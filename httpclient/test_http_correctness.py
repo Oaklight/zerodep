@@ -11,6 +11,7 @@ from httpclient import (
     AsyncClient,
     Client,
     HTTPError,
+    StreamingResponse,
     async_delete,
     async_get,
     async_patch,
@@ -219,6 +220,202 @@ class TestAsyncClient:
         async with AsyncClient(headers={"X-Async": "yes"}) as c:
             r = await c.get(f"{BASE}/get")
             assert r.json()["headers"]["X-Async"] == "yes"
+
+
+# ── Sync: file upload ──
+
+
+class TestSyncFileUpload:
+    def test_upload_bytes(self):
+        r = post(f"{BASE}/post", files={"file": b"hello world"})
+        assert r.status_code == 200
+        assert "file" in r.json()["files"]
+
+    def test_upload_tuple_with_filename(self):
+        r = post(f"{BASE}/post", files={"file": ("test.txt", b"file content")})
+        assert r.status_code == 200
+        assert r.json()["files"]["file"] == "file content"
+
+    def test_upload_tuple_with_content_type(self):
+        r = post(
+            f"{BASE}/post",
+            files={"file": ("data.json", b'{"key": "value"}', "application/json")},
+        )
+        assert r.status_code == 200
+        assert "file" in r.json()["files"]
+
+    def test_upload_with_data(self):
+        r = post(
+            f"{BASE}/post",
+            data={"field": "value"},
+            files={"file": ("test.txt", b"content")},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["form"]["field"] == "value"
+        assert "file" in body["files"]
+
+    def test_upload_file_object(self):
+        import io
+
+        buf = io.BytesIO(b"file object content")
+        buf.name = "buffer.txt"
+        r = post(f"{BASE}/post", files={"file": buf})
+        assert r.status_code == 200
+        assert r.json()["files"]["file"] == "file object content"
+
+    def test_upload_multiple_files(self):
+        r = post(
+            f"{BASE}/post",
+            files=[
+                ("file1", ("a.txt", b"aaa")),
+                ("file2", ("b.txt", b"bbb")),
+            ],
+        )
+        assert r.status_code == 200
+        files = r.json()["files"]
+        assert files["file1"] == "aaa"
+        assert files["file2"] == "bbb"
+
+
+# ── Async: file upload ──
+
+
+class TestAsyncFileUpload:
+    @pytest.mark.asyncio
+    async def test_upload_bytes(self):
+        r = await async_post(f"{BASE}/post", files={"file": b"async hello"})
+        assert r.status_code == 200
+        assert "file" in r.json()["files"]
+
+    @pytest.mark.asyncio
+    async def test_upload_with_data(self):
+        r = await async_post(
+            f"{BASE}/post",
+            data={"field": "async_value"},
+            files={"file": ("test.txt", b"async content")},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["form"]["field"] == "async_value"
+        assert "file" in body["files"]
+
+    @pytest.mark.asyncio
+    async def test_upload_tuple_with_content_type(self):
+        r = await async_post(
+            f"{BASE}/post",
+            files={"file": ("data.txt", b"typed content", "text/plain")},
+        )
+        assert r.status_code == 200
+        assert r.json()["files"]["file"] == "typed content"
+
+
+# ── Sync: streaming ──
+
+
+class TestSyncStreaming:
+    def test_stream_iter_bytes(self):
+        with get(f"{BASE}/get", stream=True) as r:
+            assert isinstance(r, StreamingResponse)
+            assert r.status_code == 200
+            assert r.ok
+            chunks = list(r.iter_bytes())
+            assert len(chunks) > 0
+            body = b"".join(chunks)
+            assert b"headers" in body
+
+    def test_stream_iter_lines(self):
+        with get(f"{BASE}/get", stream=True) as r:
+            lines = list(r.iter_lines())
+            assert len(lines) > 0
+            # httpbin /get returns JSON, should have lines
+            text = "\n".join(lines)
+            assert "headers" in text
+
+    def test_stream_read(self):
+        with get(f"{BASE}/get", stream=True) as r:
+            body = r.read()
+            assert isinstance(body, bytes)
+            assert b"headers" in body
+
+    def test_stream_headers_accessible(self):
+        with get(f"{BASE}/get", stream=True) as r:
+            assert "content-type" in r.headers
+            assert r.url.endswith("/get")
+
+    def test_stream_raise_for_status(self):
+        with get(f"{BASE}/status/404", stream=True) as r:
+            assert r.status_code == 404
+            assert not r.ok
+            with pytest.raises(HTTPError):
+                r.raise_for_status()
+
+    def test_stream_redirect(self):
+        with get(f"{BASE}/redirect/2", stream=True) as r:
+            assert r.status_code == 200
+            body = r.read()
+            assert len(body) > 0
+
+    def test_stream_client_session(self):
+        with Client() as client:
+            with client.get(f"{BASE}/get", stream=True) as r:
+                assert r.status_code == 200
+                body = r.read()
+                assert b"headers" in body
+
+
+# ── Async: streaming ──
+
+
+class TestAsyncStreaming:
+    @pytest.mark.asyncio
+    async def test_stream_aiter_bytes(self):
+        r = await async_get(f"{BASE}/get", stream=True)
+        async with r:
+            assert isinstance(r, StreamingResponse)
+            assert r.status_code == 200
+            chunks = []
+            async for chunk in r.aiter_bytes():
+                chunks.append(chunk)
+            assert len(chunks) > 0
+            body = b"".join(chunks)
+            assert b"headers" in body
+
+    @pytest.mark.asyncio
+    async def test_stream_aiter_lines(self):
+        r = await async_get(f"{BASE}/get", stream=True)
+        async with r:
+            lines = []
+            async for line in r.aiter_lines():
+                lines.append(line)
+            assert len(lines) > 0
+            text = "\n".join(lines)
+            assert "headers" in text
+
+    @pytest.mark.asyncio
+    async def test_stream_aread(self):
+        r = await async_get(f"{BASE}/get", stream=True)
+        async with r:
+            body = await r.aread()
+            assert isinstance(body, bytes)
+            assert b"headers" in body
+
+    @pytest.mark.asyncio
+    async def test_stream_redirect(self):
+        r = await async_get(f"{BASE}/redirect/2", stream=True)
+        async with r:
+            assert r.status_code == 200
+            body = await r.aread()
+            assert len(body) > 0
+
+    @pytest.mark.asyncio
+    async def test_stream_client_session(self):
+        async with AsyncClient() as client:
+            r = await client.get(f"{BASE}/get", stream=True)
+            async with r:
+                assert r.status_code == 200
+                body = await r.aread()
+                assert b"headers" in body
 
 
 # ── Response object ──

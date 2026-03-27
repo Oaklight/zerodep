@@ -16,7 +16,7 @@ hide:
 
 | 模块 | 描述 | 性能对标 |
 |------|------|---------|
-| [AES 加密](modules/aes.md) | AES-128-ECB 加密（纯 Python + OpenSSL ctypes） | `pycryptodome` |
+| [AES 加密](modules/aes.md) | AES 加密：ECB、CBC、CTR、GCM 模式（纯 Python + OpenSSL ctypes） | `pycryptodome` |
 | [QR 二维码](modules/qr.md) | QR Code 生成与终端渲染 | `qrcode` |
 | [HTTP 客户端](modules/http.md) | 同步 + 异步 REST 客户端 | `httpx` |
 | [Dotenv 环境变量](modules/dotenv.md) | .env 文件解析（load_dotenv, dotenv_values） | `python-dotenv` |
@@ -26,9 +26,11 @@ hide:
 | [重试](modules/retry.md) | 装饰器式自动重试（退避、抖动、过滤） | `tenacity` |
 | [TOON 序列化](modules/toon.md) | TOON（面向 Token 的对象表示法）编码器/解码器 | `toon_format` |
 | [表格格式化](modules/tabulate.md) | 多种输出样式的表格格式化 | `tabulate` |
+| [验证器](modules/validate.md) | TypedDict/dataclass 运行时验证器 + JSON Schema 生成 | `pydantic` |
+| [SSE 客户端](modules/sse.md) | Server-Sent Events 客户端（自动重连） | `httpx-sse` |
 | [HTML 解析器](modules/soup.md) | 类 BeautifulSoup API 的 HTML 解析器（find、select、CSS 选择器） | `beautifulsoup4` |
 | [交互式提示](modules/prompt.md) | 交互式 CLI 提示（confirm、select、text） | `questionary` |
-| [验证器](modules/validate.md) | TypedDict/dataclass 运行时验证器 + JSON Schema 生成 | `pydantic` |
+| [Markdown 渲染器](modules/markdown.md) | Markdown 转 HTML 渲染器（CommonMark 子集 + GFM 表格） | `mistune` |
 
 ## 设计理念
 

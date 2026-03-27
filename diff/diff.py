@@ -36,6 +36,7 @@ from __future__ import annotations
 import dataclasses
 import difflib
 import re
+from collections.abc import Sequence
 
 # ── Exceptions ──────────────────────────────────────────────────────
 
@@ -478,7 +479,7 @@ def reverse_patch(patch: Patch) -> Patch:
 
 
 def _extract_changes(
-    opcodes: list[tuple[str, int, int, int, int]],
+    opcodes: Sequence[tuple[str, int, int, int, int]],
     other_lines: list[str],
 ) -> list[tuple[int, int, list[str]]]:
     """Convert SequenceMatcher opcodes to ``(base_start, base_end, replacement)``."""

@@ -1,0 +1,77 @@
+site_name: zerodep
+site_description: 零依赖、单文件的 Python 常用库实现
+site_author: Peng Ding
+site_url: https://zerodep.readthedocs.io/zh-cn/
+repo_name: Oaklight/zerodep
+repo_url: https://github.com/Oaklight/zerodep
+copyright: Copyright &copy; 2026 Peng Ding
+
+theme:
+  name: material
+  language: zh
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: 切换到浅色模式
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: 切换到深色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: 跟随系统设置
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - search.highlight
+    - search.share
+    - search.suggest
+    - content.code.copy
+    - content.action.edit
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Oaklight/zerodep
+  alternate:
+    - name: English
+      link: /en/
+      lang: en
+    - name: 中文
+      link: /zh-cn/
+      lang: zh
+
+nav:
+  - 首页: index.md
+  - 模块:
+      - AES 加密: modules/aes.md
+      - QR 二维码: modules/qr.md
+      - HTTP 客户端: modules/http.md
+  - 性能测试: benchmarks.md
+  - 更新日志: changelog.md

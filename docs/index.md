@@ -28,6 +28,7 @@ hide:
 | [表格格式化](modules/tabulate.md) | 多种输出样式的表格格式化 | `tabulate` |
 | [HTML 解析器](modules/soup.md) | 类 BeautifulSoup API 的 HTML 解析器（find、select、CSS 选择器） | `beautifulsoup4` |
 | [交互式提示](modules/prompt.md) | 交互式 CLI 提示（confirm、select、text） | `questionary` |
+| [验证器](modules/validate.md) | TypedDict/dataclass 运行时验证器 + JSON Schema 生成 | `pydantic` |
 
 ## 设计理念
 

@@ -34,31 +34,8 @@ from __future__ import annotations
 
 import dataclasses
 import re
-
-# Python 3.10 has is_typeddict in typing; get_type_hints with
-# include_extras needs typing or typing_extensions.
-# Required/NotRequired are in typing from 3.11, typing_extensions for 3.10.
-import sys
 import typing
-from typing import Any, Callable, Union
-
-if sys.version_info >= (3, 11):
-    from typing import NotRequired, Required
-else:
-    from typing_extensions import NotRequired, Required  # noqa: F401
-
-try:
-    from typing_extensions import (
-        is_typeddict,  # handles both typing & typing_extensions TypedDicts
-    )
-except ImportError:
-    from typing import is_typeddict  # 3.10+
-
-try:
-    from typing_extensions import get_type_hints  # include_extras support
-except ImportError:
-    from typing import get_type_hints
-
+from typing import Any, Callable, Union, get_type_hints
 
 # ── Constraint Annotations ──
 
@@ -264,8 +241,12 @@ def _unwrap_annotated(tp: Any) -> tuple[Any, list[Any]]:
 
 
 def _is_typeddict(tp: Any) -> bool:
-    """Check if *tp* is a TypedDict class."""
-    return is_typeddict(tp)
+    """Check if *tp* is a TypedDict class.
+
+    Uses ``__required_keys__`` attribute detection to support TypedDicts
+    created with both ``typing.TypedDict`` and ``typing_extensions.TypedDict``.
+    """
+    return isinstance(tp, type) and hasattr(tp, "__required_keys__")
 
 
 def _is_dataclass_type(tp: Any) -> bool:

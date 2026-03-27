@@ -60,6 +60,7 @@ plugins:
             - ../diff
             - ../vcs
             - ../ansi
+            - ../scheduler
             - aes
             - qr
             - httpclient
@@ -78,6 +79,7 @@ plugins:
             - diff
             - vcs
             - ansi
+            - scheduler
           options:
             docstring_style: google
             show_source: true
@@ -133,6 +135,7 @@ nav:
       - Diff: modules/diff.md
       - VCS: modules/vcs.md
       - ANSI Colors: modules/ansi.md
+      - Scheduler: modules/scheduler.md
   - API Reference:
       - AES: api/aes.md
       - QR Code: api/qr.md
@@ -152,6 +155,7 @@ nav:
       - Diff: api/diff.md
       - VCS: api/vcs.md
       - ANSI: api/ansi.md
+      - Scheduler: api/scheduler.md
   - Benchmarks:
       - AES: benchmarks/aes.md
       - QR Code: benchmarks/qr.md
@@ -168,4 +172,5 @@ nav:
       - Validate: benchmarks/validate.md
       - Markdown: benchmarks/markdown.md
       - Diff: benchmarks/diff.md
+      - Scheduler: benchmarks/scheduler.md
   - Changelog: changelog.md

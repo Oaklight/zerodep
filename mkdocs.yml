@@ -38,6 +38,18 @@ theme:
 
 plugins:
   - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - ../aes
+            - ../qr
+            - ../httpclient
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            members_order: source
 
 markdown_extensions:
   - admonition
@@ -73,8 +85,16 @@ nav:
       - AES 加密: modules/aes.md
       - QR 二维码: modules/qr.md
       - HTTP 客户端: modules/http.md
+      - Dotenv 环境变量: modules/dotenv.md
+      - YAML 解析器: modules/yaml.md
+  - API 参考:
+      - AES: api/aes.md
+      - QR 二维码: api/qr.md
+      - HTTP 客户端: api/http.md
   - 性能测试:
       - AES: benchmarks/aes.md
       - QR 二维码: benchmarks/qr.md
       - HTTP 客户端: benchmarks/http.md
+      - Dotenv: benchmarks/dotenv.md
+      - YAML: benchmarks/yaml.md
   - 更新日志: changelog.md

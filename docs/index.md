@@ -1,3 +1,9 @@
+---
+title: Home
+hide:
+  - navigation
+---
+
 # zerodep
 
 Zero-dependency, single-file Python implementations of popular libraries — stdlib only, Python 3.10+.

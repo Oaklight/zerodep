@@ -255,10 +255,10 @@ Uses an `asyncio.Lock` internally for safe concurrent access from the same clien
 
 ## How to Use in Your Project
 
-Copy `httpclient.py` into your project. Since the Python standard library has a built-in module named `http`, you should **rename the file** if you plan to use it alongside stdlib `http`:
+Copy `httpclient.py` into your project:
 
 ```bash
-cp httpclient/httpclient.py your_project/httpclient.py
+cp httpclient/httpclient.py your_project/
 ```
 
 Then import it:
@@ -267,8 +267,8 @@ Then import it:
 from httpclient import get, post, Client, AsyncClient
 ```
 
-!!! warning "Naming Conflict"
-    Do not name the file `http.py` -- this will shadow the standard library `http` module that `httpclient.py` itself depends on.
+!!! warning "Do Not Rename to `http.py`"
+    The file must not be named `http.py` -- that would shadow the standard library `http` module which `httpclient.py` depends on internally.
 
 ## Comparison with httpx
 
@@ -289,4 +289,26 @@ from httpclient import get, post, Client, AsyncClient
 
 ## Benchmark
 
-Benchmarked against `httpx`. See [Benchmarks](../benchmarks.md#http-client) for detailed results.
+**Reference library:** [`httpx`](https://pypi.org/project/httpx/) (with connection pooling)
+
+### Performance Comparison (Mean)
+
+| Test | zerodep | httpx | Notes |
+|------|---------|-------|-------|
+| Sync GET | ~1,100 ms | ~398 ms | httpx benefits from connection pooling |
+| Sync POST JSON | ~1,086 ms | ~1,060 ms | Comparable (network-bound) |
+| Sync Client GET | ~1,099 ms | ~1,088 ms | Comparable with session |
+| Async GET | ~1,228 ms | ~1,178 ms | Comparable |
+| Async POST JSON | ~1,133 ms | ~1,152 ms | Comparable |
+
+### Key Takeaways
+
+- For **one-off requests**, httpx is noticeably faster due to connection pooling.
+- With **sessions or async**, performance is essentially identical since both implementations become network-bound.
+- zerodep has **zero pip dependencies** -- it uses only `http.client` (sync) and `asyncio` streams (async) from the standard library.
+
+Run the benchmark yourself:
+
+```bash
+pytest httpclient/test_http_benchmark.py --benchmark-only -v
+```

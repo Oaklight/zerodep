@@ -51,6 +51,9 @@ plugins:
             - ../structlog
             - ../retry
             - ../toon
+            - ../tabulate
+            - ../soup
+            - ../prompt
             - aes
             - qr
             - httpclient
@@ -60,6 +63,9 @@ plugins:
             - structlog
             - retry
             - toon
+            - tabulate
+            - soup
+            - prompt
           options:
             docstring_style: google
             show_source: true
@@ -106,6 +112,9 @@ nav:
       - Structured Logging: modules/structlog.md
       - Retry: modules/retry.md
       - TOON: modules/toon.md
+      - Tabulate: modules/tabulate.md
+      - HTML Parser: modules/soup.md
+      - Prompts: modules/prompt.md
   - API Reference:
       - AES: api/aes.md
       - QR Code: api/qr.md
@@ -116,6 +125,9 @@ nav:
       - Structured Logging: api/structlog.md
       - Retry: api/retry.md
       - TOON: api/toon.md
+      - Tabulate: api/tabulate.md
+      - Soup: api/soup.md
+      - Prompt: api/prompt.md
   - Benchmarks:
       - AES: benchmarks/aes.md
       - QR Code: benchmarks/qr.md
@@ -126,4 +138,6 @@ nav:
       - Structured Logging: benchmarks/structlog.md
       - Retry: benchmarks/retry.md
       - TOON: benchmarks/toon.md
+      - Tabulate: benchmarks/tabulate.md
+      - HTML Parser: benchmarks/soup.md
   - Changelog: changelog.md

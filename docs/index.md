@@ -24,6 +24,9 @@ Each module is a **self-contained single file** that you can copy directly into 
 | [JSONC](modules/jsonc.md) | JSONC parser (JSON with comments and trailing commas) | `commentjson` |
 | [Retry](modules/retry.md) | Decorator-based retry with configurable backoff strategies | `tenacity` |
 | [TOON](modules/toon.md) | TOON (Token-Oriented Object Notation) encoder/decoder | `toon_format` |
+| [Tabulate](modules/tabulate.md) | Table formatting with multiple output styles | `tabulate` |
+| [HTML Parser](modules/soup.md) | HTML parser with BeautifulSoup-like API (find, select, CSS selectors) | `beautifulsoup4` |
+| [Prompts](modules/prompt.md) | Interactive CLI prompts (confirm, select, text) | `questionary` |
 
 ## Philosophy
 

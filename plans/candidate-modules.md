@@ -1,14 +1,6 @@
 # zerodep — Candidate Module Roadmap
 
-## Current Modules
-- AES encryption (aes.py, aes_openssl.py) — done
-- QR code generation (qr.py) — done
-- HTTP client (httpclient.py) — done, file upload just added
-- YAML parser — in progress
-- dotenv — in progress
-
 ## httpclient Pending Features
-- Streaming response (medium complexity) — new StreamingResponse class, context manager for connection lifecycle
 - Connection pooling (high complexity) — pool keyed by (host, port, scheme), keep-alive, stale connection detection
 
 ## Tier 1 — High Value for Agentic/LLM Development
@@ -18,7 +10,7 @@
 - **Why**: Nearly all LLM APIs (OpenAI, Anthropic, Google) use SSE for streaming responses. Natural extension of httpclient.
 - **stdlib basis**: Extends existing httpclient (http.client, asyncio streams)
 - **Scope**: Parse `text/event-stream` format (event, data, id, retry fields), sync + async, iterator/async iterator interface
-- **Synergy**: Depends on streaming response support in httpclient
+- **Synergy**: Depends on streaming response support in httpclient (done)
 - **Priority**: Highest — completes the LLM API client stack
 
 ### JWT (JSON Web Tokens)
@@ -26,13 +18,6 @@
 - **Why**: API gateway auth, OAuth, agent-to-agent authentication. Web/API dev essential.
 - **stdlib basis**: hmac, hashlib, base64, json
 - **Scope**: HS256/HS384/HS512 signing + verification, encode/decode, claims validation (exp, nbf, iss, aud)
-- **Priority**: High
-
-### Retry / Exponential Backoff — done
-- **Replaces**: tenacity, backoff
-- **Why**: LLM APIs frequently return 429/5xx. Exponential backoff with jitter is standard practice.
-- **stdlib basis**: time, functools (decorator), random
-- **Scope**: Decorator-based retry with configurable max retries, backoff strategy (exponential, fixed, linear), jitter (full, equal, none), retry-on conditions (exception types, result predicates, HTTP status codes)
 - **Priority**: High
 
 ### Rate Limiter
@@ -49,12 +34,6 @@
 - **Why**: OpenAI Realtime API, agent real-time communication
 - **stdlib basis**: asyncio, hashlib, struct, ssl
 - **Scope**: RFC 6455 client, text/binary frames, ping/pong, close handshake, sync + async
-
-### Structured Logging
-- **Replaces**: structlog (subset)
-- **Why**: Agent debugging/observability, tracking tool calls, token usage
-- **stdlib basis**: logging, json
-- **Scope**: JSON-formatted log output, context binding, stdlib logging integration
 
 ### Markdown → HTML
 - **Replaces**: markdown, mistune
@@ -91,9 +70,7 @@
 - **Synergy**: QR module could output PNG directly
 
 ## Recommended Priority Order (for agentic/LLM focus)
-1. httpclient streaming response (prerequisite for SSE)
-2. SSE client (completes LLM streaming stack)
-3. Retry/backoff (essential for API reliability)
-4. Rate limiter (essential for API management)
-5. JWT (auth layer)
-6. WebSocket client (real-time APIs)
+1. SSE client (completes LLM streaming stack)
+2. Rate limiter (essential for API management)
+3. JWT (auth layer)
+4. WebSocket client (real-time APIs)

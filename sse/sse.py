@@ -385,14 +385,14 @@ class SSEClient:
         if resp.status_code == 204:
             resp.close()
             self._closed = True
-            return resp  # will not iterate
+            return resp  # type: ignore
 
         if not resp.ok:
             status = resp.status_code
             resp.close()
             raise SSEHTTPError(status, self._url)
 
-        return resp
+        return resp  # type: ignore
 
     def _close_response(self) -> None:
         if self._response is not None:
@@ -513,14 +513,14 @@ class AsyncSSEClient:
         if resp.status_code == 204:
             await resp.aclose()
             self._closed = True
-            return resp
+            return resp  # type: ignore
 
         if not resp.ok:
             status = resp.status_code
             await resp.aclose()
             raise SSEHTTPError(status, self._url)
 
-        return resp
+        return resp  # type: ignore
 
     async def _close_response(self) -> None:
         if self._response is not None:

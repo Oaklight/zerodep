@@ -48,7 +48,7 @@ class TestSSEEvent:
     def test_frozen(self):
         e = SSEEvent(data="hello")
         with pytest.raises(AttributeError):
-            e.data = "world"
+            e.data = "world"  # type: ignore
 
     def test_repr_short(self):
         e = SSEEvent(event="ping", data="hi", id="1")
@@ -81,6 +81,7 @@ class TestSSEParser:
         p.feed_line("data: line2")
         p.feed_line("data: line3")
         event = p.feed_line("")
+        assert event is not None
         assert event.data == "line1\nline2\nline3"
 
     def test_event_type(self):
@@ -88,6 +89,7 @@ class TestSSEParser:
         p.feed_line("event: update")
         p.feed_line("data: payload")
         event = p.feed_line("")
+        assert event is not None
         assert event.event == "update"
 
     def test_event_type_resets_after_dispatch(self):
@@ -97,6 +99,7 @@ class TestSSEParser:
         p.feed_line("")
         p.feed_line("data: second")
         event = p.feed_line("")
+        assert event is not None
         assert event.event == "message"  # reset to default
 
     def test_id_field(self):
@@ -104,6 +107,7 @@ class TestSSEParser:
         p.feed_line("id: 42")
         p.feed_line("data: payload")
         event = p.feed_line("")
+        assert event is not None
         assert event.id == "42"
 
     def test_id_persists_across_events(self):
@@ -113,6 +117,7 @@ class TestSSEParser:
         p.feed_line("")
         p.feed_line("data: second")
         event = p.feed_line("")
+        assert event is not None
         assert event.id == "42"  # persists
 
     def test_id_with_null_ignored(self):
@@ -123,6 +128,7 @@ class TestSSEParser:
         p.feed_line("id: bad\0id")
         p.feed_line("data: second")
         event = p.feed_line("")
+        assert event is not None
         assert event.id == "42"  # null id ignored
 
     def test_retry_field(self):
@@ -130,6 +136,7 @@ class TestSSEParser:
         p.feed_line("retry: 5000")
         p.feed_line("data: payload")
         event = p.feed_line("")
+        assert event is not None
         assert event.retry == 5000
 
     def test_retry_non_digit_ignored(self):
@@ -137,6 +144,7 @@ class TestSSEParser:
         p.feed_line("retry: abc")
         p.feed_line("data: payload")
         event = p.feed_line("")
+        assert event is not None
         assert event.retry is None
 
     def test_retry_empty_ignored(self):
@@ -144,6 +152,7 @@ class TestSSEParser:
         p.feed_line("retry:")
         p.feed_line("data: payload")
         event = p.feed_line("")
+        assert event is not None
         assert event.retry is None
 
     def test_retry_persists(self):
@@ -153,6 +162,7 @@ class TestSSEParser:
         p.feed_line("")
         p.feed_line("data: second")
         event = p.feed_line("")
+        assert event is not None
         assert event.retry == 1000
 
     def test_comment_ignored(self):
@@ -160,6 +170,7 @@ class TestSSEParser:
         p.feed_line(": this is a comment")
         p.feed_line("data: hello")
         event = p.feed_line("")
+        assert event is not None
         assert event.data == "hello"
 
     def test_comment_only_no_dispatch(self):
@@ -179,6 +190,7 @@ class TestSSEParser:
         p = _SSEParser()
         p.feed_line("data: hello")
         event = p.feed_line("")
+        assert event is not None
         assert event.data == "hello"
 
     def test_data_double_space_preserved(self):
@@ -186,12 +198,14 @@ class TestSSEParser:
         p = _SSEParser()
         p.feed_line("data:  hello")
         event = p.feed_line("")
+        assert event is not None
         assert event.data == " hello"
 
     def test_data_no_space(self):
         p = _SSEParser()
         p.feed_line("data:hello")
         event = p.feed_line("")
+        assert event is not None
         assert event.data == "hello"
 
     def test_field_no_colon(self):
@@ -206,12 +220,14 @@ class TestSSEParser:
         p.feed_line("foo: bar")
         p.feed_line("data: hello")
         event = p.feed_line("")
+        assert event is not None
         assert event.data == "hello"
 
     def test_bom_stripped_from_first_line(self):
         p = _SSEParser()
         p.feed_line("\ufeffdata: hello")
         event = p.feed_line("")
+        assert event is not None
         assert event.data == "hello"
 
     def test_bom_only_on_first_line(self):
@@ -239,6 +255,7 @@ class TestSSEParser:
         p.feed_line("id: 99")
         p.feed_line("retry: 2000")
         event = p.feed_line("")
+        assert event is not None
         assert event.event == "notification"
         assert event.data == "payload"
         assert event.id == "99"
@@ -381,23 +398,23 @@ class _SSEHandler(http.server.BaseHTTPRequestHandler):
 
         if path == "/events":
             # Serve events once, then 204 on reconnect (graceful stop)
-            count = self.server.request_counts.get(path, 0)
-            self.server.request_counts[path] = count + 1
+            count = self.server.request_counts.get(path, 0)  # type: ignore
+            self.server.request_counts[path] = count + 1  # type: ignore
             if count == 0:
-                self._serve_sse(self.server.sse_lines)
+                self._serve_sse(self.server.sse_lines)  # type: ignore
             else:
                 self.send_response(204)
                 self.end_headers()
         elif path == "/events-repeat":
             # Always serve events (for retry exhaustion tests)
-            self._serve_sse(self.server.sse_lines)
+            self._serve_sse(self.server.sse_lines)  # type: ignore
         elif path == "/events-with-id":
             last_id = self.headers.get("Last-Event-ID", "")
-            self.server.received_last_event_ids.append(last_id)
-            count = self.server.request_counts.get(path, 0)
-            self.server.request_counts[path] = count + 1
+            self.server.received_last_event_ids.append(last_id)  # type: ignore
+            count = self.server.request_counts.get(path, 0)  # type: ignore
+            self.server.request_counts[path] = count + 1  # type: ignore
             if count == 0:
-                self._serve_sse(self.server.sse_lines)
+                self._serve_sse(self.server.sse_lines)  # type: ignore
             else:
                 # Record the header but stop — return 204
                 self.send_response(204)
@@ -643,13 +660,13 @@ class TestCompareWithHttpxSSE:
         """Parse raw SSE text using httpx-sse."""
         # httpx-sse expects bytes content
 
-        response = httpx.Response(
+        response = httpx.Response(  # type: ignore
             200,
             headers={"content-type": "text/event-stream"},
-            stream=httpx.ByteStream(raw.encode()),
+            stream=httpx.ByteStream(raw.encode()),  # type: ignore
         )
         response.read()
-        source = httpx_sse.EventSource(response)
+        source = httpx_sse.EventSource(response)  # type: ignore
         events = []
         for sse in source.iter_sse():
             events.append(

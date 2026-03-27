@@ -23,6 +23,7 @@ Each module is a **self-contained single file** that you can copy directly into 
 | [YAML](modules/yaml.md) | YAML parser and serializer (common subset) | `PyYAML` |
 | [JSONC](modules/jsonc.md) | JSONC parser (JSON with comments and trailing commas) | `commentjson` |
 | [Retry](modules/retry.md) | Decorator-based retry with configurable backoff strategies | `tenacity` |
+| [TOON](modules/toon.md) | TOON (Token-Oriented Object Notation) encoder/decoder | `toon_format` |
 
 ## Philosophy
 

@@ -145,7 +145,9 @@ with open("input.bin.dec", "wb") as f:
 
 ## OpenSSL 变体细节
 
-`aes_openssl.py` 使用 Python 内置的 `ctypes` 模块调用系统的 OpenSSL `libcrypto` 库。按以下顺序查找库文件：
+`aes_openssl.py` 使用 Python 内置的 `ctypes` 模块调用系统的 OpenSSL `libcrypto` 库。由于 Python 自身就依赖 OpenSSL（`ssl` 和 `hashlib` 模块都链接到 `libcrypto`），任何标准的 Python 3.10+ 安装都已经包含 `libcrypto`——无需额外安装任何软件。
+
+运行时按以下顺序查找库文件：
 
 1. `ctypes.util.find_library("crypto")` -- 跨平台标准方式。
 2. 平台特定的回退路径：

@@ -11,11 +11,12 @@ Supports:
     - Trailing commas in objects and arrays
     - All standard JSON types
 
-Usage:
-    >>> loads('{"a": 1, // comment\\n"b": 2}')
-    {'a': 1, 'b': 2}
-    >>> load(open("config.jsonc"))
-    {...}
+Example::
+
+    loads('{"a": 1, // comment\n"b": 2}')
+    # {'a': 1, 'b': 2}
+    load(open("config.jsonc"))
+    # {...}
 """
 
 from __future__ import annotations

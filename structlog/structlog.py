@@ -7,25 +7,29 @@ Structured logging library inspired by structlog, with a loguru-style
 colored console renderer.  Provides bound loggers with context propagation,
 a processor pipeline, and multiple output renderers (console, JSON, key-value).
 
-Quick start (pretty console output, zero config):
-    >>> from structlog import get_logger
-    >>> logger = get_logger()
-    >>> logger.info("server started", host="0.0.0.0", port=8080)
+Quick start (pretty console output, zero config)::
 
-Bound logger (context propagation):
-    >>> log = get_logger().bind(request_id="abc-123")
-    >>> log.info("handling request")
-    >>> log = log.bind(user_id=42)
-    >>> log.info("authenticated")
+    from structlog import get_logger
+    logger = get_logger()
+    logger.info("server started", host="0.0.0.0", port=8080)
 
-One-call setup with stdlib integration:
-    >>> from structlog import setup_logging
-    >>> logger = setup_logging(level="DEBUG", renderer="json")
-    >>> logger.info("structured", key="value")
+Bound logger (context propagation)::
 
-Custom processor pipeline:
-    >>> from structlog import configure, add_log_level, TimeStamper, JSONRenderer
-    >>> configure(processors=[add_log_level, TimeStamper(), JSONRenderer()])
+    log = get_logger().bind(request_id="abc-123")
+    log.info("handling request")
+    log = log.bind(user_id=42)
+    log.info("authenticated")
+
+One-call setup with stdlib integration::
+
+    from structlog import setup_logging
+    logger = setup_logging(level="DEBUG", renderer="json")
+    logger.info("structured", key="value")
+
+Custom processor pipeline::
+
+    from structlog import configure, add_log_level, TimeStamper, JSONRenderer
+    configure(processors=[add_log_level, TimeStamper(), JSONRenderer()])
 """
 
 from __future__ import annotations

@@ -6,20 +6,23 @@ Copyright (c) 2026 Peng Ding. MIT License.
 Sync (http.client) and async (asyncio streams) HTTP/1.1 client
 for REST API consumption. Thread-safe by design.
 
-Sync usage:
-    >>> response = get("https://httpbin.org/get")
-    >>> response.json()
+Sync usage::
 
-Async usage:
-    >>> response = await async_get("https://httpbin.org/get")
-    >>> response.json()
+    response = get("https://httpbin.org/get")
+    response.json()
 
-Session usage:
-    >>> with Client() as client:
-    ...     r = client.get("https://httpbin.org/get")
+Async usage::
 
-    >>> async with AsyncClient() as client:
-    ...     r = await client.get("https://httpbin.org/get")
+    response = await async_get("https://httpbin.org/get")
+    response.json()
+
+Session usage::
+
+    with Client() as client:
+        r = client.get("https://httpbin.org/get")
+
+    async with AsyncClient() as client:
+        r = await client.get("https://httpbin.org/get")
 """
 
 from __future__ import annotations
@@ -118,14 +121,15 @@ def _guess_encoding_from_headers(headers: dict[str, str]) -> str:
 class StreamingResponse:
     """HTTP streaming response — holds the connection open.
 
-    Use as a context manager to ensure cleanup:
-        >>> with get(url, stream=True) as r:
-        ...     for chunk in r.iter_bytes():
-        ...         process(chunk)
+    Use as a context manager to ensure cleanup::
 
-        >>> async with await async_get(url, stream=True) as r:
-        ...     async for line in r.aiter_lines():
-        ...         handle(line)
+        with get(url, stream=True) as r:
+            for chunk in r.iter_bytes():
+                process(chunk)
+
+        async with await async_get(url, stream=True) as r:
+            async for line in r.aiter_lines():
+                handle(line)
     """
 
     __slots__ = (
@@ -984,9 +988,10 @@ class Client:
     Thread-safe: uses a threading.Lock internally. Each request creates
     a new connection (no connection pooling).
 
-    Usage:
-        >>> with Client(headers={"Authorization": "Bearer token"}) as c:
-        ...     r = c.get("https://api.example.com/data")
+    Usage::
+
+        with Client(headers={"Authorization": "Bearer token"}) as c:
+            r = c.get("https://api.example.com/data")
     """
 
     def __init__(
@@ -1054,9 +1059,10 @@ class AsyncClient:
     Safe to use from a single asyncio task; for concurrent requests
     from the same client, use asyncio.Lock internally.
 
-    Usage:
-        >>> async with AsyncClient(headers={"Authorization": "Bearer token"}) as c:
-        ...     r = await c.get("https://api.example.com/data")
+    Usage::
+
+        async with AsyncClient(headers={"Authorization": "Bearer token"}) as c:
+            r = await c.get("https://api.example.com/data")
     """
 
     def __init__(

@@ -9,13 +9,13 @@ multi-document streams, and comments.
 
 Does NOT implement: anchors/aliases, tags, merge keys, complex keys.
 
-Usage:
-    >>> data = load("name: Alice\\nage: 30")
-    >>> data
-    {'name': 'Alice', 'age': 30}
-    >>> print(dump(data))
-    age: 30
-    name: Alice
+Example::
+
+    data = load("name: Alice\nage: 30")
+    # {'name': 'Alice', 'age': 30}
+    print(dump(data))
+    # age: 30
+    # name: Alice
 """
 
 from __future__ import annotations

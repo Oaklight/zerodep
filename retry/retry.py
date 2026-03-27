@@ -6,25 +6,29 @@ Copyright (c) 2026 Peng Ding. MIT License.
 Decorator-based retry with exponential / linear / fixed backoff,
 jitter, exception and result filtering, and async support.
 
-Basic usage:
-    >>> @retry(max_retries=3)
-    ... def call_api():
-    ...     return get("https://api.example.com/data")
+Basic usage::
 
-Async usage:
-    >>> @retry(max_retries=3, retry_on=(ConnectionError, TimeoutError))
-    ... async def call_api():
-    ...     return await async_get("https://api.example.com/data")
+    @retry(max_retries=3)
+    def call_api():
+        return get("https://api.example.com/data")
 
-Imperative usage:
-    >>> result = retry_call(call_api, max_retries=5)
+Async usage::
 
-HTTP status filtering:
-    >>> @retry(retry_on=retry_if_status(429, 502, 503))
-    ... def call_api():
-    ...     resp = get("https://api.example.com/data")
-    ...     resp.raise_for_status()
-    ...     return resp
+    @retry(max_retries=3, retry_on=(ConnectionError, TimeoutError))
+    async def call_api():
+        return await async_get("https://api.example.com/data")
+
+Imperative usage::
+
+    result = retry_call(call_api, max_retries=5)
+
+HTTP status filtering::
+
+    @retry(retry_on=retry_if_status(429, 502, 503))
+    def call_api():
+        resp = get("https://api.example.com/data")
+        resp.raise_for_status()
+        return resp
 """
 
 from __future__ import annotations

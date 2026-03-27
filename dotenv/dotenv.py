@@ -5,10 +5,11 @@ Copyright (c) 2026 Peng Ding. MIT License.
 
 Drop-in replacement for python-dotenv core functionality.
 
-Usage:
-    >>> load_dotenv()                       # load .env into os.environ
-    >>> values = dotenv_values(".env")       # parse without modifying environ
-    >>> path = find_dotenv()                 # search up for .env file
+Example::
+
+    load_dotenv()                       # load .env into os.environ
+    values = dotenv_values(".env")       # parse without modifying environ
+    path = find_dotenv()                 # search up for .env file
 """
 
 from __future__ import annotations

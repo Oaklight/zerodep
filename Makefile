@@ -1,4 +1,4 @@
-.PHONY: all test benchmark lint fmt clean help test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs
+.PHONY: all test benchmark lint fmt clean help test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi
 
 help:
 	@echo "Available targets:"
@@ -32,12 +32,13 @@ help:
 	@echo "  test-diff        - Run diff correctness tests"
 	@echo "  benchmark-diff   - Run diff benchmarks"
 	@echo "  test-vcs         - Run VCS correctness tests"
+	@echo "  test-ansi        - Run ANSI correctness tests"
 	@echo "  lint             - Run ruff check"
 	@echo "  fmt              - Run ruff format"
 	@echo "  clean            - Clean generated files"
 
 test:
-	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_http_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py toon/test_toon_correctness.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py -v
+	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_http_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py toon/test_toon_correctness.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py ansi/test_ansi_correctness.py -v
 
 test-aes:
 	pytest aes/test_aes_correctness.py -v
@@ -125,6 +126,9 @@ benchmark-diff:
 
 test-vcs:
 	pytest vcs/test_vcs_correctness.py -v
+
+test-ansi:
+	pytest ansi/test_ansi_correctness.py -v
 
 lint:
 	ruff check .

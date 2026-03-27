@@ -23,12 +23,15 @@ Zero-dependency, single-file Python implementations of popular libraries — std
 | `soup/` | HTML parser with BeautifulSoup-like API (find, select, CSS selectors) | `beautifulsoup4` |
 | `prompt/` | Interactive CLI prompts (confirm, select, text) | `questionary` |
 | `markdown/` | Markdown to HTML renderer (CommonMark subset + GFM tables) | `mistune` |
+| `ansi/` | ANSI terminal styling: colors, attributes, detection, strip/visible_len | — |
 | `diff/` | Unified diff parser, patch apply/reverse, three-way merge | `unidiff` |
 | `vcs/` | Git/Hg/Jujutsu CLI wrapper (diff, status, log, blame) | — |
 
 ## Usage
 
 Each module is a **self-contained single file** that you can copy directly into your project. No installation required.
+
+Some modules have optional **sibling dependencies** on other zerodep modules (e.g. `structlog` can use `ansi` for color support). These are loaded via guarded imports — if the sibling module is absent, the module falls back to inline constants and remains fully functional.
 
 ## License
 

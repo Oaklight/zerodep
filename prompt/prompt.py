@@ -132,14 +132,17 @@ def _is_tty() -> bool:
 
 _ANSI_RESET = "\033[0m"
 _ANSI_BOLD = "\033[1m"
+_ANSI_DIM = "\033[2m"
 _ANSI_ITALIC = "\033[3m"
 _ANSI_UNDERLINE = "\033[4m"
+_ANSI_STRIKETHROUGH = "\033[9m"
+_ANSI_REVERSE = "\033[7m"
 _ANSI_CLEAR_LINE = "\033[K"
 _ANSI_CURSOR_UP = "\033[A"
 _ANSI_HIDE_CURSOR = "\033[?25l"
 _ANSI_SHOW_CURSOR = "\033[?25h"
 
-# Basic named colours → SGR foreground codes
+# Named colours → SGR foreground codes (standard 8 + bright 8)
 _NAMED_COLORS: dict[str, int] = {
     "black": 30,
     "red": 31,
@@ -149,6 +152,14 @@ _NAMED_COLORS: dict[str, int] = {
     "magenta": 35,
     "cyan": 36,
     "white": 37,
+    "bright_black": 90,
+    "bright_red": 91,
+    "bright_green": 92,
+    "bright_yellow": 93,
+    "bright_blue": 94,
+    "bright_magenta": 95,
+    "bright_cyan": 96,
+    "bright_white": 97,
 }
 
 
@@ -179,8 +190,9 @@ def _parse_style_string(style_str: str) -> str:
 
     Recognised tokens:
     - ``fg:#RRGGBB`` – 24-bit foreground colour
-    - ``fg:<name>`` – named colour (red, green, …)
-    - ``bold``, ``italic``, ``underline`` – text decorations
+    - ``fg:<name>`` – named colour (red, green, bright_red, …)
+    - ``bold``, ``dim``, ``italic``, ``underline``, ``strikethrough``,
+      ``reverse`` – text decorations
 
     Args:
         style_str: The style description to parse.
@@ -188,15 +200,19 @@ def _parse_style_string(style_str: str) -> str:
     Returns:
         A string of concatenated ANSI escape codes (may be empty).
     """
+    _ATTR_MAP: dict[str, str] = {
+        "bold": _ANSI_BOLD,
+        "dim": _ANSI_DIM,
+        "italic": _ANSI_ITALIC,
+        "underline": _ANSI_UNDERLINE,
+        "strikethrough": _ANSI_STRIKETHROUGH,
+        "reverse": _ANSI_REVERSE,
+    }
     codes: list[str] = []
     for token in style_str.strip().split():
         lower = token.lower()
-        if lower == "bold":
-            codes.append(_ANSI_BOLD)
-        elif lower == "italic":
-            codes.append(_ANSI_ITALIC)
-        elif lower == "underline":
-            codes.append(_ANSI_UNDERLINE)
+        if lower in _ATTR_MAP:
+            codes.append(_ATTR_MAP[lower])
         elif lower.startswith("fg:"):
             color_val = lower[3:]
             if color_val.startswith("#"):
@@ -662,7 +678,10 @@ __all__ = [
     "_is_tty",
     "_ANSI_RESET",
     "_ANSI_BOLD",
+    "_ANSI_DIM",
     "_ANSI_ITALIC",
     "_ANSI_UNDERLINE",
+    "_ANSI_STRIKETHROUGH",
+    "_ANSI_REVERSE",
     "_NAMED_COLORS",
 ]

@@ -28,11 +28,11 @@
 - **Scope**: HS256/HS384/HS512 signing + verification, encode/decode, claims validation (exp, nbf, iss, aud)
 - **Priority**: High
 
-### Retry / Exponential Backoff
+### Retry / Exponential Backoff — done
 - **Replaces**: tenacity, backoff
 - **Why**: LLM APIs frequently return 429/5xx. Exponential backoff with jitter is standard practice.
 - **stdlib basis**: time, functools (decorator), random
-- **Scope**: Decorator-based retry with configurable max retries, backoff strategy (exponential, fixed), jitter, retry-on conditions
+- **Scope**: Decorator-based retry with configurable max retries, backoff strategy (exponential, fixed, linear), jitter (full, equal, none), retry-on conditions (exception types, result predicates, HTTP status codes)
 - **Priority**: High
 
 ### Rate Limiter

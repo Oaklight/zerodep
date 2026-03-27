@@ -13,6 +13,8 @@ Zero-dependency, single-file Python implementations of popular libraries — std
 | `httpclient/` | Sync + async REST client | `httpx` |
 | `dotenv/` | .env file parser (load_dotenv, dotenv_values) | `python-dotenv` |
 | `yaml/` | YAML parser and serializer (common subset) | `PyYAML` |
+| `jsonc/` | JSONC parser (JSON with comments and trailing commas) | `commentjson` |
+| `structlog/` | Structured logging with pretty console output | `structlog` |
 
 ## Usage
 

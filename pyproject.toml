@@ -34,12 +34,21 @@ bench-dotenv = [
 bench-yaml = [
     "PyYAML>=6.0",
 ]
+bench-jsonc = [
+    "commentjson>=0.9.0",
+]
+bench-structlog = [
+    "structlog>=24.0.0",
+]
+bench-retry = [
+    "tenacity>=8.0.0",
+]
 dev = [
-    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml]",
+    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry]",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry"]
 
 [tool.ruff]
 target-version = "py310"

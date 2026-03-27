@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check .
+      - run: ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install core test dependencies
+        run: pip install pytest pytest-asyncio pytest-benchmark
+      - name: Install reference libraries for cross-validation
+        continue-on-error: true
+        run: |
+          pip install pycryptodome "qrcode>=7.0" "Pillow>=10.0.0" \
+            httpx python-dotenv PyYAML commentjson "structlog>=24.0.0" \
+            "tenacity>=8.0.0" "tabulate>=0.9.0" "beautifulsoup4>=4.12.0" \
+            "pydantic>=2.0.0" "httpx-sse>=0.4.0"
+          pip install "toon_format @ git+https://github.com/toon-format/toon-python.git" || true
+      - name: Run correctness tests
+        run: pytest --ignore-glob="*/test_*_benchmark.py" -v

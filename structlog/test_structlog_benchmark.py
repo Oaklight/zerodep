@@ -22,8 +22,8 @@ sys.path = [
 _cached = sys.modules.pop("structlog", None)
 
 try:
-    import structlog.dev as ref_dev
-    import structlog.processors as ref_processors
+    import structlog.dev as ref_dev  # type: ignore
+    import structlog.processors as ref_processors  # type: ignore
 
     import structlog as ref_structlog
 
@@ -64,7 +64,7 @@ def _our_logger(renderer):
 def _ref_logger(renderer):
     ref_structlog.configure(
         processors=[
-            ref_structlog.stdlib.add_log_level,
+            ref_structlog.stdlib.add_log_level,  # type: ignore
             ref_processors.TimeStamper(fmt="iso", utc=True),
             renderer,
         ],

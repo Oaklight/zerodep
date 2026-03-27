@@ -32,8 +32,8 @@ try:
     if not hasattr(_ref, "configure"):
         raise ImportError("Not the real structlog")
     ref_structlog = _ref
-    import structlog.processors as ref_processors
-    import structlog.stdlib as ref_stdlib
+    import structlog.processors as ref_processors  # type: ignore
+    import structlog.stdlib as ref_stdlib  # type: ignore
 except ImportError:
     pytest.skip("structlog not installed", allow_module_level=True)
 finally:

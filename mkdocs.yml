@@ -50,6 +50,7 @@ plugins:
             - ../jsonc
             - ../structlog
             - ../retry
+            - ../toon
             - aes
             - qr
             - httpclient
@@ -58,6 +59,7 @@ plugins:
             - jsonc
             - structlog
             - retry
+            - toon
           options:
             docstring_style: google
             show_source: true
@@ -103,6 +105,7 @@ nav:
       - JSONC: modules/jsonc.md
       - Structured Logging: modules/structlog.md
       - Retry: modules/retry.md
+      - TOON: modules/toon.md
   - API Reference:
       - AES: api/aes.md
       - QR Code: api/qr.md
@@ -112,6 +115,7 @@ nav:
       - JSONC: api/jsonc.md
       - Structured Logging: api/structlog.md
       - Retry: api/retry.md
+      - TOON: api/toon.md
   - Benchmarks:
       - AES: benchmarks/aes.md
       - QR Code: benchmarks/qr.md
@@ -121,4 +125,5 @@ nav:
       - JSONC: benchmarks/jsonc.md
       - Structured Logging: benchmarks/structlog.md
       - Retry: benchmarks/retry.md
+      - TOON: benchmarks/toon.md
   - Changelog: changelog.md

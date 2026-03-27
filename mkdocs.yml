@@ -56,6 +56,7 @@ plugins:
             - ../soup
             - ../prompt
             - ../validate
+            - ../markdown
             - aes
             - qr
             - httpclient
@@ -70,6 +71,7 @@ plugins:
             - soup
             - prompt
             - validate
+            - markdown
           options:
             docstring_style: google
             show_source: true
@@ -121,6 +123,7 @@ nav:
       - HTML 解析器: modules/soup.md
       - 交互式提示: modules/prompt.md
       - 验证器: modules/validate.md
+      - Markdown 渲染器: modules/markdown.md
   - API 参考:
       - AES: api/aes.md
       - QR 二维码: api/qr.md
@@ -136,6 +139,7 @@ nav:
       - Soup: api/soup.md
       - Prompt: api/prompt.md
       - 验证器: api/validate.md
+      - Markdown: api/markdown.md
   - 性能测试:
       - AES: benchmarks/aes.md
       - QR 二维码: benchmarks/qr.md
@@ -150,4 +154,5 @@ nav:
       - 表格格式化: benchmarks/tabulate.md
       - HTML 解析器: benchmarks/soup.md
       - 验证器: benchmarks/validate.md
+      - Markdown: benchmarks/markdown.md
   - 更新日志: changelog.md

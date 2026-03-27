@@ -145,7 +145,9 @@ with open("input.bin.dec", "wb") as f:
 
 ## OpenSSL Variant Details
 
-`aes_openssl.py` uses Python's built-in `ctypes` module to call the system's OpenSSL `libcrypto` library. It searches for the library in this order:
+`aes_openssl.py` uses Python's built-in `ctypes` module to call the system's OpenSSL `libcrypto` library. Since Python itself depends on OpenSSL (`ssl` and `hashlib` modules link against `libcrypto`), any standard Python 3.10+ installation already has `libcrypto` available -- no additional software needs to be installed.
+
+The library is located at runtime in this order:
 
 1. `ctypes.util.find_library("crypto")` -- the canonical cross-platform method.
 2. Platform-specific fallback paths:

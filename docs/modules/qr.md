@@ -331,7 +331,7 @@ Both implementations are pure Python, so the comparison is between two interpret
 ### Key Takeaways
 
 - **zerodep** (`qr.py`) is approximately **~2x slower** than the `qrcode` library. The gap narrows with longer inputs (from 2.1x to 1.7x).
-- Both are pure Python implementations. zerodep prioritizes **correctness** and **zero-dependency** over raw speed.
+- Both are pure Python implementations. Unlike AES where system `libcrypto` can be used via ctypes, there is no universally pre-installed C library for QR code generation. zerodep prioritizes **correctness** and **zero-dependency** over raw speed.
 - For most applications, both are fast enough -- QR code generation is rarely a bottleneck. Even the slowest case (200 chars) completes in under 20 ms.
 
 Run the benchmark yourself:

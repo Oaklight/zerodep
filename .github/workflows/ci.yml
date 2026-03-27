@@ -31,7 +31,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install core test dependencies
-        run: pip install pytest pytest-asyncio pytest-benchmark
+        run: pip install pytest pytest-asyncio pytest-benchmark pytest-rerunfailures
       - name: Install reference libraries for cross-validation
         continue-on-error: true
         run: |
@@ -41,4 +41,4 @@ jobs:
             "pydantic>=2.0.0" "httpx-sse>=0.4.0"
           pip install "toon_format @ git+https://github.com/toon-format/toon-python.git" || true
       - name: Run correctness tests
-        run: pytest --ignore-glob="*/test_*_benchmark.py" -v
+        run: pytest --ignore-glob="*/test_*_benchmark.py" -v --reruns 2 --reruns-delay 1

@@ -308,34 +308,6 @@ with open("qr.svg", "w") as f:
 
 ## Benchmark
 
-**Reference library:** [`qrcode`](https://pypi.org/project/qrcode/) (pure Python)
+Benchmarked against the `qrcode` library. zerodep is ~2x slower (both pure Python), but still under 20 ms for all tested inputs.
 
-Both implementations are pure Python, so the comparison is between two interpreted codebases.
-
-### Inputs Tested
-
-| Label | Content | Length |
-|-------|---------|--------|
-| Short | `"Hello"` | 5 characters |
-| URL | `"https://example.com/path?query=value&foo=bar"` | 46 characters |
-| Long | `"A" * 200` | 200 characters |
-
-### Encode Performance (Mean)
-
-| Input | zerodep (`qr.py`) | `qrcode` library | Ratio |
-|-------|---------------------|-------------------|-------|
-| Short (5 chars) | 3.3 ms | 1.6 ms | 2.1x slower |
-| URL (46 chars) | 8.7 ms | 4.5 ms | 1.9x slower |
-| Long (200 chars) | 18.3 ms | 10.5 ms | 1.7x slower |
-
-### Key Takeaways
-
-- **zerodep** (`qr.py`) is approximately **~2x slower** than the `qrcode` library. The gap narrows with longer inputs (from 2.1x to 1.7x).
-- Both are pure Python implementations. Unlike AES where system `libcrypto` can be used via ctypes, there is no universally pre-installed C library for QR code generation. zerodep prioritizes **correctness** and **zero-dependency** over raw speed.
-- For most applications, both are fast enough -- QR code generation is rarely a bottleneck. Even the slowest case (200 chars) completes in under 20 ms.
-
-Run the benchmark yourself:
-
-```bash
-pytest qr/test_qr_benchmark.py --benchmark-only -v
-```
+See [QR Code Benchmark](../benchmarks/qr.md) for detailed results.

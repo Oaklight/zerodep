@@ -73,4 +73,8 @@ nav:
       - AES: modules/aes.md
       - QR Code: modules/qr.md
       - HTTP Client: modules/http.md
+  - Benchmarks:
+      - AES: benchmarks/aes.md
+      - QR Code: benchmarks/qr.md
+      - HTTP Client: benchmarks/http.md
   - Changelog: changelog.md

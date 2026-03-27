@@ -28,12 +28,18 @@ bench-qr = [
 bench-http = [
     "httpx>=0.27.0",
 ]
+bench-dotenv = [
+    "python-dotenv>=1.0.0",
+]
+bench-yaml = [
+    "PyYAML>=6.0",
+]
 dev = [
-    "zerodep[test,bench-aes,bench-qr,bench-http]",
+    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml]",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "httpclient"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml"]
 
 [tool.ruff]
 target-version = "py310"
@@ -45,4 +51,5 @@ select = ["E", "F", "I", "W"]
 "aes/aes.py" = ["E501"]
 "aes/aes_openssl.py" = ["E501"]
 "qr/qr.py" = ["E501"]
+"yaml/yaml.py" = ["E501"]
 "**/test_*.py" = ["E402"]

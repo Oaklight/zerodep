@@ -11,6 +11,8 @@ Zero-dependency, single-file Python implementations of popular libraries — std
 | `aes/` | AES-128-ECB encryption (pure Python + OpenSSL via ctypes) | `pycryptodome` |
 | `qr/` | QR Code generation with terminal rendering | `qrcode` |
 | `httpclient/` | Sync + async REST client | `httpx` |
+| `dotenv/` | .env file parser (load_dotenv, dotenv_values) | `python-dotenv` |
+| `yaml/` | YAML parser and serializer (common subset) | `PyYAML` |
 
 ## Usage
 

@@ -35,7 +35,7 @@ def _make_failing(fail_times: int, exc: type[BaseException] = RuntimeError):
             raise exc(f"fail #{state['calls']}")
         return "ok"
 
-    fn.state = state
+    fn.state = state  # type: ignore
     return fn
 
 
@@ -48,7 +48,7 @@ def _make_async_failing(fail_times: int, exc: type[BaseException] = RuntimeError
             raise exc(f"fail #{state['calls']}")
         return "ok"
 
-    fn.state = state
+    fn.state = state  # type: ignore
     return fn
 
 

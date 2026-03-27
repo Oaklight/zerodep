@@ -392,30 +392,45 @@ def retry(
         RetryError: When retries are exhausted due to *retry_on_result*.
         The original exception: When retries are exhausted due to exceptions.
     """
-    opts = dict(
-        max_retries=max_retries,
-        base_delay=base_delay,
-        max_delay=max_delay,
-        backoff=backoff,
-        backoff_factor=backoff_factor,
-        jitter=jitter,
-        retry_on=retry_on,
-        retry_on_result=retry_on_result,
-        on_retry=on_retry,
-    )
 
     def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
         if inspect.iscoroutinefunction(fn):
 
             @functools.wraps(fn)
             async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-                return await _retry_async(fn, args, kwargs, **opts)
+                return await _retry_async(
+                    fn,
+                    args,
+                    kwargs,
+                    max_retries=max_retries,
+                    base_delay=base_delay,
+                    max_delay=max_delay,
+                    backoff=backoff,
+                    backoff_factor=backoff_factor,
+                    jitter=jitter,
+                    retry_on=retry_on,
+                    retry_on_result=retry_on_result,
+                    on_retry=on_retry,
+                )
 
             return async_wrapper
 
         @functools.wraps(fn)
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
-            return _retry_sync(fn, args, kwargs, **opts)
+            return _retry_sync(
+                fn,
+                args,
+                kwargs,
+                max_retries=max_retries,
+                base_delay=base_delay,
+                max_delay=max_delay,
+                backoff=backoff,
+                backoff_factor=backoff_factor,
+                jitter=jitter,
+                retry_on=retry_on,
+                retry_on_result=retry_on_result,
+                on_retry=on_retry,
+            )
 
         return sync_wrapper
 

@@ -47,7 +47,7 @@ class TestRetryWithFailures:
                 raise RuntimeError("fail")
             return "ok"
 
-        fn.reset = lambda: state.update(calls=0)
+        fn.reset = lambda: state.update(calls=0)  # type: ignore
         return fn
 
     def test_zerodep(self, benchmark):

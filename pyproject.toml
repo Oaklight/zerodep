@@ -1,0 +1,48 @@
+[project]
+name = "zerodep"
+version = "0.1.0"
+description = "Zero-dependency, single-file Python implementations of popular libraries"
+authors = [{ name = "Peng Ding" }]
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+
+[project.urls]
+Repository = "https://github.com/Oaklight/zerodep"
+Issues = "https://github.com/Oaklight/zerodep/issues"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-benchmark>=4.0.0",
+]
+# Reference libraries for correctness and benchmark comparisons
+bench-aes = [
+    "pycryptodome>=3.20.0",
+]
+bench-qr = [
+    "qrcode>=7.0",
+    "Pillow>=10.0.0",
+]
+bench-http = [
+    "httpx>=0.27.0",
+]
+dev = [
+    "zerodep[test,bench-aes,bench-qr,bench-http]",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["aes", "qr", "http"]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+"aes/aes.py" = ["E501"]
+"aes/aes_openssl.py" = ["E501"]
+"qr/qr.py" = ["E501"]
+"**/test_*.py" = ["E402"]

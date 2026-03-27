@@ -51,6 +51,9 @@ plugins:
             - ../structlog
             - ../retry
             - ../toon
+            - ../tabulate
+            - ../soup
+            - ../prompt
             - aes
             - qr
             - httpclient
@@ -60,6 +63,9 @@ plugins:
             - structlog
             - retry
             - toon
+            - tabulate
+            - soup
+            - prompt
           options:
             docstring_style: google
             show_source: true
@@ -106,6 +112,9 @@ nav:
       - 结构化日志: modules/structlog.md
       - 重试: modules/retry.md
       - TOON 序列化: modules/toon.md
+      - 表格格式化: modules/tabulate.md
+      - HTML 解析器: modules/soup.md
+      - 交互式提示: modules/prompt.md
   - API 参考:
       - AES: api/aes.md
       - QR 二维码: api/qr.md
@@ -116,6 +125,9 @@ nav:
       - 结构化日志: api/structlog.md
       - 重试: api/retry.md
       - TOON: api/toon.md
+      - Tabulate: api/tabulate.md
+      - Soup: api/soup.md
+      - Prompt: api/prompt.md
   - 性能测试:
       - AES: benchmarks/aes.md
       - QR 二维码: benchmarks/qr.md
@@ -126,4 +138,6 @@ nav:
       - 结构化日志: benchmarks/structlog.md
       - 重试: benchmarks/retry.md
       - TOON: benchmarks/toon.md
+      - 表格格式化: benchmarks/tabulate.md
+      - HTML 解析器: benchmarks/soup.md
   - 更新日志: changelog.md

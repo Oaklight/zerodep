@@ -114,12 +114,20 @@ class TestBasicParsing:
     def test_simple_html(self):
         ours = _ours(SIMPLE_HTML)
         theirs = _theirs(SIMPLE_HTML)
-        assert ours.find("title").text == theirs.find("title").text
+        our_tag = ours.find("title")
+        their_tag = theirs.find("title")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
     def test_nested_tags(self):
         ours = _ours(NESTED_HTML)
         theirs = _theirs(NESTED_HTML)
-        assert ours.find("span").text == theirs.find("span").text
+        our_tag = ours.find("span")
+        their_tag = theirs.find("span")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
     def test_self_closing_br(self):
         ours = _ours(SELF_CLOSING_HTML)
@@ -129,7 +137,11 @@ class TestBasicParsing:
     def test_self_closing_img(self):
         ours = _ours(SELF_CLOSING_HTML)
         theirs = _theirs(SELF_CLOSING_HTML)
-        assert ours.find("img")["src"] == theirs.find("img")["src"]
+        our_img = ours.find("img")
+        their_img = theirs.find("img")
+        assert our_img is not None
+        assert their_img is not None
+        assert our_img["src"] == their_img["src"]
 
     def test_self_closing_input(self):
         ours = _ours(SELF_CLOSING_HTML)
@@ -161,41 +173,60 @@ class TestFind:
     def test_by_tag_name(self):
         ours = _ours(SIMPLE_HTML)
         theirs = _theirs(SIMPLE_HTML)
-        assert ours.find("p").text == theirs.find("p").text
+        our_tag = ours.find("p")
+        their_tag = theirs.find("p")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
     def test_by_class(self):
         ours = _ours(NESTED_HTML)
         theirs = _theirs(NESTED_HTML)
-        assert ours.find("div", class_="inner").find("span").text == (
-            theirs.find("div", class_="inner").find("span").text
-        )
+        our_div = ours.find("div", class_="inner")
+        their_div = theirs.find("div", class_="inner")
+        assert our_div is not None
+        assert their_div is not None
+        our_span = our_div.find("span")
+        their_span = their_div.find("span")
+        assert our_span is not None
+        assert their_span is not None
+        assert our_span.text == their_span.text
 
     def test_by_id(self):
         ours = _ours(ATTRS_HTML)
         theirs = _theirs(ATTRS_HTML)
-        assert ours.find("a", id="link1").text == theirs.find("a", id="link1").text
+        our_tag = ours.find("a", id="link1")
+        their_tag = theirs.find("a", id="link1")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
     def test_by_attribute_value(self):
         ours = _ours(ATTRS_HTML)
         theirs = _theirs(ATTRS_HTML)
-        assert (
-            ours.find("input", {"type": "text"})["name"]
-            == (theirs.find("input", {"type": "text"})["name"])
-        )
+        our_input = ours.find("input", {"type": "text"})
+        their_input = theirs.find("input", {"type": "text"})
+        assert our_input is not None
+        assert their_input is not None
+        assert our_input["name"] == their_input["name"]
 
     def test_by_attribute_existence(self):
         ours = _ours(ATTRS_HTML)
         theirs = _theirs(ATTRS_HTML)
         our_result = ours.find("a", href=True)
         their_result = theirs.find("a", href=True)
+        assert our_result is not None
+        assert their_result is not None
         assert our_result.text == their_result.text
 
     def test_with_dict_attrs_class(self):
         ours = _ours(MULTI_CLASS_HTML)
         theirs = _theirs(MULTI_CLASS_HTML)
-        assert ours.find("div", {"class": "one"}).text.strip() == (
-            theirs.find("div", {"class": "one"}).text.strip()
-        )
+        our_tag = ours.find("div", {"class": "one"})
+        their_tag = theirs.find("div", {"class": "one"})
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text.strip() == their_tag.text.strip()
 
     def test_find_returns_none(self):
         ours = _ours(SIMPLE_HTML)
@@ -206,9 +237,11 @@ class TestFind:
     def test_find_none_name_matches_any(self):
         # find(None, class_=...) should match any tag with that class
         html = '<div class="x">A</div><span class="x">B</span>'
-        assert _ours(html).find(None, class_="x").name == (
-            _theirs(html).find(None, class_="x").name
-        )
+        our_tag = _ours(html).find(None, class_="x")
+        their_tag = _theirs(html).find(None, class_="x")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.name == their_tag.name
 
     def test_find_with_multiple_attrs(self):
         html = '<a href="/a" class="link">A</a><a href="/b" class="link">B</a>'
@@ -216,6 +249,8 @@ class TestFind:
         theirs = _theirs(html)
         our_result = ours.find("a", {"class": "link", "href": "/b"})
         their_result = theirs.find("a", {"class": "link", "href": "/b"})
+        assert our_result is not None
+        assert their_result is not None
         assert our_result.text == their_result.text
 
 
@@ -336,7 +371,11 @@ class TestSelectOne:
     def test_select_one_found(self):
         ours = _ours(REAL_WORLD_HTML)
         theirs = _theirs(REAL_WORLD_HTML)
-        assert ours.select_one("h2").text == theirs.select_one("h2").text
+        our_tag = ours.select_one("h2")
+        their_tag = theirs.select_one("h2")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
     def test_select_one_not_found(self):
         ours = _ours(SIMPLE_HTML)
@@ -345,14 +384,20 @@ class TestSelectOne:
     def test_select_one_class(self):
         ours = _ours(REAL_WORLD_HTML)
         theirs = _theirs(REAL_WORLD_HTML)
-        assert ours.select_one(".logo").text == theirs.select_one(".logo").text
+        our_tag = ours.select_one(".logo")
+        their_tag = theirs.select_one(".logo")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
     def test_select_one_descendant(self):
         ours = _ours(REAL_WORLD_HTML)
         theirs = _theirs(REAL_WORLD_HTML)
-        assert ours.select_one("nav .logo").text == (
-            theirs.select_one("nav .logo").text
-        )
+        our_tag = ours.select_one("nav .logo")
+        their_tag = theirs.select_one("nav .logo")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
 
 # ── TestGetText ──
@@ -362,27 +407,41 @@ class TestGetText:
     def test_simple(self):
         ours = _ours("<p>Hello <b>world</b></p>")
         theirs = _theirs("<p>Hello <b>world</b></p>")
-        assert ours.find("p").get_text() == theirs.find("p").get_text()
+        our_tag = ours.find("p")
+        their_tag = theirs.find("p")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.get_text() == their_tag.get_text()
 
     def test_with_separator(self):
         ours = _ours("<p>Hello <b>world</b></p>")
         theirs = _theirs("<p>Hello <b>world</b></p>")
-        assert ours.find("p").get_text(separator="|") == (
-            theirs.find("p").get_text(separator="|")
-        )
+        our_tag = ours.find("p")
+        their_tag = theirs.find("p")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.get_text(separator="|") == their_tag.get_text(separator="|")
 
     def test_with_strip(self):
         html = "<p>  Hello  <b>  world  </b>  </p>"
         ours = _ours(html)
         theirs = _theirs(html)
-        assert ours.find("p").get_text(separator=" ", strip=True) == (
-            theirs.find("p").get_text(separator=" ", strip=True)
+        our_tag = ours.find("p")
+        their_tag = theirs.find("p")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.get_text(separator=" ", strip=True) == their_tag.get_text(
+            separator=" ", strip=True
         )
 
     def test_empty_element(self):
         ours = _ours("<div></div>")
         theirs = _theirs("<div></div>")
-        assert ours.find("div").get_text() == theirs.find("div").get_text()
+        our_tag = ours.find("div")
+        their_tag = theirs.find("div")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.get_text() == their_tag.get_text()
 
 
 # ── TestTextProperty ──
@@ -392,28 +451,48 @@ class TestTextProperty:
     def test_text(self):
         ours = _ours("<p>Hello</p>")
         theirs = _theirs("<p>Hello</p>")
-        assert ours.find("p").text == theirs.find("p").text
+        our_tag = ours.find("p")
+        their_tag = theirs.find("p")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
     def test_nested_text(self):
         ours = _ours("<div><p>Hello</p> <p>World</p></div>")
         theirs = _theirs("<div><p>Hello</p> <p>World</p></div>")
-        assert ours.find("div").text == theirs.find("div").text
+        our_tag = ours.find("div")
+        their_tag = theirs.find("div")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
     def test_string_single_child(self):
         ours = _ours("<p>Hello</p>")
         theirs = _theirs("<p>Hello</p>")
-        assert ours.find("p").string == theirs.find("p").string
+        our_tag = ours.find("p")
+        their_tag = theirs.find("p")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.string == their_tag.string
 
     def test_string_nested_single(self):
         ours = _ours("<p><b>Hello</b></p>")
         theirs = _theirs("<p><b>Hello</b></p>")
-        assert ours.find("p").string == theirs.find("p").string
+        our_tag = ours.find("p")
+        their_tag = theirs.find("p")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.string == their_tag.string
 
     def test_string_multiple_children_none(self):
         ours = _ours("<p>Hello <b>World</b></p>")
         theirs = _theirs("<p>Hello <b>World</b></p>")
-        assert ours.find("p").string is None
-        assert theirs.find("p").string is None
+        our_tag = ours.find("p")
+        their_tag = theirs.find("p")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.string is None
+        assert their_tag.string is None
 
 
 # ── TestAttributes ──
@@ -423,36 +502,54 @@ class TestAttributes:
     def test_get(self):
         ours = _ours(ATTRS_HTML)
         theirs = _theirs(ATTRS_HTML)
-        assert ours.find("a")["href"] == theirs.find("a")["href"]
+        our_tag = ours.find("a")
+        their_tag = theirs.find("a")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag["href"] == their_tag["href"]
 
     def test_get_default(self):
         ours = _ours(ATTRS_HTML)
-        assert ours.find("a").get("nonexistent", "default") == "default"
+        tag = ours.find("a")
+        assert tag is not None
+        assert tag.get("nonexistent", "default") == "default"
 
     def test_getitem_raises(self):
         ours = _ours(ATTRS_HTML)
+        tag = ours.find("a")
+        assert tag is not None
         with pytest.raises(KeyError):
-            _ = ours.find("a")["nonexistent"]
+            _ = tag["nonexistent"]
 
     def test_attrs_dict(self):
         ours = _ours('<div id="test" class="a b">X</div>')
         theirs = _theirs('<div id="test" class="a b">X</div>')
-        assert ours.find("div").attrs["id"] == theirs.find("div").attrs["id"]
+        our_tag = ours.find("div")
+        their_tag = theirs.find("div")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.attrs["id"] == their_tag.attrs["id"]
 
     def test_class_as_list(self):
         ours = _ours('<div class="a b c">X</div>')
         theirs = _theirs('<div class="a b c">X</div>')
-        assert ours.find("div")["class"] == theirs.find("div")["class"]
+        our_tag = ours.find("div")
+        their_tag = theirs.find("div")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag["class"] == their_tag["class"]
 
     def test_contains(self):
         ours = _ours(ATTRS_HTML)
         tag = ours.find("a")
+        assert tag is not None
         assert "href" in tag
         assert "nonexistent" not in tag
 
     def test_empty_attribute(self):
         ours = _ours("<input disabled>")
         tag = ours.find("input")
+        assert tag is not None
         assert "disabled" in tag
 
 
@@ -467,12 +564,15 @@ class TestDecompose:
         assert len(ps) == 2
         ps[1].decompose()
         assert len(ours.find_all("p")) == 1
-        assert ours.find("p").text == "Keep"
+        remaining = ours.find("p")
+        assert remaining is not None
+        assert remaining.text == "Keep"
 
     def test_decompose_clears_children(self):
         html = "<div><span><b>Deep</b></span></div>"
         ours = _ours(html)
         span = ours.find("span")
+        assert span is not None
         span.decompose()
         assert span.children == []
         assert span.parent is None
@@ -495,13 +595,16 @@ class TestFindParent:
     def test_immediate_parent(self):
         ours = _ours(NESTED_HTML)
         span = ours.find("span")
+        assert span is not None
         parent = span.find_parent()
+        assert parent is not None
         assert parent.name == "div"
 
     def test_named_parent(self):
         html = "<html><body><div><p><span>X</span></p></div></body></html>"
         ours = _ours(html)
         span = ours.find("span")
+        assert span is not None
         div_parent = span.find_parent("div")
         assert div_parent is not None
         assert div_parent.name == "div"
@@ -510,12 +613,14 @@ class TestFindParent:
         html = "<div><span>X</span></div>"
         ours = _ours(html)
         span = ours.find("span")
+        assert span is not None
         assert span.find_parent("table") is None
 
     def test_find_parent_body(self):
         html = "<html><body><div><p>Text</p></div></body></html>"
         ours = _ours(html)
         p = ours.find("p")
+        assert p is not None
         body = p.find_parent("body")
         assert body is not None
         assert body.name == "body"
@@ -554,8 +659,9 @@ class TestMalformedHTML:
 
     def test_unclosed_bold(self):
         ours = _ours(MALFORMED_HTML)
-        assert ours.find("b") is not None
-        assert ours.find("b").text is not None
+        tag = ours.find("b")
+        assert tag is not None
+        assert tag.text is not None
 
     def test_missing_close_span(self):
         ours = _ours(MALFORMED_HTML)
@@ -571,7 +677,11 @@ class TestMalformedHTML:
         html = "<div class=foo>Text</div>"
         ours = _ours(html)
         theirs = _theirs(html)
-        assert ours.find("div").text == theirs.find("div").text
+        our_tag = ours.find("div")
+        their_tag = theirs.find("div")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
 
 # ── TestEdgeCases ──
@@ -590,17 +700,29 @@ class TestEdgeCases:
     def test_entities_amp(self):
         ours = _ours("<p>A &amp; B</p>")
         theirs = _theirs("<p>A &amp; B</p>")
-        assert ours.find("p").text == theirs.find("p").text
+        our_tag = ours.find("p")
+        their_tag = theirs.find("p")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
     def test_entities_lt_gt(self):
         ours = _ours("<p>&lt;tag&gt;</p>")
         theirs = _theirs("<p>&lt;tag&gt;</p>")
-        assert ours.find("p").text == theirs.find("p").text
+        our_tag = ours.find("p")
+        their_tag = theirs.find("p")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
     def test_numeric_entity(self):
         ours = _ours("<p>&#169; 2024</p>")
         theirs = _theirs("<p>&#169; 2024</p>")
-        assert ours.find("p").text == theirs.find("p").text
+        our_tag = ours.find("p")
+        their_tag = theirs.find("p")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
     def test_isinstance_check(self):
         ours = _ours("<div>Text</div>")
@@ -614,6 +736,7 @@ class TestEdgeCases:
     def test_repr(self):
         ours = _ours('<a href="/x" class="link">Text</a>')
         tag = ours.find("a")
+        assert tag is not None
         r = repr(tag)
         assert "a" in r
         assert "href" in r
@@ -627,14 +750,22 @@ class TestEdgeCases:
         html = "<div><!-- comment -->Text</div>"
         ours = _ours(html)
         theirs = _theirs(html)
-        assert ours.find("div").text == theirs.find("div").text
+        our_tag = ours.find("div")
+        their_tag = theirs.find("div")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text
 
     def test_nested_find(self):
         html = "<div><ul><li>1</li><li>2</li></ul></div>"
         ours = _ours(html)
         theirs = _theirs(html)
-        our_items = ours.find("ul").find_all("li")
-        their_items = theirs.find("ul").find_all("li")
+        our_ul = ours.find("ul")
+        their_ul = theirs.find("ul")
+        assert our_ul is not None
+        assert their_ul is not None
+        our_items = our_ul.find_all("li")
+        their_items = their_ul.find_all("li")
         assert len(our_items) == len(their_items)
         assert [i.text for i in our_items] == [i.text for i in their_items]
 
@@ -700,6 +831,8 @@ class TestRealWorldHTML:
         theirs = _theirs(REAL_WORLD_HTML)
         our_active = ours.find("a", class_="active")
         their_active = theirs.find("a", class_="active")
+        assert our_active is not None
+        assert their_active is not None
         assert our_active.text == their_active.text
 
     def test_child_selector(self):
@@ -712,11 +845,17 @@ class TestRealWorldHTML:
     def test_footer_text(self):
         ours = _ours(REAL_WORLD_HTML)
         theirs = _theirs(REAL_WORLD_HTML)
-        assert ours.find("footer").get_text(strip=True) == (
-            theirs.find("footer").get_text(strip=True)
-        )
+        our_tag = ours.find("footer")
+        their_tag = theirs.find("footer")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.get_text(strip=True) == their_tag.get_text(strip=True)
 
     def test_title(self):
         ours = _ours(REAL_WORLD_HTML)
         theirs = _theirs(REAL_WORLD_HTML)
-        assert ours.find("title").text == theirs.find("title").text
+        our_tag = ours.find("title")
+        their_tag = theirs.find("title")
+        assert our_tag is not None
+        assert their_tag is not None
+        assert our_tag.text == their_tag.text

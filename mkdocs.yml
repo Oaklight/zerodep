@@ -48,12 +48,16 @@ plugins:
             - ../dotenv
             - ../yaml
             - ../jsonc
+            - ../structlog
+            - ../retry
             - aes
             - qr
             - httpclient
             - dotenv
             - yaml
             - jsonc
+            - structlog
+            - retry
           options:
             docstring_style: google
             show_source: true
@@ -97,6 +101,8 @@ nav:
       - Dotenv: modules/dotenv.md
       - YAML: modules/yaml.md
       - JSONC: modules/jsonc.md
+      - Structured Logging: modules/structlog.md
+      - Retry: modules/retry.md
   - API Reference:
       - AES: api/aes.md
       - QR Code: api/qr.md
@@ -104,6 +110,8 @@ nav:
       - Dotenv: api/dotenv.md
       - YAML: api/yaml.md
       - JSONC: api/jsonc.md
+      - Structured Logging: api/structlog.md
+      - Retry: api/retry.md
   - Benchmarks:
       - AES: benchmarks/aes.md
       - QR Code: benchmarks/qr.md
@@ -111,4 +119,6 @@ nav:
       - Dotenv: benchmarks/dotenv.md
       - YAML: benchmarks/yaml.md
       - JSONC: benchmarks/jsonc.md
+      - Structured Logging: benchmarks/structlog.md
+      - Retry: benchmarks/retry.md
   - Changelog: changelog.md

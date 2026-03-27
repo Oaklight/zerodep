@@ -19,6 +19,10 @@ Each module is a **self-contained single file** that you can copy directly into 
 | [AES](modules/aes.md) | AES-128-ECB encryption (pure Python + OpenSSL via ctypes) | `pycryptodome` |
 | [QR Code](modules/qr.md) | QR Code generation with terminal rendering | `qrcode` |
 | [HTTP Client](modules/http.md) | Sync + async REST client | `httpx` |
+| [Dotenv](modules/dotenv.md) | .env file parser (load_dotenv, dotenv_values) | `python-dotenv` |
+| [YAML](modules/yaml.md) | YAML parser and serializer (common subset) | `PyYAML` |
+| [JSONC](modules/jsonc.md) | JSONC parser (JSON with comments and trailing commas) | `commentjson` |
+| [Retry](modules/retry.md) | Decorator-based retry with configurable backoff strategies | `tenacity` |
 
 ## Philosophy
 

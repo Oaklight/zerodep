@@ -10,7 +10,7 @@ Zero-dependency, single-file Python implementations of popular libraries — std
 |--------|-------------|-------------------|
 | `aes/` | AES-128-ECB encryption (pure Python + OpenSSL via ctypes) | `pycryptodome` |
 | `qr/` | QR Code generation with terminal rendering | `qrcode` |
-| `http/` | Sync + async REST client | `httpx` |
+| `httpclient/` | Sync + async REST client | `httpx` |
 
 ## Usage
 

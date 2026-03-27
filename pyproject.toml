@@ -33,7 +33,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "http"]
+testpaths = ["aes", "qr", "httpclient"]
 
 [tool.ruff]
 target-version = "py310"

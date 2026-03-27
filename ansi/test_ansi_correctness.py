@@ -124,7 +124,7 @@ class TestFgRGB:
 
     def test_wrong_tuple_length(self):
         with pytest.raises(ValueError, match="3 elements"):
-            fg((255, 0))
+            fg((255, 0))  # ty: ignore[invalid-argument-type]
 
 
 # ── bg() tests ──────────────────────────────────────────────────────

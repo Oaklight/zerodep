@@ -34,15 +34,17 @@ from __future__ import annotations
 
 import dataclasses
 import re
-import typing
-from typing import Any, Callable, Union
 
 # Python 3.10 has is_typeddict in typing; get_type_hints with
 # include_extras needs typing or typing_extensions.
 # Required/NotRequired are in typing from 3.11, typing_extensions for 3.10.
-try:
-    from typing import NotRequired, Required  # 3.11+
-except ImportError:
+import sys
+import typing
+from typing import Any, Callable, Union
+
+if sys.version_info >= (3, 11):
+    from typing import NotRequired, Required
+else:
     from typing_extensions import NotRequired, Required  # noqa: F401
 
 try:
@@ -854,7 +856,7 @@ def _type_to_schema(tp: Any) -> dict[str, Any]:
             properties[name] = _type_to_schema(field_tp)
             if is_required:
                 required.append(name)
-        schema = {
+        schema: dict[str, Any] = {
             "type": "object",
             "properties": properties,
         }
@@ -864,14 +866,14 @@ def _type_to_schema(tp: Any) -> dict[str, Any]:
 
     # list[X]
     if origin is list:
-        schema = {"type": "array"}
+        schema: dict[str, Any] = {"type": "array"}
         if args:
             schema["items"] = _type_to_schema(args[0])
         return schema
 
     # dict[K, V]
     if origin is dict:
-        schema = {"type": "object"}
+        schema: dict[str, Any] = {"type": "object"}
         if args and len(args) == 2:
             schema["additionalProperties"] = _type_to_schema(args[1])
         return schema
@@ -891,7 +893,7 @@ def _type_to_schema(tp: Any) -> dict[str, Any]:
 
     # set / frozenset
     if origin in (set, frozenset):
-        schema = {"type": "array", "uniqueItems": True}
+        schema: dict[str, Any] = {"type": "array", "uniqueItems": True}
         if args:
             schema["items"] = _type_to_schema(args[0])
         return schema
@@ -911,7 +913,7 @@ def _type_to_schema(tp: Any) -> dict[str, Any]:
 # ── Public API ──
 
 
-def validate(data: Any, tp: type, *, coerce: bool = False) -> Any:
+def validate(data: Any, tp: Any, *, coerce: bool = False) -> Any:
     """Validate *data* against type annotation *tp*.
 
     Args:
@@ -932,7 +934,7 @@ def validate(data: Any, tp: type, *, coerce: bool = False) -> Any:
     return result
 
 
-def json_schema(tp: type, *, title: str | None = None) -> dict[str, Any]:
+def json_schema(tp: Any, *, title: str | None = None) -> dict[str, Any]:
     """Generate a JSON Schema dict from a type annotation.
 
     Args:

@@ -24,9 +24,9 @@ from validate import (
     validate,
 )
 
-try:
+if sys.version_info >= (3, 11):
     from typing import NotRequired, Required, TypedDict
-except ImportError:
+else:
     from typing_extensions import NotRequired, Required, TypedDict
 
 

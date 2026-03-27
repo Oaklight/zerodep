@@ -31,6 +31,7 @@ hide:
 | [HTML 解析器](modules/soup.md) | 类 BeautifulSoup API 的 HTML 解析器（find、select、CSS 选择器） | `beautifulsoup4` |
 | [交互式提示](modules/prompt.md) | 交互式 CLI 提示（confirm、select、text） | `questionary` |
 | [Markdown 渲染器](modules/markdown.md) | Markdown 转 HTML 渲染器（CommonMark 子集 + GFM 表格） | `mistune` |
+| [ANSI 终端样式](modules/ansi.md) | ANSI 终端样式：颜色、属性、检测、strip/visible_len | — |
 
 ## 设计理念
 

@@ -30,35 +30,39 @@ Apple-to-apple performance comparison between zerodep AES implementations and [`
 |-------|------|-------------|
 | Small | 13 bytes | Short message (`"Hello, World!"`) |
 | Medium | 1 KB | Random data (`os.urandom(1024)`) |
+| Large | 64 KB | Random data (`os.urandom(64 * 1024)`) |
 
 ## ECB Encryption (Mean)
 
 | Data Size | Pure Python | OpenSSL ctypes | pycryptodome |
 |-----------|-------------|----------------|--------------|
 | 13 B (small) | ~75 us | ~3 us | ~6 us |
-| 1 KB (medium) | ~3,700 us | ~10 us | ~13 us |
-| 64 KB (large) | ~232,000 us | ~10 us | ~13 us |
+| 1 KB (medium) | ~3,700 us | ~3 us | ~6 us |
+| 64 KB (large) | ~233,000 us | ~11 us | ~13 us |
 
 ## CBC Encryption (Mean)
 
 | Data Size | Pure Python | OpenSSL ctypes | pycryptodome |
 |-----------|-------------|----------------|--------------|
 | 13 B (small) | ~100 us | ~3 us | ~6 us |
-| 1 KB (medium) | ~5,000 us | ~10 us | ~13 us |
+| 1 KB (medium) | ~3,800 us | ~4 us | ~8 us |
+| 64 KB (large) | ~237,000 us | ~36 us | ~62 us |
 
 ## CTR Encryption (Mean)
 
 | Data Size | Pure Python | OpenSSL ctypes | pycryptodome |
 |-----------|-------------|----------------|--------------|
-| 13 B (small) | ~75 us | ~3 us | ~6 us |
-| 1 KB (medium) | ~4,800 us | ~10 us | ~33 us |
+| 13 B (small) | ~75 us | ~3 us | ~8 us |
+| 1 KB (medium) | ~3,800 us | ~3 us | ~8 us |
+| 64 KB (large) | ~240,000 us | ~11 us | ~54 us |
 
 ## GCM Encryption (Mean)
 
 | Data Size | Pure Python | OpenSSL ctypes | pycryptodome |
 |-----------|-------------|----------------|--------------|
-| 13 B (small) | ~220 us | ~4 us | ~7 us |
-| 1 KB (medium) | ~5,300 us | ~11 us | ~42 us |
+| 13 B (small) | ~220 us | ~4 us | ~35 us |
+| 1 KB (medium) | ~4,800 us | ~4 us | ~35 us |
+| 64 KB (large) | ~292,000 us | ~15 us | ~88 us |
 
 ## Key Takeaways
 

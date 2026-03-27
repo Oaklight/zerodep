@@ -10,7 +10,7 @@ build:
   jobs:
     post_checkout:
       - git fetch origin master --depth=1
-      - git checkout FETCH_HEAD -- aes/ qr/ httpclient/ dotenv/ yaml/ jsonc/
+      - for d in aes qr httpclient dotenv yaml jsonc structlog retry; do git checkout FETCH_HEAD -- "$d/" 2>/dev/null || true; done
     install:
       - pip install -r requirements.txt
     build:

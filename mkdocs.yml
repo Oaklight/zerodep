@@ -56,6 +56,7 @@ plugins:
             - ../soup
             - ../prompt
             - ../validate
+            - ../markdown
             - aes
             - qr
             - httpclient
@@ -70,6 +71,7 @@ plugins:
             - soup
             - prompt
             - validate
+            - markdown
           options:
             docstring_style: google
             show_source: true
@@ -121,6 +123,7 @@ nav:
       - HTML Parser: modules/soup.md
       - Prompts: modules/prompt.md
       - Validate: modules/validate.md
+      - Markdown: modules/markdown.md
   - API Reference:
       - AES: api/aes.md
       - QR Code: api/qr.md
@@ -136,6 +139,7 @@ nav:
       - Soup: api/soup.md
       - Prompt: api/prompt.md
       - Validate: api/validate.md
+      - Markdown: api/markdown.md
   - Benchmarks:
       - AES: benchmarks/aes.md
       - QR Code: benchmarks/qr.md
@@ -150,4 +154,5 @@ nav:
       - Tabulate: benchmarks/tabulate.md
       - HTML Parser: benchmarks/soup.md
       - Validate: benchmarks/validate.md
+      - Markdown: benchmarks/markdown.md
   - Changelog: changelog.md

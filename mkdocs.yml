@@ -55,6 +55,7 @@ plugins:
             - ../tabulate
             - ../soup
             - ../prompt
+            - ../validate
             - aes
             - qr
             - httpclient
@@ -68,6 +69,7 @@ plugins:
             - tabulate
             - soup
             - prompt
+            - validate
           options:
             docstring_style: google
             show_source: true
@@ -118,6 +120,7 @@ nav:
       - Tabulate: modules/tabulate.md
       - HTML Parser: modules/soup.md
       - Prompts: modules/prompt.md
+      - Validate: modules/validate.md
   - API Reference:
       - AES: api/aes.md
       - QR Code: api/qr.md
@@ -132,6 +135,7 @@ nav:
       - Tabulate: api/tabulate.md
       - Soup: api/soup.md
       - Prompt: api/prompt.md
+      - Validate: api/validate.md
   - Benchmarks:
       - AES: benchmarks/aes.md
       - QR Code: benchmarks/qr.md
@@ -145,4 +149,5 @@ nav:
       - SSE Client: benchmarks/sse.md
       - Tabulate: benchmarks/tabulate.md
       - HTML Parser: benchmarks/soup.md
+      - Validate: benchmarks/validate.md
   - Changelog: changelog.md

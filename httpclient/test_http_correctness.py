@@ -26,38 +26,36 @@ from httpclient import (
 
 httpx = pytest.importorskip("httpx", reason="httpx not installed")
 
-BASE = "https://httpbin.org"
-
 
 # ── Sync vs httpx: GET ──
 
 
 class TestSyncGet:
-    def test_simple_get(self):
-        ours = get(f"{BASE}/get")
-        theirs = httpx.get(f"{BASE}/get")
+    def test_simple_get(self, httpbin_url):
+        ours = get(f"{httpbin_url}/get")
+        theirs = httpx.get(f"{httpbin_url}/get")
         assert ours.status_code == theirs.status_code
 
-    def test_get_with_params(self):
+    def test_get_with_params(self, httpbin_url):
         params = {"key": "value", "num": "42"}
-        ours = get(f"{BASE}/get", params=params)
-        theirs = httpx.get(f"{BASE}/get", params=params)
+        ours = get(f"{httpbin_url}/get", params=params)
+        theirs = httpx.get(f"{httpbin_url}/get", params=params)
         assert ours.json()["args"] == theirs.json()["args"]
 
-    def test_get_with_headers(self):
+    def test_get_with_headers(self, httpbin_url):
         hdrs = {"X-Custom": "test123"}
-        ours = get(f"{BASE}/get", headers=hdrs)
-        theirs = httpx.get(f"{BASE}/get", headers=hdrs)
+        ours = get(f"{httpbin_url}/get", headers=hdrs)
+        theirs = httpx.get(f"{httpbin_url}/get", headers=hdrs)
         assert ours.json()["headers"]["X-Custom"] == "test123"
         assert theirs.json()["headers"]["X-Custom"] == "test123"
 
-    def test_get_json_response(self):
-        ours = get(f"{BASE}/json")
-        theirs = httpx.get(f"{BASE}/json")
+    def test_get_json_response(self, httpbin_url):
+        ours = get(f"{httpbin_url}/json")
+        theirs = httpx.get(f"{httpbin_url}/json")
         assert ours.json() == theirs.json()
 
-    def test_response_text(self):
-        ours = get(f"{BASE}/html")
+    def test_response_text(self, httpbin_url):
+        ours = get(f"{httpbin_url}/html")
         assert "<html>" in ours.text.lower() or "<h1>" in ours.text.lower()
 
 
@@ -65,35 +63,35 @@ class TestSyncGet:
 
 
 class TestSyncMutations:
-    def test_post_json(self):
+    def test_post_json(self, httpbin_url):
         payload = {"name": "zerodep", "version": 1}
-        ours = post(f"{BASE}/post", json=payload)
-        theirs = httpx.post(f"{BASE}/post", json=payload)
+        ours = post(f"{httpbin_url}/post", json=payload)
+        theirs = httpx.post(f"{httpbin_url}/post", json=payload)
         assert ours.json()["json"] == payload
         assert theirs.json()["json"] == payload
 
-    def test_post_data(self):
-        ours = post(f"{BASE}/post", data="field=value")
+    def test_post_data(self, httpbin_url):
+        ours = post(f"{httpbin_url}/post", data="field=value")
         assert ours.status_code == 200
         assert ours.json()["form"]["field"] == "value"
 
-    def test_put_json(self):
+    def test_put_json(self, httpbin_url):
         payload = {"updated": True}
-        ours = put(f"{BASE}/put", json=payload)
-        theirs = httpx.put(f"{BASE}/put", json=payload)
+        ours = put(f"{httpbin_url}/put", json=payload)
+        theirs = httpx.put(f"{httpbin_url}/put", json=payload)
         assert ours.json()["json"] == payload
         assert theirs.json()["json"] == payload
 
-    def test_patch_json(self):
+    def test_patch_json(self, httpbin_url):
         payload = {"patched": True}
-        ours = patch(f"{BASE}/patch", json=payload)
-        theirs = httpx.patch(f"{BASE}/patch", json=payload)
+        ours = patch(f"{httpbin_url}/patch", json=payload)
+        theirs = httpx.patch(f"{httpbin_url}/patch", json=payload)
         assert ours.json()["json"] == payload
         assert theirs.json()["json"] == payload
 
-    def test_delete(self):
-        ours = delete(f"{BASE}/delete")
-        theirs = httpx.delete(f"{BASE}/delete")
+    def test_delete(self, httpbin_url):
+        ours = delete(f"{httpbin_url}/delete")
+        theirs = httpx.delete(f"{httpbin_url}/delete")
         assert ours.status_code == theirs.status_code
 
 
@@ -101,12 +99,12 @@ class TestSyncMutations:
 
 
 class TestSyncRedirects:
-    def test_redirect_followed(self):
-        ours = get(f"{BASE}/redirect/3")
+    def test_redirect_followed(self, httpbin_url):
+        ours = get(f"{httpbin_url}/redirect/3")
         assert ours.status_code == 200
 
-    def test_absolute_redirect(self):
-        ours = get(f"{BASE}/absolute-redirect/1")
+    def test_absolute_redirect(self, httpbin_url):
+        ours = get(f"{httpbin_url}/absolute-redirect/1")
         assert ours.status_code == 200
 
 
@@ -115,18 +113,18 @@ class TestSyncRedirects:
 
 class TestSyncStatusCodes:
     @pytest.mark.parametrize("code", [200, 201, 204, 400, 401, 403, 404, 500])
-    def test_status_code(self, code: int):
-        ours = get(f"{BASE}/status/{code}")
+    def test_status_code(self, httpbin_url, code: int):
+        ours = get(f"{httpbin_url}/status/{code}")
         assert ours.status_code == code
 
-    def test_raise_for_status(self):
-        r = get(f"{BASE}/status/404")
+    def test_raise_for_status(self, httpbin_url):
+        r = get(f"{httpbin_url}/status/404")
         with pytest.raises(HTTPError):
             r.raise_for_status()
 
-    def test_ok_property(self):
-        r200 = get(f"{BASE}/status/200")
-        r404 = get(f"{BASE}/status/404")
+    def test_ok_property(self, httpbin_url):
+        r200 = get(f"{httpbin_url}/status/200")
+        r404 = get(f"{httpbin_url}/status/404")
         assert r200.ok is True
         assert r404.ok is False
 
@@ -135,19 +133,19 @@ class TestSyncStatusCodes:
 
 
 class TestSyncClient:
-    def test_client_get(self):
+    def test_client_get(self, httpbin_url):
         with Client() as c:
-            r = c.get(f"{BASE}/get")
+            r = c.get(f"{httpbin_url}/get")
             assert r.status_code == 200
 
-    def test_client_base_headers(self):
+    def test_client_base_headers(self, httpbin_url):
         with Client(headers={"X-Session": "abc"}) as c:
-            r = c.get(f"{BASE}/get")
+            r = c.get(f"{httpbin_url}/get")
             assert r.json()["headers"]["X-Session"] == "abc"
 
-    def test_client_post_json(self):
+    def test_client_post_json(self, httpbin_url):
         with Client() as c:
-            r = c.post(f"{BASE}/post", json={"client": True})
+            r = c.post(f"{httpbin_url}/post", json={"client": True})
             assert r.json()["json"] == {"client": True}
 
 
@@ -156,69 +154,69 @@ class TestSyncClient:
 
 class TestAsyncGet:
     @pytest.mark.asyncio
-    async def test_simple_get(self):
-        ours = await async_get(f"{BASE}/get")
+    async def test_simple_get(self, httpbin_url):
+        ours = await async_get(f"{httpbin_url}/get")
         async with httpx.AsyncClient() as client:
-            theirs = await client.get(f"{BASE}/get")
+            theirs = await client.get(f"{httpbin_url}/get")
         assert ours.status_code == theirs.status_code
 
     @pytest.mark.asyncio
-    async def test_get_with_params(self):
+    async def test_get_with_params(self, httpbin_url):
         params = {"async_key": "async_val"}
-        ours = await async_get(f"{BASE}/get", params=params)
+        ours = await async_get(f"{httpbin_url}/get", params=params)
         assert ours.json()["args"]["async_key"] == "async_val"
 
     @pytest.mark.asyncio
-    async def test_get_json(self):
-        ours = await async_get(f"{BASE}/json")
+    async def test_get_json(self, httpbin_url):
+        ours = await async_get(f"{httpbin_url}/json")
         async with httpx.AsyncClient() as client:
-            theirs = await client.get(f"{BASE}/json")
+            theirs = await client.get(f"{httpbin_url}/json")
         assert ours.json() == theirs.json()
 
 
 class TestAsyncMutations:
     @pytest.mark.asyncio
-    async def test_post_json(self):
+    async def test_post_json(self, httpbin_url):
         payload = {"async": True}
-        ours = await async_post(f"{BASE}/post", json=payload)
+        ours = await async_post(f"{httpbin_url}/post", json=payload)
         assert ours.json()["json"] == payload
 
     @pytest.mark.asyncio
-    async def test_put_json(self):
+    async def test_put_json(self, httpbin_url):
         payload = {"async_put": True}
-        ours = await async_put(f"{BASE}/put", json=payload)
+        ours = await async_put(f"{httpbin_url}/put", json=payload)
         assert ours.json()["json"] == payload
 
     @pytest.mark.asyncio
-    async def test_patch_json(self):
+    async def test_patch_json(self, httpbin_url):
         payload = {"async_patch": True}
-        ours = await async_patch(f"{BASE}/patch", json=payload)
+        ours = await async_patch(f"{httpbin_url}/patch", json=payload)
         assert ours.json()["json"] == payload
 
     @pytest.mark.asyncio
-    async def test_delete(self):
-        ours = await async_delete(f"{BASE}/delete")
+    async def test_delete(self, httpbin_url):
+        ours = await async_delete(f"{httpbin_url}/delete")
         assert ours.status_code == 200
 
 
 class TestAsyncRedirects:
     @pytest.mark.asyncio
-    async def test_redirect_followed(self):
-        ours = await async_get(f"{BASE}/redirect/2")
+    async def test_redirect_followed(self, httpbin_url):
+        ours = await async_get(f"{httpbin_url}/redirect/2")
         assert ours.status_code == 200
 
 
 class TestAsyncClient:
     @pytest.mark.asyncio
-    async def test_client_get(self):
+    async def test_client_get(self, httpbin_url):
         async with AsyncClient() as c:
-            r = await c.get(f"{BASE}/get")
+            r = await c.get(f"{httpbin_url}/get")
             assert r.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_client_base_headers(self):
+    async def test_client_base_headers(self, httpbin_url):
         async with AsyncClient(headers={"X-Async": "yes"}) as c:
-            r = await c.get(f"{BASE}/get")
+            r = await c.get(f"{httpbin_url}/get")
             assert r.json()["headers"]["X-Async"] == "yes"
 
 
@@ -226,27 +224,27 @@ class TestAsyncClient:
 
 
 class TestSyncFileUpload:
-    def test_upload_bytes(self):
-        r = post(f"{BASE}/post", files={"file": b"hello world"})
+    def test_upload_bytes(self, httpbin_url):
+        r = post(f"{httpbin_url}/post", files={"file": b"hello world"})
         assert r.status_code == 200
         assert "file" in r.json()["files"]
 
-    def test_upload_tuple_with_filename(self):
-        r = post(f"{BASE}/post", files={"file": ("test.txt", b"file content")})
+    def test_upload_tuple_with_filename(self, httpbin_url):
+        r = post(f"{httpbin_url}/post", files={"file": ("test.txt", b"file content")})
         assert r.status_code == 200
         assert r.json()["files"]["file"] == "file content"
 
-    def test_upload_tuple_with_content_type(self):
+    def test_upload_tuple_with_content_type(self, httpbin_url):
         r = post(
-            f"{BASE}/post",
+            f"{httpbin_url}/post",
             files={"file": ("data.json", b'{"key": "value"}', "application/json")},
         )
         assert r.status_code == 200
         assert "file" in r.json()["files"]
 
-    def test_upload_with_data(self):
+    def test_upload_with_data(self, httpbin_url):
         r = post(
-            f"{BASE}/post",
+            f"{httpbin_url}/post",
             data={"field": "value"},
             files={"file": ("test.txt", b"content")},
         )
@@ -255,18 +253,18 @@ class TestSyncFileUpload:
         assert body["form"]["field"] == "value"
         assert "file" in body["files"]
 
-    def test_upload_file_object(self):
+    def test_upload_file_object(self, httpbin_url):
         import io
 
         buf = io.BytesIO(b"file object content")
         buf.name = "buffer.txt"
-        r = post(f"{BASE}/post", files={"file": buf})
+        r = post(f"{httpbin_url}/post", files={"file": buf})
         assert r.status_code == 200
         assert r.json()["files"]["file"] == "file object content"
 
-    def test_upload_multiple_files(self):
+    def test_upload_multiple_files(self, httpbin_url):
         r = post(
-            f"{BASE}/post",
+            f"{httpbin_url}/post",
             files=[
                 ("file1", ("a.txt", b"aaa")),
                 ("file2", ("b.txt", b"bbb")),
@@ -283,15 +281,15 @@ class TestSyncFileUpload:
 
 class TestAsyncFileUpload:
     @pytest.mark.asyncio
-    async def test_upload_bytes(self):
-        r = await async_post(f"{BASE}/post", files={"file": b"async hello"})
+    async def test_upload_bytes(self, httpbin_url):
+        r = await async_post(f"{httpbin_url}/post", files={"file": b"async hello"})
         assert r.status_code == 200
         assert "file" in r.json()["files"]
 
     @pytest.mark.asyncio
-    async def test_upload_with_data(self):
+    async def test_upload_with_data(self, httpbin_url):
         r = await async_post(
-            f"{BASE}/post",
+            f"{httpbin_url}/post",
             data={"field": "async_value"},
             files={"file": ("test.txt", b"async content")},
         )
@@ -301,9 +299,9 @@ class TestAsyncFileUpload:
         assert "file" in body["files"]
 
     @pytest.mark.asyncio
-    async def test_upload_tuple_with_content_type(self):
+    async def test_upload_tuple_with_content_type(self, httpbin_url):
         r = await async_post(
-            f"{BASE}/post",
+            f"{httpbin_url}/post",
             files={"file": ("data.txt", b"typed content", "text/plain")},
         )
         assert r.status_code == 200
@@ -314,8 +312,8 @@ class TestAsyncFileUpload:
 
 
 class TestSyncStreaming:
-    def test_stream_iter_bytes(self):
-        with get(f"{BASE}/get", stream=True) as r:
+    def test_stream_iter_bytes(self, httpbin_url):
+        with get(f"{httpbin_url}/get", stream=True) as r:
             assert isinstance(r, StreamingResponse)
             assert r.status_code == 200
             assert r.ok
@@ -324,41 +322,41 @@ class TestSyncStreaming:
             body = b"".join(chunks)
             assert b"headers" in body
 
-    def test_stream_iter_lines(self):
-        with get(f"{BASE}/get", stream=True) as r:
+    def test_stream_iter_lines(self, httpbin_url):
+        with get(f"{httpbin_url}/get", stream=True) as r:
             lines = list(r.iter_lines())
             assert len(lines) > 0
-            # httpbin /get returns JSON, should have lines
+            # /get returns JSON, should have lines
             text = "\n".join(lines)
             assert "headers" in text
 
-    def test_stream_read(self):
-        with get(f"{BASE}/get", stream=True) as r:
+    def test_stream_read(self, httpbin_url):
+        with get(f"{httpbin_url}/get", stream=True) as r:
             body = r.read()
             assert isinstance(body, bytes)
             assert b"headers" in body
 
-    def test_stream_headers_accessible(self):
-        with get(f"{BASE}/get", stream=True) as r:
+    def test_stream_headers_accessible(self, httpbin_url):
+        with get(f"{httpbin_url}/get", stream=True) as r:
             assert "content-type" in r.headers
             assert r.url.endswith("/get")
 
-    def test_stream_raise_for_status(self):
-        with get(f"{BASE}/status/404", stream=True) as r:
+    def test_stream_raise_for_status(self, httpbin_url):
+        with get(f"{httpbin_url}/status/404", stream=True) as r:
             assert r.status_code == 404
             assert not r.ok
             with pytest.raises(HTTPError):
                 r.raise_for_status()
 
-    def test_stream_redirect(self):
-        with get(f"{BASE}/redirect/2", stream=True) as r:
+    def test_stream_redirect(self, httpbin_url):
+        with get(f"{httpbin_url}/redirect/2", stream=True) as r:
             assert r.status_code == 200
             body = r.read()
             assert len(body) > 0
 
-    def test_stream_client_session(self):
+    def test_stream_client_session(self, httpbin_url):
         with Client() as client:
-            with client.get(f"{BASE}/get", stream=True) as r:
+            with client.get(f"{httpbin_url}/get", stream=True) as r:
                 assert r.status_code == 200
                 body = r.read()
                 assert b"headers" in body
@@ -369,8 +367,8 @@ class TestSyncStreaming:
 
 class TestAsyncStreaming:
     @pytest.mark.asyncio
-    async def test_stream_aiter_bytes(self):
-        r = await async_get(f"{BASE}/get", stream=True)
+    async def test_stream_aiter_bytes(self, httpbin_url):
+        r = await async_get(f"{httpbin_url}/get", stream=True)
         async with r:
             assert isinstance(r, StreamingResponse)
             assert r.status_code == 200
@@ -382,8 +380,8 @@ class TestAsyncStreaming:
             assert b"headers" in body
 
     @pytest.mark.asyncio
-    async def test_stream_aiter_lines(self):
-        r = await async_get(f"{BASE}/get", stream=True)
+    async def test_stream_aiter_lines(self, httpbin_url):
+        r = await async_get(f"{httpbin_url}/get", stream=True)
         async with r:
             lines = []
             async for line in r.aiter_lines():
@@ -393,25 +391,25 @@ class TestAsyncStreaming:
             assert "headers" in text
 
     @pytest.mark.asyncio
-    async def test_stream_aread(self):
-        r = await async_get(f"{BASE}/get", stream=True)
+    async def test_stream_aread(self, httpbin_url):
+        r = await async_get(f"{httpbin_url}/get", stream=True)
         async with r:
             body = await r.aread()
             assert isinstance(body, bytes)
             assert b"headers" in body
 
     @pytest.mark.asyncio
-    async def test_stream_redirect(self):
-        r = await async_get(f"{BASE}/redirect/2", stream=True)
+    async def test_stream_redirect(self, httpbin_url):
+        r = await async_get(f"{httpbin_url}/redirect/2", stream=True)
         async with r:
             assert r.status_code == 200
             body = await r.aread()
             assert len(body) > 0
 
     @pytest.mark.asyncio
-    async def test_stream_client_session(self):
+    async def test_stream_client_session(self, httpbin_url):
         async with AsyncClient() as client:
-            r = await client.get(f"{BASE}/get", stream=True)
+            r = await client.get(f"{httpbin_url}/get", stream=True)
             async with r:
                 assert r.status_code == 200
                 body = await r.aread()
@@ -422,14 +420,14 @@ class TestAsyncStreaming:
 
 
 class TestResponse:
-    def test_repr(self):
-        r = get(f"{BASE}/get")
+    def test_repr(self, httpbin_url):
+        r = get(f"{httpbin_url}/get")
         assert "200" in repr(r)
 
-    def test_content_is_bytes(self):
-        r = get(f"{BASE}/get")
+    def test_content_is_bytes(self, httpbin_url):
+        r = get(f"{httpbin_url}/get")
         assert isinstance(r.content, bytes)
 
-    def test_text_is_str(self):
-        r = get(f"{BASE}/get")
+    def test_text_is_str(self, httpbin_url):
+        r = get(f"{httpbin_url}/get")
         assert isinstance(r.text, str)

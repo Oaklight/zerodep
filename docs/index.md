@@ -31,6 +31,7 @@ Each module is a **self-contained single file** that you can copy directly into 
 | [HTML Parser](modules/soup.md) | HTML parser with BeautifulSoup-like API (find, select, CSS selectors) | `beautifulsoup4` |
 | [Prompts](modules/prompt.md) | Interactive CLI prompts (confirm, select, text) | `questionary` |
 | [Markdown](modules/markdown.md) | Markdown to HTML renderer (CommonMark subset + GFM tables) | `mistune` |
+| [ANSI Colors](modules/ansi.md) | ANSI terminal styling: colors, attributes, detection, strip/visible_len | — |
 
 ## Philosophy
 

@@ -1,4 +1,4 @@
-.PHONY: all test benchmark lint fmt clean help
+.PHONY: all test benchmark lint fmt clean help test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt
 
 help:
 	@echo "Available targets:"
@@ -11,6 +11,9 @@ help:
 	@echo "  test-jsonc       - Run JSONC correctness tests"
 	@echo "  test-retry       - Run retry correctness tests"
 	@echo "  test-toon        - Run TOON correctness tests"
+	@echo "  test-tabulate    - Run tabulate correctness tests"
+	@echo "  test-soup        - Run soup correctness tests"
+	@echo "  test-prompt      - Run prompt correctness tests"
 	@echo "  benchmark        - Run benchmarks for all modules"
 	@echo "  benchmark-aes    - Run AES benchmarks"
 	@echo "  benchmark-qr     - Run QR benchmarks"
@@ -20,12 +23,14 @@ help:
 	@echo "  benchmark-jsonc  - Run JSONC benchmarks"
 	@echo "  benchmark-retry  - Run retry benchmarks"
 	@echo "  benchmark-toon   - Run TOON benchmarks"
+	@echo "  benchmark-tabulate - Run tabulate benchmarks"
+	@echo "  benchmark-soup   - Run soup benchmarks"
 	@echo "  lint             - Run ruff check"
 	@echo "  fmt              - Run ruff format"
 	@echo "  clean            - Clean generated files"
 
 test:
-	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_http_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py toon/test_toon_correctness.py -v
+	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_http_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py toon/test_toon_correctness.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py -v
 
 test-aes:
 	pytest aes/test_aes_correctness.py -v
@@ -51,8 +56,17 @@ test-retry:
 test-toon:
 	pytest toon/test_toon_correctness.py -v
 
+test-tabulate:
+	pytest tabulate/test_tabulate_correctness.py -v
+
+test-soup:
+	pytest soup/test_soup_correctness.py -v
+
+test-prompt:
+	pytest prompt/test_prompt_correctness.py -v
+
 benchmark:
-	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_http_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonc/test_jsonc_benchmark.py retry/test_retry_benchmark.py toon/test_toon_benchmark.py -v
+	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_http_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonc/test_jsonc_benchmark.py retry/test_retry_benchmark.py toon/test_toon_benchmark.py tabulate/test_tabulate_benchmark.py soup/test_soup_benchmark.py -v
 
 benchmark-aes:
 	pytest aes/test_aes_benchmark.py -v
@@ -77,6 +91,12 @@ benchmark-retry:
 
 benchmark-toon:
 	pytest toon/test_toon_benchmark.py -v
+
+benchmark-tabulate:
+	pytest tabulate/test_tabulate_benchmark.py -v
+
+benchmark-soup:
+	pytest soup/test_soup_benchmark.py -v
 
 lint:
 	ruff check .

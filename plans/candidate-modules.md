@@ -1,46 +1,44 @@
-# zerodep — Candidate Module Roadmap
+# zerodep — Module Roadmap
+
+## Completed
+
+Modules with implementation, correctness tests, and benchmarks.
+
+| Module | Replaces | Scope | Benchmark Against |
+|--------|----------|-------|-------------------|
+| `aes/` | pycryptodome | ECB/CBC/CTR/GCM modes, AES-128/192/256, pure Python + OpenSSL ctypes, PKCS7 padding, GCM AEAD authentication | pycryptodome |
+| `qr/` | qrcode | ISO 18004 QR Code Model 2, versions 1-40, all 4 ECC levels, numeric/alphanumeric/byte/ECI encoding | qrcode |
+| `httpclient/` | httpx | Sync + async HTTP/1.1 REST client, streaming responses, multipart uploads, auto-redirect, SSL verification, Client/AsyncClient sessions | httpx |
+| `dotenv/` | python-dotenv | load_dotenv, dotenv_values, find_dotenv, get/set/unset_key, variable interpolation, export prefix, escape sequences | python-dotenv |
+| `yaml/` | PyYAML | Parser + serializer for common YAML subset (mappings, sequences, flow style, block scalars, multi-document, type resolution; no anchors/aliases/tags) | PyYAML |
+| `jsonc/` | commentjson | JSON with `//`, `#`, `/* */` comments and trailing commas, drop-in replacement for stdlib json | commentjson |
+| `structlog/` | structlog | Processor pipeline, bound loggers, console/JSON/key-value renderers, stdlib Logger wrapping, colored output | structlog |
+| `toon/` | toon_format | TOON encoder/decoder, tabular mode, customizable delimiters (comma/tab/pipe), 30-60% token reduction vs JSON | toon_format |
+| `retry/` | tenacity | @retry decorator + retry_call(), exponential/linear/fixed backoff, full/equal/none jitter, exception/result/status predicates, sync + async, on_retry callback | tenacity |
+| `tabulate/` | tabulate | Multiple table formats (plain, simple, grid, pipe, github, rst, latex, html, mediawiki, etc.), column alignment, number formatting, CJK-aware widths | tabulate |
+| `validate/` | pydantic (subset) | validate() for TypedDict/dataclass, Annotated constraints (Gt/Ge/Lt/Le/MinLen/MaxLen/Match/Predicate), discriminated unions, type coercion, json_schema() generation | pydantic |
+| `sse/` | httpx-sse | Low-level SSE parser + high-level client with auto-reconnect, exponential backoff, sync + async, depends on httpclient | — |
+| `soup/` | beautifulsoup4 | HTML parser with find/find_all/select/CSS selectors, built on stdlib html.parser | beautifulsoup4 |
+| `prompt/` | questionary | confirm/select/text prompts, arrow key navigation, ANSI colors, cross-platform (termios + msvcrt) | — |
+| `markdown/` | mistune | CommonMark subset (ATX/Setext headings, emphasis, code spans/blocks, links, images, lists, blockquotes, thematic breaks, backslash escapes, autolinks, hard breaks) + GFM tables | mistune |
 
 ## httpclient Pending Features
-- Connection pooling (high complexity) — pool keyed by (host, port, scheme), keep-alive, stale connection detection
 
-## Tier 1 — High Value for Agentic/LLM Development
+- Connection pooling — pool keyed by (host, port, scheme), keep-alive, stale connection detection. Currently each request creates a new connection.
 
-### SSE Client (Server-Sent Events)
-- **Replaces**: httpx-sse, aiohttp SSE
-- **Why**: Nearly all LLM APIs (OpenAI, Anthropic, Google) use SSE for streaming responses. Natural extension of httpclient.
-- **stdlib basis**: Extends existing httpclient (http.client, asyncio streams)
-- **Scope**: Parse `text/event-stream` format (event, data, id, retry fields), sync + async, iterator/async iterator interface
-- **Synergy**: Depends on streaming response support in httpclient (done)
-- **Priority**: Highest — completes the LLM API client stack
+## Tier 1 — High Value, Not Yet Started
 
 ### JWT (JSON Web Tokens)
 - **Replaces**: PyJWT, python-jose
-- **Why**: API gateway auth, OAuth, agent-to-agent authentication. Web/API dev essential.
+- **Why**: API gateway auth, OAuth, agent-to-agent authentication
 - **stdlib basis**: hmac, hashlib, base64, json
 - **Scope**: HS256/HS384/HS512 signing + verification, encode/decode, claims validation (exp, nbf, iss, aud)
-- **Priority**: High
 
 ### Rate Limiter
 - **Replaces**: ratelimit, aiolimiter
 - **Why**: LLM APIs all have rate limits. Token bucket / sliding window needed for managing API calls.
 - **stdlib basis**: time, threading, asyncio
 - **Scope**: Token bucket and/or sliding window, sync + async, decorator interface
-- **Priority**: High
-
-### Validate (TypedDict/Dataclass Runtime Validator)
-- **Replaces**: pydantic (validation subset), beartype, typeguard
-- **Why**: LLM tool schemas, API data validation, llm-rosetta IR validation. Define types once with stdlib TypedDict/dataclass, get validation + JSON Schema generation.
-- **stdlib basis**: typing, typing_extensions (get_type_hints, Annotated), inspect, dataclasses
-- **Scope**:
-  - `validate(data, TypedDict)` — recursive structural validation against TypedDict/dataclass definitions
-  - Constraint annotations via `Annotated`: Gt, Ge, Lt, Le, MinLen, MaxLen, Match, Predicate
-  - `Required`/`NotRequired`, `Literal`, `Union` discriminated validation
-  - Structured `ValidationError` with field path, expected type, actual value
-  - `json_schema(TypedDict)` — generate JSON Schema (LLM API common subset) from type definitions
-  - Optional type coercion (`coerce=True`)
-- **Design principle**: Enhance stdlib types, not replace them — no BaseModel, no new declaration system
-- **Synergy**: Direct consumer: llm-rosetta IR validation + tool schema generation
-- **Priority**: High
 
 ## Tier 2 — Valuable, Moderate Complexity
 
@@ -50,18 +48,13 @@
 - **stdlib basis**: asyncio, hashlib, struct, ssl
 - **Scope**: RFC 6455 client, text/binary frames, ping/pong, close handshake, sync + async
 
-### Markdown → HTML
-- **Replaces**: markdown, mistune
-- **Why**: LLM output rendering to web UI
-- **stdlib basis**: re, html
-- **Scope**: CommonMark subset (headings, lists, code blocks, links, emphasis, tables)
-
 ## Tier 3 — Niche but Useful
 
 ### TOTP/HOTP
 - **Replaces**: pyotp
 - **stdlib basis**: hmac, hashlib, struct, time
 - **Scope**: RFC 4226 (HOTP) + RFC 6238 (TOTP), URI generation for QR codes
+- **Synergy**: QR module can render TOTP provisioning URIs
 
 ### Base58
 - **Replaces**: base58
@@ -81,12 +74,10 @@
 ### PNG Encoder
 - **Replaces**: Pillow (for simple generation)
 - **stdlib basis**: zlib, struct
-- **Scope**: Generate simple PNG images, natural complement to QR module
+- **Scope**: Generate simple PNG images
 - **Synergy**: QR module could output PNG directly
 
-## Recommended Priority Order (for agentic/LLM focus)
-1. SSE client (completes LLM streaming stack)
-2. Rate limiter (essential for API management)
-3. Validate (TypedDict runtime validation + JSON Schema generation)
-4. JWT (auth layer)
-5. WebSocket client (real-time APIs)
+## Recommended Priority Order (remaining work)
+1. Rate limiter (essential for API management)
+2. JWT (auth layer)
+3. WebSocket client (real-time APIs)

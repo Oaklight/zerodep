@@ -19,6 +19,7 @@ Zero-dependency, single-file Python implementations of popular libraries — std
 | `tabulate/` | Table formatting with multiple output styles | `tabulate` |
 | `soup/` | HTML parser with BeautifulSoup-like API (find, select, CSS selectors) | `beautifulsoup4` |
 | `prompt/` | Interactive CLI prompts (confirm, select, text) | `questionary` |
+| `markdown/` | Markdown to HTML renderer (CommonMark subset + GFM tables) | `mistune` |
 
 ## Usage
 

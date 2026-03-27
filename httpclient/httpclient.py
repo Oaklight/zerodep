@@ -101,6 +101,26 @@ class Response:
     def _guess_encoding(self) -> str:
         return _guess_encoding_from_headers(self.headers)
 
+    # ── Context managers (no-op, body is already fully read) ──
+
+    def __enter__(self) -> Response:
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        self.close()
+
+    async def __aenter__(self) -> Response:
+        return self
+
+    async def __aexit__(self, *args: Any) -> None:
+        self.close()
+
+    def close(self) -> None:
+        """No-op close for a fully-read response."""
+
+    async def aclose(self) -> None:
+        """No-op async close for a fully-read response."""
+
     def __repr__(self) -> str:
         return f"<Response [{self.status_code}]>"
 
@@ -147,6 +167,20 @@ class StreamingResponse:
         "_bytes_remaining",
         "_closed",
     )
+
+    status_code: int
+    headers: dict[str, str]
+    url: str
+    _encoding: str
+    _sync_resp: http.client.HTTPResponse | None
+    _sync_conn: http.client.HTTPConnection | None
+    _async_reader: asyncio.StreamReader | None
+    _async_writer: asyncio.StreamWriter | None
+    _async_timeout: float | None
+    _is_chunked: bool
+    _content_length: int | None
+    _bytes_remaining: int | None
+    _closed: bool
 
     def __init__(self) -> None:
         raise TypeError("Use _from_sync() or _from_async()")
@@ -283,6 +317,7 @@ class StreamingResponse:
 
     async def _aiter_chunked(self) -> AsyncIterator[bytes]:
         """Decode chunked transfer encoding from async reader."""
+        assert self._async_reader is not None  # guaranteed by aiter_bytes guard
         reader = self._async_reader
         timeout = self._async_timeout
         while True:
@@ -860,37 +895,37 @@ async def _async_request(
 # ── Sync convenience functions ──
 
 
-def get(url: str, **kwargs: Any) -> Response:
+def get(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send a GET request."""
     return _sync_request("GET", url, **kwargs)
 
 
-def post(url: str, **kwargs: Any) -> Response:
+def post(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send a POST request."""
     return _sync_request("POST", url, **kwargs)
 
 
-def put(url: str, **kwargs: Any) -> Response:
+def put(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send a PUT request."""
     return _sync_request("PUT", url, **kwargs)
 
 
-def patch(url: str, **kwargs: Any) -> Response:
+def patch(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send a PATCH request."""
     return _sync_request("PATCH", url, **kwargs)
 
 
-def delete(url: str, **kwargs: Any) -> Response:
+def delete(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send a DELETE request."""
     return _sync_request("DELETE", url, **kwargs)
 
 
-def head(url: str, **kwargs: Any) -> Response:
+def head(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send a HEAD request."""
     return _sync_request("HEAD", url, **kwargs)
 
 
-def options(url: str, **kwargs: Any) -> Response:
+def options(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an OPTIONS request."""
     return _sync_request("OPTIONS", url, **kwargs)
 
@@ -898,37 +933,37 @@ def options(url: str, **kwargs: Any) -> Response:
 # ── Async convenience functions ──
 
 
-async def async_get(url: str, **kwargs: Any) -> Response:
+async def async_get(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async GET request."""
     return await _async_request("GET", url, **kwargs)
 
 
-async def async_post(url: str, **kwargs: Any) -> Response:
+async def async_post(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async POST request."""
     return await _async_request("POST", url, **kwargs)
 
 
-async def async_put(url: str, **kwargs: Any) -> Response:
+async def async_put(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async PUT request."""
     return await _async_request("PUT", url, **kwargs)
 
 
-async def async_patch(url: str, **kwargs: Any) -> Response:
+async def async_patch(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async PATCH request."""
     return await _async_request("PATCH", url, **kwargs)
 
 
-async def async_delete(url: str, **kwargs: Any) -> Response:
+async def async_delete(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async DELETE request."""
     return await _async_request("DELETE", url, **kwargs)
 
 
-async def async_head(url: str, **kwargs: Any) -> Response:
+async def async_head(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async HEAD request."""
     return await _async_request("HEAD", url, **kwargs)
 
 
-async def async_options(url: str, **kwargs: Any) -> Response:
+async def async_options(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async OPTIONS request."""
     return await _async_request("OPTIONS", url, **kwargs)
 
@@ -978,25 +1013,25 @@ class Client:
         with self._lock:
             return _sync_request(method, url, **kwargs)
 
-    def get(self, url: str, **kwargs: Any) -> Response:
+    def get(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return self.request("GET", url, **kwargs)
 
-    def post(self, url: str, **kwargs: Any) -> Response:
+    def post(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return self.request("POST", url, **kwargs)
 
-    def put(self, url: str, **kwargs: Any) -> Response:
+    def put(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return self.request("PUT", url, **kwargs)
 
-    def patch(self, url: str, **kwargs: Any) -> Response:
+    def patch(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return self.request("PATCH", url, **kwargs)
 
-    def delete(self, url: str, **kwargs: Any) -> Response:
+    def delete(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return self.request("DELETE", url, **kwargs)
 
-    def head(self, url: str, **kwargs: Any) -> Response:
+    def head(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return self.request("HEAD", url, **kwargs)
 
-    def options(self, url: str, **kwargs: Any) -> Response:
+    def options(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return self.request("OPTIONS", url, **kwargs)
 
     def __enter__(self) -> Client:
@@ -1049,25 +1084,25 @@ class AsyncClient:
         async with self._lock:
             return await _async_request(method, url, **kwargs)
 
-    async def get(self, url: str, **kwargs: Any) -> Response:
+    async def get(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return await self.request("GET", url, **kwargs)
 
-    async def post(self, url: str, **kwargs: Any) -> Response:
+    async def post(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return await self.request("POST", url, **kwargs)
 
-    async def put(self, url: str, **kwargs: Any) -> Response:
+    async def put(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return await self.request("PUT", url, **kwargs)
 
-    async def patch(self, url: str, **kwargs: Any) -> Response:
+    async def patch(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return await self.request("PATCH", url, **kwargs)
 
-    async def delete(self, url: str, **kwargs: Any) -> Response:
+    async def delete(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return await self.request("DELETE", url, **kwargs)
 
-    async def head(self, url: str, **kwargs: Any) -> Response:
+    async def head(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return await self.request("HEAD", url, **kwargs)
 
-    async def options(self, url: str, **kwargs: Any) -> Response:
+    async def options(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return await self.request("OPTIONS", url, **kwargs)
 
     async def __aenter__(self) -> AsyncClient:

@@ -40,23 +40,23 @@ class TestSyncGet:
         params = {"key": "value", "num": "42"}
         ours = get(f"{httpbin_url}/get", params=params)
         theirs = httpx.get(f"{httpbin_url}/get", params=params)
-        assert ours.json()["args"] == theirs.json()["args"]
+        assert ours.json()["args"] == theirs.json()["args"]  # type: ignore
 
     def test_get_with_headers(self, httpbin_url):
         hdrs = {"X-Custom": "test123"}
         ours = get(f"{httpbin_url}/get", headers=hdrs)
         theirs = httpx.get(f"{httpbin_url}/get", headers=hdrs)
-        assert ours.json()["headers"]["X-Custom"] == "test123"
+        assert ours.json()["headers"]["X-Custom"] == "test123"  # type: ignore
         assert theirs.json()["headers"]["X-Custom"] == "test123"
 
     def test_get_json_response(self, httpbin_url):
         ours = get(f"{httpbin_url}/json")
         theirs = httpx.get(f"{httpbin_url}/json")
-        assert ours.json() == theirs.json()
+        assert ours.json() == theirs.json()  # type: ignore
 
     def test_response_text(self, httpbin_url):
         ours = get(f"{httpbin_url}/html")
-        assert "<html>" in ours.text.lower() or "<h1>" in ours.text.lower()
+        assert "<html>" in ours.text.lower() or "<h1>" in ours.text.lower()  # type: ignore
 
 
 # ── Sync vs httpx: POST/PUT/PATCH/DELETE ──
@@ -67,26 +67,26 @@ class TestSyncMutations:
         payload = {"name": "zerodep", "version": 1}
         ours = post(f"{httpbin_url}/post", json=payload)
         theirs = httpx.post(f"{httpbin_url}/post", json=payload)
-        assert ours.json()["json"] == payload
+        assert ours.json()["json"] == payload  # type: ignore
         assert theirs.json()["json"] == payload
 
     def test_post_data(self, httpbin_url):
         ours = post(f"{httpbin_url}/post", data="field=value")
         assert ours.status_code == 200
-        assert ours.json()["form"]["field"] == "value"
+        assert ours.json()["form"]["field"] == "value"  # type: ignore
 
     def test_put_json(self, httpbin_url):
         payload = {"updated": True}
         ours = put(f"{httpbin_url}/put", json=payload)
         theirs = httpx.put(f"{httpbin_url}/put", json=payload)
-        assert ours.json()["json"] == payload
+        assert ours.json()["json"] == payload  # type: ignore
         assert theirs.json()["json"] == payload
 
     def test_patch_json(self, httpbin_url):
         payload = {"patched": True}
         ours = patch(f"{httpbin_url}/patch", json=payload)
         theirs = httpx.patch(f"{httpbin_url}/patch", json=payload)
-        assert ours.json()["json"] == payload
+        assert ours.json()["json"] == payload  # type: ignore
         assert theirs.json()["json"] == payload
 
     def test_delete(self, httpbin_url):
@@ -141,12 +141,12 @@ class TestSyncClient:
     def test_client_base_headers(self, httpbin_url):
         with Client(headers={"X-Session": "abc"}) as c:
             r = c.get(f"{httpbin_url}/get")
-            assert r.json()["headers"]["X-Session"] == "abc"
+            assert r.json()["headers"]["X-Session"] == "abc"  # type: ignore
 
     def test_client_post_json(self, httpbin_url):
         with Client() as c:
             r = c.post(f"{httpbin_url}/post", json={"client": True})
-            assert r.json()["json"] == {"client": True}
+            assert r.json()["json"] == {"client": True}  # type: ignore
 
 
 # ── Async vs httpx ──
@@ -164,14 +164,14 @@ class TestAsyncGet:
     async def test_get_with_params(self, httpbin_url):
         params = {"async_key": "async_val"}
         ours = await async_get(f"{httpbin_url}/get", params=params)
-        assert ours.json()["args"]["async_key"] == "async_val"
+        assert ours.json()["args"]["async_key"] == "async_val"  # type: ignore
 
     @pytest.mark.asyncio
     async def test_get_json(self, httpbin_url):
         ours = await async_get(f"{httpbin_url}/json")
         async with httpx.AsyncClient() as client:
             theirs = await client.get(f"{httpbin_url}/json")
-        assert ours.json() == theirs.json()
+        assert ours.json() == theirs.json()  # type: ignore
 
 
 class TestAsyncMutations:
@@ -179,19 +179,19 @@ class TestAsyncMutations:
     async def test_post_json(self, httpbin_url):
         payload = {"async": True}
         ours = await async_post(f"{httpbin_url}/post", json=payload)
-        assert ours.json()["json"] == payload
+        assert ours.json()["json"] == payload  # type: ignore
 
     @pytest.mark.asyncio
     async def test_put_json(self, httpbin_url):
         payload = {"async_put": True}
         ours = await async_put(f"{httpbin_url}/put", json=payload)
-        assert ours.json()["json"] == payload
+        assert ours.json()["json"] == payload  # type: ignore
 
     @pytest.mark.asyncio
     async def test_patch_json(self, httpbin_url):
         payload = {"async_patch": True}
         ours = await async_patch(f"{httpbin_url}/patch", json=payload)
-        assert ours.json()["json"] == payload
+        assert ours.json()["json"] == payload  # type: ignore
 
     @pytest.mark.asyncio
     async def test_delete(self, httpbin_url):
@@ -217,7 +217,7 @@ class TestAsyncClient:
     async def test_client_base_headers(self, httpbin_url):
         async with AsyncClient(headers={"X-Async": "yes"}) as c:
             r = await c.get(f"{httpbin_url}/get")
-            assert r.json()["headers"]["X-Async"] == "yes"
+            assert r.json()["headers"]["X-Async"] == "yes"  # type: ignore
 
 
 # ── Sync: file upload ──
@@ -227,12 +227,12 @@ class TestSyncFileUpload:
     def test_upload_bytes(self, httpbin_url):
         r = post(f"{httpbin_url}/post", files={"file": b"hello world"})
         assert r.status_code == 200
-        assert "file" in r.json()["files"]
+        assert "file" in r.json()["files"]  # type: ignore
 
     def test_upload_tuple_with_filename(self, httpbin_url):
         r = post(f"{httpbin_url}/post", files={"file": ("test.txt", b"file content")})
         assert r.status_code == 200
-        assert r.json()["files"]["file"] == "file content"
+        assert r.json()["files"]["file"] == "file content"  # type: ignore
 
     def test_upload_tuple_with_content_type(self, httpbin_url):
         r = post(
@@ -240,7 +240,7 @@ class TestSyncFileUpload:
             files={"file": ("data.json", b'{"key": "value"}', "application/json")},
         )
         assert r.status_code == 200
-        assert "file" in r.json()["files"]
+        assert "file" in r.json()["files"]  # type: ignore
 
     def test_upload_with_data(self, httpbin_url):
         r = post(
@@ -249,7 +249,7 @@ class TestSyncFileUpload:
             files={"file": ("test.txt", b"content")},
         )
         assert r.status_code == 200
-        body = r.json()
+        body = r.json()  # type: ignore
         assert body["form"]["field"] == "value"
         assert "file" in body["files"]
 
@@ -260,7 +260,7 @@ class TestSyncFileUpload:
         buf.name = "buffer.txt"
         r = post(f"{httpbin_url}/post", files={"file": buf})
         assert r.status_code == 200
-        assert r.json()["files"]["file"] == "file object content"
+        assert r.json()["files"]["file"] == "file object content"  # type: ignore
 
     def test_upload_multiple_files(self, httpbin_url):
         r = post(
@@ -271,7 +271,7 @@ class TestSyncFileUpload:
             ],
         )
         assert r.status_code == 200
-        files = r.json()["files"]
+        files = r.json()["files"]  # type: ignore
         assert files["file1"] == "aaa"
         assert files["file2"] == "bbb"
 
@@ -284,7 +284,7 @@ class TestAsyncFileUpload:
     async def test_upload_bytes(self, httpbin_url):
         r = await async_post(f"{httpbin_url}/post", files={"file": b"async hello"})
         assert r.status_code == 200
-        assert "file" in r.json()["files"]
+        assert "file" in r.json()["files"]  # type: ignore
 
     @pytest.mark.asyncio
     async def test_upload_with_data(self, httpbin_url):
@@ -294,7 +294,7 @@ class TestAsyncFileUpload:
             files={"file": ("test.txt", b"async content")},
         )
         assert r.status_code == 200
-        body = r.json()
+        body = r.json()  # type: ignore
         assert body["form"]["field"] == "async_value"
         assert "file" in body["files"]
 
@@ -305,7 +305,7 @@ class TestAsyncFileUpload:
             files={"file": ("data.txt", b"typed content", "text/plain")},
         )
         assert r.status_code == 200
-        assert r.json()["files"]["file"] == "typed content"
+        assert r.json()["files"]["file"] == "typed content"  # type: ignore
 
 
 # ── Sync: streaming ──
@@ -324,7 +324,7 @@ class TestSyncStreaming:
 
     def test_stream_iter_lines(self, httpbin_url):
         with get(f"{httpbin_url}/get", stream=True) as r:
-            lines = list(r.iter_lines())
+            lines = list(r.iter_lines())  # type: ignore
             assert len(lines) > 0
             # /get returns JSON, should have lines
             text = "\n".join(lines)
@@ -332,7 +332,7 @@ class TestSyncStreaming:
 
     def test_stream_read(self, httpbin_url):
         with get(f"{httpbin_url}/get", stream=True) as r:
-            body = r.read()
+            body = r.read()  # type: ignore
             assert isinstance(body, bytes)
             assert b"headers" in body
 
@@ -351,14 +351,14 @@ class TestSyncStreaming:
     def test_stream_redirect(self, httpbin_url):
         with get(f"{httpbin_url}/redirect/2", stream=True) as r:
             assert r.status_code == 200
-            body = r.read()
+            body = r.read()  # type: ignore
             assert len(body) > 0
 
     def test_stream_client_session(self, httpbin_url):
         with Client() as client:
             with client.get(f"{httpbin_url}/get", stream=True) as r:
                 assert r.status_code == 200
-                body = r.read()
+                body = r.read()  # type: ignore
                 assert b"headers" in body
 
 
@@ -384,7 +384,7 @@ class TestAsyncStreaming:
         r = await async_get(f"{httpbin_url}/get", stream=True)
         async with r:
             lines = []
-            async for line in r.aiter_lines():
+            async for line in r.aiter_lines():  # type: ignore
                 lines.append(line)
             assert len(lines) > 0
             text = "\n".join(lines)
@@ -394,7 +394,7 @@ class TestAsyncStreaming:
     async def test_stream_aread(self, httpbin_url):
         r = await async_get(f"{httpbin_url}/get", stream=True)
         async with r:
-            body = await r.aread()
+            body = await r.aread()  # type: ignore
             assert isinstance(body, bytes)
             assert b"headers" in body
 
@@ -403,7 +403,7 @@ class TestAsyncStreaming:
         r = await async_get(f"{httpbin_url}/redirect/2", stream=True)
         async with r:
             assert r.status_code == 200
-            body = await r.aread()
+            body = await r.aread()  # type: ignore
             assert len(body) > 0
 
     @pytest.mark.asyncio
@@ -412,7 +412,7 @@ class TestAsyncStreaming:
             r = await client.get(f"{httpbin_url}/get", stream=True)
             async with r:
                 assert r.status_code == 200
-                body = await r.aread()
+                body = await r.aread()  # type: ignore
                 assert b"headers" in body
 
 
@@ -426,8 +426,8 @@ class TestResponse:
 
     def test_content_is_bytes(self, httpbin_url):
         r = get(f"{httpbin_url}/get")
-        assert isinstance(r.content, bytes)
+        assert isinstance(r.content, bytes)  # type: ignore
 
     def test_text_is_str(self, httpbin_url):
         r = get(f"{httpbin_url}/get")
-        assert isinstance(r.text, str)
+        assert isinstance(r.text, str)  # type: ignore

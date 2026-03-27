@@ -95,7 +95,7 @@ class TestSyncStreaming:
     def test_zerodep(self, benchmark):
         def _stream():
             with get(f"{BASE}/stream-bytes/4096", stream=True) as r:
-                return r.read()
+                return r.read()  # type: ignore
 
         benchmark(_stream)
 
@@ -115,7 +115,7 @@ class TestAsyncStreaming:
         async def _stream():
             r = await zd_async_get(f"{BASE}/stream-bytes/4096", stream=True)
             async with r:
-                return await r.aread()
+                return await r.aread()  # type: ignore
 
         benchmark(_run_async, _stream)
 

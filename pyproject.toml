@@ -87,3 +87,25 @@ select = ["E", "F", "I", "W"]
 "diff/diff.py" = ["E501"]
 "vcs/vcs.py" = ["E501"]
 "**/test_*.py" = ["E402"]
+
+[tool.ty.environment]
+extra-paths = [
+    "./aes",
+    "./ansi",
+    "./diff",
+    "./dotenv",
+    "./httpclient",
+    "./jsonc",
+    "./markdown",
+    "./prompt",
+    "./qr",
+    "./retry",
+    "./soup",
+    "./sse",
+    "./structlog",
+    "./tabulate",
+    "./toon",
+    "./validate",
+    "./vcs",
+    "./yaml",
+]

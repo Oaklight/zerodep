@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import math
 import re
-from typing import IO, Any, Iterator
+from typing import IO, Any, Iterator, overload
 
 # ── Exceptions ─────────────────────────────────────────────────────────────────
 
@@ -973,6 +973,30 @@ def load_all(text: str) -> Iterator[Any]:
     yield from docs
 
 
+@overload
+def dump(
+    data: Any,
+    stream: None = None,
+    *,
+    default_flow_style: bool | None = None,
+    indent: int = 2,
+    sort_keys: bool = True,
+    allow_unicode: bool = True,
+) -> str: ...
+
+
+@overload
+def dump(
+    data: Any,
+    stream: IO[str],
+    *,
+    default_flow_style: bool | None = None,
+    indent: int = 2,
+    sort_keys: bool = True,
+    allow_unicode: bool = True,
+) -> None: ...
+
+
 def dump(
     data: Any,
     stream: IO[str] | None = None,
@@ -1007,6 +1031,30 @@ def dump(
         stream.write(result)
         return None
     return result
+
+
+@overload
+def dump_all(
+    documents: list[Any] | tuple[Any, ...],
+    stream: None = None,
+    *,
+    default_flow_style: bool | None = None,
+    indent: int = 2,
+    sort_keys: bool = True,
+    allow_unicode: bool = True,
+) -> str: ...
+
+
+@overload
+def dump_all(
+    documents: list[Any] | tuple[Any, ...],
+    stream: IO[str],
+    *,
+    default_flow_style: bool | None = None,
+    indent: int = 2,
+    sort_keys: bool = True,
+    allow_unicode: bool = True,
+) -> None: ...
 
 
 def dump_all(

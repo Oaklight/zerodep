@@ -60,6 +60,7 @@ plugins:
             - ../diff
             - ../vcs
             - ../ansi
+            - ../scheduler
             - aes
             - qr
             - httpclient
@@ -78,6 +79,7 @@ plugins:
             - diff
             - vcs
             - ansi
+            - scheduler
           options:
             docstring_style: google
             show_source: true
@@ -133,6 +135,7 @@ nav:
       - Diff 差异工具: modules/diff.md
       - VCS 版本控制: modules/vcs.md
       - ANSI 终端样式: modules/ansi.md
+      - 任务调度器: modules/scheduler.md
   - API 参考:
       - AES: api/aes.md
       - QR 二维码: api/qr.md
@@ -152,6 +155,7 @@ nav:
       - Diff: api/diff.md
       - VCS: api/vcs.md
       - ANSI: api/ansi.md
+      - 调度器: api/scheduler.md
   - 性能测试:
       - AES: benchmarks/aes.md
       - QR 二维码: benchmarks/qr.md
@@ -168,4 +172,5 @@ nav:
       - 验证器: benchmarks/validate.md
       - Markdown: benchmarks/markdown.md
       - Diff: benchmarks/diff.md
+      - 调度器: benchmarks/scheduler.md
   - 更新日志: changelog.md

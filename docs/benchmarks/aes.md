@@ -30,35 +30,39 @@ zerodep AES 实现与 [`pycryptodome`](https://pypi.org/project/pycryptodome/)�
 |------|------|------|
 | 小 | 13 字节 | 短消息（`"Hello, World!"`） |
 | 中 | 1 KB | 随机数据（`os.urandom(1024)`） |
+| 大 | 64 KB | 随机数据（`os.urandom(64 * 1024)`） |
 
 ## ECB 加密（均值）
 
 | 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome |
 |----------|-----------|----------------|--------------|
 | 13 B（小） | ~75 us | ~3 us | ~6 us |
-| 1 KB（中） | ~3,700 us | ~10 us | ~13 us |
-| 64 KB（大） | ~232,000 us | ~10 us | ~13 us |
+| 1 KB（中） | ~3,700 us | ~3 us | ~6 us |
+| 64 KB（大） | ~233,000 us | ~11 us | ~13 us |
 
 ## CBC 加密（均值）
 
 | 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome |
 |----------|-----------|----------------|--------------|
 | 13 B（小） | ~100 us | ~3 us | ~6 us |
-| 1 KB（中） | ~5,000 us | ~10 us | ~13 us |
+| 1 KB（中） | ~3,800 us | ~4 us | ~8 us |
+| 64 KB（大） | ~237,000 us | ~36 us | ~62 us |
 
 ## CTR 加密（均值）
 
 | 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome |
 |----------|-----------|----------------|--------------|
-| 13 B（小） | ~75 us | ~3 us | ~6 us |
-| 1 KB（中） | ~4,800 us | ~10 us | ~33 us |
+| 13 B（小） | ~75 us | ~3 us | ~8 us |
+| 1 KB（中） | ~3,800 us | ~3 us | ~8 us |
+| 64 KB（大） | ~240,000 us | ~11 us | ~54 us |
 
 ## GCM 加密（均值）
 
 | 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome |
 |----------|-----------|----------------|--------------|
-| 13 B（小） | ~220 us | ~4 us | ~7 us |
-| 1 KB（中） | ~5,300 us | ~11 us | ~42 us |
+| 13 B（小） | ~220 us | ~4 us | ~35 us |
+| 1 KB（中） | ~4,800 us | ~4 us | ~35 us |
+| 64 KB（大） | ~292,000 us | ~15 us | ~88 us |
 
 ## 要点总结
 

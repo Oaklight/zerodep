@@ -34,7 +34,7 @@ Apple-to-apple performance comparison between zerodep markdown and [`mistune`](h
 
 - **Consistently faster** -- zerodep's markdown renderer is **1.8--2.6x faster** than mistune across all document sizes.
 - **Linear scaling** -- both implementations scale linearly with document size, as expected.
-- **Simpler architecture** -- zerodep uses direct string concatenation without building an intermediate AST, which contributes to the performance advantage.
+- **Simpler architecture** -- zerodep skips building an intermediate AST and concatenates HTML directly, which contributes to the performance advantage. The tradeoff is that it only supports HTML output and is harder to extend with plugins or alternative renderers.
 - **Output compatibility** -- zerodep produces identical HTML output to `mistune.html()` for all supported Markdown features (82 correctness tests pass with exact match).
 
 ## Run It Yourself

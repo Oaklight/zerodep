@@ -47,11 +47,17 @@ class TestStyle:
 
     def test_apply_wraps_text(self):
         """apply() should wrap text with ANSI prefix and reset suffix."""
-        sty = Style([("answer", "bold")])
+        sty = Style([("answer", "bold")], colors=True)
         result = sty.apply("answer", "hello")
         assert result.startswith(_ANSI_BOLD)
         assert result.endswith(_ANSI_RESET)
         assert "hello" in result
+
+    def test_apply_no_color(self):
+        """apply() returns plain text when colors are disabled."""
+        sty = Style([("answer", "bold")], colors=False)
+        result = sty.apply("answer", "hello")
+        assert result == "hello"
 
     def test_apply_unknown_role(self):
         """apply() on an unknown role returns plain text."""
@@ -262,7 +268,7 @@ class TestSelectChoices:
 
     def test_mixed_types_cast_to_string(self):
         """Non-string, non-dict items are cast to str."""
-        result = _normalise_choices([42])  # type: ignore[list-item]
+        result = _normalise_choices([42])  # type: ignore
         assert result[0] == {"name": "42", "value": "42"}
 
 

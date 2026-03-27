@@ -22,7 +22,7 @@ import io
 import os
 import sys
 from collections.abc import Callable, Generator
-from typing import TextIO
+from typing import Any, TextIO
 
 # ---------------------------------------------------------------------------
 # Platform-specific raw-mode helpers
@@ -34,14 +34,14 @@ if _IS_WINDOWS:
     try:
         import msvcrt  # type: ignore[import-untyped]
     except ImportError:  # pragma: no cover – safety net
-        msvcrt = None  # type: ignore[assignment]
+        msvcrt = None
 else:
     try:
         import termios
         import tty
     except ImportError:  # pragma: no cover – not a real TTY
-        termios = None  # type: ignore[assignment]
-        tty = None  # type: ignore[assignment]
+        termios = None  # type: ignore
+        tty = None  # type: ignore
 
 
 @contextlib.contextmanager
@@ -124,6 +124,30 @@ def _is_tty() -> bool:
         return os.isatty(sys.stdin.fileno()) and os.isatty(sys.stdout.fileno())
     except (AttributeError, ValueError, io.UnsupportedOperation):
         return False
+
+
+def _supports_color(stream: Any = None) -> bool:
+    """Check if the output stream supports ANSI color codes.
+
+    Respects the ``FORCE_COLOR`` and ``NO_COLOR`` environment variables
+    (see https://force-color.org/ and https://no-color.org/).
+
+    Args:
+        stream: The output stream to check.  Defaults to ``sys.stdout``.
+
+    Returns:
+        True if the stream is a color-capable terminal.
+    """
+    if os.environ.get("FORCE_COLOR"):
+        return True
+    if os.environ.get("NO_COLOR"):
+        return False
+    s = stream or sys.stdout
+    if not hasattr(s, "isatty") or not s.isatty():
+        return False
+    if os.environ.get("TERM", "") == "dumb":
+        return False
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -255,11 +279,17 @@ class Style:
         confirm("Continue?", style=style)
     """
 
-    def __init__(self, style_list: list[tuple[str, str]] | None = None) -> None:
+    def __init__(
+        self,
+        style_list: list[tuple[str, str]] | None = None,
+        *,
+        colors: bool | None = None,
+    ) -> None:
         self._roles: dict[str, str] = dict(_DEFAULT_STYLES)
         if style_list:
             for role, sstr in style_list:
                 self._roles[role] = _parse_style_string(sstr)
+        self._colors = _supports_color() if colors is None else colors
 
     def apply(self, role: str, text: str) -> str:
         """Wrap *text* with the ANSI codes for *role* and a trailing reset.
@@ -269,8 +299,11 @@ class Style:
             text: The text to style.
 
         Returns:
-            The styled string with a trailing ANSI reset sequence.
+            The styled string with a trailing ANSI reset sequence,
+            or plain *text* when colors are disabled.
         """
+        if not self._colors:
+            return text
         prefix = self._roles.get(role, "")
         if prefix:
             return f"{prefix}{text}{_ANSI_RESET}"

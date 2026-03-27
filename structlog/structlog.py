@@ -153,8 +153,8 @@ _LEVEL_LABELS: dict[str, str] = {
 def _supports_color(stream: Any = None) -> bool:
     """Check if the output stream supports ANSI color codes.
 
-    Respects the ``NO_COLOR`` environment variable
-    (see https://no-color.org/).
+    Respects the ``FORCE_COLOR`` and ``NO_COLOR`` environment variables
+    (see https://force-color.org/ and https://no-color.org/).
 
     Args:
         stream: The output stream to check.  Defaults to ``sys.stderr``.
@@ -162,6 +162,8 @@ def _supports_color(stream: Any = None) -> bool:
     Returns:
         True if the stream is a color-capable terminal.
     """
+    if os.environ.get("FORCE_COLOR"):
+        return True
     if os.environ.get("NO_COLOR"):
         return False
     s = stream or sys.stderr

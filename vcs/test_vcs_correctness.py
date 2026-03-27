@@ -12,8 +12,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 from vcs import (
     BinaryNotFoundError,
     BlameLine,
-    Commit,
     CommandError,
+    Commit,
     FileStatus,
     Git,
     NotARepoError,
@@ -330,7 +330,7 @@ class TestDataStructures:
     def test_file_status_frozen(self):
         fs = FileStatus(path="test.py", status="M")
         with pytest.raises(AttributeError):
-            fs.path = "other.py"
+            fs.path = "other.py"  # ty: ignore[invalid-assignment]
 
     def test_commit_frozen(self):
         c = Commit(
@@ -341,7 +341,7 @@ class TestDataStructures:
             message="msg",
         )
         with pytest.raises(AttributeError):
-            c.message = "changed"
+            c.message = "changed"  # ty: ignore[invalid-assignment]
 
     def test_blame_line_frozen(self):
         bl = BlameLine(
@@ -352,4 +352,4 @@ class TestDataStructures:
             content="hello\n",
         )
         with pytest.raises(AttributeError):
-            bl.content = "changed"
+            bl.content = "changed"  # ty: ignore[invalid-assignment]

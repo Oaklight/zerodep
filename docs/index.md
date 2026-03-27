@@ -1,3 +1,9 @@
+---
+title: 首页
+hide:
+  - navigation
+---
+
 # zerodep
 
 零依赖、单文件的 Python 常用库实现 —— 仅使用标准库，支持 Python 3.10+。

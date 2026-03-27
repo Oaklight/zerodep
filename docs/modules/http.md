@@ -255,10 +255,10 @@ AsyncClient(
 
 ## 在项目中使用
 
-将 `httpclient.py` 复制到你的项目中。由于 Python 标准库内置了名为 `http` 的模块，如果需要同时使用标准库的 `http`，请**重命名文件**：
+将 `httpclient.py` 复制到你的项目中：
 
 ```bash
-cp httpclient/httpclient.py your_project/httpclient.py
+cp httpclient/httpclient.py your_project/
 ```
 
 然后导入：
@@ -267,8 +267,8 @@ cp httpclient/httpclient.py your_project/httpclient.py
 from httpclient import get, post, Client, AsyncClient
 ```
 
-!!! warning "命名冲突"
-    不要将文件命名为 `http.py`——这会遮蔽 `httpclient.py` 自身依赖的标准库 `http` 模块。
+!!! warning "不要重命名为 `http.py`"
+    文件名不能是 `http.py`——这会遮蔽标准库的 `http` 模块，而 `httpclient.py` 内部依赖该模块。
 
 ## 与 httpx 的对比
 
@@ -289,4 +289,26 @@ from httpclient import get, post, Client, AsyncClient
 
 ## 性能测试
 
-与 `httpx` 进行对比测试。详见[性能测试](../benchmarks.md#http-)的详细结果。
+**参考库：** [`httpx`](https://pypi.org/project/httpx/)（带连接池）
+
+### 性能对比（均值）
+
+| 测试项 | zerodep | httpx | 备注 |
+|--------|---------|-------|------|
+| 同步 GET | ~1,100 ms | ~398 ms | httpx 受益于连接池 |
+| 同步 POST JSON | ~1,086 ms | ~1,060 ms | 基本持平（网络受限） |
+| 同步 Client GET | ~1,099 ms | ~1,088 ms | 使用会话时基本持平 |
+| 异步 GET | ~1,228 ms | ~1,178 ms | 基本持平 |
+| 异步 POST JSON | ~1,133 ms | ~1,152 ms | 基本持平 |
+
+### 要点总结
+
+- **一次性请求**时，httpx 由于连接池明显更快。
+- 使用**会话或异步**模式时，两者性能几乎一致，因为此时都受限于网络延迟。
+- zerodep **无需任何 pip 依赖**——同步模式使用标准库 `http.client`，异步模式使用 `asyncio` 流。
+
+自行运行基准测试：
+
+```bash
+pytest httpclient/test_http_benchmark.py --benchmark-only -v
+```

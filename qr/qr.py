@@ -381,10 +381,10 @@ class QrCode:
                 k : k + shortblocklen - blockecclen + (0 if i < numshortblocks else 1)
             ]
             k += len(dat)
-            ecc: bytes = QrCode._reed_solomon_compute_remainder(dat, rsdiv)
+            ecc: bytes = QrCode._reed_solomon_compute_remainder(bytes(dat), rsdiv)
             if i < numshortblocks:
                 dat.append(0)
-            blocks.append(dat + ecc)
+            blocks.append(bytes(dat) + ecc)
         assert k == len(data)
 
         # Interleave (not concatenate) the bytes from every block into a single sequence
@@ -395,7 +395,7 @@ class QrCode:
                 if (i != shortblocklen - blockecclen) or (j >= numshortblocks):
                     result.append(blk[i])
         assert len(result) == rawcodewords
-        return result
+        return bytes(result)
 
     def _draw_codewords(self, data: bytes) -> None:
         """Draws the given sequence of 8-bit codewords (data and error correction) onto the entire
@@ -583,7 +583,7 @@ class QrCode:
                 if j + 1 < degree:
                     result[j] ^= result[j + 1]
             root = QrCode._reed_solomon_multiply(root, 0x02)
-        return result
+        return bytes(result)
 
     @staticmethod
     def _reed_solomon_compute_remainder(data: bytes, divisor: bytes) -> bytes:
@@ -594,7 +594,7 @@ class QrCode:
             result.append(0)
             for i, coef in enumerate(divisor):
                 result[i] ^= QrCode._reed_solomon_multiply(coef, factor)
-        return result
+        return bytes(result)
 
     @staticmethod
     def _reed_solomon_multiply(x: int, y: int) -> int:

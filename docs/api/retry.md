@@ -2,6 +2,5 @@
 
 自动生成的重试模块 API 文档。
 
-::: retry
-    options:
-      heading_level: 2
+!!! note "即将上线"
+    API 参考将在该模块发布到主分支后自动生成。

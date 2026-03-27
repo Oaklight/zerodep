@@ -52,12 +52,15 @@ bench-tabulate = [
 bench-soup = [
     "beautifulsoup4>=4.12.0",
 ]
+bench-validate = [
+    "pydantic>=2.0.0",
+]
 dev = [
-    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup]",
+    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate]",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate"]
 
 [tool.ruff]
 target-version = "py310"
@@ -70,4 +73,5 @@ select = ["E", "F", "I", "W"]
 "aes/aes_openssl.py" = ["E501"]
 "qr/qr.py" = ["E501"]
 "yaml/yaml.py" = ["E501"]
+"validate/validate.py" = ["E501"]
 "**/test_*.py" = ["E402"]

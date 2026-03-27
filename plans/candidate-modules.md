@@ -27,6 +27,21 @@
 - **Scope**: Token bucket and/or sliding window, sync + async, decorator interface
 - **Priority**: High
 
+### Validate (TypedDict/Dataclass Runtime Validator)
+- **Replaces**: pydantic (validation subset), beartype, typeguard
+- **Why**: LLM tool schemas, API data validation, llm-rosetta IR validation. Define types once with stdlib TypedDict/dataclass, get validation + JSON Schema generation.
+- **stdlib basis**: typing, typing_extensions (get_type_hints, Annotated), inspect, dataclasses
+- **Scope**:
+  - `validate(data, TypedDict)` — recursive structural validation against TypedDict/dataclass definitions
+  - Constraint annotations via `Annotated`: Gt, Ge, Lt, Le, MinLen, MaxLen, Match, Predicate
+  - `Required`/`NotRequired`, `Literal`, `Union` discriminated validation
+  - Structured `ValidationError` with field path, expected type, actual value
+  - `json_schema(TypedDict)` — generate JSON Schema (LLM API common subset) from type definitions
+  - Optional type coercion (`coerce=True`)
+- **Design principle**: Enhance stdlib types, not replace them — no BaseModel, no new declaration system
+- **Synergy**: Direct consumer: llm-rosetta IR validation + tool schema generation
+- **Priority**: High
+
 ## Tier 2 — Valuable, Moderate Complexity
 
 ### WebSocket Client
@@ -72,5 +87,6 @@
 ## Recommended Priority Order (for agentic/LLM focus)
 1. SSE client (completes LLM streaming stack)
 2. Rate limiter (essential for API management)
-3. JWT (auth layer)
-4. WebSocket client (real-time APIs)
+3. Validate (TypedDict runtime validation + JSON Schema generation)
+4. JWT (auth layer)
+5. WebSocket client (real-time APIs)

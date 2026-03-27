@@ -692,6 +692,51 @@ async def _async_read_response_headers(
     return status_code, headers
 
 
+async def _async_read_chunked_body(
+    reader: asyncio.StreamReader,
+    timeout: float,
+) -> bytes:
+    """Read a chunked transfer-encoded body from an asyncio StreamReader."""
+    parts: list[bytes] = []
+    while True:
+        size_line = await asyncio.wait_for(reader.readline(), timeout=timeout)
+        size_str = size_line.decode("latin-1").split(";")[0].strip()
+        if not size_str:
+            break
+        chunk_size = int(size_str, 16)
+        if chunk_size == 0:
+            await asyncio.wait_for(reader.readline(), timeout=timeout)  # trailing \r\n
+            break
+        data = await asyncio.wait_for(reader.readexactly(chunk_size), timeout=timeout)
+        await asyncio.wait_for(reader.readline(), timeout=timeout)  # trailing \r\n
+        parts.append(data)
+    return b"".join(parts)
+
+
+async def _async_read_body(
+    reader: asyncio.StreamReader,
+    headers: dict[str, str],
+    timeout: float,
+) -> bytes:
+    """Read the response body based on Content-Length or Transfer-Encoding.
+
+    Falls back to reading until EOF when neither header is present.
+    """
+    te = headers.get("transfer-encoding", "")
+    if te.lower() == "chunked":
+        return await _async_read_chunked_body(reader, timeout)
+
+    cl = headers.get("content-length")
+    if cl is not None:
+        length = int(cl)
+        if length == 0:
+            return b""
+        return await asyncio.wait_for(reader.readexactly(length), timeout=timeout)
+
+    # No Content-Length, no chunked — read until EOF
+    return await asyncio.wait_for(reader.read(), timeout=timeout)
+
+
 # ── Async implementation (asyncio streams) ──
 
 
@@ -759,30 +804,28 @@ async def _async_request(
                 writer.write(body)
             await asyncio.wait_for(writer.drain(), timeout=timeout)
 
+            # Read response headers
+            status, resp_headers = await _async_read_response_headers(reader, timeout)
+
+            # Handle redirects
+            if status in (301, 302, 303, 307, 308) and "location" in resp_headers:
+                await _async_read_body(reader, resp_headers, timeout)
+                redirects += 1
+                if redirects > max_redirects:
+                    raise TooManyRedirects(url, max_redirects)
+                location = resp_headers["location"]
+                if location.startswith("/"):
+                    url = f"{scheme}://{host}:{port}{location}"
+                else:
+                    url = location
+                if status == 303 or (status in (301, 302) and method == "POST"):
+                    method = "GET"
+                    body = None
+                    req_headers.pop("Content-Type", None)
+                    req_headers.pop("Content-Length", None)
+                continue
+
             if stream:
-                # Read headers only, leave body in the reader
-                status, resp_headers = await _async_read_response_headers(
-                    reader, timeout
-                )
-
-                # Handle redirects
-                if status in (301, 302, 303, 307, 308) and "location" in resp_headers:
-                    await reader.read()  # drain redirect body
-                    redirects += 1
-                    if redirects > max_redirects:
-                        raise TooManyRedirects(url, max_redirects)
-                    location = resp_headers["location"]
-                    if location.startswith("/"):
-                        url = f"{scheme}://{host}:{port}{location}"
-                    else:
-                        url = location
-                    if status == 303 or (status in (301, 302) and method == "POST"):
-                        method = "GET"
-                        body = None
-                        req_headers.pop("Content-Type", None)
-                        req_headers.pop("Content-Length", None)
-                    continue
-
                 # Return streaming response — don't close writer
                 close_writer = False
                 te = resp_headers.get("transfer-encoding", "")
@@ -800,11 +843,9 @@ async def _async_request(
                     timeout,
                 )
 
-            # Non-streaming: read entire response
-            raw_response = await asyncio.wait_for(
-                reader.read(1024 * 1024 * 10),  # 10 MB max
-                timeout=timeout,
-            )
+            # Non-streaming: read body based on Content-Length / chunked
+            resp_body = await _async_read_body(reader, resp_headers, timeout)
+            return Response(status, resp_headers, resp_body, url)
         except asyncio.TimeoutError:
             raise TimeoutError(f"Request to {url} timed out after {timeout}s")
         finally:
@@ -814,93 +855,6 @@ async def _async_request(
                     await writer.wait_closed()
                 except Exception:
                     pass
-
-        # Parse response
-        status, resp_headers, resp_body = _parse_raw_response(raw_response)
-
-        # Handle redirects
-        if status in (301, 302, 303, 307, 308) and "location" in resp_headers:
-            redirects += 1
-            if redirects > max_redirects:
-                raise TooManyRedirects(url, max_redirects)
-            location = resp_headers["location"]
-            if location.startswith("/"):
-                url = f"{scheme}://{host}:{port}{location}"
-            else:
-                url = location
-            if status == 303 or (status in (301, 302) and method == "POST"):
-                method = "GET"
-                body = None
-                req_headers.pop("Content-Type", None)
-                req_headers.pop("Content-Length", None)
-            continue
-
-        return Response(status, resp_headers, resp_body, url)
-
-
-def _parse_raw_response(
-    raw: bytes,
-) -> tuple[int, dict[str, str], bytes]:
-    """Parse raw HTTP/1.1 response bytes.
-
-    Returns:
-        (status_code, headers_dict, body_bytes).
-    """
-    # Split headers from body
-    header_end = raw.find(b"\r\n\r\n")
-    if header_end == -1:
-        raise ConnectionError("Malformed HTTP response: no header terminator")
-
-    header_section = raw[:header_end].decode("latin-1")
-    body_section = raw[header_end + 4 :]
-
-    lines = header_section.split("\r\n")
-    # Parse status line: "HTTP/1.1 200 OK"
-    status_line = lines[0]
-    parts = status_line.split(" ", 2)
-    if len(parts) < 2:
-        raise ConnectionError(f"Malformed status line: {status_line}")
-    status_code = int(parts[1])
-
-    # Parse headers
-    headers: dict[str, str] = {}
-    for line in lines[1:]:
-        if ":" in line:
-            k, v = line.split(":", 1)
-            headers[k.strip().lower()] = v.strip()
-
-    # Handle chunked transfer encoding
-    if headers.get("transfer-encoding", "").lower() == "chunked":
-        body_section = _decode_chunked(body_section)
-
-    return status_code, headers, body_section
-
-
-def _decode_chunked(data: bytes) -> bytes:
-    """Decode chunked transfer encoding."""
-    result = bytearray()
-    pos = 0
-    while pos < len(data):
-        # Find end of chunk size line
-        line_end = data.find(b"\r\n", pos)
-        if line_end == -1:
-            break
-        # Parse chunk size (hex)
-        size_str = data[pos:line_end].decode("latin-1").split(";")[0].strip()
-        if not size_str:
-            break
-        chunk_size = int(size_str, 16)
-        if chunk_size == 0:
-            break
-        # Extract chunk data
-        chunk_start = line_end + 2
-        chunk_end = chunk_start + chunk_size
-        if chunk_end > len(data):
-            result.extend(data[chunk_start:])
-            break
-        result.extend(data[chunk_start:chunk_end])
-        pos = chunk_end + 2  # skip trailing \r\n
-    return bytes(result)
 
 
 # ── Sync convenience functions ──

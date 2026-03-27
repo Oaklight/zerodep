@@ -90,12 +90,15 @@ _ECB_LARGE_CT = _pycrypto_ecb_encrypt(LARGE, KEY_128)
 
 _CBC_SMALL_CT = _pycrypto_cbc_encrypt(SMALL, KEY_128, IV)
 _CBC_MEDIUM_CT = _pycrypto_cbc_encrypt(MEDIUM, KEY_128, IV)
+_CBC_LARGE_CT = _pycrypto_cbc_encrypt(LARGE, KEY_128, IV)
 
 _CTR_SMALL_CT = _pycrypto_ctr_encrypt(SMALL, KEY_128, NONCE_16)
 _CTR_MEDIUM_CT = _pycrypto_ctr_encrypt(MEDIUM, KEY_128, NONCE_16)
+_CTR_LARGE_CT = _pycrypto_ctr_encrypt(LARGE, KEY_128, NONCE_16)
 
 _GCM_SMALL_CT, _GCM_SMALL_TAG = _pycrypto_gcm_encrypt(SMALL, KEY_128, NONCE_12)
 _GCM_MEDIUM_CT, _GCM_MEDIUM_TAG = _pycrypto_gcm_encrypt(MEDIUM, KEY_128, NONCE_12)
+_GCM_LARGE_CT, _GCM_LARGE_TAG = _pycrypto_gcm_encrypt(LARGE, KEY_128, NONCE_12)
 
 
 # ── ECB encrypt ──
@@ -195,6 +198,17 @@ class TestCbcEncryptMedium:
         benchmark(_pycrypto_cbc_encrypt, MEDIUM, KEY_128, IV)
 
 
+class TestCbcEncryptLarge:
+    def test_pure_python(self, benchmark):
+        benchmark(pure_cbc_encrypt, LARGE, KEY_128, IV)
+
+    def test_openssl(self, benchmark):
+        benchmark(openssl_cbc_encrypt, LARGE, KEY_128, IV)
+
+    def test_pycryptodome(self, benchmark):
+        benchmark(_pycrypto_cbc_encrypt, LARGE, KEY_128, IV)
+
+
 # ── CBC decrypt ──
 
 
@@ -218,6 +232,17 @@ class TestCbcDecryptMedium:
 
     def test_pycryptodome(self, benchmark):
         benchmark(_pycrypto_cbc_decrypt, _CBC_MEDIUM_CT, KEY_128, IV)
+
+
+class TestCbcDecryptLarge:
+    def test_pure_python(self, benchmark):
+        benchmark(pure_cbc_decrypt, _CBC_LARGE_CT, KEY_128, IV)
+
+    def test_openssl(self, benchmark):
+        benchmark(openssl_cbc_decrypt, _CBC_LARGE_CT, KEY_128, IV)
+
+    def test_pycryptodome(self, benchmark):
+        benchmark(_pycrypto_cbc_decrypt, _CBC_LARGE_CT, KEY_128, IV)
 
 
 # ── CTR encrypt ──
@@ -245,6 +270,17 @@ class TestCtrEncryptMedium:
         benchmark(_pycrypto_ctr_encrypt, MEDIUM, KEY_128, NONCE_16)
 
 
+class TestCtrEncryptLarge:
+    def test_pure_python(self, benchmark):
+        benchmark(pure_ctr_encrypt, LARGE, KEY_128, NONCE_16)
+
+    def test_openssl(self, benchmark):
+        benchmark(openssl_ctr_encrypt, LARGE, KEY_128, NONCE_16)
+
+    def test_pycryptodome(self, benchmark):
+        benchmark(_pycrypto_ctr_encrypt, LARGE, KEY_128, NONCE_16)
+
+
 # ── GCM encrypt ──
 
 
@@ -268,6 +304,17 @@ class TestGcmEncryptMedium:
 
     def test_pycryptodome(self, benchmark):
         benchmark(_pycrypto_gcm_encrypt, MEDIUM, KEY_128, NONCE_12)
+
+
+class TestGcmEncryptLarge:
+    def test_pure_python(self, benchmark):
+        benchmark(pure_gcm_encrypt, LARGE, KEY_128, NONCE_12)
+
+    def test_openssl(self, benchmark):
+        benchmark(openssl_gcm_encrypt, LARGE, KEY_128, NONCE_12)
+
+    def test_pycryptodome(self, benchmark):
+        benchmark(_pycrypto_gcm_encrypt, LARGE, KEY_128, NONCE_12)
 
 
 # ── GCM decrypt ──
@@ -298,4 +345,17 @@ class TestGcmDecryptMedium:
     def test_pycryptodome(self, benchmark):
         benchmark(
             _pycrypto_gcm_decrypt, _GCM_MEDIUM_CT, KEY_128, NONCE_12, _GCM_MEDIUM_TAG
+        )
+
+
+class TestGcmDecryptLarge:
+    def test_pure_python(self, benchmark):
+        benchmark(pure_gcm_decrypt, _GCM_LARGE_CT, KEY_128, NONCE_12, _GCM_LARGE_TAG)
+
+    def test_openssl(self, benchmark):
+        benchmark(openssl_gcm_decrypt, _GCM_LARGE_CT, KEY_128, NONCE_12, _GCM_LARGE_TAG)
+
+    def test_pycryptodome(self, benchmark):
+        benchmark(
+            _pycrypto_gcm_decrypt, _GCM_LARGE_CT, KEY_128, NONCE_12, _GCM_LARGE_TAG
         )

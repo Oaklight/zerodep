@@ -17,18 +17,36 @@ Apple-to-apple performance comparison between zerodep HTTP client and [`httpx`](
 
 ## Performance Comparison (Mean)
 
+### Basic Requests
+
 | Test | zerodep | httpx | Notes |
 |------|---------|-------|-------|
-| Sync GET | ~1,100 ms | ~398 ms | httpx benefits from connection pooling |
-| Sync POST JSON | ~1,086 ms | ~1,060 ms | Comparable (network-bound) |
-| Sync Client GET | ~1,099 ms | ~1,088 ms | Comparable with session |
-| Async GET | ~1,228 ms | ~1,178 ms | Comparable |
-| Async POST JSON | ~1,133 ms | ~1,152 ms | Comparable |
+| Sync GET | ~1,091 ms | ~1,165 ms | Comparable (network-bound) |
+| Sync POST JSON | ~1,039 ms | ~1,154 ms | Comparable (network-bound) |
+| Sync Client GET | ~1,613 ms | ~462 ms | httpx benefits from connection pooling |
+| Async GET | ~1,147 ms | ~1,207 ms | Comparable |
+| Async POST JSON | ~1,437 ms | ~1,352 ms | Comparable |
+
+### Streaming
+
+| Test | zerodep | httpx | Notes |
+|------|---------|-------|-------|
+| Sync Streaming | ~1,666 ms | ~2,295 ms | zerodep faster (lower stream overhead) |
+| Async Streaming | ~1,476 ms | ~1,448 ms | Comparable |
+
+### File Upload (multipart/form-data)
+
+| Test | zerodep | httpx | Notes |
+|------|---------|-------|-------|
+| Sync File Upload | ~1,731 ms | ~1,398 ms | Comparable (network-bound) |
+| Async File Upload | ~2,003 ms | ~1,571 ms | httpx slightly faster |
 
 ## Key Takeaways
 
-- For **one-off requests**, httpx is noticeably faster due to connection pooling.
-- With **sessions or async**, performance is essentially identical since both implementations become network-bound.
+- For **one-off requests**, both are comparable since performance is network-bound.
+- With **session/connection pooling**, httpx is noticeably faster by reusing TCP connections.
+- **Streaming** performance is comparable or better for zerodep due to its minimal stream abstraction.
+- **File upload** performance is comparable, with httpx having a slight edge.
 - zerodep has **zero pip dependencies** -- it uses only `http.client` (sync) and `asyncio` streams (async) from the standard library.
 
 ## Run It Yourself

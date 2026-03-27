@@ -2,6 +2,5 @@
 
 Auto-generated API documentation for the structlog module.
 
-::: structlog
-    options:
-      heading_level: 2
+!!! note "Coming Soon"
+    API reference will be available once this module is published to the main branch.

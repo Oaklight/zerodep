@@ -35,6 +35,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+from typing import Any
 
 # ── Text Attributes ─────────────────────────────────────────────────
 
@@ -252,7 +253,7 @@ def style(
 _TRUECOLOR_RE = re.compile(r"truecolor|24bit", re.IGNORECASE)
 
 
-def supports_color(stream: object | None = None) -> bool:
+def supports_color(stream: Any = None) -> bool:
     """Check if the output stream supports ANSI color codes.
 
     Respects the ``NO_COLOR`` environment variable
@@ -276,7 +277,7 @@ def supports_color(stream: object | None = None) -> bool:
     return True
 
 
-def color_depth(stream: object | None = None) -> int:
+def color_depth(stream: Any = None) -> int:
     """Detect the color depth of the terminal.
 
     Args:

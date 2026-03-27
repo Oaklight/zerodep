@@ -73,4 +73,8 @@ nav:
       - AES 加密: modules/aes.md
       - QR 二维码: modules/qr.md
       - HTTP 客户端: modules/http.md
+  - 性能测试:
+      - AES: benchmarks/aes.md
+      - QR 二维码: benchmarks/qr.md
+      - HTTP 客户端: benchmarks/http.md
   - 更新日志: changelog.md

@@ -10,6 +10,8 @@ Based on Project Nayuki's QR Code generator (MIT License):
 
 from __future__ import annotations
 
+__version__ = "0.1.0"
+
 import collections
 import itertools
 import re

@@ -10,6 +10,8 @@ Based on bozhu/AES-Python (MIT License):
 
 from __future__ import annotations
 
+__version__ = "0.1.0"
+
 __all__ = [
     "aes_ecb_encrypt",
     "aes_ecb_decrypt",

@@ -23,6 +23,8 @@ Requires Python 3.10+.
 
 from __future__ import annotations
 
+__version__ = "0.1.0"
+
 import dataclasses
 import os
 import re
@@ -38,10 +40,19 @@ try:
     _diff_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "diff")
     if _diff_dir not in sys.path:
         sys.path.insert(0, _diff_dir)
+    from diff import __version__ as _diff_version
     from diff import merge3 as _diff_merge3
 
     _HAS_DIFF_MODULE = True
-except ImportError:
+    if _diff_version != __version__:
+        import warnings
+
+        warnings.warn(
+            f"vcs {__version__} loaded with diff {_diff_version}, "
+            "they may be incompatible",
+            stacklevel=1,
+        )
+except (ImportError, AttributeError):
     _HAS_DIFF_MODULE = False
 
 

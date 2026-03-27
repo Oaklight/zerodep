@@ -21,6 +21,8 @@ Example::
 
 from __future__ import annotations
 
+__version__ = "0.1.0"
+
 import re
 from html.parser import HTMLParser
 from typing import Any

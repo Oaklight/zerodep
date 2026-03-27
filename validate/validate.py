@@ -390,9 +390,7 @@ _COERCIONS: dict[tuple[type, type], Callable[[Any], Any]] = {
 }
 
 
-def _try_coerce(
-    value: Any, target_type: type, coerce: bool
-) -> tuple[Any, bool]:
+def _try_coerce(value: Any, target_type: type, coerce: bool) -> tuple[Any, bool]:
     """Attempt to coerce *value* to *target_type*.
 
     Returns:

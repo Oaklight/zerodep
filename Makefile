@@ -10,6 +10,7 @@ help:
 	@echo "  test-yaml        - Run YAML correctness tests"
 	@echo "  test-jsonc       - Run JSONC correctness tests"
 	@echo "  test-retry       - Run retry correctness tests"
+	@echo "  test-toon        - Run TOON correctness tests"
 	@echo "  benchmark        - Run benchmarks for all modules"
 	@echo "  benchmark-aes    - Run AES benchmarks"
 	@echo "  benchmark-qr     - Run QR benchmarks"
@@ -18,12 +19,13 @@ help:
 	@echo "  benchmark-yaml   - Run YAML benchmarks"
 	@echo "  benchmark-jsonc  - Run JSONC benchmarks"
 	@echo "  benchmark-retry  - Run retry benchmarks"
+	@echo "  benchmark-toon   - Run TOON benchmarks"
 	@echo "  lint             - Run ruff check"
 	@echo "  fmt              - Run ruff format"
 	@echo "  clean            - Clean generated files"
 
 test:
-	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_http_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py -v
+	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_http_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py toon/test_toon_correctness.py -v
 
 test-aes:
 	pytest aes/test_aes_correctness.py -v
@@ -46,8 +48,11 @@ test-jsonc:
 test-retry:
 	pytest retry/test_retry_correctness.py -v
 
+test-toon:
+	pytest toon/test_toon_correctness.py -v
+
 benchmark:
-	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_http_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonc/test_jsonc_benchmark.py retry/test_retry_benchmark.py -v
+	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_http_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonc/test_jsonc_benchmark.py retry/test_retry_benchmark.py toon/test_toon_benchmark.py -v
 
 benchmark-aes:
 	pytest aes/test_aes_benchmark.py -v
@@ -69,6 +74,9 @@ benchmark-jsonc:
 
 benchmark-retry:
 	pytest retry/test_retry_benchmark.py -v
+
+benchmark-toon:
+	pytest toon/test_toon_benchmark.py -v
 
 lint:
 	ruff check .

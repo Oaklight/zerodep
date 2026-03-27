@@ -43,12 +43,15 @@ bench-structlog = [
 bench-retry = [
     "tenacity>=8.0.0",
 ]
+bench-toon = [
+    "toon_format @ git+https://github.com/toon-format/toon-python.git",
+]
 dev = [
-    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry]",
+    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon]",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon"]
 
 [tool.ruff]
 target-version = "py310"

@@ -141,4 +141,6 @@ user:
 | Token counting | Not included | Requires `tiktoken` |
 | CLI | Not included | Included |
 | encode/decode | Full support | Full support |
-| Performance | ~1.3x faster | Baseline |
+| Encode speed | 5.3 - 695.7 us | 7.8 - 952.6 us (1.3-1.5x slower) |
+| Decode speed | 13.4 - 1,463.3 us | 15.4 - 1,559.1 us (1.1x slower) |
+| Token savings vs JSON | 38-71% fewer characters | Same (identical format) |

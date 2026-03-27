@@ -24,6 +24,7 @@ hide:
 | [JSONC 解析器](modules/jsonc.md) | JSONC 解析（JSON + 注释 + 尾逗号） | `commentjson` |
 | [结构化日志](modules/structlog.md) | 结构化日志与彩色控制台输出 | `structlog` |
 | [重试](modules/retry.md) | 装饰器式自动重试（退避、抖动、过滤） | `tenacity` |
+| [TOON 序列化](modules/toon.md) | TOON（面向 Token 的对象表示法）编码器/解码器 | `toon_format` |
 
 ## 设计理念
 

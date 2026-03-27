@@ -9,11 +9,12 @@ TOON is a compact, human-readable serialization format designed for LLM contexts
 achieving 30-60% token reduction vs JSON. It combines YAML-like indentation with
 CSV-like tabular arrays.
 
-Usage:
-    >>> encode({"name": "Alice", "age": 30})
-    'name: Alice\\nage: 30'
-    >>> decode("name: Alice\\nage: 30")
-    {'name': 'Alice', 'age': 30}
+Example::
+
+    encode({"name": "Alice", "age": 30})
+    # 'name: Alice\nage: 30'
+    decode("name: Alice\nage: 30")
+    # {'name': 'Alice', 'age': 30}
 """
 
 from __future__ import annotations
@@ -978,11 +979,12 @@ def encode(value: Any, options: EncodeOptions | None = None) -> str:
     Returns:
         TOON-formatted string.
 
-    Examples:
-        >>> encode({"name": "Alice", "age": 30})
-        'name: Alice\\nage: 30'
-        >>> encode([{"id": 1, "name": "A"}, {"id": 2, "name": "B"}])
-        '[2,]{id,name}:\\n  1,A\\n  2,B'
+    Examples::
+
+        encode({"name": "Alice", "age": 30})
+        # 'name: Alice\nage: 30'
+        encode([{"id": 1, "name": "A"}, {"id": 2, "name": "B"}])
+        # '[2,]{id,name}:\n  1,A\n  2,B'
     """
     normalized = _normalize(value)
     opts = _resolve_encode_opts(options)
@@ -1004,11 +1006,12 @@ def decode(text: str, options: DecodeOptions | None = None) -> Any:
     Raises:
         ToonDecodeError: If the input is malformed.
 
-    Examples:
-        >>> decode("name: Alice\\nage: 30")
-        {'name': 'Alice', 'age': 30}
-        >>> decode("[3]: 1,2,3")
-        [1, 2, 3]
+    Examples::
+
+        decode("name: Alice\nage: 30")
+        # {'name': 'Alice', 'age': 30}
+        decode("[3]: 1,2,3")
+        # [1, 2, 3]
     """
     indent = 2
     strict = True

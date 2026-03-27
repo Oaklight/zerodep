@@ -57,6 +57,8 @@ plugins:
             - ../prompt
             - ../validate
             - ../markdown
+            - ../diff
+            - ../vcs
             - aes
             - qr
             - httpclient
@@ -72,6 +74,8 @@ plugins:
             - prompt
             - validate
             - markdown
+            - diff
+            - vcs
           options:
             docstring_style: google
             show_source: true
@@ -124,6 +128,8 @@ nav:
       - 交互式提示: modules/prompt.md
       - 验证器: modules/validate.md
       - Markdown 渲染器: modules/markdown.md
+      - Diff 差异工具: modules/diff.md
+      - VCS 版本控制: modules/vcs.md
   - API 参考:
       - AES: api/aes.md
       - QR 二维码: api/qr.md
@@ -140,6 +146,8 @@ nav:
       - Prompt: api/prompt.md
       - 验证器: api/validate.md
       - Markdown: api/markdown.md
+      - Diff: api/diff.md
+      - VCS: api/vcs.md
   - 性能测试:
       - AES: benchmarks/aes.md
       - QR 二维码: benchmarks/qr.md
@@ -155,4 +163,5 @@ nav:
       - HTML 解析器: benchmarks/soup.md
       - 验证器: benchmarks/validate.md
       - Markdown: benchmarks/markdown.md
+      - Diff: benchmarks/diff.md
   - 更新日志: changelog.md

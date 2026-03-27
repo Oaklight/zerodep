@@ -45,6 +45,9 @@ plugins:
             - ../aes
             - ../qr
             - ../httpclient
+            - aes
+            - qr
+            - httpclient
           options:
             docstring_style: google
             show_source: true

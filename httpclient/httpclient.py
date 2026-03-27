@@ -1,10 +1,10 @@
 """Zero-dependency sync + async HTTP REST client.
 
-Python 3.10+, stdlib only.
+Part of zerodep: https://github.com/Oaklight/zerodep
+Copyright (c) 2026 Peng Ding. MIT License.
 
-Provides both synchronous (http.client) and asynchronous (asyncio streams)
-HTTP/1.1 clients for REST API consumption. Thread-safe by design: each
-request creates its own connection unless explicitly using a session.
+Sync (http.client) and async (asyncio streams) HTTP/1.1 client
+for REST API consumption. Thread-safe by design.
 
 Sync usage:
     >>> response = get("https://httpbin.org/get")

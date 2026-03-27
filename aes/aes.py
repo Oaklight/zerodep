@@ -1,8 +1,9 @@
 """Pure-Python AES-128-ECB implementation with PKCS7 padding.
 
-Zero dependencies — stdlib only, Python 3.10+.
+Part of zerodep: https://github.com/Oaklight/zerodep
+Copyright (c) 2026 Peng Ding. MIT License.
 
-Core AES cipher based on bozhu/AES-Python (MIT License):
+Based on bozhu/AES-Python (MIT License):
     Copyright (C) 2012 Bo Zhu http://about.bozhu.me
     https://github.com/bozhu/AES-Python
 """

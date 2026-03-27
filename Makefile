@@ -15,28 +15,28 @@ help:
 	@echo "  clean          - Clean generated files"
 
 test:
-	pytest aes/test_correctness.py qr/test_correctness.py httpclient/test_correctness.py -v
+	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_http_correctness.py -v
 
 test-aes:
-	pytest aes/test_correctness.py -v
+	pytest aes/test_aes_correctness.py -v
 
 test-qr:
-	pytest qr/test_correctness.py -v
+	pytest qr/test_qr_correctness.py -v
 
 test-http:
-	pytest httpclient/test_correctness.py -v
+	pytest httpclient/test_http_correctness.py -v
 
 benchmark:
-	pytest aes/test_benchmark.py qr/test_benchmark.py httpclient/test_benchmark.py -v
+	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_http_benchmark.py -v
 
 benchmark-aes:
-	pytest aes/test_benchmark.py -v
+	pytest aes/test_aes_benchmark.py -v
 
 benchmark-qr:
-	pytest qr/test_benchmark.py -v
+	pytest qr/test_qr_benchmark.py -v
 
 benchmark-http:
-	pytest httpclient/test_benchmark.py -v
+	pytest httpclient/test_http_benchmark.py -v
 
 lint:
 	ruff check .

@@ -1,8 +1,9 @@
 """AES-128-ECB via OpenSSL libcrypto (ctypes).
 
-Zero dependencies — stdlib only, Python 3.10+.
-Requires system OpenSSL (libcrypto) at runtime.
+Part of zerodep: https://github.com/Oaklight/zerodep
+Copyright (c) 2026 Peng Ding. MIT License.
 
+Requires system OpenSSL (libcrypto) at runtime.
 Provides the same interface as aes.py but delegates to the system
 OpenSSL library for native-C performance.  Raises OSError at import
 time if libcrypto cannot be located or loaded.

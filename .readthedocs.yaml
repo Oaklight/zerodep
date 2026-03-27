@@ -10,7 +10,7 @@ build:
   jobs:
     post_checkout:
       - git fetch origin master --depth=1
-      - git checkout FETCH_HEAD -- aes/ qr/ httpclient/
+      - git checkout FETCH_HEAD -- aes/ qr/ httpclient/ dotenv/ yaml/ jsonc/
     install:
       - pip install -r requirements.txt
     build:

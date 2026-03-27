@@ -45,9 +45,15 @@ plugins:
             - ../aes
             - ../qr
             - ../httpclient
+            - ../dotenv
+            - ../yaml
+            - ../jsonc
             - aes
             - qr
             - httpclient
+            - dotenv
+            - yaml
+            - jsonc
           options:
             docstring_style: google
             show_source: true
@@ -90,14 +96,19 @@ nav:
       - HTTP Client: modules/http.md
       - Dotenv: modules/dotenv.md
       - YAML: modules/yaml.md
+      - JSONC: modules/jsonc.md
   - API Reference:
       - AES: api/aes.md
       - QR Code: api/qr.md
       - HTTP Client: api/http.md
+      - Dotenv: api/dotenv.md
+      - YAML: api/yaml.md
+      - JSONC: api/jsonc.md
   - Benchmarks:
       - AES: benchmarks/aes.md
       - QR Code: benchmarks/qr.md
       - HTTP Client: benchmarks/http.md
       - Dotenv: benchmarks/dotenv.md
       - YAML: benchmarks/yaml.md
+      - JSONC: benchmarks/jsonc.md
   - Changelog: changelog.md

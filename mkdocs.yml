@@ -51,6 +51,7 @@ plugins:
             - ../structlog
             - ../retry
             - ../toon
+            - ../sse
             - ../tabulate
             - ../soup
             - ../prompt
@@ -63,6 +64,7 @@ plugins:
             - structlog
             - retry
             - toon
+            - sse
             - tabulate
             - soup
             - prompt
@@ -112,6 +114,7 @@ nav:
       - Structured Logging: modules/structlog.md
       - Retry: modules/retry.md
       - TOON: modules/toon.md
+      - SSE Client: modules/sse.md
       - Tabulate: modules/tabulate.md
       - HTML Parser: modules/soup.md
       - Prompts: modules/prompt.md
@@ -125,6 +128,7 @@ nav:
       - Structured Logging: api/structlog.md
       - Retry: api/retry.md
       - TOON: api/toon.md
+      - SSE: api/sse.md
       - Tabulate: api/tabulate.md
       - Soup: api/soup.md
       - Prompt: api/prompt.md
@@ -138,6 +142,7 @@ nav:
       - Structured Logging: benchmarks/structlog.md
       - Retry: benchmarks/retry.md
       - TOON: benchmarks/toon.md
+      - SSE Client: benchmarks/sse.md
       - Tabulate: benchmarks/tabulate.md
       - HTML Parser: benchmarks/soup.md
   - Changelog: changelog.md

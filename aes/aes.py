@@ -1,4 +1,4 @@
-"""Pure-Python AES-128-ECB implementation with PKCS7 padding.
+"""Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys.
 
 Part of zerodep: https://github.com/Oaklight/zerodep
 Copyright (c) 2026 Peng Ding. MIT License.
@@ -7,6 +7,22 @@ Based on bozhu/AES-Python (MIT License):
     Copyright (C) 2012 Bo Zhu http://about.bozhu.me
     https://github.com/bozhu/AES-Python
 """
+
+from __future__ import annotations
+
+__all__ = [
+    "aes_ecb_encrypt",
+    "aes_ecb_decrypt",
+    "aes_cbc_encrypt",
+    "aes_cbc_decrypt",
+    "aes_ctr_encrypt",
+    "aes_ctr_decrypt",
+    "aes_gcm_encrypt",
+    "aes_gcm_decrypt",
+    # Backward compatibility
+    "aes128_ecb_encrypt",
+    "aes128_ecb_decrypt",
+]
 
 # fmt: off
 _SBOX = (
@@ -56,6 +72,38 @@ _RCON = (
 # fmt: on
 
 _BLOCK = 16
+_KEY_PARAMS = {16: (4, 10), 24: (6, 12), 32: (8, 14)}  # key_len -> (nk, nr)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _validate_key(key: bytes) -> None:
+    if len(key) not in _KEY_PARAMS:
+        raise ValueError(f"key must be 16, 24, or 32 bytes, got {len(key)}")
+
+
+def _validate_iv(iv: bytes) -> None:
+    if len(iv) != _BLOCK:
+        raise ValueError(f"IV must be {_BLOCK} bytes, got {len(iv)}")
+
+
+def _pkcs7_pad(data: bytes) -> bytes:
+    pad_len = _BLOCK - (len(data) % _BLOCK)
+    return data + bytes([pad_len] * pad_len)
+
+
+def _pkcs7_unpad(data: bytes) -> bytes:
+    if not data:
+        return data
+    pad_len = data[-1]
+    if not (1 <= pad_len <= _BLOCK):
+        raise ValueError("invalid PKCS7 padding")
+    if data[-pad_len:] != bytes([pad_len] * pad_len):
+        raise ValueError("invalid PKCS7 padding")
+    return data[:-pad_len]
 
 
 def _xtime(a: int) -> int:
@@ -70,21 +118,40 @@ def _matrix_to_bytes(m: list[list[int]]) -> bytes:
     return bytes(b for row in m for b in row)
 
 
+# ---------------------------------------------------------------------------
+# Key expansion (AES-128/192/256)
+# ---------------------------------------------------------------------------
+
+
 def _expand_key(key: bytes) -> list[list[list[int]]]:
-    rk: list[list[int]] = _bytes_to_matrix(key)
-    for i in range(4, 44):
-        row = [0, 0, 0, 0]
-        if i % 4 == 0:
-            prev = rk[i - 1]
-            row[0] = rk[i - 4][0] ^ _SBOX[prev[1]] ^ _RCON[i // 4]
-            row[1] = rk[i - 4][1] ^ _SBOX[prev[2]]
-            row[2] = rk[i - 4][2] ^ _SBOX[prev[3]]
-            row[3] = rk[i - 4][3] ^ _SBOX[prev[0]]
+    nk, nr = _KEY_PARAMS[len(key)]
+    total_words = 4 * (nr + 1)
+
+    rk: list[list[int]] = [list(key[i : i + 4]) for i in range(0, len(key), 4)]
+
+    for i in range(nk, total_words):
+        prev = rk[i - 1]
+        if i % nk == 0:
+            # RotWord + SubWord + Rcon
+            row = [
+                rk[i - nk][0] ^ _SBOX[prev[1]] ^ _RCON[i // nk],
+                rk[i - nk][1] ^ _SBOX[prev[2]],
+                rk[i - nk][2] ^ _SBOX[prev[3]],
+                rk[i - nk][3] ^ _SBOX[prev[0]],
+            ]
+        elif nk > 6 and i % nk == 4:
+            # AES-256 special case: SubWord only
+            row = [rk[i - nk][j] ^ _SBOX[prev[j]] for j in range(4)]
         else:
-            for j in range(4):
-                row[j] = rk[i - 4][j] ^ rk[i - 1][j]
+            row = [rk[i - nk][j] ^ prev[j] for j in range(4)]
         rk.append(row)
-    return [rk[4 * r : 4 * (r + 1)] for r in range(11)]
+
+    return [rk[4 * r : 4 * (r + 1)] for r in range(nr + 1)]
+
+
+# ---------------------------------------------------------------------------
+# AES round transformations
+# ---------------------------------------------------------------------------
 
 
 def _add_round_key(s: list[list[int]], k: list[list[int]]) -> None:
@@ -142,26 +209,33 @@ def _inv_mix_columns(s: list[list[int]]) -> None:
     _mix_columns(s)
 
 
+# ---------------------------------------------------------------------------
+# Block encrypt / decrypt (any key size)
+# ---------------------------------------------------------------------------
+
+
 def _encrypt_block(block: bytes, round_keys: list[list[list[int]]]) -> bytes:
+    nr = len(round_keys) - 1
     s = _bytes_to_matrix(block)
     _add_round_key(s, round_keys[0])
-    for i in range(1, 10):
+    for i in range(1, nr):
         _sub_bytes(s)
         _shift_rows(s)
         _mix_columns(s)
         _add_round_key(s, round_keys[i])
     _sub_bytes(s)
     _shift_rows(s)
-    _add_round_key(s, round_keys[10])
+    _add_round_key(s, round_keys[nr])
     return _matrix_to_bytes(s)
 
 
 def _decrypt_block(block: bytes, round_keys: list[list[list[int]]]) -> bytes:
+    nr = len(round_keys) - 1
     s = _bytes_to_matrix(block)
-    _add_round_key(s, round_keys[10])
+    _add_round_key(s, round_keys[nr])
     _inv_shift_rows(s)
     _inv_sub_bytes(s)
-    for i in range(9, 0, -1):
+    for i in range(nr - 1, 0, -1):
         _add_round_key(s, round_keys[i])
         _inv_mix_columns(s)
         _inv_shift_rows(s)
@@ -171,24 +245,22 @@ def _decrypt_block(block: bytes, round_keys: list[list[list[int]]]) -> bytes:
 
 
 # ---------------------------------------------------------------------------
-# ECB mode + PKCS7 padding (added for weilink)
+# ECB mode + PKCS7 padding
 # ---------------------------------------------------------------------------
 
 
-def aes128_ecb_encrypt(data: bytes, key: bytes) -> bytes:
-    """Encrypt data with AES-128-ECB and PKCS7 padding.
+def aes_ecb_encrypt(data: bytes, key: bytes) -> bytes:
+    """Encrypt data with AES-ECB and PKCS7 padding.
 
     Args:
         data: Plaintext bytes.
-        key: 16-byte AES key.
+        key: 16, 24, or 32-byte AES key.
 
     Returns:
-        Ciphertext bytes.
+        Ciphertext bytes (length is a multiple of 16).
     """
-    # PKCS7 pad
-    pad_len = _BLOCK - (len(data) % _BLOCK)
-    padded = data + bytes([pad_len] * pad_len)
-
+    _validate_key(key)
+    padded = _pkcs7_pad(data)
     rk = _expand_key(key)
     out = bytearray()
     for i in range(0, len(padded), _BLOCK):
@@ -196,24 +268,301 @@ def aes128_ecb_encrypt(data: bytes, key: bytes) -> bytes:
     return bytes(out)
 
 
-def aes128_ecb_decrypt(data: bytes, key: bytes) -> bytes:
-    """Decrypt AES-128-ECB ciphertext and remove PKCS7 padding.
+def aes_ecb_decrypt(data: bytes, key: bytes) -> bytes:
+    """Decrypt AES-ECB ciphertext and remove PKCS7 padding.
 
     Args:
-        data: Ciphertext bytes (must be multiple of 16).
-        key: 16-byte AES key.
+        data: Ciphertext bytes (must be a multiple of 16).
+        key: 16, 24, or 32-byte AES key.
 
     Returns:
         Plaintext bytes.
+
+    Raises:
+        ValueError: If padding is invalid.
     """
+    _validate_key(key)
     rk = _expand_key(key)
     out = bytearray()
     for i in range(0, len(data), _BLOCK):
         out.extend(_decrypt_block(data[i : i + _BLOCK], rk))
+    return _pkcs7_unpad(bytes(out))
 
-    # PKCS7 unpad
-    if out:
-        pad_len = out[-1]
-        if 1 <= pad_len <= _BLOCK and out[-pad_len:] == bytes([pad_len] * pad_len):
-            out = out[:-pad_len]
+
+# Backward compatibility
+aes128_ecb_encrypt = aes_ecb_encrypt
+aes128_ecb_decrypt = aes_ecb_decrypt
+
+
+# ---------------------------------------------------------------------------
+# CBC mode + PKCS7 padding
+# ---------------------------------------------------------------------------
+
+
+def aes_cbc_encrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
+    """Encrypt data with AES-CBC and PKCS7 padding.
+
+    Args:
+        data: Plaintext bytes.
+        key: 16, 24, or 32-byte AES key.
+        iv: 16-byte initialization vector.
+
+    Returns:
+        Ciphertext bytes (length is a multiple of 16).
+    """
+    _validate_key(key)
+    _validate_iv(iv)
+    padded = _pkcs7_pad(data)
+    rk = _expand_key(key)
+    out = bytearray()
+    prev = iv
+    for i in range(0, len(padded), _BLOCK):
+        block = padded[i : i + _BLOCK]
+        xored = bytes(a ^ b for a, b in zip(block, prev))
+        encrypted = _encrypt_block(xored, rk)
+        out.extend(encrypted)
+        prev = encrypted
     return bytes(out)
+
+
+def aes_cbc_decrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
+    """Decrypt AES-CBC ciphertext and remove PKCS7 padding.
+
+    Args:
+        data: Ciphertext bytes (must be a multiple of 16).
+        key: 16, 24, or 32-byte AES key.
+        iv: 16-byte initialization vector.
+
+    Returns:
+        Plaintext bytes.
+
+    Raises:
+        ValueError: If padding is invalid.
+    """
+    _validate_key(key)
+    _validate_iv(iv)
+    rk = _expand_key(key)
+    out = bytearray()
+    prev = iv
+    for i in range(0, len(data), _BLOCK):
+        block = data[i : i + _BLOCK]
+        decrypted = _decrypt_block(block, rk)
+        out.extend(a ^ b for a, b in zip(decrypted, prev))
+        prev = block
+    return _pkcs7_unpad(bytes(out))
+
+
+# ---------------------------------------------------------------------------
+# CTR mode (no padding)
+# ---------------------------------------------------------------------------
+
+
+def _inc_counter(counter: bytes) -> bytes:
+    """Increment a 16-byte counter block as a 128-bit big-endian integer."""
+    val = int.from_bytes(counter, "big") + 1
+    return (val & ((1 << 128) - 1)).to_bytes(16, "big")
+
+
+def aes_ctr_encrypt(data: bytes, key: bytes, nonce: bytes) -> bytes:
+    """Encrypt data with AES-CTR (no padding).
+
+    Args:
+        data: Plaintext bytes (any length).
+        key: 16, 24, or 32-byte AES key.
+        nonce: 16-byte initial counter block.
+
+    Returns:
+        Ciphertext bytes (same length as input).
+    """
+    _validate_key(key)
+    if len(nonce) != _BLOCK:
+        raise ValueError(f"nonce must be {_BLOCK} bytes, got {len(nonce)}")
+    rk = _expand_key(key)
+    out = bytearray()
+    ctr = nonce
+    for i in range(0, len(data), _BLOCK):
+        keystream = _encrypt_block(ctr, rk)
+        chunk = data[i : i + _BLOCK]
+        out.extend(b ^ k for b, k in zip(chunk, keystream))
+        ctr = _inc_counter(ctr)
+    return bytes(out)
+
+
+aes_ctr_decrypt = aes_ctr_encrypt
+
+
+# ---------------------------------------------------------------------------
+# GCM mode (authenticated encryption)
+# ---------------------------------------------------------------------------
+
+_GF128_R = 0xE1000000000000000000000000000000
+
+
+def _gf128_mul(x: int, y: int) -> int:
+    """Multiply two elements in GF(2^128) with NIST bit ordering."""
+    z = 0
+    v = x
+    for i in range(127, -1, -1):
+        if (y >> i) & 1:
+            z ^= v
+        carry = v & 1
+        v >>= 1
+        if carry:
+            v ^= _GF128_R
+    return z
+
+
+def _ghash(h: int, aad: bytes, ciphertext: bytes) -> int:
+    """Compute GHASH per NIST SP 800-38D."""
+
+    def _process(data: bytes, tag: int) -> int:
+        # Pad data to block boundary
+        padded = data
+        remainder = len(data) % _BLOCK
+        if remainder:
+            padded = data + b"\x00" * (_BLOCK - remainder)
+        for i in range(0, len(padded), _BLOCK):
+            block = int.from_bytes(padded[i : i + _BLOCK], "big")
+            tag = _gf128_mul(tag ^ block, h)
+        return tag
+
+    tag = _process(aad, 0)
+    tag = _process(ciphertext, tag)
+    # Length block: len(A) || len(C) in bits, each 64-bit big-endian
+    lengths = (len(aad) * 8).to_bytes(8, "big") + (len(ciphertext) * 8).to_bytes(
+        8, "big"
+    )
+    tag ^= int.from_bytes(lengths, "big")
+    tag = _gf128_mul(tag, h)
+    return tag
+
+
+def _inc32(block: bytes) -> bytes:
+    """Increment the last 32 bits of a 16-byte block (GCM counter)."""
+    ctr = int.from_bytes(block[12:], "big")
+    ctr = (ctr + 1) & 0xFFFFFFFF
+    return block[:12] + ctr.to_bytes(4, "big")
+
+
+def _gcm_j0(rk: list[list[list[int]]], nonce: bytes) -> bytes:
+    """Compute initial counter block J0 per NIST SP 800-38D."""
+    if len(nonce) == 12:
+        return nonce + b"\x00\x00\x00\x01"
+    h_block = _encrypt_block(b"\x00" * _BLOCK, rk)
+    h = int.from_bytes(h_block, "big")
+    padded = nonce
+    remainder = len(nonce) % _BLOCK
+    if remainder:
+        padded = nonce + b"\x00" * (_BLOCK - remainder)
+    padded += b"\x00" * 8 + (len(nonce) * 8).to_bytes(8, "big")
+    j0_int = 0
+    for i in range(0, len(padded), _BLOCK):
+        block = int.from_bytes(padded[i : i + _BLOCK], "big")
+        j0_int = _gf128_mul(j0_int ^ block, h)
+    return j0_int.to_bytes(16, "big")
+
+
+def aes_gcm_encrypt(
+    data: bytes,
+    key: bytes,
+    nonce: bytes,
+    aad: bytes = b"",
+    tag_length: int = 16,
+) -> tuple[bytes, bytes]:
+    """Encrypt data with AES-GCM (authenticated encryption).
+
+    Args:
+        data: Plaintext bytes.
+        key: 16, 24, or 32-byte AES key.
+        nonce: Nonce bytes (12 bytes recommended).
+        aad: Additional authenticated data.
+        tag_length: Authentication tag length in bytes (4-16).
+
+    Returns:
+        Tuple of (ciphertext, authentication_tag).
+    """
+    _validate_key(key)
+    if not nonce:
+        raise ValueError("nonce must not be empty")
+    if not (4 <= tag_length <= 16):
+        raise ValueError(f"tag_length must be 4-16, got {tag_length}")
+
+    rk = _expand_key(key)
+    h_block = _encrypt_block(b"\x00" * _BLOCK, rk)
+    h = int.from_bytes(h_block, "big")
+
+    j0 = _gcm_j0(rk, nonce)
+
+    # GCTR: encrypt data with counter starting at inc32(J0)
+    ctr = _inc32(j0)
+    ct = bytearray()
+    for i in range(0, len(data), _BLOCK):
+        keystream = _encrypt_block(ctr, rk)
+        chunk = data[i : i + _BLOCK]
+        ct.extend(b ^ k for b, k in zip(chunk, keystream))
+        ctr = _inc32(ctr)
+    ct = bytes(ct)
+
+    # Compute authentication tag
+    tag_int = _ghash(h, aad, ct)
+    e_j0 = _encrypt_block(j0, rk)
+    tag_int ^= int.from_bytes(e_j0, "big")
+    tag = tag_int.to_bytes(16, "big")[:tag_length]
+
+    return ct, tag
+
+
+def aes_gcm_decrypt(
+    data: bytes,
+    key: bytes,
+    nonce: bytes,
+    tag: bytes,
+    aad: bytes = b"",
+) -> bytes:
+    """Decrypt AES-GCM ciphertext and verify authentication tag.
+
+    Args:
+        data: Ciphertext bytes.
+        key: 16, 24, or 32-byte AES key.
+        nonce: Nonce bytes (must match the one used for encryption).
+        tag: Authentication tag to verify.
+        aad: Additional authenticated data.
+
+    Returns:
+        Plaintext bytes.
+
+    Raises:
+        ValueError: If authentication fails (tag mismatch).
+    """
+    _validate_key(key)
+    if not nonce:
+        raise ValueError("nonce must not be empty")
+    tag_length = len(tag)
+    if not (4 <= tag_length <= 16):
+        raise ValueError(f"tag must be 4-16 bytes, got {tag_length}")
+
+    rk = _expand_key(key)
+    h_block = _encrypt_block(b"\x00" * _BLOCK, rk)
+    h = int.from_bytes(h_block, "big")
+
+    j0 = _gcm_j0(rk, nonce)
+
+    # Verify authentication tag before decrypting
+    expected_int = _ghash(h, aad, data)
+    e_j0 = _encrypt_block(j0, rk)
+    expected_int ^= int.from_bytes(e_j0, "big")
+    expected_tag = expected_int.to_bytes(16, "big")[:tag_length]
+
+    if expected_tag != tag:
+        raise ValueError("authentication failed")
+
+    # GCTR: decrypt data
+    ctr = _inc32(j0)
+    pt = bytearray()
+    for i in range(0, len(data), _BLOCK):
+        keystream = _encrypt_block(ctr, rk)
+        chunk = data[i : i + _BLOCK]
+        pt.extend(b ^ k for b, k in zip(chunk, keystream))
+        ctr = _inc32(ctr)
+
+    return bytes(pt)

@@ -8,7 +8,7 @@ Zero-dependency, single-file Python implementations of popular libraries — std
 
 | Module | Description | Benchmark Against |
 |--------|-------------|-------------------|
-| `aes/` | AES-128-ECB encryption (pure Python + OpenSSL via ctypes) | `pycryptodome` |
+| `aes/` | AES encryption: ECB, CBC, CTR, GCM modes (pure Python + OpenSSL via ctypes) | `pycryptodome` |
 | `qr/` | QR Code generation with terminal rendering | `qrcode` |
 | `httpclient/` | Sync + async REST client | `httpx` |
 | `dotenv/` | .env file parser (load_dotenv, dotenv_values) | `python-dotenv` |

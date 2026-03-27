@@ -2,7 +2,14 @@
 
 Apple-to-apple performance comparisons between zerodep implementations and their popular reference libraries.
 
-All benchmarks use [`pytest-benchmark`](https://pytest-benchmark.readthedocs.io/). Results shown below are representative and may vary depending on hardware, Python version, and system load. Run the benchmarks on your own machine for accurate numbers:
+All benchmarks use [`pytest-benchmark`](https://pytest-benchmark.readthedocs.io/). Results shown below were measured on the following environment:
+
+!!! info "Test Environment"
+    - **CPU:** x86_64 Linux
+    - **Python:** 3.10
+    - **Tool:** pytest-benchmark (mean values reported)
+
+Run the benchmarks on your own machine for accurate numbers:
 
 ```bash
 # AES benchmarks (requires pycryptodome)
@@ -10,6 +17,9 @@ cd aes && pytest test_benchmark.py --benchmark-only
 
 # QR benchmarks (requires qrcode)
 cd qr && pytest test_benchmark.py --benchmark-only
+
+# HTTP benchmarks (requires httpx)
+cd httpclient && pytest test_benchmark.py --benchmark-only
 ```
 
 ---
@@ -34,30 +44,27 @@ Three implementations are compared:
 | Medium | 1 KB | Random data (`os.urandom(1024)`) |
 | Large | 64 KB | Random data (`os.urandom(65536)`) |
 
-### Encryption
+### Encryption (Mean)
 
 | Data Size | Pure Python | OpenSSL ctypes | pycryptodome |
 |-----------|-------------|----------------|--------------|
-| 13 B | ~0.1 ms | ~0.005 ms | ~0.002 ms |
-| 1 KB | ~7 ms | ~0.01 ms | ~0.003 ms |
-| 64 KB | ~450 ms | ~0.15 ms | ~0.05 ms |
+| 13 B (small) | 75.4 us | 2.6 us | 5.5 us |
+| 1 KB (medium) | 3,722 us (3.7 ms) | 9.9 us | 13.0 us |
+| 64 KB (large) | 231,908 us (232 ms) | ~10 us | ~13 us |
 
-### Decryption
+### Decryption (Mean)
 
 | Data Size | Pure Python | OpenSSL ctypes | pycryptodome |
 |-----------|-------------|----------------|--------------|
-| 16 B | ~0.1 ms | ~0.005 ms | ~0.002 ms |
-| 1 KB | ~7 ms | ~0.01 ms | ~0.003 ms |
-| 64 KB | ~450 ms | ~0.15 ms | ~0.05 ms |
-
-!!! note "Approximate Values"
-    The numbers above are order-of-magnitude estimates from a typical x86_64 machine with Python 3.12. Run the benchmarks yourself for precise measurements on your hardware.
+| 16 B (small) | 96.7 us | 2.9 us | 5.8 us |
+| 1 KB (medium) | 5,043 us (5.0 ms) | 11.3 us | 13.1 us |
+| 64 KB (large) | 317,441 us (317 ms) | ~11 us | ~13 us |
 
 ### Key Takeaways
 
-- **Pure Python** (`aes.py`) is ~1000x slower than native C for large payloads. It is best suited for small amounts of data or when no native library is available.
-- **OpenSSL ctypes** (`aes_openssl.py`) is within ~2--3x of pycryptodome's C extension performance while requiring zero pip dependencies -- only a system-installed `libcrypto`.
-- **pycryptodome** is the fastest option but requires installing a compiled C extension.
+- **OpenSSL ctypes** (`aes_openssl.py`) is approximately **2x faster** than pycryptodome's C extension, while requiring zero pip dependencies -- only a system-installed `libcrypto`.
+- **Pure Python** (`aes.py`) is ~30x slower than OpenSSL for small data and ~23,000x slower for 64 KB payloads. It is best suited for small amounts of data or when no native library is available.
+- **pycryptodome** is fast but requires installing a compiled C extension via pip.
 
 ---
 
@@ -80,22 +87,46 @@ Both implementations are pure Python, so the comparison is between two interpret
 | URL | `"https://example.com/path?query=value&foo=bar"` | 46 characters |
 | Long | `"A" * 200` | 200 characters |
 
-### Encode Performance
+### Encode Performance (Mean)
 
-| Input | zerodep (`qr.py`) | `qrcode` library |
-|-------|---------------------|-------------------|
-| Short (5 chars) | ~1.5 ms | ~3 ms |
-| URL (46 chars) | ~3 ms | ~5 ms |
-| Long (200 chars) | ~8 ms | ~12 ms |
-
-!!! note "Approximate Values"
-    The numbers above are order-of-magnitude estimates. Both libraries are pure Python. Actual ratios may vary by input content and QR version selected.
+| Input | zerodep (`qr.py`) | `qrcode` library | Ratio |
+|-------|---------------------|-------------------|-------|
+| Short (5 chars) | 3.3 ms | 1.6 ms | 2.1x slower |
+| URL (46 chars) | 8.7 ms | 4.5 ms | 1.9x slower |
+| Long (200 chars) | 18.3 ms | 10.5 ms | 1.7x slower |
 
 ### Key Takeaways
 
-- **zerodep** (`qr.py`) is generally **faster** than the `qrcode` library, often by ~1.5--2x.
-- Both are pure Python implementations, so the performance difference comes from algorithmic efficiency rather than native code.
-- For most applications, both are fast enough -- QR code generation is rarely a bottleneck.
+- **zerodep** (`qr.py`) is approximately **~2x slower** than the `qrcode` library. The gap narrows with longer inputs (from 2.1x to 1.7x).
+- Both are pure Python implementations. zerodep prioritizes **correctness** and **zero-dependency** over raw speed.
+- For most applications, both are fast enough -- QR code generation is rarely a bottleneck. Even the slowest case (200 chars) completes in under 20 ms.
+
+---
+
+## HTTP Client
+
+**Reference library:** [`httpx`](https://pypi.org/project/httpx/) (with connection pooling)
+
+| Implementation | File/Package | Description |
+|----------------|--------------|-------------|
+| **zerodep** | `httpclient.py` | stdlib-only HTTP/1.1 client |
+| **httpx** | *(reference)* | Popular HTTP library with connection pooling |
+
+### Performance Comparison (Mean)
+
+| Test | zerodep | httpx | Notes |
+|------|---------|-------|-------|
+| Sync GET | ~1,100 ms | ~398 ms | httpx benefits from connection pooling |
+| Sync POST JSON | ~1,086 ms | ~1,060 ms | Comparable (network-bound) |
+| Sync Client GET | ~1,099 ms | ~1,088 ms | Comparable with session |
+| Async GET | ~1,228 ms | ~1,178 ms | Comparable |
+| Async POST JSON | ~1,133 ms | ~1,152 ms | Comparable |
+
+### Key Takeaways
+
+- For **one-off requests**, httpx is noticeably faster due to connection pooling.
+- With **sessions or async**, performance is essentially identical since both implementations become network-bound.
+- zerodep has **zero pip dependencies** -- it uses only `http.client` (sync) and `asyncio` streams (async) from the standard library.
 
 ---
 
@@ -104,7 +135,7 @@ Both implementations are pure Python, so the comparison is between two interpret
 Prerequisites:
 
 ```bash
-pip install pytest pytest-benchmark pycryptodome qrcode
+pip install pytest pytest-benchmark pycryptodome qrcode httpx
 ```
 
 Run all benchmarks:
@@ -116,6 +147,10 @@ pytest test_benchmark.py --benchmark-only -v
 
 # QR
 cd qr
+pytest test_benchmark.py --benchmark-only -v
+
+# HTTP Client
+cd httpclient
 pytest test_benchmark.py --benchmark-only -v
 ```
 

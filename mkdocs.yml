@@ -50,6 +50,7 @@ plugins:
             - ../jsonc
             - ../structlog
             - ../retry
+            - ../toon
             - aes
             - qr
             - httpclient
@@ -57,6 +58,8 @@ plugins:
             - yaml
             - jsonc
             - structlog
+            - retry
+            - toon
           options:
             docstring_style: google
             show_source: true
@@ -102,6 +105,7 @@ nav:
       - JSONC 解析器: modules/jsonc.md
       - 结构化日志: modules/structlog.md
       - 重试: modules/retry.md
+      - TOON 序列化: modules/toon.md
   - API 参考:
       - AES: api/aes.md
       - QR 二维码: api/qr.md
@@ -111,6 +115,7 @@ nav:
       - JSONC: api/jsonc.md
       - 结构化日志: api/structlog.md
       - 重试: api/retry.md
+      - TOON: api/toon.md
   - 性能测试:
       - AES: benchmarks/aes.md
       - QR 二维码: benchmarks/qr.md
@@ -120,4 +125,5 @@ nav:
       - JSONC: benchmarks/jsonc.md
       - 结构化日志: benchmarks/structlog.md
       - 重试: benchmarks/retry.md
+      - TOON: benchmarks/toon.md
   - 更新日志: changelog.md

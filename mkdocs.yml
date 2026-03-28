@@ -119,63 +119,88 @@ extra:
 nav:
   - 首页: index.md
   - 模块:
-      - AES 加密: modules/aes.md
-      - QR 二维码: modules/qr.md
-      - HTTP 客户端: modules/http.md
-      - Dotenv 环境变量: modules/dotenv.md
-      - YAML 解析器: modules/yaml.md
-      - JSONC 解析器: modules/jsonc.md
-      - 结构化日志: modules/structlog.md
-      - 重试: modules/retry.md
-      - TOON 序列化: modules/toon.md
-      - SSE 客户端: modules/sse.md
-      - 表格格式化: modules/tabulate.md
-      - HTML 解析器: modules/soup.md
-      - 交互式提示: modules/prompt.md
-      - 验证器: modules/validate.md
-      - Markdown 渲染器: modules/markdown.md
-      - Diff 差异工具: modules/diff.md
-      - VCS 版本控制: modules/vcs.md
-      - ANSI 终端样式: modules/ansi.md
-      - 任务调度器: modules/scheduler.md
-      - 稀疏搜索: modules/search.md
+      - 网络与通信:
+          - HTTP 客户端: modules/http.md
+          - SSE 客户端: modules/sse.md
+      - 数据格式:
+          - YAML 解析器: modules/yaml.md
+          - JSONC 解析器: modules/jsonc.md
+          - TOON 序列化: modules/toon.md
+      - 数据验证:
+          - 验证器: modules/validate.md
+      - 文本与标记:
+          - Markdown 渲染器: modules/markdown.md
+          - HTML 解析器: modules/soup.md
+          - Diff 差异工具: modules/diff.md
+      - 搜索与检索:
+          - 稀疏搜索: modules/search.md
+      - 配置:
+          - Dotenv 环境变量: modules/dotenv.md
+      - 命令行与终端:
+          - ANSI 终端样式: modules/ansi.md
+          - 表格格式化: modules/tabulate.md
+          - 交互式提示: modules/prompt.md
+      - 安全与编码:
+          - AES 加密: modules/aes.md
+          - QR 二维码: modules/qr.md
+      - 基础设施与工具:
+          - 重试: modules/retry.md
+          - 任务调度器: modules/scheduler.md
+          - 结构化日志: modules/structlog.md
+          - VCS 版本控制: modules/vcs.md
   - API 参考:
-      - AES: api/aes.md
-      - QR 二维码: api/qr.md
-      - HTTP 客户端: api/http.md
-      - Dotenv: api/dotenv.md
-      - YAML: api/yaml.md
-      - JSONC: api/jsonc.md
-      - 结构化日志: api/structlog.md
-      - 重试: api/retry.md
-      - TOON: api/toon.md
-      - SSE: api/sse.md
-      - Tabulate: api/tabulate.md
-      - Soup: api/soup.md
-      - Prompt: api/prompt.md
-      - 验证器: api/validate.md
-      - Markdown: api/markdown.md
-      - Diff: api/diff.md
-      - VCS: api/vcs.md
-      - ANSI: api/ansi.md
-      - 调度器: api/scheduler.md
-      - 稀疏搜索: api/search.md
+      - 网络与通信:
+          - HTTP 客户端: api/http.md
+          - SSE: api/sse.md
+      - 数据格式:
+          - YAML: api/yaml.md
+          - JSONC: api/jsonc.md
+          - TOON: api/toon.md
+      - 数据验证:
+          - 验证器: api/validate.md
+      - 文本与标记:
+          - Markdown: api/markdown.md
+          - Soup: api/soup.md
+          - Diff: api/diff.md
+      - 搜索与检索:
+          - 稀疏搜索: api/search.md
+      - 配置:
+          - Dotenv: api/dotenv.md
+      - 命令行与终端:
+          - ANSI: api/ansi.md
+          - Tabulate: api/tabulate.md
+          - Prompt: api/prompt.md
+      - 安全与编码:
+          - AES: api/aes.md
+          - QR 二维码: api/qr.md
+      - 基础设施与工具:
+          - 重试: api/retry.md
+          - 调度器: api/scheduler.md
+          - 结构化日志: api/structlog.md
+          - VCS: api/vcs.md
   - 性能测试:
-      - AES: benchmarks/aes.md
-      - QR 二维码: benchmarks/qr.md
-      - HTTP 客户端: benchmarks/http.md
-      - Dotenv: benchmarks/dotenv.md
-      - YAML: benchmarks/yaml.md
-      - JSONC: benchmarks/jsonc.md
-      - 结构化日志: benchmarks/structlog.md
-      - 重试: benchmarks/retry.md
-      - TOON: benchmarks/toon.md
-      - SSE 客户端: benchmarks/sse.md
-      - 表格格式化: benchmarks/tabulate.md
-      - HTML 解析器: benchmarks/soup.md
-      - 验证器: benchmarks/validate.md
-      - Markdown: benchmarks/markdown.md
-      - Diff: benchmarks/diff.md
-      - 调度器: benchmarks/scheduler.md
-      - 稀疏搜索: benchmarks/search.md
+      - 网络与通信:
+          - HTTP 客户端: benchmarks/http.md
+          - SSE 客户端: benchmarks/sse.md
+      - 数据格式:
+          - YAML: benchmarks/yaml.md
+          - JSONC: benchmarks/jsonc.md
+          - TOON: benchmarks/toon.md
+      - 数据验证:
+          - 验证器: benchmarks/validate.md
+      - 文本与标记:
+          - Markdown: benchmarks/markdown.md
+          - HTML 解析器: benchmarks/soup.md
+          - Diff: benchmarks/diff.md
+      - 搜索与检索:
+          - 稀疏搜索: benchmarks/search.md
+      - 配置:
+          - Dotenv: benchmarks/dotenv.md
+      - 安全与编码:
+          - AES: benchmarks/aes.md
+          - QR 二维码: benchmarks/qr.md
+      - 基础设施与工具:
+          - 重试: benchmarks/retry.md
+          - 调度器: benchmarks/scheduler.md
+          - 结构化日志: benchmarks/structlog.md
   - 更新日志: changelog.md

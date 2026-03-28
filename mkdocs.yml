@@ -119,63 +119,88 @@ extra:
 nav:
   - Home: index.md
   - Modules:
-      - AES: modules/aes.md
-      - QR Code: modules/qr.md
-      - HTTP Client: modules/http.md
-      - Dotenv: modules/dotenv.md
-      - YAML: modules/yaml.md
-      - JSONC: modules/jsonc.md
-      - Structured Logging: modules/structlog.md
-      - Retry: modules/retry.md
-      - TOON: modules/toon.md
-      - SSE Client: modules/sse.md
-      - Tabulate: modules/tabulate.md
-      - HTML Parser: modules/soup.md
-      - Prompts: modules/prompt.md
-      - Validate: modules/validate.md
-      - Markdown: modules/markdown.md
-      - Diff: modules/diff.md
-      - VCS: modules/vcs.md
-      - ANSI Colors: modules/ansi.md
-      - Scheduler: modules/scheduler.md
-      - Sparse Search: modules/search.md
+      - Web & Networking:
+          - HTTP Client: modules/http.md
+          - SSE Client: modules/sse.md
+      - Data Formats:
+          - YAML: modules/yaml.md
+          - JSONC: modules/jsonc.md
+          - TOON: modules/toon.md
+      - Data Validation:
+          - Validate: modules/validate.md
+      - Text & Markup:
+          - Markdown: modules/markdown.md
+          - HTML Parser: modules/soup.md
+          - Diff: modules/diff.md
+      - Search & Retrieval:
+          - Sparse Search: modules/search.md
+      - Configuration:
+          - Dotenv: modules/dotenv.md
+      - CLI & Terminal:
+          - ANSI Colors: modules/ansi.md
+          - Tabulate: modules/tabulate.md
+          - Prompts: modules/prompt.md
+      - Security & Encoding:
+          - AES: modules/aes.md
+          - QR Code: modules/qr.md
+      - Infrastructure & Tools:
+          - Retry: modules/retry.md
+          - Scheduler: modules/scheduler.md
+          - Structured Logging: modules/structlog.md
+          - VCS: modules/vcs.md
   - API Reference:
-      - AES: api/aes.md
-      - QR Code: api/qr.md
-      - HTTP Client: api/http.md
-      - Dotenv: api/dotenv.md
-      - YAML: api/yaml.md
-      - JSONC: api/jsonc.md
-      - Structured Logging: api/structlog.md
-      - Retry: api/retry.md
-      - TOON: api/toon.md
-      - SSE: api/sse.md
-      - Tabulate: api/tabulate.md
-      - Soup: api/soup.md
-      - Prompt: api/prompt.md
-      - Validate: api/validate.md
-      - Markdown: api/markdown.md
-      - Diff: api/diff.md
-      - VCS: api/vcs.md
-      - ANSI: api/ansi.md
-      - Scheduler: api/scheduler.md
-      - Sparse Search: api/search.md
+      - Web & Networking:
+          - HTTP Client: api/http.md
+          - SSE: api/sse.md
+      - Data Formats:
+          - YAML: api/yaml.md
+          - JSONC: api/jsonc.md
+          - TOON: api/toon.md
+      - Data Validation:
+          - Validate: api/validate.md
+      - Text & Markup:
+          - Markdown: api/markdown.md
+          - Soup: api/soup.md
+          - Diff: api/diff.md
+      - Search & Retrieval:
+          - Sparse Search: api/search.md
+      - Configuration:
+          - Dotenv: api/dotenv.md
+      - CLI & Terminal:
+          - ANSI: api/ansi.md
+          - Tabulate: api/tabulate.md
+          - Prompt: api/prompt.md
+      - Security & Encoding:
+          - AES: api/aes.md
+          - QR Code: api/qr.md
+      - Infrastructure & Tools:
+          - Retry: api/retry.md
+          - Scheduler: api/scheduler.md
+          - Structured Logging: api/structlog.md
+          - VCS: api/vcs.md
   - Benchmarks:
-      - AES: benchmarks/aes.md
-      - QR Code: benchmarks/qr.md
-      - HTTP Client: benchmarks/http.md
-      - Dotenv: benchmarks/dotenv.md
-      - YAML: benchmarks/yaml.md
-      - JSONC: benchmarks/jsonc.md
-      - Structured Logging: benchmarks/structlog.md
-      - Retry: benchmarks/retry.md
-      - TOON: benchmarks/toon.md
-      - SSE Client: benchmarks/sse.md
-      - Tabulate: benchmarks/tabulate.md
-      - HTML Parser: benchmarks/soup.md
-      - Validate: benchmarks/validate.md
-      - Markdown: benchmarks/markdown.md
-      - Diff: benchmarks/diff.md
-      - Scheduler: benchmarks/scheduler.md
-      - Sparse Search: benchmarks/search.md
+      - Web & Networking:
+          - HTTP Client: benchmarks/http.md
+          - SSE Client: benchmarks/sse.md
+      - Data Formats:
+          - YAML: benchmarks/yaml.md
+          - JSONC: benchmarks/jsonc.md
+          - TOON: benchmarks/toon.md
+      - Data Validation:
+          - Validate: benchmarks/validate.md
+      - Text & Markup:
+          - Markdown: benchmarks/markdown.md
+          - HTML Parser: benchmarks/soup.md
+          - Diff: benchmarks/diff.md
+      - Search & Retrieval:
+          - Sparse Search: benchmarks/search.md
+      - Configuration:
+          - Dotenv: benchmarks/dotenv.md
+      - Security & Encoding:
+          - AES: benchmarks/aes.md
+          - QR Code: benchmarks/qr.md
+      - Infrastructure & Tools:
+          - Retry: benchmarks/retry.md
+          - Scheduler: benchmarks/scheduler.md
+          - Structured Logging: benchmarks/structlog.md
   - Changelog: changelog.md

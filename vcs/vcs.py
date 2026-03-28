@@ -156,6 +156,24 @@ class BlameLine:
     content: str
 
 
+@dataclasses.dataclass(frozen=True)
+class WorkspaceInfo:
+    """Information about a workspace (Git worktree / Jujutsu workspace).
+
+    Attributes:
+        path: Absolute path to the workspace directory.
+        head: HEAD commit hash.
+        branch: Branch name (Git) or bookmark (Jujutsu), ``None``
+            for detached HEAD or unknown.
+        is_main: Whether this is the main/default workspace.
+    """
+
+    path: str
+    head: str
+    branch: str | None = None
+    is_main: bool = False
+
+
 # ── Binary Discovery ─────────────────────────────────────────────────
 
 
@@ -342,6 +360,103 @@ class VCSBackend(Protocol):
 
     def current_branch(self) -> str:
         """Return the name of the current branch or bookmark."""
+        ...
+
+    def merge_file(self, base: str, ours: str, theirs: str) -> str:
+        """Three-way merge of file contents.
+
+        Args:
+            base: Common-ancestor file content.
+            ours: Content from the first branch.
+            theirs: Content from the second branch.
+
+        Returns:
+            Merged file content (may contain conflict markers).
+        """
+        ...
+
+    def workspace_add(
+        self,
+        path: str,
+        *,
+        branch: str | None = None,
+        rev: str | None = None,
+    ) -> str:
+        """Create a new workspace at *path*.
+
+        Args:
+            path: Directory for the new workspace.
+            branch: Branch to create (Git) or bookmark (Jujutsu).
+            rev: Starting revision/commit.
+
+        Returns:
+            Absolute path to the created workspace.
+        """
+        ...
+
+    def workspace_remove(self, path: str, *, force: bool = False) -> None:
+        """Remove a workspace.
+
+        Args:
+            path: Path to the workspace directory.
+            force: Force removal even with uncommitted changes.
+        """
+        ...
+
+    def workspace_list(self) -> list[WorkspaceInfo]:
+        """List all workspaces.
+
+        Returns:
+            List of :class:`WorkspaceInfo` entries.
+        """
+        ...
+
+    def branches(self) -> list[str]:
+        """List all branch names or bookmarks.
+
+        Returns:
+            List of branch/bookmark name strings.
+        """
+        ...
+
+    def create_branch(self, name: str, *, rev: str | None = None) -> None:
+        """Create a new branch or bookmark.
+
+        Args:
+            name: Branch/bookmark name.
+            rev: Starting point (defaults to current HEAD).
+        """
+        ...
+
+    def switch(self, target: str) -> None:
+        """Switch to a branch or revision.
+
+        Args:
+            target: Branch name or revision identifier.
+        """
+        ...
+
+    def commit(self, message: str, *, paths: list[str] | None = None) -> str:
+        """Create a commit/change.
+
+        Args:
+            message: Commit message.
+            paths: Files to stage and commit (Git-specific).
+
+        Returns:
+            Commit hash of the new commit.
+        """
+        ...
+
+    def rev_parse(self, rev: str) -> str:
+        """Resolve a revision string to a full commit hash.
+
+        Args:
+            rev: Revision string (branch name, tag, ``"HEAD"``, etc.).
+
+        Returns:
+            Full commit hash.
+        """
         ...
 
 
@@ -637,6 +752,158 @@ class Git:
                     except OSError:
                         pass
 
+    # -- workspace / branch / commit operations --
+
+    def workspace_add(
+        self,
+        path: str,
+        *,
+        branch: str | None = None,
+        rev: str | None = None,
+    ) -> str:
+        """Create a new workspace via ``git worktree add``.
+
+        Args:
+            path: Directory for the new workspace.
+            branch: If given, create this branch in the new workspace.
+            rev: Starting commit-ish.
+
+        Returns:
+            Absolute path to the created workspace.
+        """
+        abs_path = os.path.abspath(path)
+        cmd: list[str] = ["worktree", "add"]
+        if branch:
+            cmd.extend(["-b", branch])
+        cmd.append(abs_path)
+        if rev:
+            cmd.append(rev)
+        self._git(*cmd)
+        return abs_path
+
+    def workspace_remove(self, path: str, *, force: bool = False) -> None:
+        """Remove a workspace via ``git worktree remove``.
+
+        Args:
+            path: Path to the workspace directory.
+            force: Force removal even with uncommitted changes.
+        """
+        abs_path = os.path.abspath(path)
+        cmd: list[str] = ["worktree", "remove"]
+        if force:
+            cmd.append("--force")
+        cmd.append(abs_path)
+        self._git(*cmd)
+
+    def workspace_list(self) -> list[WorkspaceInfo]:
+        """List all workspaces via ``git worktree list --porcelain``.
+
+        Returns:
+            List of :class:`WorkspaceInfo` entries.
+        """
+        result = self._git("worktree", "list", "--porcelain")
+        workspaces: list[WorkspaceInfo] = []
+        path = ""
+        head = ""
+        branch: str | None = None
+        for line in result.stdout.splitlines():
+            if line.startswith("worktree "):
+                # Flush previous entry
+                if path:
+                    workspaces.append(
+                        WorkspaceInfo(
+                            path=path,
+                            head=head,
+                            branch=branch,
+                            is_main=len(workspaces) == 0,
+                        )
+                    )
+                path = line[9:]
+                head = ""
+                branch = None
+            elif line.startswith("HEAD "):
+                head = line[5:]
+            elif line.startswith("branch "):
+                branch = line[7:].removeprefix("refs/heads/")
+            elif line == "detached":
+                branch = None
+        # Flush last entry
+        if path:
+            workspaces.append(
+                WorkspaceInfo(
+                    path=path,
+                    head=head,
+                    branch=branch,
+                    is_main=len(workspaces) == 0,
+                )
+            )
+        return workspaces
+
+    def branches(self) -> list[str]:
+        """List all branches via ``git branch``.
+
+        Returns:
+            List of branch name strings.
+        """
+        result = self._git("branch", "--format=%(refname:short)")
+        return [b.strip() for b in result.stdout.splitlines() if b.strip()]
+
+    def create_branch(self, name: str, *, rev: str | None = None) -> None:
+        """Create a new branch via ``git branch``.
+
+        Args:
+            name: Branch name.
+            rev: Starting commit-ish (defaults to HEAD).
+        """
+        cmd: list[str] = ["branch", name]
+        if rev:
+            cmd.append(rev)
+        self._git(*cmd)
+
+    def switch(self, target: str) -> None:
+        """Switch to a branch or revision via ``git switch``.
+
+        Falls back to ``git switch --detach`` for non-branch revisions.
+
+        Args:
+            target: Branch name or revision identifier.
+        """
+        try:
+            self._git("switch", target)
+        except CommandError:
+            self._git("switch", "--detach", target)
+
+    def commit(self, message: str, *, paths: list[str] | None = None) -> str:
+        """Create a commit via ``git commit``.
+
+        If *paths* is given, stages those files first.  Otherwise commits
+        whatever is already staged.
+
+        Args:
+            message: Commit message.
+            paths: Files to stage before committing.
+
+        Returns:
+            Full commit hash of the new commit.
+        """
+        if paths:
+            self._git("add", "--", *paths)
+        self._git("commit", "-m", message)
+        result = self._git("rev-parse", "HEAD")
+        return result.stdout.strip()
+
+    def rev_parse(self, rev: str) -> str:
+        """Resolve a revision string via ``git rev-parse``.
+
+        Args:
+            rev: Revision string.
+
+        Returns:
+            Full commit hash.
+        """
+        result = self._git("rev-parse", rev)
+        return result.stdout.strip()
+
 
 # ── Mercurial Backend ────────────────────────────────────────────────
 
@@ -842,6 +1109,76 @@ class Mercurial:
             )
         result = _diff_merge3(base, ours, theirs)  # type: ignore[possibly-unbound]
         return result.content
+
+    def workspace_add(
+        self,
+        path: str,
+        *,
+        branch: str | None = None,
+        rev: str | None = None,
+    ) -> str:
+        """Not supported by Mercurial.
+
+        Raises:
+            NotImplementedError: Always.
+        """
+        raise NotImplementedError("hg does not support workspaces")
+
+    def workspace_remove(self, path: str, *, force: bool = False) -> None:
+        """Not supported by Mercurial.
+
+        Raises:
+            NotImplementedError: Always.
+        """
+        raise NotImplementedError("hg does not support workspaces")
+
+    def workspace_list(self) -> list[WorkspaceInfo]:
+        """Not supported by Mercurial.
+
+        Raises:
+            NotImplementedError: Always.
+        """
+        raise NotImplementedError("hg does not support workspaces")
+
+    def branches(self) -> list[str]:
+        """Not supported — Mercurial branches have different semantics.
+
+        Raises:
+            NotImplementedError: Always.
+        """
+        raise NotImplementedError("hg branches have different semantics; not supported")
+
+    def create_branch(self, name: str, *, rev: str | None = None) -> None:
+        """Not supported — Mercurial branches have different semantics.
+
+        Raises:
+            NotImplementedError: Always.
+        """
+        raise NotImplementedError("hg branches have different semantics; not supported")
+
+    def switch(self, target: str) -> None:
+        """Not supported by Mercurial.
+
+        Raises:
+            NotImplementedError: Always.
+        """
+        raise NotImplementedError("hg does not support switch")
+
+    def commit(self, message: str, *, paths: list[str] | None = None) -> str:
+        """Not supported by Mercurial.
+
+        Raises:
+            NotImplementedError: Always.
+        """
+        raise NotImplementedError("hg commit is not supported via this interface")
+
+    def rev_parse(self, rev: str) -> str:
+        """Not supported by Mercurial.
+
+        Raises:
+            NotImplementedError: Always.
+        """
+        raise NotImplementedError("hg does not support rev-parse via this interface")
 
 
 # ── Jujutsu Backend ──────────────────────────────────────────────────
@@ -1055,6 +1392,157 @@ class Jujutsu:
             )
         result = _diff_merge3(base, ours, theirs)  # type: ignore[possibly-unbound]
         return result.content
+
+    # -- workspace / bookmark / commit operations --
+
+    def workspace_add(
+        self,
+        path: str,
+        *,
+        branch: str | None = None,
+        rev: str | None = None,
+    ) -> str:
+        """Create a new workspace via ``jj workspace add``.
+
+        The workspace name defaults to the basename of *path* (Jujutsu
+        convention).  If *branch* is given, a bookmark is created in the
+        new workspace pointing to its working-copy change.
+
+        Args:
+            path: Directory for the new workspace.
+            branch: If given, create a bookmark in the new workspace.
+            rev: Starting revision.
+
+        Returns:
+            Absolute path to the created workspace.
+        """
+        abs_path = os.path.abspath(path)
+        cmd: list[str] = ["workspace", "add", abs_path]
+        if rev:
+            cmd.extend(["-r", rev])
+        self._jj(*cmd)
+        if branch:
+            # Create a bookmark in the new workspace context
+            _run(
+                [self._binary, "bookmark", "create", branch],
+                cwd=abs_path,
+                timeout=self._timeout,
+                encoding=self._encoding,
+            )
+        return abs_path
+
+    def workspace_remove(self, path: str, *, force: bool = False) -> None:
+        """Remove a workspace via ``jj workspace forget``.
+
+        Derives the workspace name from the directory basename (Jujutsu
+        default naming convention), then removes the directory.
+
+        Args:
+            path: Path to the workspace directory.
+            force: Unused — ``jj workspace forget`` always succeeds for
+                registered workspaces.
+        """
+        abs_path = os.path.abspath(path)
+        ws_name = os.path.basename(abs_path)
+        self._jj("workspace", "forget", ws_name)
+        if os.path.isdir(abs_path):
+            shutil.rmtree(abs_path)
+
+    def workspace_list(self) -> list[WorkspaceInfo]:
+        """List all workspaces via ``jj workspace list``.
+
+        Only the default workspace has a known path (``repo_path``);
+        other workspace paths are not exposed by ``jj workspace list``.
+
+        Returns:
+            List of :class:`WorkspaceInfo` entries.
+        """
+        result = self._jj("workspace", "list")
+        workspaces: list[WorkspaceInfo] = []
+        for line in result.stdout.splitlines():
+            # Format: "name: change_id_short commit_id_short ..."
+            m = re.match(r"^(\S+):\s+(\S+)\s+(\S+)", line)
+            if m:
+                ws_name = m.group(1)
+                commit_short = m.group(3)
+                path = self._repo if ws_name == "default" else ""
+                workspaces.append(
+                    WorkspaceInfo(
+                        path=path,
+                        head=commit_short,
+                        branch=None,
+                        is_main=ws_name == "default",
+                    )
+                )
+        return workspaces
+
+    def branches(self) -> list[str]:
+        """List all bookmarks via ``jj bookmark list``.
+
+        Returns:
+            List of bookmark name strings.
+        """
+        result = self._jj("bookmark", "list")
+        names: list[str] = []
+        for line in result.stdout.splitlines():
+            # Format: "name: change_id commit_id ..."
+            m = re.match(r"^(\S+):", line)
+            if m:
+                names.append(m.group(1))
+        return names
+
+    def create_branch(self, name: str, *, rev: str | None = None) -> None:
+        """Create a bookmark via ``jj bookmark create``.
+
+        Args:
+            name: Bookmark name.
+            rev: Target revision (defaults to ``@``).
+        """
+        cmd: list[str] = ["bookmark", "create", name]
+        if rev:
+            cmd.extend(["-r", rev])
+        self._jj(*cmd)
+
+    def switch(self, target: str) -> None:
+        """Switch working copy via ``jj new``.
+
+        Creates a new change on top of *target*, analogous to how
+        ``git switch`` positions the working copy for new commits.
+
+        Args:
+            target: Bookmark name or revision identifier.
+        """
+        self._jj("new", target)
+
+    def commit(self, message: str, *, paths: list[str] | None = None) -> str:
+        """Finalize the current change via ``jj commit``.
+
+        The *paths* argument is ignored — Jujutsu auto-tracks all
+        working-copy changes.
+
+        Args:
+            message: Change description.
+            paths: Ignored.
+
+        Returns:
+            Full commit hash of the finalized change.
+        """
+        self._jj("commit", "-m", message)
+        # The committed change is now @- (parent of current)
+        result = self._jj("log", "-r", "@-", "--no-graph", "-T", "commit_id")
+        return result.stdout.strip()
+
+    def rev_parse(self, rev: str) -> str:
+        """Resolve a revision string to a full commit hash.
+
+        Args:
+            rev: Revision string (bookmark, change ID, etc.).
+
+        Returns:
+            Full commit hash.
+        """
+        result = self._jj("log", "-r", rev, "--no-graph", "-T", "commit_id")
+        return result.stdout.strip()
 
 
 # ── Auto-Detection ───────────────────────────────────────────────────

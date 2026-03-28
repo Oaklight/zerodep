@@ -16,8 +16,10 @@ from vcs import (
     Commit,
     FileStatus,
     Git,
+    Mercurial,
     NotARepoError,
     VCSError,
+    WorkspaceInfo,
     detect,
 )
 
@@ -353,3 +355,192 @@ class TestDataStructures:
         )
         with pytest.raises(AttributeError):
             bl.content = "changed"  # ty: ignore[invalid-assignment]
+
+    def test_workspace_info_frozen(self):
+        wt = WorkspaceInfo(path="/tmp/wt", head="abc123", branch="main", is_main=True)
+        with pytest.raises(AttributeError):
+            wt.path = "/other"  # ty: ignore[invalid-assignment]
+
+    def test_workspace_info_defaults(self):
+        wt = WorkspaceInfo(path="/tmp/wt", head="abc123")
+        assert wt.branch is None
+        assert wt.is_main is False
+
+
+# ── TestGitWorkspace ────────────────────────────────────────────────
+
+
+@skip_no_git
+class TestGitWorkspace:
+    def test_workspace_list_main_only(self, git_repo):
+        g = Git(str(git_repo))
+        wts = g.workspace_list()
+        assert len(wts) == 1
+        assert wts[0].is_main is True
+        assert wts[0].path == str(git_repo)
+        assert len(wts[0].head) == 40
+
+    def test_workspace_add_and_list(self, git_repo):
+        g = Git(str(git_repo))
+        wt_path = str(git_repo / "wt-feature")
+        result_path = g.workspace_add(wt_path, branch="feature")
+        assert os.path.isdir(result_path)
+        wts = g.workspace_list()
+        assert len(wts) == 2
+        wt = [w for w in wts if not w.is_main][0]
+        assert wt.branch == "feature"
+
+    def test_workspace_add_with_rev(self, git_repo):
+        g = Git(str(git_repo))
+        head = g.rev_parse("HEAD")
+        wt_path = str(git_repo / "wt-detached")
+        g.workspace_add(wt_path, rev=head)
+        wts = g.workspace_list()
+        assert len(wts) == 2
+        # Clean up
+        g.workspace_remove(wt_path, force=True)
+        assert not os.path.isdir(wt_path)
+
+    def test_workspace_remove(self, git_repo):
+        g = Git(str(git_repo))
+        wt_path = str(git_repo / "wt-temp")
+        g.workspace_add(wt_path, branch="temp-branch")
+        assert os.path.isdir(wt_path)
+        g.workspace_remove(wt_path)
+        assert not os.path.isdir(wt_path)
+        wts = g.workspace_list()
+        assert len(wts) == 1
+
+
+# ── TestGitBranches ─────────────────────────────────────────────────
+
+
+@skip_no_git
+class TestGitBranches:
+    def test_branches_list(self, git_repo):
+        g = Git(str(git_repo))
+        bs = g.branches()
+        assert len(bs) >= 1
+        # Default branch should be listed
+        assert any(b in ("master", "main") for b in bs)
+
+    def test_create_branch(self, git_repo):
+        g = Git(str(git_repo))
+        g.create_branch("new-feature")
+        bs = g.branches()
+        assert "new-feature" in bs
+
+    def test_create_branch_at_rev(self, git_repo):
+        g = Git(str(git_repo))
+        head = g.rev_parse("HEAD")
+        g.create_branch("from-rev", rev=head)
+        bs = g.branches()
+        assert "from-rev" in bs
+
+    def test_switch_branch(self, git_repo):
+        g = Git(str(git_repo))
+        g.create_branch("switch-target")
+        g.switch("switch-target")
+        assert g.current_branch() == "switch-target"
+
+    def test_switch_detached(self, git_repo):
+        g = Git(str(git_repo))
+        head = g.rev_parse("HEAD")
+        g.switch(head)
+        # In detached state, current_branch returns short hash
+        branch = g.current_branch()
+        assert head.startswith(branch) or branch in head
+
+
+# ── TestGitCommit ───────────────────────────────────────────────────
+
+
+@skip_no_git
+class TestGitCommit:
+    def test_commit_staged(self, git_repo):
+        g = Git(str(git_repo))
+        (git_repo / "new.txt").write_text("content\n")
+        _git(git_repo, "add", "new.txt")
+        commit_hash = g.commit("add new file")
+        assert len(commit_hash) == 40
+        commits = g.log(n=1)
+        assert commits[0].message == "add new file"
+
+    def test_commit_with_paths(self, git_repo):
+        g = Git(str(git_repo))
+        (git_repo / "auto.txt").write_text("auto-staged\n")
+        commit_hash = g.commit("auto stage", paths=["auto.txt"])
+        assert len(commit_hash) == 40
+        commits = g.log(n=1)
+        assert commits[0].message == "auto stage"
+
+
+# ── TestGitRevParse ─────────────────────────────────────────────────
+
+
+@skip_no_git
+class TestGitRevParse:
+    def test_rev_parse_head(self, git_repo):
+        g = Git(str(git_repo))
+        h = g.rev_parse("HEAD")
+        assert len(h) == 40
+
+    def test_rev_parse_branch(self, git_repo):
+        g = Git(str(git_repo))
+        branch = g.current_branch()
+        h = g.rev_parse(branch)
+        assert len(h) == 40
+        assert h == g.rev_parse("HEAD")
+
+    def test_rev_parse_invalid(self, git_repo):
+        g = Git(str(git_repo))
+        from vcs import CommandError
+
+        with pytest.raises(CommandError):
+            g.rev_parse("nonexistent-ref-12345")
+
+
+# ── TestMercurialNotSupported ───────────────────────────────────────
+
+
+class TestMercurialNotSupported:
+    """Verify all new methods raise NotImplementedError for Mercurial."""
+
+    @pytest.fixture
+    def hg_backend(self):
+        """Create a Mercurial backend with a fake binary."""
+        # We only test that methods raise NotImplementedError,
+        # so we don't need an actual hg repo.
+        return Mercurial.__new__(Mercurial)
+
+    def test_workspace_add(self, hg_backend):
+        with pytest.raises(NotImplementedError):
+            hg_backend.workspace_add("/tmp/wt")
+
+    def test_workspace_remove(self, hg_backend):
+        with pytest.raises(NotImplementedError):
+            hg_backend.workspace_remove("/tmp/wt")
+
+    def test_workspace_list(self, hg_backend):
+        with pytest.raises(NotImplementedError):
+            hg_backend.workspace_list()
+
+    def test_branches(self, hg_backend):
+        with pytest.raises(NotImplementedError):
+            hg_backend.branches()
+
+    def test_create_branch(self, hg_backend):
+        with pytest.raises(NotImplementedError):
+            hg_backend.create_branch("feature")
+
+    def test_switch(self, hg_backend):
+        with pytest.raises(NotImplementedError):
+            hg_backend.switch("main")
+
+    def test_commit(self, hg_backend):
+        with pytest.raises(NotImplementedError):
+            hg_backend.commit("msg")
+
+    def test_rev_parse(self, hg_backend):
+        with pytest.raises(NotImplementedError):
+            hg_backend.rev_parse("HEAD")

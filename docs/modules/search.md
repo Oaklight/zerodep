@@ -166,6 +166,26 @@ loaded = SparseIndex.load("index.json")
 loaded = SparseIndex.load("index.db")
 ```
 
+## Design Notes
+
+### Index vs Scoring Parameters
+
+Only the `tokenize` function affects indexing. All other parameters (`variant`, `k1`, `b`, `delta`, `field_weights`) are scoring-time parameters that do not change what is stored in the index. This means the same index can be searched with different algorithms and tuning parameters without reindexing.
+
+### `field_weights` is Immutable
+
+`field_weights` is set at construction time and determines whether documents are stored as single-field or multi-field. The index does not store the original document text -- only tokenized term frequencies. This means:
+
+- A single-field index **cannot** be converted to multi-field (the field boundaries are lost)
+- To change `field_weights`, you must rebuild the index from your source data
+- `update()` replaces a document's indexed data but still requires the original text
+
+### Indexing vs Search Performance
+
+The index uses a 3-level inverted index (`term -> doc_id -> field -> tf`) to support both single-field and multi-field (BM25F) modes uniformly. This adds overhead during indexing (~6.7x slower than rank-bm25) but enables 34-132x faster search thanks to O(matched_docs) query traversal. Since indexing is typically a one-time cost and search is the frequent operation, this trade-off favors real-world usage patterns.
+
+Insert time is **O(tokens_in_doc)** per document and does not degrade as the index grows -- the 1st document and the 100,000th document with the same token count take the same time, since all underlying operations (dict lookup, set add) are O(1) amortized.
+
 ## API Reference
 
 ### `SparseIndex(variant, k1, b, delta, field_weights, tokenize)`

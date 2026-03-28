@@ -14,9 +14,9 @@ The module supports three VCS backends:
 
 | Backend | Binary | Coverage |
 |---------|--------|----------|
-| **Git** | `git` | Full (diff, status, log, blame, apply, merge-file, branch) |
-| **Mercurial** | `hg` | Core subset (diff, status, log, blame, branch) |
-| **Jujutsu** | `jj` | Core subset (diff, status, log, blame, branch) |
+| **Git** | `git` | Full (diff, status, log, blame, apply, merge-file, branch, workspace, commit) |
+| **Mercurial** | `hg` | Inspection only (diff, status, log, blame, branch) |
+| **Jujutsu** | `jj` | Full (diff, status, log, blame, merge-file, branch, workspace, commit) |
 
 ## How to Use in Your Project
 
@@ -62,6 +62,7 @@ All backends implement this protocol:
 ```python
 class VCSBackend(Protocol):
     name: str
+    # -- inspection --
     def is_repo(self, path: str) -> bool: ...
     def diff(self, *paths: str, staged: bool = False) -> str: ...
     def diff_files(self, path_a: str, path_b: str) -> str: ...
@@ -71,6 +72,16 @@ class VCSBackend(Protocol):
     def blame(self, path: str) -> list[BlameLine]: ...
     def current_branch(self) -> str: ...
     def merge_file(self, base: str, ours: str, theirs: str) -> str: ...
+    # -- workspace lifecycle --
+    def workspace_add(self, path: str, *, branch: str | None = None, rev: str | None = None) -> str: ...
+    def workspace_remove(self, path: str, *, force: bool = False) -> None: ...
+    def workspace_list(self) -> list[WorkspaceInfo]: ...
+    # -- branch / commit --
+    def branches(self) -> list[str]: ...
+    def create_branch(self, name: str, *, rev: str | None = None) -> None: ...
+    def switch(self, target: str) -> None: ...
+    def commit(self, message: str, *, paths: list[str] | None = None) -> str: ...
+    def rev_parse(self, rev: str) -> str: ...
 ```
 
 ### Git Backend
@@ -157,6 +168,92 @@ Three-way merge of text content using `git merge-file`.
 result = g.merge_file(base_text, our_text, their_text)
 ```
 
+### Workspace Lifecycle
+
+These methods manage isolated workspaces (Git worktrees / Jujutsu workspaces). Mercurial raises `NotImplementedError` for all workspace and branch operations.
+
+#### `workspace_add(path, *, branch=None, rev=None)`
+
+Create a new isolated workspace at the given path.
+
+```python
+ws_path = g.workspace_add("/tmp/feature-ws", branch="feature/new")
+```
+
+- **Git:** runs `git worktree add [-b branch] <path> [rev]`
+- **Jujutsu:** runs `jj workspace add <path> [-r rev]`, optionally creates a bookmark
+
+#### `workspace_remove(path, *, force=False)`
+
+Remove a workspace and clean up its directory.
+
+```python
+g.workspace_remove("/tmp/feature-ws")
+g.workspace_remove("/tmp/dirty-ws", force=True)  # force even with uncommitted changes
+```
+
+#### `workspace_list()`
+
+List all workspaces as `WorkspaceInfo` objects.
+
+```python
+for ws in g.workspace_list():
+    print(ws.path, ws.branch, ws.is_main)
+```
+
+### Branch Operations
+
+#### `branches()`
+
+List all branch names (Git) or bookmarks (Jujutsu).
+
+```python
+branch_names = g.branches()  # ["main", "feature/xyz", ...]
+```
+
+#### `create_branch(name, *, rev=None)`
+
+Create a new branch or bookmark.
+
+```python
+g.create_branch("feature/new")
+g.create_branch("hotfix", rev="HEAD~3")
+```
+
+#### `switch(target)`
+
+Switch to a branch or revision.
+
+```python
+g.switch("feature/new")      # switch to branch
+g.switch("abc1234")           # detach HEAD at revision (Git)
+```
+
+- **Git:** uses `git switch`, falls back to `git switch --detach` for non-branch targets
+- **Jujutsu:** uses `jj new` to create a new change on top of the target
+
+### Commit Operations
+
+#### `commit(message, *, paths=None)`
+
+Create a commit and return its full hash.
+
+```python
+sha = g.commit("fix: resolve edge case", paths=["src/fix.py"])
+```
+
+- **Git:** stages `paths` (if given) then commits; otherwise commits what is already staged
+- **Jujutsu:** finalizes the current change; `paths` is ignored (jj auto-tracks all changes)
+
+#### `rev_parse(rev)`
+
+Resolve a revision string to a full commit hash.
+
+```python
+full_hash = g.rev_parse("HEAD")
+full_hash = g.rev_parse("main")
+```
+
 ## Data Structures
 
 ### `FileStatus`
@@ -186,6 +283,15 @@ Frozen dataclass for per-line blame information.
 - `date: str` -- Commit date.
 - `line_no: int` -- 1-based line number.
 - `content: str` -- Line content.
+
+### `WorkspaceInfo`
+
+Frozen dataclass for workspace metadata.
+
+- `path: str` -- Absolute path to the workspace directory.
+- `head: str` -- HEAD commit hash.
+- `branch: str | None` -- Branch name (Git) or bookmark (Jujutsu), `None` for detached HEAD.
+- `is_main: bool` -- Whether this is the main/default workspace.
 
 ## Exceptions
 
@@ -219,5 +325,8 @@ The Mercurial and Jujutsu backends optionally use the sibling `diff/diff.py` mod
     On Windows, subprocess calls use `CREATE_NO_WINDOW` to prevent console window flashing. Binary discovery includes common Windows installation paths.
 
 - **Python version:** Requires Python 3.10+.
-- **No benchmark:** Since all operations are subprocess-based, performance is dominated by process startup and CLI execution time rather than Python code.
-- **Git is most complete:** Mercurial and Jujutsu backends cover core operations but lack some Git-specific features like `diff_files` and native `merge_file`.
+- **Mercurial is inspection-only:** Workspace, branch, commit, and rev-parse operations raise `NotImplementedError` on the Mercurial backend due to fundamental semantic differences. Git and Jujutsu have full lifecycle support.
+
+## Benchmark
+
+No benchmark is provided for this module. All operations are subprocess-based, so performance is dominated by process startup and CLI execution time rather than Python wrapper code -- see [VCS Benchmark](../benchmarks/vcs.md) for details.

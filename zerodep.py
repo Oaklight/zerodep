@@ -150,48 +150,68 @@ _SKIP_DIRS = {
 
 
 def _scan_modules(repo_root: Path) -> dict:
-    """Scan repo for module directories and extract metadata."""
+    """Scan repo recursively for module directories and extract metadata.
+
+    A directory is considered a module if it contains non-test ``.py`` files.
+    The module name is the leaf directory name (e.g. ``network/httpclient/``
+    registers as ``httpclient``).  Intermediate grouping directories that
+    contain no ``.py`` files are traversed but not registered.
+    """
     modules: dict[str, dict] = {}
 
-    for entry in sorted(repo_root.iterdir()):
-        if not entry.is_dir() or entry.name.startswith(".") or entry.name in _SKIP_DIRS:
-            continue
-        # Find non-test .py files
-        py_files = sorted(
-            f
-            for f in entry.glob("*.py")
-            if not f.name.startswith("test_") and f.name != "conftest.py"
-        )
-        if not py_files:
-            continue
+    def _walk(directory: Path) -> None:
+        for entry in sorted(directory.iterdir()):
+            if (
+                not entry.is_dir()
+                or entry.name.startswith(".")
+                or entry.name in _SKIP_DIRS
+            ):
+                continue
 
-        # Primary module file: prefer dir_name.py, else first file
-        primary = None
-        for f in py_files:
-            if f.stem == entry.name:
-                primary = f
-                break
-        if primary is None:
-            primary = py_files[0]
+            # Find non-test .py files in this directory
+            py_files = sorted(
+                f
+                for f in entry.glob("*.py")
+                if not f.name.startswith("test_") and f.name != "conftest.py"
+            )
 
-        # Extract metadata from primary file
-        source = primary.read_text(encoding="utf-8")
+            if py_files:
+                mod_name = entry.name
+                if mod_name in modules:
+                    prev_dir = str(Path(modules[mod_name]["files"][0]).parent)
+                    cur_dir = str(entry.relative_to(repo_root))
+                    _warn(
+                        f"duplicate module name {mod_name!r}: "
+                        f"found in {prev_dir} and {cur_dir}, keeping first"
+                    )
+                else:
+                    # Primary module file: prefer dir_name.py, else first file
+                    primary = None
+                    for f in py_files:
+                        if f.stem == entry.name:
+                            primary = f
+                            break
+                    if primary is None:
+                        primary = py_files[0]
 
-        meta = _extract_frontmatter(source)
-        version = meta.get("version", "0.0.0")
-        deps = meta.get("deps", [])
-        description = _extract_docstring_first_line(source) or ""
+                    source = primary.read_text(encoding="utf-8")
+                    meta = _extract_frontmatter(source)
+                    version = meta.get("version", "0.0.0")
+                    deps = meta.get("deps", [])
+                    description = _extract_docstring_first_line(source) or ""
+                    files = [str(f.relative_to(repo_root)) for f in py_files]
 
-        # Build file list (relative paths)
-        files = [str(f.relative_to(repo_root)) for f in py_files]
+                    modules[mod_name] = {
+                        "description": description,
+                        "files": files,
+                        "version": version,
+                        "deps": deps,
+                    }
 
-        modules[entry.name] = {
-            "description": description,
-            "files": files,
-            "version": version,
-            "deps": deps,
-        }
+            # Recurse into subdirectories
+            _walk(entry)
 
+    _walk(repo_root)
     return modules
 
 

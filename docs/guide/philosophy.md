@@ -37,10 +37,13 @@ Some modules build on others:
 | `sse` | `httpclient` |
 | `vcs` | `diff` |
 
-These relationships are declared in each module's source via `__deps__`:
+These relationships are declared in each module's source via a PEP 723-style frontmatter block:
 
 ```python
-__deps__: list[str] = ["httpclient"]
+# /// zerodep
+# version = "0.1.0"
+# deps = ["httpclient"]
+# ///
 ```
 
 The [CLI tool](cli.md) resolves these automatically when you add a module.
@@ -68,7 +71,7 @@ Prefer the established library when:
 Idea → Implement → Correctness tests → Benchmarks → Documentation → Manifest
 ```
 
-1. **Implement** — write a single `.py` file with `__version__` and `__deps__`
+1. **Implement** — write a single `.py` file with `# /// zerodep` frontmatter
 2. **Test** — add `test_<module>_correctness.py` comparing against the reference library
 3. **Benchmark** — add `test_<module>_benchmark.py` with `pytest-benchmark`
 4. **Document** — add module page, API reference, and benchmark results to docs

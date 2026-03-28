@@ -76,12 +76,15 @@ bench-scheduler = [
 bench-search = [
     "rank-bm25>=0.2.2",
 ]
+bench-frontmatter = [
+    "python-frontmatter>=1.1.0",
+]
 dev = [
-    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search]",
+    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter]",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "search"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "search", "frontmatter"]
 
 [tool.ruff]
 target-version = "py310"
@@ -121,4 +124,5 @@ extra-paths = [
     "./yaml",
     "./scheduler",
     "./search",
+    "./frontmatter",
 ]

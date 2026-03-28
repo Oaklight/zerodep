@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-03-28T05:49:34.381664+00:00",
+  "generated": "2026-03-28T06:07:24.943134+00:00",
   "modules": {
     "aes": {
       "description": "Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",
@@ -34,6 +34,16 @@
       ],
       "version": "0.1.0",
       "deps": []
+    },
+    "frontmatter": {
+      "description": "Frontmatter parser and serializer — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "frontmatter/frontmatter.py"
+      ],
+      "version": "0.1.0",
+      "deps": [
+        "yaml"
+      ]
     },
     "httpclient": {
       "description": "Zero-dependency sync + async HTTP REST client",

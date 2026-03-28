@@ -10,6 +10,10 @@ Zero-dependency synchronous and asynchronous HTTP/1.1 REST client built entirely
 - **Sync mode** uses `http.client` from the standard library.
 - **Async mode** uses `asyncio` streams with a hand-written HTTP/1.1 protocol implementation.
 - **Thread-safe** by design: each request creates its own connection. Session classes use locks internally.
+- **Connection pooling** — `Client` and `AsyncClient` automatically pool and reuse TCP connections (stateless functions still create one-off connections).
+- **Auto decompression** — transparently decodes gzip/deflate responses.
+- **Proxy support** — HTTP and HTTPS proxy with CONNECT tunneling.
+- **Built-in auth** — Basic and Digest authentication out of the box.
 
 ## Two Modes of Operation
 
@@ -40,9 +44,6 @@ with Client(headers={"Authorization": "Bearer token"}) as client:
     r1 = client.get("https://api.example.com/users")
     r2 = client.post("https://api.example.com/users", json={"name": "Alice"})
 ```
-
-!!! note "No Connection Pooling"
-    Unlike httpx or requests, each request creates a new TCP connection. This keeps the implementation simple and dependency-free, at the cost of some overhead for repeated requests to the same host.
 
 ## Usage Examples
 
@@ -200,6 +201,89 @@ from httpclient import get
 response = get("https://self-signed.example.com/api", verify=False)
 ```
 
+### Connection Pooling
+
+`Client` and `AsyncClient` automatically pool TCP connections per host. Connections are reused across requests, significantly reducing latency for repeated calls to the same API.
+
+```python
+from httpclient import Client
+
+# Connections are pooled and reused automatically
+with Client() as client:
+    for page in range(10):
+        r = client.get(f"https://api.example.com/items?page={page}")
+        print(r.json())
+
+# Custom pool size
+with Client(pool_size=20) as client:
+    r = client.get("https://api.example.com/data")
+```
+
+!!! note "Stateless Functions"
+    Top-level functions like `get()`, `post()` still create a new connection per call. Use `Client` / `AsyncClient` for connection pooling.
+
+### Content Decompression
+
+Responses compressed with gzip or deflate are automatically decompressed. The `Accept-Encoding: gzip, deflate` header is sent by default.
+
+```python
+from httpclient import get
+
+# Automatic: response is decompressed transparently
+r = get("https://api.example.com/data")
+print(r.json())  # Already decompressed
+
+# Opt out of compression
+r = get("https://api.example.com/data", headers={"Accept-Encoding": "identity"})
+```
+
+Streaming responses are also decompressed incrementally:
+
+```python
+with get("https://example.com/large.json.gz", stream=True) as r:
+    for chunk in r.iter_bytes():
+        process(chunk)  # Already decompressed
+```
+
+### Proxy Support
+
+Route requests through an HTTP proxy. HTTPS targets use CONNECT tunneling.
+
+```python
+from httpclient import get, Client
+
+# Per-request proxy
+r = get("https://api.example.com/data", proxy="http://proxy.corp:8080")
+
+# Session-level proxy
+with Client(proxy="http://proxy.corp:8080") as client:
+    r = client.get("https://api.example.com/data")
+
+# Proxy with authentication
+r = get("https://api.example.com/data", proxy="http://user:pass@proxy.corp:8080")
+```
+
+### Authentication
+
+Built-in support for HTTP Basic and Digest authentication.
+
+```python
+from httpclient import get, Client, BasicAuth, DigestAuth
+
+# Basic auth (tuple shorthand)
+r = get("https://api.example.com/data", auth=("user", "pass"))
+
+# Basic auth (explicit)
+r = get("https://api.example.com/data", auth=BasicAuth("user", "pass"))
+
+# Digest auth (automatic 401 challenge-response)
+r = get("https://api.example.com/data", auth=DigestAuth("user", "pass"))
+
+# Session-level auth
+with Client(auth=("user", "pass")) as client:
+    r = client.get("https://api.example.com/protected")
+```
+
 ## API Reference
 
 ### Sync Functions
@@ -217,6 +301,8 @@ All sync functions accept the same keyword arguments:
 | `max_redirects` | `int` | `10` | Maximum number of redirects to follow |
 | `verify` | `bool` | `True` | Verify TLS certificates |
 | `stream` | `bool` | `False` | Return a `StreamingResponse` for incremental body consumption |
+| `auth` | `tuple[str, str] \| Auth \| None` | `None` | Authentication credentials (tuple for Basic, or `BasicAuth`/`DigestAuth` object) |
+| `proxy` | `str \| None` | `None` | Proxy URL (e.g. `"http://proxy:8080"`) |
 
 ```python
 get(url, **kwargs) -> Response
@@ -283,12 +369,15 @@ Client(
     timeout: float = 30.0,
     max_redirects: int = 10,
     verify: bool = True,
+    auth: tuple[str, str] | Auth | None = None,
+    proxy: str | None = None,
+    pool_size: int = 10,
 )
 ```
 
 Supports context manager (`with` statement). Methods: `get`, `post`, `put`, `patch`, `delete`, `head`, `options`, `request`.
 
-Thread-safe: uses a `threading.Lock` internally.
+Thread-safe: uses a `threading.Lock` internally. Connections are pooled and reused automatically. Call `close()` or use as a context manager to release pooled connections.
 
 ### AsyncClient Class
 
@@ -299,12 +388,23 @@ AsyncClient(
     timeout: float = 30.0,
     max_redirects: int = 10,
     verify: bool = True,
+    auth: tuple[str, str] | Auth | None = None,
+    proxy: str | None = None,
+    pool_size: int = 10,
 )
 ```
 
 Supports async context manager (`async with` statement). Methods: `get`, `post`, `put`, `patch`, `delete`, `head`, `options`, `request`.
 
-Uses an `asyncio.Lock` internally for safe concurrent access from the same client instance.
+Uses an `asyncio.Lock` internally for safe concurrent access from the same client instance. Connections are pooled and reused automatically. Call `aclose()` or use as an async context manager to release pooled connections.
+
+### Auth Classes
+
+| Class | Description |
+|-------|-------------|
+| `Auth` | Base class for authentication. Subclass and override `auth_headers(method, url)`. |
+| `BasicAuth(username, password)` | HTTP Basic authentication. Sends `Authorization: Basic` header on every request. |
+| `DigestAuth(username, password)` | HTTP Digest authentication. On 401 response, computes digest from server challenge and retries. Supports MD5 and SHA-256 algorithms. |
 
 ### Exceptions
 
@@ -325,6 +425,10 @@ Uses an `asyncio.Lock` internally for safe concurrent access from the same clien
 - **Query parameter encoding** -- via the `params` argument
 - **Multipart file upload** -- upload files via `files` parameter, with optional form field mixing via `data`
 - **Response streaming** -- consume response body incrementally via `iter_bytes()` / `iter_lines()` or their async equivalents
+- **Connection pooling** — `Client`/`AsyncClient` pool and reuse TCP connections per host
+- **Auto decompression** — transparently decodes gzip/deflate responses
+- **HTTP/HTTPS proxy** — route requests through a proxy server, with CONNECT tunneling for HTTPS
+- **Basic & Digest auth** — built-in authentication with automatic 401 challenge handling for Digest
 
 ## How to Use in Your Project
 
@@ -349,7 +453,10 @@ from httpclient import get, post, Client, AsyncClient
 |---------|---------|-------|
 | Dependencies | None (stdlib only) | Several (httpcore, h11, etc.) |
 | HTTP/2 | No | Yes |
-| Connection pooling | No | Yes |
+| Connection pooling | Yes (Client/AsyncClient) | Yes |
+| Auto decompression | Yes (gzip, deflate) | Yes (gzip, deflate, brotli) |
+| Proxy support | Yes (HTTP, HTTPS tunnel) | Yes (HTTP, HTTPS, SOCKS) |
+| Authentication | Basic + Digest | Basic + Digest + more |
 | Streaming | Yes | Yes |
 | Sync + Async | Yes | Yes |
 | File upload | Yes | Yes |
@@ -358,10 +465,10 @@ from httpclient import get, post, Client, AsyncClient
 
 **When to use zerodep:** You need a lightweight HTTP client with no external dependencies, and your use case involves basic REST API consumption.
 
-**When to use httpx:** You need HTTP/2, connection pooling, or cookie management.
+**When to use httpx:** You need HTTP/2 or cookie management.
 
 ## Benchmark
 
-Benchmarked against `httpx`. One-off requests are slower (no connection pooling), but session/async usage is comparable since both become network-bound.
+Benchmarked against `httpx`. Both libraries support connection pooling via session classes. One-off requests and session usage are comparable since both are network-bound.
 
 See [HTTP Client Benchmark](../benchmarks/http.md) for detailed results.

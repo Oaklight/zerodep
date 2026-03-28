@@ -23,7 +23,7 @@ Apple-to-apple performance comparison between zerodep HTTP client and [`httpx`](
 |------|---------|-------|-------|
 | Sync GET | ~1,091 ms | ~1,165 ms | Comparable (network-bound) |
 | Sync POST JSON | ~1,039 ms | ~1,154 ms | Comparable (network-bound) |
-| Sync Client GET | ~1,613 ms | ~462 ms | httpx benefits from connection pooling |
+| Sync Client GET | ~1,613 ms | ~462 ms | Both use connection pooling |
 | Async GET | ~1,147 ms | ~1,207 ms | Comparable |
 | Async POST JSON | ~1,437 ms | ~1,352 ms | Comparable |
 
@@ -41,10 +41,16 @@ Apple-to-apple performance comparison between zerodep HTTP client and [`httpx`](
 | Sync File Upload | ~1,731 ms | ~1,398 ms | Comparable (network-bound) |
 | Async File Upload | ~2,003 ms | ~1,571 ms | httpx slightly faster |
 
+### Content Decompression
+
+| Test | zerodep | httpx | Notes |
+|------|---------|-------|-------|
+| Sync Gzip GET | TBD | TBD | Both decompress automatically |
+
 ## Key Takeaways
 
 - For **one-off requests**, both are comparable since performance is network-bound.
-- With **session/connection pooling**, httpx is noticeably faster by reusing TCP connections.
+- With **session/connection pooling**, both libraries are comparable.
 - **Streaming** performance is comparable or better for zerodep due to its minimal stream abstraction.
 - **File upload** performance is comparable, with httpx having a slight edge.
 - zerodep has **zero pip dependencies** -- it uses only `http.client` (sync) and `asyncio` streams (async) from the standard library.

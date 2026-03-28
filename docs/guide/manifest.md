@@ -51,15 +51,16 @@ The `manifest.json` file is the module index that the CLI uses to discover avail
 
 ## How It's Generated
 
-The `zerodep manifest` command scans the repository root for module directories:
+The `zerodep manifest` command recursively scans the repository for module directories:
 
-1. **Discover directories** — iterate top-level directories, skip known non-module dirs (`.git`, `docs_en`, `plans`, etc.)
+1. **Discover directories** — recursively walk all directories, skip known non-module dirs (`.git`, `docs_en`, `plans`, etc.) at any depth
 2. **Find Python files** — collect non-test `.py` files in each directory
 3. **Identify primary file** — prefer `<dirname>.py`, fall back to the first file
-4. **Extract metadata** from the primary file:
+4. **Register module** — the module name is the leaf directory name (e.g. `network/httpclient/` registers as `httpclient`). Intermediate grouping directories that contain no `.py` files are traversed but not registered. Duplicate module names trigger a warning, keeping the first one found
+5. **Extract metadata** from the primary file:
     - `version` and `deps` — from `# /// zerodep` frontmatter block via `ast.literal_eval`
     - Module docstring first line — via `ast.parse`
-5. **Write** `manifest.json` with all discovered modules
+6. **Write** `manifest.json` with all discovered modules
 
 ### Skipped Directories
 

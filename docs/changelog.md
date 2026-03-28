@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Scheduler module**: zero-dependency in-process task scheduler with cron expression support.
 - **Sparse Search module**: BM25 family (BM25, BM25+, BM25L) and TF-IDF full-text search engine.
 - `zerodep` CLI tool for module discovery and dependency-aware copying.
+- **zerodep CLI**: recursive module scanning with nested directory support and duplicate name detection.
 - **HTTP Client**: connection pooling with configurable pool size and idle timeout.
 - **HTTP Client**: transparent gzip/deflate auto-decompression for regular and streaming responses.
 - **HTTP Client**: HTTP/HTTPS proxy support with CONNECT tunneling.

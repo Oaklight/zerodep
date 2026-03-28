@@ -8,11 +8,14 @@
 
 ### 新增
 
+- **Frontmatter 模块**：解析和序列化 YAML/TOML/JSON 文件头元数据。
 - **Scheduler 模块**：零依赖进程内任务调度器，支持 cron 表达式。
 - **Sparse Search 模块**：BM25 系列（BM25、BM25+、BM25L）和 TF-IDF 全文搜索引擎。
+- `zerodep` CLI 工具，支持模块发现和依赖感知的模块复制。
 
 ### 变更
 
+- 模块元数据从 `__version__`/`__deps__` 迁移至 PEP 723 内联脚本元数据（frontmatter）。
 - 稀疏搜索反向索引优化，提升检索性能。
 
 ## [0.1.0] - 2026-03-27

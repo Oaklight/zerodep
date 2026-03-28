@@ -29,6 +29,47 @@ Modules with implementation, correctness tests, and benchmarks.
 | `frontmatter/` | python-frontmatter | Parse and serialize YAML/TOML/JSON file-header metadata, Document model, loads/dumps/load/dump API, auto-detect format | python-frontmatter |
 | `config/` | python-decouple, dynaconf (subset) | Unified config loading from env vars, .env files, JSON/JSONC/YAML/TOML/INI files, type coercion (bool/int/float/list), Csv/Choices helpers, prefix support, nested key access | python-decouple |
 
+### Competitive Analysis (2026-03-28)
+
+How much value does each zerodep module provide over the original library?
+
+**Strong** — replaces heavy C extensions or deep dependency chains, or offers architectural advantages:
+
+| Module | Replaces | Original Weight | zerodep Advantage |
+|--------|----------|----------------|-------------------|
+| `httpclient` | httpx | 7 transitive deps (httpcore, h11, anyio, sniffio, certifi, idna), ~3.7 MB total | Eliminates deepest dependency chain in the collection |
+| `validate` | pydantic | pydantic-core 4.6 MB C extension + 4 deps, ~8.4 MB total | Eliminates heaviest C extension; cross-platform compilation pain |
+| `aes` | pycryptodome | ~4.8 MB platform-specific C extension wheels | Pure Python + OpenSSL ctypes dual path; no compilation needed |
+| `search` | rank-bm25 | Full corpus scan O(N) per query | Inverted index: **35-131x faster search**; architectural superiority |
+
+**Moderate** — eliminates C extensions or indirect dependency chains:
+
+| Module | Replaces | Original Weight | zerodep Advantage |
+|--------|----------|----------------|-------------------|
+| `yaml` | PyYAML | 2.3 MB C extension (libyaml binding) | No C compilation; but feature subset (no anchors/aliases) |
+| `soup` | beautifulsoup4 | Depends on soupsieve (~256 KB) + typing-extensions | Eliminates soupsieve dependency |
+| `qr` | qrcode | Optional dep on Pillow (~50 MB) for image output | Terminal rendering without Pillow |
+| `frontmatter` | python-frontmatter | Depends on PyYAML (2.3 MB C ext) | Eliminates transitive PyYAML dependency |
+| `jsonc` | commentjson | Depends on lark-parser (~276 KB parser framework) | Much lighter; no parser framework needed |
+| `scheduler` | APScheduler | Moderate weight, async support varies | Unified sync+async, lighter |
+| `sse` | httpx-sse | Depends on httpx (see above) | Pairs with zerodep httpclient to eliminate full httpx chain |
+
+**Convenience** — original library is already zero-dep and lightweight; value is mainly single-file vendoring and zerodep ecosystem coherence:
+
+| Module | Replaces | Original Weight | Note |
+|--------|----------|----------------|------|
+| `dotenv` | python-dotenv | Zero deps, 104 KB, pure Python | Original already lightweight |
+| `retry` | tenacity | Zero deps, 184 KB, pure Python | Original already lightweight |
+| `structlog` | structlog | Zero deps, 72 KB, pure Python | Original already lightweight |
+| `tabulate` | tabulate | Zero deps, 30 KB, pure Python | Original already lightweight |
+| `markdown` | mistune | Near-zero deps, 53 KB | Original already lightweight |
+| `diff` | unidiff | Zero deps, 14 KB | Original smaller than our impl |
+| `toon` | toon_format | Niche format | Ecosystem value, not replacement value |
+| `config` | python-decouple | Zero deps, lightweight | Synergy with dotenv/yaml/jsonc modules |
+| `ansi` | — | No direct competitor | Utility module, no replacement story |
+| `vcs` | — | No direct competitor | Utility module, no replacement story |
+| `prompt` | — | No direct competitor | Utility module, no replacement story |
+
 ## Tier 1 — High Value, Not Yet Started
 
 ### Rate Limiter
@@ -51,13 +92,15 @@ Modules with implementation, correctness tests, and benchmarks.
 - **stdlib basis**: re, string
 - **Scope**: Variable substitution (`{{ var }}`), conditionals (`{% if %}`), for loops (`{% for %}`), filters (`{{ x | upper }}`), template inheritance (`{% extends %}`), includes, auto-escaping
 - **Benchmark against**: Jinja2
+- **Competitive note**: Jinja2 only depends on MarkupSafe (67 KB C ext, has pure Python fallback). Total ~1 MB. Replacement value is **low** — Jinja2 is already lightweight. Only justified if adding differentiated features (e.g. stream_parse for LLM output extraction) or for zerodep ecosystem completeness
 
 ### Cache
 - **Replaces**: cachetools, diskcache (in-memory subset)
-- **Why**: In-memory caching with TTL and eviction goes beyond stdlib `lru_cache` — commonly needed for API response caching, memoization with expiry
+- **Why**: In-memory caching with TTL and eviction goes beyond stdlib `lru_cache` — commonly needed for API response caching, memoization with expiry. cachetools is used by google-auth (large downstream). stdlib `lru_cache` has no TTL, no eviction policies beyond LRU, no async support
 - **stdlib basis**: threading, time, collections
-- **Scope**: TTL cache, LRU cache, per-key TTL, max size with eviction, decorator interface, sync + async, cache stats
+- **Scope**: TTL cache, LRU/LFU/FIFO eviction, per-key TTL, max size with eviction, decorator interface, sync + async, cache stats
 - **Benchmark against**: cachetools
+- **Competitive note**: cachetools is zero-dep (184 KB) but lacks async support entirely. Our async cache decorator would be a genuine differentiator. Cache classes: LRUCache, TTLCache, LFUCache, FIFOCache + `@cached`/`@acached` decorators
 
 ## Tier 2 — Valuable, Moderate Complexity
 
@@ -128,12 +171,14 @@ Modules with implementation, correctness tests, and benchmarks.
 
 ## Recommended Priority Order (remaining work)
 
-1. **Rate limiter** — essential for API management, every LLM app needs this
-2. **JWT** — auth layer, widely needed for web/API projects
-3. **Template engine** — replaces a heavy dep (Jinja2+MarkupSafe), broad use cases
-4. **Cache** — goes beyond stdlib lru_cache, very practical
-5. **WebSocket client** — real-time APIs (OpenAI Realtime, etc.)
-6. **Semver** — lightweight but broadly useful
+Prioritized by replacement value (dependency weight eliminated + feature gap filled):
+
+1. **Cache** — fills a real stdlib gap (no TTL/eviction/async in `lru_cache`), async support differentiates from cachetools
+2. **Rate limiter** — essential for API management, every LLM app needs this
+3. **JWT** — auth layer, widely needed for web/API projects
+4. **WebSocket client** — real-time APIs (OpenAI Realtime, etc.)
+5. **Semver** — lightweight but broadly useful
+6. **Template engine** — Jinja2 is already lightweight (~1 MB, 1 dep); only worthwhile with differentiated features or for ecosystem completeness
 
 ## search/ — Architecture & Optimization Notes
 

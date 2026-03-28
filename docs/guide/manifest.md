@@ -51,15 +51,16 @@
 
 ## 生成原理
 
-`zerodep manifest` 命令扫描仓库根目录下的模块目录：
+`zerodep manifest` 命令递归扫描仓库中的模块目录：
 
-1. **发现目录** — 遍历顶层目录，跳过已知的非模块目录（`.git`、`docs_en`、`plans` 等）
+1. **发现目录** — 递归遍历所有目录，在任意层级跳过已知的非模块目录（`.git`、`docs_en`、`plans` 等）
 2. **查找 Python 文件** — 收集每个目录中非测试的 `.py` 文件
 3. **识别主文件** — 优先选择 `<目录名>.py`，否则使用第一个文件
-4. **提取元数据**：
+4. **注册模块** — 模块名取叶子目录名（例如 `network/httpclient/` 注册为 `httpclient`）。不含 `.py` 文件的中间分组目录仅被穿透而不注册。重名模块会触发警告，保留先发现的
+5. **提取元数据**：
     - `version` 和 `deps` — 从 `# /// zerodep` frontmatter 注释块中提取，通过 `ast.literal_eval` 解析
     - 模块 docstring 首行 — 通过 `ast.parse`
-5. **写入** `manifest.json`
+6. **写入** `manifest.json`
 
 ### 跳过的目录
 

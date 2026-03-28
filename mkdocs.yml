@@ -63,6 +63,7 @@ plugins:
             - ../scheduler
             - ../search
             - ../frontmatter
+            - ../config
             - aes
             - qr
             - httpclient
@@ -84,6 +85,7 @@ plugins:
             - scheduler
             - search
             - frontmatter
+            - config
           options:
             docstring_style: google
             show_source: true
@@ -144,6 +146,7 @@ nav:
           - search / Sparse Search: modules/search.md
       - Configuration:
           - dotenv / Dotenv Loader: modules/dotenv.md
+          - config / Config Loader: modules/config.md
       - CLI & Terminal:
           - ansi / ANSI Colors: modules/ansi.md
           - tabulate / Table Formatter: modules/tabulate.md
@@ -175,6 +178,7 @@ nav:
           - search / Sparse Search: api/search.md
       - Configuration:
           - dotenv / Dotenv Loader: api/dotenv.md
+          - config / Config Loader: api/config.md
       - CLI & Terminal:
           - ansi / ANSI Colors: api/ansi.md
           - tabulate / Table Formatter: api/tabulate.md
@@ -206,6 +210,7 @@ nav:
           - search / Sparse Search: benchmarks/search.md
       - Configuration:
           - dotenv / Dotenv Loader: benchmarks/dotenv.md
+          - config / Config Loader: benchmarks/config.md
       - Security & Encoding:
           - aes / AES Encryption: benchmarks/aes.md
           - qr / QR Code: benchmarks/qr.md

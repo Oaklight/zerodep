@@ -49,6 +49,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | Module | Description | Benchmark Against |
 |--------|-------------|-------------------|
 | [dotenv](dotenv.md) | .env file parser (load_dotenv, dotenv_values) | `python-dotenv` |
+| [config](config.md) | Unified config loader (env vars, .env, JSON/YAML/TOML/INI) | `python-decouple` |
 
 ### CLI & Terminal
 

@@ -37,10 +37,13 @@
 | `sse` | `httpclient` |
 | `vcs` | `diff` |
 
-这些关系通过每个模块源码中的 `__deps__` 变量声明：
+这些关系通过每个模块源码中的 PEP 723 风格 frontmatter 注释块声明：
 
 ```python
-__deps__: list[str] = ["httpclient"]
+# /// zerodep
+# version = "0.1.0"
+# deps = ["httpclient"]
+# ///
 ```
 
 [CLI 工具](cli.md)在添加模块时会自动解析这些依赖。
@@ -68,7 +71,7 @@ zerodep 模块适合以下场景：
 构想 → 实现 → 正确性测试 → 基准测试 → 文档 → 清单注册
 ```
 
-1. **实现** — 编写单个 `.py` 文件，包含 `__version__` 和 `__deps__`
+1. **实现** — 编写单个 `.py` 文件，包含 `# /// zerodep` frontmatter
 2. **测试** — 添加 `test_<module>_correctness.py`，与参考库进行对比测试
 3. **基准** — 添加 `test_<module>_benchmark.py`，使用 `pytest-benchmark`
 4. **文档** — 添加模块页面、API 参考和基准测试结果

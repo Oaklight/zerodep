@@ -6,7 +6,7 @@
 
 - **位置**：仓库根目录的 `manifest.json`
 - **生成方式**：`zerodep manifest`（或 `make manifest`）
-- **数据来源**：模块源文件（`__version__`、`__deps__`、docstring）
+- **数据来源**：模块源文件（`# /// zerodep` frontmatter + docstring）
 - **使用者**：`zerodep` CLI 工具（list、info、add 命令）
 
 ## 格式
@@ -57,8 +57,7 @@
 2. **查找 Python 文件** — 收集每个目录中非测试的 `.py` 文件
 3. **识别主文件** — 优先选择 `<目录名>.py`，否则使用第一个文件
 4. **提取元数据**：
-    - `__version__` — 通过正则 + `ast.literal_eval`
-    - `__deps__` — 通过正则 + `ast.literal_eval`
+    - `version` 和 `deps` — 从 `# /// zerodep` frontmatter 注释块中提取，通过 `ast.literal_eval` 解析
     - 模块 docstring 首行 — 通过 `ast.parse`
 5. **写入** `manifest.json`
 
@@ -73,20 +72,24 @@ __pycache__, .pytest_cache, .ruff_cache, site
 
 ## 模块元数据规范
 
-每个模块的主 `.py` 文件应声明：
+每个模块的主 `.py` 文件应在文件最顶部、模块 docstring 之前声明一个 PEP 723 风格的 frontmatter 注释块：
 
 ```python
+# /// zerodep
+# version = "0.1.0"
+# deps = ["httpclient"]
+# ///
 """首行将成为 manifest.json 中的描述。"""
-
-__version__ = "0.1.0"
-__deps__: list[str] = []  # 或 ["httpclient", "diff", ...]
 ```
 
-| 变量 | 必需 | 说明 |
+| 字段 | 必需 | 说明 |
 |------|------|------|
-| `__version__` | 是 | 语义化版本字符串 |
-| `__deps__` | 是 | 本模块导入的兄弟 zerodep 模块名列表 |
+| `version` | 是 | 语义化版本字符串 |
+| `deps` | 是 | 本模块导入的兄弟 zerodep 模块名列表 |
 | 模块 docstring | 推荐 | 首行用作描述 |
+
+!!! note
+    此格式受 [PEP 723](https://peps.python.org/pep-0723/) 内联脚本元数据启发。元数据完全存在于注释中，对运行时零影响——不会污染命名空间，不存在 Python 保留变量名冲突的风险。
 
 ### 当前依赖关系图
 
@@ -117,8 +120,8 @@ make manifest
 在以下情况后需要重新生成 `manifest.json`：
 
 - 添加了新模块
-- 修改了模块的 `__version__`
-- 添加或移除了 `__deps__` 条目
+- 修改了模块 frontmatter 中的 `version`
+- 添加或移除了 `deps` 条目
 - 修改了模块 docstring 的首行
 
 !!! tip

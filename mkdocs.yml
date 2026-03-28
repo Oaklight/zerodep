@@ -118,6 +118,10 @@ extra:
 
 nav:
   - Home: index.md
+  - Guide:
+      - Design Philosophy: guide/philosophy.md
+      - CLI Tool: guide/cli.md
+      - Manifest: guide/manifest.md
   - Modules:
       - Web & Networking:
           - HTTP Client: modules/http.md

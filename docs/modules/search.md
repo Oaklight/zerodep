@@ -1,0 +1,251 @@
+# 稀疏搜索
+
+零依赖的全文搜索引擎，支持 BM25 系列和 TF-IDF 排名。仅依赖标准库，要求 Python 3.10+。
+
+## 概述
+
+`sparse_search` 模块提供单文件倒排索引搜索引擎，支持 BM25/BM25+/BM25L/BM25F 和 TF-IDF+Cosine 相似度排名。专为 LLM/Agent/RAG 管道设计，无需引入重量级依赖即可实现快速关键词检索。
+
+| 文件 | 说明 | 依赖 |
+|------|------|------|
+| `sparse_search.py` | 纯 Python 实现 | 无（仅标准库：`re`、`math`、`json`、`sqlite3`、`collections`、`dataclasses`） |
+
+### 功能特性
+
+- **BM25 变体** -- 经典 BM25、BM25+（下界修正）、BM25L（长文档修正），可自由组合
+- **BM25F** -- 多字段加权搜索（如提升标题权重）
+- **TF-IDF + Cosine** -- 向量空间模型作为替代排名方案
+- **动态增删改** -- 随时添加 / 删除 / 更新文档
+- **元数据过滤** -- 附加任意 JSON 元数据，搜索时按条件过滤
+- **持久化** -- JSON 或 SQLite 格式保存/加载
+- **可插拔分词器** -- 默认 Unicode 分词；可替换为 `jieba.lcut`、NLTK 等
+- **倒排索引** -- O(matched_docs) 搜索，查询速度比 rank-bm25 快 34-132 倍
+
+## 快速开始
+
+将单文件复制到你的项目中：
+
+```bash
+cp search/sparse_search.py your_project/
+```
+
+然后导入：
+
+```python
+from sparse_search import SparseIndex
+```
+
+## 使用示例
+
+### 基本搜索
+
+```python
+from sparse_search import SparseIndex
+
+index = SparseIndex()
+index.add("doc1", "the quick brown fox jumps over the lazy dog")
+index.add("doc2", "a fast brown car drives past the lazy cat")
+index.add("doc3", "the fox and the dog are friends")
+
+results = index.search("quick fox")
+for r in results:
+    print(f"{r.doc_id}: {r.score:.4f}")
+```
+
+### BM25+（下界修正）
+
+```python
+# delta > 0 启用 BM25+ 修正（默认 delta=1.0）
+index = SparseIndex(delta=1.0)
+```
+
+BM25+ 防止高文档频率的词项贡献被压缩至零。
+
+### BM25L（长文档修正）
+
+```python
+index = SparseIndex(variant="bm25l")
+```
+
+BM25L 调整长度归一化，避免对长文档过度惩罚。
+
+### BM25F（多字段搜索）
+
+```python
+index = SparseIndex(field_weights={"title": 3.0, "body": 1.0})
+
+index.add("doc1", {"title": "Python 指南", "body": "学习 Python 编程基础"})
+index.add("doc2", {"title": "烹饪技巧", "body": "如何烹饪蟒蛇肉"})
+
+results = index.search("python")
+# doc1 排名更高，因为 "python" 出现在权重更高的 title 字段中
+```
+
+### TF-IDF + Cosine 相似度
+
+```python
+index = SparseIndex(variant="tfidf")
+index.add("doc1", "machine learning algorithms")
+index.add("doc2", "deep learning neural networks")
+
+results = index.search("learning algorithms")
+```
+
+### 组合变体
+
+所有 BM25 选项可自由组合：
+
+```python
+# BM25L + BM25F + BM25+（delta）
+index = SparseIndex(
+    variant="bm25l",
+    field_weights={"title": 2.0, "body": 1.0},
+    delta=0.5,
+)
+```
+
+### 元数据与过滤
+
+```python
+index = SparseIndex()
+index.add("doc1", "Python web framework", metadata={"year": 2024, "lang": "en"})
+index.add("doc2", "Django tutorial", metadata={"year": 2023, "lang": "en"})
+index.add("doc3", "Flask guide", metadata={"year": 2024, "lang": "zh"})
+
+# 精确匹配过滤
+results = index.search("python", filters={"year": 2024})
+
+# 自定义过滤（callable）
+results = index.search("python", filters={"year": lambda y: y >= 2024})
+```
+
+### 自定义分词器
+
+```python
+import jieba
+
+# 使用 jieba 进行中文分词搜索
+index = SparseIndex(tokenize=jieba.lcut)
+index.add("doc1", "Python 编程语言入门教程")
+results = index.search("编程语言")
+```
+
+### 文档管理
+
+```python
+index = SparseIndex()
+index.add("doc1", "original content")
+
+# 更新已有文档
+index.update("doc1", "updated content", metadata={"version": 2})
+
+# 删除文档
+index.remove("doc1")
+
+# 检查成员关系
+print("doc1" in index)       # False
+print(len(index))            # 0
+print(index.doc_count)       # 0
+print(index.vocab_size)      # 0
+```
+
+### 持久化
+
+```python
+index = SparseIndex()
+index.add("doc1", "hello world")
+
+# 保存为 JSON（人类可读）
+index.save("index.json")
+
+# 保存为 SQLite（大索引更高效）
+index.save("index.db")
+
+# 加载（自动检测格式）
+loaded = SparseIndex.load("index.json")
+loaded = SparseIndex.load("index.db")
+```
+
+## API 参考
+
+### `SparseIndex(variant, k1, b, delta, field_weights, tokenize)`
+
+主搜索索引类。
+
+**参数：**
+
+| 参数名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `variant` | `str` | `"bm25"` | 排名算法：`"bm25"`、`"bm25l"` 或 `"tfidf"` |
+| `k1` | `float` | `1.5` | BM25 词频饱和参数（tfidf 时忽略） |
+| `b` | `float` | `0.75` | BM25 文档长度归一化因子（tfidf 时忽略） |
+| `delta` | `float` | `1.0` | BM25+ 下界修正值。设为 `0` 则为经典 BM25 |
+| `field_weights` | `dict[str, float] \| None` | `None` | BM25F 各字段权重 |
+| `tokenize` | `Callable[[str], list[str]] \| None` | `None` | 自定义分词函数。默认为 Unicode 分词 + 小写化 |
+
+**方法：**
+
+| 方法 | 说明 |
+|------|------|
+| `add(doc_id, content, metadata=None)` | 添加新文档。`doc_id` 已存在时抛出 `ValueError` |
+| `remove(doc_id)` | 删除文档。未找到时抛出 `KeyError` |
+| `update(doc_id, content, metadata=None)` | 替换文档。未找到时抛出 `KeyError` |
+| `search(query, top_k=10, filters=None)` | 搜索并返回排名结果 |
+| `save(path, format=None)` | 保存索引到磁盘（JSON 或 SQLite） |
+| `load(path)` | *(类方法)* 从磁盘加载索引（自动检测格式） |
+
+**属性：**
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `doc_count` | `int` | 索引中的文档数量 |
+| `vocab_size` | `int` | 唯一词项数量 |
+
+---
+
+### `Result`
+
+表示单个搜索结果的数据类。
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `doc_id` | `str` | 文档标识符 |
+| `score` | `float` | 相关性分数 |
+| `metadata` | `dict[str, Any] \| None` | 文档元数据 |
+
+---
+
+### 默认分词器
+
+内置分词器按 Unicode 词边界分割，并将所有 token 小写化：
+
+```python
+"Hello, World! 42" -> ["hello", "world", "42"]
+```
+
+生产环境中建议传入自定义分词器，支持词干提取、停用词移除或 CJK 分词。
+
+## 与 rank-bm25 的对比
+
+| 特性 | zerodep sparse_search | rank-bm25 |
+|------|----------------------|-----------|
+| 依赖 | 无（仅标准库） | numpy |
+| BM25 变体 | BM25/BM25+/BM25L/BM25F/TF-IDF | BM25Okapi/BM25Plus/BM25L |
+| 多字段（BM25F） | 支持 | 不支持 |
+| 搜索复杂度 | O(matched_docs) | O(N) 全量扫描 |
+| 动态增删改 | 支持 | 不支持（需重建） |
+| 元数据过滤 | 支持 | 不支持 |
+| 持久化 | JSON + SQLite | 不支持 |
+| 自定义分词器 | 支持 | 支持 |
+| 搜索速度（1000 文档） | **132 倍更快** | 基准 |
+| 索引速度（1000 文档） | 6.7 倍更慢 | 基准 |
+
+**何时使用 zerodep：** 你需要动态文档管理、多字段搜索、元数据过滤，或零依赖部署。
+
+**何时使用 rank-bm25：** 你只需要静态 BM25 评分，且项目已依赖 numpy。
+
+## 性能测试
+
+与 rank-bm25 的性能对比，使用 pytest-benchmark 测试。
+
+详见 [稀疏搜索性能测试](../benchmarks/search.md)。

@@ -61,6 +61,7 @@ plugins:
             - ../vcs
             - ../ansi
             - ../scheduler
+            - ../search
             - aes
             - qr
             - httpclient
@@ -80,6 +81,7 @@ plugins:
             - vcs
             - ansi
             - scheduler
+            - search
           options:
             docstring_style: google
             show_source: true
@@ -136,6 +138,7 @@ nav:
       - VCS 版本控制: modules/vcs.md
       - ANSI 终端样式: modules/ansi.md
       - 任务调度器: modules/scheduler.md
+      - 稀疏搜索: modules/search.md
   - API 参考:
       - AES: api/aes.md
       - QR 二维码: api/qr.md
@@ -156,6 +159,7 @@ nav:
       - VCS: api/vcs.md
       - ANSI: api/ansi.md
       - 调度器: api/scheduler.md
+      - 稀疏搜索: api/search.md
   - 性能测试:
       - AES: benchmarks/aes.md
       - QR 二维码: benchmarks/qr.md
@@ -173,4 +177,5 @@ nav:
       - Markdown: benchmarks/markdown.md
       - Diff: benchmarks/diff.md
       - 调度器: benchmarks/scheduler.md
+      - 稀疏搜索: benchmarks/search.md
   - 更新日志: changelog.md

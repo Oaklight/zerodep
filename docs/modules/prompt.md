@@ -198,3 +198,7 @@ answer = confirm("Continue?", style=style)
 **适用场景（zerodep）：** 需要基本的交互式提示（confirm、select、text），零依赖且跨平台支持。
 
 **适用场景（questionary）：** 需要高级提示类型（checkbox、password、autocomplete）或 prompt_toolkit 的全部功能。
+
+## 性能测试
+
+本模块不提供性能测试。交互式提示的瓶颈是用户输入延迟，而非代码执行 -- 详见 [交互式提示性能测试](../benchmarks/prompt.md)。

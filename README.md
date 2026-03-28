@@ -26,6 +26,8 @@ Zero-dependency, single-file Python implementations of popular libraries — std
 | `ansi/` | ANSI terminal styling: colors, attributes, detection, strip/visible_len | — |
 | `diff/` | Unified diff parser, patch apply/reverse, three-way merge | `unidiff` |
 | `vcs/` | Git/Hg/Jujutsu CLI wrapper (diff, status, log, blame) | — |
+| `scheduler/` | In-process task scheduler with cron, interval, one-shot triggers | `APScheduler` |
+| `search/` | BM25/BM25+/BM25L/BM25F + TF-IDF full-text search engine | `rank-bm25` |
 
 ## Usage
 

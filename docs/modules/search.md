@@ -166,6 +166,26 @@ loaded = SparseIndex.load("index.json")
 loaded = SparseIndex.load("index.db")
 ```
 
+## 设计说明
+
+### 索引参数 vs 评分参数
+
+只有 `tokenize` 分词函数影响索引内容。其他参数（`variant`、`k1`、`b`、`delta`、`field_weights`）仅在评分时使用，不改变索引中存储的数据。这意味着同一个索引可以使用不同的算法和调参进行搜索，无需重新索引。
+
+### `field_weights` 不可变
+
+`field_weights` 在构造时设定，决定文档以单字段还是多字段方式存储。索引不保存原始文档文本，只保存分词后的词频数据。因此：
+
+- 单字段索引**无法**转换为多字段索引（字段边界已丢失）
+- 要更改 `field_weights`，必须从源数据重建索引
+- `update()` 替换文档的索引数据，但仍需要原始文本
+
+### 索引速度 vs 搜索速度
+
+索引使用三层倒排索引（`term → doc_id → field → tf`）以统一支持单字段和多字段（BM25F）模式。这在索引构建时增加了开销（比 rank-bm25 慢约 6.7 倍），但搜索时凭借 O(matched_docs) 的查询遍历实现了 34-132 倍的加速。由于索引构建通常是一次性成本，而搜索是高频操作，这一权衡符合实际使用场景。
+
+单次插入的时间复杂度为 **O(tokens_in_doc)**，不会随索引规模增长而退化——第 1 个文档和第 100,000 个文档在相同 token 数量下耗时相同，因为所有底层操作（dict 查找、set 添加）均为 O(1) 均摊。
+
 ## API 参考
 
 ### `SparseIndex(variant, k1, b, delta, field_weights, tokenize)`

@@ -144,6 +144,9 @@ class SparseIndex:
         # Total field lengths for average calculation
         self._total_field_lengths: dict[str, float] = defaultdict(float)
 
+        # Reverse index: doc_id -> set of terms (for fast delete)
+        self._doc_terms: dict[str, set[str]] = defaultdict(set)
+
     # -- properties ----------------------------------------------------------
 
     def __len__(self) -> int:
@@ -343,6 +346,8 @@ class SparseIndex:
         for term in seen_terms:
             self._df[term] += 1
 
+        self._doc_terms[doc_id] = seen_terms
+
         self._docs[doc_id] = _DocRecord(
             doc_id=doc_id,
             field_lengths=field_lengths,
@@ -356,10 +361,12 @@ class SparseIndex:
         for field_name, length in doc.field_lengths.items():
             self._total_field_lengths[field_name] -= length
 
-        # Remove from inverted index and update df
+        # Remove from inverted index using reverse index (O(terms_in_doc)
+        # instead of O(vocab_size))
         empty_terms: list[str] = []
-        for term, postings in self._index.items():
-            if doc_id in postings:
+        for term in self._doc_terms[doc_id]:
+            postings = self._index.get(term)
+            if postings is not None and doc_id in postings:
                 del postings[doc_id]
                 self._df[term] -= 1
                 if self._df[term] <= 0:
@@ -370,6 +377,7 @@ class SparseIndex:
             del self._index[term]
             del self._df[term]
 
+        del self._doc_terms[doc_id]
         del self._docs[doc_id]
 
     # -- internal: BM25 scoring ----------------------------------------------
@@ -538,6 +546,10 @@ class SparseIndex:
         for doc_id, doc in self._docs.items():
             docs_data[doc_id] = asdict(doc)
 
+        doc_terms_data: dict[str, list[str]] = {
+            doc_id: sorted(terms) for doc_id, terms in self._doc_terms.items()
+        }
+
         return {
             "version": __version__,
             "config": {
@@ -551,6 +563,7 @@ class SparseIndex:
             "index": index_data,
             "df": dict(self._df),
             "total_field_lengths": dict(self._total_field_lengths),
+            "doc_terms": doc_terms_data,
         }
 
     @classmethod
@@ -586,6 +599,16 @@ class SparseIndex:
         # Restore total field lengths
         for field_name, total in data["total_field_lengths"].items():
             instance._total_field_lengths[field_name] = total
+
+        # Restore reverse index
+        if "doc_terms" in data:
+            for doc_id, terms in data["doc_terms"].items():
+                instance._doc_terms[doc_id] = set(terms)
+        else:
+            # Rebuild from inverted index if loading old format
+            for term, postings in instance._index.items():
+                for doc_id in postings:
+                    instance._doc_terms[doc_id].add(term)
 
         return instance
 
@@ -722,13 +745,14 @@ class SparseIndex:
                     else None,
                 )
 
-            # Load inverted index
+            # Load inverted index and rebuild reverse index
             for term, doc_id, field_tfs_json in cur.execute(
                 "SELECT term, doc_id, field_tfs FROM inverted_index"
             ):
                 field_tfs = json.loads(field_tfs_json)
                 for field_name, tf in field_tfs.items():
                     instance._index[term][doc_id][field_name] = tf
+                instance._doc_terms[doc_id].add(term)
 
             # Load df
             for term, count in cur.execute("SELECT term, count FROM df"):

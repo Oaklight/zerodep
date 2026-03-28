@@ -90,7 +90,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "search", "frontmatter", "config", "cache"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "search", "frontmatter", "config", "cache", "runner"]
 
 [tool.ruff]
 target-version = "py310"
@@ -133,4 +133,5 @@ extra-paths = [
     "./frontmatter",
     "./config",
     "./cache",
+    "./runner",
 ]

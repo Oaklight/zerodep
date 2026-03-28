@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-03-28T09:21:58.083781+00:00",
+  "generated": "2026-03-28T09:28:25.616863+00:00",
   "modules": {
     "aes": {
       "description": "Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",
@@ -20,7 +20,7 @@
       "deps": []
     },
     "cache": {
-      "description": "Zero-dependency caching with TTL, eviction policies, and async support — stdlib only, Python 3.10+",
+      "description": "Zero-dependency caching with TTL, eviction policies, and async support",
       "files": [
         "cache/cache.py"
       ],
@@ -109,6 +109,14 @@
       "description": "Zero-dependency retry with configurable backoff strategies",
       "files": [
         "retry/retry.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "runner": {
+      "description": "Structured subprocess execution — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "runner/runner.py"
       ],
       "version": "0.1.0",
       "deps": []

@@ -187,3 +187,7 @@ except ImportError:
 ```
 
 Currently, `structlog` and `prompt` maintain inline ANSI constants that are aligned with this module's coverage (8 standard colors + 8 bright + all text attributes).
+
+## Benchmark
+
+No benchmark is provided for this module. As a utility module with no direct third-party counterpart, performance comparison is not applicable -- see [ANSI Benchmark](../benchmarks/ansi.md) for details.

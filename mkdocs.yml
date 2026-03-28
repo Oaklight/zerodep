@@ -219,6 +219,10 @@ nav:
       - Configuration:
           - dotenv / Dotenv Loader: benchmarks/dotenv.md
           - config / Config Loader: benchmarks/config.md
+      - CLI & Terminal:
+          - ansi / ANSI Colors: benchmarks/ansi.md
+          - tabulate / Table Formatter: benchmarks/tabulate.md
+          - prompt / CLI Prompts: benchmarks/prompt.md
       - Security & Encoding:
           - aes / AES Encryption: benchmarks/aes.md
           - qr / QR Code: benchmarks/qr.md
@@ -227,5 +231,6 @@ nav:
           - retry / Retry Decorator: benchmarks/retry.md
           - scheduler / Task Scheduler: benchmarks/scheduler.md
           - structlog / Structured Logging: benchmarks/structlog.md
+          - vcs / VCS Wrapper: benchmarks/vcs.md
           - runner / Command Runner: benchmarks/runner.md
   - Changelog: changelog.md

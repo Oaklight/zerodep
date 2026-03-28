@@ -198,3 +198,7 @@ When running without a TTY (piped input, CI environments, etc.), the module auto
 **When to use zerodep:** You need basic interactive prompts (confirm, select, text) with zero dependencies and cross-platform support.
 
 **When to use questionary:** You need advanced prompt types (checkbox, password, autocomplete) or the full power of prompt_toolkit.
+
+## Benchmark
+
+No benchmark is provided for this module. Interactive prompts are bottlenecked by user input latency, not code execution -- see [Prompt Benchmark](../benchmarks/prompt.md) for details.

@@ -65,6 +65,7 @@ plugins:
             - ../frontmatter
             - ../config
             - ../cache
+            - ../runner
             - aes
             - qr
             - httpclient
@@ -88,6 +89,7 @@ plugins:
             - frontmatter
             - config
             - cache
+            - runner
           options:
             docstring_style: google
             show_source: true
@@ -162,6 +164,7 @@ nav:
           - scheduler / 任务调度器: modules/scheduler.md
           - structlog / 结构化日志: modules/structlog.md
           - vcs / VCS 版本控制: modules/vcs.md
+          - runner / 命令运行器: modules/runner.md
   - API 参考:
       - 网络与通信:
           - httpclient / HTTP 客户端: api/http.md
@@ -195,6 +198,7 @@ nav:
           - scheduler / 任务调度器: api/scheduler.md
           - structlog / 结构化日志: api/structlog.md
           - vcs / VCS 版本控制: api/vcs.md
+          - runner / 命令运行器: api/runner.md
   - 性能测试:
       - 网络与通信:
           - httpclient / HTTP 客户端: benchmarks/http.md
@@ -223,4 +227,5 @@ nav:
           - retry / 重试: benchmarks/retry.md
           - scheduler / 任务调度器: benchmarks/scheduler.md
           - structlog / 结构化日志: benchmarks/structlog.md
+          - runner / 命令运行器: benchmarks/runner.md
   - 更新日志: changelog.md

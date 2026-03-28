@@ -14,9 +14,9 @@ VCS 模块通过调用 CLI 二进制文件，提供版本控制系统的统一 P
 
 | 后端 | 二进制 | 覆盖范围 |
 |------|--------|----------|
-| **Git** | `git` | 完整（diff、status、log、blame、apply、merge-file、branch） |
-| **Mercurial** | `hg` | 核心子集（diff、status、log、blame、branch） |
-| **Jujutsu** | `jj` | 核心子集（diff、status、log、blame、branch） |
+| **Git** | `git` | 完整（diff、status、log、blame、apply、merge-file、branch、workspace、commit） |
+| **Mercurial** | `hg` | 仅检查（diff、status、log、blame、branch） |
+| **Jujutsu** | `jj` | 完整（diff、status、log、blame、merge-file、branch、workspace、commit） |
 
 ## 如何在项目中使用
 
@@ -62,6 +62,7 @@ if repo is not None:
 ```python
 class VCSBackend(Protocol):
     name: str
+    # -- 检查 --
     def is_repo(self, path: str) -> bool: ...
     def diff(self, *paths: str, staged: bool = False) -> str: ...
     def diff_files(self, path_a: str, path_b: str) -> str: ...
@@ -71,6 +72,16 @@ class VCSBackend(Protocol):
     def blame(self, path: str) -> list[BlameLine]: ...
     def current_branch(self) -> str: ...
     def merge_file(self, base: str, ours: str, theirs: str) -> str: ...
+    # -- 工作区生命周期 --
+    def workspace_add(self, path: str, *, branch: str | None = None, rev: str | None = None) -> str: ...
+    def workspace_remove(self, path: str, *, force: bool = False) -> None: ...
+    def workspace_list(self) -> list[WorkspaceInfo]: ...
+    # -- 分支 / 提交 --
+    def branches(self) -> list[str]: ...
+    def create_branch(self, name: str, *, rev: str | None = None) -> None: ...
+    def switch(self, target: str) -> None: ...
+    def commit(self, message: str, *, paths: list[str] | None = None) -> str: ...
+    def rev_parse(self, rev: str) -> str: ...
 ```
 
 ### Git 后端
@@ -157,6 +168,92 @@ branch = g.current_branch()  # "main"、"feature/xyz" 等
 result = g.merge_file(base_text, our_text, their_text)
 ```
 
+### 工作区生命周期
+
+这些方法管理隔离的工作区（Git worktree / Jujutsu workspace）。Mercurial 的所有工作区和分支操作均抛出 `NotImplementedError`。
+
+#### `workspace_add(path, *, branch=None, rev=None)`
+
+在指定路径创建新的隔离工作区。
+
+```python
+ws_path = g.workspace_add("/tmp/feature-ws", branch="feature/new")
+```
+
+- **Git：** 执行 `git worktree add [-b branch] <path> [rev]`
+- **Jujutsu：** 执行 `jj workspace add <path> [-r rev]`，可选创建 bookmark
+
+#### `workspace_remove(path, *, force=False)`
+
+移除工作区并清理其目录。
+
+```python
+g.workspace_remove("/tmp/feature-ws")
+g.workspace_remove("/tmp/dirty-ws", force=True)  # 强制移除，即使有未提交的变更
+```
+
+#### `workspace_list()`
+
+列出所有工作区，返回 `WorkspaceInfo` 对象列表。
+
+```python
+for ws in g.workspace_list():
+    print(ws.path, ws.branch, ws.is_main)
+```
+
+### 分支操作
+
+#### `branches()`
+
+列出所有分支名（Git）或 bookmark（Jujutsu）。
+
+```python
+branch_names = g.branches()  # ["main", "feature/xyz", ...]
+```
+
+#### `create_branch(name, *, rev=None)`
+
+创建新分支或 bookmark。
+
+```python
+g.create_branch("feature/new")
+g.create_branch("hotfix", rev="HEAD~3")
+```
+
+#### `switch(target)`
+
+切换到指定分支或修订版本。
+
+```python
+g.switch("feature/new")      # 切换到分支
+g.switch("abc1234")           # 在修订版本处分离 HEAD（Git）
+```
+
+- **Git：** 使用 `git switch`，非分支目标时回退到 `git switch --detach`
+- **Jujutsu：** 使用 `jj new` 在目标之上创建新变更
+
+### 提交操作
+
+#### `commit(message, *, paths=None)`
+
+创建提交并返回完整哈希。
+
+```python
+sha = g.commit("fix: resolve edge case", paths=["src/fix.py"])
+```
+
+- **Git：** 暂存 `paths`（如提供）后提交；否则提交已暂存的内容
+- **Jujutsu：** 最终确认当前变更；`paths` 被忽略（jj 自动跟踪所有变更）
+
+#### `rev_parse(rev)`
+
+将修订字符串解析为完整提交哈希。
+
+```python
+full_hash = g.rev_parse("HEAD")
+full_hash = g.rev_parse("main")
+```
+
 ## 数据结构
 
 ### `FileStatus`
@@ -186,6 +283,15 @@ result = g.merge_file(base_text, our_text, their_text)
 - `date: str` -- 提交日期。
 - `line_no: int` -- 1-based 行号。
 - `content: str` -- 行内容。
+
+### `WorkspaceInfo`
+
+冻结的 dataclass，表示工作区元数据。
+
+- `path: str` -- 工作区目录的绝对路径。
+- `head: str` -- HEAD 提交哈希。
+- `branch: str | None` -- 分支名（Git）或 bookmark（Jujutsu），detached HEAD 时为 `None`。
+- `is_main: bool` -- 是否为主/默认工作区。
 
 ## 异常
 
@@ -219,5 +325,8 @@ Mercurial 和 Jujutsu 后端可选使用兄弟模块 `diff/diff.py` 的 `merge3(
     在 Windows 上，子进程调用使用 `CREATE_NO_WINDOW` 以防止控制台窗口闪烁。二进制发现包含常见的 Windows 安装路径。
 
 - **Python 版本：** 需要 Python 3.10+。
-- **无性能测试：** 由于所有操作基于子进程，性能主要取决于进程启动和 CLI 执行时间，而非 Python 代码。
-- **Git 最为完整：** Mercurial 和 Jujutsu 后端覆盖核心操作，但缺少一些 Git 特有的功能如 `diff_files` 和原生 `merge_file`。
+- **Mercurial 仅支持检查：** 工作区、分支、提交和 rev-parse 操作在 Mercurial 后端会抛出 `NotImplementedError`，因为其语义存在根本差异。Git 和 Jujutsu 拥有完整的生命周期支持。
+
+## 性能测试
+
+本模块不提供性能测试。所有操作基于子进程，性能主要取决于进程启动和 CLI 执行时间，而非 Python 封装代码 -- 详见 [VCS 性能测试](../benchmarks/vcs.md)。

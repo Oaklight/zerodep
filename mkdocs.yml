@@ -65,6 +65,7 @@ plugins:
             - ../frontmatter
             - ../config
             - ../cache
+            - ../runner
             - aes
             - qr
             - httpclient
@@ -88,6 +89,7 @@ plugins:
             - frontmatter
             - config
             - cache
+            - runner
           options:
             docstring_style: google
             show_source: true
@@ -162,6 +164,7 @@ nav:
           - scheduler / Task Scheduler: modules/scheduler.md
           - structlog / Structured Logging: modules/structlog.md
           - vcs / VCS Wrapper: modules/vcs.md
+          - runner / Command Runner: modules/runner.md
   - API Reference:
       - Web & Networking:
           - httpclient / HTTP Client: api/http.md
@@ -195,6 +198,7 @@ nav:
           - scheduler / Task Scheduler: api/scheduler.md
           - structlog / Structured Logging: api/structlog.md
           - vcs / VCS Wrapper: api/vcs.md
+          - runner / Command Runner: api/runner.md
   - Benchmarks:
       - Web & Networking:
           - httpclient / HTTP Client: benchmarks/http.md
@@ -223,4 +227,5 @@ nav:
           - retry / Retry Decorator: benchmarks/retry.md
           - scheduler / Task Scheduler: benchmarks/scheduler.md
           - structlog / Structured Logging: benchmarks/structlog.md
+          - runner / Command Runner: benchmarks/runner.md
   - Changelog: changelog.md

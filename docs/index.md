@@ -32,6 +32,10 @@ hide:
 | [交互式提示](modules/prompt.md) | 交互式 CLI 提示（confirm、select、text） | `questionary` |
 | [Markdown 渲染器](modules/markdown.md) | Markdown 转 HTML 渲染器（CommonMark 子集 + GFM 表格） | `mistune` |
 | [ANSI 终端样式](modules/ansi.md) | ANSI 终端样式：颜色、属性、检测、strip/visible_len | — |
+| [Diff 差异工具](modules/diff.md) | Unified diff 解析、补丁应用/反转、三方合并 | `unidiff` |
+| [VCS 版本控制](modules/vcs.md) | Git/Hg/Jujutsu CLI 包装器（diff、status、log、blame） | — |
+| [任务调度器](modules/scheduler.md) | 进程内任务调度器（cron、间隔、一次性触发） | `APScheduler` |
+| [稀疏搜索](modules/search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF 全文搜索引擎 | `rank-bm25` |
 
 ## 设计理念
 

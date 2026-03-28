@@ -64,6 +64,7 @@ plugins:
             - ../search
             - ../frontmatter
             - ../config
+            - ../cache
             - aes
             - qr
             - httpclient
@@ -86,6 +87,7 @@ plugins:
             - search
             - frontmatter
             - config
+            - cache
           options:
             docstring_style: google
             show_source: true
@@ -155,6 +157,7 @@ nav:
           - aes / AES 加密: modules/aes.md
           - qr / QR 二维码: modules/qr.md
       - 基础设施与工具:
+          - cache / 缓存: modules/cache.md
           - retry / 重试: modules/retry.md
           - scheduler / 任务调度器: modules/scheduler.md
           - structlog / 结构化日志: modules/structlog.md
@@ -187,6 +190,7 @@ nav:
           - aes / AES 加密: api/aes.md
           - qr / QR 二维码: api/qr.md
       - 基础设施与工具:
+          - cache / 缓存: api/cache.md
           - retry / 重试: api/retry.md
           - scheduler / 任务调度器: api/scheduler.md
           - structlog / 结构化日志: api/structlog.md
@@ -215,6 +219,7 @@ nav:
           - aes / AES 加密: benchmarks/aes.md
           - qr / QR 二维码: benchmarks/qr.md
       - 基础设施与工具:
+          - cache / 缓存: benchmarks/cache.md
           - retry / 重试: benchmarks/retry.md
           - scheduler / 任务调度器: benchmarks/scheduler.md
           - structlog / 结构化日志: benchmarks/structlog.md

@@ -4,8 +4,9 @@ Zero-dependency synchronous and asynchronous HTTP/1.1 REST client built entirely
 
 ## Overview
 
-`httpclient.py` is a single-file HTTP client that supports both sync and async workflows. It requires **Python 3.10+** and has **no pip dependencies**.
+`httpclient.py` is a single-file HTTP client that supports both sync and async workflows. It requires **Python 3.10+** and has **no pip dependencies**. The API design follows the `requests` / `httpx` convention — if you've used either, you already know how to use this module.
 
+- **Familiar API** — `get()`, `post()`, `Response.json()`, `Response.status_code`, `Client` / `AsyncClient` sessions — all modeled after `requests` and `httpx`.
 - **Sync mode** uses `http.client` from the standard library.
 - **Async mode** uses `asyncio` streams with a hand-written HTTP/1.1 protocol implementation.
 - **Thread-safe** by design: each request creates its own connection. Session classes use locks internally.

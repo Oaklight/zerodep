@@ -63,6 +63,7 @@ plugins:
             - ../scheduler
             - ../search
             - ../frontmatter
+            - ../config
             - aes
             - qr
             - httpclient
@@ -84,6 +85,7 @@ plugins:
             - scheduler
             - search
             - frontmatter
+            - config
           options:
             docstring_style: google
             show_source: true
@@ -144,6 +146,7 @@ nav:
           - search / 稀疏搜索: modules/search.md
       - 配置:
           - dotenv / Dotenv 环境变量: modules/dotenv.md
+          - config / 配置加载器: modules/config.md
       - 命令行与终端:
           - ansi / ANSI 终端样式: modules/ansi.md
           - tabulate / 表格格式化: modules/tabulate.md
@@ -175,6 +178,7 @@ nav:
           - search / 稀疏搜索: api/search.md
       - 配置:
           - dotenv / Dotenv 环境变量: api/dotenv.md
+          - config / 配置加载器: api/config.md
       - 命令行与终端:
           - ansi / ANSI 终端样式: api/ansi.md
           - tabulate / 表格格式化: api/tabulate.md
@@ -206,6 +210,7 @@ nav:
           - search / 稀疏搜索: benchmarks/search.md
       - 配置:
           - dotenv / Dotenv 环境变量: benchmarks/dotenv.md
+          - config / 配置加载器: benchmarks/config.md
       - 安全与编码:
           - aes / AES 加密: benchmarks/aes.md
           - qr / QR 二维码: benchmarks/qr.md

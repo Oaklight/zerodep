@@ -49,6 +49,7 @@ title: 模块概览
 | 模块 | 描述 | 性能对标 |
 |------|------|---------|
 | [dotenv](dotenv.md) | .env 文件解析（load_dotenv, dotenv_values） | `python-dotenv` |
+| [config](config.md) | 统一配置加载器（环境变量、.env、JSON/YAML/TOML/INI） | `python-decouple` |
 
 ### 命令行与终端
 

@@ -10,6 +10,10 @@
 - **同步模式**使用标准库中的 `http.client`。
 - **异步模式**使用 `asyncio` 流，手写 HTTP/1.1 协议实现。
 - **线程安全**设计：每个请求创建独立连接。会话类内部使用锁机制。
+- **连接池** — `Client` 和 `AsyncClient` 自动池化复用 TCP 连接（无状态函数仍为每次请求创建独立连接）。
+- **自动解压缩** — 透明解码 gzip/deflate 压缩的响应。
+- **代理支持** — HTTP 和 HTTPS 代理，支持 CONNECT 隧道。
+- **内置认证** — 开箱即用的 Basic 和 Digest 认证。
 
 ## 两种使用模式
 
@@ -40,9 +44,6 @@ with Client(headers={"Authorization": "Bearer token"}) as client:
     r1 = client.get("https://api.example.com/users")
     r2 = client.post("https://api.example.com/users", json={"name": "Alice"})
 ```
-
-!!! note "无连接池"
-    与 httpx 或 requests 不同，每个请求都会创建一个新的 TCP 连接。这使实现保持简洁且无依赖，代价是对同一主机的重复请求会有一些额外开销。
 
 ## 使用示例
 
@@ -200,6 +201,89 @@ from httpclient import get
 response = get("https://self-signed.example.com/api", verify=False)
 ```
 
+### 连接池
+
+`Client` 和 `AsyncClient` 自动按主机池化 TCP 连接。连接在请求之间被复用，显著降低对同一 API 重复调用的延迟。
+
+```python
+from httpclient import Client
+
+# 连接自动池化复用
+with Client() as client:
+    for page in range(10):
+        r = client.get(f"https://api.example.com/items?page={page}")
+        print(r.json())
+
+# 自定义连接池大小
+with Client(pool_size=20) as client:
+    r = client.get("https://api.example.com/data")
+```
+
+!!! note "无状态函数"
+    顶层函数如 `get()`、`post()` 仍然每次调用创建新连接。使用 `Client` / `AsyncClient` 以启用连接池。
+
+### 内容解压缩
+
+使用 gzip 或 deflate 压缩的响应会自动解压缩。默认发送 `Accept-Encoding: gzip, deflate` 请求头。
+
+```python
+from httpclient import get
+
+# 自动解压缩，对调用方透明
+r = get("https://api.example.com/data")
+print(r.json())  # 已自动解压缩
+
+# 禁用压缩
+r = get("https://api.example.com/data", headers={"Accept-Encoding": "identity"})
+```
+
+流式响应也会增量解压缩：
+
+```python
+with get("https://example.com/large.json.gz", stream=True) as r:
+    for chunk in r.iter_bytes():
+        process(chunk)  # 已自动解压缩
+```
+
+### 代理支持
+
+通过 HTTP 代理转发请求。HTTPS 目标使用 CONNECT 隧道。
+
+```python
+from httpclient import get, Client
+
+# 单次请求代理
+r = get("https://api.example.com/data", proxy="http://proxy.corp:8080")
+
+# 会话级代理
+with Client(proxy="http://proxy.corp:8080") as client:
+    r = client.get("https://api.example.com/data")
+
+# 带认证的代理
+r = get("https://api.example.com/data", proxy="http://user:pass@proxy.corp:8080")
+```
+
+### 认证
+
+内置 HTTP Basic 和 Digest 认证支持。
+
+```python
+from httpclient import get, Client, BasicAuth, DigestAuth
+
+# Basic 认证（元组简写）
+r = get("https://api.example.com/data", auth=("user", "pass"))
+
+# Basic 认证（显式）
+r = get("https://api.example.com/data", auth=BasicAuth("user", "pass"))
+
+# Digest 认证（自动 401 挑战-响应）
+r = get("https://api.example.com/data", auth=DigestAuth("user", "pass"))
+
+# 会话级认证
+with Client(auth=("user", "pass")) as client:
+    r = client.get("https://api.example.com/protected")
+```
+
 ## API 参考
 
 ### 同步函数
@@ -217,6 +301,8 @@ response = get("https://self-signed.example.com/api", verify=False)
 | `max_redirects` | `int` | `10` | 最大重定向次数 |
 | `verify` | `bool` | `True` | 是否验证 TLS 证书 |
 | `stream` | `bool` | `False` | 返回 `StreamingResponse` 以增量消费响应体 |
+| `auth` | `tuple[str, str] \| Auth \| None` | `None` | 认证凭据（元组用于 Basic，或 `BasicAuth`/`DigestAuth` 对象） |
+| `proxy` | `str \| None` | `None` | 代理 URL（如 `"http://proxy:8080"`） |
 
 ```python
 get(url, **kwargs) -> Response
@@ -283,12 +369,15 @@ Client(
     timeout: float = 30.0,
     max_redirects: int = 10,
     verify: bool = True,
+    auth: tuple[str, str] | Auth | None = None,
+    proxy: str | None = None,
+    pool_size: int = 10,
 )
 ```
 
 支持上下文管理器（`with` 语句）。方法：`get`、`post`、`put`、`patch`、`delete`、`head`、`options`、`request`。
 
-线程安全：内部使用 `threading.Lock`。
+线程安全：内部使用 `threading.Lock`。连接自动池化复用。调用 `close()` 或使用上下文管理器释放连接池。
 
 ### AsyncClient 类
 
@@ -299,12 +388,23 @@ AsyncClient(
     timeout: float = 30.0,
     max_redirects: int = 10,
     verify: bool = True,
+    auth: tuple[str, str] | Auth | None = None,
+    proxy: str | None = None,
+    pool_size: int = 10,
 )
 ```
 
 支持异步上下文管理器（`async with` 语句）。方法：`get`、`post`、`put`、`patch`、`delete`、`head`、`options`、`request`。
 
-内部使用 `asyncio.Lock`，保证同一客户端实例的并发访问安全。
+内部使用 `asyncio.Lock`，保证同一客户端实例的并发访问安全。连接自动池化复用。调用 `aclose()` 或使用上下文管理器释放连接池。
+
+### 认证类
+
+| 类 | 说明 |
+|----|------|
+| `Auth` | 认证基类。子类化并重写 `auth_headers(method, url)` 方法。 |
+| `BasicAuth(username, password)` | HTTP Basic 认证。每次请求发送 `Authorization: Basic` 头。 |
+| `DigestAuth(username, password)` | HTTP Digest 认证。收到 401 响应时，根据服务端挑战计算摘要并重试。支持 MD5 和 SHA-256 算法。 |
 
 ### 异常类
 
@@ -325,6 +425,10 @@ AsyncClient(
 - **查询参数编码** -- 通过 `params` 参数自动编码
 - **Multipart 文件上传** -- 通过 `files` 参数上传文件，支持与 `data` 表单字段混合使用
 - **流式响应** -- 通过 `iter_bytes()` / `iter_lines()` 及其异步版本增量消费响应体
+- **连接池** — `Client`/`AsyncClient` 按主机池化复用 TCP 连接
+- **自动解压缩** — 透明解码 gzip/deflate 压缩的响应
+- **HTTP/HTTPS 代理** — 通过代理服务器转发请求，HTTPS 使用 CONNECT 隧道
+- **Basic 和 Digest 认证** — 内置认证支持，Digest 自动处理 401 挑战
 
 ## 在项目中使用
 
@@ -349,7 +453,10 @@ from httpclient import get, post, Client, AsyncClient
 |------|---------|-------|
 | 依赖 | 无（仅标准库） | 多个（httpcore、h11 等） |
 | HTTP/2 | 不支持 | 支持 |
-| 连接池 | 不支持 | 支持 |
+| 连接池 | 支持（Client/AsyncClient） | 支持 |
+| 自动解压缩 | 支持（gzip、deflate） | 支持（gzip、deflate、brotli） |
+| 代理支持 | 支持（HTTP、HTTPS 隧道） | 支持（HTTP、HTTPS、SOCKS） |
+| 认证 | Basic + Digest | Basic + Digest + 更多 |
 | 流式传输 | 支持 | 支持 |
 | 同步 + 异步 | 支持 | 支持 |
 | 文件上传 | 支持 | 支持 |
@@ -358,10 +465,10 @@ from httpclient import get, post, Client, AsyncClient
 
 **何时使用 zerodep：** 你需要一个轻量级、无外部依赖的 HTTP 客户端，使用场景为基本的 REST API 调用。
 
-**何时使用 httpx：** 你需要 HTTP/2、连接池或 Cookie 管理。
+**何时使用 httpx：** 你需要 HTTP/2 或 Cookie 管理。
 
 ## 性能测试
 
-与 `httpx` 进行对比。一次性请求较慢（无连接池），但会话/异步模式下性能基本持平，因为此时受限于网络延迟。
+与 `httpx` 进行对比。两个库均支持通过会话类使用连接池。一次性请求和会话模式下性能基本持平，均受限于网络延迟。
 
 详见 [HTTP 客户端性能测试](../benchmarks/http.md)。

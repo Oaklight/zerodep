@@ -17,6 +17,9 @@
 - **HTTP Client**：透明 gzip/deflate 自动解压缩，覆盖普通和流式响应。
 - **HTTP Client**：HTTP/HTTPS 代理支持，含 CONNECT 隧道。
 - **HTTP Client**：Basic 和 Digest 认证，支持自动 401 质询-响应。
+- **Config 模块**：统一多源配置加载器，支持环境变量、.env 文件、JSON/JSONC/YAML/TOML/INI，类型转换和前缀过滤。
+- **Cache 模块**：内存缓存，支持 LRU/FIFO/LFU/TTL 淘汰策略、同步+异步装饰器、线程安全、缓存统计。
+- **Runner 模块**：结构化子进程执行，支持同步+异步 API、流式输出（回调+迭代器）、SIGTERM 到 SIGKILL 超时升级、环境隔离、命令白名单/黑名单。
 
 ### 变更
 

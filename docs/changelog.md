@@ -17,6 +17,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **HTTP Client**: transparent gzip/deflate auto-decompression for regular and streaming responses.
 - **HTTP Client**: HTTP/HTTPS proxy support with CONNECT tunneling.
 - **HTTP Client**: Basic and Digest authentication with automatic 401 challenge-response.
+- **Config module**: unified multi-source configuration loader with env vars, .env files, JSON/JSONC/YAML/TOML/INI support, type coercion, and prefix support.
+- **Cache module**: in-memory caching with LRU/FIFO/LFU/TTL eviction, sync+async decorator support, thread-safe, cache statistics.
+- **Runner module**: structured subprocess execution with sync+async APIs, streaming output (callbacks + iterators), SIGTERM-to-SIGKILL timeout escalation, environment isolation, and command allowlist/blocklist.
 
 ### Changed
 

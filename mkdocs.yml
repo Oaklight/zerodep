@@ -118,6 +118,10 @@ extra:
 
 nav:
   - 首页: index.md
+  - 指南:
+      - 设计理念: guide/philosophy.md
+      - CLI 工具: guide/cli.md
+      - Manifest 清单: guide/manifest.md
   - 模块:
       - 网络与通信:
           - HTTP 客户端: modules/http.md

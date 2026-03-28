@@ -12,6 +12,10 @@
 - **Scheduler 模块**：零依赖进程内任务调度器，支持 cron 表达式。
 - **Sparse Search 模块**：BM25 系列（BM25、BM25+、BM25L）和 TF-IDF 全文搜索引擎。
 - `zerodep` CLI 工具，支持模块发现和依赖感知的模块复制。
+- **HTTP Client**：连接池，支持可配置的池大小和空闲超时。
+- **HTTP Client**：透明 gzip/deflate 自动解压缩，覆盖普通和流式响应。
+- **HTTP Client**：HTTP/HTTPS 代理支持，含 CONNECT 隧道。
+- **HTTP Client**：Basic 和 Digest 认证，支持自动 401 质询-响应。
 
 ### 变更
 

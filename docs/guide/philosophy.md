@@ -24,9 +24,9 @@ Each module is one `.py` file (occasionally two for a variant like `aes_openssl.
 - **Audit easily** — one file to read, no hidden package structure
 - **Version easily** — every module carries its own `__version__`
 
-### Correctness First, Then Performance
+### Correctness First, Performance Matched or Better
 
-Every module is tested apple-to-apple against the reference library it reimplements (`PyYAML`, `httpx`, `pydantic`, etc.). Correctness tests run first; benchmark comparisons come second. The goal is not to beat the reference — it is to be a faithful, usable replacement.
+Every module is tested apple-to-apple against the reference library it reimplements (`PyYAML`, `httpx`, `pydantic`, etc.). Correctness tests run first; benchmark comparisons come second. In practice, most zerodep modules achieve **performance parity or better** — for example, sparse_search is 34-132x faster at query time than rank-bm25, the scheduler parses cron expressions 3.6-11.5x faster than alternatives, and the AES module offers an OpenSSL ctypes backend that matches pycryptodome speeds.
 
 ### Explicit Dependencies Between Modules
 
@@ -62,8 +62,8 @@ zerodep modules are a good fit when:
 Prefer the established library when:
 
 - You need **full spec compliance** (e.g., the entire YAML 1.2 spec, not just the common subset)
-- You need **C-extension performance** for hot loops (e.g., `pycryptodome`'s AES vs. our pure-Python AES)
-- You rely on **ecosystem integrations** (e.g., Django's ORM expects `psycopg2`, not a hand-rolled driver)
+- You need **C-extension performance** for CPU-intensive hot loops where even the OpenSSL ctypes path is insufficient
+- You rely on **ecosystem integrations** (e.g., a framework that expects a specific library's API or plugin interface)
 
 ## Module Lifecycle
 

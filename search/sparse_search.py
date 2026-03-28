@@ -42,6 +42,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 __version__ = "0.1.0"
+__deps__: list[str] = []
 
 # ---------------------------------------------------------------------------
 # Default tokenizer

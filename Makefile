@@ -1,4 +1,4 @@
-.PHONY: all test benchmark lint fmt clean help test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi
+.PHONY: all test benchmark lint fmt clean help manifest test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi
 
 help:
 	@echo "Available targets:"
@@ -33,6 +33,7 @@ help:
 	@echo "  benchmark-diff   - Run diff benchmarks"
 	@echo "  test-vcs         - Run VCS correctness tests"
 	@echo "  test-ansi        - Run ANSI correctness tests"
+	@echo "  manifest         - Regenerate manifest.json"
 	@echo "  lint             - Run ruff check"
 	@echo "  fmt              - Run ruff format"
 	@echo "  clean            - Clean generated files"
@@ -129,6 +130,9 @@ test-vcs:
 
 test-ansi:
 	pytest ansi/test_ansi_correctness.py -v
+
+manifest:
+	python zerodep.py manifest
 
 lint:
 	ruff check .

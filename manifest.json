@@ -1,0 +1,171 @@
+{
+  "version": "1",
+  "generated": "2026-03-28T05:27:20.953379+00:00",
+  "modules": {
+    "aes": {
+      "description": "Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",
+      "files": [
+        "aes/aes.py",
+        "aes/aes_openssl.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "ansi": {
+      "description": "ANSI escape code primitives for terminal styling",
+      "files": [
+        "ansi/ansi.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "diff": {
+      "description": "Unified diff parser, patch applicator, and three-way merge — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "diff/diff.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "dotenv": {
+      "description": ".env file parser and loader — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "dotenv/dotenv.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "httpclient": {
+      "description": "Zero-dependency sync + async HTTP REST client",
+      "files": [
+        "httpclient/httpclient.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "jsonc": {
+      "description": "JSONC (JSON with Comments) parser — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "jsonc/jsonc.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "markdown": {
+      "description": "Markdown to HTML renderer — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "markdown/markdown.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "prompt": {
+      "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",
+      "files": [
+        "prompt/prompt.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "qr": {
+      "description": "QR Code generator library (Python)",
+      "files": [
+        "qr/qr.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "retry": {
+      "description": "Zero-dependency retry with configurable backoff strategies",
+      "files": [
+        "retry/retry.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "scheduler": {
+      "description": "Zero-dependency in-process task scheduler with cron support",
+      "files": [
+        "scheduler/scheduler.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "search": {
+      "description": "Zero-dependency sparse text search with BM25 family and TF-IDF ranking",
+      "files": [
+        "search/sparse_search.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "soup": {
+      "description": "HTML parser with BeautifulSoup-like API — zero-dep, stdlib only, Python 3.10+",
+      "files": [
+        "soup/soup.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "sse": {
+      "description": "Zero-dependency SSE (Server-Sent Events) client",
+      "files": [
+        "sse/sse.py"
+      ],
+      "version": "0.1.0",
+      "deps": [
+        "httpclient"
+      ]
+    },
+    "structlog": {
+      "description": "Zero-dependency structured logging with pretty console output",
+      "files": [
+        "structlog/structlog.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "tabulate": {
+      "description": "Tabulate — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "tabulate/tabulate.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "toon": {
+      "description": "TOON encoder/decoder — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "toon/toon.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "validate": {
+      "description": "Zero-dependency runtime validator for TypedDict and dataclass types",
+      "files": [
+        "validate/validate.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    },
+    "vcs": {
+      "description": "VCS CLI wrapper — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "vcs/vcs.py"
+      ],
+      "version": "0.1.0",
+      "deps": [
+        "diff"
+      ]
+    },
+    "yaml": {
+      "description": "YAML parser and serializer (common subset) — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "yaml/yaml.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
+    }
+  }
+}

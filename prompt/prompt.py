@@ -18,6 +18,7 @@ Basic usage::
 from __future__ import annotations
 
 __version__ = "0.1.0"
+__deps__: list[str] = []
 
 import contextlib
 import io

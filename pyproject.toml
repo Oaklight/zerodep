@@ -7,6 +7,9 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 
+[project.scripts]
+zerodep = "zerodep:main"
+
 [project.urls]
 Repository = "https://github.com/Oaklight/zerodep"
 Issues = "https://github.com/Oaklight/zerodep/issues"

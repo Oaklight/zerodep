@@ -75,6 +75,16 @@ Modules with implementation, correctness tests, and benchmarks.
 - **Scope**: Parse, compare, bump (major/minor/patch), range matching (^, ~, >=, etc.), pre-release/build metadata
 - **Benchmark against**: semver
 
+### XML
+- **Replaces**: xmltodict (dict ↔ XML layer) + custom LLM tag extraction
+- **Why**: XML remains common in enterprise APIs, RSS, SVG, and increasingly in LLM prompt/output structuring; stdlib `xml.etree.ElementTree` is strict and verbose
+- **stdlib basis**: xml.etree.ElementTree, re
+- **Scope**:
+  - **Standard layer**: `loads(xml) → dict`, `dumps(dict) → xml` — xmltodict-style bidirectional conversion, attribute handling, namespace support
+  - **Lenient layer**: `extract_tags(text, tag)` — fault-tolerant extraction of XML-like tags from LLM output (unclosed tags, malformed nesting, streaming-friendly)
+- **Synergy**: soup (HTML counterpart), frontmatter (metadata extraction), toon (LLM-optimized format)
+- **Benchmark against**: xmltodict
+
 ### Event Emitter
 - **Replaces**: pyee, pymitter
 - **Why**: Decoupled pub/sub within applications, plugin systems, middleware hooks

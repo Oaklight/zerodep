@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-03-28T07:56:36.310017+00:00",
+  "generated": "2026-03-28T08:19:36.412590+00:00",
   "modules": {
     "aes": {
       "description": "Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",
@@ -18,6 +18,18 @@
       ],
       "version": "0.1.0",
       "deps": []
+    },
+    "config": {
+      "description": "Unified configuration loader — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "config/config.py"
+      ],
+      "version": "0.1.0",
+      "deps": [
+        "dotenv",
+        "yaml",
+        "jsonc"
+      ]
     },
     "diff": {
       "description": "Unified diff parser, patch applicator, and three-way merge — zero dependencies, stdlib only, Python 3.10+",

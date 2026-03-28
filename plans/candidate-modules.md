@@ -27,6 +27,7 @@ Modules with implementation, correctness tests, and benchmarks.
 | `scheduler/` | APScheduler | In-process task scheduler, 5-field cron expressions, interval/one-shot triggers, async jobs, per-job callbacks, event listeners, job pause/resume, misfire grace time | APScheduler, croniter, schedule |
 | `search/sparse_search` | rank-bm25 | BM25/BM25+/BM25L/BM25F + TF-IDF+Cosine, inverted index with reverse index for fast delete, dynamic add/remove/update, metadata filtering, JSON/SQLite persistence, pluggable tokenizer | rank-bm25 |
 | `frontmatter/` | python-frontmatter | Parse and serialize YAML/TOML/JSON file-header metadata, Document model, loads/dumps/load/dump API, auto-detect format | python-frontmatter |
+| `config/` | python-decouple, dynaconf (subset) | Unified config loading from env vars, .env files, JSON/JSONC/YAML/TOML/INI files, type coercion (bool/int/float/list), Csv/Choices helpers, prefix support, nested key access | python-decouple |
 
 ## Tier 1 — High Value, Not Yet Started
 
@@ -73,13 +74,6 @@ Modules with implementation, correctness tests, and benchmarks.
 - **stdlib basis**: re
 - **Scope**: Parse, compare, bump (major/minor/patch), range matching (^, ~, >=, etc.), pre-release/build metadata
 - **Benchmark against**: semver
-
-### Config
-- **Replaces**: python-decouple, dynaconf (subset)
-- **Why**: Unified config loading from multiple sources with type coercion — a common pattern in 12-factor apps
-- **stdlib basis**: os, json
-- **Scope**: Load from env vars, .env files, JSON/YAML/TOML files, type coercion (int, bool, list), defaults, required checks, prefix support
-- **Synergy**: dotenv, yaml, jsonc modules
 
 ### Event Emitter
 - **Replaces**: pyee, pymitter

@@ -1,3 +1,7 @@
+# /// zerodep
+# version = "0.1.0"
+# deps = []
+# ///
 """Zero-dependency sparse text search with BM25 family and TF-IDF ranking.
 
 Part of zerodep: https://github.com/Oaklight/zerodep
@@ -41,8 +45,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
-__version__ = "0.1.0"
-__deps__: list[str] = []
+_VERSION = "0.1.0"
 
 # ---------------------------------------------------------------------------
 # Default tokenizer
@@ -552,7 +555,7 @@ class SparseIndex:
         }
 
         return {
-            "version": __version__,
+            "version": _VERSION,
             "config": {
                 "variant": self.variant,
                 "k1": self.k1,
@@ -662,7 +665,7 @@ class SparseIndex:
 
             # Config
             config = {
-                "version": __version__,
+                "version": _VERSION,
                 "variant": self.variant,
                 "k1": self.k1,
                 "b": self.b,

@@ -1,3 +1,8 @@
+# /// zerodep
+# version = "0.1.0"
+# deps = []
+# ///
+
 """Zero-dependency runtime validator for TypedDict and dataclass types.
 
 Part of zerodep: https://github.com/Oaklight/zerodep
@@ -31,9 +36,6 @@ Annotated constraints::
 """
 
 from __future__ import annotations
-
-__version__ = "0.1.0"
-__deps__: list[str] = []
 
 import dataclasses
 import re

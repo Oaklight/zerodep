@@ -17,7 +17,6 @@ __version__ = "0.1.0"
 import argparse
 import ast
 import json
-import re
 import shutil
 import sys
 import textwrap
@@ -178,8 +177,9 @@ def _scan_modules(repo_root: Path) -> dict:
         # Extract metadata from primary file
         source = primary.read_text(encoding="utf-8")
 
-        version = _extract_var(source, "__version__") or "0.0.0"
-        deps = _extract_var(source, "__deps__") or []
+        meta = _extract_frontmatter(source)
+        version = meta.get("version", "0.0.0")
+        deps = meta.get("deps", [])
         description = _extract_docstring_first_line(source) or ""
 
         # Build file list (relative paths)
@@ -195,17 +195,39 @@ def _scan_modules(repo_root: Path) -> dict:
     return modules
 
 
-def _extract_var(source: str, var_name: str) -> str | list | None:
-    """Extract a module-level variable value from source text."""
-    # Match: __var__ = "value" or __var__ = [...] or __var__: type = [...]
-    pattern = rf"^{re.escape(var_name)}(?:\s*:\s*[^=]+)?\s*=\s*(.+)$"
-    match = re.search(pattern, source, re.MULTILINE)
-    if not match:
-        return None
-    try:
-        return ast.literal_eval(match.group(1).strip())
-    except (ValueError, SyntaxError):
-        return None
+def _extract_frontmatter(source: str) -> dict[str, str | list]:
+    """Extract metadata from ``# /// zerodep`` frontmatter block.
+
+    Parses a PEP 723-style comment block::
+
+        # /// zerodep
+        # version = "0.1.0"
+        # deps = ["httpclient"]
+        # ///
+
+    Returns:
+        Dict with parsed key-value pairs (values via ``ast.literal_eval``).
+    """
+    result: dict[str, str | list] = {}
+    in_block = False
+    for line in source.splitlines():
+        stripped = line.strip()
+        if stripped == "# /// zerodep":
+            in_block = True
+            continue
+        if stripped == "# ///" and in_block:
+            break
+        if in_block and stripped.startswith("# "):
+            content = stripped[2:]
+            if "=" in content:
+                key, _, val = content.partition("=")
+                key = key.strip()
+                val = val.strip()
+                try:
+                    result[key] = ast.literal_eval(val)
+                except (ValueError, SyntaxError):
+                    result[key] = val
+    return result
 
 
 def _extract_docstring_first_line(source: str) -> str | None:

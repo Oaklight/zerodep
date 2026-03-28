@@ -1,3 +1,8 @@
+# /// zerodep
+# version = "0.1.0"
+# deps = []
+# ///
+
 """QR Code generator library (Python).
 
 Part of zerodep: https://github.com/Oaklight/zerodep
@@ -9,9 +14,6 @@ Based on Project Nayuki's QR Code generator (MIT License):
 """
 
 from __future__ import annotations
-
-__version__ = "0.1.0"
-__deps__: list[str] = []
 
 import collections
 import itertools

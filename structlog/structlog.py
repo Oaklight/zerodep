@@ -1,3 +1,8 @@
+# /// zerodep
+# version = "0.1.0"
+# deps = []
+# ///
+
 """Zero-dependency structured logging with pretty console output.
 
 Part of zerodep: https://github.com/Oaklight/zerodep
@@ -33,9 +38,6 @@ Custom processor pipeline::
 """
 
 from __future__ import annotations
-
-__version__ = "0.1.0"
-__deps__: list[str] = []
 
 import dataclasses
 import datetime

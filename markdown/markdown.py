@@ -1,3 +1,8 @@
+# /// zerodep
+# version = "0.1.0"
+# deps = []
+# ///
+
 """Markdown to HTML renderer — zero dependencies, stdlib only, Python 3.10+.
 
 Part of zerodep: https://github.com/Oaklight/zerodep
@@ -29,9 +34,6 @@ Example::
 """
 
 from __future__ import annotations
-
-__version__ = "0.1.0"
-__deps__: list[str] = []
 
 import html
 import re

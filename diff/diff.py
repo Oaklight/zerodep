@@ -1,3 +1,8 @@
+# /// zerodep
+# version = "0.1.0"
+# deps = []
+# ///
+
 """Unified diff parser, patch applicator, and three-way merge — zero dependencies, stdlib only, Python 3.10+.
 
 Part of zerodep: https://github.com/Oaklight/zerodep
@@ -32,9 +37,6 @@ Three-way merge::
 """
 
 from __future__ import annotations
-
-__version__ = "0.1.0"
-__deps__: list[str] = []
 
 import dataclasses
 import difflib

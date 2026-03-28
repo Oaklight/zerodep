@@ -1,3 +1,8 @@
+# /// zerodep
+# version = "0.1.0"
+# deps = []
+# ///
+
 """Zero-dependency retry with configurable backoff strategies.
 
 Part of zerodep: https://github.com/Oaklight/zerodep
@@ -32,9 +37,6 @@ HTTP status filtering::
 """
 
 from __future__ import annotations
-
-__version__ = "0.1.0"
-__deps__: list[str] = []
 
 import asyncio
 import dataclasses

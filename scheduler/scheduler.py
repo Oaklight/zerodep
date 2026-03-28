@@ -1,3 +1,8 @@
+# /// zerodep
+# version = "0.1.0"
+# deps = []
+# ///
+
 """Zero-dependency in-process task scheduler with cron support.
 
 Part of zerodep: https://github.com/Oaklight/zerodep
@@ -37,9 +42,6 @@ Requires Python 3.10+.
 """
 
 from __future__ import annotations
-
-__version__ = "0.1.0"
-__deps__: list[str] = []
 
 import asyncio
 import dataclasses

@@ -1,3 +1,7 @@
+# /// zerodep
+# version = "0.1.0"
+# deps = ["httpclient"]
+# ///
 """Zero-dependency SSE (Server-Sent Events) client.
 
 Part of zerodep: https://github.com/Oaklight/zerodep
@@ -40,9 +44,6 @@ Requires Python 3.10+.
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
-__deps__: list[str] = ["httpclient"]
-
 import asyncio
 import dataclasses
 import os
@@ -62,19 +63,10 @@ try:
     from httpclient import ConnectionError as _HttpConnectionError
     from httpclient import StreamingResponse as _StreamingResponse
     from httpclient import TimeoutError as _HttpTimeoutError
-    from httpclient import __version__ as _httpclient_version
     from httpclient import async_get as _http_async_get
     from httpclient import get as _http_get
 
     _HAS_HTTPCLIENT = True
-    if _httpclient_version != __version__:
-        import warnings
-
-        warnings.warn(
-            f"sse {__version__} loaded with httpclient {_httpclient_version}, "
-            "they may be incompatible",
-            stacklevel=1,
-        )
 except (ImportError, AttributeError):
     _HAS_HTTPCLIENT = False
 

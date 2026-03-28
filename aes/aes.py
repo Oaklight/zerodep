@@ -1,3 +1,8 @@
+# /// zerodep
+# version = "0.1.0"
+# deps = []
+# ///
+
 """Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys.
 
 Part of zerodep: https://github.com/Oaklight/zerodep
@@ -9,9 +14,6 @@ Based on bozhu/AES-Python (MIT License):
 """
 
 from __future__ import annotations
-
-__version__ = "0.1.0"
-__deps__: list[str] = []
 
 __all__ = [
     "aes_ecb_encrypt",

@@ -1,3 +1,8 @@
+# /// zerodep
+# version = "0.1.0"
+# deps = []
+# ///
+
 """ANSI escape code primitives for terminal styling.
 
 Zero dependencies, stdlib only, Python 3.10+.
@@ -31,9 +36,6 @@ Terminal detection::
 """
 
 from __future__ import annotations
-
-__version__ = "0.1.0"
-__deps__: list[str] = []
 
 import os
 import re

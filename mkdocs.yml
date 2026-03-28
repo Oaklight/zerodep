@@ -125,91 +125,92 @@ nav:
       - CLI Tool: guide/cli.md
       - Manifest: guide/manifest.md
   - Modules:
+      - modules/index.md
       - Web & Networking:
-          - HTTP Client: modules/http.md
-          - SSE Client: modules/sse.md
+          - httpclient / HTTP Client: modules/http.md
+          - sse / SSE Client: modules/sse.md
       - Data Formats:
-          - YAML: modules/yaml.md
-          - JSONC: modules/jsonc.md
-          - TOON: modules/toon.md
-          - Frontmatter: modules/frontmatter.md
+          - yaml / YAML Parser: modules/yaml.md
+          - jsonc / JSONC Parser: modules/jsonc.md
+          - toon / TOON Serializer: modules/toon.md
+          - frontmatter / Frontmatter Parser: modules/frontmatter.md
       - Data Validation:
-          - Validate: modules/validate.md
+          - validate / Validator: modules/validate.md
       - Text & Markup:
-          - Markdown: modules/markdown.md
-          - HTML Parser: modules/soup.md
-          - Diff: modules/diff.md
+          - markdown / Markdown Renderer: modules/markdown.md
+          - soup / HTML Parser: modules/soup.md
+          - diff / Diff Tool: modules/diff.md
       - Search & Retrieval:
-          - Sparse Search: modules/search.md
+          - search / Sparse Search: modules/search.md
       - Configuration:
-          - Dotenv: modules/dotenv.md
+          - dotenv / Dotenv Loader: modules/dotenv.md
       - CLI & Terminal:
-          - ANSI Colors: modules/ansi.md
-          - Tabulate: modules/tabulate.md
-          - Prompts: modules/prompt.md
+          - ansi / ANSI Colors: modules/ansi.md
+          - tabulate / Table Formatter: modules/tabulate.md
+          - prompt / CLI Prompts: modules/prompt.md
       - Security & Encoding:
-          - AES: modules/aes.md
-          - QR Code: modules/qr.md
+          - aes / AES Encryption: modules/aes.md
+          - qr / QR Code: modules/qr.md
       - Infrastructure & Tools:
-          - Retry: modules/retry.md
-          - Scheduler: modules/scheduler.md
-          - Structured Logging: modules/structlog.md
-          - VCS: modules/vcs.md
+          - retry / Retry Decorator: modules/retry.md
+          - scheduler / Task Scheduler: modules/scheduler.md
+          - structlog / Structured Logging: modules/structlog.md
+          - vcs / VCS Wrapper: modules/vcs.md
   - API Reference:
       - Web & Networking:
-          - HTTP Client: api/http.md
-          - SSE: api/sse.md
+          - httpclient / HTTP Client: api/http.md
+          - sse / SSE Client: api/sse.md
       - Data Formats:
-          - YAML: api/yaml.md
-          - JSONC: api/jsonc.md
-          - TOON: api/toon.md
-          - Frontmatter: api/frontmatter.md
+          - yaml / YAML Parser: api/yaml.md
+          - jsonc / JSONC Parser: api/jsonc.md
+          - toon / TOON Serializer: api/toon.md
+          - frontmatter / Frontmatter Parser: api/frontmatter.md
       - Data Validation:
-          - Validate: api/validate.md
+          - validate / Validator: api/validate.md
       - Text & Markup:
-          - Markdown: api/markdown.md
-          - Soup: api/soup.md
-          - Diff: api/diff.md
+          - markdown / Markdown Renderer: api/markdown.md
+          - soup / HTML Parser: api/soup.md
+          - diff / Diff Tool: api/diff.md
       - Search & Retrieval:
-          - Sparse Search: api/search.md
+          - search / Sparse Search: api/search.md
       - Configuration:
-          - Dotenv: api/dotenv.md
+          - dotenv / Dotenv Loader: api/dotenv.md
       - CLI & Terminal:
-          - ANSI: api/ansi.md
-          - Tabulate: api/tabulate.md
-          - Prompt: api/prompt.md
+          - ansi / ANSI Colors: api/ansi.md
+          - tabulate / Table Formatter: api/tabulate.md
+          - prompt / CLI Prompts: api/prompt.md
       - Security & Encoding:
-          - AES: api/aes.md
-          - QR Code: api/qr.md
+          - aes / AES Encryption: api/aes.md
+          - qr / QR Code: api/qr.md
       - Infrastructure & Tools:
-          - Retry: api/retry.md
-          - Scheduler: api/scheduler.md
-          - Structured Logging: api/structlog.md
-          - VCS: api/vcs.md
+          - retry / Retry Decorator: api/retry.md
+          - scheduler / Task Scheduler: api/scheduler.md
+          - structlog / Structured Logging: api/structlog.md
+          - vcs / VCS Wrapper: api/vcs.md
   - Benchmarks:
       - Web & Networking:
-          - HTTP Client: benchmarks/http.md
-          - SSE Client: benchmarks/sse.md
+          - httpclient / HTTP Client: benchmarks/http.md
+          - sse / SSE Client: benchmarks/sse.md
       - Data Formats:
-          - YAML: benchmarks/yaml.md
-          - JSONC: benchmarks/jsonc.md
-          - TOON: benchmarks/toon.md
-          - Frontmatter: benchmarks/frontmatter.md
+          - yaml / YAML Parser: benchmarks/yaml.md
+          - jsonc / JSONC Parser: benchmarks/jsonc.md
+          - toon / TOON Serializer: benchmarks/toon.md
+          - frontmatter / Frontmatter Parser: benchmarks/frontmatter.md
       - Data Validation:
-          - Validate: benchmarks/validate.md
+          - validate / Validator: benchmarks/validate.md
       - Text & Markup:
-          - Markdown: benchmarks/markdown.md
-          - HTML Parser: benchmarks/soup.md
-          - Diff: benchmarks/diff.md
+          - markdown / Markdown Renderer: benchmarks/markdown.md
+          - soup / HTML Parser: benchmarks/soup.md
+          - diff / Diff Tool: benchmarks/diff.md
       - Search & Retrieval:
-          - Sparse Search: benchmarks/search.md
+          - search / Sparse Search: benchmarks/search.md
       - Configuration:
-          - Dotenv: benchmarks/dotenv.md
+          - dotenv / Dotenv Loader: benchmarks/dotenv.md
       - Security & Encoding:
-          - AES: benchmarks/aes.md
-          - QR Code: benchmarks/qr.md
+          - aes / AES Encryption: benchmarks/aes.md
+          - qr / QR Code: benchmarks/qr.md
       - Infrastructure & Tools:
-          - Retry: benchmarks/retry.md
-          - Scheduler: benchmarks/scheduler.md
-          - Structured Logging: benchmarks/structlog.md
+          - retry / Retry Decorator: benchmarks/retry.md
+          - scheduler / Task Scheduler: benchmarks/scheduler.md
+          - structlog / Structured Logging: benchmarks/structlog.md
   - Changelog: changelog.md

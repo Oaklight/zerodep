@@ -21,31 +21,32 @@ Apple-to-apple performance comparison between zerodep HTTP client and [`httpx`](
 
 | Test | zerodep | httpx | Notes |
 |------|---------|-------|-------|
-| Sync GET | ~1,091 ms | ~1,165 ms | Comparable (network-bound) |
-| Sync POST JSON | ~1,039 ms | ~1,154 ms | Comparable (network-bound) |
-| Sync Client GET | ~1,613 ms | ~462 ms | Both use connection pooling |
-| Async GET | ~1,147 ms | ~1,207 ms | Comparable |
-| Async POST JSON | ~1,437 ms | ~1,352 ms | Comparable |
+| Sync GET | ~1,288 ms | ~1,206 ms | Comparable (network-bound) |
+| Sync POST JSON | ~1,436 ms | ~1,209 ms | Comparable (network-bound) |
+| Sync Client GET | ~287 ms | ~264 ms | Both use connection pooling |
+| Async GET | ~1,035 ms | ~1,334 ms | Comparable |
+| Async POST JSON | ~1,312 ms | ~1,253 ms | Comparable |
+| Async Client GET | ~1,593 ms | ~1,591 ms | Both use connection pooling |
 
 ### Streaming
 
 | Test | zerodep | httpx | Notes |
 |------|---------|-------|-------|
-| Sync Streaming | ~1,666 ms | ~2,295 ms | zerodep faster (lower stream overhead) |
-| Async Streaming | ~1,476 ms | ~1,448 ms | Comparable |
+| Sync Streaming | ~1,378 ms | ~1,287 ms | Comparable |
+| Async Streaming | ~1,129 ms | ~1,751 ms | zerodep faster |
 
 ### File Upload (multipart/form-data)
 
 | Test | zerodep | httpx | Notes |
 |------|---------|-------|-------|
-| Sync File Upload | ~1,731 ms | ~1,398 ms | Comparable (network-bound) |
-| Async File Upload | ~2,003 ms | ~1,571 ms | httpx slightly faster |
+| Sync File Upload | ~2,790 ms | ~2,063 ms | Comparable (network-bound) |
+| Async File Upload | ~1,470 ms | ~1,643 ms | Comparable |
 
 ### Content Decompression
 
 | Test | zerodep | httpx | Notes |
 |------|---------|-------|-------|
-| Sync Gzip GET | TBD | TBD | Both decompress automatically |
+| Sync Gzip GET | ~1,229 ms | ~1,720 ms | zerodep faster |
 
 ## Key Takeaways
 

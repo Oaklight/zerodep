@@ -4,8 +4,9 @@
 
 ## 概述
 
-`httpclient.py` 是一个单文件 HTTP 客户端，支持同步和异步两种工作模式。要求 **Python 3.10+**，**无需任何 pip 依赖**。
+`httpclient.py` 是一个单文件 HTTP 客户端，支持同步和异步两种工作模式。要求 **Python 3.10+**，**无需任何 pip 依赖**。API 设计沿袭 `requests` / `httpx` 风格——如果你用过其中任何一个，就已经知道怎么使用本模块。
 
+- **熟悉的 API** — `get()`、`post()`、`Response.json()`、`Response.status_code`、`Client` / `AsyncClient` 会话——全部对齐 `requests` 和 `httpx` 的接口风格。
 - **同步模式**使用标准库中的 `http.client`。
 - **异步模式**使用 `asyncio` 流，手写 HTTP/1.1 协议实现。
 - **线程安全**设计：每个请求创建独立连接。会话类内部使用锁机制。

@@ -8,11 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Frontmatter module**: parse and serialize YAML/TOML/JSON file-header metadata.
 - **Scheduler module**: zero-dependency in-process task scheduler with cron expression support.
 - **Sparse Search module**: BM25 family (BM25, BM25+, BM25L) and TF-IDF full-text search engine.
+- `zerodep` CLI tool for module discovery and dependency-aware copying.
 
 ### Changed
 
+- Migrated module metadata from `__version__`/`__deps__` to PEP 723 inline script metadata (frontmatter).
 - Reverse index optimization for sparse search performance improvement.
 
 ## [0.1.0] - 2026-03-27

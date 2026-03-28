@@ -64,6 +64,7 @@ plugins:
             - ../search
             - ../frontmatter
             - ../config
+            - ../cache
             - aes
             - qr
             - httpclient
@@ -86,6 +87,7 @@ plugins:
             - search
             - frontmatter
             - config
+            - cache
           options:
             docstring_style: google
             show_source: true
@@ -155,6 +157,7 @@ nav:
           - aes / AES Encryption: modules/aes.md
           - qr / QR Code: modules/qr.md
       - Infrastructure & Tools:
+          - cache / Cache: modules/cache.md
           - retry / Retry Decorator: modules/retry.md
           - scheduler / Task Scheduler: modules/scheduler.md
           - structlog / Structured Logging: modules/structlog.md
@@ -187,6 +190,7 @@ nav:
           - aes / AES Encryption: api/aes.md
           - qr / QR Code: api/qr.md
       - Infrastructure & Tools:
+          - cache / Cache: api/cache.md
           - retry / Retry Decorator: api/retry.md
           - scheduler / Task Scheduler: api/scheduler.md
           - structlog / Structured Logging: api/structlog.md
@@ -215,6 +219,7 @@ nav:
           - aes / AES Encryption: benchmarks/aes.md
           - qr / QR Code: benchmarks/qr.md
       - Infrastructure & Tools:
+          - cache / Cache: benchmarks/cache.md
           - retry / Retry Decorator: benchmarks/retry.md
           - scheduler / Task Scheduler: benchmarks/scheduler.md
           - structlog / Structured Logging: benchmarks/structlog.md

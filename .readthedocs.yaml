@@ -10,7 +10,10 @@ build:
   jobs:
     post_checkout:
       - git fetch origin master --depth=1
-      - for d in aes qr httpclient dotenv yaml jsonc structlog retry toon sse tabulate soup prompt validate markdown diff vcs ansi scheduler search frontmatter config; do git checkout FETCH_HEAD -- "$d/" 2>/dev/null || true; done
+      # Dynamically check out all module directories from master.
+      # Excludes dotfiles, plans/, and docs_* to avoid conflicts with the docs branch.
+      # No manual update needed when adding new modules.
+      - for d in $(git ls-tree --name-only -d FETCH_HEAD | grep -v ^[.] | grep -v ^plans | grep -v ^docs_); do git checkout FETCH_HEAD -- "$d/" 2>/dev/null || true; done
     install:
       - pip install -r requirements.txt
     build:

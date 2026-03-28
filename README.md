@@ -10,7 +10,7 @@ Zero-dependency, single-file Python implementations of popular libraries — std
 
 | Module | Description | Benchmark Against |
 |--------|-------------|-------------------|
-| `httpclient/` | Sync + async REST client | `httpx` |
+| `httpclient/` | Sync + async REST client with connection pooling, proxy, and auth | `httpx` |
 | `sse/` | Server-Sent Events client with auto-reconnect | `httpx-sse` |
 
 **Data Formats**
@@ -20,6 +20,7 @@ Zero-dependency, single-file Python implementations of popular libraries — std
 | `yaml/` | YAML parser and serializer (common subset) | `PyYAML` |
 | `jsonc/` | JSONC parser (JSON with comments and trailing commas) | `commentjson` |
 | `toon/` | TOON (Token-Oriented Object Notation) encoder/decoder | `toon_format` |
+| `frontmatter/` | Frontmatter parser and serializer (YAML/TOML/JSON file-header metadata) | `python-frontmatter` |
 
 **Data Validation**
 

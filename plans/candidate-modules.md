@@ -8,7 +8,7 @@ Modules with implementation, correctness tests, and benchmarks.
 |--------|----------|-------|-------------------|
 | `aes/` | pycryptodome | ECB/CBC/CTR/GCM modes, AES-128/192/256, pure Python + OpenSSL ctypes, PKCS7 padding, GCM AEAD authentication | pycryptodome |
 | `qr/` | qrcode | ISO 18004 QR Code Model 2, versions 1-40, all 4 ECC levels, numeric/alphanumeric/byte/ECI encoding | qrcode |
-| `httpclient/` | httpx | Sync + async HTTP/1.1 REST client, streaming responses, multipart uploads, auto-redirect, SSL verification, Client/AsyncClient sessions | httpx |
+| `httpclient/` | httpx | Sync + async HTTP/1.1 REST client, streaming responses, multipart uploads, auto-redirect, SSL verification, Client/AsyncClient sessions, connection pooling, auto decompression, proxy support, Basic/Digest auth | httpx |
 | `dotenv/` | python-dotenv | load_dotenv, dotenv_values, find_dotenv, get/set/unset_key, variable interpolation, export prefix, escape sequences | python-dotenv |
 | `yaml/` | PyYAML | Parser + serializer for common YAML subset (mappings, sequences, flow style, block scalars, multi-document, type resolution; no anchors/aliases/tags) | PyYAML |
 | `jsonc/` | commentjson | JSON with `//`, `#`, `/* */` comments and trailing commas, drop-in replacement for stdlib json | commentjson |
@@ -26,10 +26,7 @@ Modules with implementation, correctness tests, and benchmarks.
 | `ansi/` | — | ANSI escape code primitives, fg/bg/style helpers, color depth detection, strip_ansi, visible_len, cursor control | — |
 | `scheduler/` | APScheduler | In-process task scheduler, 5-field cron expressions, interval/one-shot triggers, async jobs, per-job callbacks, event listeners, job pause/resume, misfire grace time | APScheduler, croniter, schedule |
 | `search/sparse_search` | rank-bm25 | BM25/BM25+/BM25L/BM25F + TF-IDF+Cosine, inverted index with reverse index for fast delete, dynamic add/remove/update, metadata filtering, JSON/SQLite persistence, pluggable tokenizer | rank-bm25 |
-
-## httpclient Pending Features
-
-- Connection pooling — pool keyed by (host, port, scheme), keep-alive, stale connection detection. Currently each request creates a new connection.
+| `frontmatter/` | python-frontmatter | Parse and serialize YAML/TOML/JSON file-header metadata, Document model, loads/dumps/load/dump API, auto-detect format | python-frontmatter |
 
 ## Tier 1 — High Value, Not Yet Started
 

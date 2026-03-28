@@ -33,12 +33,16 @@ Session usage::
 from __future__ import annotations
 
 import asyncio
+import base64
+import hashlib
 import http.client
 import json as _json
 import os
 import ssl
 import threading
+import time
 import warnings
+import zlib
 from collections.abc import AsyncIterator, Iterator
 from typing import IO, Any
 from urllib.parse import quote, urlencode, urlparse
@@ -48,6 +52,8 @@ from urllib.parse import quote, urlencode, urlparse
 DEFAULT_TIMEOUT = 30.0
 DEFAULT_MAX_REDIRECTS = 10
 DEFAULT_USER_AGENT = "zerodep-http/0.1"
+DEFAULT_POOL_SIZE = 10
+DEFAULT_POOL_IDLE_TIMEOUT = 60.0
 
 
 # ── Response ──
@@ -140,6 +146,214 @@ def _guess_encoding_from_headers(headers: dict[str, str]) -> str:
     return "utf-8"
 
 
+# ── Auth ──
+
+
+class Auth:
+    """Base class for HTTP authentication."""
+
+    def auth_headers(self, method: str, url: str) -> dict[str, str]:
+        """Return authorization headers.
+
+        Args:
+            method: HTTP method.
+            url: Request URL.
+
+        Returns:
+            Dict of headers to add to the request.
+        """
+        raise NotImplementedError
+
+
+class BasicAuth(Auth):
+    """HTTP Basic authentication."""
+
+    def __init__(self, username: str, password: str) -> None:
+        self._username = username
+        self._password = password
+
+    def auth_headers(self, method: str, url: str) -> dict[str, str]:
+        """Return Basic Authorization header."""
+        credentials = f"{self._username}:{self._password}".encode()
+        return {"Authorization": "Basic " + base64.b64encode(credentials).decode()}
+
+
+class DigestAuth(Auth):
+    """HTTP Digest authentication."""
+
+    def __init__(self, username: str, password: str) -> None:
+        self._username = username
+        self._password = password
+        self._nc = 0
+
+    def auth_headers(self, method: str, url: str) -> dict[str, str]:
+        """Not usable without a server challenge."""
+        raise NotImplementedError("DigestAuth requires a server challenge")
+
+    def auth_headers_from_challenge(
+        self, method: str, path: str, challenge: str
+    ) -> dict[str, str]:
+        """Compute Digest auth headers from a WWW-Authenticate challenge.
+
+        Args:
+            method: HTTP method.
+            path: Request path (URI).
+            challenge: The WWW-Authenticate header value.
+
+        Returns:
+            Dict with the Authorization header.
+        """
+        params = _parse_digest_challenge(challenge)
+        realm = params.get("realm", "")
+        nonce = params.get("nonce", "")
+        qop = params.get("qop", "")
+        opaque = params.get("opaque", "")
+        algorithm = params.get("algorithm", "MD5").upper()
+
+        self._nc += 1
+        nc_hex = f"{self._nc:08x}"
+        cnonce = os.urandom(16).hex()
+
+        if algorithm == "SHA-256":
+            hash_fn = hashlib.sha256
+        else:
+            hash_fn = hashlib.md5
+
+        ha1 = hash_fn(f"{self._username}:{realm}:{self._password}".encode()).hexdigest()
+        ha2 = hash_fn(f"{method}:{path}".encode()).hexdigest()
+
+        if qop == "auth":
+            response = hash_fn(
+                f"{ha1}:{nonce}:{nc_hex}:{cnonce}:{qop}:{ha2}".encode()
+            ).hexdigest()
+        else:
+            response = hash_fn(f"{ha1}:{nonce}:{ha2}".encode()).hexdigest()
+
+        header = (
+            f'Digest username="{self._username}", realm="{realm}", '
+            f'nonce="{nonce}", uri="{path}", response="{response}"'
+        )
+        if qop:
+            header += f', qop={qop}, nc={nc_hex}, cnonce="{cnonce}"'
+        if opaque:
+            header += f', opaque="{opaque}"'
+        header += f", algorithm={algorithm}"
+
+        return {"Authorization": header}
+
+
+def _normalize_auth(
+    auth: tuple[str, str] | Auth | None,
+) -> Auth | None:
+    """Convert auth parameter to an Auth instance.
+
+    Args:
+        auth: A (username, password) tuple, an Auth subclass, or None.
+
+    Returns:
+        An Auth instance or None.
+    """
+    if auth is None:
+        return None
+    if isinstance(auth, tuple):
+        return BasicAuth(auth[0], auth[1])
+    return auth
+
+
+def _parse_digest_challenge(header_value: str) -> dict[str, str]:
+    """Parse a Digest WWW-Authenticate challenge into a dict.
+
+    Args:
+        header_value: The full WWW-Authenticate header value.
+
+    Returns:
+        Dict of challenge parameters.
+    """
+    if header_value.lower().startswith("digest "):
+        header_value = header_value[7:]
+    result: dict[str, str] = {}
+    import re
+
+    for match in re.finditer(r'(\w+)=(?:"([^"]*)"|([\w\-]+))', header_value):
+        key = match.group(1)
+        value = match.group(2) if match.group(2) is not None else match.group(3)
+        result[key] = value
+    return result
+
+
+# ── Decompression helpers ──
+
+
+def _decompress_body(body: bytes, encoding: str) -> bytes:
+    """Decompress a response body based on Content-Encoding.
+
+    Args:
+        body: The raw response body bytes.
+        encoding: The Content-Encoding value.
+
+    Returns:
+        Decompressed bytes, or original body if encoding is unsupported.
+    """
+    if encoding in ("gzip", "x-gzip"):
+        return zlib.decompress(body, 16 + zlib.MAX_WBITS)
+    if encoding == "deflate":
+        try:
+            return zlib.decompress(body, -zlib.MAX_WBITS)
+        except zlib.error:
+            return zlib.decompress(body)
+    return body
+
+
+def _make_decompressor(encoding: str) -> zlib.decompressobj | None:
+    """Create a streaming decompressor for the given encoding.
+
+    Args:
+        encoding: The Content-Encoding value.
+
+    Returns:
+        A zlib.decompressobj or None if encoding is unsupported.
+    """
+    if encoding in ("gzip", "x-gzip"):
+        return zlib.decompressobj(16 + zlib.MAX_WBITS)
+    if encoding == "deflate":
+        return zlib.decompressobj(-zlib.MAX_WBITS)
+    return None
+
+
+# ── Proxy helpers ──
+
+
+def _parse_proxy(proxy: str) -> tuple[str, int, str | None, str | None]:
+    """Parse a proxy URL into components.
+
+    Args:
+        proxy: Proxy URL (e.g. "http://user:pass@host:port").
+
+    Returns:
+        Tuple of (hostname, port, username_or_None, password_or_None).
+    """
+    parsed = urlparse(proxy)
+    hostname = parsed.hostname or ""
+    port = parsed.port or 8080
+    username = parsed.username or None
+    password = parsed.password or None
+    return hostname, port, username, password
+
+
+def _proxy_auth_header(username: str, password: str) -> str:
+    """Build a Proxy-Authorization Basic header value.
+
+    Args:
+        username: Proxy username.
+        password: Proxy password.
+
+    Returns:
+        The header value string.
+    """
+    credentials = f"{username}:{password}".encode()
+    return "Basic " + base64.b64encode(credentials).decode()
+
+
 # ── Streaming Response ──
 
 
@@ -162,6 +376,7 @@ class StreamingResponse:
         "headers",
         "url",
         "_encoding",
+        "_decompressor",
         "_sync_resp",
         "_sync_conn",
         "_async_reader",
@@ -198,12 +413,16 @@ class StreamingResponse:
         url: str,
         resp: http.client.HTTPResponse,
         conn: http.client.HTTPConnection,
+        content_encoding: str = "",
     ) -> "StreamingResponse":
         obj = object.__new__(cls)
         obj.status_code = status_code
         obj.headers = headers
         obj.url = url
         obj._encoding = _guess_encoding_from_headers(headers)
+        obj._decompressor = (
+            _make_decompressor(content_encoding) if content_encoding else None
+        )
         obj._sync_resp = resp
         obj._sync_conn = conn
         obj._async_reader = None
@@ -226,12 +445,16 @@ class StreamingResponse:
         is_chunked: bool,
         content_length: int | None,
         timeout: float,
+        content_encoding: str = "",
     ) -> "StreamingResponse":
         obj = object.__new__(cls)
         obj.status_code = status_code
         obj.headers = headers
         obj.url = url
         obj._encoding = _guess_encoding_from_headers(headers)
+        obj._decompressor = (
+            _make_decompressor(content_encoding) if content_encoding else None
+        )
         obj._sync_resp = None
         obj._sync_conn = None
         obj._async_reader = reader
@@ -264,7 +487,13 @@ class StreamingResponse:
                 chunk = self._sync_resp.read(chunk_size)
                 if not chunk:
                     break
+                if self._decompressor:
+                    chunk = self._decompressor.decompress(chunk)
                 yield chunk
+            if self._decompressor:
+                remaining = self._decompressor.flush()
+                if remaining:
+                    yield remaining
         except (OSError, http.client.HTTPException) as exc:
             raise ConnectionError(str(exc)) from exc
 
@@ -294,6 +523,8 @@ class StreamingResponse:
         try:
             if self._is_chunked:
                 async for chunk in self._aiter_chunked():
+                    if self._decompressor:
+                        chunk = self._decompressor.decompress(chunk)
                     yield chunk
             elif self._bytes_remaining is not None:
                 while self._bytes_remaining > 0:
@@ -305,6 +536,8 @@ class StreamingResponse:
                     if not data:
                         break
                     self._bytes_remaining -= len(data)
+                    if self._decompressor:
+                        data = self._decompressor.decompress(data)
                     yield data
             else:
                 while True:
@@ -314,7 +547,13 @@ class StreamingResponse:
                     )
                     if not data:
                         break
+                    if self._decompressor:
+                        data = self._decompressor.decompress(data)
                     yield data
+            if self._decompressor:
+                remaining = self._decompressor.flush()
+                if remaining:
+                    yield remaining
         except asyncio.TimeoutError:
             raise TimeoutError(f"Streaming read timed out for {self.url}")
         except OSError as exc:
@@ -603,6 +842,199 @@ def _merge_headers(
     return merged
 
 
+# ── Connection pools ──
+
+
+class _SyncConnectionPool:
+    """Thread-safe connection pool for sync HTTP connections."""
+
+    def __init__(self, pool_size: int = DEFAULT_POOL_SIZE) -> None:
+        self._pool: dict[
+            tuple[str, int, bool],
+            list[tuple[http.client.HTTPConnection, float]],
+        ] = {}
+        self._pool_size = pool_size
+        self._lock = threading.Lock()
+
+    def acquire(
+        self,
+        host: str,
+        port: int,
+        is_https: bool,
+        timeout: float,
+        verify: bool,
+    ) -> http.client.HTTPConnection | None:
+        """Acquire a connection from the pool if available.
+
+        Args:
+            host: Target hostname.
+            port: Target port.
+            is_https: Whether the connection uses TLS.
+            timeout: Connection timeout.
+            verify: Whether to verify TLS certificates.
+
+        Returns:
+            A reusable connection or None.
+        """
+        key = (host, port, is_https)
+        now = time.monotonic()
+        with self._lock:
+            conns = self._pool.get(key, [])
+            while conns:
+                conn, timestamp = conns.pop()
+                if now - timestamp > DEFAULT_POOL_IDLE_TIMEOUT:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                    continue
+                if conn.sock is not None and conn.sock.fileno() != -1:
+                    return conn
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+        return None
+
+    def release(
+        self,
+        host: str,
+        port: int,
+        is_https: bool,
+        conn: http.client.HTTPConnection,
+    ) -> None:
+        """Return a connection to the pool.
+
+        Args:
+            host: Target hostname.
+            port: Target port.
+            is_https: Whether the connection uses TLS.
+            conn: The connection to return.
+        """
+        key = (host, port, is_https)
+        with self._lock:
+            conns = self._pool.setdefault(key, [])
+            if len(conns) < self._pool_size:
+                conns.append((conn, time.monotonic()))
+            else:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+    def close_all(self) -> None:
+        """Close all pooled connections."""
+        with self._lock:
+            for conns in self._pool.values():
+                for conn, _ in conns:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+            self._pool.clear()
+
+
+class _AsyncConnectionPool:
+    """Async connection pool for async HTTP connections."""
+
+    def __init__(self, pool_size: int = DEFAULT_POOL_SIZE) -> None:
+        self._pool: dict[
+            tuple[str, int, bool],
+            list[
+                tuple[
+                    asyncio.StreamReader,
+                    asyncio.StreamWriter,
+                    float,
+                ]
+            ],
+        ] = {}
+        self._pool_size = pool_size
+        self._lock = asyncio.Lock()
+
+    async def acquire(
+        self,
+        host: str,
+        port: int,
+        is_https: bool,
+        timeout: float,
+        verify: bool,
+    ) -> tuple[asyncio.StreamReader, asyncio.StreamWriter] | None:
+        """Acquire a connection from the pool if available.
+
+        Args:
+            host: Target hostname.
+            port: Target port.
+            is_https: Whether the connection uses TLS.
+            timeout: Connection timeout.
+            verify: Whether to verify TLS certificates.
+
+        Returns:
+            A (reader, writer) tuple or None.
+        """
+        key = (host, port, is_https)
+        now = time.monotonic()
+        async with self._lock:
+            conns = self._pool.get(key, [])
+            while conns:
+                reader, writer, timestamp = conns.pop()
+                if now - timestamp > DEFAULT_POOL_IDLE_TIMEOUT:
+                    try:
+                        writer.close()
+                        await writer.wait_closed()
+                    except Exception:
+                        pass
+                    continue
+                if not reader.at_eof():
+                    return reader, writer
+                try:
+                    writer.close()
+                    await writer.wait_closed()
+                except Exception:
+                    pass
+        return None
+
+    async def release(
+        self,
+        host: str,
+        port: int,
+        is_https: bool,
+        reader: asyncio.StreamReader,
+        writer: asyncio.StreamWriter,
+    ) -> None:
+        """Return a connection to the pool.
+
+        Args:
+            host: Target hostname.
+            port: Target port.
+            is_https: Whether the connection uses TLS.
+            reader: The stream reader.
+            writer: The stream writer.
+        """
+        key = (host, port, is_https)
+        async with self._lock:
+            conns = self._pool.setdefault(key, [])
+            if len(conns) < self._pool_size:
+                conns.append((reader, writer, time.monotonic()))
+            else:
+                try:
+                    writer.close()
+                    await writer.wait_closed()
+                except Exception:
+                    pass
+
+    async def close_all(self) -> None:
+        """Close all pooled connections."""
+        async with self._lock:
+            for conns in self._pool.values():
+                for _, writer, _ in conns:
+                    try:
+                        writer.close()
+                        await writer.wait_closed()
+                    except Exception:
+                        pass
+            self._pool.clear()
+
+
 # ── Sync implementation (http.client) ──
 
 
@@ -619,37 +1051,105 @@ def _sync_request(
     max_redirects: int = DEFAULT_MAX_REDIRECTS,
     verify: bool = True,
     stream: bool = False,
+    auth: tuple[str, str] | Auth | None = None,
+    proxy: str | None = None,
+    _pool: _SyncConnectionPool | None = None,
 ) -> Response | StreamingResponse:
     """Perform a synchronous HTTP request."""
     url = _build_url(url, params)
     body, content_type = _prepare_body(data, json, files)
 
     req_headers: dict[str, str] = {"User-Agent": DEFAULT_USER_AGENT}
+    req_headers["Accept-Encoding"] = "gzip, deflate"
     if content_type:
         req_headers["Content-Type"] = content_type
     if body is not None:
         req_headers["Content-Length"] = str(len(body))
     req_headers.update(headers or {})
 
+    auth_obj = _normalize_auth(auth)
+    if isinstance(auth_obj, BasicAuth):
+        req_headers.update(auth_obj.auth_headers(method, url))
+
     redirects = 0
+    _digest_attempted = False
     while True:
         scheme, host, port, path, is_https = _parse_url(url)
 
         close_conn = True
+        conn: http.client.HTTPConnection | None = None
         try:
-            if is_https:
-                if verify:
-                    ctx = ssl.create_default_context()
+            if proxy:
+                proxy_host, proxy_port, proxy_user, proxy_pass = _parse_proxy(proxy)
+                if not is_https:
+                    conn = http.client.HTTPConnection(
+                        proxy_host, proxy_port, timeout=timeout
+                    )
+                    request_path = url
+                    if proxy_user and proxy_pass:
+                        req_headers["Proxy-Authorization"] = _proxy_auth_header(
+                            proxy_user, proxy_pass
+                        )
                 else:
-                    ctx = ssl._create_unverified_context()
-                conn = http.client.HTTPSConnection(
-                    host, port, timeout=timeout, context=ctx
-                )
+                    # CONNECT tunnel for HTTPS through proxy
+                    tunnel_conn = http.client.HTTPConnection(
+                        proxy_host, proxy_port, timeout=timeout
+                    )
+                    connect_headers: dict[str, str] = {"Host": f"{host}:{port}"}
+                    if proxy_user and proxy_pass:
+                        connect_headers["Proxy-Authorization"] = _proxy_auth_header(
+                            proxy_user, proxy_pass
+                        )
+                    tunnel_conn.request(
+                        "CONNECT", f"{host}:{port}", headers=connect_headers
+                    )
+                    tunnel_resp = tunnel_conn.getresponse()
+                    if tunnel_resp.status != 200:
+                        tunnel_conn.close()
+                        raise ConnectionError(
+                            f"CONNECT tunnel failed: {tunnel_resp.status}"
+                        )
+                    tunnel_resp.read()
+                    sock = tunnel_conn.sock
+                    if verify:
+                        ctx = ssl.create_default_context()
+                    else:
+                        ctx = ssl._create_unverified_context()
+                    wrapped = ctx.wrap_socket(sock, server_hostname=host)
+                    conn = http.client.HTTPSConnection(
+                        host, port, timeout=timeout, context=ctx
+                    )
+                    conn.sock = wrapped
+                    request_path = path
+            elif _pool:
+                pooled_conn = _pool.acquire(host, port, is_https, timeout, verify)
+                if pooled_conn is not None:
+                    conn = pooled_conn
+                    req_headers["Connection"] = "keep-alive"
+                    request_path = path
+                else:
+                    conn = None
+                    request_path = path
             else:
-                conn = http.client.HTTPConnection(host, port, timeout=timeout)
+                request_path = path
+
+            if conn is None:
+                if is_https:
+                    if verify:
+                        ctx = ssl.create_default_context()
+                    else:
+                        ctx = ssl._create_unverified_context()
+                    conn = http.client.HTTPSConnection(
+                        host, port, timeout=timeout, context=ctx
+                    )
+                else:
+                    conn = http.client.HTTPConnection(host, port, timeout=timeout)
+
+            if _pool and not proxy:
+                req_headers.setdefault("Connection", "keep-alive")
 
             try:
-                conn.request(method, path, body=body, headers=req_headers)
+                conn.request(method, request_path, body=body, headers=req_headers)
                 resp = conn.getresponse()
                 resp_headers = {k.lower(): v for k, v in resp.getheaders()}
                 status = resp.status
@@ -672,17 +1172,51 @@ def _sync_request(
                         req_headers.pop("Content-Length", None)
                     continue
 
+                # Digest auth retry
+                if (
+                    isinstance(auth_obj, DigestAuth)
+                    and status == 401
+                    and not _digest_attempted
+                ):
+                    www_auth = resp_headers.get("www-authenticate", "")
+                    if www_auth.lower().startswith("digest"):
+                        resp.read()
+                        digest_headers = auth_obj.auth_headers_from_challenge(
+                            method, path, www_auth
+                        )
+                        req_headers.update(digest_headers)
+                        _digest_attempted = True
+                        conn.close()
+                        continue
+
+                content_encoding = resp_headers.get("content-encoding", "")
+
                 if stream:
                     close_conn = False
                     return StreamingResponse._from_sync(
-                        status, resp_headers, url, resp, conn
+                        status,
+                        resp_headers,
+                        url,
+                        resp,
+                        conn,
+                        content_encoding=content_encoding,
                     )
 
                 resp_body = resp.read()
+                if content_encoding:
+                    resp_body = _decompress_body(resp_body, content_encoding)
                 return Response(status, resp_headers, resp_body, url)
             finally:
                 if close_conn:
-                    conn.close()
+                    if (
+                        _pool
+                        and not proxy
+                        and not stream
+                        and resp_headers.get("connection", "").lower() != "close"
+                    ):
+                        _pool.release(host, port, is_https, conn)
+                    else:
+                        conn.close()
 
         except (OSError, http.client.HTTPException) as exc:
             raise ConnectionError(f"Connection to {host}:{port} failed: {exc}") from exc
@@ -793,49 +1327,131 @@ async def _async_request(
     max_redirects: int = DEFAULT_MAX_REDIRECTS,
     verify: bool = True,
     stream: bool = False,
+    auth: tuple[str, str] | Auth | None = None,
+    proxy: str | None = None,
+    _pool: _AsyncConnectionPool | None = None,
 ) -> Response | StreamingResponse:
     """Perform an asynchronous HTTP request using asyncio streams."""
     url = _build_url(url, params)
     body, content_type = _prepare_body(data, json, files)
 
     req_headers: dict[str, str] = {"User-Agent": DEFAULT_USER_AGENT}
+    req_headers["Accept-Encoding"] = "gzip, deflate"
     if content_type:
         req_headers["Content-Type"] = content_type
     if body is not None:
         req_headers["Content-Length"] = str(len(body))
     req_headers.update(headers or {})
 
+    auth_obj = _normalize_auth(auth)
+    if isinstance(auth_obj, BasicAuth):
+        req_headers.update(auth_obj.auth_headers(method, url))
+
     redirects = 0
+    _digest_attempted = False
     while True:
         scheme, host, port, path, is_https = _parse_url(url)
 
-        try:
-            if is_https:
-                if verify:
-                    ctx = ssl.create_default_context()
-                else:
-                    ctx = ssl._create_unverified_context()
-            else:
-                ctx = None
+        reader: asyncio.StreamReader | None = None
+        writer: asyncio.StreamWriter | None = None
 
-            reader, writer = await asyncio.wait_for(
-                asyncio.open_connection(host, port, ssl=ctx),
-                timeout=timeout,
-            )
+        try:
+            if proxy:
+                proxy_host, proxy_port, proxy_user, proxy_pass = _parse_proxy(proxy)
+                if not is_https:
+                    reader, writer = await asyncio.wait_for(
+                        asyncio.open_connection(proxy_host, proxy_port),
+                        timeout=timeout,
+                    )
+                    request_path = url
+                    if proxy_user and proxy_pass:
+                        req_headers["Proxy-Authorization"] = _proxy_auth_header(
+                            proxy_user, proxy_pass
+                        )
+                else:
+                    # CONNECT tunnel for HTTPS through proxy
+                    proxy_reader, proxy_writer = await asyncio.wait_for(
+                        asyncio.open_connection(proxy_host, proxy_port),
+                        timeout=timeout,
+                    )
+                    connect_line = f"CONNECT {host}:{port} HTTP/1.1\r\n"
+                    connect_headers = f"Host: {host}:{port}\r\n"
+                    if proxy_user and proxy_pass:
+                        connect_headers += (
+                            f"Proxy-Authorization: "
+                            f"{_proxy_auth_header(proxy_user, proxy_pass)}\r\n"
+                        )
+                    connect_headers += "\r\n"
+                    proxy_writer.write(
+                        (connect_line + connect_headers).encode("latin-1")
+                    )
+                    await asyncio.wait_for(proxy_writer.drain(), timeout=timeout)
+                    tunnel_status, _ = await _async_read_response_headers(
+                        proxy_reader, timeout
+                    )
+                    if tunnel_status != 200:
+                        proxy_writer.close()
+                        try:
+                            await proxy_writer.wait_closed()
+                        except Exception:
+                            pass
+                        raise ConnectionError(f"CONNECT tunnel failed: {tunnel_status}")
+                    # Upgrade to TLS over the tunnel
+                    if verify:
+                        ctx = ssl.create_default_context()
+                    else:
+                        ctx = ssl._create_unverified_context()
+                    loop = asyncio.get_event_loop()
+                    transport = proxy_writer.transport
+                    new_transport = await loop.start_tls(
+                        transport, transport.get_protocol(), ctx, server_hostname=host
+                    )
+                    reader = proxy_reader
+                    writer = proxy_writer
+                    writer._transport = new_transport  # type: ignore[attr-defined]
+                    request_path = path
+            elif _pool:
+                result = await _pool.acquire(host, port, is_https, timeout, verify)
+                if result is not None:
+                    reader, writer = result
+                    req_headers["Connection"] = "keep-alive"
+                    request_path = path
+                else:
+                    request_path = path
+            else:
+                request_path = path
+
+            if reader is None or writer is None:
+                if is_https:
+                    if verify:
+                        ctx = ssl.create_default_context()
+                    else:
+                        ctx = ssl._create_unverified_context()
+                else:
+                    ctx = None
+                reader, writer = await asyncio.wait_for(
+                    asyncio.open_connection(host, port, ssl=ctx),
+                    timeout=timeout,
+                )
         except asyncio.TimeoutError:
             msg = f"Connection to {host}:{port} timed out after {timeout}s"
             raise TimeoutError(msg)
         except OSError as exc:
             raise ConnectionError(f"Connection to {host}:{port} failed: {exc}") from exc
 
+        if _pool and not proxy:
+            req_headers.setdefault("Connection", "keep-alive")
+
         close_writer = True
+        resp_headers: dict[str, str] = {}
         try:
             # Build raw HTTP/1.1 request
-            request_line = f"{method} {path} HTTP/1.1\r\n"
+            request_line = f"{method} {request_path} HTTP/1.1\r\n"
             header_lines = f"Host: {host}\r\n"
             for k, v in req_headers.items():
                 header_lines += f"{k}: {v}\r\n"
-            header_lines += "Connection: close\r\n"
+            if not _pool or proxy:
+                header_lines += "Connection: close\r\n"
             header_lines += "\r\n"
 
             raw_request = (request_line + header_lines).encode("latin-1")
@@ -865,6 +1481,24 @@ async def _async_request(
                     req_headers.pop("Content-Length", None)
                 continue
 
+            # Digest auth retry
+            if (
+                isinstance(auth_obj, DigestAuth)
+                and status == 401
+                and not _digest_attempted
+            ):
+                www_auth = resp_headers.get("www-authenticate", "")
+                if www_auth.lower().startswith("digest"):
+                    await _async_read_body(reader, resp_headers, timeout)
+                    digest_headers = auth_obj.auth_headers_from_challenge(
+                        method, path, www_auth
+                    )
+                    req_headers.update(digest_headers)
+                    _digest_attempted = True
+                    continue
+
+            content_encoding = resp_headers.get("content-encoding", "")
+
             if stream:
                 # Return streaming response — don't close writer
                 close_writer = False
@@ -881,20 +1515,31 @@ async def _async_request(
                     is_chunked,
                     content_length,
                     timeout,
+                    content_encoding=content_encoding,
                 )
 
             # Non-streaming: read body based on Content-Length / chunked
             resp_body = await _async_read_body(reader, resp_headers, timeout)
+            if content_encoding:
+                resp_body = _decompress_body(resp_body, content_encoding)
             return Response(status, resp_headers, resp_body, url)
         except asyncio.TimeoutError:
             raise TimeoutError(f"Request to {url} timed out after {timeout}s")
         finally:
             if close_writer:
-                writer.close()
-                try:
-                    await writer.wait_closed()
-                except Exception:
-                    pass
+                if (
+                    _pool
+                    and not proxy
+                    and not stream
+                    and resp_headers.get("connection", "").lower() != "close"
+                ):
+                    await _pool.release(host, port, is_https, reader, writer)
+                else:
+                    writer.close()
+                    try:
+                        await writer.wait_closed()
+                    except Exception:
+                        pass
 
 
 # ── Sync convenience functions ──
@@ -977,10 +1622,9 @@ async def async_options(url: str, **kwargs: Any) -> Response | StreamingResponse
 
 
 class Client:
-    """Synchronous HTTP client session.
+    """Synchronous HTTP client session with connection pooling.
 
-    Thread-safe: uses a threading.Lock internally. Each request creates
-    a new connection (no connection pooling).
+    Thread-safe: uses a threading.Lock internally.
 
     Usage::
 
@@ -995,11 +1639,17 @@ class Client:
         timeout: float = DEFAULT_TIMEOUT,
         max_redirects: int = DEFAULT_MAX_REDIRECTS,
         verify: bool = True,
+        auth: tuple[str, str] | Auth | None = None,
+        proxy: str | None = None,
+        pool_size: int = DEFAULT_POOL_SIZE,
     ) -> None:
         self._base_headers = headers or {}
         self._timeout = timeout
         self._max_redirects = max_redirects
         self._verify = verify
+        self._auth = auth
+        self._proxy = proxy
+        self._pool = _SyncConnectionPool(pool_size)
         self._lock = threading.Lock()
 
     def request(
@@ -1012,6 +1662,9 @@ class Client:
         kwargs.setdefault("timeout", self._timeout)
         kwargs.setdefault("max_redirects", self._max_redirects)
         kwargs.setdefault("verify", self._verify)
+        kwargs.setdefault("auth", self._auth)
+        kwargs.setdefault("proxy", self._proxy)
+        kwargs["_pool"] = self._pool
         kwargs["headers"] = _merge_headers(self._base_headers, kwargs.get("headers"))
         if kwargs.get("stream"):
             return _sync_request(method, url, **kwargs)
@@ -1039,17 +1692,20 @@ class Client:
     def options(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return self.request("OPTIONS", url, **kwargs)
 
+    def close(self) -> None:
+        """Close all pooled connections."""
+        self._pool.close_all()
+
     def __enter__(self) -> Client:
         return self
 
     def __exit__(self, *args: Any) -> None:
-        pass
+        self._pool.close_all()
 
 
 class AsyncClient:
-    """Asynchronous HTTP client session.
+    """Asynchronous HTTP client session with connection pooling.
 
-    Each request creates a new connection (no connection pooling).
     Safe to use from a single asyncio task; for concurrent requests
     from the same client, use asyncio.Lock internally.
 
@@ -1066,11 +1722,17 @@ class AsyncClient:
         timeout: float = DEFAULT_TIMEOUT,
         max_redirects: int = DEFAULT_MAX_REDIRECTS,
         verify: bool = True,
+        auth: tuple[str, str] | Auth | None = None,
+        proxy: str | None = None,
+        pool_size: int = DEFAULT_POOL_SIZE,
     ) -> None:
         self._base_headers = headers or {}
         self._timeout = timeout
         self._max_redirects = max_redirects
         self._verify = verify
+        self._auth = auth
+        self._proxy = proxy
+        self._pool = _AsyncConnectionPool(pool_size)
         self._lock = asyncio.Lock()
 
     async def request(
@@ -1083,6 +1745,9 @@ class AsyncClient:
         kwargs.setdefault("timeout", self._timeout)
         kwargs.setdefault("max_redirects", self._max_redirects)
         kwargs.setdefault("verify", self._verify)
+        kwargs.setdefault("auth", self._auth)
+        kwargs.setdefault("proxy", self._proxy)
+        kwargs["_pool"] = self._pool
         kwargs["headers"] = _merge_headers(self._base_headers, kwargs.get("headers"))
         if kwargs.get("stream"):
             return await _async_request(method, url, **kwargs)
@@ -1110,8 +1775,12 @@ class AsyncClient:
     async def options(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
         return await self.request("OPTIONS", url, **kwargs)
 
+    async def aclose(self) -> None:
+        """Close all pooled connections."""
+        await self._pool.close_all()
+
     async def __aenter__(self) -> AsyncClient:
         return self
 
     async def __aexit__(self, *args: Any) -> None:
-        pass
+        await self._pool.close_all()

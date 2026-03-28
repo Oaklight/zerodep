@@ -8,7 +8,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from httpclient import Client, get, post
+from httpclient import AsyncClient, Client, get, post
 from httpclient import async_get as zd_async_get
 from httpclient import async_post as zd_async_post
 
@@ -176,3 +176,33 @@ class TestAsyncFileUpload:
                 )
 
         benchmark(_run_async, _upload)
+
+
+# ── Sync Gzip Decompression ──
+
+
+class TestSyncGzipDecompression:
+    def test_zerodep(self, benchmark):
+        benchmark(get, f"{BASE}/gzip")
+
+    def test_httpx(self, benchmark):
+        benchmark(httpx.get, f"{BASE}/gzip")
+
+
+# ── Async Client GET ──
+
+
+class TestAsyncClientGet:
+    def test_zerodep(self, benchmark):
+        async def _get():
+            async with AsyncClient() as c:
+                return await c.get(f"{BASE}/get")
+
+        benchmark(_run_async, _get)
+
+    def test_httpx(self, benchmark):
+        async def _get():
+            async with httpx.AsyncClient() as c:
+                return await c.get(f"{BASE}/get")
+
+        benchmark(_run_async, _get)

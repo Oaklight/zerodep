@@ -6,8 +6,15 @@ The server runs on localhost with an OS-assigned port and is torn down
 after all tests finish.
 """
 
+import base64
+import gzip
+import hashlib
 import json
+import select
+import socket
 import threading
+import zlib
+from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
@@ -170,6 +177,106 @@ class _HttpBinHandler(BaseHTTPRequestHandler):
             self.send_response(code)
             self.send_header("Content-Length", "0")
             self.end_headers()
+        elif path == "/gzip":
+            payload = json.dumps(
+                {"gzipped": True, "method": "GET", "origin": "127.0.0.1"}
+            ).encode()
+            compressed = gzip.compress(payload)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Content-Length", str(len(compressed)))
+            self.end_headers()
+            self.wfile.write(compressed)
+        elif path == "/deflate":
+            payload = json.dumps(
+                {"deflated": True, "method": "GET", "origin": "127.0.0.1"}
+            ).encode()
+            compressed = zlib.compress(payload)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Encoding", "deflate")
+            self.send_header("Content-Length", str(len(compressed)))
+            self.end_headers()
+            self.wfile.write(compressed)
+        elif path == "/gzip-stream":
+            payload = json.dumps(
+                {"gzipped": True, "method": "GET", "origin": "127.0.0.1"}
+            ).encode()
+            compressed = gzip.compress(payload)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Transfer-Encoding", "chunked")
+            self.end_headers()
+            chunk_size = 32
+            for i in range(0, len(compressed), chunk_size):
+                chunk = compressed[i : i + chunk_size]
+                self.wfile.write(f"{len(chunk):x}\r\n".encode())
+                self.wfile.write(chunk)
+                self.wfile.write(b"\r\n")
+            self.wfile.write(b"0\r\n\r\n")
+        elif path.startswith("/basic-auth/"):
+            parts = path.split("/")
+            expected_user, expected_pass = parts[2], parts[3]
+            auth = self.headers.get("Authorization", "")
+            if auth.startswith("Basic "):
+                decoded = base64.b64decode(auth[6:]).decode()
+                user, passwd = decoded.split(":", 1)
+                if user == expected_user and passwd == expected_pass:
+                    self._send_json({"authenticated": True, "user": user})
+                    return
+            self.send_response(401)
+            self.send_header("WWW-Authenticate", 'Basic realm="Fake Realm"')
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+        elif path.startswith("/digest-auth/"):
+            parts = path.split("/")
+            qop, expected_user, expected_pass = parts[2], parts[3], parts[4]
+            realm = "testrealm@host.com"
+            nonce = "testnonce123"
+            auth = self.headers.get("Authorization", "")
+            if auth.startswith("Digest "):
+                # Parse key=value pairs from the Digest header.
+                auth_params = {}
+                for item in auth[7:].split(","):
+                    item = item.strip()
+                    if "=" in item:
+                        k, v = item.split("=", 1)
+                        auth_params[k.strip()] = v.strip().strip('"')
+                ha1 = hashlib.md5(
+                    f"{expected_user}:{realm}:{expected_pass}".encode()
+                ).hexdigest()
+                ha2 = hashlib.md5(
+                    f"GET:{auth_params.get('uri', '')}".encode()
+                ).hexdigest()
+                if qop == "auth":
+                    expected_response = hashlib.md5(
+                        f"{ha1}:{nonce}:{auth_params.get('nc', '')}:"
+                        f"{auth_params.get('cnonce', '')}:{qop}:{ha2}".encode()
+                    ).hexdigest()
+                else:
+                    expected_response = hashlib.md5(
+                        f"{ha1}:{nonce}:{ha2}".encode()
+                    ).hexdigest()
+                if auth_params.get("response") == expected_response:
+                    self._send_json({"authenticated": True, "user": expected_user})
+                    return
+            self.send_response(401)
+            self.send_header(
+                "WWW-Authenticate",
+                f'Digest realm="{realm}", nonce="{nonce}", qop="auth", algorithm=MD5',
+            )
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+        elif path == "/keep-alive":
+            body = json.dumps({"keep-alive": True}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Connection", "keep-alive")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
         else:
             self.send_response(404)
             self.send_header("Content-Length", "0")
@@ -193,13 +300,117 @@ class _HttpBinHandler(BaseHTTPRequestHandler):
         )
 
 
-# ── pytest fixture ──
+# ── proxy handler ──
+
+
+class _ProxyHandler(BaseHTTPRequestHandler):
+    """Simple forward HTTP proxy handler for testing."""
+
+    def log_message(self, format, *args):  # noqa: A002
+        pass  # suppress request logs during tests
+
+    def _forward_request(self, method):
+        """Forward an HTTP request to the target server.
+
+        Args:
+            method: The HTTP method to forward (e.g. "GET", "POST").
+        """
+        parsed = urlparse(self.path)
+        host = parsed.hostname
+        port = parsed.port or 80
+        path = parsed.path
+        if parsed.query:
+            path = f"{path}?{parsed.query}"
+
+        # Read request body if present.
+        body = self._read_body()
+
+        # Filter out proxy-specific and hop-by-hop headers.
+        headers = {}
+        for key, value in self.headers.items():
+            lower = key.lower()
+            if lower.startswith("proxy-") or lower == "host":
+                continue
+            headers[key] = value
+
+        conn = HTTPConnection(host, port, timeout=10)
+        try:
+            conn.request(method, path, body=body or None, headers=headers)
+            resp = conn.getresponse()
+            resp_body = resp.read()
+            self.send_response(resp.status)
+            for key, value in resp.getheaders():
+                lower = key.lower()
+                if lower in ("transfer-encoding", "connection"):
+                    continue
+                self.send_header(key, value)
+            self.send_header("Content-Length", str(len(resp_body)))
+            self.end_headers()
+            self.wfile.write(resp_body)
+        finally:
+            conn.close()
+
+    def _read_body(self):
+        length = int(self.headers.get("Content-Length", 0))
+        return self.rfile.read(length) if length else b""
+
+    def do_GET(self):
+        self._forward_request("GET")
+
+    def do_POST(self):
+        self._forward_request("POST")
+
+    def do_CONNECT(self):
+        """Handle HTTPS CONNECT tunneling."""
+        host, port = self.path.split(":")
+        port = int(port)
+        target = socket.create_connection((host, port), timeout=10)
+        self.send_response(200, "Connection Established")
+        self.end_headers()
+
+        self.connection.setblocking(False)
+        target.setblocking(False)
+
+        try:
+            while True:
+                readable, _, _ = select.select([self.connection, target], [], [], 1.0)
+                if not readable:
+                    continue
+                for sock in readable:
+                    try:
+                        data = sock.recv(8192)
+                    except (BlockingIOError, ConnectionResetError):
+                        data = b""
+                    if not data:
+                        return
+                    if sock is self.connection:
+                        target.sendall(data)
+                    else:
+                        self.connection.sendall(data)
+        except Exception:
+            pass
+        finally:
+            target.close()
+
+
+# ── pytest fixtures ──
 
 
 @pytest.fixture(scope="session")
 def httpbin_url():
     """Start a local httpbin-compatible server and yield its base URL."""
     server = ThreadingHTTPServer(("127.0.0.1", 0), _HttpBinHandler)
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f"http://127.0.0.1:{port}"
+    server.shutdown()
+
+
+@pytest.fixture(scope="session")
+def proxy_url():
+    """Start a local HTTP proxy server and yield its base URL."""
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _ProxyHandler)
     port = server.server_address[1]
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()

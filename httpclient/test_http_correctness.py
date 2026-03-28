@@ -9,7 +9,9 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from httpclient import (
     AsyncClient,
+    BasicAuth,
     Client,
+    DigestAuth,
     HTTPError,
     StreamingResponse,
     async_delete,
@@ -431,3 +433,265 @@ class TestResponse:
     def test_text_is_str(self, httpbin_url):
         r = get(f"{httpbin_url}/get")
         assert isinstance(r.text, str)  # type: ignore
+
+
+# ── Sync: decompression ──
+
+
+class TestSyncDecompression:
+    def test_gzip(self, httpbin_url):
+        r = get(f"{httpbin_url}/gzip")
+        assert r.status_code == 200
+        assert r.json()["gzipped"] is True  # type: ignore
+
+    def test_deflate(self, httpbin_url):
+        r = get(f"{httpbin_url}/deflate")
+        assert r.status_code == 200
+        assert r.json()["deflated"] is True  # type: ignore
+
+    def test_gzip_vs_httpx(self, httpbin_url):
+        ours = get(f"{httpbin_url}/gzip")
+        theirs = httpx.get(f"{httpbin_url}/gzip")
+        assert ours.json() == theirs.json()  # type: ignore
+
+    def test_identity_no_decompression(self, httpbin_url):
+        """User can opt out by setting Accept-Encoding: identity."""
+        r = get(f"{httpbin_url}/get", headers={"Accept-Encoding": "identity"})
+        assert r.status_code == 200
+        # Server should not compress when identity is requested
+
+    def test_gzip_streaming(self, httpbin_url):
+        with get(f"{httpbin_url}/gzip-stream", stream=True) as r:
+            assert r.status_code == 200
+            body = r.read()
+        import json as _json
+
+        data = _json.loads(body)
+        assert data["gzipped"] is True
+
+
+# ── Async: decompression ──
+
+
+class TestAsyncDecompression:
+    @pytest.mark.asyncio
+    async def test_gzip(self, httpbin_url):
+        r = await async_get(f"{httpbin_url}/gzip")
+        assert r.status_code == 200
+        assert r.json()["gzipped"] is True  # type: ignore
+
+    @pytest.mark.asyncio
+    async def test_deflate(self, httpbin_url):
+        r = await async_get(f"{httpbin_url}/deflate")
+        assert r.status_code == 200
+        assert r.json()["deflated"] is True  # type: ignore
+
+    @pytest.mark.asyncio
+    async def test_gzip_streaming(self, httpbin_url):
+        r = await async_get(f"{httpbin_url}/gzip-stream", stream=True)
+        async with r:
+            body = await r.aread()
+        import json as _json
+
+        data = _json.loads(body)
+        assert data["gzipped"] is True
+
+
+# ── Sync: basic auth ──
+
+
+class TestSyncBasicAuth:
+    def test_basic_auth_tuple(self, httpbin_url):
+        r = get(f"{httpbin_url}/basic-auth/user/pass", auth=("user", "pass"))
+        assert r.status_code == 200
+        assert r.json()["authenticated"] is True  # type: ignore
+
+    def test_basic_auth_object(self, httpbin_url):
+        r = get(f"{httpbin_url}/basic-auth/user/pass", auth=BasicAuth("user", "pass"))
+        assert r.status_code == 200
+        assert r.json()["authenticated"] is True  # type: ignore
+
+    def test_basic_auth_wrong_credentials(self, httpbin_url):
+        r = get(f"{httpbin_url}/basic-auth/user/pass", auth=("wrong", "creds"))
+        assert r.status_code == 401
+
+    def test_basic_auth_client_session(self, httpbin_url):
+        with Client(auth=("user", "pass")) as c:
+            r = c.get(f"{httpbin_url}/basic-auth/user/pass")
+            assert r.status_code == 200
+            assert r.json()["authenticated"] is True  # type: ignore
+
+
+# ── Async: basic auth ──
+
+
+class TestAsyncBasicAuth:
+    @pytest.mark.asyncio
+    async def test_basic_auth_tuple(self, httpbin_url):
+        r = await async_get(
+            f"{httpbin_url}/basic-auth/user/pass", auth=("user", "pass")
+        )
+        assert r.status_code == 200
+        assert r.json()["authenticated"] is True  # type: ignore
+
+    @pytest.mark.asyncio
+    async def test_basic_auth_object(self, httpbin_url):
+        r = await async_get(
+            f"{httpbin_url}/basic-auth/user/pass", auth=BasicAuth("user", "pass")
+        )
+        assert r.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_basic_auth_client_session(self, httpbin_url):
+        async with AsyncClient(auth=("user", "pass")) as c:
+            r = await c.get(f"{httpbin_url}/basic-auth/user/pass")
+            assert r.status_code == 200
+
+
+# ── Sync: digest auth ──
+
+
+class TestSyncDigestAuth:
+    def test_digest_auth_success(self, httpbin_url):
+        r = get(
+            f"{httpbin_url}/digest-auth/auth/user/pass",
+            auth=DigestAuth("user", "pass"),
+        )
+        assert r.status_code == 200
+        assert r.json()["authenticated"] is True  # type: ignore
+
+    def test_digest_auth_wrong_credentials(self, httpbin_url):
+        r = get(
+            f"{httpbin_url}/digest-auth/auth/user/pass",
+            auth=DigestAuth("wrong", "creds"),
+        )
+        assert r.status_code == 401
+
+    def test_digest_auth_client_session(self, httpbin_url):
+        with Client(auth=DigestAuth("user", "pass")) as c:
+            r = c.get(f"{httpbin_url}/digest-auth/auth/user/pass")
+            assert r.status_code == 200
+            assert r.json()["user"] == "user"  # type: ignore
+
+
+# ── Async: digest auth ──
+
+
+class TestAsyncDigestAuth:
+    @pytest.mark.asyncio
+    async def test_digest_auth_success(self, httpbin_url):
+        r = await async_get(
+            f"{httpbin_url}/digest-auth/auth/user/pass",
+            auth=DigestAuth("user", "pass"),
+        )
+        assert r.status_code == 200
+        assert r.json()["authenticated"] is True  # type: ignore
+
+    @pytest.mark.asyncio
+    async def test_digest_auth_wrong_credentials(self, httpbin_url):
+        r = await async_get(
+            f"{httpbin_url}/digest-auth/auth/user/pass",
+            auth=DigestAuth("wrong", "creds"),
+        )
+        assert r.status_code == 401
+
+
+# ── Sync: connection pool ──
+
+
+class TestSyncConnectionPool:
+    def test_pool_basic_reuse(self, httpbin_url):
+        with Client() as c:
+            for _ in range(5):
+                r = c.get(f"{httpbin_url}/get")
+                assert r.status_code == 200
+
+    def test_pool_different_paths(self, httpbin_url):
+        with Client() as c:
+            r1 = c.get(f"{httpbin_url}/get")
+            r2 = c.get(f"{httpbin_url}/json")
+            assert r1.status_code == 200
+            assert r2.status_code == 200
+
+    def test_pool_client_close(self, httpbin_url):
+        c = Client()
+        c.get(f"{httpbin_url}/get")
+        c.close()
+        assert len(c._pool._pool) == 0
+
+    def test_pool_size_limit(self, httpbin_url):
+        with Client(pool_size=1) as c:
+            for _ in range(3):
+                r = c.get(f"{httpbin_url}/get")
+                assert r.status_code == 200
+
+    def test_pool_vs_no_pool(self, httpbin_url):
+        """Stateless functions should still work without pooling."""
+        r1 = get(f"{httpbin_url}/get")
+        with Client() as c:
+            r2 = c.get(f"{httpbin_url}/get")
+        assert r1.json()["url"] == r2.json()["url"]  # type: ignore
+
+
+# ── Async: connection pool ──
+
+
+class TestAsyncConnectionPool:
+    @pytest.mark.asyncio
+    async def test_pool_single_request(self, httpbin_url):
+        async with AsyncClient() as c:
+            r = await c.get(f"{httpbin_url}/get")
+            assert r.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_pool_different_hosts(self, httpbin_url):
+        """Each request to the same host creates a fresh connection."""
+        async with AsyncClient() as c:
+            r = await c.get(f"{httpbin_url}/json")
+            assert r.status_code == 200
+            assert "slideshow" in r.json()  # type: ignore
+
+    @pytest.mark.asyncio
+    async def test_pool_client_close(self, httpbin_url):
+        c = AsyncClient()
+        await c.request("GET", f"{httpbin_url}/get")
+        await c.aclose()
+        assert len(c._pool._pool) == 0
+
+
+# ── Sync: proxy ──
+
+
+class TestSyncProxy:
+    def test_http_through_proxy(self, httpbin_url, proxy_url):
+        r = get(f"{httpbin_url}/get", proxy=proxy_url)
+        assert r.status_code == 200
+        assert "url" in r.json()  # type: ignore
+
+    def test_proxy_client_session(self, httpbin_url, proxy_url):
+        with Client(proxy=proxy_url) as c:
+            r = c.get(f"{httpbin_url}/get")
+            assert r.status_code == 200
+
+    def test_proxy_post(self, httpbin_url, proxy_url):
+        r = post(f"{httpbin_url}/post", json={"key": "val"}, proxy=proxy_url)
+        assert r.status_code == 200
+        assert r.json()["json"] == {"key": "val"}  # type: ignore
+
+
+# ── Async: proxy ──
+
+
+class TestAsyncProxy:
+    @pytest.mark.asyncio
+    async def test_http_through_proxy(self, httpbin_url, proxy_url):
+        r = await async_get(f"{httpbin_url}/get", proxy=proxy_url)
+        assert r.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_proxy_post(self, httpbin_url, proxy_url):
+        r = await async_post(
+            f"{httpbin_url}/post", json={"key": "val"}, proxy=proxy_url
+        )
+        assert r.status_code == 200
+        assert r.json()["json"] == {"key": "val"}  # type: ignore

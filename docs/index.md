@@ -32,6 +32,10 @@ Each module is a **self-contained single file** that you can copy directly into 
 | [Prompts](modules/prompt.md) | Interactive CLI prompts (confirm, select, text) | `questionary` |
 | [Markdown](modules/markdown.md) | Markdown to HTML renderer (CommonMark subset + GFM tables) | `mistune` |
 | [ANSI Colors](modules/ansi.md) | ANSI terminal styling: colors, attributes, detection, strip/visible_len | — |
+| [Diff](modules/diff.md) | Unified diff parser, patch apply/reverse, three-way merge | `unidiff` |
+| [VCS](modules/vcs.md) | Git/Hg/Jujutsu CLI wrapper (diff, status, log, blame) | — |
+| [Scheduler](modules/scheduler.md) | In-process task scheduler with cron, interval, one-shot triggers | `APScheduler` |
+| [Sparse Search](modules/search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF full-text search engine | `rank-bm25` |
 
 ## Philosophy
 

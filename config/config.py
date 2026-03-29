@@ -36,14 +36,19 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
+
+def _ensure_sibling_path(name: str) -> str:
+    """Return the sibling module directory and prepend it to ``sys.path``."""
+    sibling_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", name)
+    if sibling_dir not in sys.path:
+        sys.path.insert(0, sibling_dir)
+    return sibling_dir
+
+
 # ── Sibling dotenv import (guarded) ──────────────────────────────────────────
 
 try:
-    _dotenv_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "dotenv"
-    )
-    if _dotenv_dir not in sys.path:
-        sys.path.insert(0, _dotenv_dir)
+    _dotenv_dir = _ensure_sibling_path("dotenv")
     from dotenv import dotenv_values as _dotenv_values
     from dotenv import find_dotenv as _find_dotenv
 
@@ -54,9 +59,7 @@ except ImportError:
 # ── Sibling yaml import (guarded) ───────────────────────────────────────────
 
 try:
-    _yaml_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "yaml")
-    if _yaml_dir not in sys.path:
-        sys.path.insert(0, _yaml_dir)
+    _yaml_dir = _ensure_sibling_path("yaml")
     from yaml import load as _yaml_load
 
     _HAS_YAML = True
@@ -66,9 +69,7 @@ except ImportError:
 # ── Sibling jsonc import (guarded) ──────────────────────────────────────────
 
 try:
-    _jsonc_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "jsonc")
-    if _jsonc_dir not in sys.path:
-        sys.path.insert(0, _jsonc_dir)
+    _jsonc_dir = _ensure_sibling_path("jsonc")
     from jsonc import loads as _jsonc_loads
 
     _HAS_JSONC = True

@@ -36,12 +36,19 @@ import sys
 import tempfile
 from typing import Protocol, runtime_checkable
 
+
+def _ensure_sibling_path(name: str) -> str:
+    """Return the sibling module directory and prepend it to ``sys.path``."""
+    sibling_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", name)
+    if sibling_dir not in sys.path:
+        sys.path.insert(0, sibling_dir)
+    return sibling_dir
+
+
 # ── Sibling diff module import (guarded) ─────────────────────────────
 
 try:
-    _diff_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "diff")
-    if _diff_dir not in sys.path:
-        sys.path.insert(0, _diff_dir)
+    _diff_dir = _ensure_sibling_path("diff")
     from diff import merge3 as _diff_merge3
 
     _HAS_DIFF_MODULE = True

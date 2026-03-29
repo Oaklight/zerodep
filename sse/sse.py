@@ -52,14 +52,19 @@ import time
 from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator
 from typing import Any
 
+
+def _ensure_sibling_path(name: str) -> str:
+    """Return the sibling module directory and prepend it to ``sys.path``."""
+    sibling_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", name)
+    if sibling_dir not in sys.path:
+        sys.path.insert(0, sibling_dir)
+    return sibling_dir
+
+
 # ── Sibling httpclient import (guarded) ──
 
 try:
-    _httpclient_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "httpclient"
-    )
-    if _httpclient_dir not in sys.path:
-        sys.path.insert(0, _httpclient_dir)
+    _httpclient_dir = _ensure_sibling_path("httpclient")
     from httpclient import ConnectionError as _HttpConnectionError
     from httpclient import StreamingResponse as _StreamingResponse
     from httpclient import TimeoutError as _HttpTimeoutError

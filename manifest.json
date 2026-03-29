@@ -204,6 +204,14 @@
       ],
       "version": "0.1.0",
       "deps": []
+    },
+    "xml": {
+      "description": "XML ↔ dict converter with fault-tolerant LLM tag extraction — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "xml/xml.py"
+      ],
+      "version": "0.1.0",
+      "deps": []
     }
   }
 }

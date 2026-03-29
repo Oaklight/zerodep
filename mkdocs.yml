@@ -66,6 +66,7 @@ plugins:
             - ../config
             - ../cache
             - ../runner
+            - ../xml
             - aes
             - qr
             - httpclient
@@ -90,6 +91,7 @@ plugins:
             - config
             - cache
             - runner
+            - xml
           options:
             docstring_style: google
             show_source: true
@@ -136,6 +138,7 @@ nav:
           - httpclient / HTTP Client: modules/http.md
           - sse / SSE Client: modules/sse.md
       - Data Formats:
+          - xml / XML Converter: modules/xml.md
           - yaml / YAML Parser: modules/yaml.md
           - jsonc / JSONC Parser: modules/jsonc.md
           - toon / TOON Serializer: modules/toon.md
@@ -170,6 +173,7 @@ nav:
           - httpclient / HTTP Client: api/http.md
           - sse / SSE Client: api/sse.md
       - Data Formats:
+          - xml / XML Converter: api/xml.md
           - yaml / YAML Parser: api/yaml.md
           - jsonc / JSONC Parser: api/jsonc.md
           - toon / TOON Serializer: api/toon.md
@@ -204,6 +208,7 @@ nav:
           - httpclient / HTTP Client: benchmarks/http.md
           - sse / SSE Client: benchmarks/sse.md
       - Data Formats:
+          - xml / XML Converter: benchmarks/xml.md
           - yaml / YAML Parser: benchmarks/yaml.md
           - jsonc / JSONC Parser: benchmarks/jsonc.md
           - toon / TOON Serializer: benchmarks/toon.md

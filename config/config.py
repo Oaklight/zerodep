@@ -45,36 +45,48 @@ def _ensure_sibling_path(name: str) -> str:
     return sibling_dir
 
 
-# ── Sibling dotenv import (guarded) ──────────────────────────────────────────
+# ── Sibling module loaders (lazy) ───────────────────────────────────────────
 
-try:
-    _dotenv_dir = _ensure_sibling_path("dotenv")
-    from dotenv import dotenv_values as _dotenv_values
-    from dotenv import find_dotenv as _find_dotenv
 
-    _HAS_DOTENV = True
-except ImportError:
-    _HAS_DOTENV = False
+def _load_dotenv_helpers() -> tuple[Callable[..., Any], Callable[..., Any]]:
+    """Load sibling ``dotenv`` helpers on demand."""
+    _ensure_sibling_path("dotenv")
+    sys.modules.pop("dotenv", None)
+    try:
+        from dotenv import dotenv_values, find_dotenv
+    except ImportError as exc:
+        raise ImportError(
+            ".env loading requires the sibling dotenv module. "
+            "Copy dotenv/dotenv.py into your project, "
+            "or set dotenv_path=None to disable."
+        ) from exc
+    return dotenv_values, find_dotenv
 
-# ── Sibling yaml import (guarded) ───────────────────────────────────────────
 
-try:
-    _yaml_dir = _ensure_sibling_path("yaml")
-    from yaml import load as _yaml_load
+def _load_yaml_loader() -> Callable[[str], Any]:
+    """Load the sibling ``yaml`` module's ``load`` function on demand."""
+    _ensure_sibling_path("yaml")
+    sys.modules.pop("yaml", None)
+    try:
+        from yaml import load as yaml_load
+    except ImportError as exc:
+        raise ImportError(
+            "YAML config files require the sibling yaml module. "
+            "Copy yaml/yaml.py into your project."
+        ) from exc
+    return yaml_load
 
-    _HAS_YAML = True
-except ImportError:
-    _HAS_YAML = False
 
-# ── Sibling jsonc import (guarded) ──────────────────────────────────────────
+def _load_jsonc_loader() -> Callable[[str], Any] | None:
+    """Load the sibling ``jsonc`` module's ``loads`` function if available."""
+    _ensure_sibling_path("jsonc")
+    sys.modules.pop("jsonc", None)
+    try:
+        from jsonc import loads as jsonc_loads
+    except ImportError:
+        return None
+    return jsonc_loads
 
-try:
-    _jsonc_dir = _ensure_sibling_path("jsonc")
-    from jsonc import loads as _jsonc_loads
-
-    _HAS_JSONC = True
-except ImportError:
-    _HAS_JSONC = False
 
 # ── Stdlib tomllib (Python 3.11+) ───────────────────────────────────────────
 
@@ -226,8 +238,9 @@ def _load_jsonc_file(path: str | os.PathLike[str]) -> dict[str, Any]:
     """Load a JSONC file, falling back to plain JSON if jsonc module is unavailable."""
     with open(path, encoding="utf-8") as f:
         text = f.read()
-    if _HAS_JSONC:
-        data = _jsonc_loads(text)
+    jsonc_loads = _load_jsonc_loader()
+    if jsonc_loads is not None:
+        data = jsonc_loads(text)
     else:
         data = json.loads(text)
     if not isinstance(data, dict):
@@ -237,14 +250,10 @@ def _load_jsonc_file(path: str | os.PathLike[str]) -> dict[str, Any]:
 
 def _load_yaml_file(path: str | os.PathLike[str]) -> dict[str, Any]:
     """Load a YAML file using the sibling yaml module."""
-    if not _HAS_YAML:
-        raise ImportError(
-            "YAML config files require the sibling yaml module. "
-            "Copy yaml/yaml.py into your project."
-        )
+    yaml_load = _load_yaml_loader()
     with open(path, encoding="utf-8") as f:
         text = f.read()
-    data = _yaml_load(text)
+    data = yaml_load(text)
     if data is None:
         return {}
     if not isinstance(data, dict):
@@ -430,19 +439,17 @@ class Config:
 
         # Load .env file
         if isinstance(dotenv_path, _Auto):
-            if _HAS_DOTENV:
-                found = _find_dotenv(usecwd=True)
-                if found:
-                    self._dotenv_data = _dotenv_values(found)
-        elif dotenv_path is not None:
-            if _HAS_DOTENV:
-                self._dotenv_data = _dotenv_values(str(dotenv_path))
+            try:
+                dotenv_values, find_dotenv = _load_dotenv_helpers()
+            except ImportError:
+                pass
             else:
-                raise ImportError(
-                    ".env loading requires the sibling dotenv module. "
-                    "Copy dotenv/dotenv.py into your project, "
-                    "or set dotenv_path=None to disable."
-                )
+                found = find_dotenv(usecwd=True)
+                if found:
+                    self._dotenv_data = dotenv_values(found)
+        elif dotenv_path is not None:
+            dotenv_values, _find_dotenv = _load_dotenv_helpers()
+            self._dotenv_data = dotenv_values(str(dotenv_path))
 
         # Load config file
         if config_path is not None:

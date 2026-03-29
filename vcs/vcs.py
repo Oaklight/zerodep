@@ -45,15 +45,20 @@ def _ensure_sibling_path(name: str) -> str:
     return sibling_dir
 
 
-# ── Sibling diff module import (guarded) ─────────────────────────────
+# ── Sibling diff module import (lazy) ───────────────────────────────────────
 
-try:
-    _diff_dir = _ensure_sibling_path("diff")
-    from diff import merge3 as _diff_merge3
 
-    _HAS_DIFF_MODULE = True
-except (ImportError, AttributeError):
-    _HAS_DIFF_MODULE = False
+def _load_diff_merge3():
+    """Load the sibling ``diff`` module's ``merge3`` function on demand."""
+    _ensure_sibling_path("diff")
+    try:
+        from diff import merge3 as diff_merge3
+    except (ImportError, AttributeError) as exc:
+        raise NotImplementedError(
+            "merge_file requires the sibling diff module. "
+            "Place diff.py in a sibling directory or on sys.path."
+        ) from exc
+    return diff_merge3
 
 
 # ── Exceptions ───────────────────────────────────────────────────────
@@ -1109,12 +1114,8 @@ class Mercurial:
             NotImplementedError: If the sibling ``diff`` module is
                 not available.
         """
-        if not _HAS_DIFF_MODULE:
-            raise NotImplementedError(
-                "merge_file requires the sibling diff module. "
-                "Place diff.py in a sibling directory or on sys.path."
-            )
-        result = _diff_merge3(base, ours, theirs)  # type: ignore[possibly-unbound]
+        diff_merge3 = _load_diff_merge3()
+        result = diff_merge3(base, ours, theirs)
         return result.content
 
     def workspace_add(
@@ -1392,12 +1393,8 @@ class Jujutsu:
             NotImplementedError: If the sibling ``diff`` module is
                 not available.
         """
-        if not _HAS_DIFF_MODULE:
-            raise NotImplementedError(
-                "merge_file requires the sibling diff module. "
-                "Place diff.py in a sibling directory or on sys.path."
-            )
-        result = _diff_merge3(base, ours, theirs)  # type: ignore[possibly-unbound]
+        diff_merge3 = _load_diff_merge3()
+        result = diff_merge3(base, ours, theirs)
         return result.content
 
     # -- workspace / bookmark / commit operations --

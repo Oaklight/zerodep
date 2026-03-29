@@ -171,7 +171,8 @@ _ANSI_CURSOR_UP = "\033[A"
 _ANSI_HIDE_CURSOR = "\033[?25l"
 _ANSI_SHOW_CURSOR = "\033[?25h"
 
-# Named colours → SGR foreground codes (standard 8 + bright 8)
+# Named colours → SGR foreground codes (aligned with ``ansi.NAMED_COLORS``
+# and ``ansi.BRIGHT_COLORS``: standard 8 + bright 8)
 _NAMED_COLORS: dict[str, int] = {
     "black": 30,
     "red": 31,

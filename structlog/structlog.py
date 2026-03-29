@@ -172,9 +172,7 @@ def _supports_color(stream: Any = None) -> bool:
     if os.environ.get("NO_COLOR"):
         return False
     s = stream or sys.stderr
-    if not hasattr(s, "isatty"):
-        return False
-    if not s.isatty():
+    if not hasattr(s, "isatty") or not s.isatty():
         return False
     if os.environ.get("TERM", "") == "dumb":
         return False

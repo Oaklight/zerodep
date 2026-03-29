@@ -195,6 +195,30 @@
 
 颜色能力判断不一定要抽成共享 helper，但应当成为仓库内统一写法。
 
+当前建议以 `ansi/ansi.py:261` 作为参考实现，其他终端相关模块尽量与它保持一致，例如：
+
+- `structlog/structlog.py:158`
+- `prompt/prompt.py:134`
+
+颜色集合本身也建议与 `ansi/ansi.py:71` 和 `ansi/ansi.py:82` 保持一致，默认对齐：
+
+- 标准 8 色
+- bright 8 色
+
+对于上层终端模块，如果没有非常明确的产品理由，不应单独发明新的 named-color 集合。
+
+进一步的能力分层建议如下：
+
+- `ansi` 负责完整颜色表达能力，覆盖 named colors、bright colors、256 色、hex、RGB、前景和背景
+- `prompt` 作为交互层，默认沿用 16 色 named colors；如确有需要，可以局部支持更灵活的前景色表达（例如 hex 前景）
+- `structlog` 作为日志渲染层，默认保持固定 16 色映射，不主动扩展为通用配色系统
+
+也就是说：
+
+- `ansi` 是颜色能力上限的参考实现
+- `prompt` 可以按交互需要局部借用 `ansi` 的表达模型
+- `structlog` 不必为了能力对齐而机械补齐 hex / 256 色，除非后续明确有更强的 renderer 可配置需求
+
 ---
 
 ## Pattern 4：Sync / Async API 镜像

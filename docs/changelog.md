@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-03-31
+
+### Enhancements
+
+- **HTTP Client**: added `HttpClientError` as the common base exception; renamed `ConnectionError` / `TimeoutError` to `HttpConnectionError` / `HttpTimeoutError` to avoid shadowing Python builtins (backward-compatible aliases kept).
+- **Config module**: added `ConfigError` base exception for `UndefinedValueError`.
+- **Frontmatter module**: `HandlerError` now carries a `handler` context field.
+- **VCS module**: `CommandError` now captures partial output on timeout and includes a `timeout` field.
+
+### Internal Improvements
+
+- Standardized error type conventions across all subsystem modules: two-level hierarchy, `<Module><Noun>Error` naming, f-string messages with context fields.
+- Documented subprocess execution conventions (binary discovery, timeout, encoding, return codes).
+- Documented sync/async API mirroring conventions (naming, phase annotations, shared logic extraction).
+- Documented large module internal layering conventions (section markers, ordering, phase annotations).
+- All 8 patterns in `internals.md` are now Standardized or Implemented.
+
 ## [0.2.1] - 2026-03-30
 
 ### Enhancements

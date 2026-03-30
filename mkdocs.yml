@@ -130,6 +130,8 @@ nav:
   - 首页: index.md
   - 指南:
       - 设计理念: guide/philosophy.md
+      - 设计与架构: guide/design.md
+      - 内部约定: guide/internals.md
       - CLI 工具: guide/cli.md
       - Manifest 清单: guide/manifest.md
   - 模块:

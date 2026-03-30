@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-03-30T13:25:40.671536+00:00",
+  "generated": "2026-03-30T16:38:58.741657+00:00",
   "modules": {
     "aes": {
       "description": "Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",
@@ -8,7 +8,7 @@
         "aes/aes.py",
         "aes/aes_openssl.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "medium"
     },
@@ -17,7 +17,7 @@
       "files": [
         "ansi/ansi.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "simple"
     },
@@ -26,7 +26,7 @@
       "files": [
         "cache/cache.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "subsystem"
     },
@@ -35,7 +35,7 @@
       "files": [
         "config/config.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [
         "dotenv",
         "yaml",
@@ -48,7 +48,7 @@
       "files": [
         "diff/diff.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "simple"
     },
@@ -57,7 +57,7 @@
       "files": [
         "dotenv/dotenv.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "simple"
     },
@@ -66,7 +66,7 @@
       "files": [
         "frontmatter/frontmatter.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [
         "yaml"
       ],
@@ -77,7 +77,7 @@
       "files": [
         "httpclient/httpclient.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "subsystem"
     },
@@ -86,7 +86,7 @@
       "files": [
         "jsonc/jsonc.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "simple"
     },
@@ -95,7 +95,7 @@
       "files": [
         "markdown/markdown.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "medium"
     },
@@ -104,7 +104,7 @@
       "files": [
         "prompt/prompt.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "simple"
     },
@@ -113,7 +113,7 @@
       "files": [
         "qr/qr.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "simple"
     },
@@ -122,7 +122,7 @@
       "files": [
         "retry/retry.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "simple"
     },
@@ -131,7 +131,7 @@
       "files": [
         "runner/runner.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "subsystem"
     },
@@ -140,7 +140,7 @@
       "files": [
         "scheduler/scheduler.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "subsystem"
     },
@@ -149,7 +149,7 @@
       "files": [
         "search/sparse_search.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "medium"
     },
@@ -158,7 +158,7 @@
       "files": [
         "soup/soup.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "medium"
     },
@@ -167,7 +167,7 @@
       "files": [
         "sse/sse.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [
         "httpclient"
       ],
@@ -178,7 +178,7 @@
       "files": [
         "structlog/structlog.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "medium"
     },
@@ -187,7 +187,7 @@
       "files": [
         "tabulate/tabulate.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "medium"
     },
@@ -196,7 +196,7 @@
       "files": [
         "toon/toon.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "simple"
     },
@@ -205,7 +205,7 @@
       "files": [
         "validate/validate.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "medium"
     },
@@ -214,7 +214,7 @@
       "files": [
         "vcs/vcs.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [
         "diff"
       ],
@@ -225,7 +225,7 @@
       "files": [
         "xml/xml.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "medium"
     },
@@ -234,7 +234,7 @@
       "files": [
         "yaml/yaml.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "subsystem"
     }

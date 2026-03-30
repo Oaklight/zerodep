@@ -693,16 +693,32 @@ async def run_async(
                 )
             except asyncio.TimeoutError:
                 # NOTE: sync/async alignment — phase 6: timeout handling
-                # TODO(tier2): partial output gap — sync non-callback path
-                # captures partial stdout/stderr from TimeoutExpired.stdout/.stderr,
-                # but asyncio.TimeoutError carries no partial output.  To align,
-                # would need to read proc.stdout/proc.stderr after kill, or
-                # switch to a streaming approach similar to the callback path.
+                # asyncio.TimeoutError carries no partial output (unlike
+                # subprocess.TimeoutExpired).  After killing the process,
+                # drain whatever bytes remain in the pipe buffers so the
+                # raised CommandTimeoutError includes partial output —
+                # aligned with the sync non-callback path.
                 await _async_terminate_with_escalation(proc, kill_delay)
+                partial_out = ""
+                partial_err = ""
+                try:
+                    if proc.stdout is not None:
+                        raw_out = await proc.stdout.read()
+                        partial_out = raw_out.decode(encoding) if raw_out else ""
+                except Exception:
+                    pass
+                try:
+                    if proc.stderr is not None:
+                        raw_err = await proc.stderr.read()
+                        partial_err = raw_err.decode(encoding) if raw_err else ""
+                except Exception:
+                    pass
                 assert timeout is not None
                 raise CommandTimeoutError(
                     cmd_tuple,
                     timeout,
+                    partial_out,
+                    partial_err,
                 )
 
             stdout_text = stdout_bytes.decode(encoding) if stdout_bytes else ""
@@ -1085,20 +1101,10 @@ class AsyncStreamHandle:
         await self._proc.wait()
         self._returncode = self._proc.returncode
 
-    def kill(self) -> None:
-        """Forcibly kill the process.
-
-        .. note::
-
-            Unlike :meth:`StreamHandle.kill`, this does not await
-            ``proc.wait()``.  The caller should rely on the context
-            manager cleanup to reap the process.
-        """
-        # TODO(tier2): sync/async drift — StreamHandle.kill() calls
-        # proc.kill() + proc.wait(); this only sends SIGKILL without
-        # waiting.  Consider adding an async kill() or documenting
-        # that callers must exit the context manager to reap.
+    async def kill(self) -> None:
+        """Forcibly kill the process."""
         self._proc.kill()
+        await self._proc.wait()
 
     async def _cleanup(self) -> None:
         """Ensure the process is terminated and returncode is captured.

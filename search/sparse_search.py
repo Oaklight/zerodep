@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.1.0"
+# version = "0.2.0"
 # deps = []
 # ///
 """Zero-dependency sparse text search with BM25 family and TF-IDF ranking.

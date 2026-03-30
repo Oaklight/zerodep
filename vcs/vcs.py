@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.1.0"
+# version = "0.2.0"
 # deps = ["diff"]
 # ///
 """VCS CLI wrapper — zero dependencies, stdlib only, Python 3.10+.

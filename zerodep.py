@@ -221,7 +221,7 @@ def _extract_frontmatter(source: str) -> dict[str, str | list]:
     Parses a PEP 723-style comment block::
 
         # /// zerodep
-        # version = "0.1.0"
+        # version = "0.2.0"
         # deps = ["httpclient"]
         # ///
 

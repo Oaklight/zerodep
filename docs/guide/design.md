@@ -119,14 +119,18 @@ zerodep 不是传统意义上的 Python 包。它不提供统一的运行时，�
 | structlog、prompt 的终端颜色检测对齐 | 完成 | `87ef4dc` |
 | cleanup 语义分为三级 | 完成 | -- |
 
-### Tier 2 -- 核心模块内部重构（计划中）
+### Tier 2 -- 核心模块内部重构（已完成）
 
-对三个最大子系统模块进行内部结构改进。
+对三个最大子系统模块进行内部结构改进。此层级所有项目均已完成。
 
-- **runner** -- 对齐 sync/async 结构，理清流式生命周期，统一 timeout/cleanup 语义
-- **scheduler** -- 文档化 thread + async 交互模型，审计 shutdown 路径，识别竞态条件风险点
-- **httpclient** -- 审计请求/响应生命周期，明确池归还/丢弃决策，标准化错误消息
-- **错误约定** -- 建立所有模块的错误消息最小上下文规则
+| 项目 | 状态 | 提交 |
+|------|------|------|
+| runner：段落结构 + sync/async 对齐审计 | 完成 | `0b85cf5` |
+| runner：修复 async 超时 partial output + 进程回收 | 完成 | `98d4c8a` |
+| scheduler：并发模型文档化 + 错误约定建立 | 完成 | `217833a` |
+| scheduler：收紧 job 状态转换的锁纪律 | 完成 | `116fb9e` |
+| httpclient：内部分层重排（12 层结构） | 完成 | `c8c8d61` |
+| httpclient：修复 sync/async 漂移 + 丰富错误上下文 | 完成 | `e9ddf8a` |
 
 ### Tier 3 -- 仓库级治理（计划中）
 

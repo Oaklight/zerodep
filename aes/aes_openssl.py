@@ -1,3 +1,9 @@
+# /// zerodep
+# version = "0.2.2"
+# deps = []
+# tier = "medium"
+# ///
+
 """AES encryption via OpenSSL libcrypto (ctypes): ECB, CBC, CTR, and GCM modes.
 
 Part of zerodep: https://github.com/Oaklight/zerodep

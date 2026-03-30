@@ -315,28 +315,31 @@ LOC 高不一定意味着必须拆分。
 
 这样后续新增功能时，不同类型模块就能采用不同的审查标准。
 
-## 30/60/90 计划
+## 进度追踪
 
-## 30 天内
+> 以下用 ✅ 标注已完成项、🔄 标注进行中。最后更新：2026-03-30。
 
-- 完成 `plans/` 分析文档基线
-- 增加 `pattern-inventory`
-- 统一 `config` / `vcs` / `sse` 的 sibling import 模式
-- 统一 `structlog` / `prompt` 的颜色能力检测
-- 检查 `README` / `Makefile` / pytest 路径是否漂移
+### Tier 1 完成状态
 
-## 60 天内
+- ✅ 完成 `plans/` 分析文档基线（`283e7dc`）
+- ✅ 增加 `pattern-inventory`（`plans/03-pattern-inventory.md`）
+- ✅ 统一 `config` / `vcs` / `sse` 的 sibling import 模式（`a196e45`）
+- ✅ sibling 模块改为懒加载：config（`240d6b5`）、vcs→diff（`262674a`）
+- ✅ 统一 `structlog` / `prompt` 的颜色能力检测（`87ef4dc`）
+- ✅ 统一 cleanup 段落的内部风格（三级分类标准化）
 
-- 整理 `runner` 内部结构
-- 梳理 `scheduler` 并发模型
-- 开始 `httpclient` 生命周期与 cleanup 审计
-- 建立错误消息风格约定
+### Tier 2（待启动）
 
-## 90 天内
+- ❌ 整理 `runner` 内部结构
+- ❌ 梳理 `scheduler` 并发模型
+- ❌ 开始 `httpclient` 生命周期与 cleanup 审计
+- ❌ 建立错误消息风格约定
 
-- 完成 `httpclient` 内部整形第一轮
-- 正式识别并标记 subsystem 级模块
-- 增加面向边界行为的测试：
+### Tier 3（待启动）
+
+- ❌ 完成 `httpclient` 内部整形第一轮
+- ❌ 正式识别并标记 subsystem 级模块
+- ❌ 增加面向边界行为的测试：
   - resource cleanup
   - timeout/cancel
   - pool reuse/invalidation

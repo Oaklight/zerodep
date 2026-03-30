@@ -425,13 +425,15 @@
 
 ## 按优先级的 pattern 治理建议
 
+> 以下用 ✅ 标注已完成项、🔄 标注进行中。最后更新：2026-03-30。
+
 ## 第一优先级
 
 最应该先统一的：
 
-1. Optional sibling import
-2. Terminal color detection
-3. Cleanup 语义分级
+1. ✅ Optional sibling import — 已统一模式（`a196e45`）+ 懒加载（`240d6b5`、`262674a`）
+2. ✅ Terminal color detection — 已对齐 structlog/prompt（`87ef4dc`）
+3. ✅ Cleanup 语义分级 — 三级分类标准化完成
 
 原因：
 

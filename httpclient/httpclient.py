@@ -85,12 +85,36 @@ class TooManyRedirects(HTTPError):
 
 # Note: intentionally shadows builtins for domain-specific semantics
 class ConnectionError(Exception):
-    """Raised on connection failures."""
+    """Raised on connection failures.
+
+    Attributes:
+        host: Remote hostname that the connection targeted.
+        port: Remote port number.
+        message: Human-readable error description.
+    """
+
+    def __init__(self, message: str, *, host: str = "", port: int = 0) -> None:
+        self.host = host
+        self.port = port
+        self.message = message
+        super().__init__(message)
 
 
 # Note: intentionally shadows builtins for domain-specific semantics
 class TimeoutError(Exception):
-    """Raised on request timeout."""
+    """Raised on request timeout.
+
+    Attributes:
+        url: The URL that timed out.
+        timeout: The timeout value in seconds that was exceeded.
+        message: Human-readable error description.
+    """
+
+    def __init__(self, message: str, *, url: str = "", timeout: float = 0.0) -> None:
+        self.url = url
+        self.timeout = timeout
+        self.message = message
+        super().__init__(message)
 
 
 # ── Data Models (Response) ──
@@ -559,7 +583,11 @@ class StreamingResponse:
                 if remaining:
                     yield remaining
         except asyncio.TimeoutError:
-            raise TimeoutError(f"Streaming read timed out for {self.url}")
+            raise TimeoutError(
+                f"Streaming read timed out for {self.url}",
+                url=self.url,
+                timeout=self._async_timeout or 0.0,
+            )
         except OSError as exc:
             raise ConnectionError(str(exc)) from exc
 
@@ -1061,7 +1089,9 @@ def _sync_request(
                     if tunnel_resp.status != 200:
                         tunnel_conn.close()
                         raise ConnectionError(
-                            f"CONNECT tunnel failed: {tunnel_resp.status}"
+                            f"CONNECT tunnel failed: {tunnel_resp.status}",
+                            host=host,
+                            port=port,
                         )
                     tunnel_resp.read()
                     sock = tunnel_conn.sock
@@ -1100,10 +1130,12 @@ def _sync_request(
                     conn = http.client.HTTPConnection(host, port, timeout=timeout)
 
             # Phase 4c: Keep-alive header management
-            # NOTE: sync relies on http.client defaults for Connection header;
-            # async explicitly appends "Connection: close" when not pooling.
-            # TODO(sync/async drift): consider aligning explicit Connection
-            # header management between sync and async paths.
+            # NOTE: sync/async intentional difference -- sync relies on
+            # http.client defaults for Connection header (http.client manages
+            # keep-alive internally); async explicitly appends
+            # "Connection: close" when not pooling because it builds raw
+            # HTTP/1.1 text over asyncio streams and must manage the header
+            # itself.
             if _pool and not proxy:
                 req_headers.setdefault("Connection", "keep-alive")
 
@@ -1135,9 +1167,6 @@ def _sync_request(
                     continue
 
                 # Phase 4f: Digest auth retry
-                # TODO(sync/async drift): sync explicitly calls conn.close()
-                # before retrying; async relies on the finally block, which
-                # may pool-release instead of closing.
                 if (
                     isinstance(auth_obj, DigestAuth)
                     and status == 401
@@ -1195,19 +1224,24 @@ def _sync_request(
                     else:
                         conn.close()
 
-        # NOTE: sync wraps connection acquisition AND request/response in a
-        # single try/except; async splits them into two separate try blocks.
-        # TODO(sync/async drift): error handling scope differs -- sync catches
-        # OSError/HTTPException around the entire connection+request cycle,
-        # while async catches connection errors separately from request errors.
+        # NOTE: sync/async intentional difference -- sync wraps connection
+        # acquisition AND request/response in a single try/except because
+        # http.client manages the socket internally.  Async splits them into
+        # two separate try blocks because the asyncio reader/writer must
+        # exist before the request try block's finally clause can decide
+        # whether to pool-release or close the writer.
         except (OSError, http.client.HTTPException) as exc:
-            raise ConnectionError(f"Connection to {host}:{port} failed: {exc}") from exc
+            raise ConnectionError(
+                f"Connection to {host}:{port} failed: {exc}",
+                host=host,
+                port=port,
+            ) from exc
         except TimeoutError:
             raise
         except Exception as exc:
             if "timed out" in str(exc).lower():
                 msg = f"Request to {url} timed out after {timeout}s"
-                raise TimeoutError(msg) from exc
+                raise TimeoutError(msg, url=url, timeout=timeout) from exc
             raise
 
 
@@ -1358,12 +1392,12 @@ async def _async_request(
         writer: asyncio.StreamWriter | None = None
 
         # Phase 4b: Connection acquisition
-        # NOTE: async splits connection acquisition into its own try/except,
-        # separate from the request/response try block below. Sync wraps both
-        # in a single try/except.
-        # TODO(sync/async drift): error handling scope differs -- sync catches
-        # OSError/HTTPException around the entire connection+request cycle,
-        # while async catches connection errors separately from request errors.
+        # NOTE: sync/async intentional difference -- async splits connection
+        # acquisition into its own try/except, separate from the request/
+        # response try block below, because the asyncio reader/writer must
+        # exist before the request try block's finally clause can decide
+        # whether to pool-release or close the writer.  Sync wraps both in
+        # a single try/except since http.client manages the socket internally.
         try:
             if proxy:
                 proxy_host, proxy_port, proxy_user, proxy_pass = _parse_proxy(proxy)
@@ -1405,7 +1439,11 @@ async def _async_request(
                             await proxy_writer.wait_closed()
                         except Exception:
                             pass
-                        raise ConnectionError(f"CONNECT tunnel failed: {tunnel_status}")
+                        raise ConnectionError(
+                            f"CONNECT tunnel failed: {tunnel_status}",
+                            host=host,
+                            port=port,
+                        )
                     # Upgrade to TLS over the tunnel
                     if verify:
                         ctx = ssl.create_default_context()
@@ -1445,14 +1483,20 @@ async def _async_request(
                 )
         except asyncio.TimeoutError:
             msg = f"Connection to {host}:{port} timed out after {timeout}s"
-            raise TimeoutError(msg)
+            raise TimeoutError(msg, url=url, timeout=timeout)
         except OSError as exc:
-            raise ConnectionError(f"Connection to {host}:{port} failed: {exc}") from exc
+            raise ConnectionError(
+                f"Connection to {host}:{port} failed: {exc}",
+                host=host,
+                port=port,
+            ) from exc
 
         # Phase 4c: Keep-alive header management
-        # NOTE: async explicitly appends "Connection: close" when not pooling
-        # (see header_lines construction below); sync relies on http.client
-        # defaults.
+        # NOTE: sync/async intentional difference -- async explicitly appends
+        # "Connection: close" when not pooling (see header_lines construction
+        # below) because it builds raw HTTP/1.1 text over asyncio streams;
+        # sync relies on http.client defaults which manage keep-alive
+        # internally.
         if _pool and not proxy:
             req_headers.setdefault("Connection", "keep-alive")
 
@@ -1498,10 +1542,6 @@ async def _async_request(
                 continue
 
             # Phase 4f: Digest auth retry
-            # TODO(sync/async drift): async relies on the finally block for
-            # connection cleanup on retry; sync explicitly calls conn.close()
-            # before continuing, which may pool-release the connection
-            # differently.
             if (
                 isinstance(auth_obj, DigestAuth)
                 and status == 401
@@ -1515,6 +1555,16 @@ async def _async_request(
                     )
                     req_headers.update(digest_headers)
                     _digest_attempted = True
+                    # Explicitly close before retry, matching sync behavior.
+                    # Without this, the finally block might pool-release
+                    # instead of closing, reusing a stale auth state.
+                    writer.close()
+                    # Tier 3: best-effort silent -- wait_closed on digest retry
+                    try:
+                        await writer.wait_closed()
+                    except Exception:
+                        pass
+                    close_writer = False
                     continue
 
             # Phase 4g: Response construction
@@ -1545,7 +1595,11 @@ async def _async_request(
                 resp_body = _decompress_body(resp_body, content_encoding)
             return Response(status, resp_headers, resp_body, url)
         except asyncio.TimeoutError:
-            raise TimeoutError(f"Request to {url} timed out after {timeout}s")
+            raise TimeoutError(
+                f"Request to {url} timed out after {timeout}s",
+                url=url,
+                timeout=timeout,
+            )
         finally:
             # Phase 4h: Pool release or connection close.
             # Tier 1: must-succeed -- connection lifecycle decision.

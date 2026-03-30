@@ -328,16 +328,18 @@ LOC 高不一定意味着必须拆分。
 - ✅ 统一 `structlog` / `prompt` 的颜色能力检测（`87ef4dc`）
 - ✅ 统一 cleanup 段落的内部风格（三级分类标准化）
 
-### Tier 2（待启动）
+### Tier 2 完成状态
 
-- ❌ 整理 `runner` 内部结构
-- ❌ 梳理 `scheduler` 并发模型
-- ❌ 开始 `httpclient` 生命周期与 cleanup 审计
-- ❌ 建立错误消息风格约定
+- ✅ 整理 `runner` 内部结构：14 段落标题、8 阶段 sync/async 对齐审计（`0b85cf5`）
+- ✅ 修复 `runner` sync/async 语义漂移：async 超时 partial output、AsyncStreamHandle.kill() await（`98d4c8a`）
+- ✅ 梳理 `scheduler` 并发模型：线程+async 文档化、shutdown 路径、4 处竞态标注（`217833a`）
+- ✅ 修复 `scheduler` 竞态条件：锁纪律收紧、job 状态转换保护（`116fb9e`）
+- ✅ 开始 `httpclient` 生命周期与 cleanup 审计：12 层分层重排、池生命周期文档（`c8c8d61`）
+- ✅ 修复 `httpclient` sync/async 漂移：错误上下文丰富化、digest retry 对齐（`e9ddf8a`）
+- ✅ 建立错误消息风格约定（scheduler 中建立标准，跨模块审计完成）
 
 ### Tier 3（待启动）
 
-- ❌ 完成 `httpclient` 内部整形第一轮
 - ❌ 正式识别并标记 subsystem 级模块
 - ❌ 增加面向边界行为的测试：
   - resource cleanup

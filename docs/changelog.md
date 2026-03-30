@@ -6,6 +6,23 @@
 
 ## [未发布]
 
+## [0.2.2] - 2026-03-31
+
+### 功能增强
+
+- **HTTP Client**：新增 `HttpClientError` 作为公共基础异常；将 `ConnectionError` / `TimeoutError` 重命名为 `HttpConnectionError` / `HttpTimeoutError`，避免遮蔽 Python 内置名（保留向后兼容别名）。
+- **Config 模块**：为 `UndefinedValueError` 新增 `ConfigError` 基础异常。
+- **Frontmatter 模块**：`HandlerError` 新增 `handler` 上下文字段。
+- **VCS 模块**：`CommandError` 在超时时捕获部分输出，并新增 `timeout` 字段。
+
+### 内部改进
+
+- 标准化所有子系统模块的错误类型约定：两层层次结构、`<模块><名词>Error` 命名、带上下文字段的 f-string 消息。
+- 文档化子进程执行约定（二进制发现、超时、编码、返回码）。
+- 文档化 sync/async API 镜像约定（命名、阶段注释、共享逻辑提取）。
+- 文档化大模块内部分层约定（段落标记、顺序、阶段注释）。
+- `internals.md` 中全部 8 个模式现已标准化或已实现。
+
 ## [0.2.1] - 2026-03-30
 
 ### 功能增强

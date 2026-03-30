@@ -684,8 +684,12 @@ class Scheduler:
         - ``self._jobs`` dict access is protected by ``self._lock``.
         - ``_get_due_jobs()`` snapshots due jobs under the lock.
         - Job execution (``_execute_job``) runs **outside** the lock.
-        - Job status is set to ``running`` outside the lock before
-          execution and reset to ``pending`` in a ``finally`` block.
+        - Job status transitions (``pending → running → pending``)
+          are performed under the lock.  ``_execute_job`` atomically
+          checks and sets ``status = running``, preventing concurrent
+          double-execution of the same job.
+        - ``_reschedule`` mutates ``next_run_time`` under the lock.
+        - ``_process_job`` reads ``next_run_time`` under the lock.
         - Listener dispatch (``_emit``) runs outside the lock, so
           listeners may observe intermediate job states.
 
@@ -883,21 +887,20 @@ class Scheduler:
         This does **not** update ``next_run_time`` — the trigger's
         schedule continues independently.
 
+        Double-execution is prevented by the status guard in
+        ``_execute_job``, which atomically checks and sets
+        ``job.status = running`` under the lock.
+
         Args:
             job_id: The job to run.
 
         Returns:
-            The return value of the job function.
+            The return value of the job function, or ``None`` if the
+            job is already running.
 
         Raises:
             JobNotFound: If *job_id* doesn't exist.
         """
-        # TODO(tier2): potential race — run_job() fetches the Job
-        # reference under lock but then calls _execute_job() outside
-        # the lock.  If the scheduler thread picks up the same job
-        # concurrently (it passed _get_due_jobs before this call),
-        # both threads will execute the job simultaneously and both
-        # will mutate job.status without synchronisation.
         with self._lock:
             job = self._jobs.get(job_id)
             if job is None:
@@ -1019,11 +1022,8 @@ class Scheduler:
         but is processed here without the lock held.  This is intentional
         to avoid holding the lock during potentially long job execution.
         """
-        # TODO(tier2): potential race — job.next_run_time is read here
-        # outside the lock.  A concurrent ``run_job()`` call could
-        # trigger ``_reschedule`` on the same job, causing the scheduler
-        # thread and the caller thread to both reschedule the same job.
-        scheduled = job.next_run_time
+        with self._lock:
+            scheduled = job.next_run_time
         if scheduled is None:
             return
 
@@ -1049,17 +1049,18 @@ class Scheduler:
     def _execute_job(self, job: Job, now: datetime) -> Any:
         """Run a job function, handling sync and async callables.
 
-        Note: this method runs **outside** the lock.  Job status is
-        mutated directly on the dataclass instance without lock
-        protection.
+        Acquires the lock to atomically check and set job status to
+        ``running``.  If the job is already running (concurrent
+        ``run_job`` or scheduler execution), the call is skipped.
+        The lock is released before job execution and re-acquired
+        briefly to reset the status in the ``finally`` block.
         """
-        # TODO(tier2): potential race — job.status is set to running
-        # without holding self._lock.  If run_job() is called from a
-        # user thread while the scheduler thread is also executing the
-        # same job, both threads may concurrently mutate the same Job
-        # instance (status, next_run_time).
-        job.status = JobStatus.running
-        scheduled = job.next_run_time
+        with self._lock:
+            if job.status == JobStatus.running:
+                logger.debug("Job %r already running, skipping", job.id)
+                return None
+            job.status = JobStatus.running
+            scheduled = job.next_run_time
 
         try:
             if inspect.iscoroutinefunction(job.fn):
@@ -1105,8 +1106,9 @@ class Scheduler:
 
         finally:
             # Tier 1: must-succeed — job status must reset
-            if job.status == JobStatus.running:
-                job.status = JobStatus.pending
+            with self._lock:
+                if job.status == JobStatus.running:
+                    job.status = JobStatus.pending
 
     def _run_async_job(self, job: Job) -> Any:
         """Execute an async job function in a new event loop.
@@ -1127,17 +1129,18 @@ class Scheduler:
         """Update a job's next_run_time from its trigger.
 
         Called from the scheduler thread after job execution.
+        Trigger computation runs outside the lock; only the state
+        mutation is protected.
         """
-        # TODO(tier2): potential race — next_run_time and trigger
-        # state are mutated outside the lock.  A concurrent run_job()
-        # call could read stale next_run_time.
         if isinstance(job.trigger, OnceTrigger):
-            job.trigger.mark_fired()
-            job.next_run_time = None
+            with self._lock:
+                job.trigger.mark_fired()
+                job.next_run_time = None
             return
 
         nxt = job.trigger.next_fire_time(now)
-        job.next_run_time = nxt
+        with self._lock:
+            job.next_run_time = nxt
 
     # ── Wakeup on job add ──
 

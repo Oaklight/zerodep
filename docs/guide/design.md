@@ -132,13 +132,17 @@ Internal structural improvements to the three largest subsystem modules. All ite
 | httpclient: reorganize internal sections (12-layer structure) | Done | `c8c8d61` |
 | httpclient: resolve sync/async drifts + enrich error context | Done | `e9ddf8a` |
 
-### Tier 3 -- Repository governance (planned)
+### Tier 3 -- Repository governance (completed)
 
-Formalize contributor-facing standards and add edge-behavior test coverage.
+Formalize contributor-facing standards and add edge-behavior test coverage. All items in this tier are complete.
 
-- **Contributor standards** -- short guide covering sibling import conventions, when duplication is acceptable, naming rules for `_HAS_*` flags, error design, sync/async mirroring
-- **Module classification** -- formally tag each module's complexity tier in metadata
-- **Edge-behavior tests** -- targeted test coverage for resource cleanup, timeout/cancel paths, pool reuse/invalidation, and sibling import fallback
+| Item | Status | Commits |
+|------|--------|---------|
+| Module complexity tier tagged in frontmatter + CLI support | Done | `0f14b6e` |
+| Edge-behavior tests: httpclient pool, streaming, timeout (12 tests) | Done | -- |
+| Edge-behavior tests: runner timeout, streaming, policy (13 tests) | Done | -- |
+| Edge-behavior tests: scheduler shutdown, state safety, events (10 tests) | Done | -- |
+| Edge-behavior tests: config sibling import fallback (6 tests) | Done | -- |
 
 ## Further Reading
 

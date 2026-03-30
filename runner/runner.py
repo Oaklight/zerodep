@@ -39,6 +39,8 @@ Async execution::
 Requires Python 3.10+.
 """
 
+# ── Imports ──────────────────────────────────────────────────────────
+
 from __future__ import annotations
 
 import asyncio
@@ -59,11 +61,18 @@ from typing import IO
 
 DEFAULT_TIMEOUT: float = 30.0
 DEFAULT_KILL_DELAY: float = 5.0
+# Pattern 2 convention: encoding default is explicit and used consistently
+# across all execution paths (sync, async, streaming).
 DEFAULT_ENCODING: str = "utf-8"
 
 _IS_WINDOWS: bool = os.name == "nt"
 
 # ── Exceptions ────────────────────────────────────────────────────────
+# Pattern 2 convention: each exception carries domain-relevant context.
+# - CommandFailedError: returncode + command + key stderr
+# - CommandTimeoutError: command + timeout value (+ partial output)
+# - CommandNotFoundError: command name
+# - CommandBlockedError: command name + reason
 
 
 class RunnerError(Exception):
@@ -138,7 +147,7 @@ class CommandBlockedError(RunnerError):
         super().__init__(f"Command blocked: {command} ({reason})")
 
 
-# ── Data Structures ───────────────────────────────────────────────────
+# ── Data Models (RunResult) ───────────────────────────────────────────
 
 
 @dataclasses.dataclass(frozen=True)
@@ -247,6 +256,9 @@ def _parse_cmd(cmd: str | Sequence[str]) -> tuple[str, ...]:
     return tuple(parts)
 
 
+# ── Policy (allowlist/blocklist) ─────────────────────────────────────
+
+
 def _check_command_policy(
     cmd_name: str,
     allowed_commands: Sequence[str] | None,
@@ -278,7 +290,11 @@ def _check_command_policy(
             raise CommandBlockedError(basename, "in blocklist")
 
 
-# ── Internal: Process Management ──────────────────────────────────────
+# ── Process Lifecycle Helpers (terminate, escalation) ────────────────
+# Pattern 2 convention: timeout handling follows a two-stage escalation:
+#   1. SIGTERM with grace period (kill_delay seconds)
+#   2. SIGKILL if the process doesn't exit within the grace period
+# Both sync and async variants follow this same protocol.
 
 
 def _terminate_with_escalation(
@@ -342,7 +358,7 @@ def _read_pipe_lines(
         pass
 
 
-# ── Synchronous Execution ─────────────────────────────────────────────
+# ── Sync Execution (run) ─────────────────────────────────────────────
 
 
 def run(
@@ -390,12 +406,18 @@ def run(
         CommandBlockedError: If the command violates the policy.
         ValueError: If the command is empty.
     """
+    # NOTE: sync/async alignment — phase 1: command normalization
     cmd_tuple = _parse_cmd(cmd)
+    # NOTE: sync/async alignment — phase 2: policy validation
     _check_command_policy(cmd_tuple[0], allowed_commands, blocked_commands)
 
+    # NOTE: sync/async alignment — phase 3: environment building
+    # (sync-only: popen_kwargs for platform flags; asyncio doesn't use them)
     computed_env = _build_env(env, env_extra, env_remove)
     popen_kwargs = _popen_platform_kwargs()
 
+    # NOTE: sync/async alignment — phase 3b: command existence check
+    # Pattern 2 convention: binary lookup via which() before process start.
     if which(cmd_tuple[0]) is None and not Path(cmd_tuple[0]).is_absolute():
         raise CommandNotFoundError(cmd_tuple[0])
 
@@ -403,6 +425,9 @@ def run(
 
     t0 = time.monotonic()
 
+    # NOTE: sync/async alignment — phase 4: process startup
+    # Sync uses subprocess.Popen with text-mode encoding param;
+    # async uses asyncio.create_subprocess_exec with binary pipes.
     try:
         proc = subprocess.Popen(
             cmd_tuple,
@@ -419,6 +444,7 @@ def run(
 
     pid = proc.pid
 
+    # NOTE: sync/async alignment — phase 5+6: stdout/stderr collection + timeout
     try:
         if has_callbacks:
             stdout_buf: list[str] = []
@@ -444,6 +470,9 @@ def run(
             try:
                 proc.wait(timeout=timeout)
             except subprocess.TimeoutExpired:
+                # NOTE: sync/async alignment — phase 6: timeout handling
+                # Pattern 2 convention: terminate → kill escalation,
+                # then raise with command + timeout value + partial output.
                 _terminate_with_escalation(proc, kill_delay)
                 stdout_thread.join(timeout=2)
                 stderr_thread.join(timeout=2)
@@ -465,6 +494,10 @@ def run(
                     input=input, timeout=timeout
                 )
             except subprocess.TimeoutExpired as exc:
+                # NOTE: sync/async alignment — phase 6: timeout handling
+                # Sync captures partial output from the TimeoutExpired
+                # exception; async non-callback path does NOT — see
+                # TODO(tier2) in run_async().
                 _terminate_with_escalation(proc, kill_delay)
                 partial_out = (
                     exc.stdout.decode(encoding)
@@ -493,6 +526,7 @@ def run(
 
     duration = time.monotonic() - t0
 
+    # NOTE: sync/async alignment — phase 7: result construction
     result = RunResult(
         command=cmd_tuple,
         returncode=proc.returncode,
@@ -502,13 +536,15 @@ def run(
         pid=pid,
     )
 
+    # NOTE: sync/async alignment — phase 8: non-zero exit wrapping
+    # Pattern 2 convention: error includes returncode, command, key stderr.
     if check and proc.returncode != 0:
         raise CommandFailedError(result)
 
     return result
 
 
-# ── Asynchronous Execution ────────────────────────────────────────────
+# ── Async Execution (run_async) ──────────────────────────────────────
 
 
 async def run_async(
@@ -559,16 +595,24 @@ async def run_async(
         CommandBlockedError: If the command violates the policy.
         ValueError: If the command is empty.
     """
+    # NOTE: sync/async alignment — phase 1: command normalization
     cmd_tuple = _parse_cmd(cmd)
+    # NOTE: sync/async alignment — phase 2: policy validation
     _check_command_policy(cmd_tuple[0], allowed_commands, blocked_commands)
 
+    # NOTE: sync/async alignment — phase 3: environment building
+    # (no popen_kwargs — asyncio.create_subprocess_exec doesn't support
+    # platform-specific creationflags; this is a sync-only concern)
     computed_env = _build_env(env, env_extra, env_remove)
 
+    # NOTE: sync/async alignment — phase 3b: command existence check
     if which(cmd_tuple[0]) is None and not Path(cmd_tuple[0]).is_absolute():
         raise CommandNotFoundError(cmd_tuple[0])
 
     t0 = time.monotonic()
 
+    # NOTE: sync/async alignment — phase 4: process startup
+    # Async uses binary pipes; encoding is applied manually on read.
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd_tuple,
@@ -590,6 +634,7 @@ async def run_async(
     has_callbacks = on_stdout is not None or on_stderr is not None
     input_bytes = input.encode(encoding) if input is not None else None
 
+    # NOTE: sync/async alignment — phase 5+6: stdout/stderr collection + timeout
     try:
         if has_callbacks:
             stdout_buf: list[str] = []
@@ -627,6 +672,9 @@ async def run_async(
             try:
                 await asyncio.wait_for(_run_with_streaming(), timeout=timeout)
             except asyncio.TimeoutError:
+                # NOTE: sync/async alignment — phase 6: timeout handling
+                # Callback path captures partial output from buffers —
+                # aligned with sync callback path.
                 await _async_terminate_with_escalation(proc, kill_delay)
                 assert timeout is not None
                 raise CommandTimeoutError(
@@ -644,6 +692,12 @@ async def run_async(
                     proc.communicate(input=input_bytes), timeout=timeout
                 )
             except asyncio.TimeoutError:
+                # NOTE: sync/async alignment — phase 6: timeout handling
+                # TODO(tier2): partial output gap — sync non-callback path
+                # captures partial stdout/stderr from TimeoutExpired.stdout/.stderr,
+                # but asyncio.TimeoutError carries no partial output.  To align,
+                # would need to read proc.stdout/proc.stderr after kill, or
+                # switch to a streaming approach similar to the callback path.
                 await _async_terminate_with_escalation(proc, kill_delay)
                 assert timeout is not None
                 raise CommandTimeoutError(
@@ -663,6 +717,10 @@ async def run_async(
 
     duration = time.monotonic() - t0
 
+    # NOTE: sync/async alignment — phase 7: result construction
+    # Defensive fallback: returncode should always be set after communicate(),
+    # but asyncio.subprocess.Process.returncode can be None if the process
+    # was terminated abnormally. Sync uses proc.returncode directly.
     result = RunResult(
         command=cmd_tuple,
         returncode=proc.returncode if proc.returncode is not None else -1,
@@ -672,13 +730,14 @@ async def run_async(
         pid=pid,
     )
 
+    # NOTE: sync/async alignment — phase 8: non-zero exit wrapping
     if check and result.returncode != 0:
         raise CommandFailedError(result)
 
     return result
 
 
-# ── Streaming (Sync) ──────────────────────────────────────────────────
+# ── Sync Streaming (StreamHandle, stream) ────────────────────────────
 
 
 class StreamHandle:
@@ -686,6 +745,36 @@ class StreamHandle:
 
     Returned by the :func:`stream` context manager.  Provides iterators
     over stdout and/or stderr lines and process control methods.
+
+    Lifecycle:
+        1. **Create** — the :func:`stream` context manager starts the
+           subprocess, optionally writes *input* to stdin, then yields
+           this handle.  At this point the handle **owns** the process.
+        2. **Yield lines** — the caller iterates via :meth:`iter_lines`
+           or :meth:`iter_any`.  Lines are yielded as they arrive.
+        3. **Cleanup** — when the ``with`` block exits (normally or via
+           exception), :meth:`_cleanup` is called automatically.
+
+    Process ownership:
+        The handle takes exclusive ownership of the underlying
+        :class:`subprocess.Popen` object.  Callers must not interact
+        with the ``Popen`` directly.  The handle is responsible for
+        ensuring the process is terminated when the context exits.
+
+    Unconsumed output:
+        If the caller does not fully consume stdout/stderr (e.g. breaks
+        out of the iterator early), the remaining pipe data is
+        discarded during cleanup.  The process is still terminated
+        cleanly via :meth:`_cleanup`.
+
+    Cleanup semantics:
+        :meth:`_cleanup` checks whether the process is still running
+        (via ``poll()``).  If so, it calls
+        :func:`_terminate_with_escalation` (SIGTERM, then SIGKILL after
+        *kill_delay* seconds).  The ``returncode`` attribute is then
+        set from the process exit code.  Cleanup is invoked by the
+        ``finally`` clause in :func:`stream`, so it always runs even
+        if the caller raises an exception.
 
     Attributes:
         pid: Process ID.
@@ -782,7 +871,13 @@ class StreamHandle:
         self._proc.wait()
 
     def _cleanup(self) -> None:
-        """Ensure the process is terminated."""
+        """Ensure the process is terminated and returncode is captured.
+
+        Called automatically by the :func:`stream` context manager on
+        exit.  If the process is still running (``poll()`` returns
+        ``None``), escalates through SIGTERM -> SIGKILL.  Always sets
+        ``self._returncode`` from the process exit code.
+        """
         if self._proc.poll() is None:
             _terminate_with_escalation(self._proc, self._kill_delay)
         self._returncode = self._proc.returncode
@@ -865,13 +960,43 @@ def stream(
         handle._cleanup()
 
 
-# ── Streaming (Async) ─────────────────────────────────────────────────
+# ── Async Streaming (AsyncStreamHandle, stream_async) ────────────────
 
 
 class AsyncStreamHandle:
     """Async live handle to a running process for streaming output.
 
     Returned by the :func:`stream_async` async context manager.
+
+    Lifecycle:
+        1. **Create** — :func:`stream_async` starts the subprocess via
+           ``asyncio.create_subprocess_exec``, optionally writes *input*
+           to stdin, then yields this handle.  The handle **owns** the
+           process from this point.
+        2. **Yield lines** — the caller iterates via
+           :meth:`aiter_lines` or :meth:`aiter_any`.  Lines are yielded
+           as they arrive from the async stream readers.
+        3. **Cleanup** — when the ``async with`` block exits (normally
+           or via exception), :meth:`_cleanup` is awaited automatically.
+
+    Process ownership:
+        The handle takes exclusive ownership of the underlying
+        ``asyncio.subprocess.Process``.  Callers must not interact with
+        the process object directly.
+
+    Unconsumed output:
+        If the caller does not fully consume stdout/stderr (e.g. breaks
+        out of the async iterator early), remaining pipe data is
+        discarded during cleanup.  The process is still terminated
+        cleanly via :meth:`_cleanup`.
+
+    Cleanup semantics:
+        :meth:`_cleanup` checks ``proc.returncode``.  If ``None`` (the
+        process is still running), it awaits
+        :func:`_async_terminate_with_escalation` (SIGTERM, then SIGKILL
+        after *kill_delay* seconds).  The ``returncode`` attribute is
+        then set.  Cleanup is invoked by the ``finally`` clause in
+        :func:`stream_async`.
 
     Attributes:
         pid: Process ID.
@@ -961,11 +1086,28 @@ class AsyncStreamHandle:
         self._returncode = self._proc.returncode
 
     def kill(self) -> None:
-        """Forcibly kill the process."""
+        """Forcibly kill the process.
+
+        .. note::
+
+            Unlike :meth:`StreamHandle.kill`, this does not await
+            ``proc.wait()``.  The caller should rely on the context
+            manager cleanup to reap the process.
+        """
+        # TODO(tier2): sync/async drift — StreamHandle.kill() calls
+        # proc.kill() + proc.wait(); this only sends SIGKILL without
+        # waiting.  Consider adding an async kill() or documenting
+        # that callers must exit the context manager to reap.
         self._proc.kill()
 
     async def _cleanup(self) -> None:
-        """Ensure the process is terminated."""
+        """Ensure the process is terminated and returncode is captured.
+
+        Called automatically by the :func:`stream_async` context manager
+        on exit.  If the process is still running (``returncode is
+        None``), escalates through SIGTERM -> SIGKILL.  Always sets
+        ``self._returncode`` from the process exit code.
+        """
         if self._proc.returncode is None:
             await _async_terminate_with_escalation(self._proc, self._kill_delay)
         self._returncode = self._proc.returncode
@@ -1051,7 +1193,7 @@ async def stream_async(
         await handle._cleanup()
 
 
-# ── Utilities ─────────────────────────────────────────────────────────
+# ── Shell Utilities ──────────────────────────────────────────────────
 
 
 def shell_split(s: str) -> list[str]:
@@ -1089,10 +1231,19 @@ def shell_quote(*args: str) -> str:
     return " ".join(shlex.quote(a) for a in args)
 
 
+# ── Command Discovery (which) ───────────────────────────────────────
+
+
 def which(name: str) -> str | None:
     """Locate a command on the system PATH.
 
     Cross-platform wrapper around :func:`shutil.which`.
+
+    Binary lookup order (Pattern 2 convention):
+      1. Exact path — if *name* is absolute, return it directly if it exists.
+      2. PATH search — delegates to :func:`shutil.which`, which walks
+         ``os.environ["PATH"]`` entries in order, respecting PATHEXT on
+         Windows.
 
     Args:
         name: Command name (e.g. ``"git"``).
@@ -1101,3 +1252,33 @@ def which(name: str) -> str | None:
         Absolute path to the binary, or ``None`` if not found.
     """
     return shutil.which(name)
+
+
+# ── Public API ───────────────────────────────────────────────────────
+
+__all__ = [
+    # Data models
+    "RunResult",
+    # Exceptions
+    "RunnerError",
+    "CommandNotFoundError",
+    "CommandFailedError",
+    "CommandTimeoutError",
+    "CommandBlockedError",
+    # Sync execution
+    "run",
+    "stream",
+    "StreamHandle",
+    # Async execution
+    "run_async",
+    "stream_async",
+    "AsyncStreamHandle",
+    # Utilities
+    "shell_split",
+    "shell_quote",
+    "which",
+    # Defaults (useful for callers to reference)
+    "DEFAULT_TIMEOUT",
+    "DEFAULT_KILL_DELAY",
+    "DEFAULT_ENCODING",
+]

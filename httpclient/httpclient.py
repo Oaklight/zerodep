@@ -259,7 +259,7 @@ def _normalize_auth(
     if auth is None:
         return None
     if isinstance(auth, tuple):
-        return BasicAuth(auth[0], auth[1])
+        return BasicAuth(str(auth[0]), str(auth[1]))
     return auth
 
 
@@ -307,7 +307,7 @@ def _decompress_body(body: bytes, encoding: str) -> bytes:
     return body
 
 
-def _make_decompressor(encoding: str) -> zlib.decompressobj | None:
+def _make_decompressor(encoding: str) -> zlib._Decompress | None:
     """Create a streaming decompressor for the given encoding.
 
     Args:
@@ -395,6 +395,7 @@ class StreamingResponse:
     headers: dict[str, str]
     url: str
     _encoding: str
+    _decompressor: zlib._Decompress | None
     _sync_resp: http.client.HTTPResponse | None
     _sync_conn: http.client.HTTPConnection | None
     _async_reader: asyncio.StreamReader | None
@@ -1435,7 +1436,7 @@ async def _async_request(
                     )
                     reader = proxy_reader
                     writer = proxy_writer
-                    writer._transport = new_transport  # type: ignore[attr-defined]
+                    writer._transport = new_transport  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
                     request_path = path
             elif _pool:
                 result = await _pool.acquire(host, port, is_https, timeout, verify)

@@ -405,6 +405,7 @@ class SSEClient:
 
     def _close_response(self) -> None:
         if self._response is not None:
+            # Tier 3: best-effort silent — reconnect cleanup
             try:
                 self._response.close()
             except Exception:
@@ -533,6 +534,7 @@ class AsyncSSEClient:
 
     async def _close_response(self) -> None:
         if self._response is not None:
+            # Tier 3: best-effort silent — reconnect cleanup
             try:
                 await self._response.aclose()
             except Exception:

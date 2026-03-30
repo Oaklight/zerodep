@@ -485,6 +485,7 @@ def run(
                 )
     except CommandTimeoutError:
         raise
+    # Tier 1: must-succeed — process termination on unexpected error
     except Exception:
         if proc.poll() is None:
             _terminate_with_escalation(proc, kill_delay)
@@ -654,6 +655,7 @@ async def run_async(
             stderr_text = stderr_bytes.decode(encoding) if stderr_bytes else ""
     except CommandTimeoutError:
         raise
+    # Tier 1: must-succeed — async process termination on unexpected error
     except Exception:
         if proc.returncode is None:
             await _async_terminate_with_escalation(proc, kill_delay)
@@ -746,6 +748,7 @@ class StreamHandle:
                 for line in pipe:
                     q.put((label, line))
             except ValueError:
+                # Tier 2: best-effort observable — expected on pipe close
                 pass
             finally:
                 q.put(None)
@@ -858,6 +861,7 @@ def stream(
     try:
         yield handle
     finally:
+        # Tier 1: must-succeed — process cleanup
         handle._cleanup()
 
 
@@ -1043,6 +1047,7 @@ async def stream_async(
     try:
         yield handle
     finally:
+        # Tier 1: must-succeed — async process cleanup
         await handle._cleanup()
 
 

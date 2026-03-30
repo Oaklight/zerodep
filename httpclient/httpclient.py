@@ -37,6 +37,7 @@ import base64
 import hashlib
 import http.client
 import json as _json
+import logging
 import os
 import ssl
 import threading
@@ -48,6 +49,8 @@ from typing import IO, Any
 from urllib.parse import quote, urlencode, urlparse
 
 # ── Defaults ──
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 30.0
 DEFAULT_MAX_REDIRECTS = 10
@@ -618,28 +621,42 @@ class StreamingResponse:
         if self._closed:
             return
         self._closed = True
+        # Tier 2: best-effort observable — active streaming resource
         if self._sync_resp is not None:
             try:
                 self._sync_resp.close()
             except Exception:
-                pass
+                logger.debug(
+                    "failed to close sync response for %s",
+                    self.url,
+                    exc_info=True,
+                )
         if self._sync_conn is not None:
             try:
                 self._sync_conn.close()
             except Exception:
-                pass
+                logger.debug(
+                    "failed to close sync connection for %s",
+                    self.url,
+                    exc_info=True,
+                )
 
     async def aclose(self) -> None:
         """Close the underlying async connection."""
         if self._closed:
             return
         self._closed = True
+        # Tier 2: best-effort observable — active streaming resource
         if self._async_writer is not None:
             try:
                 self._async_writer.close()
                 await self._async_writer.wait_closed()
             except Exception:
-                pass
+                logger.debug(
+                    "failed to close async writer for %s",
+                    self.url,
+                    exc_info=True,
+                )
 
     def __del__(self) -> None:
         if not self._closed:
@@ -883,6 +900,7 @@ class _SyncConnectionPool:
             while conns:
                 conn, timestamp = conns.pop()
                 if now - timestamp > DEFAULT_POOL_IDLE_TIMEOUT:
+                    # Tier 3: best-effort silent — stale connection eviction
                     try:
                         conn.close()
                     except Exception:
@@ -890,6 +908,7 @@ class _SyncConnectionPool:
                     continue
                 if conn.sock is not None and conn.sock.fileno() != -1:
                     return conn
+                # Tier 3: best-effort silent — dead connection eviction
                 try:
                     conn.close()
                 except Exception:
@@ -917,6 +936,7 @@ class _SyncConnectionPool:
             if len(conns) < self._pool_size:
                 conns.append((conn, time.monotonic()))
             else:
+                # Tier 3: best-effort silent — pool overflow discard
                 try:
                     conn.close()
                 except Exception:
@@ -927,6 +947,7 @@ class _SyncConnectionPool:
         with self._lock:
             for conns in self._pool.values():
                 for conn, _ in conns:
+                    # Tier 3: best-effort silent — bulk shutdown
                     try:
                         conn.close()
                     except Exception:
@@ -978,6 +999,7 @@ class _AsyncConnectionPool:
             while conns:
                 reader, writer, timestamp = conns.pop()
                 if now - timestamp > DEFAULT_POOL_IDLE_TIMEOUT:
+                    # Tier 3: best-effort silent — stale connection eviction
                     try:
                         writer.close()
                         await writer.wait_closed()
@@ -986,6 +1008,7 @@ class _AsyncConnectionPool:
                     continue
                 if not reader.at_eof():
                     return reader, writer
+                # Tier 3: best-effort silent — dead connection eviction
                 try:
                     writer.close()
                     await writer.wait_closed()
@@ -1016,6 +1039,7 @@ class _AsyncConnectionPool:
             if len(conns) < self._pool_size:
                 conns.append((reader, writer, time.monotonic()))
             else:
+                # Tier 3: best-effort silent — pool overflow discard
                 try:
                     writer.close()
                     await writer.wait_closed()
@@ -1027,6 +1051,7 @@ class _AsyncConnectionPool:
         async with self._lock:
             for conns in self._pool.values():
                 for _, writer, _ in conns:
+                    # Tier 3: best-effort silent — bulk shutdown
                     try:
                         writer.close()
                         await writer.wait_closed()
@@ -1207,6 +1232,7 @@ def _sync_request(
                     resp_body = _decompress_body(resp_body, content_encoding)
                 return Response(status, resp_headers, resp_body, url)
             finally:
+                # Tier 1: must-succeed — connection lifecycle decision
                 if close_conn:
                     if (
                         _pool
@@ -1391,6 +1417,7 @@ async def _async_request(
                     )
                     if tunnel_status != 200:
                         proxy_writer.close()
+                        # Tier 3: best-effort silent — proxy tunnel teardown
                         try:
                             await proxy_writer.wait_closed()
                         except Exception:
@@ -1526,6 +1553,7 @@ async def _async_request(
         except asyncio.TimeoutError:
             raise TimeoutError(f"Request to {url} timed out after {timeout}s")
         finally:
+            # Tier 1: must-succeed — connection lifecycle decision
             if close_writer:
                 if (
                     _pool
@@ -1536,6 +1564,7 @@ async def _async_request(
                     await _pool.release(host, port, is_https, reader, writer)
                 else:
                     writer.close()
+                    # Tier 3: best-effort silent — wait_closed on direct close
                     try:
                         await writer.wait_closed()
                     except Exception:

@@ -759,6 +759,7 @@ class Git:
         finally:
             for tmp in (tmp_base, tmp_ours, tmp_theirs):
                 if tmp is not None:
+                    # Tier 3: best-effort silent — temp file cleanup
                     try:
                         os.unlink(tmp.name)
                     except OSError:

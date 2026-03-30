@@ -869,6 +869,7 @@ class Scheduler:
     def _emit(self, event: JobEvent) -> None:
         """Dispatch an event to all listeners."""
         for listener in self._listeners:
+            # Tier 2: best-effort observable — listener errors logged
             try:
                 listener(event)
             except Exception:
@@ -976,6 +977,7 @@ class Scheduler:
                 )
             )
             if job.on_success is not None:
+                # Tier 2: best-effort observable — callback error logged
                 try:
                     job.on_success(result)
                 except Exception:
@@ -994,6 +996,7 @@ class Scheduler:
                 )
             )
             if job.on_error is not None:
+                # Tier 2: best-effort observable — callback error logged
                 try:
                     job.on_error(exc)
                 except Exception:
@@ -1001,6 +1004,7 @@ class Scheduler:
             raise
 
         finally:
+            # Tier 1: must-succeed — job status must reset
             if job.status == JobStatus.running:
                 job.status = JobStatus.pending
 
@@ -1010,6 +1014,7 @@ class Scheduler:
         try:
             return loop.run_until_complete(job.fn(*job.args, **job.kwargs))
         finally:
+            # Tier 1: must-succeed — event loop must close
             loop.close()
 
     def _reschedule(self, job: Job, now: datetime) -> None:

@@ -347,6 +347,14 @@ LOC 高不一定意味着必须拆分。
   - scheduler: shutdown behavior、job state safety、event system（10 tests）
   - config: sibling import fallback（6 tests）
 
+### Pattern Standardization 完成状态
+
+- ✅ 显式注入 API（`_Unset` 哨兵、三态参数）：vcs `merge_func`、config `loaders`/`dotenv_loader`、sse `transport`（`792e21e`）
+- ✅ 错误类型设计标准化：httpclient 异常重命名（不再遮蔽内置名）、config 添加 `ConfigError` 基类、frontmatter `HandlerError` 添加 `handler` 字段（`dd23eca`）
+- ✅ 子进程执行约定：vcs `_run()` 超时时捕获部分输出、`CommandError` 添加 `timeout` 字段（`dd23eca`）
+- ✅ Sync/Async API 镜像约定：文档化命名规范、结构约定、阶段注释
+- ✅ 大模块内部分层约定：文档化段落标记、顺序、阶段注释规则
+
 ## 现在最值得做的事
 
 如果只看 ROI，建议顺序是：

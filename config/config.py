@@ -137,6 +137,25 @@ class _Auto:
 
 _AUTO = _Auto()
 
+# ── Sentinel for injection parameters ──────────────────────────────────────
+
+
+class _Unset:
+    """Sentinel indicating 'use default sibling auto-discovery'."""
+
+    _instance: _Unset | None = None
+
+    def __new__(cls) -> _Unset:
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __repr__(self) -> str:
+        return "UNSET"
+
+
+_UNSET = _Unset()
+
 # ── Exceptions ──────────────────────────────────────────────────────────────
 
 
@@ -417,6 +436,17 @@ class Config:
         separator: Separator for nested key access. Default ``"__"``
             means ``"DATABASE__HOST"`` resolves to ``data["DATABASE"]["HOST"]``
             or ``data["database"]["host"]`` in config files.
+        loaders: Override the file-format loader registry. Defaults to
+            ``_UNSET`` (use built-in loaders with sibling auto-discovery
+            for yaml/jsonc). Pass a ``dict`` mapping extensions (e.g.
+            ``".yaml"``) to loader callables to replace the defaults.
+            Stdlib loaders (json, toml, ini) are always available unless
+            explicitly overridden.
+        dotenv_loader: Override the dotenv loading mechanism. Defaults to
+            ``_UNSET`` (auto-discover sibling ``dotenv`` module). Pass
+            ``None`` to disable .env loading entirely, or a callable that
+            returns ``(dotenv_values_fn, find_dotenv_fn)`` to inject a
+            custom implementation.
 
     Example::
 
@@ -432,16 +462,34 @@ class Config:
         config_path: str | os.PathLike[str] | None = None,
         prefix: str = "",
         separator: str = "__",
+        loaders: dict[str, Callable[..., dict[str, Any]]] | None | _Unset = _UNSET,
+        dotenv_loader: Callable[[], tuple[Callable[..., Any], Callable[..., Any]]]
+        | None
+        | _Unset = _UNSET,
     ) -> None:
         self._prefix = prefix
         self._separator = separator
         self._dotenv_data: dict[str, str | None] = {}
         self._config_data: dict[str, Any] = {}
+        self._loaders: dict[str, Callable[..., dict[str, Any]]]
+
+        # Resolve loader registry
+        if isinstance(loaders, _Unset):
+            self._loaders = _LOADERS
+        elif loaders is None:
+            self._loaders = {}
+        else:
+            self._loaders = loaders
 
         # Load .env file
-        if isinstance(dotenv_path, _Auto):
+        if dotenv_loader is None:
+            pass  # .env explicitly disabled
+        elif isinstance(dotenv_path, _Auto):
             try:
-                dotenv_values, find_dotenv = _load_dotenv_helpers()
+                if isinstance(dotenv_loader, _Unset):
+                    dotenv_values, find_dotenv = _load_dotenv_helpers()
+                else:
+                    dotenv_values, find_dotenv = dotenv_loader()
             except ImportError:
                 pass
             else:
@@ -449,7 +497,10 @@ class Config:
                 if found:
                     self._dotenv_data = dotenv_values(found)
         elif dotenv_path is not None:
-            dotenv_values, _find_dotenv = _load_dotenv_helpers()
+            if isinstance(dotenv_loader, _Unset):
+                dotenv_values, _find_dotenv = _load_dotenv_helpers()
+            else:
+                dotenv_values, _find_dotenv = dotenv_loader()
             self._dotenv_data = dotenv_values(str(dotenv_path))
 
         # Load config file
@@ -460,11 +511,11 @@ class Config:
         """Load a config file based on its extension."""
         p = Path(path)
         ext = p.suffix.lower()
-        loader = _LOADERS.get(ext)
+        loader = self._loaders.get(ext)
         if loader is None:
             raise ValueError(
                 f"Unsupported config file format: {ext!r}. "
-                f"Supported: {', '.join(sorted(_LOADERS))}"
+                f"Supported: {', '.join(sorted(self._loaders))}"
             )
         if loader in (_load_ini_file,):
             self._config_data = loader(p, separator=self._separator)

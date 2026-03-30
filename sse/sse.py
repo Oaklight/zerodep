@@ -51,7 +51,7 @@ import os
 import sys
 import time
 from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator
-from typing import Any
+from typing import Any, Callable
 
 
 def _ensure_sibling_path(name: str) -> str:
@@ -67,7 +67,6 @@ def _ensure_sibling_path(name: str) -> str:
 try:
     _httpclient_dir = _ensure_sibling_path("httpclient")
     from httpclient import ConnectionError as _HttpConnectionError
-    from httpclient import StreamingResponse as _StreamingResponse
     from httpclient import TimeoutError as _HttpTimeoutError
     from httpclient import async_get as _http_async_get
     from httpclient import get as _http_get
@@ -76,6 +75,24 @@ try:
 except (ImportError, AttributeError):
     _HAS_HTTPCLIENT = False
 
+# ── Sentinel for injection parameters ──────────────────────────────────────
+
+
+class _Unset:
+    """Sentinel indicating 'use default sibling auto-discovery'."""
+
+    _instance: _Unset | None = None
+
+    def __new__(cls) -> _Unset:
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __repr__(self) -> str:
+        return "UNSET"
+
+
+_UNSET = _Unset()
 
 # ── Constants ──
 
@@ -292,6 +309,20 @@ class SSEClient:
     Opens a streaming HTTP GET, parses ``text/event-stream``, and
     automatically reconnects when the connection drops.
 
+    Args:
+        url: SSE endpoint URL.
+        headers: Extra HTTP headers to send.
+        timeout: Connection/read timeout in seconds.
+        retry_interval: Initial reconnection delay in milliseconds.
+        max_retries: Maximum reconnection attempts (``-1`` = unlimited).
+        verify: Whether to verify TLS certificates.
+        last_event_id: Initial ``Last-Event-ID`` header value.
+        transport: Sync HTTP GET callable. Defaults to ``_UNSET``
+            (auto-discover sibling ``httpclient.get``). Must accept
+            ``(url, *, headers, stream, timeout, verify)`` and return
+            a response with ``.status_code``, ``.ok``, ``.close()``,
+            and ``.iter_lines()`` attributes.
+
     Example::
 
         with SSEClient("https://api.example.com/events") as client:
@@ -309,8 +340,26 @@ class SSEClient:
         max_retries: int = -1,
         verify: bool = True,
         last_event_id: str = "",
+        transport: Callable[..., Any] | None | _Unset = _UNSET,
     ) -> None:
-        _require_httpclient()
+        self._transport: Callable[..., Any]
+        if isinstance(transport, _Unset):
+            _require_httpclient()
+            self._transport = _http_get
+            self._reconnect_errors: tuple[type[Exception], ...] = (
+                _HttpConnectionError,
+                _HttpTimeoutError,
+                ConnectionError,
+                OSError,
+            )
+        elif transport is None:
+            raise ValueError(
+                "SSEClient requires a transport; pass a callable "
+                "or omit to use sibling httpclient"
+            )
+        else:
+            self._transport = transport
+            self._reconnect_errors = (ConnectionError, OSError)
         self._url = url
         self._user_headers = headers or {}
         self._timeout = timeout
@@ -318,7 +367,7 @@ class SSEClient:
         self._max_retries = max_retries
         self._verify = verify
         self._last_event_id = last_event_id
-        self._response: _StreamingResponse | None = None
+        self._response: Any = None
         self._closed = False
 
     def __enter__(self) -> SSEClient:
@@ -357,12 +406,7 @@ class SSEClient:
                 if self._closed:
                     return
 
-            except (
-                _HttpConnectionError,
-                _HttpTimeoutError,
-                ConnectionError,
-                OSError,
-            ) as exc:
+            except self._reconnect_errors as exc:
                 last_error = exc
             finally:
                 self._close_response()
@@ -374,7 +418,7 @@ class SSEClient:
 
             time.sleep(self._retry_interval / 1000)
 
-    def _connect(self) -> _StreamingResponse:
+    def _connect(self) -> Any:
         """Open a streaming GET request."""
         headers = {
             "Accept": "text/event-stream",
@@ -384,7 +428,7 @@ class SSEClient:
         if self._last_event_id:
             headers["Last-Event-ID"] = self._last_event_id
 
-        resp = _http_get(
+        resp = self._transport(
             self._url,
             headers=headers,
             stream=True,
@@ -395,14 +439,14 @@ class SSEClient:
         if resp.status_code == 204:
             resp.close()
             self._closed = True
-            return resp  # type: ignore
+            return resp
 
         if not resp.ok:
             status = resp.status_code
             resp.close()
             raise SSEHTTPError(status, self._url)
 
-        return resp  # type: ignore
+        return resp
 
     def _close_response(self) -> None:
         if self._response is not None:
@@ -425,6 +469,20 @@ class AsyncSSEClient:
     Opens a streaming HTTP GET, parses ``text/event-stream``, and
     automatically reconnects when the connection drops.
 
+    Args:
+        url: SSE endpoint URL.
+        headers: Extra HTTP headers to send.
+        timeout: Connection/read timeout in seconds.
+        retry_interval: Initial reconnection delay in milliseconds.
+        max_retries: Maximum reconnection attempts (``-1`` = unlimited).
+        verify: Whether to verify TLS certificates.
+        last_event_id: Initial ``Last-Event-ID`` header value.
+        transport: Async HTTP GET callable. Defaults to ``_UNSET``
+            (auto-discover sibling ``httpclient.async_get``). Must accept
+            ``(url, *, headers, stream, timeout, verify)`` and return
+            a response with ``.status_code``, ``.ok``, ``.aclose()``,
+            and ``.aiter_lines()`` attributes.
+
     Example::
 
         async with AsyncSSEClient("https://api.example.com/events") as client:
@@ -442,8 +500,26 @@ class AsyncSSEClient:
         max_retries: int = -1,
         verify: bool = True,
         last_event_id: str = "",
+        transport: Callable[..., Any] | None | _Unset = _UNSET,
     ) -> None:
-        _require_httpclient()
+        self._transport: Callable[..., Any]
+        if isinstance(transport, _Unset):
+            _require_httpclient()
+            self._transport = _http_async_get
+            self._reconnect_errors: tuple[type[Exception], ...] = (
+                _HttpConnectionError,
+                _HttpTimeoutError,
+                ConnectionError,
+                OSError,
+            )
+        elif transport is None:
+            raise ValueError(
+                "AsyncSSEClient requires a transport; pass a callable "
+                "or omit to use sibling httpclient"
+            )
+        else:
+            self._transport = transport
+            self._reconnect_errors = (ConnectionError, OSError)
         self._url = url
         self._user_headers = headers or {}
         self._timeout = timeout
@@ -451,7 +527,7 @@ class AsyncSSEClient:
         self._max_retries = max_retries
         self._verify = verify
         self._last_event_id = last_event_id
-        self._response: _StreamingResponse | None = None
+        self._response: Any = None
         self._closed = False
 
     async def __aenter__(self) -> AsyncSSEClient:
@@ -487,12 +563,7 @@ class AsyncSSEClient:
                 if self._closed:
                     return
 
-            except (
-                _HttpConnectionError,
-                _HttpTimeoutError,
-                ConnectionError,
-                OSError,
-            ) as exc:
+            except self._reconnect_errors as exc:
                 last_error = exc
             finally:
                 await self._close_response()
@@ -503,7 +574,7 @@ class AsyncSSEClient:
 
             await asyncio.sleep(self._retry_interval / 1000)
 
-    async def _connect(self) -> _StreamingResponse:
+    async def _connect(self) -> Any:
         """Open a streaming async GET request."""
         headers = {
             "Accept": "text/event-stream",
@@ -513,7 +584,7 @@ class AsyncSSEClient:
         if self._last_event_id:
             headers["Last-Event-ID"] = self._last_event_id
 
-        resp = await _http_async_get(
+        resp = await self._transport(
             self._url,
             headers=headers,
             stream=True,
@@ -524,14 +595,14 @@ class AsyncSSEClient:
         if resp.status_code == 204:
             await resp.aclose()
             self._closed = True
-            return resp  # type: ignore
+            return resp
 
         if not resp.ok:
             status = resp.status_code
             await resp.aclose()
             raise SSEHTTPError(status, self._url)
 
-        return resp  # type: ignore
+        return resp
 
     async def _close_response(self) -> None:
         if self._response is not None:

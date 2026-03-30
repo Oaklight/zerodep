@@ -35,7 +35,26 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from typing import Protocol, runtime_checkable
+from typing import Any, Callable, Protocol, runtime_checkable
+
+# ── Sentinel for injection parameters ──────────────────────────────────────
+
+
+class _Unset:
+    """Sentinel indicating 'use default sibling auto-discovery'."""
+
+    _instance: _Unset | None = None
+
+    def __new__(cls) -> _Unset:
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __repr__(self) -> str:
+        return "UNSET"
+
+
+_UNSET = _Unset()
 
 
 def _ensure_sibling_path(name: str) -> str:
@@ -296,7 +315,7 @@ def _run(
         "timeout": timeout,
     }
     if os.name == "nt":
-        kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW  # type: ignore[attr-defined]
+        kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
 
     try:
         result = subprocess.run(cmd, **kwargs)  # noqa: S603
@@ -931,6 +950,11 @@ class Mercurial:
             automatically if ``None``.
         encoding: Text encoding for command I/O.
         timeout: Default subprocess timeout in seconds.
+        merge_func: Three-way merge callable ``(base, ours, theirs) -> result``.
+            Defaults to ``_UNSET`` (auto-discover sibling ``diff`` module).
+            Pass ``None`` to disable ``merge_file()``, or a custom callable
+            whose return value has a ``.content`` attribute (or is a plain
+            ``str``).
     """
 
     def __init__(
@@ -940,11 +964,13 @@ class Mercurial:
         binary: str | None = None,
         encoding: str = "utf-8",
         timeout: float = 30.0,
+        merge_func: Callable[[str, str, str], Any] | None | _Unset = _UNSET,
     ) -> None:
         self._binary = binary or _find_binary("hg")
         self._repo = os.path.abspath(repo_path)
         self._encoding = encoding
         self._timeout = timeout
+        self._merge_func = merge_func
 
     def _hg(
         self,
@@ -1104,6 +1130,9 @@ class Mercurial:
     def merge_file(self, base: str, ours: str, theirs: str) -> str:
         """Three-way merge using the sibling ``diff`` module.
 
+        Uses an injected ``merge_func`` if provided at construction time,
+        otherwise falls back to sibling ``diff.merge3`` auto-discovery.
+
         Args:
             base: Common-ancestor file content.
             ours: Content from the first branch.
@@ -1114,11 +1143,22 @@ class Mercurial:
 
         Raises:
             NotImplementedError: If the sibling ``diff`` module is
-                not available.
+                not available and no ``merge_func`` was injected,
+                or if ``merge_func=None`` was passed explicitly.
         """
-        diff_merge3 = _load_diff_merge3()
-        result = diff_merge3(base, ours, theirs)
-        return result.content
+        merge3 = self._resolve_merge_func()
+        result = merge3(base, ours, theirs)
+        return result.content if hasattr(result, "content") else result
+
+    def _resolve_merge_func(self) -> Callable[[str, str, str], Any]:
+        """Return the merge callable, resolving sibling fallback if needed."""
+        if isinstance(self._merge_func, _Unset):
+            return _load_diff_merge3()
+        if self._merge_func is None:
+            raise NotImplementedError(
+                "merge_file disabled: merge_func=None was passed explicitly"
+            )
+        return self._merge_func
 
     def workspace_add(
         self,
@@ -1203,6 +1243,11 @@ class Jujutsu:
             automatically if ``None``.
         encoding: Text encoding for command I/O.
         timeout: Default subprocess timeout in seconds.
+        merge_func: Three-way merge callable ``(base, ours, theirs) -> result``.
+            Defaults to ``_UNSET`` (auto-discover sibling ``diff`` module).
+            Pass ``None`` to disable ``merge_file()``, or a custom callable
+            whose return value has a ``.content`` attribute (or is a plain
+            ``str``).
     """
 
     def __init__(
@@ -1212,11 +1257,13 @@ class Jujutsu:
         binary: str | None = None,
         encoding: str = "utf-8",
         timeout: float = 30.0,
+        merge_func: Callable[[str, str, str], Any] | None | _Unset = _UNSET,
     ) -> None:
         self._binary = binary or _find_binary("jj")
         self._repo = os.path.abspath(repo_path)
         self._encoding = encoding
         self._timeout = timeout
+        self._merge_func = merge_func
 
     def _jj(
         self,
@@ -1383,6 +1430,9 @@ class Jujutsu:
     def merge_file(self, base: str, ours: str, theirs: str) -> str:
         """Three-way merge using the sibling ``diff`` module.
 
+        Uses an injected ``merge_func`` if provided at construction time,
+        otherwise falls back to sibling ``diff.merge3`` auto-discovery.
+
         Args:
             base: Common-ancestor file content.
             ours: Content from the first branch.
@@ -1393,11 +1443,22 @@ class Jujutsu:
 
         Raises:
             NotImplementedError: If the sibling ``diff`` module is
-                not available.
+                not available and no ``merge_func`` was injected,
+                or if ``merge_func=None`` was passed explicitly.
         """
-        diff_merge3 = _load_diff_merge3()
-        result = diff_merge3(base, ours, theirs)
-        return result.content
+        merge3 = self._resolve_merge_func()
+        result = merge3(base, ours, theirs)
+        return result.content if hasattr(result, "content") else result
+
+    def _resolve_merge_func(self) -> Callable[[str, str, str], Any]:
+        """Return the merge callable, resolving sibling fallback if needed."""
+        if isinstance(self._merge_func, _Unset):
+            return _load_diff_merge3()
+        if self._merge_func is None:
+            raise NotImplementedError(
+                "merge_file disabled: merge_func=None was passed explicitly"
+            )
+        return self._merge_func
 
     # -- workspace / bookmark / commit operations --
 
@@ -1560,7 +1621,11 @@ _BACKENDS: list[tuple[str, str, type]] = [
 ]
 
 
-def detect(path: str = ".") -> VCSBackend | None:
+def detect(
+    path: str = ".",
+    *,
+    merge_func: Callable[[str, str, str], Any] | None | _Unset = _UNSET,
+) -> VCSBackend | None:
     """Auto-detect the VCS backend for the given path.
 
     Walks upward from *path* to the filesystem root looking for
@@ -1570,6 +1635,9 @@ def detect(path: str = ".") -> VCSBackend | None:
 
     Args:
         path: Starting directory (defaults to ``"."``).
+        merge_func: Forwarded to ``Mercurial`` / ``Jujutsu`` constructors.
+            See their docstrings for semantics.  Ignored for ``Git``
+            (which uses ``git merge-file`` directly).
 
     Returns:
         An instantiated backend, or ``None``.
@@ -1583,7 +1651,9 @@ def detect(path: str = ".") -> VCSBackend | None:
                     _find_binary(binary_name)
                 except BinaryNotFoundError:
                     continue
-                return cls(current)  # type: ignore[call-arg]
+                if cls is Git:
+                    return cls(current)
+                return cls(current, merge_func=merge_func)
         parent = os.path.dirname(current)
         if parent == current:
             break

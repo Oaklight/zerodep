@@ -12,10 +12,10 @@
 | 2 | [终端颜色检测](#终端颜色检测) | 已标准化 | ansi, structlog, prompt |
 | 3 | [Cleanup 语义](#cleanup-语义) | 已标准化 | httpclient, runner, scheduler, sse, vcs |
 | 4 | [显式注入](#显式注入) | 已实现 | vcs, config, sse |
-| 5 | 子进程执行 | 计划中 | runner, vcs |
-| 6 | Sync/Async API 镜像 | 计划中 | runner, httpclient |
-| 7 | 错误类型设计 | 计划中 | 所有子系统模块 |
-| 8 | 大模块内部分层 | 计划中 | httpclient, runner, scheduler |
+| 5 | [子进程执行](#子进程执行) | 已标准化 | runner, vcs |
+| 6 | [Sync/Async API 镜像](#syncasync-api-镜像) | 已标准化 | runner, httpclient |
+| 7 | [错误类型设计](#错误类型设计) | 已标准化 | 所有子系统模块 |
+| 8 | [大模块内部分层](#大模块内部分层) | 已标准化 | httpclient, runner, scheduler |
 
 ---
 
@@ -319,3 +319,339 @@ client = SSEClient("https://example.com/events", transport=my_get_func)
 2. **不新增文件** — 哨兵类在每个模块内联定义。不创建共享的 `_core` 或工具层。
 3. **向后兼容** — 所有新参数默认值为 `_UNSET`，保留现有行为。
 4. **`isinstance` 做收窄** — 使用 `isinstance(value, _Unset)` 而非 `value is _UNSET`，以便类型检查器能正确收窄联合类型。
+
+---
+
+## 错误类型设计
+
+### 问题定义
+
+子系统模块各自定义领域异常。如果没有约定，异常命名、层次深度、上下文字段和消息风格会在模块间逐渐分化，导致捕获、日志记录和错误展示的一致性下降。
+
+### 标准约定
+
+#### 层次结构
+
+每个子系统模块定义一个继承自 `Exception` 的基础异常。所有模块特定异常继承该基础异常。最大深度为两层。
+
+```python
+class HttpClientError(Exception):
+    """Base exception for all httpclient operations."""
+
+class HTTPError(HttpClientError):
+    """Raised on non-2xx status."""
+    ...
+
+class HttpConnectionError(HttpClientError):
+    """Raised on connection failures."""
+    ...
+```
+
+这样调用方可以用 `except HttpClientError` 捕获所有模块错误，或单独针对特定错误。
+
+#### 命名规范
+
+异常名遵循 `<模块><名词>Error` 模式：
+
+| 模块 | 基类 | 示例 |
+|------|------|------|
+| httpclient | `HttpClientError` | `HTTPError`、`HttpConnectionError`、`HttpTimeoutError`、`TooManyRedirects` |
+| runner | `RunnerError` | `CommandNotFoundError`、`CommandFailedError`、`CommandTimeoutError`、`CommandBlockedError` |
+| scheduler | `SchedulerError` | `SchedulerAlreadyRunning`、`SchedulerNotRunning`、`JobNotFound`、`InvalidCronExpression` |
+| vcs | `VCSError` | `BinaryNotFoundError`、`CommandError`、`NotARepoError` |
+| sse | `SSEError` | `SSEConnectionError`、`SSEHTTPError` |
+| config | `ConfigError` | `UndefinedValueError` |
+| frontmatter | `FrontmatterError` | `HandlerError` |
+| validate | `ValidationError` | *（独立使用 — 通过 `ErrorDetail` 数据类进行结构化报告）* |
+| retry | `RetryError` | *（独立使用 — 携带 `last_exception` 和 `attempts`）* |
+
+**规则**：绝不遮蔽 Python 内置异常名（`ConnectionError`、`TimeoutError` 等）。使用模块前缀的名称代替。
+
+#### 上下文字段
+
+异常通过 `__init__` 参数将上下文存储为实例属性。错误消息在构造时使用 f-string 计算。
+
+```python
+class HttpConnectionError(HttpClientError):
+    def __init__(self, message: str, *, host: str = "", port: int = 0) -> None:
+        self.host = host
+        self.port = port
+        self.message = message
+        super().__init__(message)
+```
+
+各错误类别的最小上下文要求：
+
+| 错误类别 | 必需上下文 |
+|---------|-----------|
+| 网络/HTTP | `url`、`host`、`port` 或 `status_code` |
+| 命令执行 | `command`、`returncode`、关键 `stderr` |
+| 调度 | `job_id` 或 `cron expression` |
+| 配置 | 键名 |
+| 文件格式 | handler 或格式名 |
+
+#### 不需要自定义异常的模块
+
+简单工具模块（`cache`、`search`、`dotenv`、`yaml`、`jsonc`、`aes`、`qr` 等）使用标准库异常（`ValueError`、`KeyError`、`FileNotFoundError`）。只有当模块具有调用方需要区分的领域特定故障模式时，才需要自定义异常。
+
+---
+
+## 子进程执行
+
+### 问题定义
+
+`runner` 和 `vcs` 都执行外部进程，但在二进制发现、超时处理、编码和错误报告方面使用不同约定。如果不对齐，新模块将没有明确的参考可循。
+
+### 参考实现
+
+`runner` 是功能完整的通用实现。`vcs` 是面向特定领域的轻量封装。两者分别作为不同使用场景的参考。
+
+### 标准约定
+
+#### 二进制发现
+
+| 步骤 | 描述 | 使用模块 |
+|------|------|----------|
+| 1 | 环境变量覆盖（`ZERODEP_<NAME>_PATH`） | vcs |
+| 2 | `shutil.which()` — 跨平台 PATH 搜索 | runner, vcs |
+| 3 | 平台特定回退目录（仅 Windows） | vcs |
+
+`runner` 将 `which()` 作为公开工具函数暴露。`vcs` 使用扩展的 `_find_binary()`，包含环境变量覆盖和 Windows 回退。两种都是合理的——简单模块只用第 2 步即可；需要在 Windows 上可靠发现二进制的模块应遵循 `vcs` 的做法。
+
+#### 编码
+
+默认编码为 `utf-8`，显式声明且可配置：
+
+```python
+def _run(cmd, *, encoding="utf-8", ...):
+    result = subprocess.run(cmd, text=True, encoding=encoding, ...)
+```
+
+`runner` 和 `vcs` 都使用此约定。
+
+#### 超时
+
+- 默认：`30.0` 秒，显式声明且可按调用配置
+- 错误：抛出包含命令和超时值的领域特定超时错误
+
+**升级策略**（仅 runner）：对于长时间运行或不可信的进程，`runner` 使用 SIGTERM → SIGKILL 升级，带可配置的宽限期（`kill_delay=5.0`）。`vcs` 使用简单的 `subprocess.run(timeout=...)`，不带升级，这对短生命周期的 VCS 命令是合适的。
+
+#### 返回码处理
+
+使用 `allowed_returncodes` 元组指定可接受的退出码：
+
+```python
+def _run(cmd, *, allowed_returncodes=(0,), ...):
+    ...
+    if result.returncode not in allowed_returncodes:
+        raise CommandError(cmd, result.returncode, result.stderr)
+```
+
+某些命令合法使用非零退出码（如 `git diff` 返回 1 表示"有变更"）。对这些情况传入 `allowed_returncodes=(0, 1)`。
+
+#### 超时时的错误上下文
+
+超时错误必须在可用时捕获部分输出，并包含超时值：
+
+```python
+except subprocess.TimeoutExpired as exc:
+    raise CommandError(
+        cmd, -1,
+        (exc.stderr or "").strip() if isinstance(exc.stderr, str) else "",
+        timeout=timeout,
+    ) from exc
+```
+
+#### Windows 支持
+
+在 Windows 上，为后台进程抑制控制台窗口：
+
+```python
+if os.name == "nt":
+    kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+```
+
+### 有意保留的差异
+
+| 方面 | runner | vcs | 原因 |
+|------|--------|-----|------|
+| SIGTERM→SIGKILL | 有（5s 宽限期） | 无 | VCS 命令生命周期短，不需要优雅关闭 |
+| 异步支持 | 有（`asyncio.create_subprocess_exec`） | 无 | VCS 操作足够快，同步即可 |
+| 环境变量控制 | 完整 API（`env`、`env_extra`、`env_remove`） | 继承当前环境 | VCS 命令需要用户的 PATH、HOME 等 |
+| 流式输出 | 有（回调 + 迭代器） | 无 | VCS 输出量小，完整捕获即可 |
+
+---
+
+## Sync/Async API 镜像
+
+### 问题定义
+
+同时提供同步和异步 API 的模块需要在两条路径之间保持一致的命名、结构和错误行为。如果没有约定，sync/async 对会在细节上逐渐漂移——不同的错误消息、缺少的上下文字段、不一致的清理顺序。
+
+### 命名约定
+
+#### 类
+
+所有异步类变体使用 `Async` 前缀：
+
+| 同步 | 异步 |
+|------|------|
+| `Client` | `AsyncClient` |
+| `StreamHandle` | `AsyncStreamHandle` |
+| `SSEClient` | `AsyncSSEClient` |
+| `EventSource` | `AsyncEventSource` |
+
+#### 公开函数
+
+代码库中存在两种约定：
+
+| 模块 | 同步 | 异步 | 约定 |
+|------|------|------|------|
+| runner | `run` | `run_async` | 后缀 `_async` |
+| runner | `stream` | `stream_async` | 后缀 `_async` |
+| httpclient | `get` | `async_get` | 前缀 `async_` |
+| sse | `connect` | `async_connect` | 前缀 `async_` |
+
+对于已有 API，两种都可接受。**新代码推荐使用 `_async` 后缀**（`foo_async`），因为阅读更自然，且按字母排序时与同步版本相邻。
+
+#### 内部函数
+
+使用显式 `_sync_` / `_async_` 前缀：
+
+```python
+def _sync_request(method, url, ...):    ...
+async def _async_request(method, url, ...):    ...
+```
+
+### 结构约定
+
+#### 共享逻辑
+
+将请求校验、输入解析和策略检查提取为同步辅助函数，供两条路径调用：
+
+```python
+def _validate_command(cmd, policy):   ...  # run() 和 run_async() 都调用
+```
+
+#### 阶段注释
+
+较长的 sync/async 函数对使用匹配的阶段注释来保持对齐：
+
+```python
+# 同步路径
+def _sync_request(...):
+    # Phase 1: 构建 URL
+    # Phase 2: 设置请求头
+    # Phase 3: 建立连接
+    # Phase 4: 发送请求
+    ...
+
+# 异步路径
+async def _async_request(...):
+    # Phase 1: 构建 URL
+    # Phase 2: 设置请求头
+    # Phase 3: 建立连接 (asyncio.open_connection)
+    # Phase 4: 发送请求 (writer.write)
+    ...
+```
+
+这使得审计两条路径是否处理了相同情况变得容易。
+
+#### 错误行为
+
+两条路径必须抛出相同的异常类型，并携带相同的上下文字段。异常类本身是同步的——只有抛出它们的代码不同：
+
+```python
+# 两条路径抛出相同的错误类型
+raise HttpTimeoutError(msg, url=url, timeout=timeout)
+```
+
+#### 上下文管理器
+
+同步类实现 `__enter__` / `__exit__`。异步类实现 `__aenter__` / `__aexit__`。两者都委托给相同的 `close()` / `aclose()` 方法。
+
+### 当前模块覆盖
+
+| 模块 | 同步 API | 异步 API | 共享核心 |
+|------|---------|---------|---------|
+| httpclient | `Client`、`get`/`post`/... | `AsyncClient`、`async_get`/`async_post`/... | URL 构建、请求头设置、认证 |
+| runner | `run`、`stream` | `run_async`、`stream_async` | 命令解析、策略校验、环境构建 |
+| sse | `SSEClient`、`connect` | `AsyncSSEClient`、`async_connect` | `_SSEParser`、`SSEEvent` 数据类 |
+| scheduler | `Scheduler`（统一类） | *（异步任务在隔离的事件循环中运行）* | 单一类处理两种情况 |
+
+---
+
+## 大模块内部分层
+
+### 问题定义
+
+子系统模块（`httpclient`、`runner`、`scheduler`）是 1000+ 行的单文件。如果没有内部结构，导航困难，sync/async 路径难以并排审计，贡献者无法快速定位正确的代码段。
+
+### 段落标记约定
+
+每个大模块使用水平线注释将文件划分为命名段落：
+
+```python
+# ── 段落名 ──────────────────────────────────────────────────────
+```
+
+末尾短横线延伸到第 72 列以保持视觉一致性。所有段落使用此格式。
+
+### 标准段落顺序
+
+段落遵循自上而下的依赖顺序——每个段落只引用在其上方定义的内容：
+
+| 顺序 | 段落 | 内容 |
+|------|------|------|
+| 1 | Imports | 标准库，然后是条件性的 sibling import |
+| 2 | Constants / Defaults | 模块级常量、默认值 |
+| 3 | Exceptions | 异常类层次结构 |
+| 4 | Data Models | 数据类、TypedDict、命名元组 |
+| 5 | Internal Helpers | 私有工具函数 |
+| 6 | Core Logic | 核心实现（同步块在前，异步块在后） |
+| 7 | Public API | 用户可见的函数和类 |
+
+并非每个模块都需要所有段落。简单模块可以跳过第 5-6 段，直接到公开 API。
+
+### 阶段注释
+
+在长函数内部（尤其是 sync/async 传输对），使用编号的阶段注释标记逻辑阶段：
+
+```python
+async def _async_request(method, url, ...):
+    # Phase 1: 构建 URL 和请求头
+    ...
+    # Phase 2: 认证设置
+    ...
+    # Phase 3: 获取连接
+    ...
+    # Phase 4: 发送请求
+    ...
+    # Phase 5: 读取响应
+    ...
+    # Phase 6: 处理重定向
+    ...
+```
+
+同步和异步路径使用相同的阶段编号。这使得对两条路径进行 `diff` 或并排审计变得容易。
+
+### 当前模块结构
+
+#### httpclient（12 段）
+
+`Imports → Constants → Exceptions → Data Models (Response) → Auth → Compression → Streaming Response → Connection Pools → Transport → Request Building → Public API Functions → Client Classes`
+
+#### runner（14 段）
+
+`Imports → Defaults → Exceptions → Data Models → Platform → Environment → Command Parsing → Policy → Process Lifecycle → Sync Execution → Async Execution → Sync Streaming → Async Streaming → Public API`
+
+#### scheduler（7 段）
+
+`Imports → Constants → Exceptions → Cron Parser → Triggers → Data Models → Scheduler Core`
+
+### 规则
+
+1. **超过 500 行的文件必须使用段落标记**
+2. **段落顺序遵循依赖关系** — 段落之间不存在前向引用
+3. **同步在异步之前** — 当段落有 sync 和 async 变体时，同步块在前
+4. **阶段编号匹配** — 同步阶段 N 和异步阶段 N 必须处理相同的逻辑阶段

@@ -41,6 +41,8 @@ Context-manager usage::
 Requires Python 3.10+.
 """
 
+# ── Imports ──
+
 from __future__ import annotations
 
 import asyncio
@@ -62,6 +64,17 @@ DEFAULT_TICK_INTERVAL = 0.1  # seconds — scheduler loop resolution
 
 
 # ── Exceptions ──
+# ── Error Convention ──────────────────────────────────────────────────
+# All zerodep subsystem modules follow these error message rules:
+# 1. Domain exceptions wrap stdlib exceptions (never expose raw OSError, etc.)
+# 2. Error messages include minimal necessary context:
+#    - Command execution: command, returncode, stderr
+#    - Network: URL, host, timeout, status code
+#    - Scheduling: job id, trigger type, scheduled time
+#    - Configuration: key, source, expected type
+# 3. Exception names reflect domain semantics, not implementation
+# 4. Built-in name shadowing (if any) is documented with intent
+# ─────────────────────────────────────────────────────────────────────
 
 
 class SchedulerError(Exception):
@@ -95,7 +108,7 @@ class InvalidCronExpression(SchedulerError):
         super().__init__(msg)
 
 
-# ── Cron Parser ──
+# ── Cron Expression Parser ──
 
 # Field ranges: minute(0-59), hour(0-23), day-of-month(1-31),
 #               month(1-12), day-of-week(0-6, 0=Sunday)
@@ -387,7 +400,7 @@ def _advance_minute(dt: datetime, minutes: frozenset[int]) -> datetime:
     return dt.replace(minute=0) + timedelta(hours=1)
 
 
-# ── Triggers ──
+# ── Trigger Implementations ──
 
 
 class _BaseTrigger:
@@ -508,7 +521,7 @@ class OnceTrigger(_BaseTrigger):
         return f"OnceTrigger({self._run_time!r})"
 
 
-# ── Convenience trigger constructors ──
+# ── Convenience Trigger Constructors ──
 
 
 def every(interval: float, unit: str = "seconds") -> IntervalTrigger:
@@ -567,7 +580,7 @@ def once(run_time: datetime) -> OnceTrigger:
     return OnceTrigger(run_time)
 
 
-# ── Job & Events ──
+# ── Data Models (Job, JobEvent, JobStatus, EventType) ──
 
 
 class JobStatus(enum.Enum):
@@ -647,7 +660,7 @@ class Job:
         )
 
 
-# ── Scheduler ──
+# ── Scheduler Core ──
 
 
 class Scheduler:
@@ -655,6 +668,37 @@ class Scheduler:
 
     Jobs are checked and dispatched by a daemon thread that wakes
     at ``tick_interval`` resolution.  Supports sync and async callables.
+
+    Concurrency Model:
+        The scheduler runs a single background daemon thread that
+        periodically checks for due jobs via ``_run_loop``.
+
+        - **Sync jobs**: executed directly in the scheduler thread.
+          This means long-running sync jobs block the scheduler tick.
+        - **Async jobs**: executed via a temporary ``asyncio`` event loop
+          created per invocation (``asyncio.new_event_loop()``), then
+          closed in a ``finally`` block.  The scheduler thread blocks
+          until the coroutine completes.
+
+        Threading guarantees:
+        - ``self._jobs`` dict access is protected by ``self._lock``.
+        - ``_get_due_jobs()`` snapshots due jobs under the lock.
+        - Job execution (``_execute_job``) runs **outside** the lock.
+        - Job status is set to ``running`` outside the lock before
+          execution and reset to ``pending`` in a ``finally`` block.
+        - Listener dispatch (``_emit``) runs outside the lock, so
+          listeners may observe intermediate job states.
+
+        Shutdown semantics:
+        - ``self._running`` set to ``False``; ``self._event`` signaled.
+        - Background thread finishes its current tick iteration
+          (including any in-flight job) before exiting the loop.
+        - ``_thread.join()`` blocks the caller until the thread exits
+          (unless ``wait=False``).
+        - There is no pre-emption: a running sync job will complete;
+          a running async job's event loop will run to completion.
+        - Listeners receive events for jobs that complete during the
+          final tick, but no synthetic "shutdown" event is emitted.
 
     Args:
         tick_interval: How often (seconds) the scheduler checks for
@@ -836,6 +880,9 @@ class Scheduler:
     def run_job(self, job_id: str) -> Any:
         """Execute a job immediately, bypassing its trigger.
 
+        This does **not** update ``next_run_time`` — the trigger's
+        schedule continues independently.
+
         Args:
             job_id: The job to run.
 
@@ -845,6 +892,12 @@ class Scheduler:
         Raises:
             JobNotFound: If *job_id* doesn't exist.
         """
+        # TODO(tier2): potential race — run_job() fetches the Job
+        # reference under lock but then calls _execute_job() outside
+        # the lock.  If the scheduler thread picks up the same job
+        # concurrently (it passed _get_due_jobs before this call),
+        # both threads will execute the job simultaneously and both
+        # will mutate job.status without synchronisation.
         with self._lock:
             job = self._jobs.get(job_id)
             if job is None:
@@ -852,7 +905,7 @@ class Scheduler:
 
         return self._execute_job(job, datetime.now())
 
-    # ── Event listeners ──
+    # ── Event system (listeners, emission) ──
 
     def add_listener(self, callback: Callable[[JobEvent], None]) -> None:
         """Register a global event listener.
@@ -867,7 +920,15 @@ class Scheduler:
         self._listeners.remove(callback)
 
     def _emit(self, event: JobEvent) -> None:
-        """Dispatch an event to all listeners."""
+        """Dispatch an event to all listeners.
+
+        Runs outside the lock, so listeners may observe intermediate
+        job states (e.g., ``status=running``).
+        """
+        # Note: self._listeners is a plain list; add_listener/
+        # remove_listener mutate it without locking.  This is safe
+        # under CPython's GIL (list.append is atomic), but not
+        # guaranteed by the language spec.
         for listener in self._listeners:
             # Tier 2: best-effort observable — listener errors logged
             try:
@@ -875,7 +936,7 @@ class Scheduler:
             except Exception:
                 logger.exception("Error in event listener")
 
-    # ── Lifecycle ──
+    # ── Lifecycle (start, main loop, shutdown) ──
 
     @property
     def running(self) -> bool:
@@ -902,15 +963,35 @@ class Scheduler:
 
         Args:
             wait: If ``True``, block until the background thread exits.
+
+        Shutdown behavior:
+        - Currently running jobs: the scheduler thread finishes the
+          current ``_process_job`` call (including ``_execute_job``)
+          before checking ``self._running`` again.  There is no
+          pre-emption — sync jobs run to completion, and async jobs'
+          event loops run to completion.
+        - Listener events: listeners receive ``job_executed`` /
+          ``job_error`` events for any job that completes during the
+          final tick.  No synthetic "scheduler_stopped" event is emitted.
+        - Async job cleanup: the per-invocation event loop is always
+          closed in ``_run_async_job``'s ``finally`` block, regardless
+          of shutdown timing.
         """
+        # Signal the run loop to stop after its current iteration
         self._running = False
+        # Wake the thread from Event.wait() so it exits promptly
         self._event.set()
         if wait and self._thread is not None and self._thread.is_alive():
             self._thread.join()
         self._thread = None
 
     def _run_loop(self) -> None:
-        """Background thread main loop."""
+        """Background thread main loop.
+
+        Note: ``self._running`` is read without a lock.  This is safe
+        because it is a simple boolean flag written by the main thread
+        (in ``shutdown``) and read here — worst case is one extra tick.
+        """
         while self._running:
             now = datetime.now()
             due_jobs = self._get_due_jobs(now)
@@ -932,7 +1013,16 @@ class Scheduler:
             ]
 
     def _process_job(self, job: Job, now: datetime) -> None:
-        """Check misfire and execute or skip a due job."""
+        """Check misfire and execute or skip a due job.
+
+        Note: *job* was snapshotted from ``_get_due_jobs`` under lock,
+        but is processed here without the lock held.  This is intentional
+        to avoid holding the lock during potentially long job execution.
+        """
+        # TODO(tier2): potential race — job.next_run_time is read here
+        # outside the lock.  A concurrent ``run_job()`` call could
+        # trigger ``_reschedule`` on the same job, causing the scheduler
+        # thread and the caller thread to both reschedule the same job.
         scheduled = job.next_run_time
         if scheduled is None:
             return
@@ -957,7 +1047,17 @@ class Scheduler:
         self._reschedule(job, now)
 
     def _execute_job(self, job: Job, now: datetime) -> Any:
-        """Run a job function, handling sync and async callables."""
+        """Run a job function, handling sync and async callables.
+
+        Note: this method runs **outside** the lock.  Job status is
+        mutated directly on the dataclass instance without lock
+        protection.
+        """
+        # TODO(tier2): potential race — job.status is set to running
+        # without holding self._lock.  If run_job() is called from a
+        # user thread while the scheduler thread is also executing the
+        # same job, both threads may concurrently mutate the same Job
+        # instance (status, next_run_time).
         job.status = JobStatus.running
         scheduled = job.next_run_time
 
@@ -1009,7 +1109,13 @@ class Scheduler:
                 job.status = JobStatus.pending
 
     def _run_async_job(self, job: Job) -> Any:
-        """Execute an async job function in a new event loop."""
+        """Execute an async job function in a new event loop.
+
+        A fresh event loop is created per invocation so that the
+        scheduler thread (which has no running loop) can drive async
+        jobs.  The loop is always closed in the ``finally`` block,
+        ensuring no resource leak even on exception.
+        """
         loop = asyncio.new_event_loop()
         try:
             return loop.run_until_complete(job.fn(*job.args, **job.kwargs))
@@ -1018,7 +1124,13 @@ class Scheduler:
             loop.close()
 
     def _reschedule(self, job: Job, now: datetime) -> None:
-        """Update a job's next_run_time from its trigger."""
+        """Update a job's next_run_time from its trigger.
+
+        Called from the scheduler thread after job execution.
+        """
+        # TODO(tier2): potential race — next_run_time and trigger
+        # state are mutated outside the lock.  A concurrent run_job()
+        # call could read stale next_run_time.
         if isinstance(job.trigger, OnceTrigger):
             job.trigger.mark_fired()
             job.next_run_time = None

@@ -119,14 +119,18 @@ Low-risk, high-reward normalization work. All items in this tier are complete.
 | Terminal color detection aligned across structlog, prompt | Done | `87ef4dc` |
 | Cleanup semantics classified into three tiers | Done | -- |
 
-### Tier 2 -- Core module internal refactoring (planned)
+### Tier 2 -- Core module internal refactoring (completed)
 
-Internal structural improvements to the three largest subsystem modules.
+Internal structural improvements to the three largest subsystem modules. All items in this tier are complete.
 
-- **runner** -- align sync/async structure, clarify streaming lifecycle, unify timeout/cleanup semantics
-- **scheduler** -- document thread + async interaction model, audit shutdown paths, identify race condition risks
-- **httpclient** -- audit request/response lifecycle, clarify pool return/discard decisions, standardize error messages
-- **Error conventions** -- establish minimum-context rules for error messages across all modules
+| Item | Status | Commits |
+|------|--------|---------|
+| runner: section structure + sync/async alignment audit | Done | `0b85cf5` |
+| runner: fix async partial output + process reaping gaps | Done | `98d4c8a` |
+| scheduler: concurrency model documentation + error conventions | Done | `217833a` |
+| scheduler: tighten lock discipline around job state transitions | Done | `116fb9e` |
+| httpclient: reorganize internal sections (12-layer structure) | Done | `c8c8d61` |
+| httpclient: resolve sync/async drifts + enrich error context | Done | `e9ddf8a` |
 
 ### Tier 3 -- Repository governance (planned)
 

@@ -1,6 +1,7 @@
 # /// zerodep
 # version = "0.2.0"
 # deps = []
+# tier = "medium"
 # ///
 
 """Zero-dependency structured logging with pretty console output.

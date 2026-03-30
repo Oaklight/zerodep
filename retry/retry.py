@@ -1,6 +1,7 @@
 # /// zerodep
 # version = "0.2.0"
 # deps = []
+# tier = "simple"
 # ///
 
 """Zero-dependency retry with configurable backoff strategies.

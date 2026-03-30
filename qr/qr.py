@@ -1,6 +1,7 @@
 # /// zerodep
 # version = "0.2.0"
 # deps = []
+# tier = "simple"
 # ///
 
 """QR Code generator library (Python).

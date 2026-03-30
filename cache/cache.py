@@ -1,6 +1,7 @@
 # /// zerodep
 # version = "0.2.0"
 # deps = []
+# tier = "subsystem"
 # ///
 """Zero-dependency caching with TTL, eviction policies, and async support.
 

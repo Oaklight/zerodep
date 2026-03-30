@@ -1,6 +1,7 @@
 # /// zerodep
 # version = "0.2.0"
 # deps = []
+# tier = "subsystem"
 # ///
 
 """YAML parser and serializer (common subset) — zero dependencies, stdlib only, Python 3.10+.

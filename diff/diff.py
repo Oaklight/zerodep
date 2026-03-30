@@ -1,6 +1,7 @@
 # /// zerodep
 # version = "0.2.0"
 # deps = []
+# tier = "simple"
 # ///
 
 """Unified diff parser, patch applicator, and three-way merge — zero dependencies, stdlib only, Python 3.10+.

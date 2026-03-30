@@ -1,6 +1,7 @@
 # /// zerodep
 # version = "0.2.0"
 # deps = []
+# tier = "medium"
 # ///
 
 """XML ↔ dict converter with fault-tolerant LLM tag extraction — zero-dep, stdlib only, Python 3.10+.

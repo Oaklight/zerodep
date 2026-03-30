@@ -1,6 +1,7 @@
 # /// zerodep
 # version = "0.2.0"
 # deps = []
+# tier = "medium"
 # ///
 
 """Zero-dependency runtime validator for TypedDict and dataclass types.

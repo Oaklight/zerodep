@@ -201,11 +201,14 @@ def _scan_modules(repo_root: Path) -> dict:
                     description = _extract_docstring_first_line(source) or ""
                     files = [str(f.relative_to(repo_root)) for f in py_files]
 
+                    tier = meta.get("tier", "")
+
                     modules[mod_name] = {
                         "description": description,
                         "files": files,
                         "version": version,
                         "deps": deps,
+                        "tier": tier,
                     }
 
             # Recurse into subdirectories
@@ -309,20 +312,28 @@ def cmd_list(args: argparse.Namespace) -> None:
     # Column widths
     name_w = max(len(n) for n in modules)
     ver_w = max(len(m.get("version", "")) for m in modules.values())
+    tier_w = max(len(m.get("tier", "")) for m in modules.values())
+    tier_w = max(tier_w, len("Tier"))
 
-    header = f"  {'Module':<{name_w}}  {'Version':<{ver_w}}  Description"
+    header = (
+        f"  {'Module':<{name_w}}  {'Version':<{ver_w}}  {'Tier':<{tier_w}}  Description"
+    )
     _ok(header)
-    _ok(f"  {'-' * name_w}  {'-' * ver_w}  {'-' * 40}")
+    sep = f"  {'-' * name_w}  {'-' * ver_w}  {'-' * tier_w}  {'-' * 40}"
+    _ok(sep)
 
     for name in sorted(modules):
         mod = modules[name]
         ver = mod.get("version", "?")
+        tier = mod.get("tier", "")
         desc = mod.get("description", "")
         # Truncate description
-        max_desc = shutil.get_terminal_size((80, 24)).columns - name_w - ver_w - 8
+        max_desc = (
+            shutil.get_terminal_size((80, 24)).columns - name_w - ver_w - tier_w - 12
+        )
         if max_desc > 10 and len(desc) > max_desc:
             desc = desc[: max_desc - 3] + "..."
-        _ok(f"  {name:<{name_w}}  {ver:<{ver_w}}  {desc}")
+        _ok(f"  {name:<{name_w}}  {ver:<{ver_w}}  {tier:<{tier_w}}  {desc}")
 
     _ok(f"\n  {len(modules)} modules available")
 
@@ -339,6 +350,7 @@ def cmd_info(args: argparse.Namespace) -> None:
     mod = modules[name]
     _ok(f"Module:      {name}")
     _ok(f"Version:     {mod.get('version', '?')}")
+    _ok(f"Tier:        {mod.get('tier', '(unknown)')}")
     _ok(f"Description: {mod.get('description', '(none)')}")
     _ok(f"Files:       {', '.join(mod.get('files', []))}")
 

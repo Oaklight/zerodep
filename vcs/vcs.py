@@ -1,6 +1,7 @@
 # /// zerodep
 # version = "0.2.0"
 # deps = ["diff"]
+# tier = "subsystem"
 # ///
 """VCS CLI wrapper — zero dependencies, stdlib only, Python 3.10+.
 

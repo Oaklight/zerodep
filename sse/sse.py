@@ -1,6 +1,7 @@
 # /// zerodep
 # version = "0.2.0"
 # deps = ["httpclient"]
+# tier = "subsystem"
 # ///
 """Zero-dependency SSE (Server-Sent Events) client.
 

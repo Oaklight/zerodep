@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-03-30
+
+### Enhancements
+
+- **VCS module**: `Mercurial` and `Jujutsu` constructors accept `merge_func` parameter for explicit three-way merge injection; `detect()` forwards it to the backend.
+- **Config module**: `Config` constructor accepts `loaders` and `dotenv_loader` parameters for explicit file-format loader and dotenv injection.
+- **SSE module**: `SSEClient` and `AsyncSSEClient` constructors accept `transport` parameter for explicit HTTP transport injection; reconnection error handling adapts automatically.
+
+### Internal Improvements
+
+- Introduced `_Unset` sentinel pattern across vcs, config, and sse modules for three-state injection parameters (`_UNSET` = auto-discover, `None` = disabled, callable = injected).
+- Added "Explicit Injection" section to internals documentation (English and Chinese).
+
 ## [0.2.0] - 2026-03-30
 
 ### New Modules

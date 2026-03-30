@@ -130,6 +130,8 @@ nav:
   - Home: index.md
   - Guide:
       - Design Philosophy: guide/philosophy.md
+      - Design & Architecture: guide/design.md
+      - Internal Conventions: guide/internals.md
       - CLI Tool: guide/cli.md
       - Manifest: guide/manifest.md
   - Modules:

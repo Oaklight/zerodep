@@ -6,6 +6,19 @@
 
 ## [未发布]
 
+## [0.2.1] - 2026-03-30
+
+### 功能增强
+
+- **VCS 模块**：`Mercurial` 和 `Jujutsu` 构造函数接受 `merge_func` 参数，支持显式注入三路合并函数；`detect()` 将其转发给后端。
+- **Config 模块**：`Config` 构造函数接受 `loaders` 和 `dotenv_loader` 参数，支持显式注入文件格式加载器和 dotenv 加载器。
+- **SSE 模块**：`SSEClient` 和 `AsyncSSEClient` 构造函数接受 `transport` 参数，支持显式注入 HTTP 传输层；重连错误处理自动适配。
+
+### 内部改进
+
+- 在 vcs、config、sse 模块中引入 `_Unset` 哨兵模式，实现三态注入参数（`_UNSET` = 自动发现、`None` = 禁用、可调用对象 = 注入）。
+- 在内部约定文档中新增"显式注入"章节（中英文）。
+
 ## [0.2.0] - 2026-03-30
 
 ### 新增模块

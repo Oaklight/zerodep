@@ -338,14 +338,14 @@ LOC 高不一定意味着必须拆分。
 - ✅ 修复 `httpclient` sync/async 漂移：错误上下文丰富化、digest retry 对齐（`e9ddf8a`）
 - ✅ 建立错误消息风格约定（scheduler 中建立标准，跨模块审计完成）
 
-### Tier 3（待启动）
+### Tier 3 完成状态
 
-- ❌ 正式识别并标记 subsystem 级模块
-- ❌ 增加面向边界行为的测试：
-  - resource cleanup
-  - timeout/cancel
-  - pool reuse/invalidation
-  - sibling import fallback
+- ✅ 正式识别并标记 subsystem 级模块：frontmatter 添加 `tier` 字段，CLI 支持显示（`0f14b6e`）
+- ✅ 增加面向边界行为的测试（41 tests）：
+  - httpclient: pool lifecycle、streaming cleanup、timeout/error context（12 tests）
+  - runner: timeout escalation、async partial output、stream lifecycle、command policy（13 tests）
+  - scheduler: shutdown behavior、job state safety、event system（10 tests）
+  - config: sibling import fallback（6 tests）
 
 ## 现在最值得做的事
 

@@ -9,10 +9,10 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from httpclient import (
     Client,
-    ConnectionError,
+    HttpConnectionError,
     HTTPError,
+    HttpTimeoutError,
     StreamingResponse,
-    TimeoutError,
     _SyncConnectionPool,
     get,
 )
@@ -141,15 +141,17 @@ class TestTimeoutBehavior:
     """Tests for timeout handling."""
 
     def test_timeout_raises_with_context(self):
-        """TimeoutError should include url and timeout value."""
-        err = TimeoutError("timed out", url="http://example.com/slow", timeout=5.0)
+        """HttpTimeoutError should include url and timeout value."""
+        err = HttpTimeoutError("timed out", url="http://example.com/slow", timeout=5.0)
         assert err.url == "http://example.com/slow"
         assert err.timeout == 5.0
         assert "timed out" in str(err)
 
     def test_connection_error_includes_host(self):
-        """ConnectionError should include host and port."""
-        err = ConnectionError("Connection refused", host="db.example.com", port=5432)
+        """HttpConnectionError should include host and port."""
+        err = HttpConnectionError(
+            "Connection refused", host="db.example.com", port=5432
+        )
         assert err.host == "db.example.com"
         assert err.port == 5432
         assert "Connection refused" in str(err)

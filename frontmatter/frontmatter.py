@@ -92,7 +92,15 @@ class FrontmatterError(Exception):
 
 
 class HandlerError(FrontmatterError):
-    """Raised when a requested handler is not available."""
+    """Raised when a requested handler is not available.
+
+    Attributes:
+        handler: Name of the handler that caused the error.
+    """
+
+    def __init__(self, message: str, *, handler: str = "") -> None:
+        self.handler = handler
+        super().__init__(message)
 
 
 # ── Data class ──
@@ -149,7 +157,8 @@ def _parse_yaml(raw: str) -> dict[str, Any]:
     if not _HAS_YAML:
         raise HandlerError(
             "YAML handler requires the sibling yaml module. "
-            "Place yaml.py in a sibling directory or on sys.path."
+            "Place yaml.py in a sibling directory or on sys.path.",
+            handler="yaml",
         )
     result = _yaml_load(raw)
     if not isinstance(result, dict):
@@ -164,7 +173,8 @@ def _dump_yaml(data: dict[str, Any], **kwargs: Any) -> str:
     if not _HAS_YAML:
         raise HandlerError(
             "YAML handler requires the sibling yaml module. "
-            "Place yaml.py in a sibling directory or on sys.path."
+            "Place yaml.py in a sibling directory or on sys.path.",
+            handler="yaml",
         )
     sort_keys = kwargs.pop("sort_keys", False)
     result = _yaml_dump(data, sort_keys=sort_keys, **kwargs)
@@ -175,7 +185,9 @@ def _dump_yaml(data: dict[str, Any], **kwargs: Any) -> str:
 def _parse_toml(raw: str) -> dict[str, Any]:
     """Parse TOML frontmatter content."""
     if not _HAS_TOMLLIB:
-        raise HandlerError("TOML handler requires Python 3.11+ (tomllib)")
+        raise HandlerError(
+            "TOML handler requires Python 3.11+ (tomllib)", handler="toml"
+        )
     return tomllib.loads(raw)
 
 
@@ -392,7 +404,9 @@ def loads(text: str, *, handler: str | None = None) -> Document:
         metadata = _parse_json(raw)
         return Document(metadata=metadata, content=body)
 
-    raise HandlerError(f"unknown handler: {handler!r} (expected yaml/toml/json)")
+    raise HandlerError(
+        f"unknown handler: {handler!r} (expected yaml/toml/json)", handler=handler
+    )
 
 
 def load(
@@ -462,7 +476,9 @@ def dumps(
             return raw_json + doc.content
         return raw_json
     else:
-        raise HandlerError(f"unknown handler: {handler!r} (expected yaml/toml/json)")
+        raise HandlerError(
+            f"unknown handler: {handler!r} (expected yaml/toml/json)", handler=handler
+        )
 
     parts = [fence, "\n"]
     if raw:

@@ -107,16 +107,27 @@ class CommandError(VCSError):
         command: The full command list that was executed.
         returncode: Process exit code.
         stderr: Captured standard-error output.
+        timeout: Timeout value in seconds if this was a timeout, else ``None``.
     """
 
-    def __init__(self, command: list[str], returncode: int, stderr: str) -> None:
+    def __init__(
+        self,
+        command: list[str],
+        returncode: int,
+        stderr: str,
+        *,
+        timeout: float | None = None,
+    ) -> None:
         self.command = command
         self.returncode = returncode
         self.stderr = stderr
+        self.timeout = timeout
         cmd_str = " ".join(command)
-        super().__init__(
-            f"Command failed (rc={returncode}): {cmd_str}\n{stderr.rstrip()}"
-        )
+        if timeout is not None:
+            msg = f"Command timed out after {timeout}s: {cmd_str}"
+        else:
+            msg = f"Command failed (rc={returncode}): {cmd_str}\n{stderr.rstrip()}"
+        super().__init__(msg)
 
 
 class NotARepoError(VCSError):
@@ -320,7 +331,12 @@ def _run(
     try:
         result = subprocess.run(cmd, **kwargs)  # noqa: S603
     except subprocess.TimeoutExpired as exc:
-        raise VCSError(f"Command timed out after {timeout}s: {' '.join(cmd)}") from exc
+        raise CommandError(
+            cmd,
+            -1,
+            (exc.stderr or "").strip() if isinstance(exc.stderr, str) else "",
+            timeout=timeout,
+        ) from exc
 
     if result.returncode not in allowed_returncodes:
         raise CommandError(cmd, result.returncode, result.stderr)

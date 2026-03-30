@@ -159,7 +159,11 @@ _UNSET = _Unset()
 # ── Exceptions ──────────────────────────────────────────────────────────────
 
 
-class UndefinedValueError(Exception):
+class ConfigError(Exception):
+    """Base exception for all config operations."""
+
+
+class UndefinedValueError(ConfigError):
     """Raised when a required configuration value is missing."""
 
 

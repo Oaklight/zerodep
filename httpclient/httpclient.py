@@ -65,7 +65,11 @@ DEFAULT_POOL_IDLE_TIMEOUT = 60.0
 # ── Exceptions ──
 
 
-class HTTPError(Exception):
+class HttpClientError(Exception):
+    """Base exception for all httpclient operations."""
+
+
+class HTTPError(HttpClientError):
     """Raised on non-2xx status when raise_for_status() is called."""
 
     def __init__(self, status_code: int, body: str, url: str) -> None:
@@ -84,8 +88,7 @@ class TooManyRedirects(HTTPError):
         Exception.__init__(self, f"Too many redirects (>{max_redirects}) for {url}")
 
 
-# Note: intentionally shadows builtins for domain-specific semantics
-class ConnectionError(Exception):
+class HttpConnectionError(HttpClientError):
     """Raised on connection failures.
 
     Attributes:
@@ -101,8 +104,7 @@ class ConnectionError(Exception):
         super().__init__(message)
 
 
-# Note: intentionally shadows builtins for domain-specific semantics
-class TimeoutError(Exception):
+class HttpTimeoutError(HttpClientError):
     """Raised on request timeout.
 
     Attributes:
@@ -116,6 +118,11 @@ class TimeoutError(Exception):
         self.timeout = timeout
         self.message = message
         super().__init__(message)
+
+
+# Backward-compatible aliases (deprecated: prefer HttpConnectionError/HttpTimeoutError)
+ConnectionError = HttpConnectionError  # noqa: A001
+TimeoutError = HttpTimeoutError  # noqa: A001
 
 
 # ── Data Models (Response) ──
@@ -524,7 +531,7 @@ class StreamingResponse:
                 if remaining:
                     yield remaining
         except (OSError, http.client.HTTPException) as exc:
-            raise ConnectionError(str(exc)) from exc
+            raise HttpConnectionError(str(exc)) from exc
 
     def iter_lines(self) -> Iterator[str]:
         """Yield response body line by line (decoded)."""
@@ -537,7 +544,7 @@ class StreamingResponse:
                     break
                 yield line.decode(self._encoding, errors="replace").rstrip("\r\n")
         except (OSError, http.client.HTTPException) as exc:
-            raise ConnectionError(str(exc)) from exc
+            raise HttpConnectionError(str(exc)) from exc
 
     def read(self) -> bytes:
         """Consume entire stream into bytes."""
@@ -584,13 +591,13 @@ class StreamingResponse:
                 if remaining:
                     yield remaining
         except asyncio.TimeoutError:
-            raise TimeoutError(
+            raise HttpTimeoutError(
                 f"Streaming read timed out for {self.url}",
                 url=self.url,
                 timeout=self._async_timeout or 0.0,
             )
         except OSError as exc:
-            raise ConnectionError(str(exc)) from exc
+            raise HttpConnectionError(str(exc)) from exc
 
     async def _aiter_chunked(self) -> AsyncIterator[bytes]:
         """Decode chunked transfer encoding from async reader."""
@@ -1089,7 +1096,7 @@ def _sync_request(
                     tunnel_resp = tunnel_conn.getresponse()
                     if tunnel_resp.status != 200:
                         tunnel_conn.close()
-                        raise ConnectionError(
+                        raise HttpConnectionError(
                             f"CONNECT tunnel failed: {tunnel_resp.status}",
                             host=host,
                             port=port,
@@ -1232,17 +1239,17 @@ def _sync_request(
         # exist before the request try block's finally clause can decide
         # whether to pool-release or close the writer.
         except (OSError, http.client.HTTPException) as exc:
-            raise ConnectionError(
+            raise HttpConnectionError(
                 f"Connection to {host}:{port} failed: {exc}",
                 host=host,
                 port=port,
             ) from exc
-        except TimeoutError:
+        except HttpTimeoutError:
             raise
         except Exception as exc:
             if "timed out" in str(exc).lower():
                 msg = f"Request to {url} timed out after {timeout}s"
-                raise TimeoutError(msg, url=url, timeout=timeout) from exc
+                raise HttpTimeoutError(msg, url=url, timeout=timeout) from exc
             raise
 
 
@@ -1266,7 +1273,7 @@ async def _async_read_response_headers(
     status_str = status_line.decode("latin-1").rstrip("\r\n")
     parts = status_str.split(" ", 2)
     if len(parts) < 2:
-        raise ConnectionError(f"Malformed status line: {status_str}")
+        raise HttpConnectionError(f"Malformed status line: {status_str}")
     status_code = int(parts[1])
 
     # Headers until empty line
@@ -1440,7 +1447,7 @@ async def _async_request(
                             await proxy_writer.wait_closed()
                         except Exception:
                             pass
-                        raise ConnectionError(
+                        raise HttpConnectionError(
                             f"CONNECT tunnel failed: {tunnel_status}",
                             host=host,
                             port=port,
@@ -1457,7 +1464,7 @@ async def _async_request(
                     )
                     reader = proxy_reader
                     writer = proxy_writer
-                    writer._transport = new_transport  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+                    writer._transport = new_transport  # type: ignore[attr-defined]
                     request_path = path
             elif _pool:
                 result = await _pool.acquire(host, port, is_https, timeout, verify)
@@ -1484,9 +1491,9 @@ async def _async_request(
                 )
         except asyncio.TimeoutError:
             msg = f"Connection to {host}:{port} timed out after {timeout}s"
-            raise TimeoutError(msg, url=url, timeout=timeout)
+            raise HttpTimeoutError(msg, url=url, timeout=timeout)
         except OSError as exc:
-            raise ConnectionError(
+            raise HttpConnectionError(
                 f"Connection to {host}:{port} failed: {exc}",
                 host=host,
                 port=port,
@@ -1596,7 +1603,7 @@ async def _async_request(
                 resp_body = _decompress_body(resp_body, content_encoding)
             return Response(status, resp_headers, resp_body, url)
         except asyncio.TimeoutError:
-            raise TimeoutError(
+            raise HttpTimeoutError(
                 f"Request to {url} timed out after {timeout}s",
                 url=url,
                 timeout=timeout,

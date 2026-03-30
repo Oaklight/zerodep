@@ -66,8 +66,8 @@ def _ensure_sibling_path(name: str) -> str:
 
 try:
     _httpclient_dir = _ensure_sibling_path("httpclient")
-    from httpclient import ConnectionError as _HttpConnectionError
-    from httpclient import TimeoutError as _HttpTimeoutError
+    from httpclient import HttpConnectionError as _HttpConnectionError
+    from httpclient import HttpTimeoutError as _HttpTimeoutError
     from httpclient import async_get as _http_async_get
     from httpclient import get as _http_get
 

@@ -70,6 +70,7 @@ plugins:
             - ../a2a
             - ../jsonrpc
             - ../acp
+            - ../skills
             - aes
             - qr
             - httpclient
@@ -98,6 +99,7 @@ plugins:
             - a2a
             - jsonrpc
             - acp
+            - skills
           options:
             docstring_style: google
             show_source: true
@@ -149,6 +151,7 @@ nav:
           - jsonrpc / JSON-RPC: modules/jsonrpc.md
           - a2a / A2A 协议: modules/a2a.md
           - acp / ACP 协议: modules/acp.md
+          - skills / Agent Skills: modules/skills.md
       - 数据格式:
           - xml / XML 转换器: modules/xml.md
           - yaml / YAML 解析器: modules/yaml.md
@@ -188,6 +191,7 @@ nav:
           - jsonrpc / JSON-RPC: api/jsonrpc.md
           - a2a / A2A 协议: api/a2a.md
           - acp / ACP 协议: api/acp.md
+          - skills / Agent Skills: api/skills.md
       - 数据格式:
           - xml / XML 转换器: api/xml.md
           - yaml / YAML 解析器: api/yaml.md
@@ -227,6 +231,7 @@ nav:
           - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md
           - a2a / A2A 协议: benchmarks/a2a.md
           - acp / ACP 协议: benchmarks/acp.md
+          - skills / Agent Skills: benchmarks/skills.md
       - 数据格式:
           - xml / XML 转换器: benchmarks/xml.md
           - yaml / YAML 解析器: benchmarks/yaml.md

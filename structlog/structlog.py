@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "medium"
+# category = "utility"
 # ///
 
 """Zero-dependency structured logging with pretty console output.

@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "medium"
+# category = "utility"
 # ///
 """Zero-dependency sparse text search with BM25 family and TF-IDF ranking.
 

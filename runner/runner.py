@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "subsystem"
+# category = "process"
 # ///
 """Structured subprocess execution — zero dependencies, stdlib only, Python 3.10+.
 

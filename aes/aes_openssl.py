@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "medium"
+# category = "crypto"
 # ///
 
 """AES encryption via OpenSSL libcrypto (ctypes): ECB, CBC, CTR, and GCM modes.

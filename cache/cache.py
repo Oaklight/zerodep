@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "subsystem"
+# category = "utility"
 # ///
 """Zero-dependency caching with TTL, eviction policies, and async support.
 

@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "simple"
+# category = "devtools"
 # ///
 
 """Unified diff parser, patch applicator, and three-way merge — zero dependencies, stdlib only, Python 3.10+.

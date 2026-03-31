@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "medium"
+# category = "terminal"
 # ///
 
 """Tabulate — zero dependencies, stdlib only, Python 3.10+.

@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "medium"
+# category = "data"
 # ///
 
 """HTML parser with BeautifulSoup-like API — zero-dep, stdlib only, Python 3.10+.

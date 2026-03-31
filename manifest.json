@@ -1,7 +1,27 @@
 {
   "version": "1",
-  "generated": "2026-03-30T16:38:58.741657+00:00",
+  "generated": "2026-03-31T06:32:10.643352+00:00",
   "modules": {
+    "a2a": {
+      "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
+      "files": [
+        "a2a/a2a.py"
+      ],
+      "version": "0.2.2",
+      "deps": [],
+      "tier": "subsystem",
+      "category": ""
+    },
+    "acp": {
+      "description": "ACP (Agent Client Protocol) -- Zero-dependency Python implementation",
+      "files": [
+        "acp/acp.py"
+      ],
+      "version": "0.2.2",
+      "deps": [],
+      "tier": "subsystem",
+      "category": ""
+    },
     "aes": {
       "description": "Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",
       "files": [
@@ -10,7 +30,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "medium"
+      "tier": "medium",
+      "category": "crypto"
     },
     "ansi": {
       "description": "ANSI escape code primitives for terminal styling",
@@ -19,7 +40,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "simple"
+      "tier": "simple",
+      "category": "terminal"
     },
     "cache": {
       "description": "Zero-dependency caching with TTL, eviction policies, and async support",
@@ -28,7 +50,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "subsystem"
+      "tier": "subsystem",
+      "category": "utility"
     },
     "config": {
       "description": "Unified configuration loader — zero dependencies, stdlib only, Python 3.10+",
@@ -41,7 +64,8 @@
         "yaml",
         "jsonc"
       ],
-      "tier": "subsystem"
+      "tier": "subsystem",
+      "category": "data"
     },
     "diff": {
       "description": "Unified diff parser, patch applicator, and three-way merge — zero dependencies, stdlib only, Python 3.10+",
@@ -50,7 +74,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "simple"
+      "tier": "simple",
+      "category": "devtools"
     },
     "dotenv": {
       "description": ".env file parser and loader — zero dependencies, stdlib only, Python 3.10+",
@@ -59,7 +84,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "simple"
+      "tier": "simple",
+      "category": "data"
     },
     "frontmatter": {
       "description": "Frontmatter parser and serializer — zero dependencies, stdlib only, Python 3.10+",
@@ -70,7 +96,8 @@
       "deps": [
         "yaml"
       ],
-      "tier": "medium"
+      "tier": "medium",
+      "category": "data"
     },
     "httpclient": {
       "description": "Zero-dependency sync + async HTTP REST client",
@@ -79,7 +106,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "subsystem"
+      "tier": "subsystem",
+      "category": "network"
     },
     "jsonc": {
       "description": "JSONC (JSON with Comments) parser — zero dependencies, stdlib only, Python 3.10+",
@@ -88,7 +116,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "simple"
+      "tier": "simple",
+      "category": "data"
     },
     "markdown": {
       "description": "Markdown to HTML renderer — zero dependencies, stdlib only, Python 3.10+",
@@ -97,7 +126,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "medium"
+      "tier": "medium",
+      "category": "terminal"
     },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",
@@ -106,7 +136,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "simple"
+      "tier": "simple",
+      "category": "terminal"
     },
     "qr": {
       "description": "QR Code generator library (Python)",
@@ -115,7 +146,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "simple"
+      "tier": "simple",
+      "category": "utility"
     },
     "retry": {
       "description": "Zero-dependency retry with configurable backoff strategies",
@@ -124,7 +156,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "simple"
+      "tier": "simple",
+      "category": "utility"
     },
     "runner": {
       "description": "Structured subprocess execution — zero dependencies, stdlib only, Python 3.10+",
@@ -133,7 +166,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "subsystem"
+      "tier": "subsystem",
+      "category": "process"
     },
     "scheduler": {
       "description": "Zero-dependency in-process task scheduler with cron support",
@@ -142,7 +176,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "subsystem"
+      "tier": "subsystem",
+      "category": "process"
     },
     "search": {
       "description": "Zero-dependency sparse text search with BM25 family and TF-IDF ranking",
@@ -151,7 +186,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "medium"
+      "tier": "medium",
+      "category": "utility"
     },
     "soup": {
       "description": "HTML parser with BeautifulSoup-like API — zero-dep, stdlib only, Python 3.10+",
@@ -160,7 +196,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "medium"
+      "tier": "medium",
+      "category": "data"
     },
     "sse": {
       "description": "Zero-dependency SSE (Server-Sent Events) client",
@@ -171,7 +208,8 @@
       "deps": [
         "httpclient"
       ],
-      "tier": "subsystem"
+      "tier": "subsystem",
+      "category": "network"
     },
     "structlog": {
       "description": "Zero-dependency structured logging with pretty console output",
@@ -180,7 +218,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "medium"
+      "tier": "medium",
+      "category": "utility"
     },
     "tabulate": {
       "description": "Tabulate — zero dependencies, stdlib only, Python 3.10+",
@@ -189,7 +228,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "medium"
+      "tier": "medium",
+      "category": "terminal"
     },
     "toon": {
       "description": "TOON encoder/decoder — zero dependencies, stdlib only, Python 3.10+",
@@ -198,7 +238,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "simple"
+      "tier": "simple",
+      "category": "data"
     },
     "validate": {
       "description": "Zero-dependency runtime validator for TypedDict and dataclass types",
@@ -207,7 +248,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "medium"
+      "tier": "medium",
+      "category": "data"
     },
     "vcs": {
       "description": "VCS CLI wrapper — zero dependencies, stdlib only, Python 3.10+",
@@ -218,7 +260,8 @@
       "deps": [
         "diff"
       ],
-      "tier": "subsystem"
+      "tier": "subsystem",
+      "category": "devtools"
     },
     "xml": {
       "description": "XML ↔ dict converter with fault-tolerant LLM tag extraction — zero-dep, stdlib only, Python 3.10+",
@@ -227,7 +270,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "medium"
+      "tier": "medium",
+      "category": "data"
     },
     "yaml": {
       "description": "YAML parser and serializer (common subset) — zero dependencies, stdlib only, Python 3.10+",
@@ -236,7 +280,8 @@
       ],
       "version": "0.2.2",
       "deps": [],
-      "tier": "subsystem"
+      "tier": "subsystem",
+      "category": "data"
     }
   }
 }

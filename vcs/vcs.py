@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = ["diff"]
 # tier = "subsystem"
+# category = "devtools"
 # ///
 """VCS CLI wrapper — zero dependencies, stdlib only, Python 3.10+.
 

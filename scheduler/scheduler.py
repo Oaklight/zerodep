@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "subsystem"
+# category = "process"
 # ///
 
 """Zero-dependency in-process task scheduler with cron support.

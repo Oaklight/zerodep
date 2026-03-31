@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "simple"
+# category = "terminal"
 # ///
 
 """Zero-dependency interactive CLI prompts (confirm, select, text).

@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "medium"
+# category = "crypto"
 # ///
 
 """Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys.

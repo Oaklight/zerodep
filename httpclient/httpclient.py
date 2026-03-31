@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "subsystem"
+# category = "network"
 # ///
 
 """Zero-dependency sync + async HTTP REST client.

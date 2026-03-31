@@ -202,6 +202,7 @@ def _scan_modules(repo_root: Path) -> dict:
                     files = [str(f.relative_to(repo_root)) for f in py_files]
 
                     tier = meta.get("tier", "")
+                    category = meta.get("category", "")
 
                     modules[mod_name] = {
                         "description": description,
@@ -209,6 +210,7 @@ def _scan_modules(repo_root: Path) -> dict:
                         "version": version,
                         "deps": deps,
                         "tier": tier,
+                        "category": category,
                     }
 
             # Recurse into subdirectories
@@ -309,33 +311,70 @@ def cmd_list(args: argparse.Namespace) -> None:
         _ok("No modules found.")
         return
 
+    # Canonical category display order
+    _CATEGORY_ORDER = [
+        "network",
+        "terminal",
+        "data",
+        "crypto",
+        "process",
+        "devtools",
+        "utility",
+    ]
+    _CATEGORY_LABELS = {
+        "network": "Network",
+        "terminal": "Terminal",
+        "data": "Data",
+        "crypto": "Crypto",
+        "process": "Process",
+        "devtools": "Dev Tools",
+        "utility": "Utility",
+    }
+
+    # Group modules by category
+    by_category: dict[str, list[str]] = {}
+    for name, mod in modules.items():
+        cat = mod.get("category", "")
+        by_category.setdefault(cat, []).append(name)
+
     # Column widths
     name_w = max(len(n) for n in modules)
     ver_w = max(len(m.get("version", "")) for m in modules.values())
     tier_w = max(len(m.get("tier", "")) for m in modules.values())
     tier_w = max(tier_w, len("Tier"))
 
-    header = (
-        f"  {'Module':<{name_w}}  {'Version':<{ver_w}}  {'Tier':<{tier_w}}  Description"
-    )
-    _ok(header)
-    sep = f"  {'-' * name_w}  {'-' * ver_w}  {'-' * tier_w}  {'-' * 40}"
-    _ok(sep)
+    # Ordered categories (known first, then unknown)
+    ordered_cats = [c for c in _CATEGORY_ORDER if c in by_category]
+    for c in sorted(by_category):
+        if c not in ordered_cats:
+            ordered_cats.append(c)
 
-    for name in sorted(modules):
-        mod = modules[name]
-        ver = mod.get("version", "?")
-        tier = mod.get("tier", "")
-        desc = mod.get("description", "")
-        # Truncate description
-        max_desc = (
-            shutil.get_terminal_size((80, 24)).columns - name_w - ver_w - tier_w - 12
-        )
-        if max_desc > 10 and len(desc) > max_desc:
-            desc = desc[: max_desc - 3] + "..."
-        _ok(f"  {name:<{name_w}}  {ver:<{ver_w}}  {tier:<{tier_w}}  {desc}")
+    cat_count = 0
+    for cat in ordered_cats:
+        names = sorted(by_category[cat])
+        label = _CATEGORY_LABELS.get(cat, cat or "Uncategorized")
+        if cat_count > 0:
+            _ok("")
+        _ok(f"  {label}")
+        for name in names:
+            mod = modules[name]
+            ver = mod.get("version", "?")
+            tier = mod.get("tier", "")
+            desc = mod.get("description", "")
+            max_desc = (
+                shutil.get_terminal_size((80, 24)).columns
+                - name_w
+                - ver_w
+                - tier_w
+                - 16
+            )
+            if max_desc > 10 and len(desc) > max_desc:
+                desc = desc[: max_desc - 3] + "..."
+            _ok(f"    {name:<{name_w}}  {ver:<{ver_w}}  {tier:<{tier_w}}  {desc}")
+        cat_count += 1
 
-    _ok(f"\n  {len(modules)} modules available")
+    cats_shown = len([c for c in ordered_cats if by_category.get(c)])
+    _ok(f"\n  {len(modules)} modules available ({cats_shown} categories)")
 
 
 def cmd_info(args: argparse.Namespace) -> None:
@@ -350,6 +389,7 @@ def cmd_info(args: argparse.Namespace) -> None:
     mod = modules[name]
     _ok(f"Module:      {name}")
     _ok(f"Version:     {mod.get('version', '?')}")
+    _ok(f"Category:    {mod.get('category', '(unknown)')}")
     _ok(f"Tier:        {mod.get('tier', '(unknown)')}")
     _ok(f"Description: {mod.get('description', '(none)')}")
     _ok(f"Files:       {', '.join(mod.get('files', []))}")

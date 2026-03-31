@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "simple"
+# category = "terminal"
 # ///
 
 """ANSI escape code primitives for terminal styling.

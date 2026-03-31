@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "medium"
+# category = "data"
 # ///
 
 """XML ↔ dict converter with fault-tolerant LLM tag extraction — zero-dep, stdlib only, Python 3.10+.

@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = ["yaml"]
 # tier = "medium"
+# category = "data"
 # ///
 """Frontmatter parser and serializer — zero dependencies, stdlib only, Python 3.10+.
 

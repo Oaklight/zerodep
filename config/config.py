@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = ["dotenv", "yaml", "jsonc"]
 # tier = "subsystem"
+# category = "data"
 # ///
 
 """Unified configuration loader — zero dependencies, stdlib only, Python 3.10+.

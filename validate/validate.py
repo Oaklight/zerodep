@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "medium"
+# category = "data"
 # ///
 
 """Zero-dependency runtime validator for TypedDict and dataclass types.

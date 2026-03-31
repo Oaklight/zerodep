@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "simple"
+# category = "data"
 # ///
 
 """JSONC (JSON with Comments) parser — zero dependencies, stdlib only, Python 3.10+.

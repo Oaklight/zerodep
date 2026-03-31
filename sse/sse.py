@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = ["httpclient"]
 # tier = "subsystem"
+# category = "network"
 # ///
 """Zero-dependency SSE (Server-Sent Events) client.
 

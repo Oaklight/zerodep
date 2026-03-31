@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "subsystem"
+# category = "data"
 # ///
 
 """YAML parser and serializer (common subset) — zero dependencies, stdlib only, Python 3.10+.

@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "subsystem"
+# category = "network"
 # ///
 
 """A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation.

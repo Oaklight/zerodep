@@ -2,6 +2,7 @@
 # version = "0.2.2"
 # deps = []
 # tier = "subsystem"
+# category = "network"
 # ///
 
 """ACP (Agent Client Protocol) -- Zero-dependency Python implementation.

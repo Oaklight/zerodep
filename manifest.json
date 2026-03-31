@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-03-31T06:32:10.643352+00:00",
+  "generated": "2026-03-31T07:45:16.347329+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -10,7 +10,7 @@
       "version": "0.2.2",
       "deps": [],
       "tier": "subsystem",
-      "category": ""
+      "category": "network"
     },
     "acp": {
       "description": "ACP (Agent Client Protocol) -- Zero-dependency Python implementation",
@@ -20,7 +20,7 @@
       "version": "0.2.2",
       "deps": [],
       "tier": "subsystem",
-      "category": ""
+      "category": "network"
     },
     "aes": {
       "description": "Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",

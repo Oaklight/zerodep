@@ -12,6 +12,8 @@ title: 模块概览
 
 | 模块 | 描述 | 性能对标 |
 |------|------|---------|
+| [a2a](a2a.md) | Google A2A 协议：JSON-RPC 2.0、SSE 流式传输、任务管理 | `a2a-python` |
+| [acp](acp.md) | Anthropic ACP 协议：JSON-RPC 2.0 over stdio、异步客户端/代理 | `acp-python` |
 | [httpclient](http.md) | 同步 + 异步 REST 客户端 | `httpx` |
 | [sse](sse.md) | Server-Sent Events 客户端（自动重连） | `httpx-sse` |
 

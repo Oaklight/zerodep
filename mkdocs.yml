@@ -68,6 +68,7 @@ plugins:
             - ../runner
             - ../xml
             - ../a2a
+            - ../jsonrpc
             - ../acp
             - aes
             - qr
@@ -95,6 +96,7 @@ plugins:
             - runner
             - xml
             - a2a
+            - jsonrpc
             - acp
           options:
             docstring_style: google
@@ -144,6 +146,7 @@ nav:
           - httpclient / HTTP 客户端: modules/http.md
           - sse / SSE 客户端: modules/sse.md
       - 智能体协议:
+          - jsonrpc / JSON-RPC: modules/jsonrpc.md
           - a2a / A2A 协议: modules/a2a.md
           - acp / ACP 协议: modules/acp.md
       - 数据格式:
@@ -182,6 +185,7 @@ nav:
           - httpclient / HTTP 客户端: api/http.md
           - sse / SSE 客户端: api/sse.md
       - 智能体协议:
+          - jsonrpc / JSON-RPC: api/jsonrpc.md
           - a2a / A2A 协议: api/a2a.md
           - acp / ACP 协议: api/acp.md
       - 数据格式:
@@ -220,6 +224,7 @@ nav:
           - httpclient / HTTP 客户端: benchmarks/http.md
           - sse / SSE 客户端: benchmarks/sse.md
       - 智能体协议:
+          - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md
           - a2a / A2A 协议: benchmarks/a2a.md
           - acp / ACP 协议: benchmarks/acp.md
       - 数据格式:

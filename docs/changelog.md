@@ -6,6 +6,15 @@
 
 ## [未发布]
 
+### 新增模块
+
+- **JSON-RPC 模块**：JSON-RPC 2.0 协议实现，包含核心数据类型（`JSONRPCError`、`JSONRPCRequest`、`JSONRPCResponse`）、异常层次结构、支持流式的方法分发器，以及基于换行分隔 JSON 流的异步传输层。性能测试比 `jsonrpcserver` 快约 12-17 倍。
+
+### 功能增强
+
+- **A2A 模块**：将内联 JSON-RPC 层提取至共享 `jsonrpc` 模块；`A2AError` 现继承 `JSONRPCException`，实现统一的错误处理。
+- **ACP 模块**：将内联 JSON-RPC 层提取至共享 `jsonrpc` 模块；用基于正则的算法转换替换 39 条硬编码 camelCase 映射表；序列化统一为 A2A 风格的单一递归 `to_dict()`，支持空集合过滤。
+
 ## [0.2.2] - 2026-03-31
 
 ### 功能增强

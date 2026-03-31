@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-03-31T07:45:16.347329+00:00",
+  "generated": "2026-03-31T16:59:31.167079+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -8,7 +8,9 @@
         "a2a/a2a.py"
       ],
       "version": "0.2.2",
-      "deps": [],
+      "deps": [
+        "jsonrpc"
+      ],
       "tier": "subsystem",
       "category": "network"
     },
@@ -18,7 +20,9 @@
         "acp/acp.py"
       ],
       "version": "0.2.2",
-      "deps": [],
+      "deps": [
+        "jsonrpc"
+      ],
       "tier": "subsystem",
       "category": "network"
     },
@@ -119,6 +123,16 @@
       "tier": "simple",
       "category": "data"
     },
+    "jsonrpc": {
+      "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",
+      "files": [
+        "jsonrpc/jsonrpc.py"
+      ],
+      "version": "0.2.2",
+      "deps": [],
+      "tier": "medium",
+      "category": "network"
+    },
     "markdown": {
       "description": "Markdown to HTML renderer — zero dependencies, stdlib only, Python 3.10+",
       "files": [
@@ -188,6 +202,19 @@
       "deps": [],
       "tier": "medium",
       "category": "utility"
+    },
+    "skills": {
+      "description": "Agent Skills runtime — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "skills/skills.py"
+      ],
+      "version": "0.2.2",
+      "deps": [
+        "frontmatter",
+        "search"
+      ],
+      "tier": "medium",
+      "category": "data"
     },
     "soup": {
       "description": "HTML parser with BeautifulSoup-like API — zero-dep, stdlib only, Python 3.10+",

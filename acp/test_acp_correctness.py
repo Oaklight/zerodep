@@ -64,7 +64,7 @@ from acp import (  # noqa: E402
     ImplementationInfo,
     InitializeParams,
     InitializeResult,
-    JsonRpcErrorData,
+    JSONRPCError,
     McpCapabilities,
     NewSessionParams,
     NewSessionResult,
@@ -228,9 +228,9 @@ class TestRoundTrip:
         assert r["entries"][0]["content"] == "Step 1"
 
     def test_json_rpc_error_data(self):
-        obj = JsonRpcErrorData(code=-32600, message="Invalid Request", data={"key": 1})
+        obj = JSONRPCError(code=-32600, message="Invalid Request", data={"key": 1})
         d = obj.to_dict()
-        roundtripped = JsonRpcErrorData.from_dict(d)
+        roundtripped = JSONRPCError.from_dict(d)
         assert roundtripped.code == -32600
         assert roundtripped.message == "Invalid Request"
         assert roundtripped.data == {"key": 1}
@@ -780,16 +780,16 @@ class TestSessionUpdateTypes:
 # ── JSON-RPC transport ──
 
 
-class TestJsonRpcErrorData:
-    """Test JsonRpcErrorData serialization."""
+class TestJSONRPCError:
+    """Test JSONRPCError serialization."""
 
     def test_basic_error(self):
-        err = JsonRpcErrorData(code=-32600, message="Invalid Request")
+        err = JSONRPCError(code=-32600, message="Invalid Request")
         d = err.to_dict()
         assert d == {"code": -32600, "message": "Invalid Request"}
 
     def test_error_with_data(self):
-        err = JsonRpcErrorData(
+        err = JSONRPCError(
             code=-32602, message="Invalid params", data={"expected": "string"}
         )
         d = err.to_dict()
@@ -797,21 +797,21 @@ class TestJsonRpcErrorData:
 
     def test_from_dict(self):
         d = {"code": -32700, "message": "Parse error", "data": [1, 2, 3]}
-        err = JsonRpcErrorData.from_dict(d)
+        err = JSONRPCError.from_dict(d)
         assert err.code == -32700
         assert err.message == "Parse error"
         assert err.data == [1, 2, 3]
 
     def test_from_dict_no_data(self):
         d = {"code": -32603, "message": "Internal error"}
-        err = JsonRpcErrorData.from_dict(d)
+        err = JSONRPCError.from_dict(d)
         assert err.data is None
 
     def test_round_trip(self):
-        original = JsonRpcErrorData(
+        original = JSONRPCError(
             code=-32601, message="Method not found", data={"m": "foo"}
         )
-        restored = JsonRpcErrorData.from_dict(original.to_dict())
+        restored = JSONRPCError.from_dict(original.to_dict())
         assert restored.code == original.code
         assert restored.message == original.message
         assert restored.data == original.data
@@ -875,14 +875,14 @@ class TestFromRaw:
     def test_key_conversion(self, camel: dict, expected: dict):
         assert from_raw(camel) == expected
 
-    def test_unknown_keys_pass_through(self):
+    def test_unknown_keys_converted(self):
         d = from_raw({"unknownKey": "value", "another": 123})
-        assert d == {"unknownKey": "value", "another": 123}
+        assert d == {"unknown_key": "value", "another": 123}
 
     def test_mixed_known_unknown(self):
         d = from_raw({"sessionId": "s1", "customField": True})
         assert d["session_id"] == "s1"
-        assert d["customField"] is True
+        assert d["custom_field"] is True
 
 
 # ── JSON serialization round-trip ──

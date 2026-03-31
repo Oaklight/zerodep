@@ -1,6 +1,6 @@
 # /// zerodep
 # version = "0.2.2"
-# deps = []
+# deps = ["jsonrpc"]
 # tier = "subsystem"
 # category = "network"
 # ///
@@ -17,7 +17,7 @@ standardized language-server integration.
 
 This single-file module provides:
 
-* **JsonRpcTransport** -- async read/write of newline-delimited JSON-RPC 2.0
+* **JSONRPCTransport** -- async read/write of newline-delimited JSON-RPC 2.0
   messages over arbitrary ``asyncio.StreamReader`` / ``asyncio.StreamWriter``
   pairs (typically stdin/stdout of a subprocess).
 
@@ -73,12 +73,13 @@ Quickstart -- Agent side::
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
+import os
+import re
 import sys
 import uuid
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field, fields
 from enum import Enum
 from typing import (
     Any,
@@ -88,11 +89,29 @@ from typing import (
     Union,
 )
 
+
+def _ensure_sibling_path(name: str) -> str:
+    """Return the sibling module directory and prepend it to ``sys.path``."""
+    sibling_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", name)
+    if sibling_dir not in sys.path:
+        sys.path.insert(0, sibling_dir)
+    return sibling_dir
+
+
+_ensure_sibling_path("jsonrpc")
+from jsonrpc import (  # noqa: E402
+    INTERNAL_ERROR,
+    METHOD_NOT_FOUND,
+    JSONRPCError,
+    JSONRPCException,
+    JSONRPCTransport,
+)
+
 __all__ = [
-    # Transport
-    "JsonRpcTransport",
-    "JsonRpcError",
-    "JsonRpcErrorData",
+    # JSON-RPC (re-exported from jsonrpc module)
+    "JSONRPCTransport",
+    "JSONRPCException",
+    "JSONRPCError",
     # Enums
     "StopReason",
     "ToolKind",
@@ -182,249 +201,27 @@ __version__ = "0.2.2"
 logger = logging.getLogger("acp")
 
 # ---------------------------------------------------------------------------
-# JSON-RPC 2.0 transport
-# ---------------------------------------------------------------------------
-
-JSONRPC_VERSION = "2.0"
-
-# Standard JSON-RPC error codes
-PARSE_ERROR = -32700
-INVALID_REQUEST = -32600
-METHOD_NOT_FOUND = -32601
-INVALID_PARAMS = -32602
-INTERNAL_ERROR = -32603
-
-
-@dataclass
-class JsonRpcErrorData:
-    """JSON-RPC 2.0 error object.
-
-    Attributes:
-        code: Integer error code.
-        message: Human-readable error description.
-        data: Optional additional error data.
-    """
-
-    code: int
-    message: str
-    data: Optional[Any] = None
-
-    def to_dict(self) -> dict[str, Any]:
-        """Serialize to a JSON-compatible dictionary."""
-        d: dict[str, Any] = {"code": self.code, "message": self.message}
-        if self.data is not None:
-            d["data"] = self.data
-        return d
-
-    @classmethod
-    def from_dict(cls, raw: dict[str, Any]) -> JsonRpcErrorData:
-        """Deserialize from a dictionary."""
-        return cls(
-            code=raw["code"],
-            message=raw["message"],
-            data=raw.get("data"),
-        )
-
-
-class JsonRpcError(Exception):
-    """Exception wrapper around a JSON-RPC error object."""
-
-    def __init__(self, error: JsonRpcErrorData) -> None:
-        super().__init__(error.message)
-        self.error = error
-
-
-class JsonRpcTransport:
-    """Async JSON-RPC 2.0 transport over newline-delimited JSON streams.
-
-    Each message is a single JSON object terminated by ``\\n``.
-    Messages must not contain embedded newlines.
-
-    Attributes:
-        reader: Async stream to read incoming messages from.
-        writer: Async stream to write outgoing messages to.
-    """
-
-    def __init__(
-        self,
-        reader: asyncio.StreamReader,
-        writer: asyncio.StreamWriter,
-    ) -> None:
-        self.reader = reader
-        self.writer = writer
-        self._closed = False
-
-    async def read_message(self) -> Optional[dict[str, Any]]:
-        """Read the next JSON-RPC message.
-
-        Returns:
-            Parsed JSON object, or ``None`` on EOF.
-        """
-        while True:
-            line = await self.reader.readline()
-            if not line:
-                return None
-            text = line.decode("utf-8").strip()
-            if not text:
-                continue
-            try:
-                return json.loads(text)
-            except json.JSONDecodeError:
-                logger.warning("Ignoring malformed JSON line: %s", text[:120])
-
-    async def write_message(self, msg: dict[str, Any]) -> None:
-        """Write a JSON-RPC message followed by a newline.
-
-        Args:
-            msg: JSON-serializable dictionary to send.
-        """
-        raw = json.dumps(msg, separators=(",", ":"), ensure_ascii=False)
-        self.writer.write((raw + "\n").encode("utf-8"))
-        await self.writer.drain()
-
-    # -- Convenience helpers ------------------------------------------------
-
-    async def send_request(
-        self, method: str, params: Any = None, req_id: Union[int, str, None] = None
-    ) -> dict[str, Any]:
-        """Build and send a JSON-RPC request.
-
-        Args:
-            method: The RPC method name.
-            params: Parameters for the method.
-            req_id: Optional explicit request id.
-
-        Returns:
-            The message dictionary that was sent.
-        """
-        msg: dict[str, Any] = {
-            "jsonrpc": JSONRPC_VERSION,
-            "id": req_id if req_id is not None else _next_id(),
-            "method": method,
-        }
-        if params is not None:
-            msg["params"] = params
-        await self.write_message(msg)
-        return msg
-
-    async def send_notification(self, method: str, params: Any = None) -> None:
-        """Build and send a JSON-RPC notification (no ``id``).
-
-        Args:
-            method: The RPC method name.
-            params: Parameters for the notification.
-        """
-        msg: dict[str, Any] = {"jsonrpc": JSONRPC_VERSION, "method": method}
-        if params is not None:
-            msg["params"] = params
-        await self.write_message(msg)
-
-    async def send_result(self, req_id: Union[int, str], result: Any) -> None:
-        """Send a JSON-RPC success response.
-
-        Args:
-            req_id: The id of the original request.
-            result: The result payload.
-        """
-        await self.write_message(
-            {"jsonrpc": JSONRPC_VERSION, "id": req_id, "result": result}
-        )
-
-    async def send_error(
-        self, req_id: Union[int, str, None], error: JsonRpcErrorData
-    ) -> None:
-        """Send a JSON-RPC error response.
-
-        Args:
-            req_id: The id of the original request (may be ``None``).
-            error: The error object.
-        """
-        await self.write_message(
-            {"jsonrpc": JSONRPC_VERSION, "id": req_id, "error": error.to_dict()}
-        )
-
-    async def close(self) -> None:
-        """Close the writer stream."""
-        if not self._closed:
-            self._closed = True
-            self.writer.close()
-
-    @property
-    def is_closed(self) -> bool:
-        """Whether the writer has been closed."""
-        return self._closed
-
-
-_global_id = 0
-
-
-def _next_id() -> int:
-    global _global_id
-    _global_id += 1
-    return _global_id
-
-
-# ---------------------------------------------------------------------------
 # Helper: dataclass <-> dict conversion
 # ---------------------------------------------------------------------------
 
-_RENAME_MAP: dict[str, str] = {
-    "session_update": "sessionUpdate",
-    "protocol_version": "protocolVersion",
-    "client_capabilities": "clientCapabilities",
-    "client_info": "clientInfo",
-    "agent_capabilities": "agentCapabilities",
-    "agent_info": "agentInfo",
-    "auth_methods": "authMethods",
-    "load_session": "loadSession",
-    "prompt_capabilities": "promptCapabilities",
-    "mcp_capabilities": "mcpCapabilities",
-    "session_capabilities": "sessionCapabilities",
-    "read_text_file": "readTextFile",
-    "write_text_file": "writeTextFile",
-    "embedded_context": "embeddedContext",
-    "session_id": "sessionId",
-    "mcp_servers": "mcpServers",
-    "config_options": "configOptions",
-    "stop_reason": "stopReason",
-    "tool_call_id": "toolCallId",
-    "raw_input": "rawInput",
-    "raw_output": "rawOutput",
-    "current_mode_id": "currentModeId",
-    "available_modes": "availableModes",
-    "mode_id": "modeId",
-    "config_id": "configId",
-    "current_value": "currentValue",
-    "option_id": "optionId",
-    "updated_at": "updatedAt",
-    "next_cursor": "nextCursor",
-    "mime_type": "mimeType",
-    "old_text": "oldText",
-    "new_text": "newText",
-    "terminal_id": "terminalId",
-    "exit_status": "exitStatus",
-    "exit_code": "exitCode",
-    "output_byte_limit": "outputByteLimit",
-    "tool_call": "toolCall",
-    "method_id": "methodId",
-    "available_commands": "availableCommands",
-}
-
-_REVERSE_RENAME: dict[str, str] = {v: k for k, v in _RENAME_MAP.items()}
+_CAMEL_RE = re.compile(r"(?<=[a-z0-9])([A-Z])")
 
 
-def _to_camel(key: str) -> str:
-    return _RENAME_MAP.get(key, key)
+def _to_camel(name: str) -> str:
+    """Convert a snake_case name to camelCase."""
+    parts = name.split("_")
+    return parts[0] + "".join(w.capitalize() for w in parts[1:])
 
 
-def _to_snake(key: str) -> str:
-    return _REVERSE_RENAME.get(key, key)
+def _to_snake(name: str) -> str:
+    """Convert a camelCase name to snake_case."""
+    return _CAMEL_RE.sub(r"_\1", name).lower()
 
 
 def to_dict(obj: Any) -> Any:
     """Recursively convert a dataclass instance to a JSON-friendly dict.
 
-    * ``None`` values are omitted.
+    * ``None`` values and empty collections are omitted.
     * Snake-case field names are converted to camelCase per the ACP spec.
     * Enum values are serialized as their ``.value``.
 
@@ -434,38 +231,29 @@ def to_dict(obj: Any) -> Any:
     Returns:
         A JSON-serializable value.
     """
+    if obj is None:
+        return None
     if isinstance(obj, Enum):
         return obj.value
-    if hasattr(obj, "__dataclass_fields__"):
-        out: dict[str, Any] = {}
-        for k, v in asdict(obj).items():
-            if v is None:
-                continue
-            out[_to_camel(k)] = _serialize_value(v)
-        return out
+    if isinstance(obj, (str, int, float, bool)):
+        return obj
     if isinstance(obj, dict):
-        return {
-            _to_camel(k): _serialize_value(v) for k, v in obj.items() if v is not None
-        }
+        return {k: to_dict(v) for k, v in obj.items() if v is not None}
     if isinstance(obj, (list, tuple)):
-        return [_serialize_value(i) for i in obj]
+        return [to_dict(v) for v in obj]
+    if hasattr(obj, "__dataclass_fields__"):
+        result: dict[str, Any] = {}
+        for f in fields(obj):
+            val = getattr(obj, f.name)
+            if val is None:
+                continue
+            if isinstance(val, (list, tuple)) and len(val) == 0:
+                continue
+            if isinstance(val, dict) and len(val) == 0:
+                continue
+            result[_to_camel(f.name)] = to_dict(val)
+        return result
     return obj
-
-
-def _serialize_value(v: Any) -> Any:
-    if isinstance(v, Enum):
-        return v.value
-    if hasattr(v, "__dataclass_fields__"):
-        return to_dict(v)
-    if isinstance(v, dict):
-        return {
-            _to_camel(k): _serialize_value(val)
-            for k, val in v.items()
-            if val is not None
-        }
-    if isinstance(v, (list, tuple)):
-        return [_serialize_value(i) for i in v]
-    return v
 
 
 def from_raw(raw: dict[str, Any]) -> dict[str, Any]:
@@ -478,6 +266,16 @@ def from_raw(raw: dict[str, Any]) -> dict[str, Any]:
         A new dictionary with snake_case keys.
     """
     return {_to_snake(k): v for k, v in raw.items()}
+
+
+def _enum_from_value(enum_cls: type[Enum], value: Any) -> Any:
+    """Look up an enum member by its *value* string."""
+    if isinstance(value, enum_cls):
+        return value
+    for member in enum_cls:
+        if member.value == value:
+            return member
+    raise ValueError(f"Unknown {enum_cls.__name__} value: {value!r}")
 
 
 # ---------------------------------------------------------------------------
@@ -1679,7 +1477,7 @@ class ACPClient:
         self._command = command
         self._env = env
         self._process: Optional[asyncio.subprocess.Process] = None
-        self._transport: Optional[JsonRpcTransport] = None
+        self._transport: Optional[JSONRPCTransport] = None
         self._pending: dict[Union[int, str], asyncio.Future[dict[str, Any]]] = {}
         self._notification_handlers: dict[str, Callable[..., Any]] = {}
         self._update_queue: asyncio.Queue[Optional[dict[str, Any]]] = asyncio.Queue()
@@ -1699,7 +1497,7 @@ class ACPClient:
         assert self._process.stdout is not None
         reader = asyncio.StreamReader()
         reader.set_transport(self._process.stdout._transport)  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
-        self._transport = JsonRpcTransport(
+        self._transport = JSONRPCTransport(
             reader=self._process.stdout,  # type: ignore[arg-type]
             writer=self._process.stdin,  # type: ignore[arg-type]
         )
@@ -1752,7 +1550,7 @@ class ACPClient:
                 if fut and not fut.done():
                     if "error" in msg:
                         fut.set_exception(
-                            JsonRpcError(JsonRpcErrorData.from_dict(msg["error"]))
+                            JSONRPCException(JSONRPCError.from_dict(msg["error"]))
                         )
                     else:
                         fut.set_result(msg.get("result") or {})
@@ -1786,12 +1584,12 @@ class ACPClient:
             except Exception as exc:
                 await self._transport.send_error(
                     req_id,
-                    JsonRpcErrorData(code=INTERNAL_ERROR, message=str(exc)),
+                    JSONRPCError(code=INTERNAL_ERROR, message=str(exc)),
                 )
         else:
             await self._transport.send_error(
                 req_id,
-                JsonRpcErrorData(
+                JSONRPCError(
                     code=METHOD_NOT_FOUND,
                     message=f"No handler for {method}",
                 ),
@@ -1808,7 +1606,7 @@ class ACPClient:
             The result payload from the agent.
 
         Raises:
-            JsonRpcError: If the agent returns an error.
+            JSONRPCException: If the agent returns an error.
         """
         assert self._transport is not None
         sent = await self._transport.send_request(method, params)
@@ -2066,7 +1864,7 @@ class ACPAgent(ABC):
     """
 
     def __init__(self) -> None:
-        self._transport: Optional[JsonRpcTransport] = None
+        self._transport: Optional[JSONRPCTransport] = None
         self._running = False
 
     # -- Handler methods (override these) -----------------------------------
@@ -2116,8 +1914,8 @@ class ACPAgent(ABC):
         Args:
             params: Session load parameters.
         """
-        raise JsonRpcError(
-            JsonRpcErrorData(
+        raise JSONRPCException(
+            JSONRPCError(
                 code=METHOD_NOT_FOUND,
                 message="session/load not supported",
             )
@@ -2193,7 +1991,7 @@ class ACPAgent(ABC):
             The user's decision.
 
         Raises:
-            JsonRpcError: If the client returns an error.
+            JSONRPCException: If the client returns an error.
         """
         assert self._transport is not None
         sent = await self._transport.send_request(
@@ -2329,7 +2127,7 @@ class ACPAgent(ABC):
             loop,
         )
 
-        self._transport = JsonRpcTransport(reader, writer)
+        self._transport = JSONRPCTransport(reader, writer)
         self._running = True
         self._pending_requests: dict[
             Union[int, str], asyncio.Future[dict[str, Any]]
@@ -2360,7 +2158,7 @@ class ACPAgent(ABC):
             if fut and not fut.done():
                 if "error" in msg:
                     fut.set_exception(
-                        JsonRpcError(JsonRpcErrorData.from_dict(msg["error"]))
+                        JSONRPCException(JSONRPCError.from_dict(msg["error"]))
                     )
                 else:
                     fut.set_result(msg.get("result") or {})
@@ -2377,7 +2175,7 @@ class ACPAgent(ABC):
                 assert req_id is not None
                 result_dict = to_dict(result) if result is not None else None
                 await self._transport.send_result(req_id, result_dict)
-        except JsonRpcError as exc:
+        except JSONRPCException as exc:
             if not is_notification:
                 await self._transport.send_error(req_id, exc.error)
         except Exception as exc:
@@ -2385,7 +2183,7 @@ class ACPAgent(ABC):
             if not is_notification:
                 await self._transport.send_error(
                     req_id,
-                    JsonRpcErrorData(code=INTERNAL_ERROR, message=str(exc)),
+                    JSONRPCError(code=INTERNAL_ERROR, message=str(exc)),
                 )
 
     async def _handle_method(
@@ -2488,8 +2286,8 @@ class ACPAgent(ABC):
                 )
             )
 
-        raise JsonRpcError(
-            JsonRpcErrorData(
+        raise JSONRPCException(
+            JSONRPCError(
                 code=METHOD_NOT_FOUND,
                 message=f"Unknown method: {method}",
             )

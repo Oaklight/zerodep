@@ -88,6 +88,9 @@ bench-cache = [
 bench-xml = [
     "xmltodict>=0.13.0",
 ]
+bench-jsonrpc = [
+    "jsonrpcserver>=5.0.0",
+]
 bench-a2a = [
     "a2a-protocol>=0.1.0",
 ]
@@ -95,11 +98,11 @@ bench-acp = [
     "agent-client-protocol>=0.9.0",
 ]
 dev = [
-    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-a2a,bench-acp]",
+    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp]",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "search", "frontmatter", "config", "cache", "runner", "xml", "a2a", "acp"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills"]
 
 [tool.ruff]
 target-version = "py310"
@@ -147,6 +150,8 @@ extra-paths = [
     "./cache",
     "./runner",
     "./xml",
+    "./jsonrpc",
     "./a2a",
     "./acp",
+    "./skills",
 ]

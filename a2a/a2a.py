@@ -1,6 +1,6 @@
 # /// zerodep
 # version = "0.2.2"
-# deps = []
+# deps = ["jsonrpc"]
 # tier = "subsystem"
 # category = "network"
 # ///
@@ -42,8 +42,10 @@ import http.client
 import http.server
 import json
 import logging
+import os
 import re
 import socketserver
+import sys
 import threading
 import urllib.parse
 import urllib.request
@@ -58,6 +60,26 @@ from typing import (
     Optional,
     Tuple,
     Union,
+)
+
+
+def _ensure_sibling_path(name: str) -> str:
+    """Return the sibling module directory and prepend it to ``sys.path``."""
+    sibling_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", name)
+    if sibling_dir not in sys.path:
+        sys.path.insert(0, sibling_dir)
+    return sibling_dir
+
+
+_ensure_sibling_path("jsonrpc")
+from jsonrpc import (  # noqa: E402
+    INTERNAL_ERROR,
+    PARSE_ERROR,
+    JSONRPCDispatcher,
+    JSONRPCError,
+    JSONRPCException,
+    JSONRPCRequest,
+    JSONRPCResponse,
 )
 
 __all__ = [
@@ -959,16 +981,18 @@ class AgentCard:
 # ===================================================================
 
 
-class A2AError(Exception):
+class A2AError(JSONRPCException):
     """Base class for A2A protocol errors."""
 
-    code: int = -32603
+    code: int = INTERNAL_ERROR
     default_message: str = "Internal error"
 
     def __init__(self, message: Optional[str] = None, data: Any = None):
         self.rpc_message = message or self.default_message
         self.data = data
-        super().__init__(self.rpc_message)
+        super().__init__(
+            JSONRPCError(code=self.code, message=self.rpc_message, data=self.data)
+        )
 
 
 class TaskNotFoundError(A2AError):
@@ -1011,197 +1035,6 @@ class InvalidAgentResponseError(A2AError):
 
     code = -32006
     default_message = "Invalid agent response"
-
-
-@dataclass
-class JSONRPCRequest:
-    """A JSON-RPC 2.0 request object.
-
-    Attributes:
-        method: The RPC method name.
-        params: Method parameters.
-        id: Request identifier.
-        jsonrpc: Protocol version (always "2.0").
-    """
-
-    method: str = ""
-    params: Optional[Dict[str, Any]] = None
-    id: Union[str, int, None] = None
-    jsonrpc: str = "2.0"
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to a dictionary."""
-        d: Dict[str, Any] = {"jsonrpc": self.jsonrpc, "method": self.method}
-        if self.id is not None:
-            d["id"] = self.id
-        if self.params is not None:
-            d["params"] = self.params
-        return d
-
-    @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "JSONRPCRequest":
-        """Deserialize from a dictionary."""
-        return cls(
-            method=d.get("method", ""),
-            params=d.get("params"),
-            id=d.get("id"),
-            jsonrpc=d.get("jsonrpc", "2.0"),
-        )
-
-
-@dataclass
-class JSONRPCError:
-    """A JSON-RPC 2.0 error object.
-
-    Attributes:
-        code: Numeric error code.
-        message: Human-readable error message.
-        data: Optional additional error data.
-    """
-
-    code: int = -32603
-    message: str = "Internal error"
-    data: Any = None
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to a dictionary."""
-        d: Dict[str, Any] = {"code": self.code, "message": self.message}
-        if self.data is not None:
-            d["data"] = self.data
-        return d
-
-
-@dataclass
-class JSONRPCResponse:
-    """A JSON-RPC 2.0 response object.
-
-    Exactly one of ``result`` or ``error`` should be set.
-
-    Attributes:
-        id: Matching request identifier.
-        result: Successful result payload.
-        error: Error details on failure.
-        jsonrpc: Protocol version (always "2.0").
-    """
-
-    id: Union[str, int, None] = None
-    result: Any = None
-    error: Optional[JSONRPCError] = None
-    jsonrpc: str = "2.0"
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to a dictionary."""
-        d: Dict[str, Any] = {"jsonrpc": self.jsonrpc, "id": self.id}
-        if self.error is not None:
-            d["error"] = self.error.to_dict()
-        else:
-            d["result"] = self.result
-        return d
-
-    @classmethod
-    def success(cls, request_id: Any, result: Any) -> "JSONRPCResponse":
-        """Create a successful response."""
-        return cls(id=request_id, result=result)
-
-    @classmethod
-    def from_error(cls, request_id: Any, error: A2AError) -> "JSONRPCResponse":
-        """Create an error response from an A2AError."""
-        return cls(
-            id=request_id,
-            error=JSONRPCError(
-                code=error.code,
-                message=error.rpc_message,
-                data=error.data,
-            ),
-        )
-
-
-# Method handler type: callable(params_dict) -> result_dict | generator
-MethodHandler = Callable[..., Any]
-
-
-class JSONRPCDispatcher:
-    """Routes JSON-RPC method calls to registered handler functions.
-
-    Example::
-
-        dispatcher = JSONRPCDispatcher()
-
-        @dispatcher.register("SendMessage")
-        def handle_send(params):
-            ...
-            return result_dict
-    """
-
-    def __init__(self) -> None:
-        self._handlers: Dict[str, MethodHandler] = {}
-
-    def register(self, method: str) -> Callable[[MethodHandler], MethodHandler]:
-        """Decorator to register a handler for *method*.
-
-        Args:
-            method: JSON-RPC method name (e.g. ``"SendMessage"``).
-
-        Returns:
-            The original handler function, unmodified.
-        """
-
-        def decorator(fn: MethodHandler) -> MethodHandler:
-            self._handlers[method] = fn
-            return fn
-
-        return decorator
-
-    def dispatch(
-        self, request: JSONRPCRequest
-    ) -> Union[JSONRPCResponse, Iterator[JSONRPCResponse]]:
-        """Dispatch a parsed JSON-RPC request to the appropriate handler.
-
-        Args:
-            request: The parsed JSON-RPC request.
-
-        Returns:
-            A single ``JSONRPCResponse`` or, for streaming methods, a
-            generator yielding ``JSONRPCResponse`` objects.
-        """
-        handler = self._handlers.get(request.method)
-        if handler is None:
-            return JSONRPCResponse(
-                id=request.id,
-                error=JSONRPCError(
-                    code=-32601,
-                    message=f"Method not found: {request.method}",
-                ),
-            )
-        try:
-            result = handler(request.params or {})
-            # If the handler returns a generator, wrap each yield.
-            if hasattr(result, "__next__"):
-                return self._stream_wrap(request.id, result)
-            return JSONRPCResponse.success(request.id, result)
-        except A2AError as exc:
-            return JSONRPCResponse.from_error(request.id, exc)
-        except Exception as exc:
-            logger.exception("Unhandled error in handler %s", request.method)
-            return JSONRPCResponse(
-                id=request.id,
-                error=JSONRPCError(code=-32603, message=str(exc)),
-            )
-
-    @staticmethod
-    def _stream_wrap(request_id: Any, gen: Iterator[Any]) -> Iterator[JSONRPCResponse]:
-        """Wrap a generator so each yielded value becomes a JSONRPCResponse."""
-        try:
-            for item in gen:
-                yield JSONRPCResponse.success(request_id, item)
-        except A2AError as exc:
-            yield JSONRPCResponse.from_error(request_id, exc)
-        except Exception as exc:
-            logger.exception("Unhandled error in streaming handler")
-            yield JSONRPCResponse(
-                id=request_id,
-                error=JSONRPCError(code=-32603, message=str(exc)),
-            )
 
 
 # ===================================================================
@@ -1632,7 +1465,7 @@ class A2ARequestHandler(http.server.BaseHTTPRequestHandler):
         except json.JSONDecodeError as exc:
             self._send_jsonrpc_error(
                 None,
-                JSONRPCError(code=-32700, message=f"Parse error: {exc}"),
+                JSONRPCError(code=PARSE_ERROR, message=f"Parse error: {exc}"),
             )
             return
 

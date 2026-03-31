@@ -67,6 +67,8 @@ plugins:
             - ../cache
             - ../runner
             - ../xml
+            - ../a2a
+            - ../acp
             - aes
             - qr
             - httpclient
@@ -92,6 +94,8 @@ plugins:
             - cache
             - runner
             - xml
+            - a2a
+            - acp
           options:
             docstring_style: google
             show_source: true
@@ -139,6 +143,9 @@ nav:
       - Web & Networking:
           - httpclient / HTTP Client: modules/http.md
           - sse / SSE Client: modules/sse.md
+      - Agent Protocols:
+          - a2a / A2A Protocol: modules/a2a.md
+          - acp / ACP Protocol: modules/acp.md
       - Data Formats:
           - xml / XML Converter: modules/xml.md
           - yaml / YAML Parser: modules/yaml.md
@@ -174,6 +181,9 @@ nav:
       - Web & Networking:
           - httpclient / HTTP Client: api/http.md
           - sse / SSE Client: api/sse.md
+      - Agent Protocols:
+          - a2a / A2A Protocol: api/a2a.md
+          - acp / ACP Protocol: api/acp.md
       - Data Formats:
           - xml / XML Converter: api/xml.md
           - yaml / YAML Parser: api/yaml.md
@@ -209,6 +219,9 @@ nav:
       - Web & Networking:
           - httpclient / HTTP Client: benchmarks/http.md
           - sse / SSE Client: benchmarks/sse.md
+      - Agent Protocols:
+          - a2a / A2A Protocol: benchmarks/a2a.md
+          - acp / ACP Protocol: benchmarks/acp.md
       - Data Formats:
           - xml / XML Converter: benchmarks/xml.md
           - yaml / YAML Parser: benchmarks/yaml.md

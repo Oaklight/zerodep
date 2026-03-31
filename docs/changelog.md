@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### New Modules
+
+- **JSON-RPC module**: JSON-RPC 2.0 protocol implementation with core data types (`JSONRPCError`, `JSONRPCRequest`, `JSONRPCResponse`), exception hierarchy, method dispatcher with streaming support, and async transport over newline-delimited JSON streams. Benchmarked ~12-17x faster than `jsonrpcserver`.
+
+### Enhancements
+
+- **A2A module**: extracted inline JSON-RPC layer into shared `jsonrpc` module; `A2AError` now subclasses `JSONRPCException` for unified error handling.
+- **ACP module**: extracted inline JSON-RPC layer into shared `jsonrpc` module; replaced 39-entry hardcoded camelCase rename map with algorithmic regex-based conversion; unified serialization to A2A-style single recursive `to_dict()` with empty collection filtering.
+
 ## [0.2.2] - 2026-03-31
 
 ### Enhancements

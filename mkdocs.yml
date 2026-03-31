@@ -68,6 +68,7 @@ plugins:
             - ../runner
             - ../xml
             - ../a2a
+            - ../jsonrpc
             - ../acp
             - aes
             - qr
@@ -95,6 +96,7 @@ plugins:
             - runner
             - xml
             - a2a
+            - jsonrpc
             - acp
           options:
             docstring_style: google
@@ -144,6 +146,7 @@ nav:
           - httpclient / HTTP Client: modules/http.md
           - sse / SSE Client: modules/sse.md
       - Agent Protocols:
+          - jsonrpc / JSON-RPC: modules/jsonrpc.md
           - a2a / A2A Protocol: modules/a2a.md
           - acp / ACP Protocol: modules/acp.md
       - Data Formats:
@@ -182,6 +185,7 @@ nav:
           - httpclient / HTTP Client: api/http.md
           - sse / SSE Client: api/sse.md
       - Agent Protocols:
+          - jsonrpc / JSON-RPC: api/jsonrpc.md
           - a2a / A2A Protocol: api/a2a.md
           - acp / ACP Protocol: api/acp.md
       - Data Formats:
@@ -220,6 +224,7 @@ nav:
           - httpclient / HTTP Client: benchmarks/http.md
           - sse / SSE Client: benchmarks/sse.md
       - Agent Protocols:
+          - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md
           - a2a / A2A Protocol: benchmarks/a2a.md
           - acp / ACP Protocol: benchmarks/acp.md
       - Data Formats:

@@ -8,12 +8,18 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 
 ## All Modules
 
-### Network
+### Agent Protocols
 
 | Module | Description | Benchmark Against |
 |--------|-------------|-------------------|
 | [a2a](a2a.md) | Google A2A protocol: JSON-RPC 2.0, SSE streaming, task management | `a2a-python` |
 | [acp](acp.md) | Anthropic ACP protocol: JSON-RPC 2.0 over stdio, async client/agent | `acp-python` |
+| [skills](skills.md) | Agent Skills runtime: parse, discover, manage, select skills | -- |
+
+### Network
+
+| Module | Description | Benchmark Against |
+|--------|-------------|-------------------|
 | [httpclient](http.md) | Sync + async REST client | `httpx` |
 | [sse](sse.md) | Server-Sent Events client with auto-reconnect | `httpx-sse` |
 

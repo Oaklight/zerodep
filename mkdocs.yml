@@ -70,6 +70,7 @@ plugins:
             - ../a2a
             - ../jsonrpc
             - ../acp
+            - ../skills
             - aes
             - qr
             - httpclient
@@ -98,6 +99,7 @@ plugins:
             - a2a
             - jsonrpc
             - acp
+            - skills
           options:
             docstring_style: google
             show_source: true
@@ -149,6 +151,7 @@ nav:
           - jsonrpc / JSON-RPC: modules/jsonrpc.md
           - a2a / A2A Protocol: modules/a2a.md
           - acp / ACP Protocol: modules/acp.md
+          - skills / Agent Skills: modules/skills.md
       - Data Formats:
           - xml / XML Converter: modules/xml.md
           - yaml / YAML Parser: modules/yaml.md
@@ -188,6 +191,7 @@ nav:
           - jsonrpc / JSON-RPC: api/jsonrpc.md
           - a2a / A2A Protocol: api/a2a.md
           - acp / ACP Protocol: api/acp.md
+          - skills / Agent Skills: api/skills.md
       - Data Formats:
           - xml / XML Converter: api/xml.md
           - yaml / YAML Parser: api/yaml.md
@@ -227,6 +231,7 @@ nav:
           - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md
           - a2a / A2A Protocol: benchmarks/a2a.md
           - acp / ACP Protocol: benchmarks/acp.md
+          - skills / Agent Skills: benchmarks/skills.md
       - Data Formats:
           - xml / XML Converter: benchmarks/xml.md
           - yaml / YAML Parser: benchmarks/yaml.md

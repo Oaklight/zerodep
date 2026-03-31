@@ -13,6 +13,13 @@ Zero-dependency, single-file Python implementations of popular libraries — std
 | `httpclient/` | Sync + async REST client with connection pooling, proxy, and auth | `httpx` |
 | `sse/` | Server-Sent Events client with auto-reconnect | `httpx-sse` |
 
+**Agent Protocols**
+
+| Module | Description | Benchmark Against |
+|--------|-------------|-------------------|
+| `a2a/` | Google A2A protocol: JSON-RPC 2.0, SSE streaming, HTTP client/server, task management | `a2a-python` |
+| `acp/` | Anthropic ACP protocol: JSON-RPC 2.0 over stdio, async client/agent framework | `acp-python` |
+
 **Data Formats**
 
 | Module | Description | Benchmark Against |

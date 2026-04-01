@@ -199,9 +199,7 @@ __version__ = "0.2.2"
 
 logger = logging.getLogger("acp")
 
-# ---------------------------------------------------------------------------
-# Helper: dataclass <-> dict conversion
-# ---------------------------------------------------------------------------
+# ── Helper: dataclass <-> dict conversion ──────────────────────────────────
 
 _CAMEL_RE = re.compile(r"(?<=[a-z0-9])([A-Z])")
 
@@ -277,9 +275,7 @@ def _enum_from_value(enum_cls: type[Enum], value: Any) -> Any:
     raise ValueError(f"Unknown {enum_cls.__name__} value: {value!r}")
 
 
-# ---------------------------------------------------------------------------
-# Enums
-# ---------------------------------------------------------------------------
+# ── Enums ──────────────────────────────────────────────────────────────────
 
 
 class StopReason(str, Enum):
@@ -340,9 +336,7 @@ class PlanEntryStatus(str, Enum):
     COMPLETED = "completed"
 
 
-# ---------------------------------------------------------------------------
-# Content blocks (shared with MCP)
-# ---------------------------------------------------------------------------
+# ── Content Blocks (shared with MCP) ───────────────────────────────────────
 
 
 @dataclass
@@ -473,9 +467,7 @@ def _content_from_dict(raw: dict[str, Any]) -> ContentBlock:
     return TextContent(text=str(raw))
 
 
-# ---------------------------------------------------------------------------
-# Protocol types -- initialization
-# ---------------------------------------------------------------------------
+# ── Protocol Types -- Initialization ───────────────────────────────────────
 
 
 @dataclass
@@ -629,9 +621,7 @@ class InitializeResult:
     auth_methods: list[AuthMethod] | None = None
 
 
-# ---------------------------------------------------------------------------
-# Protocol types -- session setup
-# ---------------------------------------------------------------------------
+# ── Protocol Types -- Session Setup ────────────────────────────────────────
 
 
 @dataclass
@@ -806,9 +796,7 @@ class LoadSessionParams:
     mcp_servers: list[dict[str, Any]] | None = None
 
 
-# ---------------------------------------------------------------------------
-# Protocol types -- prompt turn
-# ---------------------------------------------------------------------------
+# ── Protocol Types -- Prompt Turn ──────────────────────────────────────────
 
 
 @dataclass
@@ -846,9 +834,7 @@ class CancelParams:
     session_id: str
 
 
-# ---------------------------------------------------------------------------
-# Protocol types -- session modes & config
-# ---------------------------------------------------------------------------
+# ── Protocol Types -- Session Modes & Config ───────────────────────────────
 
 
 @dataclass
@@ -890,9 +876,7 @@ class SetConfigOptionResult:
     config_options: list[ConfigOption] = field(default_factory=list)
 
 
-# ---------------------------------------------------------------------------
-# Protocol types -- session list
-# ---------------------------------------------------------------------------
+# ── Protocol Types -- Session List ─────────────────────────────────────────
 
 
 @dataclass
@@ -938,9 +922,7 @@ class ListSessionsResult:
     next_cursor: str | None = None
 
 
-# ---------------------------------------------------------------------------
-# Protocol types -- tool calls
-# ---------------------------------------------------------------------------
+# ── Protocol Types -- Tool Calls ───────────────────────────────────────────
 
 
 @dataclass
@@ -1056,9 +1038,7 @@ class RequestPermissionResult:
     outcome: PermissionOutcome
 
 
-# ---------------------------------------------------------------------------
-# Protocol types -- plans
-# ---------------------------------------------------------------------------
+# ── Protocol Types -- Plans ────────────────────────────────────────────────
 
 
 @dataclass
@@ -1076,9 +1056,7 @@ class PlanEntry:
     status: PlanEntryStatus
 
 
-# ---------------------------------------------------------------------------
-# Protocol types -- slash commands
-# ---------------------------------------------------------------------------
+# ── Protocol Types -- Slash Commands ───────────────────────────────────────
 
 
 @dataclass
@@ -1107,9 +1085,7 @@ class AvailableCommand:
     input: AvailableCommandInput | None = None
 
 
-# ---------------------------------------------------------------------------
-# Protocol types -- file system (client methods)
-# ---------------------------------------------------------------------------
+# ── Protocol Types -- File System (client methods) ─────────────────────────
 
 
 @dataclass
@@ -1155,9 +1131,7 @@ class WriteTextFileParams:
     content: str
 
 
-# ---------------------------------------------------------------------------
-# Protocol types -- terminals (client methods)
-# ---------------------------------------------------------------------------
+# ── Protocol Types -- Terminals (client methods) ───────────────────────────
 
 
 @dataclass
@@ -1272,9 +1246,7 @@ class ReleaseTerminalParams:
     terminal_id: str
 
 
-# ---------------------------------------------------------------------------
-# Session update types (agent -> client notifications)
-# ---------------------------------------------------------------------------
+# ── Session Update Types (agent -> client notifications) ───────────────────
 
 
 @dataclass
@@ -1445,9 +1417,7 @@ SessionUpdate = Union[
 ]
 
 
-# ---------------------------------------------------------------------------
-# ACP Client
-# ---------------------------------------------------------------------------
+# ── ACP Client ─────────────────────────────────────────────────────────────
 
 
 class ACPClient:
@@ -1838,9 +1808,7 @@ class ACPClient:
         )
 
 
-# ---------------------------------------------------------------------------
-# ACP Agent (server-side base class)
-# ---------------------------------------------------------------------------
+# ── ACP Agent (server-side base class) ─────────────────────────────────────
 
 
 class ACPAgent(ABC):
@@ -2291,9 +2259,7 @@ class ACPAgent(ABC):
         )
 
 
-# ---------------------------------------------------------------------------
-# Example usage
-# ---------------------------------------------------------------------------
+# ── Example Usage ──────────────────────────────────────────────────────────
 
 
 class _EchoAgent(ACPAgent):

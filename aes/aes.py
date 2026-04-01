@@ -82,9 +82,7 @@ _BLOCK = 16
 _KEY_PARAMS = {16: (4, 10), 24: (6, 12), 32: (8, 14)}  # key_len -> (nk, nr)
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+# ── Helpers ────────────────────────────────────────────────────────────────
 
 
 def _validate_key(key: bytes) -> None:
@@ -125,9 +123,7 @@ def _matrix_to_bytes(m: list[list[int]]) -> bytes:
     return bytes(b for row in m for b in row)
 
 
-# ---------------------------------------------------------------------------
-# Key expansion (AES-128/192/256)
-# ---------------------------------------------------------------------------
+# ── Key Expansion (AES-128/192/256) ────────────────────────────────────────
 
 
 def _expand_key(key: bytes) -> list[list[list[int]]]:
@@ -156,9 +152,7 @@ def _expand_key(key: bytes) -> list[list[list[int]]]:
     return [rk[4 * r : 4 * (r + 1)] for r in range(nr + 1)]
 
 
-# ---------------------------------------------------------------------------
-# AES round transformations
-# ---------------------------------------------------------------------------
+# ── AES Round Transformations ──────────────────────────────────────────────
 
 
 def _add_round_key(s: list[list[int]], k: list[list[int]]) -> None:
@@ -216,9 +210,7 @@ def _inv_mix_columns(s: list[list[int]]) -> None:
     _mix_columns(s)
 
 
-# ---------------------------------------------------------------------------
-# Block encrypt / decrypt (any key size)
-# ---------------------------------------------------------------------------
+# ── Block Encrypt / Decrypt (any key size) ─────────────────────────────────
 
 
 def _encrypt_block(block: bytes, round_keys: list[list[list[int]]]) -> bytes:
@@ -251,9 +243,7 @@ def _decrypt_block(block: bytes, round_keys: list[list[list[int]]]) -> bytes:
     return _matrix_to_bytes(s)
 
 
-# ---------------------------------------------------------------------------
-# ECB mode + PKCS7 padding
-# ---------------------------------------------------------------------------
+# ── ECB Mode + PKCS7 Padding ───────────────────────────────────────────────
 
 
 def aes_ecb_encrypt(data: bytes, key: bytes) -> bytes:
@@ -301,9 +291,7 @@ aes128_ecb_encrypt = aes_ecb_encrypt
 aes128_ecb_decrypt = aes_ecb_decrypt
 
 
-# ---------------------------------------------------------------------------
-# CBC mode + PKCS7 padding
-# ---------------------------------------------------------------------------
+# ── CBC Mode + PKCS7 Padding ───────────────────────────────────────────────
 
 
 def aes_cbc_encrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
@@ -359,9 +347,7 @@ def aes_cbc_decrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
     return _pkcs7_unpad(bytes(out))
 
 
-# ---------------------------------------------------------------------------
-# CTR mode (no padding)
-# ---------------------------------------------------------------------------
+# ── CTR Mode (no padding) ──────────────────────────────────────────────────
 
 
 def _inc_counter(counter: bytes) -> bytes:
@@ -398,9 +384,7 @@ def aes_ctr_encrypt(data: bytes, key: bytes, nonce: bytes) -> bytes:
 aes_ctr_decrypt = aes_ctr_encrypt
 
 
-# ---------------------------------------------------------------------------
-# GCM mode (authenticated encryption)
-# ---------------------------------------------------------------------------
+# ── GCM Mode (authenticated encryption) ────────────────────────────────────
 
 _GF128_R = 0xE1000000000000000000000000000000
 

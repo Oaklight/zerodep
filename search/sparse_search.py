@@ -42,6 +42,7 @@ import json
 import math
 import re
 import sqlite3
+import statistics
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -59,6 +60,87 @@ _VERSION = "0.1.0"
 # ---------------------------------------------------------------------------
 
 _SPLIT_RE = re.compile(r"[\w]+", re.UNICODE)
+
+# ---------------------------------------------------------------------------
+# Bayesian probability utilities
+# ---------------------------------------------------------------------------
+
+
+def _sigmoid(x: float) -> float:
+    """Numerically stable sigmoid."""
+    if x >= 0:
+        return 1.0 / (1.0 + math.exp(-x))
+    ex = math.exp(x)
+    return ex / (1.0 + ex)
+
+
+def _logit(p: float) -> float:
+    """Logit (inverse sigmoid) with epsilon clamping."""
+    p = max(1e-10, min(1.0 - 1e-10, p))
+    return math.log(p / (1.0 - p))
+
+
+def _bayesian_likelihood(score: float, alpha: float, beta: float) -> float:
+    """Sigmoid likelihood: L(s) = sigmoid(alpha * (s - beta))."""
+    return _sigmoid(alpha * (score - beta))
+
+
+def _tf_prior(tf: float) -> float:
+    """Term-frequency prior: P_tf = 0.2 + 0.7 * min(1, tf/10)."""
+    return 0.2 + 0.7 * min(1.0, tf / 10.0)
+
+
+def _norm_prior(doc_len_ratio: float) -> float:
+    """Doc-length normalization prior (bell curve peaking at ratio=0.5)."""
+    return 0.3 + 0.6 * (1.0 - min(1.0, abs(doc_len_ratio - 0.5) * 2.0))
+
+
+def _composite_prior(tf: float, doc_len_ratio: float) -> float:
+    """Composite prior: 0.7*P_tf + 0.3*P_norm, clamped to [0.1, 0.9]."""
+    return max(0.1, min(0.9, 0.7 * _tf_prior(tf) + 0.3 * _norm_prior(doc_len_ratio)))
+
+
+def _bayesian_posterior(
+    likelihood: float,
+    prior: float,
+    base_rate: float | None = None,
+) -> float:
+    """Two-step Bayesian posterior update."""
+    # Step 1: standard Bayes
+    p = likelihood * prior / (likelihood * prior + (1.0 - likelihood) * (1.0 - prior))
+    # Step 2: optional base_rate correction
+    if base_rate is not None:
+        p = p * base_rate / (p * base_rate + (1.0 - p) * (1.0 - base_rate))
+    return p
+
+
+def _score_to_probability(
+    score: float,
+    tf: float,
+    doc_len_ratio: float,
+    alpha: float,
+    beta: float,
+    base_rate: float | None = None,
+) -> float:
+    """Full pipeline: BM25 score -> calibrated probability."""
+    L = _bayesian_likelihood(score, alpha, beta)
+    prior = _composite_prior(tf, doc_len_ratio)
+    return _bayesian_posterior(L, prior, base_rate)
+
+
+def _prob_or(probs: list[float]) -> float:
+    """P(A or B or ...) = 1 - prod(1 - p_i), in log-space for stability."""
+    log_complement = sum(math.log(max(1e-10, 1.0 - p)) for p in probs)
+    return 1.0 - math.exp(log_complement)
+
+
+def _log_odds_conjunction(probs: list[float], alpha: float = 0.5) -> float:
+    """Log-odds conjunction: sigmoid(mean(logit(p_i)) * n^alpha)."""
+    n = len(probs)
+    if n == 0:
+        return 0.0
+    mean_logit = sum(_logit(p) for p in probs) / n
+    return _sigmoid(mean_logit * (n**alpha))
 
 
 def _default_tokenize(text: str) -> list[str]:
@@ -116,6 +198,9 @@ class SparseIndex:
             When ``None``, documents are treated as single-field text.
         tokenize: Tokenization function ``str -> list[str]``.
             Defaults to a simple Unicode word splitter with lowercasing.
+        calibrated: If ``True``, BM25 scores are converted to calibrated
+            probabilities in [0, 1] via Bayesian BM25. Call :meth:`calibrate`
+            to estimate or provide the calibration parameters.
     """
 
     _SQLITE_MAGIC = b"SQLite format 3\x00"
@@ -128,6 +213,7 @@ class SparseIndex:
         delta: float = 1.0,
         field_weights: dict[str, float] | None = None,
         tokenize: Callable[[str], list[str]] | None = None,
+        calibrated: bool = False,
     ) -> None:
         if variant not in ("bm25", "bm25l", "tfidf"):
             raise ValueError(
@@ -140,6 +226,12 @@ class SparseIndex:
         self.delta = delta
         self.field_weights = field_weights
         self._tokenize = tokenize or _default_tokenize
+        self.calibrated = calibrated
+
+        # Bayesian BM25 calibration parameters
+        self._alpha: float | None = None
+        self._beta: float | None = None
+        self._base_rate: float | None = None
 
         # Document storage: doc_id -> _DocRecord
         self._docs: dict[str, _DocRecord] = {}
@@ -287,6 +379,74 @@ class SparseIndex:
             for doc_id, score in ranked
             if score > 0
         ]
+
+    # -- calibration ---------------------------------------------------------
+
+    def calibrate(
+        self,
+        *,
+        alpha: float | None = None,
+        beta: float | None = None,
+        base_rate: float | None = None,
+        n_samples: int = 50,
+    ) -> None:
+        """Estimate Bayesian calibration parameters from corpus statistics.
+
+        When both ``alpha`` and ``beta`` are provided they are used directly.
+        Otherwise they are auto-estimated by sampling pseudo-queries from the
+        corpus and collecting raw BM25 scores:
+
+        * ``beta = median(scores)`` -- the score midpoint.
+        * ``alpha = 1 / stdev(scores)`` -- controls sigmoid steepness.
+
+        After calling this method, :meth:`search` with a BM25 variant will
+        return calibrated probabilities in [0, 1] instead of raw scores.
+
+        Args:
+            alpha: Sigmoid steepness parameter. Auto-estimated when ``None``.
+            beta: Sigmoid midpoint parameter. Auto-estimated when ``None``.
+            base_rate: Optional base-rate for a second Bayesian correction
+                step. ``None`` skips the correction (the default).
+            n_samples: Number of pseudo-queries for auto-estimation.
+
+        Raises:
+            RuntimeError: If the index is empty or auto-estimation fails.
+        """
+        if alpha is not None and beta is not None:
+            self._alpha = alpha
+            self._beta = beta
+            self._base_rate = base_rate
+            self.calibrated = True
+            return
+
+        if not self._docs:
+            raise RuntimeError("Cannot auto-calibrate on an empty index")
+
+        # Sample documents and use their first tokens as pseudo-queries
+        doc_ids = list(self._docs.keys())
+        step = max(1, len(doc_ids) // n_samples)
+        sampled_ids = doc_ids[::step][:n_samples]
+
+        all_scores: list[float] = []
+        for doc_id in sampled_ids:
+            # Collect up to 5 terms from this document
+            terms = list(self._doc_terms.get(doc_id, set()))[:5]
+            if not terms:
+                continue
+            scores = self._score_bm25(terms)
+            all_scores.extend(s for s in scores.values() if s > 0)
+
+        if len(all_scores) < 2:
+            raise RuntimeError(
+                "Not enough score samples for auto-calibration "
+                f"(got {len(all_scores)}, need >= 2)"
+            )
+
+        self._beta = statistics.median(all_scores)
+        stdev = statistics.stdev(all_scores)
+        self._alpha = 1.0 / stdev if stdev > 0 else 1.0
+        self._base_rate = base_rate
+        self.calibrated = True
 
     # -- persistence ---------------------------------------------------------
 
@@ -455,7 +615,45 @@ class SparseIndex:
 
                 scores[doc_id] += idf * tf_norm
 
-        return dict(scores)
+        if not self.calibrated or self._alpha is None or self._beta is None:
+            return dict(scores)
+
+        # Bayesian calibration: convert raw scores to probabilities
+        alpha = self._alpha
+        beta = self._beta
+        base_rate = self._base_rate
+        calibrated_scores: dict[str, float] = {}
+        for doc_id, raw_score in scores.items():
+            doc = self._docs[doc_id]
+            # Weighted TF across query tokens
+            total_tf = 0.0
+            for token in query_tokens:
+                if token in self._index and doc_id in self._index[token]:
+                    for fn, tf in self._index[token][doc_id].items():
+                        total_tf += field_weights.get(fn, 1.0) * tf
+            # Doc-length ratio
+            weighted_dl = sum(
+                field_weights.get(fn, 1.0) * dl for fn, dl in doc.field_lengths.items()
+            )
+            weighted_avgdl = (
+                sum(
+                    field_weights.get(fn, 1.0) * self._avg_field_length(fn)
+                    for fn in field_weights
+                )
+                or 1.0
+            )
+            doc_len_ratio = weighted_dl / weighted_avgdl
+
+            calibrated_scores[doc_id] = _score_to_probability(
+                raw_score,
+                total_tf,
+                doc_len_ratio,
+                alpha,
+                beta,
+                base_rate,
+            )
+
+        return calibrated_scores
 
     # -- internal: TF-IDF scoring --------------------------------------------
 
@@ -569,6 +767,10 @@ class SparseIndex:
                 "b": self.b,
                 "delta": self.delta,
                 "field_weights": self.field_weights,
+                "calibrated": self.calibrated,
+                "alpha": self._alpha,
+                "beta": self._beta,
+                "base_rate": self._base_rate,
             },
             "docs": docs_data,
             "index": index_data,
@@ -587,7 +789,11 @@ class SparseIndex:
             b=config["b"],
             delta=config["delta"],
             field_weights=config.get("field_weights"),
+            calibrated=config.get("calibrated", False),
         )
+        instance._alpha = config.get("alpha")
+        instance._beta = config.get("beta")
+        instance._base_rate = config.get("base_rate")
 
         # Restore docs
         for doc_id, doc_data in data["docs"].items():
@@ -678,6 +884,10 @@ class SparseIndex:
                 "b": self.b,
                 "delta": self.delta,
                 "field_weights": self.field_weights,
+                "calibrated": self.calibrated,
+                "alpha": self._alpha,
+                "beta": self._beta,
+                "base_rate": self._base_rate,
             }
             for key, value in config.items():
                 cur.execute(
@@ -742,7 +952,11 @@ class SparseIndex:
                 b=config["b"],
                 delta=config["delta"],
                 field_weights=config.get("field_weights"),
+                calibrated=config.get("calibrated", False),
             )
+            instance._alpha = config.get("alpha")
+            instance._beta = config.get("beta")
+            instance._base_rate = config.get("base_rate")
 
             # Load docs
             for doc_id, field_lengths_json, metadata_json in cur.execute(

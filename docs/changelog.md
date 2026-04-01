@@ -8,6 +8,7 @@
 
 ### 新增模块
 
+- **文件锁模块**：仅标准库的跨平台咨询式文件锁。Unix/macOS 使用 `fcntl.flock`，Windows 使用 `msvcrt.locking` 配合指数退避轮询。支持上下文管理器、非阻塞 `try_lock()`、自动创建父目录。
 - **JSON-RPC 模块**：JSON-RPC 2.0 协议实现，包含核心数据类型（`JSONRPCError`、`JSONRPCRequest`、`JSONRPCResponse`）、异常层次结构、支持流式的方法分发器，以及基于换行分隔 JSON 流的异步传输层。性能测试比 `jsonrpcserver` 快约 12-17 倍。
 
 ### 功能增强

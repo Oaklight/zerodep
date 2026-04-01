@@ -71,6 +71,7 @@ plugins:
             - ../jsonrpc
             - ../acp
             - ../skills
+            - ../filelock
             - aes
             - qr
             - httpclient
@@ -100,6 +101,7 @@ plugins:
             - jsonrpc
             - acp
             - skills
+            - filelock
           options:
             docstring_style: google
             show_source: true
@@ -183,6 +185,7 @@ nav:
           - structlog / 结构化日志: modules/structlog.md
           - vcs / VCS 版本控制: modules/vcs.md
           - runner / 命令运行器: modules/runner.md
+          - filelock / 文件锁: modules/filelock.md
   - API 参考:
       - 网络与通信:
           - httpclient / HTTP 客户端: api/http.md
@@ -223,6 +226,7 @@ nav:
           - structlog / 结构化日志: api/structlog.md
           - vcs / VCS 版本控制: api/vcs.md
           - runner / 命令运行器: api/runner.md
+          - filelock / 文件锁: api/filelock.md
   - 性能测试:
       - 网络与通信:
           - httpclient / HTTP 客户端: benchmarks/http.md
@@ -263,4 +267,5 @@ nav:
           - structlog / 结构化日志: benchmarks/structlog.md
           - vcs / VCS 版本控制: benchmarks/vcs.md
           - runner / 命令运行器: benchmarks/runner.md
+          - filelock / 文件锁: benchmarks/filelock.md
   - 更新日志: changelog.md

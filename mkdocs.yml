@@ -179,9 +179,8 @@ nav:
           - ansi / ANSI 终端样式: modules/ansi.md
           - tabulate / 表格格式化: modules/tabulate.md
           - prompt / 交互式提示: modules/prompt.md
-      - 安全与编码:
+      - 安全:
           - aes / AES 加密: modules/aes.md
-          - qr / QR 二维码: modules/qr.md
       - 基础设施与工具:
           - cache / 缓存: modules/cache.md
           - retry / 重试: modules/retry.md
@@ -190,6 +189,7 @@ nav:
           - vcs / VCS 版本控制: modules/vcs.md
           - runner / 命令运行器: modules/runner.md
           - filelock / 文件锁: modules/filelock.md
+          - qr / QR 二维码: modules/qr.md
   - API 参考:
       - 网络与通信:
           - httpclient / HTTP 客户端: api/http.md
@@ -220,9 +220,8 @@ nav:
           - ansi / ANSI 终端样式: api/ansi.md
           - tabulate / 表格格式化: api/tabulate.md
           - prompt / 交互式提示: api/prompt.md
-      - 安全与编码:
+      - 安全:
           - aes / AES 加密: api/aes.md
-          - qr / QR 二维码: api/qr.md
       - 基础设施与工具:
           - cache / 缓存: api/cache.md
           - retry / 重试: api/retry.md
@@ -231,6 +230,7 @@ nav:
           - vcs / VCS 版本控制: api/vcs.md
           - runner / 命令运行器: api/runner.md
           - filelock / 文件锁: api/filelock.md
+          - qr / QR 二维码: api/qr.md
   - 性能测试:
       - 网络与通信:
           - httpclient / HTTP 客户端: benchmarks/http.md
@@ -261,9 +261,8 @@ nav:
           - ansi / ANSI 终端样式: benchmarks/ansi.md
           - tabulate / 表格格式化: benchmarks/tabulate.md
           - prompt / 交互式提示: benchmarks/prompt.md
-      - 安全与编码:
+      - 安全:
           - aes / AES 加密: benchmarks/aes.md
-          - qr / QR 二维码: benchmarks/qr.md
       - 基础设施与工具:
           - cache / 缓存: benchmarks/cache.md
           - retry / 重试: benchmarks/retry.md
@@ -272,4 +271,5 @@ nav:
           - vcs / VCS 版本控制: benchmarks/vcs.md
           - runner / 命令运行器: benchmarks/runner.md
           - filelock / 文件锁: benchmarks/filelock.md
+          - qr / QR 二维码: benchmarks/qr.md
   - 更新日志: changelog.md

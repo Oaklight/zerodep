@@ -1,4 +1,4 @@
-"""Correctness tests for zerodep scheduler."""
+"""Correctness tests: zerodep scheduler."""
 
 import os
 import sys

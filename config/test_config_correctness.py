@@ -1,10 +1,4 @@
-"""Correctness tests for zerodep config module.
-
-Covers: env vars, .env files, config files (JSON/YAML/TOML/INI),
-type coercion (bool/int/float/list/tuple), Csv, Choices, prefix,
-nested keys, priority override, UndefinedValueError, and comparison
-with python-decouple where applicable.
-"""
+"""Correctness tests: zerodep config."""
 
 from __future__ import annotations
 

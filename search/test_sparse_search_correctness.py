@@ -1,4 +1,4 @@
-"""Correctness tests for sparse_search module."""
+"""Correctness tests: zerodep sparse_search."""
 
 from __future__ import annotations
 

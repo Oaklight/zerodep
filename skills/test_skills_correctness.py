@@ -1,4 +1,4 @@
-"""Correctness tests for the zerodep skills module."""
+"""Correctness tests: zerodep skills."""
 
 import os
 import sys

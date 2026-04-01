@@ -179,9 +179,8 @@ nav:
           - ansi / ANSI Colors: modules/ansi.md
           - tabulate / Table Formatter: modules/tabulate.md
           - prompt / CLI Prompts: modules/prompt.md
-      - Security & Encoding:
+      - Security:
           - aes / AES Encryption: modules/aes.md
-          - qr / QR Code: modules/qr.md
       - Infrastructure & Tools:
           - cache / Cache: modules/cache.md
           - retry / Retry Decorator: modules/retry.md
@@ -190,6 +189,7 @@ nav:
           - vcs / VCS Wrapper: modules/vcs.md
           - runner / Command Runner: modules/runner.md
           - filelock / File Lock: modules/filelock.md
+          - qr / QR Code: modules/qr.md
   - API Reference:
       - Web & Networking:
           - httpclient / HTTP Client: api/http.md
@@ -220,9 +220,8 @@ nav:
           - ansi / ANSI Colors: api/ansi.md
           - tabulate / Table Formatter: api/tabulate.md
           - prompt / CLI Prompts: api/prompt.md
-      - Security & Encoding:
+      - Security:
           - aes / AES Encryption: api/aes.md
-          - qr / QR Code: api/qr.md
       - Infrastructure & Tools:
           - cache / Cache: api/cache.md
           - retry / Retry Decorator: api/retry.md
@@ -231,6 +230,7 @@ nav:
           - vcs / VCS Wrapper: api/vcs.md
           - runner / Command Runner: api/runner.md
           - filelock / File Lock: api/filelock.md
+          - qr / QR Code: api/qr.md
   - Benchmarks:
       - Web & Networking:
           - httpclient / HTTP Client: benchmarks/http.md
@@ -261,9 +261,8 @@ nav:
           - ansi / ANSI Colors: benchmarks/ansi.md
           - tabulate / Table Formatter: benchmarks/tabulate.md
           - prompt / CLI Prompts: benchmarks/prompt.md
-      - Security & Encoding:
+      - Security:
           - aes / AES Encryption: benchmarks/aes.md
-          - qr / QR Code: benchmarks/qr.md
       - Infrastructure & Tools:
           - cache / Cache: benchmarks/cache.md
           - retry / Retry Decorator: benchmarks/retry.md
@@ -272,4 +271,5 @@ nav:
           - vcs / VCS Wrapper: benchmarks/vcs.md
           - runner / Command Runner: benchmarks/runner.md
           - filelock / File Lock: benchmarks/filelock.md
+          - qr / QR Code: benchmarks/qr.md
   - Changelog: changelog.md

@@ -1,4 +1,4 @@
-"""Correctness tests for zerodep prompt module."""
+"""Correctness tests: zerodep prompt."""
 
 import io
 import os

@@ -1,14 +1,4 @@
-"""Correctness tests for the jsonrpc module.
-
-Covers:
-    - JSONRPCError: construction, to_dict, from_dict, defaults
-    - JSONRPCRequest: construction, to_dict, from_dict, is_notification
-    - JSONRPCResponse: construction, to_dict, from_dict, success, from_error
-    - JSONRPCException: wrapping, message propagation
-    - next_id: monotonic incrementing
-    - JSONRPCDispatcher: register, dispatch, error handling, streaming
-    - JSONRPCTransport: read/write over async streams (unit-level)
-"""
+"""Correctness tests: zerodep jsonrpc."""
 
 from __future__ import annotations
 

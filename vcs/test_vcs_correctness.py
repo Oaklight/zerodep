@@ -1,4 +1,4 @@
-"""Correctness tests: zerodep vcs module."""
+"""Correctness tests: zerodep vcs."""
 
 import os
 import shutil

@@ -1,4 +1,4 @@
-"""Correctness tests for zerodep SSE client."""
+"""Correctness tests: zerodep sse."""
 
 import asyncio
 import http.server

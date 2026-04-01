@@ -139,11 +139,15 @@ extra:
 nav:
   - 首页: index.md
   - 指南:
+      - 快速开始: guide/quickstart.md
       - 设计理念: guide/philosophy.md
       - 设计与架构: guide/design.md
       - 内部约定: guide/internals.md
+      - 安装与获取: guide/installation.md
       - CLI 工具: guide/cli.md
       - Manifest 清单: guide/manifest.md
+      - 迁移指南: guide/migration.md
+      - 常见问题: guide/faq.md
   - 模块:
       - modules/index.md
       - 网络与通信:

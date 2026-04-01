@@ -75,3 +75,23 @@ title: 模块概览
 | [retry](retry.md) | 装饰器式自动重试（退避、抖动、过滤） | `tenacity` |
 | [search](search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF 全文搜索引擎 | `rank-bm25` |
 | [structlog](structlog.md) | 结构化日志与彩色控制台输出 | `structlog` |
+
+## 模块间依赖关系
+
+大部分 zerodep 模块是完全独立的。以下模块依赖其他 zerodep 模块：
+
+```mermaid
+graph LR
+    a2a --> jsonrpc
+    acp --> jsonrpc
+    config --> dotenv
+    config --> yaml
+    config --> jsonc
+    frontmatter --> yaml
+    skills --> frontmatter
+    skills --> search
+    sse --> httpclient
+    vcs --> diff
+```
+
+使用 [CLI 工具](../guide/cli.md) 时，依赖会自动解析。手动安装时，请确保所有依赖模块都已就位。

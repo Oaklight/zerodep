@@ -6,6 +6,8 @@
 
 ## [未发布]
 
+## [0.3.0] - 2026-04-01
+
 ### 新增模块
 
 - **文件锁模块**：仅标准库的跨平台咨询式文件锁。Unix/macOS 使用 `fcntl.flock`，Windows 使用 `msvcrt.locking` 配合指数退避轮询。支持上下文管理器、非阻塞 `try_lock()`、自动创建父目录。
@@ -16,6 +18,15 @@
 - **Search 模块**：Bayesian BM25 概率校准——通过 sigmoid 似然、复合先验和贝叶斯后验，将无界 BM25 分数转换为校准概率 [0,1]。支持从语料统计自动估计 α/β 参数和可选的基准率校正。校准状态在 JSON 和 SQLite 中持久化。
 - **A2A 模块**：将内联 JSON-RPC 层提取至共享 `jsonrpc` 模块；`A2AError` 现继承 `JSONRPCException`，实现统一的错误处理。
 - **ACP 模块**：将内联 JSON-RPC 层提取至共享 `jsonrpc` 模块；用基于正则的算法转换替换 39 条硬编码 camelCase 映射表；序列化统一为 A2A 风格的单一递归 `to_dict()`，支持空集合过滤。
+
+### 风格
+
+- 现代化类型标注：将 `Optional`/`Dict`/`List` 替换为 PEP 604/585 风格。
+- 为所有模块添加 `__all__` 导出。
+- 统一模块间的段落分隔符风格。
+- 为 frozen dataclass 添加 `slots=True`。
+- 重命名 httpclient 测试文件以保持命名一致性。
+- 统一测试文件 docstring 格式。
 
 ## [0.2.2] - 2026-03-31
 

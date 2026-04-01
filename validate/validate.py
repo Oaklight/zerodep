@@ -65,7 +65,7 @@ __all__ = [
 # ── Constraint Annotations ──
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class Gt:
     """Value must be strictly greater than *val*."""
 
@@ -81,7 +81,7 @@ class Gt:
         return f"> {self.val}"
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class Ge:
     """Value must be greater than or equal to *val*."""
 
@@ -97,7 +97,7 @@ class Ge:
         return f">= {self.val}"
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class Lt:
     """Value must be strictly less than *val*."""
 
@@ -113,7 +113,7 @@ class Lt:
         return f"< {self.val}"
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class Le:
     """Value must be less than or equal to *val*."""
 
@@ -129,7 +129,7 @@ class Le:
         return f"<= {self.val}"
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class MinLen:
     """Length must be at least *val*."""
 
@@ -150,7 +150,7 @@ class MinLen:
         return f"len >= {self.val}"
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class MaxLen:
     """Length must be at most *val*."""
 
@@ -169,7 +169,7 @@ class MaxLen:
         return f"len <= {self.val}"
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class Match:
     """Value must match *pattern* (via ``re.fullmatch``)."""
 
@@ -185,7 +185,7 @@ class Match:
         return f"match({self.pattern!r})"
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class Predicate:
     """Value must satisfy a custom predicate function.
 

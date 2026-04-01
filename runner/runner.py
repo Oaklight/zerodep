@@ -152,7 +152,7 @@ class CommandBlockedError(RunnerError):
 # ── Data Models (RunResult) ───────────────────────────────────────────
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class RunResult:
     """Result of a completed command execution.
 

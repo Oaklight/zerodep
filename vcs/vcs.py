@@ -167,7 +167,7 @@ class NotARepoError(VCSError):
 # ── Data Structures ──────────────────────────────────────────────────
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class FileStatus:
     """Status of a single file in the working tree.
 
@@ -183,7 +183,7 @@ class FileStatus:
     original_path: str | None = None
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class Commit:
     """Metadata for a single commit.
 
@@ -202,7 +202,7 @@ class Commit:
     message: str
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class BlameLine:
     """Annotation for a single source line.
 
@@ -221,7 +221,7 @@ class BlameLine:
     content: str
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class WorkspaceInfo:
     """Information about a workspace (Git worktree / Jujutsu workspace).
 

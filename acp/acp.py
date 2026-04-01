@@ -85,7 +85,6 @@ from typing import (
     Any,
     AsyncIterator,
     Callable,
-    Optional,
     Union,
 )
 
@@ -395,7 +394,7 @@ class _TextResource:
 
     uri: str
     text: str
-    mime_type: Optional[str] = None
+    mime_type: str | None = None
 
 
 @dataclass
@@ -427,10 +426,10 @@ class ResourceLinkContent:
 
     uri: str
     name: str
-    mime_type: Optional[str] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    size: Optional[int] = None
+    mime_type: str | None = None
+    title: str | None = None
+    description: str | None = None
+    size: int | None = None
     type: str = "resource_link"
 
 
@@ -491,7 +490,7 @@ class ImplementationInfo:
 
     name: str
     version: str = ""
-    title: Optional[str] = None
+    title: str | None = None
 
 
 @dataclass
@@ -516,7 +515,7 @@ class ClientCapabilities:
         terminal: Whether all ``terminal/*`` methods are available.
     """
 
-    fs: Optional[FsCapabilities] = None
+    fs: FsCapabilities | None = None
     terminal: bool = False
 
 
@@ -563,7 +562,7 @@ class SessionCapabilities:
         list: If present, ``session/list`` is supported.
     """
 
-    list: Optional[SessionListCapability] = None
+    list: SessionListCapability | None = None
 
 
 @dataclass
@@ -578,9 +577,9 @@ class AgentCapabilities:
     """
 
     load_session: bool = False
-    prompt_capabilities: Optional[PromptCapabilities] = None
-    mcp_capabilities: Optional[McpCapabilities] = None
-    session_capabilities: Optional[SessionCapabilities] = None
+    prompt_capabilities: PromptCapabilities | None = None
+    mcp_capabilities: McpCapabilities | None = None
+    session_capabilities: SessionCapabilities | None = None
 
 
 @dataclass
@@ -595,7 +594,7 @@ class AuthMethod:
 
     id: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 @dataclass
@@ -609,8 +608,8 @@ class InitializeParams:
     """
 
     protocol_version: int = 1
-    client_capabilities: Optional[ClientCapabilities] = None
-    client_info: Optional[ImplementationInfo] = None
+    client_capabilities: ClientCapabilities | None = None
+    client_info: ImplementationInfo | None = None
 
 
 @dataclass
@@ -625,9 +624,9 @@ class InitializeResult:
     """
 
     protocol_version: int = 1
-    agent_capabilities: Optional[AgentCapabilities] = None
-    agent_info: Optional[ImplementationInfo] = None
-    auth_methods: Optional[list[AuthMethod]] = None
+    agent_capabilities: AgentCapabilities | None = None
+    agent_info: ImplementationInfo | None = None
+    auth_methods: list[AuthMethod] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -662,7 +661,7 @@ class McpServerStdio:
     name: str
     command: str
     args: list[str] = field(default_factory=list)
-    env: Optional[list[EnvVariable]] = None
+    env: list[EnvVariable] | None = None
 
 
 @dataclass
@@ -708,7 +707,7 @@ class NewSessionParams:
     """
 
     cwd: str
-    mcp_servers: Optional[list[dict[str, Any]]] = None
+    mcp_servers: list[dict[str, Any]] | None = None
 
 
 @dataclass
@@ -723,7 +722,7 @@ class SessionMode:
 
     id: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 @dataclass
@@ -751,7 +750,7 @@ class ConfigOptionValue:
 
     value: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 @dataclass
@@ -773,8 +772,8 @@ class ConfigOption:
     type: str
     current_value: str
     options: list[ConfigOptionValue] = field(default_factory=list)
-    description: Optional[str] = None
-    category: Optional[str] = None
+    description: str | None = None
+    category: str | None = None
 
 
 @dataclass
@@ -788,8 +787,8 @@ class NewSessionResult:
     """
 
     session_id: str
-    modes: Optional[SessionModeState] = None
-    config_options: Optional[list[ConfigOption]] = None
+    modes: SessionModeState | None = None
+    config_options: list[ConfigOption] | None = None
 
 
 @dataclass
@@ -804,7 +803,7 @@ class LoadSessionParams:
 
     session_id: str
     cwd: str
-    mcp_servers: Optional[list[dict[str, Any]]] = None
+    mcp_servers: list[dict[str, Any]] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -905,8 +904,8 @@ class ListSessionsParams:
         cursor: Optional pagination cursor.
     """
 
-    cwd: Optional[str] = None
-    cursor: Optional[str] = None
+    cwd: str | None = None
+    cursor: str | None = None
 
 
 @dataclass
@@ -922,8 +921,8 @@ class SessionInfo:
 
     session_id: str
     cwd: str
-    title: Optional[str] = None
-    updated_at: Optional[str] = None
+    title: str | None = None
+    updated_at: str | None = None
 
 
 @dataclass
@@ -936,7 +935,7 @@ class ListSessionsResult:
     """
 
     sessions: list[SessionInfo] = field(default_factory=list)
-    next_cursor: Optional[str] = None
+    next_cursor: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -954,7 +953,7 @@ class ToolCallLocation:
     """
 
     path: str
-    line: Optional[int] = None
+    line: int | None = None
 
 
 @dataclass
@@ -970,7 +969,7 @@ class DiffContent:
 
     path: str
     new_text: str
-    old_text: Optional[str] = None
+    old_text: str | None = None
     type: str = "diff"
 
 
@@ -1028,7 +1027,7 @@ class PermissionOutcome:
     """
 
     outcome: str
-    option_id: Optional[str] = None
+    option_id: str | None = None
 
 
 @dataclass
@@ -1105,7 +1104,7 @@ class AvailableCommand:
 
     name: str
     description: str
-    input: Optional[AvailableCommandInput] = None
+    input: AvailableCommandInput | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -1126,8 +1125,8 @@ class ReadTextFileParams:
 
     session_id: str
     path: str
-    line: Optional[int] = None
-    limit: Optional[int] = None
+    line: int | None = None
+    limit: int | None = None
 
 
 @dataclass
@@ -1176,10 +1175,10 @@ class CreateTerminalParams:
 
     session_id: str
     command: str
-    args: Optional[list[str]] = None
-    env: Optional[list[EnvVariable]] = None
-    cwd: Optional[str] = None
-    output_byte_limit: Optional[int] = None
+    args: list[str] | None = None
+    env: list[EnvVariable] | None = None
+    cwd: str | None = None
+    output_byte_limit: int | None = None
 
 
 @dataclass
@@ -1215,8 +1214,8 @@ class TerminalExitStatus:
         signal: Termination signal (may be ``None``).
     """
 
-    exit_code: Optional[int] = None
-    signal: Optional[str] = None
+    exit_code: int | None = None
+    signal: str | None = None
 
 
 @dataclass
@@ -1231,7 +1230,7 @@ class TerminalOutputResult:
 
     output: str = ""
     truncated: bool = False
-    exit_status: Optional[TerminalExitStatus] = None
+    exit_status: TerminalExitStatus | None = None
 
 
 @dataclass
@@ -1337,10 +1336,10 @@ class ToolCallUpdate:
     title: str
     kind: ToolKind = ToolKind.OTHER
     status: ToolCallStatus = ToolCallStatus.PENDING
-    content: Optional[list[ToolCallContent]] = None
-    locations: Optional[list[ToolCallLocation]] = None
-    raw_input: Optional[dict[str, Any]] = None
-    raw_output: Optional[dict[str, Any]] = None
+    content: list[ToolCallContent] | None = None
+    locations: list[ToolCallLocation] | None = None
+    raw_input: dict[str, Any] | None = None
+    raw_output: dict[str, Any] | None = None
     session_update: str = "tool_call"
 
 
@@ -1358,10 +1357,10 @@ class ToolCallStatusUpdate:
     """
 
     tool_call_id: str
-    status: Optional[ToolCallStatus] = None
-    content: Optional[list[ToolCallContent]] = None
-    title: Optional[str] = None
-    locations: Optional[list[ToolCallLocation]] = None
+    status: ToolCallStatus | None = None
+    content: list[ToolCallContent] | None = None
+    title: str | None = None
+    locations: list[ToolCallLocation] | None = None
     session_update: str = "tool_call_update"
 
 
@@ -1427,8 +1426,8 @@ class SessionInfoUpdate:
         session_update: Discriminator.
     """
 
-    title: Optional[str] = None
-    updated_at: Optional[str] = None
+    title: str | None = None
+    updated_at: str | None = None
     session_update: str = "session_info_update"
 
 
@@ -1472,17 +1471,17 @@ class ACPClient:
     def __init__(
         self,
         command: list[str],
-        env: Optional[dict[str, str]] = None,
+        env: dict[str, str] | None = None,
     ) -> None:
         self._command = command
         self._env = env
-        self._process: Optional[asyncio.subprocess.Process] = None
-        self._transport: Optional[JSONRPCTransport] = None
+        self._process: asyncio.subprocess.Process | None = None
+        self._transport: JSONRPCTransport | None = None
         self._pending: dict[Union[int, str], asyncio.Future[dict[str, Any]]] = {}
         self._notification_handlers: dict[str, Callable[..., Any]] = {}
-        self._update_queue: asyncio.Queue[Optional[dict[str, Any]]] = asyncio.Queue()
-        self._reader_task: Optional[asyncio.Task[None]] = None
-        self._request_handler: Optional[Callable[[str, dict[str, Any]], Any]] = None
+        self._update_queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue()
+        self._reader_task: asyncio.Task[None] | None = None
+        self._request_handler: Callable[[str, dict[str, Any]], Any] | None = None
 
     async def start(self) -> None:
         """Launch the agent subprocess and begin reading messages."""
@@ -1620,7 +1619,7 @@ class ACPClient:
 
     async def initialize(
         self,
-        params: Optional[InitializeParams] = None,
+        params: InitializeParams | None = None,
     ) -> InitializeResult:
         """Perform the ``initialize`` handshake with the agent.
 
@@ -1651,7 +1650,7 @@ class ACPClient:
     async def new_session(
         self,
         cwd: str,
-        mcp_servers: Optional[list[dict[str, Any]]] = None,
+        mcp_servers: list[dict[str, Any]] | None = None,
     ) -> NewSessionResult:
         """Create a new conversation session.
 
@@ -1674,7 +1673,7 @@ class ACPClient:
         self,
         session_id: str,
         cwd: str,
-        mcp_servers: Optional[list[dict[str, Any]]] = None,
+        mcp_servers: list[dict[str, Any]] | None = None,
     ) -> None:
         """Load (resume) an existing session.
 
@@ -1695,7 +1694,7 @@ class ACPClient:
         self,
         session_id: str,
         text: str,
-        extra_content: Optional[list[ContentBlock]] = None,
+        extra_content: list[ContentBlock] | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
         """Send a prompt and yield ``session/update`` notifications.
 
@@ -1803,8 +1802,8 @@ class ACPClient:
 
     async def list_sessions(
         self,
-        cwd: Optional[str] = None,
-        cursor: Optional[str] = None,
+        cwd: str | None = None,
+        cursor: str | None = None,
     ) -> ListSessionsResult:
         """List sessions known to the agent.
 
@@ -1864,7 +1863,7 @@ class ACPAgent(ABC):
     """
 
     def __init__(self) -> None:
-        self._transport: Optional[JSONRPCTransport] = None
+        self._transport: JSONRPCTransport | None = None
         self._running = False
 
     # -- Handler methods (override these) -----------------------------------
@@ -2020,8 +2019,8 @@ class ACPAgent(ABC):
         session_id: str,
         path: str,
         *,
-        line: Optional[int] = None,
-        limit: Optional[int] = None,
+        line: int | None = None,
+        limit: int | None = None,
     ) -> str:
         """Read a text file via the client's ``fs/read_text_file`` method.
 
@@ -2072,8 +2071,8 @@ class ACPAgent(ABC):
         session_id: str,
         command: str,
         *,
-        args: Optional[list[str]] = None,
-        cwd: Optional[str] = None,
+        args: list[str] | None = None,
+        cwd: str | None = None,
     ) -> str:
         """Create a terminal via the client's ``terminal/create`` method.
 
@@ -2186,9 +2185,7 @@ class ACPAgent(ABC):
                     JSONRPCError(code=INTERNAL_ERROR, message=str(exc)),
                 )
 
-    async def _handle_method(
-        self, method: Optional[str], params: dict[str, Any]
-    ) -> Any:
+    async def _handle_method(self, method: str | None, params: dict[str, Any]) -> Any:
         """Dispatch a method call to the correct handler."""
         if method == "initialize":
             rp = from_raw(params)

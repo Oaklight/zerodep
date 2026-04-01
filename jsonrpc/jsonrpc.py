@@ -38,7 +38,6 @@ from typing import (
     Any,
     Callable,
     Iterator,
-    Optional,
     Union,
 )
 
@@ -129,7 +128,7 @@ class JSONRPCRequest:
     """
 
     method: str = ""
-    params: Optional[dict[str, Any]] = None
+    params: dict[str, Any] | None = None
     id: Union[str, int, None] = None
     jsonrpc: str = JSONRPC_VERSION
 
@@ -173,7 +172,7 @@ class JSONRPCResponse:
 
     id: Union[str, int, None] = None
     result: Any = None
-    error: Optional[JSONRPCError] = None
+    error: JSONRPCError | None = None
     jsonrpc: str = JSONRPC_VERSION
 
     def to_dict(self) -> dict[str, Any]:
@@ -373,7 +372,7 @@ class JSONRPCTransport:
         self.writer = writer
         self._closed = False
 
-    async def read_message(self) -> Optional[dict[str, Any]]:
+    async def read_message(self) -> dict[str, Any] | None:
         """Read the next JSON-RPC message.
 
         Returns:

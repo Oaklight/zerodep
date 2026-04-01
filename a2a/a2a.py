@@ -54,11 +54,7 @@ from dataclasses import dataclass, field, fields
 from typing import (
     Any,
     Callable,
-    Dict,
     Iterator,
-    List,
-    Optional,
-    Tuple,
     Union,
 )
 
@@ -220,7 +216,7 @@ def _serialize(obj: Any) -> Any:
     if isinstance(obj, (list, tuple)):
         return [_serialize(v) for v in obj]
     if hasattr(obj, "__dataclass_fields__"):
-        result: Dict[str, Any] = {}
+        result: dict[str, Any] = {}
         for f in fields(obj):
             val = getattr(obj, f.name)
             if val is None:
@@ -264,20 +260,20 @@ class Part:
         media_type: MIME type of the content.
     """
 
-    text: Optional[str] = None
-    raw: Optional[str] = None
-    url: Optional[str] = None
-    data: Optional[Any] = None
-    metadata: Optional[Dict[str, Any]] = None
-    filename: Optional[str] = None
-    media_type: Optional[str] = None
+    text: str | None = None
+    raw: str | None = None
+    url: str | None = None
+    data: Any | None = None
+    metadata: dict[str, Any] | None = None
+    filename: str | None = None
+    media_type: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "Part":
+    def from_dict(cls, d: dict[str, Any]) -> "Part":
         """Deserialize from a camelCase dictionary."""
         return cls(
             text=d.get("text"),
@@ -310,23 +306,23 @@ class Message:
 
     message_id: str = ""
     role: Role = Role.USER
-    parts: List[Part] = field(default_factory=list)
-    context_id: Optional[str] = None
-    task_id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
-    extensions: Optional[List[str]] = None
-    reference_task_ids: Optional[List[str]] = None
+    parts: list[Part] = field(default_factory=list)
+    context_id: str | None = None
+    task_id: str | None = None
+    metadata: dict[str, Any] | None = None
+    extensions: list[str] | None = None
+    reference_task_ids: list[str] | None = None
 
     def __post_init__(self) -> None:
         if not self.message_id:
             self.message_id = str(uuid.uuid4())
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "Message":
+    def from_dict(cls, d: dict[str, Any]) -> "Message":
         """Deserialize from a camelCase dictionary."""
         role_val = d.get("role", "ROLE_USER")
         return cls(
@@ -358,22 +354,22 @@ class Artifact:
     """
 
     artifact_id: str = ""
-    parts: List[Part] = field(default_factory=list)
-    name: Optional[str] = None
-    description: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
-    extensions: Optional[List[str]] = None
+    parts: list[Part] = field(default_factory=list)
+    name: str | None = None
+    description: str | None = None
+    metadata: dict[str, Any] | None = None
+    extensions: list[str] | None = None
 
     def __post_init__(self) -> None:
         if not self.artifact_id:
             self.artifact_id = str(uuid.uuid4())
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "Artifact":
+    def from_dict(cls, d: dict[str, Any]) -> "Artifact":
         """Deserialize from a camelCase dictionary."""
         return cls(
             artifact_id=d.get("artifactId", ""),
@@ -399,19 +395,19 @@ class TaskStatus:
     """
 
     state: TaskState = TaskState.SUBMITTED
-    message: Optional[Message] = None
-    timestamp: Optional[str] = None
+    message: Message | None = None
+    timestamp: str | None = None
 
     def __post_init__(self) -> None:
         if self.timestamp is None:
             self.timestamp = _now_iso()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "TaskStatus":
+    def from_dict(cls, d: dict[str, Any]) -> "TaskStatus":
         """Deserialize from a camelCase dictionary."""
         msg = d.get("message")
         return cls(
@@ -439,21 +435,21 @@ class Task:
 
     id: str = ""
     status: TaskStatus = field(default_factory=TaskStatus)
-    context_id: Optional[str] = None
-    artifacts: Optional[List[Artifact]] = None
-    history: Optional[List[Message]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    context_id: str | None = None
+    artifacts: list[Artifact] | None = None
+    history: list[Message] | None = None
+    metadata: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if not self.id:
             self.id = str(uuid.uuid4())
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "Task":
+    def from_dict(cls, d: dict[str, Any]) -> "Task":
         """Deserialize from a camelCase dictionary."""
         artifacts_raw = d.get("artifacts")
         history_raw = d.get("history")
@@ -492,14 +488,14 @@ class TaskStatusUpdateEvent:
     task_id: str = ""
     context_id: str = ""
     status: TaskStatus = field(default_factory=TaskStatus)
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "TaskStatusUpdateEvent":
+    def from_dict(cls, d: dict[str, Any]) -> "TaskStatusUpdateEvent":
         """Deserialize from a camelCase dictionary."""
         return cls(
             task_id=d.get("taskId", ""),
@@ -527,14 +523,14 @@ class TaskArtifactUpdateEvent:
     artifact: Artifact = field(default_factory=Artifact)
     append: bool = False
     last_chunk: bool = False
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "TaskArtifactUpdateEvent":
+    def from_dict(cls, d: dict[str, Any]) -> "TaskArtifactUpdateEvent":
         """Deserialize from a camelCase dictionary."""
         return cls(
             task_id=d.get("taskId", ""),
@@ -559,12 +555,12 @@ class StreamResponse:
         artifact_update: A TaskArtifactUpdateEvent.
     """
 
-    task: Optional[Task] = None
-    message: Optional[Message] = None
-    status_update: Optional[TaskStatusUpdateEvent] = None
-    artifact_update: Optional[TaskArtifactUpdateEvent] = None
+    task: Task | None = None
+    message: Message | None = None
+    status_update: TaskStatusUpdateEvent | None = None
+    artifact_update: TaskArtifactUpdateEvent | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         if self.task is not None:
             return {"task": self.task.to_dict()}
@@ -577,7 +573,7 @@ class StreamResponse:
         return {}
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "StreamResponse":
+    def from_dict(cls, d: dict[str, Any]) -> "StreamResponse":
         """Deserialize from a camelCase dictionary."""
         task_d = d.get("task")
         msg_d = d.get("message")
@@ -604,14 +600,14 @@ class AuthenticationInfo:
     """
 
     scheme: str = "Bearer"
-    credentials: Optional[str] = None
+    credentials: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "AuthenticationInfo":
+    def from_dict(cls, d: dict[str, Any]) -> "AuthenticationInfo":
         """Deserialize from a camelCase dictionary."""
         return cls(
             scheme=d.get("scheme", "Bearer"),
@@ -632,21 +628,21 @@ class PushNotificationConfig:
     """
 
     url: str = ""
-    id: Optional[str] = None
-    task_id: Optional[str] = None
-    token: Optional[str] = None
-    authentication: Optional[AuthenticationInfo] = None
+    id: str | None = None
+    task_id: str | None = None
+    token: str | None = None
+    authentication: AuthenticationInfo | None = None
 
     def __post_init__(self) -> None:
         if not self.id:
             self.id = str(uuid.uuid4())
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "PushNotificationConfig":
+    def from_dict(cls, d: dict[str, Any]) -> "PushNotificationConfig":
         """Deserialize from a camelCase dictionary."""
         auth = d.get("authentication")
         return cls(
@@ -669,17 +665,17 @@ class SendMessageConfiguration:
         return_immediately: If True, return without waiting for completion.
     """
 
-    accepted_output_modes: Optional[List[str]] = None
-    push_notification_config: Optional[PushNotificationConfig] = None
-    history_length: Optional[int] = None
+    accepted_output_modes: list[str] | None = None
+    push_notification_config: PushNotificationConfig | None = None
+    history_length: int | None = None
     return_immediately: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "SendMessageConfiguration":
+    def from_dict(cls, d: dict[str, Any]) -> "SendMessageConfiguration":
         """Deserialize from a camelCase dictionary."""
         pnc = d.get("pushNotificationConfig") or d.get("taskPushNotificationConfig")
         return cls(
@@ -703,15 +699,15 @@ class SendMessageRequest:
     """
 
     message: Message = field(default_factory=Message)
-    configuration: Optional[SendMessageConfiguration] = None
-    metadata: Optional[Dict[str, Any]] = None
+    configuration: SendMessageConfiguration | None = None
+    metadata: dict[str, Any] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "SendMessageRequest":
+    def from_dict(cls, d: dict[str, Any]) -> "SendMessageRequest":
         """Deserialize from a camelCase dictionary."""
         cfg = d.get("configuration")
         return cls(
@@ -730,10 +726,10 @@ class SendMessageResponse:
         message: A direct response message.
     """
 
-    task: Optional[Task] = None
-    message: Optional[Message] = None
+    task: Task | None = None
+    message: Message | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         if self.task is not None:
             return {"task": self.task.to_dict()}
@@ -742,7 +738,7 @@ class SendMessageResponse:
         return {}
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "SendMessageResponse":
+    def from_dict(cls, d: dict[str, Any]) -> "SendMessageResponse":
         """Deserialize from a camelCase dictionary."""
         task_d = d.get("task")
         msg_d = d.get("message")
@@ -767,12 +763,12 @@ class AgentProvider:
     organization: str = ""
     url: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "AgentProvider":
+    def from_dict(cls, d: dict[str, Any]) -> "AgentProvider":
         """Deserialize from a camelCase dictionary."""
         return cls(
             organization=d.get("organization", ""),
@@ -792,16 +788,16 @@ class AgentExtension:
     """
 
     uri: str = ""
-    description: Optional[str] = None
+    description: str | None = None
     required: bool = False
-    params: Optional[Dict[str, Any]] = None
+    params: dict[str, Any] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "AgentExtension":
+    def from_dict(cls, d: dict[str, Any]) -> "AgentExtension":
         """Deserialize from a camelCase dictionary."""
         return cls(
             uri=d.get("uri", ""),
@@ -822,17 +818,17 @@ class AgentCapabilities:
         extended_agent_card: Whether an authenticated extended card is available.
     """
 
-    streaming: Optional[bool] = None
-    push_notifications: Optional[bool] = None
-    extensions: Optional[List[AgentExtension]] = None
-    extended_agent_card: Optional[bool] = None
+    streaming: bool | None = None
+    push_notifications: bool | None = None
+    extensions: list[AgentExtension] | None = None
+    extended_agent_card: bool | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "AgentCapabilities":
+    def from_dict(cls, d: dict[str, Any]) -> "AgentCapabilities":
         """Deserialize from a camelCase dictionary."""
         exts = d.get("extensions")
         return cls(
@@ -860,17 +856,17 @@ class AgentSkill:
     id: str = ""
     name: str = ""
     description: str = ""
-    tags: List[str] = field(default_factory=list)
-    examples: Optional[List[str]] = None
-    input_modes: Optional[List[str]] = None
-    output_modes: Optional[List[str]] = None
+    tags: list[str] = field(default_factory=list)
+    examples: list[str] | None = None
+    input_modes: list[str] | None = None
+    output_modes: list[str] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "AgentSkill":
+    def from_dict(cls, d: dict[str, Any]) -> "AgentSkill":
         """Deserialize from a camelCase dictionary."""
         return cls(
             id=d.get("id", ""),
@@ -897,14 +893,14 @@ class AgentInterface:
     url: str = ""
     protocol_binding: str = "JSONRPC"
     protocol_version: str = "1.0"
-    tenant: Optional[str] = None
+    tenant: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "AgentInterface":
+    def from_dict(cls, d: dict[str, Any]) -> "AgentInterface":
         """Deserialize from a camelCase dictionary."""
         return cls(
             url=d.get("url", ""),
@@ -937,23 +933,23 @@ class AgentCard:
     name: str = ""
     description: str = ""
     version: str = "1.0.0"
-    supported_interfaces: List[AgentInterface] = field(default_factory=list)
-    default_input_modes: List[str] = field(default_factory=lambda: ["text/plain"])
-    default_output_modes: List[str] = field(default_factory=lambda: ["text/plain"])
-    skills: List[AgentSkill] = field(default_factory=list)
-    capabilities: Optional[AgentCapabilities] = None
-    provider: Optional[AgentProvider] = None
-    documentation_url: Optional[str] = None
-    security_schemes: Optional[Dict[str, Any]] = None
-    security_requirements: Optional[List[Dict[str, Any]]] = None
-    icon_url: Optional[str] = None
+    supported_interfaces: list[AgentInterface] = field(default_factory=list)
+    default_input_modes: list[str] = field(default_factory=lambda: ["text/plain"])
+    default_output_modes: list[str] = field(default_factory=lambda: ["text/plain"])
+    skills: list[AgentSkill] = field(default_factory=list)
+    capabilities: AgentCapabilities | None = None
+    provider: AgentProvider | None = None
+    documentation_url: str | None = None
+    security_schemes: dict[str, Any] | None = None
+    security_requirements: list[dict[str, Any]] | None = None
+    icon_url: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a camelCase dictionary."""
         return _serialize(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "AgentCard":
+    def from_dict(cls, d: dict[str, Any]) -> "AgentCard":
         """Deserialize from a camelCase dictionary."""
         interfaces = d.get("supportedInterfaces", [])
         skills = d.get("skills", [])
@@ -987,7 +983,7 @@ class A2AError(JSONRPCException):
     code: int = INTERNAL_ERROR
     default_message: str = "Internal error"
 
-    def __init__(self, message: Optional[str] = None, data: Any = None):
+    def __init__(self, message: str | None = None, data: Any = None):
         self.rpc_message = message or self.default_message
         self.data = data
         super().__init__(
@@ -1057,7 +1053,7 @@ def sse_encode(data: Any) -> bytes:
 
 def sse_decode_stream(
     response: http.client.HTTPResponse,
-) -> Iterator[Dict[str, Any]]:
+) -> Iterator[dict[str, Any]]:
     """Parse an SSE stream from an ``http.client.HTTPResponse``.
 
     Reads lines from the response, extracts ``data:`` fields, and yields
@@ -1123,14 +1119,14 @@ class A2AClient:
 
     def __init__(
         self,
-        agent_card_url: Optional[str] = None,
-        base_url: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        agent_card_url: str | None = None,
+        base_url: str | None = None,
+        headers: dict[str, str] | None = None,
     ):
         self._base_url = base_url.rstrip("/") if base_url else None
         self._agent_card_url = agent_card_url
         self._headers = headers or {}
-        self._agent_card: Optional[AgentCard] = None
+        self._agent_card: AgentCard | None = None
 
     # --- Agent Card ---
 
@@ -1174,7 +1170,7 @@ class A2AClient:
     def _make_rpc_request(
         self,
         method: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         request_id: Union[str, int, None] = None,
     ) -> JSONRPCResponse:
         """Send a JSON-RPC request and return the parsed response.
@@ -1219,9 +1215,9 @@ class A2AClient:
     def _make_sse_request(
         self,
         method: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         request_id: Union[str, int, None] = None,
-    ) -> Iterator[Dict[str, Any]]:
+    ) -> Iterator[dict[str, Any]]:
         """Send a JSON-RPC request and stream SSE responses.
 
         Uses ``http.client`` for chunked/streaming reads.
@@ -1265,10 +1261,10 @@ class A2AClient:
         self,
         text: str,
         *,
-        task_id: Optional[str] = None,
-        context_id: Optional[str] = None,
-        configuration: Optional[SendMessageConfiguration] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        task_id: str | None = None,
+        context_id: str | None = None,
+        configuration: SendMessageConfiguration | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> SendMessageResponse:
         """Send a text message to the agent (blocking).
 
@@ -1302,10 +1298,10 @@ class A2AClient:
         self,
         text: str,
         *,
-        task_id: Optional[str] = None,
-        context_id: Optional[str] = None,
-        configuration: Optional[SendMessageConfiguration] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        task_id: str | None = None,
+        context_id: str | None = None,
+        configuration: SendMessageConfiguration | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Iterator[StreamResponse]:
         """Send a text message and stream responses via SSE.
 
@@ -1339,7 +1335,7 @@ class A2AClient:
         self,
         task_id: str,
         *,
-        history_length: Optional[int] = None,
+        history_length: int | None = None,
     ) -> Task:
         """Retrieve the current state of a task.
 
@@ -1350,7 +1346,7 @@ class A2AClient:
         Returns:
             The current ``Task`` object.
         """
-        params: Dict[str, Any] = {"id": task_id}
+        params: dict[str, Any] = {"id": task_id}
         if history_length is not None:
             params["historyLength"] = history_length
         rpc_resp = self._make_rpc_request("GetTask", params)
@@ -1361,11 +1357,11 @@ class A2AClient:
     def list_tasks(
         self,
         *,
-        context_id: Optional[str] = None,
-        status: Optional[TaskState] = None,
-        page_size: Optional[int] = None,
-        page_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        context_id: str | None = None,
+        status: TaskState | None = None,
+        page_size: int | None = None,
+        page_token: str | None = None,
+    ) -> dict[str, Any]:
         """List tasks with optional filtering.
 
         Args:
@@ -1377,7 +1373,7 @@ class A2AClient:
         Returns:
             Raw result dictionary with ``tasks``, ``nextPageToken``, etc.
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if context_id:
             params["contextId"] = context_id
         if status:
@@ -1485,7 +1481,7 @@ class A2ARequestHandler(http.server.BaseHTTPRequestHandler):
             else:
                 # Collect all into a list and return as a single JSON-RPC
                 # response with the last item.
-                last: Optional[JSONRPCResponse] = None
+                last: JSONRPCResponse | None = None
                 for item in stream:
                     last = item
                 if last is not None:
@@ -1585,14 +1581,14 @@ class A2AServer:
         self,
         host: str = "0.0.0.0",
         port: int = 8000,
-        agent_card: Optional[AgentCard] = None,
+        agent_card: AgentCard | None = None,
     ):
         self.host = host
         self.port = port
         self.dispatcher = JSONRPCDispatcher()
         self.agent_card = agent_card or AgentCard()
-        self._httpd: Optional[http.server.HTTPServer] = None
-        self._thread: Optional[threading.Thread] = None
+        self._httpd: http.server.HTTPServer | None = None
+        self._thread: threading.Thread | None = None
 
     def _create_server(self) -> http.server.HTTPServer:
         """Create and configure the HTTP server instance."""
@@ -1657,7 +1653,7 @@ class TaskStore:
     """
 
     def __init__(self) -> None:
-        self._tasks: Dict[str, Task] = {}
+        self._tasks: dict[str, Task] = {}
         self._lock = threading.Lock()
 
     def save(self, task: Task) -> None:
@@ -1669,7 +1665,7 @@ class TaskStore:
         with self._lock:
             self._tasks[task.id] = copy.deepcopy(task)
 
-    def get(self, task_id: str) -> Optional[Task]:
+    def get(self, task_id: str) -> Task | None:
         """Retrieve a task by ID.
 
         Args:
@@ -1697,11 +1693,11 @@ class TaskStore:
     def list_tasks(
         self,
         *,
-        context_id: Optional[str] = None,
-        status: Optional[TaskState] = None,
+        context_id: str | None = None,
+        status: TaskState | None = None,
         page_size: int = 50,
-        page_token: Optional[str] = None,
-    ) -> Tuple[List[Task], str, int]:
+        page_token: str | None = None,
+    ) -> tuple[list[Task], str, int]:
         """List tasks with optional filtering and pagination.
 
         Args:
@@ -1765,7 +1761,7 @@ class TaskManager:
     """
 
     # Valid state transitions (from -> set of allowed to-states)
-    _TRANSITIONS: Dict[TaskState, set] = {
+    _TRANSITIONS: dict[TaskState, set] = {
         TaskState.UNSPECIFIED: {TaskState.SUBMITTED},
         TaskState.SUBMITTED: {
             TaskState.WORKING,
@@ -1800,16 +1796,16 @@ class TaskManager:
         TaskState.REJECTED: set(),
     }
 
-    def __init__(self, store: Optional[TaskStore] = None):
+    def __init__(self, store: TaskStore | None = None):
         self.store = store or TaskStore()
-        self._listeners: Dict[str, List[Callable[[StreamResponse], None]]] = {}
+        self._listeners: dict[str, list[Callable[[StreamResponse], None]]] = {}
         self._lock = threading.Lock()
 
     def create_task(
         self,
         message: Message,
         *,
-        context_id: Optional[str] = None,
+        context_id: str | None = None,
     ) -> Task:
         """Create a new task from an incoming message.
 
@@ -1851,7 +1847,7 @@ class TaskManager:
         task_id: str,
         state: TaskState,
         *,
-        status_message: Optional[Message] = None,
+        status_message: Message | None = None,
     ) -> Task:
         """Transition a task to a new state.
 
@@ -2038,7 +2034,7 @@ if __name__ == "__main__":
     task_manager = TaskManager()
 
     @server.dispatcher.register("SendMessage")
-    def handle_send_message(params: Dict[str, Any]) -> Dict[str, Any]:
+    def handle_send_message(params: dict[str, Any]) -> dict[str, Any]:
         """Handle a SendMessage request by echoing the input."""
         req = SendMessageRequest.from_dict(params)
         text = ""
@@ -2060,8 +2056,8 @@ if __name__ == "__main__":
 
     @server.dispatcher.register("SendStreamingMessage")
     def handle_stream_message(
-        params: Dict[str, Any],
-    ) -> Iterator[Dict[str, Any]]:
+        params: dict[str, Any],
+    ) -> Iterator[dict[str, Any]]:
         """Handle a SendStreamingMessage by streaming token-by-token."""
         req = SendMessageRequest.from_dict(params)
         text = ""
@@ -2108,14 +2104,14 @@ if __name__ == "__main__":
         ).to_dict()
 
     @server.dispatcher.register("GetTask")
-    def handle_get_task(params: Dict[str, Any]) -> Dict[str, Any]:
+    def handle_get_task(params: dict[str, Any]) -> dict[str, Any]:
         """Handle a GetTask request."""
         task_id = params.get("id", "")
         task = task_manager.get_task(task_id)
         return task.to_dict()
 
     @server.dispatcher.register("CancelTask")
-    def handle_cancel_task(params: Dict[str, Any]) -> Dict[str, Any]:
+    def handle_cancel_task(params: dict[str, Any]) -> dict[str, Any]:
         """Handle a CancelTask request."""
         task_id = params.get("id", "")
         task = task_manager.cancel_task(task_id)

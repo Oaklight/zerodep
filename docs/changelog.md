@@ -12,6 +12,7 @@
 
 ### 功能增强
 
+- **Search 模块**：Bayesian BM25 概率校准——通过 sigmoid 似然、复合先验和贝叶斯后验，将无界 BM25 分数转换为校准概率 [0,1]。支持从语料统计自动估计 α/β 参数和可选的基准率校正。校准状态在 JSON 和 SQLite 中持久化。
 - **A2A 模块**：将内联 JSON-RPC 层提取至共享 `jsonrpc` 模块；`A2AError` 现继承 `JSONRPCException`，实现统一的错误处理。
 - **ACP 模块**：将内联 JSON-RPC 层提取至共享 `jsonrpc` 模块；用基于正则的算法转换替换 39 条硬编码 camelCase 映射表；序列化统一为 A2A 风格的单一递归 `to_dict()`，支持空集合过滤。
 

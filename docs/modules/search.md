@@ -8,7 +8,7 @@
 
 | 文件 | 说明 | 依赖 |
 |------|------|------|
-| `sparse_search.py` | 纯 Python 实现 | 无（仅标准库：`re`、`math`、`json`、`sqlite3`、`collections`、`dataclasses`） |
+| `sparse_search.py` | 纯 Python 实现 | 无（仅标准库：`re`、`math`、`json`、`sqlite3`、`statistics`、`collections`、`dataclasses`） |
 
 ### 功能特性
 
@@ -19,6 +19,7 @@
 - **元数据过滤** -- 附加任意 JSON 元数据，搜索时按条件过滤
 - **持久化** -- JSON 或 SQLite 格式保存/加载
 - **可插拔分词器** -- 默认 Unicode 分词；可替换为 `jieba.lcut`、NLTK 等
+- **Bayesian BM25 校准** -- 通过 sigmoid 似然、复合先验和贝叶斯后验，将原始 BM25 分数转换为校准概率 [0, 1]
 - **倒排索引** -- O(matched_docs) 搜索，查询速度比 rank-bm25 快 34-132 倍
 
 ## 快速开始
@@ -104,6 +105,40 @@ index = SparseIndex(
 )
 ```
 
+### Bayesian BM25 概率校准
+
+将原始 BM25 分数转换为校准概率 [0, 1]：
+
+```python
+index = SparseIndex()
+index.add("doc1", "the quick brown fox jumps over the lazy dog")
+index.add("doc2", "the quick brown fox")
+index.add("doc3", "the lazy dog sleeps all day long")
+
+# 从语料统计自动估计校准参数
+index.calibrate()
+
+results = index.search("quick fox")
+for r in results:
+    print(f"{r.doc_id}: {r.score:.4f}")  # 分数现在在 [0, 1] 范围内
+```
+
+也可以手动指定参数或应用基准率校正：
+
+```python
+# 手动参数
+index.calibrate(alpha=1.5, beta=2.0)
+
+# 带基准率校正（将概率向先验方向偏移）
+index.calibrate(alpha=1.5, beta=2.0, base_rate=0.05)
+```
+
+校准分数的适用场景：
+
+- **阈值过滤** -- 拒绝低于概率阈值的结果
+- **多信号融合** -- 在统一尺度上与其他评分信号组合
+- **跨查询对比** -- 概率值可在不同查询间进行比较
+
 ### 元数据与过滤
 
 ```python
@@ -188,7 +223,7 @@ loaded = SparseIndex.load("index.db")
 
 ## API 参考
 
-### `SparseIndex(variant, k1, b, delta, field_weights, tokenize)`
+### `SparseIndex(variant, k1, b, delta, field_weights, tokenize, calibrated)`
 
 主搜索索引类。
 
@@ -202,6 +237,7 @@ loaded = SparseIndex.load("index.db")
 | `delta` | `float` | `1.0` | BM25+ 下界修正值。设为 `0` 则为经典 BM25 |
 | `field_weights` | `dict[str, float] \| None` | `None` | BM25F 各字段权重 |
 | `tokenize` | `Callable[[str], list[str]] \| None` | `None` | 自定义分词函数。默认为 Unicode 分词 + 小写化 |
+| `calibrated` | `bool` | `False` | 若为 `True`，BM25 分数将通过 Bayesian BM25 转换为校准概率 |
 
 **方法：**
 
@@ -211,6 +247,7 @@ loaded = SparseIndex.load("index.db")
 | `remove(doc_id)` | 删除文档。未找到时抛出 `KeyError` |
 | `update(doc_id, content, metadata=None)` | 替换文档。未找到时抛出 `KeyError` |
 | `search(query, top_k=10, filters=None)` | 搜索并返回排名结果 |
+| `calibrate(*, alpha=None, beta=None, base_rate=None, n_samples=50)` | 估计或设置贝叶斯校准参数。启用校准模式 |
 | `save(path, format=None)` | 保存索引到磁盘（JSON 或 SQLite） |
 | `load(path)` | *(类方法)* 从磁盘加载索引（自动检测格式） |
 

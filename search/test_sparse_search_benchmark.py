@@ -242,3 +242,37 @@ class TestLargeSearchPerformance:
     def test_search_1k_rank_bm25(self, benchmark):
         """rank-bm25 BM25Okapi: search 1000-doc index."""
         benchmark(self.ref_bm25.get_scores, self.query_tokens)
+
+
+# ---------------------------------------------------------------------------
+# Performance: Bayesian calibration overhead
+# ---------------------------------------------------------------------------
+
+
+class TestCalibrationPerformance:
+    """Measure Bayesian BM25 calibration overhead."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self):
+        self.idx_raw = SparseIndex()
+        self.idx_cal = SparseIndex()
+        for i, doc in enumerate(CORPUS):
+            self.idx_raw.add(f"d{i}", doc)
+            self.idx_cal.add(f"d{i}", doc)
+        self.idx_cal.calibrate()
+        self.query = "quick brown fox search"
+
+    def test_calibrate_corpus(self, benchmark):
+        """Benchmark calibrate() on 20-doc corpus."""
+        idx = SparseIndex()
+        for i, doc in enumerate(CORPUS):
+            idx.add(f"d{i}", doc)
+        benchmark(idx.calibrate)
+
+    def test_search_raw(self, benchmark):
+        """Baseline: raw BM25 search."""
+        benchmark(self.idx_raw.search, self.query, top_k=10)
+
+    def test_search_calibrated(self, benchmark):
+        """Calibrated BM25 search (probability output)."""
+        benchmark(self.idx_cal.search, self.query, top_k=10)

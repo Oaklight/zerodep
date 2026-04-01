@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 import pytest
-from sparse_search import SparseIndex, _default_tokenize
+from sparse_search import (
+    SparseIndex,
+    _default_tokenize,
+    _log_odds_conjunction,
+    _logit,
+    _prob_or,
+    _sigmoid,
+)
 
 # ---------------------------------------------------------------------------
 # Default tokenizer
@@ -513,3 +520,134 @@ class TestEdgeCases:
         idx.add("d1", "version 42 release")
         results = idx.search("42")
         assert len(results) == 1
+
+
+# ---------------------------------------------------------------------------
+# Bayesian BM25 calibration
+# ---------------------------------------------------------------------------
+
+
+class TestBayesianCalibration:
+    """Tests for Bayesian BM25 probabilistic calibration."""
+
+    def _build_index(self) -> SparseIndex:
+        idx = SparseIndex()
+        idx.add("d1", "the quick brown fox jumps over the lazy dog")
+        idx.add("d2", "the quick brown fox")
+        idx.add("d3", "the lazy dog sleeps all day long")
+        idx.add("d4", "a fast red car drives on the highway")
+        idx.add("d5", "python programming language is great for data science")
+        idx.add("d6", "machine learning and artificial intelligence")
+        idx.add("d7", "the brown fox is quick and clever")
+        idx.add("d8", "dogs and cats are popular pets worldwide")
+        idx.add("d9", "natural language processing with transformers")
+        idx.add("d10", "search engines use inverted indexes for retrieval")
+        return idx
+
+    def test_sigmoid_logit_inverse(self):
+        for p in [0.01, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99]:
+            assert abs(_sigmoid(_logit(p)) - p) < 1e-9
+
+    def test_sigmoid_extremes(self):
+        assert abs(_sigmoid(0.0) - 0.5) < 1e-9
+        assert _sigmoid(100.0) > 0.999
+        assert _sigmoid(-100.0) < 0.001
+
+    def test_calibrated_scores_bounded(self):
+        idx = self._build_index()
+        idx.calibrate()
+        results = idx.search("quick brown fox", top_k=20)
+        assert len(results) > 0
+        for r in results:
+            assert 0.0 <= r.score <= 1.0, f"Score {r.score} out of [0,1]"
+
+    def test_calibrated_preserves_ranking(self):
+        idx = self._build_index()
+        raw_results = idx.search("quick brown fox", top_k=20)
+        raw_order = [r.doc_id for r in raw_results]
+
+        idx.calibrate()
+        cal_results = idx.search("quick brown fox", top_k=20)
+        cal_order = [r.doc_id for r in cal_results]
+
+        assert raw_order == cal_order
+
+    def test_auto_calibrate(self):
+        idx = self._build_index()
+        idx.calibrate()
+        assert idx.calibrated is True
+        assert idx._alpha is not None
+        assert idx._beta is not None
+        assert idx._alpha > 0
+        assert idx._beta > 0
+
+    def test_manual_calibrate(self):
+        idx = self._build_index()
+        idx.calibrate(alpha=2.0, beta=3.0)
+        assert idx._alpha == 2.0
+        assert idx._beta == 3.0
+        assert idx.calibrated is True
+
+    def test_base_rate_effect(self):
+        idx = self._build_index()
+        idx.calibrate(alpha=1.0, beta=2.0)
+        results_no_br = idx.search("quick fox", top_k=5)
+
+        idx.calibrate(alpha=1.0, beta=2.0, base_rate=0.05)
+        results_br = idx.search("quick fox", top_k=5)
+
+        # base_rate < 0.5 should pull probabilities down
+        for r_no, r_br in zip(results_no_br, results_br):
+            assert r_br.score <= r_no.score
+
+    def test_prob_or_basic(self):
+        assert abs(_prob_or([0.5, 0.5]) - 0.75) < 1e-9
+        assert abs(_prob_or([0.0]) - 0.0) < 1e-6
+        assert abs(_prob_or([1.0]) - 1.0) < 1e-6
+
+    def test_log_odds_conjunction(self):
+        result = _log_odds_conjunction([0.5, 0.5, 0.5])
+        assert abs(result - 0.5) < 0.2
+        result_high = _log_odds_conjunction([0.9, 0.9])
+        assert result_high > 0.5
+
+    def test_save_load_calibrated_json(self, tmp_path):
+        idx = self._build_index()
+        idx.calibrate(alpha=1.5, beta=2.5, base_rate=0.1)
+
+        path = str(tmp_path / "idx.json")
+        idx.save(path)
+        loaded = SparseIndex.load(path)
+
+        assert loaded.calibrated is True
+        assert loaded._alpha == 1.5
+        assert loaded._beta == 2.5
+        assert loaded._base_rate == 0.1
+        results = loaded.search("quick fox")
+        for r in results:
+            assert 0.0 <= r.score <= 1.0
+
+    def test_save_load_calibrated_sqlite(self, tmp_path):
+        idx = self._build_index()
+        idx.calibrate(alpha=1.5, beta=2.5, base_rate=0.1)
+
+        path = str(tmp_path / "idx.db")
+        idx.save(path)
+        loaded = SparseIndex.load(path)
+
+        assert loaded.calibrated is True
+        assert loaded._alpha == 1.5
+        assert loaded._beta == 2.5
+        assert loaded._base_rate == 0.1
+
+    def test_uncalibrated_default(self):
+        idx = self._build_index()
+        assert idx.calibrated is False
+        results = idx.search("quick fox", top_k=5)
+        for r in results:
+            assert r.score > 0
+
+    def test_calibrate_empty_index_raises(self):
+        idx = SparseIndex()
+        with pytest.raises(RuntimeError, match="empty index"):
+            idx.calibrate()

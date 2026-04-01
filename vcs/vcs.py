@@ -38,6 +38,27 @@ import sys
 import tempfile
 from typing import Any, Callable, Protocol, runtime_checkable
 
+__all__ = [
+    # Exceptions
+    "VCSError",
+    "BinaryNotFoundError",
+    "CommandError",
+    "NotARepoError",
+    # Data classes
+    "FileStatus",
+    "Commit",
+    "BlameLine",
+    "WorkspaceInfo",
+    # Backend protocol
+    "VCSBackend",
+    # Backend implementations
+    "Git",
+    "Mercurial",
+    "Jujutsu",
+    # Detection
+    "detect",
+]
+
 # ── Sentinel for injection parameters ──────────────────────────────────────
 
 

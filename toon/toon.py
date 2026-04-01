@@ -35,6 +35,22 @@ from decimal import Decimal
 from pathlib import PurePath
 from typing import Any, Literal, TypedDict, TypeGuard, Union
 
+__all__ = [
+    # Type aliases
+    "JsonPrimitive",
+    "JsonObject",
+    "JsonArray",
+    "JsonValue",
+    # Options
+    "EncodeOptions",
+    "DecodeOptions",
+    # Exceptions
+    "ToonDecodeError",
+    # Public API
+    "encode",
+    "decode",
+]
+
 # ── Types ─────────────────────────────────────────────────────────────────────
 
 JsonPrimitive = Union[str, int, float, bool, None]

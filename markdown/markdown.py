@@ -40,6 +40,10 @@ from __future__ import annotations
 import html
 import re
 
+__all__ = [
+    "render",
+]
+
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 _ESCAPED_CHARS = r"\\!\"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~"

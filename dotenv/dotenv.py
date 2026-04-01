@@ -28,6 +28,15 @@ import sys
 from pathlib import Path
 from typing import IO, Iterator, Mapping
 
+__all__ = [
+    "find_dotenv",
+    "get_key",
+    "set_key",
+    "unset_key",
+    "dotenv_values",
+    "load_dotenv",
+]
+
 # ── Constants / Regex ──────────────────────────────────────────────────────────
 
 _ESCAPE_MAP = {

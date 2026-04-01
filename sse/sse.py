@@ -54,6 +54,27 @@ import time
 from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator
 from typing import Any, Callable
 
+__all__ = [
+    # Constants
+    "DEFAULT_RETRY_INTERVAL",
+    "DEFAULT_TIMEOUT",
+    # Data classes
+    "SSEEvent",
+    # Low-level parsers
+    "EventSource",
+    "AsyncEventSource",
+    # Exceptions
+    "SSEError",
+    "SSEConnectionError",
+    "SSEHTTPError",
+    # High-level clients
+    "SSEClient",
+    "AsyncSSEClient",
+    # Convenience functions
+    "connect",
+    "async_connect",
+]
+
 
 def _ensure_sibling_path(name: str) -> str:
     """Return the sibling module directory and prepend it to ``sys.path``."""

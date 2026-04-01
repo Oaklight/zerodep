@@ -8,7 +8,7 @@ The `sparse_search` module provides a single-file inverted-index search engine s
 
 | File | Description | Dependencies |
 |------|-------------|--------------|
-| `sparse_search.py` | Pure Python implementation | None (stdlib only: `re`, `math`, `json`, `sqlite3`, `collections`, `dataclasses`) |
+| `sparse_search.py` | Pure Python implementation | None (stdlib only: `re`, `math`, `json`, `sqlite3`, `statistics`, `collections`, `dataclasses`) |
 
 ### Key Features
 
@@ -19,6 +19,7 @@ The `sparse_search` module provides a single-file inverted-index search engine s
 - **Metadata filtering** -- attach arbitrary JSON metadata, filter at search time
 - **Persistence** -- save/load in JSON or SQLite format
 - **Pluggable tokenizer** -- default Unicode word splitter; plug in `jieba.lcut`, NLTK, etc.
+- **Bayesian BM25 calibration** -- convert raw BM25 scores to calibrated [0,1] probabilities via sigmoid likelihood, composite prior, and Bayesian posterior
 - **Inverted index** -- O(matched_docs) search, 34-132x faster than rank-bm25 at query time
 
 ## How to Use in Your Project
@@ -104,6 +105,40 @@ index = SparseIndex(
 )
 ```
 
+### Bayesian BM25 Calibration
+
+Convert raw BM25 scores to calibrated probabilities in [0, 1]:
+
+```python
+index = SparseIndex()
+index.add("doc1", "the quick brown fox jumps over the lazy dog")
+index.add("doc2", "the quick brown fox")
+index.add("doc3", "the lazy dog sleeps all day long")
+
+# Auto-estimate calibration parameters from corpus
+index.calibrate()
+
+results = index.search("quick fox")
+for r in results:
+    print(f"{r.doc_id}: {r.score:.4f}")  # scores are now in [0, 1]
+```
+
+You can also provide parameters manually or apply a base-rate correction:
+
+```python
+# Manual parameters
+index.calibrate(alpha=1.5, beta=2.0)
+
+# With base-rate correction (shifts probabilities toward the prior)
+index.calibrate(alpha=1.5, beta=2.0, base_rate=0.05)
+```
+
+Calibrated scores are useful for:
+
+- **Threshold filtering** -- reject results below a probability cutoff
+- **Multi-signal fusion** -- combine with other scoring signals on a common scale
+- **Cross-query comparison** -- probabilities are comparable across different queries
+
 ### Metadata and Filtering
 
 ```python
@@ -188,7 +223,7 @@ Insert time is **O(tokens_in_doc)** per document and does not degrade as the ind
 
 ## API Reference
 
-### `SparseIndex(variant, k1, b, delta, field_weights, tokenize)`
+### `SparseIndex(variant, k1, b, delta, field_weights, tokenize, calibrated)`
 
 The main search index class.
 
@@ -202,6 +237,7 @@ The main search index class.
 | `delta` | `float` | `1.0` | BM25+ lower-bound correction. `0` for classic BM25 |
 | `field_weights` | `dict[str, float] \| None` | `None` | Per-field boost weights for BM25F |
 | `tokenize` | `Callable[[str], list[str]] \| None` | `None` | Custom tokenizer. Defaults to Unicode word split + lowercase |
+| `calibrated` | `bool` | `False` | If `True`, BM25 scores are converted to calibrated probabilities via Bayesian BM25 |
 
 **Methods:**
 
@@ -211,6 +247,7 @@ The main search index class.
 | `remove(doc_id)` | Remove a document. Raises `KeyError` if not found. |
 | `update(doc_id, content, metadata=None)` | Replace a document. Raises `KeyError` if not found. |
 | `search(query, top_k=10, filters=None)` | Search and return ranked results. |
+| `calibrate(*, alpha=None, beta=None, base_rate=None, n_samples=50)` | Estimate or set Bayesian calibration parameters. Enables calibrated mode. |
 | `save(path, format=None)` | Save index to disk (JSON or SQLite). |
 | `load(path)` | *(classmethod)* Load index from disk (auto-detects format). |
 

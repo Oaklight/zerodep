@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Enhancements
 
+- **Search module**: Bayesian BM25 probabilistic calibration -- converts unbounded BM25 scores to calibrated [0,1] probabilities via sigmoid likelihood, composite prior, and Bayesian posterior. Supports auto-estimation of α/β from corpus statistics and optional base-rate correction. Calibration state persisted in JSON and SQLite.
 - **A2A module**: extracted inline JSON-RPC layer into shared `jsonrpc` module; `A2AError` now subclasses `JSONRPCException` for unified error handling.
 - **ACP module**: extracted inline JSON-RPC layer into shared `jsonrpc` module; replaced 39-entry hardcoded camelCase rename map with algorithmic regex-based conversion; unified serialization to A2A-style single recursive `to_dict()` with empty collection filtering.
 

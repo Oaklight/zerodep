@@ -29,12 +29,21 @@ Apple-to-apple performance comparison between zerodep sparse_search and [`rank-b
 |-------------|---------|-----------|-------|
 | 1000 docs | 56.6 ms | 8.4 ms | 6.7x slower |
 
+### Bayesian Calibration Overhead
+
+| Operation | Time | vs Raw Search |
+|-----------|------|---------------|
+| Raw BM25 search | 16.8 us | baseline |
+| Calibrated BM25 search | 42.0 us | ~2.5x overhead |
+| `calibrate()` (20 docs) | 565 us | one-time cost |
+
 ## Key Takeaways
 
 - **Search is 34-132x faster** thanks to an inverted index that traverses only matching postings O(matched_docs), vs rank-bm25's full corpus scan O(N). The advantage grows with corpus size.
 - **Indexing is slower** due to richer data structures (reverse index for fast deletes, metadata storage, persistence support). This is a one-time cost vs repeated search savings.
 - **Ranking correctness** is validated against rank-bm25 across BM25Okapi, BM25Plus, and BM25L variants with 8 queries -- results match in ranking order.
 - zerodep has **zero pip dependencies** and supports dynamic add/remove/update without rebuilding the index.
+- **Bayesian calibration** adds ~2.5x overhead per search (still faster than rank-bm25). `calibrate()` is a one-time cost (~565 us for 20 docs).
 
 ## Run It Yourself
 

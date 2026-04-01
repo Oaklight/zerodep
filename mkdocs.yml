@@ -139,11 +139,15 @@ extra:
 nav:
   - Home: index.md
   - Guide:
+      - Quick Start: guide/quickstart.md
       - Design Philosophy: guide/philosophy.md
       - Design & Architecture: guide/design.md
       - Internal Conventions: guide/internals.md
+      - Installation: guide/installation.md
       - CLI Tool: guide/cli.md
       - Manifest: guide/manifest.md
+      - Migration Guide: guide/migration.md
+      - FAQ: guide/faq.md
   - Modules:
       - modules/index.md
       - Web & Networking:

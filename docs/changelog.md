@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-01
+
 ### New Modules
 
 - **File Lock module**: cross-platform advisory file lock using only stdlib. `fcntl.flock` on Unix/macOS, `msvcrt.locking` with exponential-backoff polling on Windows. Context manager support, non-blocking `try_lock()`, auto parent-dir creation.
@@ -16,6 +18,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Search module**: Bayesian BM25 probabilistic calibration -- converts unbounded BM25 scores to calibrated [0,1] probabilities via sigmoid likelihood, composite prior, and Bayesian posterior. Supports auto-estimation of α/β from corpus statistics and optional base-rate correction. Calibration state persisted in JSON and SQLite.
 - **A2A module**: extracted inline JSON-RPC layer into shared `jsonrpc` module; `A2AError` now subclasses `JSONRPCException` for unified error handling.
 - **ACP module**: extracted inline JSON-RPC layer into shared `jsonrpc` module; replaced 39-entry hardcoded camelCase rename map with algorithmic regex-based conversion; unified serialization to A2A-style single recursive `to_dict()` with empty collection filtering.
+
+### Style
+
+- Modernized type annotations: replaced `Optional`/`Dict`/`List` with PEP 604/585 style.
+- Added `__all__` exports to all modules.
+- Standardized section divider style across modules.
+- Added `slots=True` to frozen dataclasses.
+- Renamed httpclient test files for naming consistency.
+- Standardized test file docstring format.
 
 ## [0.2.2] - 2026-03-31
 

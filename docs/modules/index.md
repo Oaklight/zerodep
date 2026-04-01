@@ -75,3 +75,23 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [retry](retry.md) | Decorator-based retry with configurable backoff strategies | `tenacity` |
 | [search](search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF full-text search engine | `rank-bm25` |
 | [structlog](structlog.md) | Structured logging with pretty console output | `structlog` |
+
+## Inter-Module Dependencies
+
+Most zerodep modules are fully standalone. The following modules depend on other zerodep modules:
+
+```mermaid
+graph LR
+    a2a --> jsonrpc
+    acp --> jsonrpc
+    config --> dotenv
+    config --> yaml
+    config --> jsonc
+    frontmatter --> yaml
+    skills --> frontmatter
+    skills --> search
+    sse --> httpclient
+    vcs --> diff
+```
+
+When using the [CLI tool](../guide/cli.md), dependencies are resolved automatically. For manual installation, ensure all required modules are present.

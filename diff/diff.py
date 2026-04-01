@@ -45,6 +45,27 @@ import difflib
 import re
 from collections.abc import Sequence
 
+__all__ = [
+    # Exceptions
+    "DiffError",
+    "PatchParseError",
+    "PatchApplyError",
+    # Data structures
+    "Hunk",
+    "PatchedFile",
+    "Patch",
+    "ConflictRegion",
+    "MergeResult",
+    # Diff generation
+    "make_diff",
+    # Patch operations
+    "parse_patch",
+    "apply_patch",
+    "reverse_patch",
+    # Three-way merge
+    "merge3",
+]
+
 # ── Exceptions ──────────────────────────────────────────────────────
 
 

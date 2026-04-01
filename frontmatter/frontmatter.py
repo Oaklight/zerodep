@@ -55,6 +55,22 @@ import sys
 from pathlib import Path
 from typing import IO, Any
 
+__all__ = [
+    # Exceptions
+    "FrontmatterError",
+    "HandlerError",
+    # Data class
+    "Document",
+    # Detection
+    "detect_handler",
+    "check",
+    # Public API
+    "loads",
+    "load",
+    "dumps",
+    "dump",
+]
+
 # ── Sibling yaml import (guarded) ──
 
 try:

@@ -23,6 +23,13 @@ import re
 from collections.abc import Sequence
 from typing import Union
 
+__all__ = [
+    "QrCode",
+    "QrSegment",
+    "DataTooLongError",
+    "print_qr_terminal",
+]
+
 # ---- QR Code symbol class ----
 
 

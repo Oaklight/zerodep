@@ -32,6 +32,14 @@ import json
 import re
 from typing import IO, Any
 
+__all__ = [
+    "JSONCDecodeError",
+    "loads",
+    "load",
+    "dumps",
+    "dump",
+]
+
 # ── Comment stripping ─────────────────────────────────────────────────────────
 
 # Matches (in priority order):

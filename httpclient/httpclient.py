@@ -52,6 +52,47 @@ from collections.abc import AsyncIterator, Iterator
 from typing import IO, Any
 from urllib.parse import quote, urlencode, urlparse
 
+__all__ = [
+    # Constants
+    "DEFAULT_TIMEOUT",
+    "DEFAULT_MAX_REDIRECTS",
+    "DEFAULT_USER_AGENT",
+    "DEFAULT_POOL_SIZE",
+    "DEFAULT_POOL_IDLE_TIMEOUT",
+    # Exceptions
+    "HttpClientError",
+    "HTTPError",
+    "TooManyRedirects",
+    "HttpConnectionError",
+    "HttpTimeoutError",
+    # Response classes
+    "Response",
+    "StreamingResponse",
+    # Auth
+    "Auth",
+    "BasicAuth",
+    "DigestAuth",
+    # Sync convenience functions
+    "get",
+    "post",
+    "put",
+    "patch",
+    "delete",
+    "head",
+    "options",
+    # Async convenience functions
+    "async_get",
+    "async_post",
+    "async_put",
+    "async_patch",
+    "async_delete",
+    "async_head",
+    "async_options",
+    # Client classes
+    "Client",
+    "AsyncClient",
+]
+
 # ── Constants / Defaults ──
 
 logger = logging.getLogger(__name__)

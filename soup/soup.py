@@ -32,6 +32,12 @@ import re
 from html.parser import HTMLParser
 from typing import Any
 
+__all__ = [
+    "SELF_CLOSING_TAGS",
+    "Tag",
+    "Soup",
+]
+
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 SELF_CLOSING_TAGS = frozenset(

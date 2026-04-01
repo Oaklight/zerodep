@@ -38,6 +38,22 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
+__all__ = [
+    # Sentinels
+    "MISSING",
+    # Exceptions
+    "ConfigError",
+    "UndefinedValueError",
+    # Type coercion helpers
+    "Csv",
+    "Choices",
+    # Main class
+    "Config",
+    # Module-level convenience
+    "setup",
+    "config",
+]
+
 
 def _ensure_sibling_path(name: str) -> str:
     """Return the sibling module directory and prepend it to ``sys.path``."""

@@ -78,6 +78,18 @@ import io  # noqa: E402
 import re  # noqa: E402
 from typing import IO, Any, Callable  # noqa: E402
 
+__all__ = [
+    # Exceptions
+    "XMLError",
+    "ParsingInterrupted",
+    # Data classes
+    "ExtractedTag",
+    # Public API
+    "parse",
+    "unparse",
+    "extract_tags",
+]
+
 # ── Exceptions ────────────────────────────────────────────────────────────────
 
 

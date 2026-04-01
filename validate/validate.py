@@ -44,6 +44,24 @@ import re
 import typing
 from typing import Any, Callable, Union, get_type_hints
 
+__all__ = [
+    # Constraint annotations
+    "Gt",
+    "Ge",
+    "Lt",
+    "Le",
+    "MinLen",
+    "MaxLen",
+    "Match",
+    "Predicate",
+    # Error types
+    "ErrorDetail",
+    "ValidationError",
+    # Public API
+    "validate",
+    "json_schema",
+]
+
 # ── Constraint Annotations ──
 
 

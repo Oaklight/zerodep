@@ -48,6 +48,25 @@ import random
 import time
 from typing import Any, Callable
 
+__all__ = [
+    # Constants
+    "DEFAULT_MAX_RETRIES",
+    "DEFAULT_BASE_DELAY",
+    "DEFAULT_MAX_DELAY",
+    "DEFAULT_BACKOFF_FACTOR",
+    # Exceptions
+    "RetryError",
+    # Data classes
+    "RetryState",
+    # Predicates
+    "retry_if_exception",
+    "retry_if_result",
+    "retry_if_status",
+    # Main API
+    "retry",
+    "retry_call",
+]
+
 # ── Defaults ──
 
 DEFAULT_MAX_RETRIES = 3

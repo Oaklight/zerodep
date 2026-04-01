@@ -54,6 +54,30 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Protocol, runtime_checkable
 
+__all__ = [
+    # Exceptions
+    "SkillError",
+    "ParseError",
+    "ValidationError",
+    # Data classes
+    "SkillProperties",
+    "Skill",
+    "SelectionResult",
+    # Selector protocol and implementations
+    "Selector",
+    "KeywordSelector",
+    "BM25Selector",
+    # Registry
+    "SkillRegistry",
+    # Public API functions
+    "validate",
+    "to_catalog",
+    "compose",
+    "load",
+    "loads",
+    "discover",
+]
+
 # ---------------------------------------------------------------------------
 # Sibling imports (guarded)
 # ---------------------------------------------------------------------------

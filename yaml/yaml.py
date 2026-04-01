@@ -31,6 +31,14 @@ import math
 import re
 from typing import IO, Any, Iterator, overload
 
+__all__ = [
+    "YAMLError",
+    "load",
+    "load_all",
+    "dump",
+    "dump_all",
+]
+
 # ── Exceptions ─────────────────────────────────────────────────────────────────
 
 

@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.2.2"
+# version = "0.3.0"
 # deps = ["dotenv", "yaml", "jsonc"]
 # tier = "subsystem"
 # category = "data"

@@ -1,13 +1,13 @@
 {
   "version": "1",
-  "generated": "2026-04-01T07:27:33.001906+00:00",
+  "generated": "2026-04-01T08:06:52.191308+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
       "files": [
         "a2a/a2a.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [
         "jsonrpc"
       ],
@@ -19,7 +19,7 @@
       "files": [
         "acp/acp.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [
         "jsonrpc"
       ],
@@ -32,7 +32,7 @@
         "aes/aes.py",
         "aes/aes_openssl.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "crypto"
@@ -42,7 +42,7 @@
       "files": [
         "ansi/ansi.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "terminal"
@@ -52,7 +52,7 @@
       "files": [
         "cache/cache.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "subsystem",
       "category": "utility"
@@ -62,7 +62,7 @@
       "files": [
         "config/config.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [
         "dotenv",
         "yaml",
@@ -76,7 +76,7 @@
       "files": [
         "diff/diff.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "devtools"
@@ -86,7 +86,7 @@
       "files": [
         "dotenv/dotenv.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "data"
@@ -96,7 +96,7 @@
       "files": [
         "filelock/filelock.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "utility"
@@ -106,7 +106,7 @@
       "files": [
         "frontmatter/frontmatter.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [
         "yaml"
       ],
@@ -118,7 +118,7 @@
       "files": [
         "httpclient/httpclient.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "subsystem",
       "category": "network"
@@ -128,7 +128,7 @@
       "files": [
         "jsonc/jsonc.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "data"
@@ -138,7 +138,7 @@
       "files": [
         "jsonrpc/jsonrpc.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "network"
@@ -148,7 +148,7 @@
       "files": [
         "markdown/markdown.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "terminal"
@@ -158,7 +158,7 @@
       "files": [
         "prompt/prompt.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "terminal"
@@ -168,7 +168,7 @@
       "files": [
         "qr/qr.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "utility"
@@ -178,7 +178,7 @@
       "files": [
         "retry/retry.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "utility"
@@ -188,7 +188,7 @@
       "files": [
         "runner/runner.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "subsystem",
       "category": "process"
@@ -198,7 +198,7 @@
       "files": [
         "scheduler/scheduler.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "subsystem",
       "category": "process"
@@ -208,7 +208,7 @@
       "files": [
         "search/sparse_search.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "utility"
@@ -218,7 +218,7 @@
       "files": [
         "skills/skills.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [
         "frontmatter",
         "search"
@@ -231,7 +231,7 @@
       "files": [
         "soup/soup.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "data"
@@ -241,7 +241,7 @@
       "files": [
         "sse/sse.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [
         "httpclient"
       ],
@@ -253,7 +253,7 @@
       "files": [
         "structlog/structlog.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "utility"
@@ -263,7 +263,7 @@
       "files": [
         "tabulate/tabulate.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "terminal"
@@ -273,7 +273,7 @@
       "files": [
         "toon/toon.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "data"
@@ -283,7 +283,7 @@
       "files": [
         "validate/validate.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "data"
@@ -293,7 +293,7 @@
       "files": [
         "vcs/vcs.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [
         "diff"
       ],
@@ -305,7 +305,7 @@
       "files": [
         "xml/xml.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "data"
@@ -315,7 +315,7 @@
       "files": [
         "yaml/yaml.py"
       ],
-      "version": "0.2.2",
+      "version": "0.3.0",
       "deps": [],
       "tier": "subsystem",
       "category": "data"

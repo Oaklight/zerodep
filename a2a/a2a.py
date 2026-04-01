@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.2.2"
+# version = "0.3.0"
 # deps = ["jsonrpc"]
 # tier = "subsystem"
 # category = "network"
@@ -128,7 +128,7 @@ __all__ = [
     "TaskManager",
 ]
 
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 
 logger = logging.getLogger("a2a")
 

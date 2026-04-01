@@ -71,6 +71,7 @@ plugins:
             - ../jsonrpc
             - ../acp
             - ../skills
+            - ../filelock
             - aes
             - qr
             - httpclient
@@ -100,6 +101,7 @@ plugins:
             - jsonrpc
             - acp
             - skills
+            - filelock
           options:
             docstring_style: google
             show_source: true
@@ -183,6 +185,7 @@ nav:
           - structlog / Structured Logging: modules/structlog.md
           - vcs / VCS Wrapper: modules/vcs.md
           - runner / Command Runner: modules/runner.md
+          - filelock / File Lock: modules/filelock.md
   - API Reference:
       - Web & Networking:
           - httpclient / HTTP Client: api/http.md
@@ -223,6 +226,7 @@ nav:
           - structlog / Structured Logging: api/structlog.md
           - vcs / VCS Wrapper: api/vcs.md
           - runner / Command Runner: api/runner.md
+          - filelock / File Lock: api/filelock.md
   - Benchmarks:
       - Web & Networking:
           - httpclient / HTTP Client: benchmarks/http.md
@@ -263,4 +267,5 @@ nav:
           - structlog / Structured Logging: benchmarks/structlog.md
           - vcs / VCS Wrapper: benchmarks/vcs.md
           - runner / Command Runner: benchmarks/runner.md
+          - filelock / File Lock: benchmarks/filelock.md
   - Changelog: changelog.md

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### New Modules
 
+- **File Lock module**: cross-platform advisory file lock using only stdlib. `fcntl.flock` on Unix/macOS, `msvcrt.locking` with exponential-backoff polling on Windows. Context manager support, non-blocking `try_lock()`, auto parent-dir creation.
 - **JSON-RPC module**: JSON-RPC 2.0 protocol implementation with core data types (`JSONRPCError`, `JSONRPCRequest`, `JSONRPCResponse`), exception hierarchy, method dispatcher with streaming support, and async transport over newline-delimited JSON streams. Benchmarked ~12-17x faster than `jsonrpcserver`.
 
 ### Enhancements

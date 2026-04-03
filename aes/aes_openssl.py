@@ -32,6 +32,7 @@ __all__ = [
     "aes_ctr_decrypt",
     "aes_gcm_encrypt",
     "aes_gcm_decrypt",
+    "aes_ecb_padded_size",
     # Backward compatibility
     "aes128_ecb_encrypt",
     "aes128_ecb_decrypt",
@@ -278,6 +279,19 @@ def aes_ecb_decrypt(data: bytes, key: bytes) -> bytes:
 # Backward compatibility
 aes128_ecb_encrypt = aes_ecb_encrypt
 aes128_ecb_decrypt = aes_ecb_decrypt
+
+
+def aes_ecb_padded_size(plaintext_size: int) -> int:
+    """Calculate the ciphertext size after AES-ECB + PKCS7 padding.
+
+    Args:
+        plaintext_size: Size of the original data in bytes.
+
+    Returns:
+        Size of the encrypted output in bytes.
+    """
+    pad_len = 16 - (plaintext_size % 16)
+    return plaintext_size + pad_len
 
 
 # ---------------------------------------------------------------------------

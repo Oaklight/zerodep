@@ -76,6 +76,7 @@ __all__ = [
     "load",
     "loads",
     "discover",
+    "filter_compatible",
 ]
 
 # ---------------------------------------------------------------------------
@@ -745,6 +746,7 @@ class SkillRegistry:
         *,
         top_k: int = 5,
         min_score: float = 0.0,
+        available_tools: Iterable[str] | None = None,
         selector: Selector | None = None,
     ) -> builtins.list[SelectionResult]:
         """Pre-filter skills by relevance to a query.
@@ -758,6 +760,12 @@ class SkillRegistry:
             top_k: Maximum number of skills to return.
             min_score: Minimum relevance score.  Results below this
                 threshold are discarded before applying ``top_k``.
+            available_tools: If provided, only skills whose
+                ``allowed_tools`` are satisfied by this set are
+                considered.  Skills without ``allowed_tools`` always
+                pass.  Tool names are matched case-insensitively; a
+                pattern like ``Bash(git:*)`` is matched by its base
+                name ``bash``.
             selector: Selection strategy.  Defaults to
                 :class:`KeywordSelector`.
 
@@ -768,6 +776,8 @@ class SkillRegistry:
         if selector is None:
             selector = KeywordSelector()
         skills = self.list()
+        if available_tools is not None:
+            skills = filter_compatible(skills, available_tools)
         if not skills:
             return []
         results = selector.select(query, skills, top_k)
@@ -1000,6 +1010,47 @@ def discover(*paths: str | Path, recursive: bool = False) -> list[Skill]:
     return registry.discover(*paths, recursive=recursive)
 
 
+def filter_compatible(
+    skills: Iterable[Skill],
+    available_tools: Iterable[str],
+) -> list[Skill]:
+    """Filter skills by tool compatibility.
+
+    A skill passes if it has no ``allowed_tools`` requirement, or if
+    every tool base name in its ``allowed_tools`` string is present in
+    *available_tools*.
+
+    Tool patterns like ``Bash(git:*)`` are matched by their base name
+    (``bash``).  Matching is case-insensitive.
+
+    Args:
+        skills: Skills to filter.
+        available_tools: Tool names available in the current environment
+            (e.g. ``["Bash", "Read", "Write"]``).
+
+    Returns:
+        Skills whose tool requirements are satisfied.
+
+    Example::
+
+        compatible = filter_compatible(
+            registry.list(),
+            available_tools=["Bash", "Read", "Write", "Glob"],
+        )
+    """
+    tool_set = {t.lower() for t in available_tools}
+    result: list[Skill] = []
+    for skill in skills:
+        allowed = skill.properties.allowed_tools
+        if allowed is None:
+            result.append(skill)
+            continue
+        required = _parse_tool_names(allowed)
+        if required <= tool_set:
+            result.append(skill)
+    return result
+
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -1094,6 +1145,17 @@ def _build_properties(metadata: dict[str, Any]) -> SkillProperties:
         allowed_tools=str(allowed_tools) if allowed_tools is not None else None,
         metadata=skill_metadata,
     )
+
+
+_TOOL_BASE_RE = re.compile(r"[A-Za-z]\w*")
+
+
+def _parse_tool_names(allowed_tools: str) -> set[str]:
+    """Extract lowercase base tool names from an ``allowed-tools`` string.
+
+    ``"Bash(git:*) Read"`` → ``{"bash", "read"}``.
+    """
+    return {m.group().lower() for m in _TOOL_BASE_RE.finditer(allowed_tools)}
 
 
 def _read_resource(path: Path, max_bytes: int) -> str | None:

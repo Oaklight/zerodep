@@ -382,9 +382,7 @@ class Skill:
         Returns:
             A ``Skill`` instance.
         """
-        props_keys = {
-            k: v for k, v in d.items() if k not in ("instructions", "path")
-        }
+        props_keys = {k: v for k, v in d.items() if k not in ("instructions", "path")}
         props = SkillProperties.from_dict(props_keys)
         instructions = d.get("instructions", "")
         path = Path(d["path"]) if d.get("path") else None
@@ -457,9 +455,7 @@ class Skill:
                     content = _read_resource(full, max_inline_bytes)
                     if content is not None:
                         parts.append(
-                            f'<file name="{escaped}">\n'
-                            f"{html.escape(content)}\n"
-                            f"</file>"
+                            f'<file name="{escaped}">\n{html.escape(content)}\n</file>'
                         )
                     else:
                         parts.append(f"<file>{escaped}</file>")
@@ -1147,15 +1143,16 @@ def _build_properties(metadata: dict[str, Any]) -> SkillProperties:
     )
 
 
-_TOOL_BASE_RE = re.compile(r"[A-Za-z]\w*")
+_TOOL_ENTRY_RE = re.compile(r"([A-Za-z]\w*)(?:\([^)]*\))?")
 
 
 def _parse_tool_names(allowed_tools: str) -> set[str]:
     """Extract lowercase base tool names from an ``allowed-tools`` string.
 
     ``"Bash(git:*) Read"`` → ``{"bash", "read"}``.
+    Parenthesized parameters are skipped.
     """
-    return {m.group().lower() for m in _TOOL_BASE_RE.finditer(allowed_tools)}
+    return {m.group(1).lower() for m in _TOOL_ENTRY_RE.finditer(allowed_tools)}
 
 
 def _read_resource(path: Path, max_bytes: int) -> str | None:

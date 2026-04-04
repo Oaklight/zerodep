@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Skills module**: priority/override mechanism (`register(override=True)`, `discover(override=True)`) — enables project > user > system skill precedence.
 - **Skills module**: resource content inlining (`to_prompt(inline_resources=True)`) — embeds scripts/references/assets file contents directly in the activation prompt XML.
 - **Skills module**: compatibility-based filtering (`filter_compatible()`, `available_tools` parameter on `select()`) — filters skills by tool requirements against the current environment.
+- **AES module**: `aes_ecb_padded_size()` utility function — calculates ciphertext size after PKCS7 padding without performing encryption.
 
 ## [0.3.0] - 2026-04-01
 

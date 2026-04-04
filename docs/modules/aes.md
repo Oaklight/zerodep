@@ -175,10 +175,12 @@ pt = aes_cbc_decrypt(ct_read, key, iv_read)
 ```python
 aes_ecb_encrypt(data: bytes, key: bytes) -> bytes
 aes_ecb_decrypt(data: bytes, key: bytes) -> bytes
+aes_ecb_padded_size(plaintext_size: int) -> int
 ```
 
 - **key**: 16, 24, or 32 bytes
 - PKCS7 padding applied automatically
+- `aes_ecb_padded_size()` calculates the ciphertext size after PKCS7 padding without performing encryption -- useful for pre-allocating buffers
 - `aes128_ecb_encrypt` / `aes128_ecb_decrypt` are available as backward-compatible aliases
 
 ### CBC Mode

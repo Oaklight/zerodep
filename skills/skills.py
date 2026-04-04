@@ -538,8 +538,12 @@ class BM25Selector:
             )
         self._index: _SparseIndex | None = None
         self._skill_map: dict[str, Skill] = {}
+        self._cache_key: tuple[str, ...] | None = None
 
     def _build_index(self, skills: list[Skill]) -> None:
+        key = tuple(sorted(s.name for s in skills))
+        if key == self._cache_key and self._index is not None:
+            return
         self._index = _SparseIndex(variant="bm25")
         self._skill_map.clear()
         for skill in skills:
@@ -547,6 +551,7 @@ class BM25Selector:
             content = f"{name_text} {skill.description} {skill.instructions}"
             self._index.add(skill.name, content)
             self._skill_map[skill.name] = skill
+        self._cache_key = key
 
     def select(
         self, query: str, skills: list[Skill], top_k: int

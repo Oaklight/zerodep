@@ -13,10 +13,12 @@ from skills import (
     ParseError,
     SelectionResult,
     Selector,
+    Skill,
     SkillProperties,
     SkillRegistry,
     compose,
     discover,
+    filter_compatible,
     load,
     loads,
     to_catalog,
@@ -575,3 +577,407 @@ class TestConvenience:
         assert "&lt;script&gt;" in xml
         assert "&amp;" in xml
         assert "&quot;" in xml
+
+
+# ---------------------------------------------------------------------------
+# Serialization (to_markdown / from_dict)
+# ---------------------------------------------------------------------------
+
+
+class TestSerialization:
+    def test_skill_properties_from_dict_minimal(self):
+        d = {"name": "test-skill", "description": "A test"}
+        props = SkillProperties.from_dict(d)
+        assert props.name == "test-skill"
+        assert props.description == "A test"
+        assert props.license is None
+        assert props.metadata == {}
+
+    def test_skill_properties_from_dict_full(self):
+        d = {
+            "name": "test-skill",
+            "description": "A test",
+            "license": "MIT",
+            "compatibility": "Python 3.10+",
+            "allowed-tools": "Bash Read",
+            "metadata": {"author": "me"},
+        }
+        props = SkillProperties.from_dict(d)
+        assert props.license == "MIT"
+        assert props.allowed_tools == "Bash Read"
+        assert props.metadata == {"author": "me"}
+
+    def test_skill_properties_from_dict_underscore_key(self):
+        d = {
+            "name": "x",
+            "description": "y",
+            "allowed_tools": "Bash",
+        }
+        props = SkillProperties.from_dict(d)
+        assert props.allowed_tools == "Bash"
+
+    def test_skill_from_dict(self):
+        d = {
+            "name": "test-skill",
+            "description": "A test",
+            "instructions": "Do things.",
+        }
+        skill = Skill.from_dict(d)
+        assert skill.name == "test-skill"
+        assert skill.instructions == "Do things."
+        assert skill.path is None
+
+    def test_skill_from_dict_with_path(self, tmp_path):
+        d = {
+            "name": "test-skill",
+            "description": "A test",
+            "instructions": "Do things.",
+            "path": str(tmp_path),
+        }
+        skill = Skill.from_dict(d)
+        assert skill.path == tmp_path
+
+    def test_to_dict_from_dict_roundtrip(self):
+        original = loads(FULL_SKILL_MD)
+        d = original.to_dict()
+        rebuilt = Skill.from_dict(d)
+        assert rebuilt.name == original.name
+        assert rebuilt.description == original.description
+        assert rebuilt.properties.license == original.properties.license
+        assert rebuilt.instructions == original.instructions
+
+    def test_to_markdown_roundtrip(self):
+        original = loads(SIMPLE_SKILL_MD)
+        md_text = original.to_markdown()
+        rebuilt = loads(md_text)
+        assert rebuilt.name == original.name
+        assert rebuilt.description == original.description
+        assert rebuilt.instructions.strip() == original.instructions.strip()
+
+    def test_to_markdown_full(self):
+        original = loads(FULL_SKILL_MD)
+        md_text = original.to_markdown()
+        assert "---" in md_text
+        rebuilt = loads(md_text)
+        assert rebuilt.name == "code-review"
+        assert rebuilt.properties.license == "MIT"
+
+
+# ---------------------------------------------------------------------------
+# BM25 index caching
+# ---------------------------------------------------------------------------
+
+
+class TestBM25Caching:
+    def test_cache_reuse(self):
+        try:
+            selector = BM25Selector()
+        except ImportError:
+            pytest.skip("search module not available")
+
+        skills = [loads(SIMPLE_SKILL_MD), loads(FULL_SKILL_MD)]
+        selector.select("PDF", skills, top_k=5)
+        first_index = selector._index
+
+        # Same skill list should reuse cached index
+        selector.select("code review", skills, top_k=5)
+        assert selector._index is first_index
+
+    def test_cache_invalidation(self):
+        try:
+            selector = BM25Selector()
+        except ImportError:
+            pytest.skip("search module not available")
+
+        skills = [loads(SIMPLE_SKILL_MD)]
+        selector.select("PDF", skills, top_k=5)
+        first_index = selector._index
+
+        # Different skill list should rebuild
+        skills2 = [loads(SIMPLE_SKILL_MD), loads(FULL_SKILL_MD)]
+        selector.select("PDF", skills2, top_k=5)
+        assert selector._index is not first_index
+
+
+# ---------------------------------------------------------------------------
+# min_score threshold
+# ---------------------------------------------------------------------------
+
+
+class TestMinScore:
+    def test_min_score_filters(self):
+        registry = SkillRegistry()
+        registry.register(loads(SIMPLE_SKILL_MD))
+        registry.register(loads(FULL_SKILL_MD))
+
+        # Very high min_score should filter everything
+        results = registry.select("PDF", min_score=999.0)
+        assert results == []
+
+    def test_min_score_zero_no_filter(self):
+        registry = SkillRegistry()
+        registry.register(loads(SIMPLE_SKILL_MD))
+
+        results = registry.select("PDF files", min_score=0.0)
+        assert len(results) > 0
+
+    def test_min_score_partial_filter(self):
+        registry = SkillRegistry()
+        registry.register(loads(SIMPLE_SKILL_MD))
+        registry.register(loads(FULL_SKILL_MD))
+
+        # Get all results first
+        all_results = registry.select("PDF extract text files metadata")
+        if len(all_results) < 2:
+            pytest.skip("Need at least 2 results")
+
+        # Use mid-point score as threshold
+        scores = sorted([r.score for r in all_results])
+        mid_score = (scores[0] + scores[-1]) / 2
+        filtered = registry.select(
+            "PDF extract text files metadata", min_score=mid_score
+        )
+        assert len(filtered) <= len(all_results)
+        assert all(r.score >= mid_score for r in filtered)
+
+
+# ---------------------------------------------------------------------------
+# Recursive discovery
+# ---------------------------------------------------------------------------
+
+
+class TestRecursiveDiscovery:
+    def test_non_recursive_skips_nested(self, tmp_path):
+        # Create nested layout: category/my-skill/SKILL.md
+        category = tmp_path / "category"
+        skill_dir = category / "pdf-processing"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+
+        # Non-recursive should not find nested skills
+        registry = SkillRegistry()
+        found = registry.discover(tmp_path, recursive=False)
+        assert len(found) == 0
+
+    def test_recursive_finds_nested(self, tmp_path):
+        category = tmp_path / "category"
+        skill_dir = category / "pdf-processing"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+
+        registry = SkillRegistry()
+        found = registry.discover(tmp_path, recursive=True)
+        assert len(found) == 1
+        assert found[0].name == "pdf-processing"
+
+    def test_recursive_finds_both_levels(self, tmp_path):
+        # Top level skill
+        d1 = tmp_path / "code-review"
+        d1.mkdir()
+        (d1 / "SKILL.md").write_text(FULL_SKILL_MD, encoding="utf-8")
+
+        # Nested skill
+        d2 = tmp_path / "sub" / "pdf-processing"
+        d2.mkdir(parents=True)
+        (d2 / "SKILL.md").write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+
+        registry = SkillRegistry()
+        found = registry.discover(tmp_path, recursive=True)
+        names = {s.name for s in found}
+        assert "code-review" in names
+        assert "pdf-processing" in names
+
+    def test_discover_function_recursive(self, tmp_path):
+        category = tmp_path / "cat"
+        d = category / "pdf-processing"
+        d.mkdir(parents=True)
+        (d / "SKILL.md").write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+
+        found = discover(tmp_path, recursive=True)
+        assert len(found) == 1
+
+
+# ---------------------------------------------------------------------------
+# Override / priority
+# ---------------------------------------------------------------------------
+
+
+class TestOverride:
+    def test_register_override(self):
+        registry = SkillRegistry()
+        s1 = loads(SIMPLE_SKILL_MD)
+        registry.register(s1)
+
+        # Create a different skill with same name
+        md2 = SIMPLE_SKILL_MD.replace(
+            "Extract text and metadata from PDF files",
+            "Updated description",
+        )
+        s2 = loads(md2)
+        registry.register(s2, override=True)
+
+        assert len(registry) == 1
+        assert registry.get("pdf-processing").description == "Updated description"
+
+    def test_register_no_override_raises(self):
+        registry = SkillRegistry()
+        registry.register(loads(SIMPLE_SKILL_MD))
+        with pytest.raises(ValueError, match="already registered"):
+            registry.register(loads(SIMPLE_SKILL_MD), override=False)
+
+    def test_discover_override(self, tmp_path):
+        # First path
+        p1 = tmp_path / "global"
+        d1 = p1 / "pdf-processing"
+        d1.mkdir(parents=True)
+        (d1 / "SKILL.md").write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+
+        # Second path with override
+        p2 = tmp_path / "project"
+        d2 = p2 / "pdf-processing"
+        d2.mkdir(parents=True)
+        updated_md = SIMPLE_SKILL_MD.replace(
+            "Extract text and metadata from PDF files",
+            "Project-level override",
+        )
+        (d2 / "SKILL.md").write_text(updated_md, encoding="utf-8")
+
+        registry = SkillRegistry()
+        registry.discover(p1)
+        registry.discover(p2, override=True)
+
+        assert len(registry) == 1
+        assert registry.get("pdf-processing").description == "Project-level override"
+
+    def test_discover_no_override_keeps_first(self, tmp_path):
+        p1 = tmp_path / "global"
+        d1 = p1 / "pdf-processing"
+        d1.mkdir(parents=True)
+        (d1 / "SKILL.md").write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+
+        p2 = tmp_path / "project"
+        d2 = p2 / "pdf-processing"
+        d2.mkdir(parents=True)
+        updated_md = SIMPLE_SKILL_MD.replace(
+            "Extract text and metadata from PDF files",
+            "Should not appear",
+        )
+        (d2 / "SKILL.md").write_text(updated_md, encoding="utf-8")
+
+        registry = SkillRegistry()
+        registry.discover(p1)
+        registry.discover(p2, override=False)
+
+        assert registry.get("pdf-processing").description == (
+            "Extract text and metadata from PDF files"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Resource inlining
+# ---------------------------------------------------------------------------
+
+
+class TestResourceInlining:
+    def test_inline_resources_false(self, tmp_path):
+        skill_dir = tmp_path / "my-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+        (skill_dir / "scripts").mkdir()
+        (skill_dir / "scripts" / "run.sh").write_text(
+            "#!/bin/bash\necho hello", encoding="utf-8"
+        )
+
+        skill = load(skill_dir)
+        prompt = skill.to_prompt(inline_resources=False)
+        assert "<file>scripts/run.sh</file>" in prompt
+        assert "echo hello" not in prompt
+
+    def test_inline_resources_true(self, tmp_path):
+        skill_dir = tmp_path / "my-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+        (skill_dir / "scripts").mkdir()
+        (skill_dir / "scripts" / "run.sh").write_text(
+            "#!/bin/bash\necho hello", encoding="utf-8"
+        )
+
+        skill = load(skill_dir)
+        prompt = skill.to_prompt(inline_resources=True)
+        assert 'name="scripts/run.sh"' in prompt
+        assert "echo hello" in prompt
+
+    def test_inline_skips_large_files(self, tmp_path):
+        skill_dir = tmp_path / "my-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+        (skill_dir / "references").mkdir()
+        (skill_dir / "references" / "big.txt").write_text("x" * 200, encoding="utf-8")
+
+        skill = load(skill_dir)
+        # Set max_inline_bytes very small
+        prompt = skill.to_prompt(inline_resources=True, max_inline_bytes=10)
+        # Should fall back to name-only
+        assert "<file>references/big.txt</file>" in prompt
+        assert "name=" not in prompt.split("references/big.txt")[0].split("\n")[-1]
+
+    def test_inline_multiple_resources(self, tmp_path):
+        skill_dir = tmp_path / "my-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+        (skill_dir / "scripts").mkdir()
+        (skill_dir / "scripts" / "a.sh").write_text("script-a", encoding="utf-8")
+        (skill_dir / "references").mkdir()
+        (skill_dir / "references" / "b.md").write_text("ref-b", encoding="utf-8")
+
+        skill = load(skill_dir)
+        prompt = skill.to_prompt(inline_resources=True)
+        assert "script-a" in prompt
+        assert "ref-b" in prompt
+
+
+# ---------------------------------------------------------------------------
+# Compatibility filtering
+# ---------------------------------------------------------------------------
+
+
+class TestCompatibilityFiltering:
+    def test_filter_no_requirement_passes(self):
+        skill = loads(SIMPLE_SKILL_MD)  # no allowed-tools
+        result = filter_compatible([skill], ["Bash", "Read"])
+        assert len(result) == 1
+
+    def test_filter_satisfied_requirement(self):
+        skill = loads(FULL_SKILL_MD)  # allowed-tools: Bash(git:*) Read
+        result = filter_compatible([skill], ["Bash", "Read", "Write"])
+        assert len(result) == 1
+
+    def test_filter_unsatisfied_requirement(self):
+        skill = loads(FULL_SKILL_MD)  # needs Bash and Read
+        result = filter_compatible([skill], ["Write"])
+        assert len(result) == 0
+
+    def test_filter_case_insensitive(self):
+        skill = loads(FULL_SKILL_MD)
+        result = filter_compatible([skill], ["bash", "read"])
+        assert len(result) == 1
+
+    def test_filter_mixed(self):
+        s1 = loads(SIMPLE_SKILL_MD)  # no requirement
+        s2 = loads(FULL_SKILL_MD)  # needs Bash, Read
+        result = filter_compatible([s1, s2], ["Write"])
+        assert len(result) == 1
+        assert result[0].name == "pdf-processing"
+
+    def test_select_with_available_tools(self):
+        registry = SkillRegistry()
+        registry.register(loads(SIMPLE_SKILL_MD))
+        registry.register(loads(FULL_SKILL_MD))
+
+        # Only provide Write tool — code-review needs Bash+Read
+        results = registry.select(
+            "review code",
+            available_tools=["Write"],
+        )
+        names = {r.skill.name for r in results}
+        assert "code-review" not in names

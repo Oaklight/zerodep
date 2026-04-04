@@ -96,10 +96,12 @@ def _load_frontmatter():
     _ensure_sibling_path("frontmatter")
     sys.modules.pop("frontmatter", None)
     try:
+        from frontmatter import Document as FmDocument
+        from frontmatter import dumps as fm_dumps
         from frontmatter import load as fm_load
         from frontmatter import loads as fm_loads
 
-        return fm_load, fm_loads
+        return fm_load, fm_loads, fm_dumps, FmDocument
     except ImportError as exc:
         raise ImportError(
             "Skills module requires the sibling frontmatter module. "
@@ -200,6 +202,33 @@ class SkillProperties:
         if self.metadata:
             d["metadata"] = dict(self.metadata)
         return d
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> SkillProperties:
+        """Create ``SkillProperties`` from a spec-conformant dictionary.
+
+        Accepts both ``allowed_tools`` and ``allowed-tools`` key forms.
+
+        Args:
+            d: Dictionary with at least ``name`` and ``description``.
+
+        Returns:
+            A ``SkillProperties`` instance.
+
+        Raises:
+            KeyError: If required fields are missing.
+        """
+        allowed = d.get("allowed-tools", d.get("allowed_tools"))
+        return cls(
+            name=d["name"],
+            description=d["description"],
+            license=d.get("license"),
+            compatibility=d.get("compatibility"),
+            allowed_tools=str(allowed) if allowed is not None else None,
+            metadata={str(k): str(v) for k, v in d["metadata"].items()}
+            if d.get("metadata")
+            else {},
+        )
 
 
 class Skill:
@@ -322,7 +351,7 @@ class Skill:
         Raises:
             ParseError: If the text cannot be parsed.
         """
-        fm_load, fm_loads = _load_frontmatter()
+        _fm_load, fm_loads, _fm_dumps, _FmDocument = _load_frontmatter()
         try:
             doc = fm_loads(text, handler="yaml")
         except Exception as exc:
@@ -337,6 +366,29 @@ class Skill:
         props = _build_properties(doc.metadata)
         return cls(properties=props, instructions=doc.content, path=None)
 
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> Skill:
+        """Create a ``Skill`` from a dictionary.
+
+        The dictionary should contain at least ``name``, ``description``,
+        and ``instructions`` keys.  Optional keys: ``license``,
+        ``compatibility``, ``allowed-tools``/``allowed_tools``,
+        ``metadata``, ``path``.
+
+        Args:
+            d: Skill dictionary (e.g. from :meth:`to_dict`).
+
+        Returns:
+            A ``Skill`` instance.
+        """
+        props_keys = {
+            k: v for k, v in d.items() if k not in ("instructions", "path")
+        }
+        props = SkillProperties.from_dict(props_keys)
+        instructions = d.get("instructions", "")
+        path = Path(d["path"]) if d.get("path") else None
+        return cls(properties=props, instructions=instructions, path=path)
+
     # -- output -------------------------------------------------------------
 
     def to_dict(self) -> dict[str, Any]:
@@ -346,6 +398,23 @@ class Skill:
         if self._path is not None:
             d["path"] = str(self._path)
         return d
+
+    def to_markdown(self) -> str:
+        """Serialize the skill back to ``SKILL.md`` format.
+
+        Generates a valid ``SKILL.md`` string with YAML frontmatter and
+        the Markdown instruction body.  Round-trip safe::
+
+            original = Skill.loads(text)
+            rebuilt = Skill.loads(original.to_markdown())
+            assert original.name == rebuilt.name
+
+        Returns:
+            A complete ``SKILL.md`` file content string.
+        """
+        _fm_load, _fm_loads, fm_dumps, FmDocument = _load_frontmatter()
+        doc = FmDocument(self._properties.to_dict(), self._instructions)
+        return fm_dumps(doc, handler="yaml")
 
     def describe(self) -> str:
         """Return a short catalog-level description (name + description)."""
@@ -709,7 +778,7 @@ def validate(path: str | Path) -> list[str]:
     # Parse frontmatter
     try:
         text = skill_md.read_text(encoding="utf-8")
-        fm_load, fm_loads = _load_frontmatter()
+        _fm_load, fm_loads, _fm_dumps, _FmDocument = _load_frontmatter()
         doc = fm_loads(text, handler="yaml")
     except Exception as exc:
         problems.append(f"Failed to parse YAML frontmatter: {exc}")

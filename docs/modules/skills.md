@@ -68,6 +68,30 @@ When the user asks about PDFs, use this skill.
 """)
 ```
 
+### Create Skills Programmatically
+
+```python
+from skills import Skill, SkillProperties
+
+# From a dictionary
+skill = Skill.from_dict({
+    "name": "my-tool",
+    "description": "Does something useful",
+    "instructions": "# My Tool\n\nUse this when...",
+})
+
+# Serialize back to SKILL.md format (round-trip safe)
+md_text = skill.to_markdown()
+print(md_text)
+# ---
+# name: my-tool
+# description: Does something useful
+# ---
+# # My Tool
+#
+# Use this when...
+```
+
 ### Discover and Register Skills
 
 ```python
@@ -80,6 +104,13 @@ registry.discover(
     "~/.agents/skills",       # User-level skills
     ".agents/skills",         # Project-level skills
 )
+
+# Recursive discovery for nested layouts (category/skill/)
+registry.discover("~/.agents/skills", recursive=True)
+
+# Override: project skills take precedence over user skills
+registry.discover("~/.agents/skills")           # user-level
+registry.discover(".agents/skills", override=True)  # project overrides
 
 print(f"Found {len(registry)} skills")
 for skill in registry:
@@ -102,6 +133,27 @@ shortlist = [m.skill for m in matches]
 catalog_xml = to_catalog(shortlist)
 
 # LLM sees the reduced catalog and decides which skill to activate
+```
+
+### Quality Filtering
+
+```python
+# Filter by minimum relevance score
+matches = registry.select("PDF conversion", top_k=10, min_score=0.3)
+
+# Filter by tool compatibility
+matches = registry.select(
+    "review this code",
+    available_tools=["Bash", "Read", "Write"],
+)
+
+# Standalone compatibility filter
+from skills import filter_compatible
+
+compatible = filter_compatible(
+    registry.list(),
+    available_tools=["Bash", "Read", "Write", "Glob"],
+)
 ```
 
 ### Custom Selector
@@ -164,6 +216,10 @@ prompt = skill_a.to_prompt()
 # </skill_resources>
 # </skill_content>
 
+# Level 2 with inlined resource contents
+prompt = skill_a.to_prompt(inline_resources=True)
+# Resource file contents are included directly in the XML output
+
 # Compose multiple skills
 combined = compose(skill_a, skill_b)
 ```
@@ -176,6 +232,7 @@ Following the Agent Skills spec, this module supports three levels of progressiv
 |-------|---------|------------|--------|
 | 1. Catalog | name + description | ~50-100/skill | `to_catalog()` |
 | 2. Instructions | Full SKILL.md body | <5000/skill | `skill.to_prompt()` |
+| 2+. Inlined | Instructions + resource contents | Varies | `skill.to_prompt(inline_resources=True)` |
 | 3. Resources | scripts/, references/ | On demand | `skill.scripts`, `skill.references` |
 
 ## Built-in Selectors

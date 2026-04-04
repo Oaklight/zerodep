@@ -420,24 +420,50 @@ class Skill:
         """Return a short catalog-level description (name + description)."""
         return f"{self.name}: {self.description}"
 
-    def to_prompt(self) -> str:
+    def to_prompt(
+        self,
+        *,
+        inline_resources: bool = False,
+        max_inline_bytes: int = 64 * 1024,
+    ) -> str:
         """Generate the full activation prompt (Level 2 progressive disclosure).
 
         Returns XML-wrapped skill content suitable for injection into an
         agent's system prompt.
+
+        Args:
+            inline_resources: If ``True``, include the actual file
+                contents of resources (scripts, references, assets)
+                inside the XML output.  When ``False`` (default), only
+                file names are listed.
+            max_inline_bytes: Maximum file size (bytes) to inline.
+                Files larger than this are listed by name only.
+                Defaults to 64 KiB.
         """
         parts = [f'<skill_content name="{html.escape(self.name)}">']
         parts.append(self._instructions)
 
-        resource_files = []
+        resource_entries: list[tuple[str, Path]] = []
         for dirname in _RESOURCE_DIRS:
             for p in self._list_resource_dir(dirname):
-                resource_files.append(f"{dirname}/{p.name}")
+                resource_entries.append((f"{dirname}/{p.name}", p))
 
-        if resource_files:
+        if resource_entries:
             parts.append("<skill_resources>")
-            for f in resource_files:
-                parts.append(f"<file>{html.escape(f)}</file>")
+            for rel, full in resource_entries:
+                escaped = html.escape(rel)
+                if inline_resources:
+                    content = _read_resource(full, max_inline_bytes)
+                    if content is not None:
+                        parts.append(
+                            f'<file name="{escaped}">\n'
+                            f"{html.escape(content)}\n"
+                            f"</file>"
+                        )
+                    else:
+                        parts.append(f"<file>{escaped}</file>")
+                else:
+                    parts.append(f"<file>{escaped}</file>")
             parts.append("</skill_resources>")
 
         parts.append("</skill_content>")
@@ -1068,6 +1094,20 @@ def _build_properties(metadata: dict[str, Any]) -> SkillProperties:
         allowed_tools=str(allowed_tools) if allowed_tools is not None else None,
         metadata=skill_metadata,
     )
+
+
+def _read_resource(path: Path, max_bytes: int) -> str | None:
+    """Read a resource file if it fits within *max_bytes*.
+
+    Returns ``None`` for binary files, files that exceed the size limit,
+    or files that cannot be read.
+    """
+    try:
+        if path.stat().st_size > max_bytes:
+            return None
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
 
 
 def _tokenize(text: str) -> list[str]:

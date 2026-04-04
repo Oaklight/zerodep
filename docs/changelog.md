@@ -15,6 +15,7 @@
 - **Skills 模块**：优先级/覆盖机制（`register(override=True)`、`discover(override=True)`）——实现项目 > 用户 > 系统的技能优先级链。
 - **Skills 模块**：资源内容内联（`to_prompt(inline_resources=True)`）——将 scripts/references/assets 文件内容直接嵌入激活提示词 XML。
 - **Skills 模块**：兼容性过滤（`filter_compatible()`、`select()` 的 `available_tools` 参数）——根据当前环境的可用工具过滤技能。
+- **AES 模块**：`aes_ecb_padded_size()` 工具函数——无需实际加密即可计算 PKCS7 填充后的密文大小。
 
 ## [0.3.0] - 2026-04-01
 

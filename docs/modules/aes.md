@@ -175,10 +175,12 @@ pt = aes_cbc_decrypt(ct_read, key, iv_read)
 ```python
 aes_ecb_encrypt(data: bytes, key: bytes) -> bytes
 aes_ecb_decrypt(data: bytes, key: bytes) -> bytes
+aes_ecb_padded_size(plaintext_size: int) -> int
 ```
 
 - **key**：16、24 或 32 字节
 - PKCS7 填充自动应用
+- `aes_ecb_padded_size()` 计算 PKCS7 填充后的密文大小，无需实际执行加密——适用于预分配缓冲区
 - `aes128_ecb_encrypt` / `aes128_ecb_decrypt` 作为向后兼容的别名可用
 
 ### CBC 模式

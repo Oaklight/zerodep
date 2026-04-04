@@ -600,16 +600,19 @@ class SkillRegistry:
 
     # -- management ---------------------------------------------------------
 
-    def register(self, skill: Skill) -> None:
+    def register(self, skill: Skill, *, override: bool = False) -> None:
         """Register a skill.
 
         Args:
             skill: The skill to register.
+            override: If ``True``, silently replace any existing skill
+                with the same name.
 
         Raises:
-            ValueError: If a skill with the same name is already registered.
+            ValueError: If a skill with the same name is already registered
+                and *override* is ``False``.
         """
-        if skill.name in self._skills:
+        if skill.name in self._skills and not override:
             raise ValueError(
                 f"Skill {skill.name!r} already registered; "
                 "unregister it first or use a different name"
@@ -660,14 +663,27 @@ class SkillRegistry:
 
     # -- discovery ----------------------------------------------------------
 
-    def discover(self, *paths: str | Path) -> builtins.list[Skill]:
+    def discover(
+        self,
+        *paths: str | Path,
+        recursive: bool = False,
+        override: bool = False,
+    ) -> builtins.list[Skill]:
         """Scan directories for skills and register them.
 
-        Each path is scanned for immediate subdirectories containing a
-        ``SKILL.md`` file.  Discovered skills are automatically registered.
+        Each path is scanned for subdirectories containing a ``SKILL.md``
+        file.  Discovered skills are automatically registered.
 
         Args:
             *paths: Directories to scan.
+            recursive: If ``True``, walk the full directory tree instead
+                of scanning only immediate children.  Useful for
+                hierarchical skill layouts like
+                ``~/.agents/skills/category/my-skill/``.
+            override: If ``True``, a newly discovered skill replaces any
+                previously registered skill with the same name.  Useful
+                for implementing precedence (e.g. project overrides
+                user overrides system).
 
         Returns:
             List of newly discovered and registered skills.
@@ -677,9 +693,10 @@ class SkillRegistry:
             resolved = Path(p).expanduser().resolve()
             if not resolved.is_dir():
                 continue
-            for child in sorted(resolved.iterdir()):
-                if not child.is_dir():
-                    continue
+            candidates = (
+                _walk_skill_dirs(resolved) if recursive else _iter_child_dirs(resolved)
+            )
+            for child in candidates:
                 try:
                     _find_skill_md(child)
                 except ParseError:
@@ -688,9 +705,10 @@ class SkillRegistry:
                     skill = Skill.load(child)
                 except (ParseError, ValidationError):
                     continue
-                if skill.name not in self._skills:
-                    self._skills[skill.name] = skill
-                    found.append(skill)
+                if skill.name in self._skills and not override:
+                    continue
+                self._skills[skill.name] = skill
+                found.append(skill)
         return found
 
     # -- selection ----------------------------------------------------------
@@ -940,24 +958,44 @@ def loads(text: str) -> Skill:
     return Skill.loads(text)
 
 
-def discover(*paths: str | Path) -> list[Skill]:
+def discover(*paths: str | Path, recursive: bool = False) -> list[Skill]:
     """Discover skills in directories (convenience wrapper).
 
     Creates a temporary registry, discovers skills, and returns them.
 
     Args:
         *paths: Directories to scan.
+        recursive: If ``True``, walk the full directory tree.
 
     Returns:
         List of discovered skills.
     """
     registry = SkillRegistry()
-    return registry.discover(*paths)
+    return registry.discover(*paths, recursive=recursive)
 
 
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
+
+def _iter_child_dirs(root: Path) -> Iterator[Path]:
+    """Yield sorted immediate child directories."""
+    yield from sorted(d for d in root.iterdir() if d.is_dir())
+
+
+def _walk_skill_dirs(root: Path) -> Iterator[Path]:
+    """Walk the directory tree yielding dirs that contain a SKILL.md."""
+    for dirpath, dirnames, filenames in os.walk(root):
+        p = Path(dirpath)
+        if p == root:
+            continue
+        low = {f.lower() for f in filenames}
+        if "skill.md" in low:
+            yield p
+            # Don't recurse into a skill directory's subdirectories
+            dirnames.clear()
+    return
 
 
 def _find_skill_md(path: Path) -> Path:

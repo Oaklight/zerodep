@@ -6,6 +6,16 @@
 
 ## [未发布]
 
+### 功能增强
+
+- **Skills 模块**：`to_markdown()` 和 `from_dict()` 方法，支持 SKILL.md 往返序列化——程序化技能创建、模板生成和迁移工具。
+- **Skills 模块**：BM25 索引缓存——避免在相同技能集上重复调用 `select()` 时冗余重建索引。
+- **Skills 模块**：`SkillRegistry.select()` 新增 `min_score` 阈值——在注入系统提示词前过滤低相关性结果。
+- **Skills 模块**：递归目录发现（`discover(..., recursive=True)`）——支持 `category/sub-skill/` 分层布局。
+- **Skills 模块**：优先级/覆盖机制（`register(override=True)`、`discover(override=True)`）——实现项目 > 用户 > 系统的技能优先级链。
+- **Skills 模块**：资源内容内联（`to_prompt(inline_resources=True)`）——将 scripts/references/assets 文件内容直接嵌入激活提示词 XML。
+- **Skills 模块**：兼容性过滤（`filter_compatible()`、`select()` 的 `available_tools` 参数）——根据当前环境的可用工具过滤技能。
+
 ## [0.3.0] - 2026-04-01
 
 ### 新增模块

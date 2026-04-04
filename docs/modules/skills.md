@@ -68,6 +68,30 @@ When the user asks about PDFs, use this skill.
 """)
 ```
 
+### 程序化创建技能
+
+```python
+from skills import Skill, SkillProperties
+
+# 从字典创建
+skill = Skill.from_dict({
+    "name": "my-tool",
+    "description": "Does something useful",
+    "instructions": "# My Tool\n\nUse this when...",
+})
+
+# 序列化回 SKILL.md 格式（支持往返转换）
+md_text = skill.to_markdown()
+print(md_text)
+# ---
+# name: my-tool
+# description: Does something useful
+# ---
+# # My Tool
+#
+# Use this when...
+```
+
 ### 发现和注册技能
 
 ```python
@@ -80,6 +104,13 @@ registry.discover(
     "~/.agents/skills",       # 用户级技能
     ".agents/skills",         # 项目级技能
 )
+
+# 递归发现嵌套布局（category/skill/）
+registry.discover("~/.agents/skills", recursive=True)
+
+# 覆盖机制：项目级技能优先于用户级技能
+registry.discover("~/.agents/skills")           # 用户级
+registry.discover(".agents/skills", override=True)  # 项目级覆盖
 
 print(f"发现 {len(registry)} 个技能")
 for skill in registry:
@@ -102,6 +133,27 @@ shortlist = [m.skill for m in matches]
 catalog_xml = to_catalog(shortlist)
 
 # LLM 看到缩减后的目录，自行决定激活哪个技能
+```
+
+### 质量过滤
+
+```python
+# 按最低相关性分数过滤
+matches = registry.select("PDF conversion", top_k=10, min_score=0.3)
+
+# 按工具兼容性过滤
+matches = registry.select(
+    "review this code",
+    available_tools=["Bash", "Read", "Write"],
+)
+
+# 独立的兼容性过滤函数
+from skills import filter_compatible
+
+compatible = filter_compatible(
+    registry.list(),
+    available_tools=["Bash", "Read", "Write", "Glob"],
+)
 ```
 
 ### 自定义选择器
@@ -154,6 +206,10 @@ catalog = to_catalog([skill_a, skill_b])
 # 第二层：激活提示词（选中技能的完整指令）
 prompt = skill_a.to_prompt()
 
+# 第二层增强：内联资源文件内容
+prompt = skill_a.to_prompt(inline_resources=True)
+# 资源文件内容直接包含在 XML 输出中
+
 # 组合多个技能
 combined = compose(skill_a, skill_b)
 ```
@@ -166,6 +222,7 @@ combined = compose(skill_a, skill_b)
 |------|------|-----------|------|
 | 1. 目录 | 名称 + 描述 | ~50-100/技能 | `to_catalog()` |
 | 2. 指令 | SKILL.md 完整正文 | <5000/技能 | `skill.to_prompt()` |
+| 2+. 内联 | 指令 + 资源文件内容 | 视内容而定 | `skill.to_prompt(inline_resources=True)` |
 | 3. 资源 | scripts/、references/ | 按需 | `skill.scripts`、`skill.references` |
 
 ## 内置选择器

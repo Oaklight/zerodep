@@ -153,6 +153,16 @@
       "tier": "medium",
       "category": "terminal"
     },
+    "protobuf": {
+      "description": "Zero-dependency proto3 encoder/decoder using Python dataclass schemas",
+      "files": [
+        "protobuf/protobuf.py"
+      ],
+      "version": "0.3.0",
+      "deps": [],
+      "tier": "subsystem",
+      "category": "data"
+    },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",
       "files": [

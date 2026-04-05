@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### New Modules
+
+- **Persistent Dict module**: `MutableMapping`-based persistent dictionary with pluggable backends (JSON file, SQLite) and pluggable serialization (JSON by default, no pickle). Thread-safe, atomic writes, namespace support via SQLite tables. Factory function `open()` auto-detects backend from file extension.
+
 ### Enhancements
 
 - **Skills module**: `to_markdown()` and `from_dict()` methods for round-trip SKILL.md serialization — programmatic skill authoring, templating, and migration.

@@ -72,6 +72,7 @@ plugins:
             - ../acp
             - ../skills
             - ../filelock
+            - ../persistdict
             - aes
             - qr
             - httpclient
@@ -102,6 +103,7 @@ plugins:
             - acp
             - skills
             - filelock
+            - persistdict
           options:
             docstring_style: google
             show_source: true
@@ -189,6 +191,7 @@ nav:
           - vcs / VCS Wrapper: modules/vcs.md
           - runner / Command Runner: modules/runner.md
           - filelock / File Lock: modules/filelock.md
+          - persistdict / Persistent Dict: modules/persistdict.md
           - qr / QR Code: modules/qr.md
   - API Reference:
       - Web & Networking:
@@ -230,6 +233,7 @@ nav:
           - vcs / VCS Wrapper: api/vcs.md
           - runner / Command Runner: api/runner.md
           - filelock / File Lock: api/filelock.md
+          - persistdict / Persistent Dict: api/persistdict.md
           - qr / QR Code: api/qr.md
   - Benchmarks:
       - Web & Networking:
@@ -271,5 +275,6 @@ nav:
           - vcs / VCS Wrapper: benchmarks/vcs.md
           - runner / Command Runner: benchmarks/runner.md
           - filelock / File Lock: benchmarks/filelock.md
+          - persistdict / Persistent Dict: benchmarks/persistdict.md
           - qr / QR Code: benchmarks/qr.md
   - Changelog: changelog.md

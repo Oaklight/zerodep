@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### New Modules
 
+- **Protobuf module**: Zero-dependency proto3 encoder/decoder using Python dataclass schemas. Supports all proto3 scalar types (int32/64, uint32/64, sint32/64, fixed32/64, sfixed32/64, float32, double, bool, string, bytes), nested messages, packed repeated fields, map fields, enums, oneof groups, and unknown field preservation. Schema defined via `@message` decorator + `field(number)` + `Annotated` type aliases — no `.proto` files or `protoc` needed. Proto3 semantics: zero-value fields omitted, packed repeated scalars by default.
 - **Persistent Dict module**: `MutableMapping`-based persistent dictionary with pluggable backends (JSON file, SQLite) and pluggable serialization (JSON by default, no pickle). Thread-safe, atomic writes, namespace support via SQLite tables. Factory function `open()` auto-detects backend from file extension.
 
 ### Enhancements

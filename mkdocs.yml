@@ -73,6 +73,7 @@ plugins:
             - ../skills
             - ../filelock
             - ../persistdict
+            - ../protobuf
             - aes
             - qr
             - httpclient
@@ -104,6 +105,7 @@ plugins:
             - skills
             - filelock
             - persistdict
+            - protobuf
           options:
             docstring_style: google
             show_source: true
@@ -166,6 +168,7 @@ nav:
           - jsonc / JSONC Parser: modules/jsonc.md
           - toon / TOON Serializer: modules/toon.md
           - frontmatter / Frontmatter Parser: modules/frontmatter.md
+          - protobuf / Protobuf Codec: modules/protobuf.md
       - Data Validation:
           - validate / Validator: modules/validate.md
       - Text & Markup:
@@ -208,6 +211,7 @@ nav:
           - jsonc / JSONC Parser: api/jsonc.md
           - toon / TOON Serializer: api/toon.md
           - frontmatter / Frontmatter Parser: api/frontmatter.md
+          - protobuf / Protobuf Codec: api/protobuf.md
       - Data Validation:
           - validate / Validator: api/validate.md
       - Text & Markup:
@@ -250,6 +254,7 @@ nav:
           - jsonc / JSONC Parser: benchmarks/jsonc.md
           - toon / TOON Serializer: benchmarks/toon.md
           - frontmatter / Frontmatter Parser: benchmarks/frontmatter.md
+          - protobuf / Protobuf Codec: benchmarks/protobuf.md
       - Data Validation:
           - validate / Validator: benchmarks/validate.md
       - Text & Markup:

@@ -73,6 +73,7 @@ plugins:
             - ../skills
             - ../filelock
             - ../persistdict
+            - ../protobuf
             - aes
             - qr
             - httpclient
@@ -104,6 +105,7 @@ plugins:
             - skills
             - filelock
             - persistdict
+            - protobuf
           options:
             docstring_style: google
             show_source: true
@@ -166,6 +168,7 @@ nav:
           - jsonc / JSONC 解析器: modules/jsonc.md
           - toon / TOON 序列化: modules/toon.md
           - frontmatter / Frontmatter 解析器: modules/frontmatter.md
+          - protobuf / Protobuf 编解码器: modules/protobuf.md
       - 数据验证:
           - validate / 验证器: modules/validate.md
       - 文本与标记:
@@ -208,6 +211,7 @@ nav:
           - jsonc / JSONC 解析器: api/jsonc.md
           - toon / TOON 序列化: api/toon.md
           - frontmatter / Frontmatter 解析器: api/frontmatter.md
+          - protobuf / Protobuf 编解码器: api/protobuf.md
       - 数据验证:
           - validate / 验证器: api/validate.md
       - 文本与标记:
@@ -250,6 +254,7 @@ nav:
           - jsonc / JSONC 解析器: benchmarks/jsonc.md
           - toon / TOON 序列化: benchmarks/toon.md
           - frontmatter / Frontmatter 解析器: benchmarks/frontmatter.md
+          - protobuf / Protobuf 编解码器: benchmarks/protobuf.md
       - 数据验证:
           - validate / 验证器: benchmarks/validate.md
       - 文本与标记:

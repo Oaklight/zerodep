@@ -74,6 +74,7 @@ plugins:
             - ../filelock
             - ../persistdict
             - ../protobuf
+            - ../depdetect
             - aes
             - qr
             - httpclient
@@ -106,6 +107,7 @@ plugins:
             - filelock
             - persistdict
             - protobuf
+            - depdetect
           options:
             docstring_style: google
             show_source: true
@@ -196,6 +198,7 @@ nav:
           - filelock / File Lock: modules/filelock.md
           - persistdict / Persistent Dict: modules/persistdict.md
           - qr / QR Code: modules/qr.md
+          - depdetect / Dependency Detection: modules/depdetect.md
   - API Reference:
       - Web & Networking:
           - httpclient / HTTP Client: api/http.md
@@ -239,6 +242,7 @@ nav:
           - filelock / File Lock: api/filelock.md
           - persistdict / Persistent Dict: api/persistdict.md
           - qr / QR Code: api/qr.md
+          - depdetect / Dependency Detection: api/depdetect.md
   - Benchmarks:
       - Web & Networking:
           - httpclient / HTTP Client: benchmarks/http.md
@@ -282,4 +286,5 @@ nav:
           - filelock / File Lock: benchmarks/filelock.md
           - persistdict / Persistent Dict: benchmarks/persistdict.md
           - qr / QR Code: benchmarks/qr.md
+          - depdetect / Dependency Detection: benchmarks/depdetect.md
   - Changelog: changelog.md

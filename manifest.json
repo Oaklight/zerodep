@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-04-01T08:06:52.191308+00:00",
+  "generated": "2026-04-06T15:43:02.365639+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -47,6 +47,18 @@
       "tier": "simple",
       "category": "terminal"
     },
+    "lib": {
+      "description": "zerodep CLI — copy zero-dependency Python modules into your project",
+      "files": [
+        "build/lib/zerodep.py"
+      ],
+      "version": "0.2.0",
+      "deps": [
+        "httpclient"
+      ],
+      "tier": "",
+      "category": ""
+    },
     "cache": {
       "description": "Zero-dependency caching with TTL, eviction policies, and async support",
       "files": [
@@ -70,6 +82,16 @@
       ],
       "tier": "subsystem",
       "category": "data"
+    },
+    "depdetect": {
+      "description": "Dependency detection and verification — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "depdetect/depdetect.py"
+      ],
+      "version": "0.3.0",
+      "deps": [],
+      "tier": "medium",
+      "category": "devtools"
     },
     "diff": {
       "description": "Unified diff parser, patch applicator, and three-way merge — zero dependencies, stdlib only, Python 3.10+",
@@ -153,14 +175,14 @@
       "tier": "medium",
       "category": "terminal"
     },
-    "protobuf": {
-      "description": "Zero-dependency proto3 encoder/decoder using Python dataclass schemas",
+    "persistdict": {
+      "description": "Persistent dictionary with pluggable backends",
       "files": [
-        "protobuf/protobuf.py"
+        "persistdict/persistdict.py"
       ],
       "version": "0.3.0",
       "deps": [],
-      "tier": "subsystem",
+      "tier": "medium",
       "category": "data"
     },
     "prompt": {
@@ -172,6 +194,16 @@
       "deps": [],
       "tier": "simple",
       "category": "terminal"
+    },
+    "protobuf": {
+      "description": "Zero-dependency proto3 encoder/decoder using Python dataclass schemas",
+      "files": [
+        "protobuf/protobuf.py"
+      ],
+      "version": "0.3.0",
+      "deps": [],
+      "tier": "subsystem",
+      "category": "data"
     },
     "qr": {
       "description": "QR Code generator library (Python)",

@@ -74,6 +74,7 @@ plugins:
             - ../filelock
             - ../persistdict
             - ../protobuf
+            - ../depdetect
             - aes
             - qr
             - httpclient
@@ -106,6 +107,7 @@ plugins:
             - filelock
             - persistdict
             - protobuf
+            - depdetect
           options:
             docstring_style: google
             show_source: true
@@ -196,6 +198,7 @@ nav:
           - filelock / 文件锁: modules/filelock.md
           - persistdict / 持久化字典: modules/persistdict.md
           - qr / QR 二维码: modules/qr.md
+          - depdetect / 依赖检测: modules/depdetect.md
   - API 参考:
       - 网络与通信:
           - httpclient / HTTP 客户端: api/http.md
@@ -239,6 +242,7 @@ nav:
           - filelock / 文件锁: api/filelock.md
           - persistdict / 持久化字典: api/persistdict.md
           - qr / QR 二维码: api/qr.md
+          - depdetect / 依赖检测: api/depdetect.md
   - 性能测试:
       - 网络与通信:
           - httpclient / HTTP 客户端: benchmarks/http.md
@@ -282,4 +286,5 @@ nav:
           - filelock / 文件锁: benchmarks/filelock.md
           - persistdict / 持久化字典: benchmarks/persistdict.md
           - qr / QR 二维码: benchmarks/qr.md
+          - depdetect / 依赖检测: benchmarks/depdetect.md
   - 更新日志: changelog.md

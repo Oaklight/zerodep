@@ -37,12 +37,20 @@ def _small_data():
 
 
 def _medium_data():
-    return {f"key_{i}": {"index": i, "name": f"item_{i}", "tags": ["a", "b"]} for i in range(MEDIUM_N)}
+    return {
+        f"key_{i}": {"index": i, "name": f"item_{i}", "tags": ["a", "b"]}
+        for i in range(MEDIUM_N)
+    }
 
 
 def _large_data():
     return {
-        f"key_{i}": {"index": i, "name": f"item_{i}", "tags": [f"t{j}" for j in range(5)], "active": i % 2 == 0}
+        f"key_{i}": {
+            "index": i,
+            "name": f"item_{i}",
+            "tags": [f"t{j}" for j in range(5)],
+            "active": i % 2 == 0,
+        }
         for i in range(LARGE_N)
     }
 

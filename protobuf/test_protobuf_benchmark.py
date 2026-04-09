@@ -52,70 +52,173 @@ def _build_google_messages():
     small_msg = file_dp.message_type.add()
     small_msg.name = "SmallMessage"
     f = small_msg.field.add()
-    f.name, f.number, f.type, f.label = "name", 1, _dpb2.FieldDescriptorProto.TYPE_STRING, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "name",
+        1,
+        _dpb2.FieldDescriptorProto.TYPE_STRING,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
     f = small_msg.field.add()
-    f.name, f.number, f.type, f.label = "value", 2, _dpb2.FieldDescriptorProto.TYPE_INT32, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "value",
+        2,
+        _dpb2.FieldDescriptorProto.TYPE_INT32,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
     f = small_msg.field.add()
-    f.name, f.number, f.type, f.label = "flag", 3, _dpb2.FieldDescriptorProto.TYPE_BOOL, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "flag",
+        3,
+        _dpb2.FieldDescriptorProto.TYPE_BOOL,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
 
     # MediumMessage: id(1)=uint64, title(2)=string, score(3)=double,
     #                tags(4)=repeated string, values(5)=repeated int32
     med_msg = file_dp.message_type.add()
     med_msg.name = "MediumMessage"
     f = med_msg.field.add()
-    f.name, f.number, f.type, f.label = "id", 1, _dpb2.FieldDescriptorProto.TYPE_UINT64, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "id",
+        1,
+        _dpb2.FieldDescriptorProto.TYPE_UINT64,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
     f = med_msg.field.add()
-    f.name, f.number, f.type, f.label = "title", 2, _dpb2.FieldDescriptorProto.TYPE_STRING, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "title",
+        2,
+        _dpb2.FieldDescriptorProto.TYPE_STRING,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
     f = med_msg.field.add()
-    f.name, f.number, f.type, f.label = "score", 3, _dpb2.FieldDescriptorProto.TYPE_DOUBLE, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "score",
+        3,
+        _dpb2.FieldDescriptorProto.TYPE_DOUBLE,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
     f = med_msg.field.add()
-    f.name, f.number, f.type, f.label = "tags", 4, _dpb2.FieldDescriptorProto.TYPE_STRING, _dpb2.FieldDescriptorProto.LABEL_REPEATED
+    f.name, f.number, f.type, f.label = (
+        "tags",
+        4,
+        _dpb2.FieldDescriptorProto.TYPE_STRING,
+        _dpb2.FieldDescriptorProto.LABEL_REPEATED,
+    )
     f = med_msg.field.add()
-    f.name, f.number, f.type, f.label = "values", 5, _dpb2.FieldDescriptorProto.TYPE_INT32, _dpb2.FieldDescriptorProto.LABEL_REPEATED
+    f.name, f.number, f.type, f.label = (
+        "values",
+        5,
+        _dpb2.FieldDescriptorProto.TYPE_INT32,
+        _dpb2.FieldDescriptorProto.LABEL_REPEATED,
+    )
 
     # InnerMessage: x(1)=int32, y(2)=int32, label(3)=string
     inner_msg = file_dp.message_type.add()
     inner_msg.name = "InnerMessage"
     f = inner_msg.field.add()
-    f.name, f.number, f.type, f.label = "x", 1, _dpb2.FieldDescriptorProto.TYPE_INT32, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "x",
+        1,
+        _dpb2.FieldDescriptorProto.TYPE_INT32,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
     f = inner_msg.field.add()
-    f.name, f.number, f.type, f.label = "y", 2, _dpb2.FieldDescriptorProto.TYPE_INT32, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "y",
+        2,
+        _dpb2.FieldDescriptorProto.TYPE_INT32,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
     f = inner_msg.field.add()
-    f.name, f.number, f.type, f.label = "label", 3, _dpb2.FieldDescriptorProto.TYPE_STRING, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "label",
+        3,
+        _dpb2.FieldDescriptorProto.TYPE_STRING,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
 
     # LargeMessage: id(1)=uint64, name(2)=string, items(3)=repeated InnerMessage,
     #               metadata(4)=map<string,string>, scores(5)=repeated double, active(6)=bool
     large_msg = file_dp.message_type.add()
     large_msg.name = "LargeMessage"
     f = large_msg.field.add()
-    f.name, f.number, f.type, f.label = "id", 1, _dpb2.FieldDescriptorProto.TYPE_UINT64, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "id",
+        1,
+        _dpb2.FieldDescriptorProto.TYPE_UINT64,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
     f = large_msg.field.add()
-    f.name, f.number, f.type, f.label = "name", 2, _dpb2.FieldDescriptorProto.TYPE_STRING, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "name",
+        2,
+        _dpb2.FieldDescriptorProto.TYPE_STRING,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
     f = large_msg.field.add()
-    f.name, f.number, f.type, f.label = "items", 3, _dpb2.FieldDescriptorProto.TYPE_MESSAGE, _dpb2.FieldDescriptorProto.LABEL_REPEATED
+    f.name, f.number, f.type, f.label = (
+        "items",
+        3,
+        _dpb2.FieldDescriptorProto.TYPE_MESSAGE,
+        _dpb2.FieldDescriptorProto.LABEL_REPEATED,
+    )
     f.type_name = ".bench.InnerMessage"
     # map<string, string> as MapEntry
     map_entry = large_msg.nested_type.add()
     map_entry.name = "MetadataEntry"
     map_entry.options.CopyFrom(_dpb2.MessageOptions(map_entry=True))
     f = map_entry.field.add()
-    f.name, f.number, f.type, f.label = "key", 1, _dpb2.FieldDescriptorProto.TYPE_STRING, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "key",
+        1,
+        _dpb2.FieldDescriptorProto.TYPE_STRING,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
     f = map_entry.field.add()
-    f.name, f.number, f.type, f.label = "value", 2, _dpb2.FieldDescriptorProto.TYPE_STRING, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "value",
+        2,
+        _dpb2.FieldDescriptorProto.TYPE_STRING,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
     f = large_msg.field.add()
-    f.name, f.number, f.type, f.label = "metadata", 4, _dpb2.FieldDescriptorProto.TYPE_MESSAGE, _dpb2.FieldDescriptorProto.LABEL_REPEATED
+    f.name, f.number, f.type, f.label = (
+        "metadata",
+        4,
+        _dpb2.FieldDescriptorProto.TYPE_MESSAGE,
+        _dpb2.FieldDescriptorProto.LABEL_REPEATED,
+    )
     f.type_name = ".bench.LargeMessage.MetadataEntry"
     f = large_msg.field.add()
-    f.name, f.number, f.type, f.label = "scores", 5, _dpb2.FieldDescriptorProto.TYPE_DOUBLE, _dpb2.FieldDescriptorProto.LABEL_REPEATED
+    f.name, f.number, f.type, f.label = (
+        "scores",
+        5,
+        _dpb2.FieldDescriptorProto.TYPE_DOUBLE,
+        _dpb2.FieldDescriptorProto.LABEL_REPEATED,
+    )
     f = large_msg.field.add()
-    f.name, f.number, f.type, f.label = "active", 6, _dpb2.FieldDescriptorProto.TYPE_BOOL, _dpb2.FieldDescriptorProto.LABEL_OPTIONAL
+    f.name, f.number, f.type, f.label = (
+        "active",
+        6,
+        _dpb2.FieldDescriptorProto.TYPE_BOOL,
+        _dpb2.FieldDescriptorProto.LABEL_OPTIONAL,
+    )
 
     pool.Add(file_dp)
 
-    SmallMsg = message_factory.GetMessageClass(pool.FindMessageTypeByName("bench.SmallMessage"))
-    MedMsg = message_factory.GetMessageClass(pool.FindMessageTypeByName("bench.MediumMessage"))
-    InnerMsg = message_factory.GetMessageClass(pool.FindMessageTypeByName("bench.InnerMessage"))
-    LargeMsg = message_factory.GetMessageClass(pool.FindMessageTypeByName("bench.LargeMessage"))
+    SmallMsg = message_factory.GetMessageClass(
+        pool.FindMessageTypeByName("bench.SmallMessage")
+    )
+    MedMsg = message_factory.GetMessageClass(
+        pool.FindMessageTypeByName("bench.MediumMessage")
+    )
+    InnerMsg = message_factory.GetMessageClass(
+        pool.FindMessageTypeByName("bench.InnerMessage")
+    )
+    LargeMsg = message_factory.GetMessageClass(
+        pool.FindMessageTypeByName("bench.LargeMessage")
+    )
 
     return SmallMsg, MedMsg, InnerMsg, LargeMsg
 
@@ -283,7 +386,9 @@ def g_small_obj():
 
 @pytest.fixture
 def g_medium_obj():
-    msg = GMedium(id=123456789, title="A medium-sized message for benchmarking", score=3.14159)
+    msg = GMedium(
+        id=123456789, title="A medium-sized message for benchmarking", score=3.14159
+    )
     msg.tags.extend(["alpha", "beta", "gamma", "delta"])
     msg.values.extend(list(range(100)))
     return msg

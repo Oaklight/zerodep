@@ -75,6 +75,7 @@ plugins:
             - ../persistdict
             - ../protobuf
             - ../depdetect
+            - ../semver
             - aes
             - qr
             - httpclient
@@ -108,6 +109,7 @@ plugins:
             - persistdict
             - protobuf
             - depdetect
+            - semver
           options:
             docstring_style: google
             show_source: true
@@ -173,6 +175,7 @@ nav:
           - protobuf / Protobuf Codec: modules/protobuf.md
       - Data Validation:
           - validate / Validator: modules/validate.md
+          - semver / Version Parser: modules/semver.md
       - Text & Markup:
           - markdown / Markdown Renderer: modules/markdown.md
           - soup / HTML Parser: modules/soup.md
@@ -217,6 +220,7 @@ nav:
           - protobuf / Protobuf Codec: api/protobuf.md
       - Data Validation:
           - validate / Validator: api/validate.md
+          - semver / Version Parser: api/semver.md
       - Text & Markup:
           - markdown / Markdown Renderer: api/markdown.md
           - soup / HTML Parser: api/soup.md
@@ -261,6 +265,7 @@ nav:
           - protobuf / Protobuf Codec: benchmarks/protobuf.md
       - Data Validation:
           - validate / Validator: benchmarks/validate.md
+          - semver / Version Parser: benchmarks/semver.md
       - Text & Markup:
           - markdown / Markdown Renderer: benchmarks/markdown.md
           - soup / HTML Parser: benchmarks/soup.md

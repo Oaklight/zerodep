@@ -19,14 +19,22 @@
     "scheduler": {
       "description": "Zero-dependency in-process task scheduler with cron support",
       "files": ["scheduler/scheduler.py"],
-      "version": "0.1.0",
-      "deps": []
+      "version": "0.4.0",
+      "deps": [],
+      "tier": "subsystem",
+      "category": "util",
+      "last_updated": "2026-04-09T22:14:17+08:00",
+      "content_hash": "a1b2c3..."
     },
     "sse": {
       "description": "Zero-dependency SSE (Server-Sent Events) client",
       "files": ["sse/sse.py"],
-      "version": "0.1.0",
-      "deps": ["httpclient"]
+      "version": "0.4.0",
+      "deps": ["httpclient"],
+      "tier": "subsystem",
+      "category": "network",
+      "last_updated": "2026-04-09T22:14:17+08:00",
+      "content_hash": "d4e5f6..."
     }
   }
 }
@@ -46,8 +54,15 @@
 |------|------|------|
 | `description` | `string` | 模块 docstring 的第一行 |
 | `files` | `list[string]` | 模块 `.py` 文件的相对路径列表 |
-| `version` | `string` | 主文件中 `__version__` 的值 |
-| `deps` | `list[string]` | 兄弟模块依赖（来自 `__deps__`） |
+| `version` | `string` | frontmatter 注释块中的版本号 |
+| `deps` | `list[string]` | 兄弟模块依赖 |
+| `tier` | `string` | 复杂度层级（`simple`、`moderate`、`subsystem`） |
+| `category` | `string` | 功能分类（`data`、`network`、`util` 等） |
+| `last_updated` | `string\|null` | 主文件最后一次 git 提交的 ISO 8601 时间戳 |
+| `content_hash` | `string` | 去除 frontmatter 后主文件内容的 SHA-256 哈希值 |
+
+!!! tip
+    `content_hash` 排除了 `# /// zerodep` frontmatter 注释块，因此仅元数据变更（版本号更新、tier 调整）不会改变哈希值。使用 `zerodep outdated` 可将本地文件与这些哈希值进行对比。
 
 ## 生成原理
 
@@ -67,7 +82,7 @@
 以下目录不会被扫描：
 
 ```
-docs_en, docs_zh, plans, .git, .github,
+build, dist, docs_en, docs_zh, plans, .git, .github,
 __pycache__, .pytest_cache, .ruff_cache, site
 ```
 
@@ -96,11 +111,19 @@ __pycache__, .pytest_cache, .ruff_cache, site
 
 ```mermaid
 graph LR
+    a2a --> jsonrpc
+    acp --> jsonrpc
+    config --> dotenv
+    config --> yaml
+    config --> jsonc
+    frontmatter --> yaml
+    skills --> frontmatter
+    skills --> search
     sse --> httpclient
     vcs --> diff
 ```
 
-其他所有模块的 `__deps__: list[str] = []`（无兄弟依赖）。
+其他所有模块的 `deps = []`（无兄弟依赖）。
 
 ## 重新生成
 

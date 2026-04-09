@@ -100,6 +100,23 @@ Continue? [Y/n]
 zerodep update sse
 ```
 
+### `zerodep outdated`
+
+检查本地 zerodep 文件是否有上游内容变更。将每个本地文件的内容哈希与 manifest 对比，忽略仅元数据变更（如版本号更新）。
+
+```bash
+$ zerodep outdated
+Module  Local Ver  Latest Ver  Status
+------  ---------  ----------  ----------
+semver  0.3.0      0.4.0       up-to-date
+yaml    0.3.0      0.4.0       outdated
+```
+
+- **up-to-date** — 文件内容与上游一致（元数据可能不同）
+- **outdated** — 文件有实质性的上游内容变更
+
+仅检查当前目录中存在的文件；本地不存在的模块会被跳过。
+
 ### `zerodep manifest`
 
 从本地模块源文件重新生成 `manifest.json`。这是维护者命令——在仓库中添加或更新模块后运行。

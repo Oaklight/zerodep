@@ -12,12 +12,13 @@ Requires Python 3.10+, zero external dependencies.
 
 from __future__ import annotations
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 import argparse
 import ast
 import json
 import shutil
+import subprocess
 import sys
 import textwrap
 import urllib.error
@@ -137,6 +138,8 @@ def _resolve_deps(
 
 # Directories/files to skip when scanning for modules
 _SKIP_DIRS = {
+    "build",
+    "dist",
     "docs_en",
     "docs_zh",
     "plans",
@@ -147,6 +150,22 @@ _SKIP_DIRS = {
     ".ruff_cache",
     "site",
 }
+
+
+def _git_last_updated(filepath: Path, repo_root: Path) -> str | None:
+    """Return the ISO 8601 author-date of the last commit touching *filepath*."""
+    try:
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%aI", "--", str(filepath)],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        ts = result.stdout.strip()
+        return ts if ts else None
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return None
 
 
 def _scan_modules(repo_root: Path) -> dict:
@@ -204,6 +223,9 @@ def _scan_modules(repo_root: Path) -> dict:
                     tier = meta.get("tier", "")
                     category = meta.get("category", "")
 
+                    # Get last commit timestamp for the primary file
+                    last_updated = _git_last_updated(primary, repo_root)
+
                     modules[mod_name] = {
                         "description": description,
                         "files": files,
@@ -211,6 +233,7 @@ def _scan_modules(repo_root: Path) -> dict:
                         "deps": deps,
                         "tier": tier,
                         "category": category,
+                        "last_updated": last_updated,
                     }
 
             # Recurse into subdirectories

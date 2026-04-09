@@ -7,17 +7,15 @@ the popular sqlitedict library.
 
 import os
 import sys
-import tempfile
 
 import pytest
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from persistdict import open as pd_open
-
 # ── Reference implementations ──
-
 import shelve
+
+from persistdict import open as pd_open
 
 try:
     from sqlitedict import SqliteDict

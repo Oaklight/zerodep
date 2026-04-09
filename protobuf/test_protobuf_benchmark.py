@@ -29,7 +29,6 @@ from protobuf import (
 try:
     from google.protobuf import descriptor_pb2 as _dpb2
     from google.protobuf import descriptor_pool as _pool
-    from google.protobuf import symbol_database as _sdb
 
     HAS_GOOGLE_PB = True
 except ImportError:
@@ -38,7 +37,6 @@ except ImportError:
 
 def _build_google_messages():
     """Dynamically build google-protobuf message classes equivalent to zerodep ones."""
-    from google.protobuf import descriptor as _desc
     from google.protobuf import message_factory
 
     pool = _pool.DescriptorPool()

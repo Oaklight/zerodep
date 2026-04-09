@@ -149,6 +149,7 @@ select = ["E", "F", "I", "W"]
 "a2a/a2a.py" = ["E501"]
 "acp/acp.py" = ["E501"]
 "**/test_*.py" = ["E402"]
+"**/test_*_benchmark.py" = ["E501"]
 
 [tool.ty.environment]
 extra-paths = [

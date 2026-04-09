@@ -6,13 +6,21 @@
 
 ## [未发布]
 
+## [0.4.0] - 2026-04-09
+
 ### 新增模块
 
+- **Semver 模块**：PEP 440 版本解析与比较器——零依赖，可直接替换 `packaging.version`。支持完整的 PEP 440 版本方案，包括 epoch、pre/post/dev 发布、local 版本和字母规范化。排序性能比 `packaging` 快约 2 倍。
 - **Protobuf 模块**：零依赖 proto3 编解码器，使用 Python dataclass 定义消息 schema。支持全部 proto3 标量类型（int32/64、uint32/64、sint32/64、fixed32/64、sfixed32/64、float32、double、bool、string、bytes）、嵌套消息、packed repeated 字段、map 字段、枚举、oneof 分组和未知字段保留。通过 `@message` 装饰器 + `field(number)` + `Annotated` 类型别名定义 schema——无需 `.proto` 文件或 `protoc` 编译器。Proto3 语义：零值字段不序列化，repeated 标量默认 packed 编码。
 - **持久化字典模块**：基于 `MutableMapping` 的持久化字典，支持可插拔后端（JSON 文件、SQLite）和可插拔序列化（默认 JSON，无 pickle）。线程安全、原子写入、通过 SQLite 表支持命名空间。工厂函数 `open()` 根据文件扩展名自动检测后端。
+- **DepDetect 模块**：依赖检测与验证工具。
 
 ### 功能增强
 
+- **zerodep CLI**：新增 `outdated` 命令——将本地文件的内容哈希与上游 manifest 对比，检测实质性内容变更，忽略仅元数据更新（如版本号变化）。
+- **zerodep CLI**：manifest 新增 `content_hash` 字段——去除 frontmatter 后的模块文件 SHA-256 摘要，实现可靠的变更检测。
+- **zerodep CLI**：manifest 新增 `last_updated` 字段——每个模块主文件最后一次 git 提交的 ISO 8601 时间戳。
+- **zerodep CLI**：manifest 生成现在跳过 `build/` 和 `dist/` 目录，避免将过期构建产物注册为模块。
 - **Skills 模块**：`to_markdown()` 和 `from_dict()` 方法，支持 SKILL.md 往返序列化——程序化技能创建、模板生成和迁移工具。
 - **Skills 模块**：BM25 索引缓存——避免在相同技能集上重复调用 `select()` 时冗余重建索引。
 - **Skills 模块**：`SkillRegistry.select()` 新增 `min_score` 阈值——在注入系统提示词前过滤低相关性结果。

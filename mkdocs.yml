@@ -75,6 +75,7 @@ plugins:
             - ../persistdict
             - ../protobuf
             - ../depdetect
+            - ../semver
             - aes
             - qr
             - httpclient
@@ -108,6 +109,7 @@ plugins:
             - persistdict
             - protobuf
             - depdetect
+            - semver
           options:
             docstring_style: google
             show_source: true
@@ -173,6 +175,7 @@ nav:
           - protobuf / Protobuf 编解码器: modules/protobuf.md
       - 数据验证:
           - validate / 验证器: modules/validate.md
+          - semver / 版本解析器: modules/semver.md
       - 文本与标记:
           - markdown / Markdown 渲染器: modules/markdown.md
           - soup / HTML 解析器: modules/soup.md
@@ -217,6 +220,7 @@ nav:
           - protobuf / Protobuf 编解码器: api/protobuf.md
       - 数据验证:
           - validate / 验证器: api/validate.md
+          - semver / 版本解析器: api/semver.md
       - 文本与标记:
           - markdown / Markdown 渲染器: api/markdown.md
           - soup / HTML 解析器: api/soup.md
@@ -261,6 +265,7 @@ nav:
           - protobuf / Protobuf 编解码器: benchmarks/protobuf.md
       - 数据验证:
           - validate / 验证器: benchmarks/validate.md
+          - semver / 版本解析器: benchmarks/semver.md
       - 文本与标记:
           - markdown / Markdown 渲染器: benchmarks/markdown.md
           - soup / HTML 解析器: benchmarks/soup.md

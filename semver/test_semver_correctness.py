@@ -19,7 +19,7 @@ except ImportError:
     pytest.skip("packaging not installed", allow_module_level=True)
 
 sys.path.insert(0, os.path.dirname(__file__))
-from semver import InvalidVersion, Version, version_parse  # noqa: E402
+from semver import InvalidVersion, Version, version_parse  # noqa: E402, I001
 
 
 # ── Helpers ──────────────────────────────────────────────────────────

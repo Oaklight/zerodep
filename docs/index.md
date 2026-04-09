@@ -6,6 +6,13 @@ hide:
 
 # zerodep
 
+[![PyPI](https://img.shields.io/pypi/v/zerodep?color=green)](https://pypi.org/project/zerodep/)
+[![GitHub Release](https://img.shields.io/github/v/release/Oaklight/zerodep?color=green)](https://github.com/Oaklight/zerodep/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/pypi/pyversions/zerodep?color=green)](https://pypi.org/project/zerodep/)
+[![CI](https://img.shields.io/github/actions/workflow/status/Oaklight/zerodep/ci.yml?label=CI)](https://github.com/Oaklight/zerodep/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/readthedocs/zerodep)](https://zerodep.readthedocs.io)
+
 Zero-dependency, single-file Python implementations of popular libraries — stdlib only, Python 3.10+.
 
 ## Overview

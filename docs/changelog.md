@@ -6,13 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-09
+
 ### New Modules
 
+- **Semver module**: PEP 440 version parser and comparator — zero-dependency drop-in replacement for `packaging.version`. Supports full PEP 440 version scheme including epochs, pre/post/dev releases, local versions, and letter normalization. Benchmarked ~2x faster than `packaging` for sorting.
 - **Protobuf module**: Zero-dependency proto3 encoder/decoder using Python dataclass schemas. Supports all proto3 scalar types (int32/64, uint32/64, sint32/64, fixed32/64, sfixed32/64, float32, double, bool, string, bytes), nested messages, packed repeated fields, map fields, enums, oneof groups, and unknown field preservation. Schema defined via `@message` decorator + `field(number)` + `Annotated` type aliases — no `.proto` files or `protoc` needed. Proto3 semantics: zero-value fields omitted, packed repeated scalars by default.
 - **Persistent Dict module**: `MutableMapping`-based persistent dictionary with pluggable backends (JSON file, SQLite) and pluggable serialization (JSON by default, no pickle). Thread-safe, atomic writes, namespace support via SQLite tables. Factory function `open()` auto-detects backend from file extension.
+- **Dep Detect module**: dependency detection and verification utility.
 
 ### Enhancements
 
+- **zerodep CLI**: new `outdated` command — compares local file content hashes against the upstream manifest, detecting actual content changes while ignoring metadata-only updates (version bumps).
+- **zerodep CLI**: `content_hash` field in manifest — SHA-256 digest of module file content with frontmatter stripped, enabling reliable change detection.
+- **zerodep CLI**: `last_updated` field in manifest — ISO 8601 timestamp of the last git commit touching each module's primary file.
+- **zerodep CLI**: manifest generation now skips `build/` and `dist/` directories to avoid registering stale build artifacts.
 - **Skills module**: `to_markdown()` and `from_dict()` methods for round-trip SKILL.md serialization — programmatic skill authoring, templating, and migration.
 - **Skills module**: BM25 index caching — avoids redundant index rebuilds on repeated `select()` calls with the same skill set.
 - **Skills module**: `min_score` threshold on `SkillRegistry.select()` — filters out low-relevance results before injection into system prompts.

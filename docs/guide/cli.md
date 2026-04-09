@@ -100,6 +100,23 @@ Re-fetch and overwrite existing module files. Equivalent to `add --force --yes`.
 zerodep update sse
 ```
 
+### `zerodep outdated`
+
+Check local zerodep files for upstream content changes. Compares the content hash of each local file against the manifest, ignoring metadata-only changes (version bumps).
+
+```bash
+$ zerodep outdated
+Module  Local Ver  Latest Ver  Status
+------  ---------  ----------  ----------
+semver  0.3.0      0.4.0       up-to-date
+yaml    0.3.0      0.4.0       outdated
+```
+
+- **up-to-date** — the file content is identical to upstream (metadata may differ)
+- **outdated** — the file has substantive upstream changes
+
+Only files found in the current directory are checked; modules not present locally are silently skipped.
+
 ### `zerodep manifest`
 
 Regenerate `manifest.json` from local module source files. This is a maintainer command — run it after adding or updating modules in the repository.

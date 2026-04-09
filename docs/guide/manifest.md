@@ -19,14 +19,22 @@ The `manifest.json` file is the module index that the CLI uses to discover avail
     "scheduler": {
       "description": "Zero-dependency in-process task scheduler with cron support",
       "files": ["scheduler/scheduler.py"],
-      "version": "0.1.0",
-      "deps": []
+      "version": "0.4.0",
+      "deps": [],
+      "tier": "subsystem",
+      "category": "util",
+      "last_updated": "2026-04-09T22:14:17+08:00",
+      "content_hash": "a1b2c3..."
     },
     "sse": {
       "description": "Zero-dependency SSE (Server-Sent Events) client",
       "files": ["sse/sse.py"],
-      "version": "0.1.0",
-      "deps": ["httpclient"]
+      "version": "0.4.0",
+      "deps": ["httpclient"],
+      "tier": "subsystem",
+      "category": "network",
+      "last_updated": "2026-04-09T22:14:17+08:00",
+      "content_hash": "d4e5f6..."
     }
   }
 }
@@ -46,8 +54,15 @@ The `manifest.json` file is the module index that the CLI uses to discover avail
 |-------|------|-------------|
 | `description` | `string` | First line of the module docstring |
 | `files` | `list[string]` | Relative paths to the module's `.py` files |
-| `version` | `string` | Value of `__version__` in the primary file |
-| `deps` | `list[string]` | Sibling module dependencies (from `__deps__`) |
+| `version` | `string` | Version from the frontmatter block |
+| `deps` | `list[string]` | Sibling module dependencies |
+| `tier` | `string` | Complexity tier (`simple`, `moderate`, `subsystem`) |
+| `category` | `string` | Functional category (`data`, `network`, `util`, etc.) |
+| `last_updated` | `string\|null` | ISO 8601 timestamp of the last git commit touching the primary file |
+| `content_hash` | `string` | SHA-256 hex digest of the primary file with frontmatter stripped |
+
+!!! tip
+    `content_hash` excludes the `# /// zerodep` frontmatter block, so metadata-only changes (version bumps, tier reclassification) do not alter the hash. Use `zerodep outdated` to compare your local files against these hashes.
 
 ## How It's Generated
 
@@ -67,7 +82,7 @@ The `zerodep manifest` command recursively scans the repository for module direc
 The following directories are not scanned for modules:
 
 ```
-docs_en, docs_zh, plans, .git, .github,
+build, dist, docs_en, docs_zh, plans, .git, .github,
 __pycache__, .pytest_cache, .ruff_cache, site
 ```
 
@@ -96,11 +111,19 @@ Each module's primary `.py` file should declare a PEP 723-style frontmatter bloc
 
 ```mermaid
 graph LR
+    a2a --> jsonrpc
+    acp --> jsonrpc
+    config --> dotenv
+    config --> yaml
+    config --> jsonc
+    frontmatter --> yaml
+    skills --> frontmatter
+    skills --> search
     sse --> httpclient
     vcs --> diff
 ```
 
-All other modules have `__deps__: list[str] = []` (no sibling dependencies).
+All other modules have `deps = []` (no sibling dependencies).
 
 ## Regenerating
 

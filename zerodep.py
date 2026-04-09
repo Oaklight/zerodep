@@ -5,6 +5,7 @@ Usage::
     python zerodep.py list                  # list available modules
     python zerodep.py info <module>         # module details + deps
     python zerodep.py add <module> [...]    # copy modules to cwd
+    python zerodep.py outdated              # check local files for updates
     python zerodep.py manifest              # regenerate manifest.json
 
 Requires Python 3.10+, zero external dependencies.
@@ -16,6 +17,7 @@ __version__ = "0.4.0"
 
 import argparse
 import ast
+import hashlib
 import json
 import shutil
 import subprocess
@@ -152,6 +154,28 @@ _SKIP_DIRS = {
 }
 
 
+def _content_hash(filepath: Path) -> str:
+    """Return SHA-256 hex digest of *filepath* with the frontmatter block stripped.
+
+    The ``# /// zerodep`` … ``# ///`` block is excluded so that metadata-only
+    changes (version bumps, tier reclassification) do not alter the hash.
+    """
+    lines = filepath.read_text(encoding="utf-8").splitlines(keepends=True)
+    filtered: list[str] = []
+    in_block = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped == "# /// zerodep":
+            in_block = True
+            continue
+        if in_block and stripped == "# ///":
+            in_block = False
+            continue
+        if not in_block:
+            filtered.append(line)
+    return hashlib.sha256("".join(filtered).encode("utf-8")).hexdigest()
+
+
 def _git_last_updated(filepath: Path, repo_root: Path) -> str | None:
     """Return the ISO 8601 author-date of the last commit touching *filepath*."""
     try:
@@ -225,6 +249,7 @@ def _scan_modules(repo_root: Path) -> dict:
 
                     # Get last commit timestamp for the primary file
                     last_updated = _git_last_updated(primary, repo_root)
+                    chash = _content_hash(primary)
 
                     modules[mod_name] = {
                         "description": description,
@@ -234,6 +259,7 @@ def _scan_modules(repo_root: Path) -> dict:
                         "tier": tier,
                         "category": category,
                         "last_updated": last_updated,
+                        "content_hash": chash,
                     }
 
             # Recurse into subdirectories
@@ -533,6 +559,47 @@ def cmd_manifest(args: argparse.Namespace) -> None:
             _ok(f"  {name} -> {', '.join(deps)}")
 
 
+def cmd_outdated(args: argparse.Namespace) -> None:
+    """Check local zerodep files against the upstream manifest for changes."""
+    manifest = _load_manifest(local=args.local, offline=args.offline)
+    modules_data = manifest.get("modules", {})
+
+    scan_dir = Path.cwd()
+    rows: list[tuple[str, str, str, str]] = []
+
+    for mod_name, mod in sorted(modules_data.items()):
+        upstream_hash = mod.get("content_hash")
+        if not upstream_hash:
+            continue
+        for rel_path in mod.get("files", []):
+            filename = Path(rel_path).name
+            local_file = scan_dir / filename
+            if not local_file.exists():
+                continue
+            local_hash = _content_hash(local_file)
+            local_meta = _extract_frontmatter(local_file.read_text(encoding="utf-8"))
+            local_ver = local_meta.get("version", "?")
+            upstream_ver = mod.get("version", "?")
+            if local_hash == upstream_hash:
+                status = "up-to-date"
+            else:
+                status = "outdated"
+            rows.append((mod_name, local_ver, upstream_ver, status))
+
+    if not rows:
+        _ok("No zerodep modules found in current directory.")
+        return
+
+    # Print table
+    headers = ("Module", "Local Ver", "Latest Ver", "Status")
+    widths = [max(len(headers[i]), *(len(r[i]) for r in rows)) for i in range(4)]
+    fmt = "  ".join(f"{{:<{w}}}" for w in widths)
+    print(fmt.format(*headers))
+    print(fmt.format(*("-" * w for w in widths)))
+    for row in rows:
+        print(fmt.format(*row))
+
+
 def cmd_version(args: argparse.Namespace) -> None:
     """Print version."""
     _ok(f"zerodep {__version__}")
@@ -602,6 +669,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     p_update.add_argument("--no-deps", action="store_true", help="skip dependencies")
 
+    # outdated
+    sub.add_parser("outdated", help="check local files for upstream changes")
+
     # manifest
     sub.add_parser("manifest", help="regenerate manifest.json from source")
 
@@ -619,6 +689,7 @@ def main(argv: list[str] | None = None) -> None:
         "info": cmd_info,
         "add": cmd_add,
         "update": cmd_update,
+        "outdated": cmd_outdated,
         "manifest": cmd_manifest,
         "version": cmd_version,
     }

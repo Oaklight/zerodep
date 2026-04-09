@@ -235,6 +235,16 @@
       "tier": "subsystem",
       "category": "process"
     },
+    "semver": {
+      "description": "PEP 440 version parser and comparator — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "semver/semver.py"
+      ],
+      "version": "0.3.0",
+      "deps": [],
+      "tier": "simple",
+      "category": "data"
+    },
     "scheduler": {
       "description": "Zero-dependency in-process task scheduler with cron support",
       "files": [

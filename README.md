@@ -62,6 +62,7 @@ Each module is a **self-contained single `.py` file** — copy it into your proj
 | Module | Description | Benchmark Against |
 |--------|-------------|-------------------|
 | `validate/` | Runtime TypedDict/dataclass validator with JSON Schema generation | `pydantic` |
+| `semver/` | PEP 440 version parser and comparator | `packaging` |
 
 **Text & Markup**
 

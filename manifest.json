@@ -1,30 +1,32 @@
 {
   "version": "1",
-  "generated": "2026-04-06T15:43:02.365639+00:00",
+  "generated": "2026-04-09T14:13:00.848039+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
       "files": [
         "a2a/a2a.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [
         "jsonrpc"
       ],
       "tier": "subsystem",
-      "category": "network"
+      "category": "network",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "acp": {
       "description": "ACP (Agent Client Protocol) -- Zero-dependency Python implementation",
       "files": [
         "acp/acp.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [
         "jsonrpc"
       ],
       "tier": "subsystem",
-      "category": "network"
+      "category": "network",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "aes": {
       "description": "Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",
@@ -32,345 +34,365 @@
         "aes/aes.py",
         "aes/aes_openssl.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "crypto"
+      "category": "crypto",
+      "last_updated": "2026-04-03T17:29:41+08:00"
     },
     "ansi": {
       "description": "ANSI escape code primitives for terminal styling",
       "files": [
         "ansi/ansi.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "simple",
-      "category": "terminal"
-    },
-    "lib": {
-      "description": "zerodep CLI — copy zero-dependency Python modules into your project",
-      "files": [
-        "build/lib/zerodep.py"
-      ],
-      "version": "0.2.0",
-      "deps": [
-        "httpclient"
-      ],
-      "tier": "",
-      "category": ""
+      "category": "terminal",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "cache": {
       "description": "Zero-dependency caching with TTL, eviction policies, and async support",
       "files": [
         "cache/cache.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "subsystem",
-      "category": "utility"
+      "category": "utility",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "config": {
       "description": "Unified configuration loader — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "config/config.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [
         "dotenv",
         "yaml",
         "jsonc"
       ],
       "tier": "subsystem",
-      "category": "data"
+      "category": "data",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "depdetect": {
       "description": "Dependency detection and verification — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "depdetect/depdetect.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "devtools"
+      "category": "devtools",
+      "last_updated": "2026-04-06T23:52:02+08:00"
     },
     "diff": {
       "description": "Unified diff parser, patch applicator, and three-way merge — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "diff/diff.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "simple",
-      "category": "devtools"
+      "category": "devtools",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "dotenv": {
       "description": ".env file parser and loader — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "dotenv/dotenv.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "simple",
-      "category": "data"
+      "category": "data",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "filelock": {
       "description": "Cross-process file locking (Unix ``fcntl`` / Windows ``msvcrt``)",
       "files": [
         "filelock/filelock.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "simple",
-      "category": "utility"
+      "category": "utility",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "frontmatter": {
       "description": "Frontmatter parser and serializer — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "frontmatter/frontmatter.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [
         "yaml"
       ],
       "tier": "medium",
-      "category": "data"
+      "category": "data",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "httpclient": {
       "description": "Zero-dependency sync + async HTTP REST client",
       "files": [
         "httpclient/httpclient.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "subsystem",
-      "category": "network"
+      "category": "network",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "jsonc": {
       "description": "JSONC (JSON with Comments) parser — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "jsonc/jsonc.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "simple",
-      "category": "data"
+      "category": "data",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "jsonrpc": {
       "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",
       "files": [
         "jsonrpc/jsonrpc.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "network"
+      "category": "network",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "markdown": {
       "description": "Markdown to HTML renderer — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "markdown/markdown.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "terminal"
+      "category": "terminal",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "persistdict": {
       "description": "Persistent dictionary with pluggable backends",
       "files": [
         "persistdict/persistdict.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "data"
+      "category": "data",
+      "last_updated": "2026-04-05T17:10:13+08:00"
     },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",
       "files": [
         "prompt/prompt.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "simple",
-      "category": "terminal"
+      "category": "terminal",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "protobuf": {
       "description": "Zero-dependency proto3 encoder/decoder using Python dataclass schemas",
       "files": [
         "protobuf/protobuf.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "subsystem",
-      "category": "data"
+      "category": "data",
+      "last_updated": "2026-04-05T19:40:41+08:00"
     },
     "qr": {
       "description": "QR Code generator library (Python)",
       "files": [
         "qr/qr.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "simple",
-      "category": "utility"
+      "category": "utility",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "retry": {
       "description": "Zero-dependency retry with configurable backoff strategies",
       "files": [
         "retry/retry.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "simple",
-      "category": "utility"
+      "category": "utility",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "runner": {
       "description": "Structured subprocess execution — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "runner/runner.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "subsystem",
-      "category": "process"
-    },
-    "semver": {
-      "description": "PEP 440 version parser and comparator — zero dependencies, stdlib only, Python 3.10+",
-      "files": [
-        "semver/semver.py"
-      ],
-      "version": "0.3.0",
-      "deps": [],
-      "tier": "simple",
-      "category": "data"
+      "category": "process",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "scheduler": {
       "description": "Zero-dependency in-process task scheduler with cron support",
       "files": [
         "scheduler/scheduler.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "subsystem",
-      "category": "process"
+      "category": "process",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "search": {
       "description": "Zero-dependency sparse text search with BM25 family and TF-IDF ranking",
       "files": [
         "search/sparse_search.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "utility"
+      "category": "utility",
+      "last_updated": "2026-04-01T16:13:09+08:00"
+    },
+    "semver": {
+      "description": "PEP 440 version parser and comparator -- zero dependencies, stdlib only",
+      "files": [
+        "semver/semver.py"
+      ],
+      "version": "0.4.0",
+      "deps": [],
+      "tier": "simple",
+      "category": "data",
+      "last_updated": "2026-04-09T18:34:07+08:00"
     },
     "skills": {
       "description": "Agent Skills runtime — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "skills/skills.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [
         "frontmatter",
         "search"
       ],
       "tier": "medium",
-      "category": "data"
+      "category": "data",
+      "last_updated": "2026-04-04T23:55:00+08:00"
     },
     "soup": {
       "description": "HTML parser with BeautifulSoup-like API — zero-dep, stdlib only, Python 3.10+",
       "files": [
         "soup/soup.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "data"
+      "category": "data",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "sse": {
       "description": "Zero-dependency SSE (Server-Sent Events) client",
       "files": [
         "sse/sse.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [
         "httpclient"
       ],
       "tier": "subsystem",
-      "category": "network"
+      "category": "network",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "structlog": {
       "description": "Zero-dependency structured logging with pretty console output",
       "files": [
         "structlog/structlog.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "utility"
+      "category": "utility",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "tabulate": {
       "description": "Tabulate — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "tabulate/tabulate.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "terminal"
+      "category": "terminal",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "toon": {
       "description": "TOON encoder/decoder — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "toon/toon.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "simple",
-      "category": "data"
+      "category": "data",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "validate": {
       "description": "Zero-dependency runtime validator for TypedDict and dataclass types",
       "files": [
         "validate/validate.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "data"
+      "category": "data",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "vcs": {
       "description": "VCS CLI wrapper — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "vcs/vcs.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [
         "diff"
       ],
       "tier": "subsystem",
-      "category": "devtools"
+      "category": "devtools",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "xml": {
       "description": "XML ↔ dict converter with fault-tolerant LLM tag extraction — zero-dep, stdlib only, Python 3.10+",
       "files": [
         "xml/xml.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "data"
+      "category": "data",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     },
     "yaml": {
       "description": "YAML parser and serializer (common subset) — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "yaml/yaml.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "subsystem",
-      "category": "data"
+      "category": "data",
+      "last_updated": "2026-04-01T16:13:09+08:00"
     }
   }
 }

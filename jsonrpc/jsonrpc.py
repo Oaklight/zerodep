@@ -3,7 +3,7 @@
 # deps = []
 # tier = "medium"
 # category = "network"
-# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
+# note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 
 """JSON-RPC 2.0 -- Zero-dependency Python implementation.

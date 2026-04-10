@@ -3,7 +3,7 @@
 # deps = []
 # tier = "subsystem"
 # category = "process"
-# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
+# note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 
 """Zero-dependency in-process task scheduler with cron support.

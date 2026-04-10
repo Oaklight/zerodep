@@ -599,14 +599,11 @@ def cmd_add(args: argparse.Namespace) -> None:
         # Replace generic note with module-specific note
         mod_name = remote_path.split("/")[0]
         text = data.decode("utf-8")
-        text = text.replace(
-            "Install/update via zerodep CLI"
-            " (https://zerodep.readthedocs.io/en/latest/guide/cli/)."
-            " Manual copy may miss deps.",
-            f"Install/update via `zerodep add {mod_name}`"
-            " (https://zerodep.readthedocs.io/en/latest/guide/cli/)."
-            " Manual copy may miss deps.",
+        generic = (
+            "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
         )
+        specific = f"Install/update via `zerodep add {mod_name}`"
+        text = text.replace(generic, specific)
         dest.write_text(text, encoding="utf-8")
         copied += 1
 

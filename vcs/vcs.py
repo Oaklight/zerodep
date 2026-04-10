@@ -3,7 +3,7 @@
 # deps = ["diff"]
 # tier = "subsystem"
 # category = "devtools"
-# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
+# note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 """VCS CLI wrapper — zero dependencies, stdlib only, Python 3.10+.
 

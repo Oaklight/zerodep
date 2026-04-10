@@ -3,7 +3,7 @@
 # deps = []
 # tier = "subsystem"
 # category = "data"
-# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
+# note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 
 """Zero-dependency proto3 encoder/decoder using Python dataclass schemas.

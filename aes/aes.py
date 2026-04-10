@@ -3,7 +3,7 @@
 # deps = []
 # tier = "medium"
 # category = "crypto"
-# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
+# note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 
 """Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys.

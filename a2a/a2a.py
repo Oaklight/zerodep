@@ -3,7 +3,7 @@
 # deps = ["jsonrpc"]
 # tier = "subsystem"
 # category = "network"
-# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
+# note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 
 """A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation.

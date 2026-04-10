@@ -3,7 +3,7 @@
 # deps = []
 # tier = "medium"
 # category = "data"
-# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
+# note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 """Persistent dictionary with pluggable backends.
 

@@ -10,7 +10,7 @@
 |------|------|------|
 | `validate.py` | 纯 Python 实现 | 无（仅标准库：`typing`、`dataclasses`、`re`） |
 
-!!! note "v0.4.2 性能与正确性改进"
+!!! note "v0.4.1 性能与正确性改进"
     内部字段解析辅助函数（`_typeddict_fields`、`_dataclass_fields`、`_find_discriminator`）现使用 `functools.lru_cache` 缓存，避免冗余 `get_type_hints()` 调用，对复杂嵌套 TypedDict 结构性能提升 **8-10 倍**。新增 `_strip_required()` 辅助函数可正确解包 `Required[T]`/`NotRequired[T]` 包装器，使 discriminated union 匹配在联合类型成员使用这些注解时能可靠工作。
 
 ## 功能特性
@@ -228,7 +228,7 @@ validate(3, EvenInt)   # 抛出 ValidationError
 | 约束 | `Annotated[int, Gt(0)]` | `Annotated[int, Field(gt=0)]` |
 | JSON Schema | `json_schema(TypedDict)` | `Model.model_json_schema()` |
 | Discriminated union | 自动检测 Literal 字段 | 需显式声明 `Discriminator` |
-| 性能 | 纯 Python（简单 ~10 us；v0.4.2 缓存优化嵌套类型提速 8-10 倍） | Rust 核心（简单 ~0.6 us） |
+| 性能 | 纯 Python（缓存后简单 ~3.3 us；批量数据优于 pydantic） | Rust 核心（简单 ~0.6 us） |
 | 单文件 | 是（~500 行） | 否（Rust 扩展包） |
 
 **何时使用 zerodep：** 已使用 TypedDict/dataclass，需要验证 + JSON Schema，不想引入新类型系统和外部依赖。

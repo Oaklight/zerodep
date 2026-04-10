@@ -6,11 +6,11 @@
 
 ## [未发布]
 
-## [0.4.2] - 2026-04-10
+## [0.4.1] - 2026-04-10
 
 ### 性能优化
 
-- **Validate 模块**：为 `_typeddict_fields()`、`_dataclass_fields()` 和 `_find_discriminator()` 内部辅助函数添加 `@functools.lru_cache(maxsize=None)` 缓存，避免冗余的 `get_type_hints()` 调用。对复杂嵌套 TypedDict 结构的验证性能提升 **8-10 倍**。
+- **Validate 模块**：为 `_typeddict_fields()`、`_dataclass_fields()`、`_find_discriminator()`、`_is_typeddict()`、`_is_dataclass_type()` 和 `_unwrap_annotated()` 内部辅助函数添加 `@functools.lru_cache(maxsize=None)` 缓存。消除冗余的 `get_type_hints()` 和类型内省调用。简单验证**提速 3 倍**（9.9 → 3.3 us），批量数据验证现已**比 pydantic 快 2 倍**。
 
 ### 问题修复
 

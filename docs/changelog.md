@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.4.0] - 2026-04-11
+
+### Breaking Changes
+
+- **Versioning**: adopted [CalVer](https://calver.org/) (`YYYY.M.patch`) for project-level releases. Individual modules continue to use independent SemVer. Each release represents a stable snapshot of the CLI and all modules.
+
+### New Commands
+
+- **`zerodep dep-graph`**: display module dependency relationships — table view for all modules, or detailed view with transitive impact analysis for a single module (`zerodep dep-graph yaml`).
+- **`zerodep dep-check`**: auto-detect changed modules (via content hash comparison against git tags), then run correctness tests for changed modules and all their downstream dependents. Exits with code 1 on test failure for CI integration. Accepts optional module names to check specific modules (`zerodep dep-check yaml config`).
+- **`zerodep version-check`**: check which modules have been modified since their declared version tag (existed before, now refactored to share logic with `dep-check`).
+
+### Enhancements
+
+- **Module frontmatter**: added `note` field to all modules pointing to CLI documentation, warning that manual file copy may miss required dependencies.
+- **`zerodep add`**: now replaces the generic frontmatter note with a module-specific install command (e.g., `zerodep add config`) when copying files to the user's project.
+- **Module versioning**: corrected all module-level versions to reflect actual per-module change history instead of blanket project-version bumps. Modules like `cache` (0.2.0), `prompt` (0.2.0), and `tabulate` (0.1.0) now show their true version.
+
+### Internal
+
+- Extracted `_find_changed_modules()` helper from `cmd_version_check` to share change-detection logic between `version-check` and `dep-check`.
+- Added `_build_reverse_deps()`, `_transitive_dependents()`, and `_find_test_file()` utility functions.
+
 ## [0.4.1] - 2026-04-10
 
 ### Performance

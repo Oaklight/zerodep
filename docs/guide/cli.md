@@ -117,6 +117,72 @@ yaml    0.3.0      0.4.0       outdated
 
 Only files found in the current directory are checked; modules not present locally are silently skipped.
 
+### `zerodep version-check`
+
+Check which modules have been modified since their declared version tag. Compares the content hash of each module's current source against the git tag corresponding to its declared version.
+
+```bash
+$ zerodep version-check
+Module       Version  Status
+-----------  -------  -----------------------------
+aes          0.4.0    up-to-date
+cache        0.2.0    up-to-date
+config       0.3.0    modified (needs version bump)
+yaml         0.3.0    up-to-date
+...
+```
+
+This is a maintainer command — run it before releasing to ensure all modified modules have had their version bumped.
+
+### `zerodep dep-graph`
+
+Show module dependency relationships. Without arguments, displays a table of all modules that participate in any dependency. With a module name, shows detailed dependency info including transitive impact.
+
+```bash
+# All modules with dependencies
+$ zerodep dep-graph
+Module       Depends on           Depended on by
+-----------  -------------------  -------------------
+config       dotenv, jsonc, yaml  (none)
+frontmatter  yaml                 skills
+yaml         (none)               config, frontmatter
+...
+
+# Single module detail
+$ zerodep dep-graph yaml
+Module: yaml (v0.3.0)
+  Depends on: (none)
+  Depended on by: config, frontmatter
+  Transitively affects: config, frontmatter, skills
+```
+
+### `zerodep dep-check`
+
+Auto-detect changed modules and run correctness tests for them and all their downstream dependents. This ensures that a change in one module does not break modules that depend on it.
+
+```bash
+# Auto-detect changed modules
+$ zerodep dep-check
+
+Changed modules: yaml
+Affected downstream: config, frontmatter, skills
+Total modules to test: 4
+
+Module       Changed  Test  Detail
+-----------  -------  ----  ------
+config       no       pass
+frontmatter  no       pass
+skills       no       pass
+yaml         yes      pass
+
+4 passed
+
+# Check specific modules
+$ zerodep dep-check yaml config
+```
+
+Exits with code 1 if any test fails — suitable for CI pipelines and pre-release checks.
+
 ### `zerodep manifest`
 
 Regenerate `manifest.json` from local module source files. This is a maintainer command — run it after adding or updating modules in the repository.
@@ -137,7 +203,7 @@ Print the CLI version.
 
 ```bash
 $ zerodep version
-zerodep 0.1.0
+zerodep 2026.4.0
 ```
 
 ## Global Options

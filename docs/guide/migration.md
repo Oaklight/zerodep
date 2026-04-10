@@ -6,6 +6,49 @@ title: Migration Guide
 
 This page documents breaking changes between zerodep versions and how to update your code.
 
+## Migrating to 2026.4.0 (CalVer)
+
+### Versioning Scheme Change
+
+Starting with this release, the **project-level** version uses [CalVer](https://calver.org/) (`YYYY.M.patch`):
+
+- `2026.4.0` — first stable release of April 2026
+- `2026.4.1` — second release in the same month (if needed)
+- `2026.5.0` — first release of May 2026
+
+**Module-level** versions remain independent SemVer (e.g., `yaml` 0.3.0, `aes` 0.4.0). Each module's version tracks its own API evolution and is declared in the frontmatter `version` field.
+
+**What this means for users:**
+
+- `pip install zerodep` installs the CLI at the CalVer version
+- Modules obtained via `zerodep add` carry their own SemVer version
+- All modules within the same CalVer release are guaranteed compatible
+- When copying modules manually, always use files from the same release
+
+### Module Frontmatter Note
+
+All modules now include a `note` field in their frontmatter:
+
+```python
+# /// zerodep
+# version = "0.3.0"
+# deps = ["dotenv", "yaml", "jsonc"]
+# note = "Install/update via zerodep CLI (...). Manual copy may miss deps."
+# ///
+```
+
+When copied via `zerodep add`, the note is automatically updated with the specific module name. **No code changes needed** — this is informational only.
+
+### New Maintainer Commands
+
+Three new CLI commands are available for module interdependency management:
+
+- `zerodep version-check` — detect modules with code changes since their declared version
+- `zerodep dep-graph` — visualize module dependency graph
+- `zerodep dep-check` — run tests for changed modules and their downstream dependents
+
+See [CLI Tool](cli.md) for usage details.
+
 ## Migrating to 0.3.0
 
 ### Type Annotations (Style Change)

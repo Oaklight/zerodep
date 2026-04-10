@@ -6,6 +6,16 @@
 
 ## [未发布]
 
+## [0.4.2] - 2026-04-10
+
+### 性能优化
+
+- **Validate 模块**：为 `_typeddict_fields()`、`_dataclass_fields()` 和 `_find_discriminator()` 内部辅助函数添加 `@functools.lru_cache(maxsize=None)` 缓存，避免冗余的 `get_type_hints()` 调用。对复杂嵌套 TypedDict 结构的验证性能提升 **8-10 倍**。
+
+### 问题修复
+
+- **Validate 模块**：新增 `_strip_required()` 辅助函数，用于在 discriminated union 匹配前解包 `Required[T]`/`NotRequired[T]` 包装器。此前当联合类型成员使用 `Required[Literal[...]]` 字段注解时，discriminated union 分发可能失败。
+
 ## [0.4.0] - 2026-04-09
 
 ### 新增模块

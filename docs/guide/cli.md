@@ -203,7 +203,7 @@ Modules with dependencies:
 
 ```bash
 $ zerodep version
-zerodep 2026.4.0
+zerodep 2026.4.11
 ```
 
 ## 全局选项

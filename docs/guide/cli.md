@@ -203,7 +203,7 @@ Print the CLI version.
 
 ```bash
 $ zerodep version
-zerodep 2026.4.0
+zerodep 2026.4.11
 ```
 
 ## Global Options

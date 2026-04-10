@@ -6,13 +6,13 @@ title: Migration Guide
 
 This page documents breaking changes between zerodep versions and how to update your code.
 
-## Migrating to 2026.4.0 (CalVer)
+## Migrating to 2026.4.11 (CalVer)
 
 ### Versioning Scheme Change
 
 Starting with this release, the **project-level** version uses [CalVer](https://calver.org/) (`YYYY.M.patch`):
 
-- `2026.4.0` — first stable release of April 2026
+- `2026.4.11` — first stable release of April 2026
 - `2026.4.1` — second release in the same month (if needed)
 - `2026.5.0` — first release of May 2026
 

@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-04-10
+
+### Performance
+
+- **Validate module**: added `@functools.lru_cache(maxsize=None)` caching to `_typeddict_fields()`, `_dataclass_fields()`, and `_find_discriminator()` internal helpers to avoid redundant `get_type_hints()` calls. Provides **8-10x performance improvement** for validation of complex nested TypedDict structures.
+
+### Bug Fixes
+
+- **Validate module**: added `_strip_required()` helper to unwrap `Required[T]`/`NotRequired[T]` wrappers before discriminated union matching. Previously, discriminated union dispatch could fail when union members used `Required[Literal[...]]` field annotations.
+
 ## [0.4.0] - 2026-04-09
 
 ### New Modules

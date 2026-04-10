@@ -3,6 +3,7 @@
 # deps = ["jsonrpc"]
 # tier = "subsystem"
 # category = "network"
+# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
 # ///
 
 """ACP (Agent Client Protocol) -- Zero-dependency Python implementation.

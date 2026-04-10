@@ -3,6 +3,7 @@
 # deps = ["httpclient"]
 # tier = "subsystem"
 # category = "network"
+# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
 # ///
 """Zero-dependency SSE (Server-Sent Events) client.
 

@@ -3,6 +3,7 @@
 # deps = []
 # tier = "simple"
 # category = "data"
+# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
 # ///
 
 """PEP 440 version parser and comparator -- zero dependencies, stdlib only.

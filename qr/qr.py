@@ -3,6 +3,7 @@
 # deps = []
 # tier = "simple"
 # category = "utility"
+# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
 # ///
 
 """QR Code generator library (Python).

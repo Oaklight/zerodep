@@ -3,6 +3,7 @@
 # deps = []
 # tier = "medium"
 # category = "crypto"
+# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
 # ///
 
 """AES encryption via OpenSSL libcrypto (ctypes): ECB, CBC, CTR, and GCM modes.

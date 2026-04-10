@@ -3,6 +3,7 @@
 # deps = []
 # tier = "medium"
 # category = "utility"
+# note = "Install/update via zerodep CLI (https://zerodep.readthedocs.io/en/latest/guide/cli/). Manual copy may miss deps."
 # ///
 
 """Zero-dependency structured logging with pretty console output.

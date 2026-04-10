@@ -1,4 +1,4 @@
-.PHONY: all test benchmark lint fmt clean help manifest test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi test-frontmatter benchmark-frontmatter test-cache benchmark-cache
+.PHONY: all test benchmark lint fmt clean help manifest version-check dep-graph dep-check test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi test-frontmatter benchmark-frontmatter test-cache benchmark-cache
 
 help:
 	@echo "Available targets:"
@@ -38,6 +38,9 @@ help:
 	@echo "  test-cache       - Run cache correctness tests"
 	@echo "  benchmark-cache  - Run cache benchmarks"
 	@echo "  manifest         - Regenerate manifest.json"
+	@echo "  version-check    - Check modules for uncommitted version bumps"
+	@echo "  dep-graph        - Show module dependency graph"
+	@echo "  dep-check        - Test changed modules and their dependents"
 	@echo "  lint             - Run ruff check"
 	@echo "  fmt              - Run ruff format"
 	@echo "  clean            - Clean generated files"
@@ -149,6 +152,15 @@ benchmark-cache:
 
 manifest:
 	python zerodep.py manifest
+
+version-check:
+	python zerodep.py version-check
+
+dep-graph:
+	python zerodep.py dep-graph
+
+dep-check:
+	python zerodep.py dep-check
 
 lint:
 	ruff check .

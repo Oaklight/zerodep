@@ -13,12 +13,13 @@ Requires Python 3.10+, zero external dependencies.
 
 from __future__ import annotations
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 import argparse
 import ast
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -136,6 +137,76 @@ def _resolve_deps(
     return resolved
 
 
+def _build_reverse_deps(modules: dict) -> dict[str, list[str]]:
+    """Build a mapping from each module to the list of modules that depend on it."""
+    reverse: dict[str, list[str]] = {}
+    for mod_name, mod in modules.items():
+        for dep in mod.get("deps", []):
+            reverse.setdefault(dep, []).append(mod_name)
+    return reverse
+
+
+def _transitive_dependents(
+    seeds: set[str], reverse_deps: dict[str, list[str]]
+) -> set[str]:
+    """BFS from *seeds* through *reverse_deps* to find all affected modules."""
+    visited = set(seeds)
+    queue = list(seeds)
+    i = 0
+    while i < len(queue):
+        mod = queue[i]
+        i += 1
+        for dep in reverse_deps.get(mod, []):
+            if dep not in visited:
+                visited.add(dep)
+                queue.append(dep)
+    return visited
+
+
+def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
+    """Detect which modules have been modified since their declared version tag.
+
+    Returns:
+        Dict mapping module name to status: "up-to-date", "modified", "new", or "error".
+    """
+    status_map: dict[str, str] = {}
+    for mod_name, mod in sorted(modules.items()):
+        version = mod["version"]
+        tag = f"v{version}"
+        primary_file = mod["files"][0]
+
+        try:
+            result = subprocess.run(
+                ["git", "show", f"{tag}:{primary_file}"],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+        except subprocess.SubprocessError:
+            status_map[mod_name] = "error"
+            continue
+
+        if result.returncode != 0:
+            status_map[mod_name] = "new"
+            continue
+
+        tag_hash = _normalized_hash(result.stdout)
+        cur_hash = _normalized_hash(
+            (repo_root / primary_file).read_text(encoding="utf-8")
+        )
+        status_map[mod_name] = "up-to-date" if tag_hash == cur_hash else "modified"
+    return status_map
+
+
+def _find_test_file(mod_name: str, modules: dict, repo_root: Path) -> Path | None:
+    """Locate the correctness test file for a module."""
+    primary = modules[mod_name]["files"][0]
+    mod_dir = repo_root / Path(primary).parent
+    matches = sorted(mod_dir.glob("test_*_correctness.py"))
+    return matches[0] if matches else None
+
+
 # ── Manifest Generation ──
 
 # Directories/files to skip when scanning for modules
@@ -154,13 +225,13 @@ _SKIP_DIRS = {
 }
 
 
-def _content_hash(filepath: Path) -> str:
-    """Return SHA-256 hex digest of *filepath* with the frontmatter block stripped.
+def _content_hash_from_string(source: str) -> str:
+    """Return SHA-256 hex digest of *source* with the frontmatter block stripped.
 
     The ``# /// zerodep`` … ``# ///`` block is excluded so that metadata-only
     changes (version bumps, tier reclassification) do not alter the hash.
     """
-    lines = filepath.read_text(encoding="utf-8").splitlines(keepends=True)
+    lines = source.splitlines(keepends=True)
     filtered: list[str] = []
     in_block = False
     for line in lines:
@@ -174,6 +245,11 @@ def _content_hash(filepath: Path) -> str:
         if not in_block:
             filtered.append(line)
     return hashlib.sha256("".join(filtered).encode("utf-8")).hexdigest()
+
+
+def _content_hash(filepath: Path) -> str:
+    """Return SHA-256 hex digest of *filepath* with the frontmatter block stripped."""
+    return _content_hash_from_string(filepath.read_text(encoding="utf-8"))
 
 
 def _git_last_updated(filepath: Path, repo_root: Path) -> str | None:
@@ -520,7 +596,18 @@ def cmd_add(args: argparse.Namespace) -> None:
             data = local_file.read_bytes()
         else:
             data = _fetch_with_fallback(remote_path, offline=args.offline)
-        dest.write_bytes(data)
+        # Replace generic note with module-specific note
+        mod_name = remote_path.split("/")[0]
+        text = data.decode("utf-8")
+        text = text.replace(
+            "Install/update via zerodep CLI"
+            " (https://zerodep.readthedocs.io/en/latest/guide/cli/)."
+            " Manual copy may miss deps.",
+            f"Install/update via `zerodep add {mod_name}`"
+            " (https://zerodep.readthedocs.io/en/latest/guide/cli/)."
+            " Manual copy may miss deps.",
+        )
+        dest.write_text(text, encoding="utf-8")
         copied += 1
 
     _ok(f"Copied {copied} file(s) to {target}")
@@ -600,6 +687,229 @@ def cmd_outdated(args: argparse.Namespace) -> None:
         print(fmt.format(*row))
 
 
+def _normalized_hash(source: str) -> str:
+    """Content hash with extra normalization for cross-era comparison.
+
+    Strips the frontmatter block (like ``_content_hash_from_string``), then
+    additionally removes artifacts of the v0.1.0 → v0.2.0 frontmatter
+    migration so that pre- and post-migration files of functionally identical
+    code produce the same hash:
+
+    * Leading blank lines (visual separator after ``# ///`` end marker).
+    * In-code ``__version__ = "..."`` lines (moved into frontmatter).
+    """
+    lines = source.splitlines(keepends=True)
+    filtered: list[str] = []
+    in_block = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped == "# /// zerodep":
+            in_block = True
+            continue
+        if in_block and stripped == "# ///":
+            in_block = False
+            continue
+        if not in_block:
+            # Skip __version__ = "..." lines (migrated to frontmatter)
+            if re.match(r'^__version__\s*=\s*["\']', stripped):
+                continue
+            filtered.append(line)
+    text = "".join(filtered).lstrip("\n")
+    # Collapse runs of blank lines left by removed __version__ / frontmatter
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def cmd_version_check(args: argparse.Namespace) -> None:
+    """Check which modules have been modified since their declared version."""
+    repo_root = Path(__file__).resolve().parent
+    modules = _scan_modules(repo_root)
+    if not modules:
+        _die("no modules found")
+
+    status_map = _find_changed_modules(repo_root, modules)
+    display = {
+        "up-to-date": "up-to-date",
+        "modified": "modified (needs version bump)",
+        "new": "new (needs version bump)",
+        "error": "error",
+    }
+
+    rows: list[tuple[str, str, str]] = []
+    for mod_name in sorted(status_map):
+        version = modules[mod_name]["version"]
+        rows.append((mod_name, version, display[status_map[mod_name]]))
+
+    # Print table
+    headers = ("Module", "Version", "Status")
+    widths = [max(len(headers[i]), *(len(r[i]) for r in rows)) for i in range(3)]
+    fmt = "  ".join(f"{{:<{w}}}" for w in widths)
+    print(fmt.format(*headers))
+    print(fmt.format(*("-" * w for w in widths)))
+
+    modified = 0
+    for row in rows:
+        print(fmt.format(*row))
+        if "needs version bump" in row[2]:
+            modified += 1
+
+    if modified:
+        _warn(f"{modified} module(s) need a version bump")
+    else:
+        _ok("all modules up-to-date")
+
+
+def cmd_dep_graph(args: argparse.Namespace) -> None:
+    """Show module dependency relationships."""
+    repo_root = Path(__file__).resolve().parent
+    modules = _scan_modules(repo_root)
+    if not modules:
+        _die("no modules found")
+
+    reverse_deps = _build_reverse_deps(modules)
+
+    if args.module:
+        # Single module detail view
+        name = args.module
+        if name not in modules:
+            _die(
+                f"unknown module: {name!r}. "
+                "Run 'zerodep list' to see available modules."
+            )
+        mod = modules[name]
+        deps = mod.get("deps", [])
+        rev = reverse_deps.get(name, [])
+        trans = _transitive_dependents({name}, reverse_deps) - {name}
+
+        print(f"Module: {name} (v{mod['version']})")
+        print(f"  Depends on: {', '.join(sorted(deps)) or '(none)'}")
+        print(f"  Depended on by: {', '.join(sorted(rev)) or '(none)'}")
+        if trans:
+            print(f"  Transitively affects: {', '.join(sorted(trans))}")
+        return
+
+    # Table view: show all modules that participate in any dependency
+    rows: list[tuple[str, str, str]] = []
+    for mod_name in sorted(modules):
+        deps = modules[mod_name].get("deps", [])
+        rev = reverse_deps.get(mod_name, [])
+        if not deps and not rev:
+            continue
+        rows.append(
+            (
+                mod_name,
+                ", ".join(sorted(deps)) or "(none)",
+                ", ".join(sorted(rev)) or "(none)",
+            )
+        )
+
+    if not rows:
+        _ok("no inter-module dependencies found")
+        return
+
+    headers = ("Module", "Depends on", "Depended on by")
+    widths = [max(len(headers[i]), *(len(r[i]) for r in rows)) for i in range(3)]
+    fmt = "  ".join(f"{{:<{w}}}" for w in widths)
+    print(fmt.format(*headers))
+    print(fmt.format(*("-" * w for w in widths)))
+    for row in rows:
+        print(fmt.format(*row))
+
+
+def cmd_dep_check(args: argparse.Namespace) -> None:
+    """Test changed modules and their downstream dependents."""
+    repo_root = Path(__file__).resolve().parent
+    modules = _scan_modules(repo_root)
+    if not modules:
+        _die("no modules found")
+
+    # Determine which modules to treat as changed
+    if args.modules:
+        for name in args.modules:
+            if name not in modules:
+                _die(
+                    f"unknown module: {name!r}. "
+                    "Run 'zerodep list' to see available modules."
+                )
+        changed = set(args.modules)
+    else:
+        status_map = _find_changed_modules(repo_root, modules)
+        changed = {m for m, s in status_map.items() if s in ("modified", "new")}
+
+    if not changed:
+        _ok("all modules up-to-date, nothing to check")
+        return
+
+    reverse_deps = _build_reverse_deps(modules)
+    affected = _transitive_dependents(changed, reverse_deps)
+    downstream = affected - changed
+
+    print(f"Changed modules: {', '.join(sorted(changed))}")
+    if downstream:
+        print(f"Affected downstream: {', '.join(sorted(downstream))}")
+    print(f"Total modules to test: {len(affected)}")
+    print()
+
+    # Run tests
+    results: list[tuple[str, str, str, str]] = []
+    for mod_name in sorted(affected):
+        test_file = _find_test_file(mod_name, modules, repo_root)
+        is_changed = "yes" if mod_name in changed else "no"
+
+        if test_file is None:
+            results.append((mod_name, is_changed, "skip", "no test file"))
+            continue
+
+        try:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    str(test_file),
+                    "-x",
+                    "--tb=short",
+                    "-q",
+                ],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            if result.returncode == 0:
+                results.append((mod_name, is_changed, "pass", ""))
+            else:
+                summary = result.stdout.strip().split("\n")[-1] if result.stdout else ""
+                results.append((mod_name, is_changed, "FAIL", summary))
+        except subprocess.TimeoutExpired:
+            results.append((mod_name, is_changed, "FAIL", "timeout (120s)"))
+        except subprocess.SubprocessError as e:
+            results.append((mod_name, is_changed, "error", str(e)))
+
+    # Print results table
+    headers = ("Module", "Changed", "Test", "Detail")
+    widths = [max(len(headers[i]), *(len(r[i]) for r in results)) for i in range(4)]
+    fmt = "  ".join(f"{{:<{w}}}" for w in widths)
+    print(fmt.format(*headers))
+    print(fmt.format(*("-" * w for w in widths)))
+    for row in results:
+        print(fmt.format(*row))
+
+    passed = sum(1 for r in results if r[2] == "pass")
+    failed = sum(1 for r in results if r[2] == "FAIL")
+    skipped = sum(1 for r in results if r[2] == "skip")
+    print()
+    parts = [f"{passed} passed"]
+    if failed:
+        parts.append(f"{failed} failed")
+    if skipped:
+        parts.append(f"{skipped} skipped")
+    print(", ".join(parts))
+
+    if failed:
+        sys.exit(1)
+
+
 def cmd_version(args: argparse.Namespace) -> None:
     """Print version."""
     _ok(f"zerodep {__version__}")
@@ -623,6 +933,11 @@ def main(argv: list[str] | None = None) -> None:
               zerodep add sse --nested       Copy into sse/ and httpclient/ subdirs
               zerodep add sse --no-deps      Copy only sse.py, skip httpclient
               zerodep manifest               Regenerate manifest.json
+              zerodep version-check          Check for modules needing a bump
+              zerodep dep-graph              Show all module dependencies
+              zerodep dep-graph yaml         Show dependencies for yaml module
+              zerodep dep-check              Test changed modules + dependents
+              zerodep dep-check yaml config  Test specific modules + dependents
         """),
     )
     parser.add_argument(
@@ -675,6 +990,23 @@ def main(argv: list[str] | None = None) -> None:
     # manifest
     sub.add_parser("manifest", help="regenerate manifest.json from source")
 
+    # version-check
+    sub.add_parser("version-check", help="check modules for uncommitted version bumps")
+
+    # dep-graph
+    p_depgraph = sub.add_parser("dep-graph", help="show module dependency graph")
+    p_depgraph.add_argument(
+        "module", nargs="?", default=None, help="specific module (default: all)"
+    )
+
+    # dep-check
+    p_depcheck = sub.add_parser(
+        "dep-check", help="test changed modules and their dependents"
+    )
+    p_depcheck.add_argument(
+        "modules", nargs="*", default=[], help="modules to check (default: auto-detect)"
+    )
+
     # version
     sub.add_parser("version", help="show version")
 
@@ -691,6 +1023,9 @@ def main(argv: list[str] | None = None) -> None:
         "update": cmd_update,
         "outdated": cmd_outdated,
         "manifest": cmd_manifest,
+        "version-check": cmd_version_check,
+        "dep-graph": cmd_dep_graph,
+        "dep-check": cmd_dep_check,
         "version": cmd_version,
     }
     commands[args.command](args)

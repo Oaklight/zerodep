@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.1"
+# version = "0.4.2"
 # deps = []
 # tier = "medium"
 # category = "data"
@@ -280,12 +280,30 @@ def _is_dataclass_type(tp: Any) -> bool:
     return isinstance(tp, type) and dataclasses.is_dataclass(tp)
 
 
+def _strip_required(tp: Any) -> Any:
+    """Strip ``Required`` / ``NotRequired`` wrappers, returning the inner type."""
+    import sys
+
+    origin = typing.get_origin(tp)
+    if sys.version_info >= (3, 11):
+        from typing import NotRequired, Required
+    else:
+        from typing_extensions import NotRequired, Required
+    if origin is Required or origin is NotRequired:
+        args = typing.get_args(tp)
+        return args[0] if args else tp
+    return tp
+
+
 @functools.lru_cache(maxsize=None)
 def _typeddict_fields(td: type) -> dict[str, tuple[Any, bool]]:
     """Get fields of a TypedDict with their types and required status.
 
     Results are cached because TypedDict type structures are static at
     runtime, and ``get_type_hints()`` is expensive on Python 3.10-3.12.
+
+    Strips ``Required``/``NotRequired`` wrappers so downstream sees the
+    actual type (e.g. ``Literal["response"]``, not ``Required[Literal["response"]]``).
 
     Returns:
         Dict mapping field name to ``(type_hint, is_required)``.
@@ -295,13 +313,14 @@ def _typeddict_fields(td: type) -> dict[str, tuple[Any, bool]]:
     optional = getattr(td, "__optional_keys__", set())
     result: dict[str, tuple[Any, bool]] = {}
     for name, tp in hints.items():
+        inner = _strip_required(tp)
         if name in required:
-            result[name] = (tp, True)
+            result[name] = (inner, True)
         elif name in optional:
-            result[name] = (tp, False)
+            result[name] = (inner, False)
         else:
             # Default: assume required (total=True is the default)
-            result[name] = (tp, True)
+            result[name] = (inner, True)
     return result
 
 

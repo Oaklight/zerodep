@@ -43,7 +43,8 @@ import dataclasses
 import functools
 import re
 import typing
-from typing import Any, Callable, Union, get_type_hints
+from collections.abc import Callable
+from typing import Any, Union, get_type_hints
 
 __all__ = [
     # Constraint annotations
@@ -250,7 +251,7 @@ class ValidationError(Exception):
 # ── Internal Helpers ──
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _unwrap_annotated(tp: Any) -> tuple[Any, tuple[Any, ...]]:
     """Extract the base type and constraint metadata from an Annotated type.
 
@@ -270,7 +271,7 @@ def _unwrap_annotated(tp: Any) -> tuple[Any, tuple[Any, ...]]:
     return tp, ()
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _is_typeddict(tp: Any) -> bool:
     """Check if *tp* is a TypedDict class.
 
@@ -282,7 +283,7 @@ def _is_typeddict(tp: Any) -> bool:
     return isinstance(tp, type) and hasattr(tp, "__required_keys__")
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _is_dataclass_type(tp: Any) -> bool:
     """Check if *tp* is a dataclass class (not an instance).
 
@@ -306,7 +307,7 @@ def _strip_required(tp: Any) -> Any:
     return tp
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _typeddict_fields(td: type) -> dict[str, tuple[Any, bool]]:
     """Get fields of a TypedDict with their types and required status.
 
@@ -335,7 +336,7 @@ def _typeddict_fields(td: type) -> dict[str, tuple[Any, bool]]:
     return result
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _dataclass_fields(dc: type) -> dict[str, tuple[Any, bool]]:
     """Get fields of a dataclass with their types and required status.
 
@@ -390,7 +391,7 @@ def _type_name(tp: Any) -> str:
     return str(tp)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _find_discriminator(union_args: tuple[Any, ...]) -> str | None:
     """Find a shared Literal field that can discriminate union members.
 

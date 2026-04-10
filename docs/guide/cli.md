@@ -117,6 +117,72 @@ yaml    0.3.0      0.4.0       outdated
 
 仅检查当前目录中存在的文件；本地不存在的模块会被跳过。
 
+### `zerodep version-check`
+
+检查哪些模块在其声明版本后有代码修改。将每个模块当前源码的内容哈希与其声明版本对应的 git tag 进行对比。
+
+```bash
+$ zerodep version-check
+Module       Version  Status
+-----------  -------  -----------------------------
+aes          0.4.0    up-to-date
+cache        0.2.0    up-to-date
+config       0.3.0    modified (needs version bump)
+yaml         0.3.0    up-to-date
+...
+```
+
+这是维护者命令——在发布前运行，确保所有修改过的模块都已更新版本号。
+
+### `zerodep dep-graph`
+
+显示模块依赖关系。无参数时显示所有有依赖关系的模块表格；指定模块名时显示详细的依赖信息，包括传递性影响分析。
+
+```bash
+# 所有有依赖关系的模块
+$ zerodep dep-graph
+Module       Depends on           Depended on by
+-----------  -------------------  -------------------
+config       dotenv, jsonc, yaml  (none)
+frontmatter  yaml                 skills
+yaml         (none)               config, frontmatter
+...
+
+# 单个模块详情
+$ zerodep dep-graph yaml
+Module: yaml (v0.3.0)
+  Depends on: (none)
+  Depended on by: config, frontmatter
+  Transitively affects: config, frontmatter, skills
+```
+
+### `zerodep dep-check`
+
+自动检测变更模块，并运行这些模块及其所有下游依赖的正确性测试。确保某个模块的变更不会破坏依赖它的其他模块。
+
+```bash
+# 自动检测变更模块
+$ zerodep dep-check
+
+Changed modules: yaml
+Affected downstream: config, frontmatter, skills
+Total modules to test: 4
+
+Module       Changed  Test  Detail
+-----------  -------  ----  ------
+config       no       pass
+frontmatter  no       pass
+skills       no       pass
+yaml         yes      pass
+
+4 passed
+
+# 检查指定模块
+$ zerodep dep-check yaml config
+```
+
+测试失败时退出码为 1——适用于 CI 流水线和发布前检查。
+
 ### `zerodep manifest`
 
 从本地模块源文件重新生成 `manifest.json`。这是维护者命令——在仓库中添加或更新模块后运行。
@@ -137,7 +203,7 @@ Modules with dependencies:
 
 ```bash
 $ zerodep version
-zerodep 0.1.0
+zerodep 2026.4.0
 ```
 
 ## 全局选项

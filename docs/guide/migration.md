@@ -6,6 +6,49 @@ title: 迁移指南
 
 本页面记录 zerodep 各版本之间的破坏性变更及对应的代码更新方法。
 
+## 迁移到 2026.4.0（CalVer）
+
+### 版本策略变更
+
+从此版本开始，**项目级**版本号使用 [CalVer](https://calver.org/)（`YYYY.M.patch`）日历版本：
+
+- `2026.4.0` — 2026 年 4 月第一个稳定版本
+- `2026.4.1` — 同月第二个版本（如有需要）
+- `2026.5.0` — 2026 年 5 月第一个版本
+
+**模块级**版本号继续使用独立的 SemVer（如 `yaml` 0.3.0、`aes` 0.4.0）。每个模块的版本跟踪其自身的 API 演化，在 frontmatter 的 `version` 字段中声明。
+
+**对用户的影响：**
+
+- `pip install zerodep` 安装的 CLI 使用 CalVer 版本号
+- 通过 `zerodep add` 获取的模块携带各自的 SemVer 版本号
+- 同一 CalVer 版本内的所有模块保证兼容
+- 手动拷贝模块时，请始终使用同一版本的文件
+
+### 模块 Frontmatter Note
+
+所有模块的 frontmatter 中新增 `note` 字段：
+
+```python
+# /// zerodep
+# version = "0.3.0"
+# deps = ["dotenv", "yaml", "jsonc"]
+# note = "Install/update via zerodep CLI (...). Manual copy may miss deps."
+# ///
+```
+
+通过 `zerodep add` 拷贝时，note 会自动替换为具体的模块名。**无需代码修改**——这仅为提示信息。
+
+### 新增维护者命令
+
+三个新 CLI 命令用于模块间依赖管理：
+
+- `zerodep version-check` — 检测在声明版本后有代码变更的模块
+- `zerodep dep-graph` — 可视化模块依赖图
+- `zerodep dep-check` — 运行变更模块及其下游依赖的测试
+
+详见 [CLI 工具](cli.md) 了解使用方法。
+
 ## 迁移到 0.3.0
 
 ### 类型注解（风格变更）

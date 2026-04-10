@@ -6,6 +6,29 @@
 
 ## [未发布]
 
+## [2026.4.0] - 2026-04-11
+
+### 不兼容变更
+
+- **版本策略**：项目级版本号采用 [CalVer](https://calver.org/)（`YYYY.M.patch`）日历版本。各模块继续使用独立的 SemVer 语义版本。每次发布代表 CLI 和全部模块的稳定快照。
+
+### 新增命令
+
+- **`zerodep dep-graph`**：显示模块依赖关系——全量模块表格视图，或指定单个模块查看传递性影响分析（`zerodep dep-graph yaml`）。
+- **`zerodep dep-check`**：自动检测变更模块（通过内容哈希与 git tag 对比），然后运行变更模块及其所有下游依赖的正确性测试。测试失败时退出码为 1，支持 CI 集成。可指定模块名检查特定模块（`zerodep dep-check yaml config`）。
+- **`zerodep version-check`**：检查哪些模块在其声明版本后有代码修改（此前已存在，现重构以与 `dep-check` 共享检测逻辑）。
+
+### 功能增强
+
+- **模块 frontmatter**：为所有模块添加 `note` 字段，指向 CLI 文档，提示手动拷贝文件可能遗漏依赖。
+- **`zerodep add`**：拷贝文件时将通用 note 替换为具体模块的安装命令（如 `zerodep add config`）。
+- **模块版本**：修正所有模块级版本号，反映各模块实际的变更历史，而非跟随项目版本统一 bump。如 `cache`（0.2.0）、`prompt`（0.2.0）、`tabulate`（0.1.0）现显示其真实版本。
+
+### 内部改进
+
+- 从 `cmd_version_check` 提取 `_find_changed_modules()` 辅助函数，在 `version-check` 和 `dep-check` 间共享变更检测逻辑。
+- 新增 `_build_reverse_deps()`、`_transitive_dependents()` 和 `_find_test_file()` 工具函数。
+
 ## [0.4.1] - 2026-04-10
 
 ### 性能优化

@@ -250,33 +250,44 @@ class ValidationError(Exception):
 # ── Internal Helpers ──
 
 
-def _unwrap_annotated(tp: Any) -> tuple[Any, list[Any]]:
+@functools.lru_cache(maxsize=None)
+def _unwrap_annotated(tp: Any) -> tuple[Any, tuple[Any, ...]]:
     """Extract the base type and constraint metadata from an Annotated type.
 
+    Results are cached because Annotated type structures are static at
+    runtime.
+
     Returns:
-        ``(base_type, [constraint1, constraint2, ...])`` if Annotated,
-        otherwise ``(tp, [])``.
+        ``(base_type, (constraint1, constraint2, ...))`` if Annotated,
+        otherwise ``(tp, ())``.
     """
     origin = typing.get_origin(tp)
     if origin is typing.Annotated:
         args = typing.get_args(tp)
         base = args[0]
-        constraints = [a for a in args[1:] if isinstance(a, _CONSTRAINT_TYPES)]
+        constraints = tuple(a for a in args[1:] if isinstance(a, _CONSTRAINT_TYPES))
         return base, constraints
-    return tp, []
+    return tp, ()
 
 
+@functools.lru_cache(maxsize=None)
 def _is_typeddict(tp: Any) -> bool:
     """Check if *tp* is a TypedDict class.
 
     Uses ``__required_keys__`` attribute detection to support TypedDicts
     created with both ``typing.TypedDict`` and ``typing_extensions.TypedDict``.
+
+    Results are cached because type identity is stable at runtime.
     """
     return isinstance(tp, type) and hasattr(tp, "__required_keys__")
 
 
+@functools.lru_cache(maxsize=None)
 def _is_dataclass_type(tp: Any) -> bool:
-    """Check if *tp* is a dataclass class (not an instance)."""
+    """Check if *tp* is a dataclass class (not an instance).
+
+    Results are cached because type identity is stable at runtime.
+    """
     return isinstance(tp, type) and dataclasses.is_dataclass(tp)
 
 

@@ -1,13 +1,13 @@
 {
   "version": "1",
-  "generated": "2026-04-09T14:51:46.523881+00:00",
+  "generated": "2026-04-10T13:49:30.320316+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
       "files": [
         "a2a/a2a.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [
         "jsonrpc"
       ],
@@ -21,7 +21,7 @@
       "files": [
         "acp/acp.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [
         "jsonrpc"
       ],
@@ -48,7 +48,7 @@
       "files": [
         "ansi/ansi.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "terminal",
@@ -60,7 +60,7 @@
       "files": [
         "cache/cache.py"
       ],
-      "version": "0.4.0",
+      "version": "0.2.0",
       "deps": [],
       "tier": "subsystem",
       "category": "utility",
@@ -72,7 +72,7 @@
       "files": [
         "config/config.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [
         "dotenv",
         "yaml",
@@ -100,7 +100,7 @@
       "files": [
         "diff/diff.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "devtools",
@@ -112,7 +112,7 @@
       "files": [
         "dotenv/dotenv.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "data",
@@ -124,7 +124,7 @@
       "files": [
         "filelock/filelock.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "utility",
@@ -136,7 +136,7 @@
       "files": [
         "frontmatter/frontmatter.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [
         "yaml"
       ],
@@ -150,7 +150,7 @@
       "files": [
         "httpclient/httpclient.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "subsystem",
       "category": "network",
@@ -162,7 +162,7 @@
       "files": [
         "jsonc/jsonc.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "data",
@@ -174,7 +174,7 @@
       "files": [
         "jsonrpc/jsonrpc.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "network",
@@ -186,7 +186,7 @@
       "files": [
         "markdown/markdown.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "terminal",
@@ -210,7 +210,7 @@
       "files": [
         "prompt/prompt.py"
       ],
-      "version": "0.4.0",
+      "version": "0.2.0",
       "deps": [],
       "tier": "simple",
       "category": "terminal",
@@ -234,7 +234,7 @@
       "files": [
         "qr/qr.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "utility",
@@ -246,7 +246,7 @@
       "files": [
         "retry/retry.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "utility",
@@ -258,7 +258,7 @@
       "files": [
         "runner/runner.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "subsystem",
       "category": "process",
@@ -270,7 +270,7 @@
       "files": [
         "scheduler/scheduler.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "subsystem",
       "category": "process",
@@ -282,7 +282,7 @@
       "files": [
         "search/sparse_search.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "utility",
@@ -321,7 +321,7 @@
       "files": [
         "soup/soup.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "data",
@@ -333,7 +333,7 @@
       "files": [
         "sse/sse.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [
         "httpclient"
       ],
@@ -347,7 +347,7 @@
       "files": [
         "structlog/structlog.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "utility",
@@ -359,7 +359,7 @@
       "files": [
         "tabulate/tabulate.py"
       ],
-      "version": "0.4.0",
+      "version": "0.1.0",
       "deps": [],
       "tier": "medium",
       "category": "terminal",
@@ -371,7 +371,7 @@
       "files": [
         "toon/toon.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "simple",
       "category": "data",
@@ -383,19 +383,19 @@
       "files": [
         "validate/validate.py"
       ],
-      "version": "0.4.0",
+      "version": "0.4.1",
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "2bbd23088920dad933f1e9c38cc974c3d6b0531630d6bf0d80f1b338469b0f20"
+      "last_updated": "2026-04-10T18:07:31+08:00",
+      "content_hash": "f5c2ca582afc03169aa3cf6262221a79d1885063115063af64a616d8883034ea"
     },
     "vcs": {
       "description": "VCS CLI wrapper — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "vcs/vcs.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [
         "diff"
       ],
@@ -409,7 +409,7 @@
       "files": [
         "xml/xml.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "medium",
       "category": "data",
@@ -421,7 +421,7 @@
       "files": [
         "yaml/yaml.py"
       ],
-      "version": "0.4.0",
+      "version": "0.3.0",
       "deps": [],
       "tier": "subsystem",
       "category": "data",

@@ -19,22 +19,22 @@ Apple-to-apple performance comparison between zerodep validate and [`pydantic`](
 
 | Test | zerodep | pydantic | Ratio |
 |------|---------|----------|-------|
-| Simple (3 fields) | 9.9 us | 648 ns | pydantic 15x faster |
-| Nested (TypedDict in TypedDict) | 15.3 us | 674 ns | pydantic 23x faster |
-| Constrained (Annotated Gt/Ge/Le) | 15.5 us | 977 ns | pydantic 16x faster |
-| List of 50 dicts | 18.9 us | 12.1 us | pydantic 1.6x faster |
-| JSON Schema generation | 434 us | 135 us | pydantic 3.2x faster |
+| Simple (3 fields) | 3.3 us | 650 ns | pydantic 5x faster |
+| Nested (TypedDict in TypedDict) | 5.9 us | 710 ns | pydantic 8.4x faster |
+| Constrained (Annotated Gt/Ge/Le) | 6.2 us | 980 ns | pydantic 6.3x faster |
+| List of 50 dicts | 6.1 us | 11.9 us | zerodep 2x faster |
+| JSON Schema generation | 132 us | 127 us | ~equal |
 
 ## Key Takeaways
 
 - **pydantic v2 uses a Rust-compiled core** (`pydantic-core`), so raw speed is not a fair pure-Python comparison. zerodep is pure Python with zero dependencies.
-- **For bulk data** (list of 50 dicts), the gap narrows to only **1.6x** -- the per-item overhead becomes dominant and pure Python scales well.
-- **In absolute terms**, zerodep validates a simple 3-field TypedDict in **~10 us** -- fast enough for API request/response validation where network latency is the bottleneck.
-- **JSON Schema generation** at 434 us is a one-time cost typically called at startup, not per-request.
+- **For bulk data** (list of 50 dicts), zerodep is now **2x faster** than pydantic -- caching amortizes the per-type overhead, and the Rust-to-Python bridge overhead becomes the bottleneck for pydantic.
+- **In absolute terms**, zerodep validates a simple 3-field TypedDict in **~3.3 us** -- fast enough for API request/response validation where network latency is the bottleneck.
+- **JSON Schema generation** at 132 us is a one-time cost typically called at startup, not per-request. With caching, this is now on par with pydantic.
 - zerodep has **zero pip dependencies** and uses only stdlib `typing`, `dataclasses`, and `re`.
 
-!!! tip "v0.4.2 Caching Optimization"
-    Starting from v0.4.2, `_typeddict_fields()`, `_dataclass_fields()`, and `_find_discriminator()` are cached with `@functools.lru_cache(maxsize=None)`, eliminating redundant `get_type_hints()` calls on repeated validations of the same type. This provides **8-10x performance improvement** for complex nested TypedDict structures where the same types are resolved multiple times. The above benchmark numbers predate this optimization; actual throughput for nested/repeated type validation will be significantly better.
+!!! tip "Caching Optimization (v0.4.0+)"
+    Since v0.4.0, multiple internal helpers are cached with `@functools.lru_cache(maxsize=None)`, including `_typeddict_fields()`, `_dataclass_fields()`, `_find_discriminator()`, `_is_typeddict()`, `_is_dataclass_type()`, and `_unwrap_annotated()`. This eliminates redundant `get_type_hints()` and type introspection calls on repeated validations of the same type, providing **3-5x speedup** for simple types and up to **10x** for complex nested TypedDict structures.
 
 ## Run It Yourself
 

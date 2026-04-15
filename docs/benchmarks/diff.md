@@ -53,3 +53,15 @@ Apple-to-apple performance comparison between zerodep diff and [`unidiff`](https
 pip install pytest pytest-benchmark unidiff
 pytest diff/test_diff_benchmark.py --benchmark-only -v
 ```
+
+---
+
+## Latest CI Results
+
+<iframe
+  src="https://oaklight.github.io/zerodep/dev/bench/modules/diff.html"
+  width="100%" height="600" frameborder="0"
+  style="border: 1px solid #dee2e6; border-radius: 8px;">
+</iframe>
+
+> Updated automatically on each release via [Benchmark CI](https://github.com/Oaklight/zerodep/actions/workflows/benchmark.yml).

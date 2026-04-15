@@ -62,3 +62,15 @@ Apple-to-apple performance comparison between zerodep HTTP client and [`httpx`](
 pip install pytest pytest-benchmark httpx
 pytest httpclient/test_http_benchmark.py --benchmark-only -v
 ```
+
+---
+
+## Latest CI Results
+
+<iframe
+  src="https://oaklight.github.io/zerodep/dev/bench/modules/httpclient.html"
+  width="100%" height="600" frameborder="0"
+  style="border: 1px solid #dee2e6; border-radius: 8px;">
+</iframe>
+
+> Updated automatically on each release via [Benchmark CI](https://github.com/Oaklight/zerodep/actions/workflows/benchmark.yml).

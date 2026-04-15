@@ -47,3 +47,15 @@ Both libraries implement the same W3C SSE line-parsing algorithm. The benchmark 
 pip install pytest pytest-benchmark httpx-sse httpx
 pytest sse/test_sse_benchmark.py --benchmark-only -v
 ```
+
+---
+
+## Latest CI Results
+
+<iframe
+  src="https://oaklight.github.io/zerodep/dev/bench/modules/sse.html"
+  width="100%" height="600" frameborder="0"
+  style="border: 1px solid #dee2e6; border-radius: 8px;">
+</iframe>
+
+> Updated automatically on each release via [Benchmark CI](https://github.com/Oaklight/zerodep/actions/workflows/benchmark.yml).

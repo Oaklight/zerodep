@@ -94,62 +94,45 @@ def _ref_end_to_end(json_str: str) -> str:
     return ref_dispatch(json_str)
 
 
-# ── Dispatch: success ──
+# ── Dispatch benchmarks ──
 
 
-@pytest.mark.benchmark(group="dispatch-success")
-def test_zerodep_dispatch_success(benchmark):
-    benchmark(_zd_end_to_end, ECHO_JSON)
+class TestDispatchSuccess:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_end_to_end, ECHO_JSON)
+
+    def test_jsonrpcserver(self, benchmark):
+        benchmark(_ref_end_to_end, ECHO_JSON)
 
 
-@pytest.mark.benchmark(group="dispatch-success")
-def test_jsonrpcserver_dispatch_success(benchmark):
-    benchmark(_ref_end_to_end, ECHO_JSON)
+class TestDispatchError:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_end_to_end, FAIL_JSON)
+
+    def test_jsonrpcserver(self, benchmark):
+        benchmark(_ref_end_to_end, FAIL_JSON)
 
 
-# ── Dispatch: error ──
+class TestDispatchNotFound:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_end_to_end, NOT_FOUND_JSON)
+
+    def test_jsonrpcserver(self, benchmark):
+        benchmark(_ref_end_to_end, NOT_FOUND_JSON)
 
 
-@pytest.mark.benchmark(group="dispatch-error")
-def test_zerodep_dispatch_error(benchmark):
-    benchmark(_zd_end_to_end, FAIL_JSON)
+class TestDispatchBatch:
+    def test_zerodep(self, benchmark):
+        def _run():
+            return [_zd_end_to_end(j) for j in BATCH_JSONS]
 
+        benchmark(_run)
 
-@pytest.mark.benchmark(group="dispatch-error")
-def test_jsonrpcserver_dispatch_error(benchmark):
-    benchmark(_ref_end_to_end, FAIL_JSON)
+    def test_jsonrpcserver(self, benchmark):
+        def _run():
+            return [_ref_end_to_end(j) for j in BATCH_JSONS]
 
-
-# ── Dispatch: method not found ──
-
-
-@pytest.mark.benchmark(group="dispatch-not-found")
-def test_zerodep_dispatch_not_found(benchmark):
-    benchmark(_zd_end_to_end, NOT_FOUND_JSON)
-
-
-@pytest.mark.benchmark(group="dispatch-not-found")
-def test_jsonrpcserver_dispatch_not_found(benchmark):
-    benchmark(_ref_end_to_end, NOT_FOUND_JSON)
-
-
-# ── Batch dispatch ──
-
-
-@pytest.mark.benchmark(group="dispatch-batch")
-def test_zerodep_dispatch_batch(benchmark):
-    def _run():
-        return [_zd_end_to_end(j) for j in BATCH_JSONS]
-
-    benchmark(_run)
-
-
-@pytest.mark.benchmark(group="dispatch-batch")
-def test_jsonrpcserver_dispatch_batch(benchmark):
-    def _run():
-        return [_ref_end_to_end(j) for j in BATCH_JSONS]
-
-    benchmark(_run)
+        benchmark(_run)
 
 
 # ── Serialization (zerodep only — jsonrpcserver has no model objects) ──
@@ -178,35 +161,31 @@ LARGE_BATCH_REQS = [
 LARGE_BATCH_WIRE = [r.to_dict() for r in LARGE_BATCH_REQS]
 
 
-@pytest.mark.benchmark(group="serialize")
-def test_request_to_dict(benchmark):
-    benchmark(SMALL_REQ.to_dict)
+class TestSerializeToDict:
+    def test_request_to_dict(self, benchmark):
+        benchmark(SMALL_REQ.to_dict)
+
+    def test_response_to_dict(self, benchmark):
+        benchmark(MEDIUM_RESP.to_dict)
 
 
-@pytest.mark.benchmark(group="serialize")
-def test_response_to_dict(benchmark):
-    benchmark(MEDIUM_RESP.to_dict)
+class TestDeserializeFromDict:
+    def test_request_from_dict(self, benchmark):
+        benchmark(JSONRPCRequest.from_dict, SMALL_REQ_WIRE)
+
+    def test_response_from_dict(self, benchmark):
+        benchmark(JSONRPCResponse.from_dict, MEDIUM_RESP_WIRE)
 
 
-@pytest.mark.benchmark(group="deserialize")
-def test_request_from_dict(benchmark):
-    benchmark(JSONRPCRequest.from_dict, SMALL_REQ_WIRE)
+class TestJsonRoundTrip:
+    def test_json_round_trip(self, benchmark):
+        def _run():
+            wire = json.dumps(SMALL_REQ.to_dict())
+            return JSONRPCRequest.from_dict(json.loads(wire))
+
+        benchmark(_run)
 
 
-@pytest.mark.benchmark(group="deserialize")
-def test_response_from_dict(benchmark):
-    benchmark(JSONRPCResponse.from_dict, MEDIUM_RESP_WIRE)
-
-
-@pytest.mark.benchmark(group="json-round-trip")
-def test_json_round_trip(benchmark):
-    def _run():
-        wire = json.dumps(SMALL_REQ.to_dict())
-        return JSONRPCRequest.from_dict(json.loads(wire))
-
-    benchmark(_run)
-
-
-@pytest.mark.benchmark(group="id-gen")
-def test_next_id(benchmark):
-    benchmark(next_id)
+class TestIdGeneration:
+    def test_next_id(self, benchmark):
+        benchmark(next_id)

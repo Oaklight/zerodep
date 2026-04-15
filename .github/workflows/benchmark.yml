@@ -83,3 +83,29 @@ jobs:
           alert-threshold: "150%"
           comment-on-alert: true
           fail-on-alert: false
+
+      - name: Generate comparison report
+        run: |
+          python scripts/generate_bench_report.py \
+            benchmark-results.json \
+            benchmark-report.html \
+            "${{ steps.bench-name.outputs.name }}" \
+            "${{ github.sha }}"
+
+      - name: Publish report to gh-pages
+        run: |
+          git fetch origin gh-pages
+          git worktree add gh-pages-wt gh-pages
+          cp benchmark-report.html gh-pages-wt/dev/bench/index.html
+          cd gh-pages-wt
+          git add dev/bench/index.html
+          if git diff --cached --quiet; then
+            echo "No changes to report"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "Update benchmark report for ${{ steps.bench-name.outputs.name }}"
+            git push origin gh-pages
+          fi
+          cd ..
+          git worktree remove gh-pages-wt

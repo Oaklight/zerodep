@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-04-15T09:45:45.456263+00:00",
+  "generated": "2026-04-15T14:08:58.639129+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -27,11 +27,11 @@
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-04-15T13:03:30+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "6c7dc3a97e136d0d949f34520952ef31e82f00f882320d997149461e78d5efa6"
     },
     "aes": {
-      "description": "Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",
+      "description": "AES encryption via OpenSSL libcrypto (ctypes): ECB, CBC, CTR, and GCM modes",
       "files": [
         "aes/__init__.py",
         "aes/aes.py",
@@ -41,8 +41,8 @@
       "deps": [],
       "tier": "medium",
       "category": "crypto",
-      "last_updated": "2026-04-11T01:00:28+08:00",
-      "content_hash": "5418668267d5b95354058d5b7c84ac0349ca0fe6350190321b6df670e00c9227"
+      "last_updated": "2026-04-15T20:53:03+08:00",
+      "content_hash": "c8efa1b058fb338a54d8afa03001701db40468238572431f06aa4136dd801d0f"
     },
     "ansi": {
       "description": "ANSI escape code primitives for terminal styling",
@@ -61,11 +61,11 @@
       "files": [
         "cache/cache.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "deps": [],
       "tier": "subsystem",
       "category": "utility",
-      "last_updated": "2026-04-15T12:54:01+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "5161daf28871933063b17526a49429dacea22f6934cd4b2439cefa02a97bdd3d"
     },
     "config": {
@@ -89,12 +89,12 @@
       "files": [
         "depdetect/depdetect.py"
       ],
-      "version": "0.4.1",
+      "version": "0.4.2",
       "deps": [],
       "tier": "medium",
       "category": "devtools",
-      "last_updated": "2026-04-15T12:54:36+08:00",
-      "content_hash": "7e70ad2578f9db0132468ad9591939182fd859a6519f3a5b9141c62674509b82"
+      "last_updated": "2026-04-15T21:57:20+08:00",
+      "content_hash": "085c6beded889dfd577738ac05e05b5ce092e62f81dd7e80bdfa8dcbe1471162"
     },
     "diff": {
       "description": "Unified diff parser, patch applicator, and three-way merge — zero dependencies, stdlib only, Python 3.10+",
@@ -105,7 +105,7 @@
       "deps": [],
       "tier": "simple",
       "category": "devtools",
-      "last_updated": "2026-04-15T12:55:25+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "32d978f21594cfa95b80a7bb155b294d0ade288588163e59812fa8376093a577"
     },
     "dotenv": {
@@ -117,7 +117,7 @@
       "deps": [],
       "tier": "simple",
       "category": "data",
-      "last_updated": "2026-04-15T12:53:26+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "96a25bac569969a26f9ca83869855b6480ca3aae433bd8873ec9f81f57d04a21"
     },
     "filelock": {
@@ -155,7 +155,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-04-15T13:25:30+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "368292df96dffcbf07bde26a7a7c2f15c90639e3b0f73bdf4dbc3443cd4347fc"
     },
     "jsonc": {
@@ -191,7 +191,7 @@
       "deps": [],
       "tier": "medium",
       "category": "terminal",
-      "last_updated": "2026-04-15T13:16:54+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "b26d13e113404ced28490ce69a874e499154dd6b8096bd268427364b4a847c41"
     },
     "persistdict": {
@@ -223,12 +223,12 @@
       "files": [
         "protobuf/protobuf.py"
       ],
-      "version": "0.4.1",
+      "version": "0.4.2",
       "deps": [],
       "tier": "subsystem",
       "category": "data",
-      "last_updated": "2026-04-15T13:21:33+08:00",
-      "content_hash": "e0b1d766b2167965fb5af23a7178d6e1e7bb8698cd44f41249fa62b8a91cc579"
+      "last_updated": "2026-04-15T21:57:20+08:00",
+      "content_hash": "939d31669a88b924bb016674c50c9a50ff283b255b155f5c5372828723458e0a"
     },
     "qr": {
       "description": "QR Code generator library (Python)",
@@ -239,7 +239,7 @@
       "deps": [],
       "tier": "simple",
       "category": "utility",
-      "last_updated": "2026-04-15T17:41:04+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "dcca726ed431bc0ad27b41d3fa256cd64cb0dbb2770910c3c806cc500e71d8a1"
     },
     "retry": {
@@ -263,7 +263,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "process",
-      "last_updated": "2026-04-15T12:54:43+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "b4864085c534273da7734f69bcbda528ba1c073774db099d146afb32e632bf79"
     },
     "scheduler": {
@@ -275,7 +275,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "process",
-      "last_updated": "2026-04-15T12:54:13+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "fe2d6d5a1037a99e48102f5e5d983e706decca2b1616de31d804d9ef333752ea"
     },
     "search": {
@@ -287,7 +287,7 @@
       "deps": [],
       "tier": "medium",
       "category": "utility",
-      "last_updated": "2026-04-15T12:54:59+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "98bfa266b43782668ebfc26ff891e2cf555762d539a0b724090ae6629a45abde"
     },
     "semver": {
@@ -326,7 +326,7 @@
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-15T12:54:17+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "fc27dceec6932994622fc171a8284fab93f2ae6c2453ce822c46535b08967259"
     },
     "sse": {
@@ -340,7 +340,7 @@
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-04-15T12:53:46+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "1647daea59f9efb7ab87067d93d65cca0c479641a530a08b9688b5313044bacb"
     },
     "structlog": {
@@ -364,7 +364,7 @@
       "deps": [],
       "tier": "medium",
       "category": "terminal",
-      "last_updated": "2026-04-15T12:54:10+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "effd04109a31f5ae7b87333d4207a70ceda712ef5e5718acc7e97691d7574667"
     },
     "toon": {
@@ -372,12 +372,12 @@
       "files": [
         "toon/toon.py"
       ],
-      "version": "0.3.1",
+      "version": "0.3.2",
       "deps": [],
       "tier": "simple",
       "category": "data",
-      "last_updated": "2026-04-15T13:18:10+08:00",
-      "content_hash": "a11d872c486ab693fd668e1b19690a534b426f921f9ec9b8b832f5042e04dbc0"
+      "last_updated": "2026-04-15T21:57:20+08:00",
+      "content_hash": "7ba503084ede371241d85ba5ef825f0badd0b5084f9807212f664a7a1b79dbc5"
     },
     "validate": {
       "description": "Zero-dependency runtime validator for TypedDict and dataclass types",
@@ -388,7 +388,7 @@
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-15T12:53:58+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "9346085a3bb68fd21e5e266748c52b55da6b8c2d71a2ab059bf54015b14d436a"
     },
     "vcs": {
@@ -414,7 +414,7 @@
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-15T12:53:15+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "bc42c60dad60e7a0af5928772b31ff61c07756c47020404eee40b1f67c18bc3e"
     },
     "yaml": {
@@ -426,7 +426,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "data",
-      "last_updated": "2026-04-15T13:17:10+08:00",
+      "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "5fd31be65d0c15cc82ef518e7b6e9cb553f8a7722a70c1ae6f9cda0999c92344"
     }
   }

@@ -326,7 +326,36 @@ def _require_httpclient() -> None:
         )
 
 
-class SSEClient:
+class _SSEClientMixin:
+    """Shared helpers for sync and async SSE clients."""
+
+    _last_event_id: str
+    _retry_interval: int
+    _max_retries: int
+    _url: str
+
+    def _init_parser(self) -> _SSEParser:
+        """Create a parser with restored persistent state."""
+        parser = _SSEParser()
+        parser._last_id = self._last_event_id
+        if self._retry_interval != DEFAULT_RETRY_INTERVAL:
+            parser._retry = self._retry_interval
+        return parser
+
+    def _handle_event(self, event: SSEEvent) -> None:
+        """Update reconnection state from a received event."""
+        if event.id:
+            self._last_event_id = event.id
+        if event.retry is not None:
+            self._retry_interval = event.retry
+
+    def _check_reconnect(self, retries: int, last_error: Exception | None) -> None:
+        """Raise ``SSEConnectionError`` if max retries exceeded."""
+        if self._max_retries >= 0 and retries > self._max_retries:
+            raise SSEConnectionError(self._url, retries, last_error)
+
+
+class SSEClient(_SSEClientMixin):
     """Synchronous SSE client with auto-reconnection.
 
     Opens a streaming HTTP GET, parses ``text/event-stream``, and
@@ -406,22 +435,14 @@ class SSEClient:
         while not self._closed:
             try:
                 self._response = self._connect()
-                parser = _SSEParser()
-                # Restore persistent parser state
-                parser._last_id = self._last_event_id
-                if self._retry_interval != DEFAULT_RETRY_INTERVAL:
-                    parser._retry = self._retry_interval
+                parser = self._init_parser()
 
                 for line in self._response.iter_lines():
                     if self._closed:
                         return
                     event = parser.feed_line(line)
                     if event is not None:
-                        # Update reconnection state
-                        if event.id:
-                            self._last_event_id = event.id
-                        if event.retry is not None:
-                            self._retry_interval = event.retry
+                        self._handle_event(event)
                         retries = 0
                         yield event
 
@@ -434,11 +455,8 @@ class SSEClient:
             finally:
                 self._close_response()
 
-            # Reconnect logic
             retries += 1
-            if self._max_retries >= 0 and retries > self._max_retries:
-                raise SSEConnectionError(self._url, retries, last_error)
-
+            self._check_reconnect(retries, last_error)
             time.sleep(self._retry_interval / 1000)
 
     def _connect(self) -> Any:
@@ -486,7 +504,7 @@ class SSEClient:
         self._close_response()
 
 
-class AsyncSSEClient:
+class AsyncSSEClient(_SSEClientMixin):
     """Asynchronous SSE client with auto-reconnection.
 
     Opens a streaming HTTP GET, parses ``text/event-stream``, and
@@ -566,20 +584,14 @@ class AsyncSSEClient:
         while not self._closed:
             try:
                 self._response = await self._connect()
-                parser = _SSEParser()
-                parser._last_id = self._last_event_id
-                if self._retry_interval != DEFAULT_RETRY_INTERVAL:
-                    parser._retry = self._retry_interval
+                parser = self._init_parser()
 
                 async for line in self._response.aiter_lines():
                     if self._closed:
                         return
                     event = parser.feed_line(line)
                     if event is not None:
-                        if event.id:
-                            self._last_event_id = event.id
-                        if event.retry is not None:
-                            self._retry_interval = event.retry
+                        self._handle_event(event)
                         retries = 0
                         yield event
 
@@ -592,9 +604,7 @@ class AsyncSSEClient:
                 await self._close_response()
 
             retries += 1
-            if self._max_retries >= 0 and retries > self._max_retries:
-                raise SSEConnectionError(self._url, retries, last_error)
-
+            self._check_reconnect(retries, last_error)
             await asyncio.sleep(self._retry_interval / 1000)
 
     async def _connect(self) -> Any:

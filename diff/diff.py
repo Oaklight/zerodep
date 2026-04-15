@@ -275,6 +275,63 @@ def _strip_filename_prefix(name: str) -> str:
     return name
 
 
+def _make_hunk_from_header(
+    m: re.Match, current_file: PatchedFile | None, line_no: int
+) -> Hunk:
+    """Create a :class:`Hunk` from a matched ``@@`` header and attach it to *current_file*.
+
+    Raises:
+        PatchParseError: If no file header has been seen yet.
+    """
+    if current_file is None:
+        raise PatchParseError(line_no, "hunk header before file header")
+    src_start = int(m.group(1))
+    src_len = int(m.group(2)) if m.group(2) is not None else 1
+    tgt_start = int(m.group(3))
+    tgt_len = int(m.group(4)) if m.group(4) is not None else 1
+    hunk = Hunk(
+        src_start=src_start,
+        src_len=src_len,
+        tgt_start=tgt_start,
+        tgt_len=tgt_len,
+        lines=[],
+    )
+    current_file.hunks.append(hunk)
+    return hunk
+
+
+def _classify_body_line(
+    raw: str,
+    line_no: int,
+    current_hunk: Hunk,
+    remaining_src: int,
+    remaining_tgt: int,
+) -> tuple[int, int]:
+    """Append a hunk body line to *current_hunk* and return updated counters.
+
+    Returns:
+        ``(remaining_src, remaining_tgt)`` after processing the line.
+
+    Raises:
+        PatchParseError: If the line prefix is not ``' '``, ``'-'``, or ``'+'``.
+    """
+    tag = raw[0]
+    content = raw[1:]
+    if tag == " ":
+        current_hunk.lines.append((" ", content))
+        return remaining_src - 1, remaining_tgt - 1
+    if tag == "-":
+        current_hunk.lines.append(("-", content))
+        return remaining_src - 1, remaining_tgt
+    if tag == "+":
+        current_hunk.lines.append(("+", content))
+        return remaining_src, remaining_tgt - 1
+    raise PatchParseError(
+        line_no,
+        f"unexpected line prefix {tag!r} inside hunk body",
+    )
+
+
 def parse_patch(patch_text: str) -> Patch:
     """Parse unified diff text into a structured :class:`Patch`.
 
@@ -298,7 +355,6 @@ def parse_patch(patch_text: str) -> Patch:
 
     for line_no_0, raw in enumerate(raw_lines):
         line_no = line_no_0 + 1
-        # Strip trailing newline for comparisons but keep it for content.
         stripped = raw.rstrip("\n").rstrip("\r")
 
         # --- source file header
@@ -323,22 +379,9 @@ def parse_patch(patch_text: str) -> Patch:
         # @@ hunk header
         m = _HUNK_HEADER_RE.match(stripped)
         if m:
-            if current_file is None:
-                raise PatchParseError(line_no, "hunk header before file header")
-            src_start = int(m.group(1))
-            src_len = int(m.group(2)) if m.group(2) is not None else 1
-            tgt_start = int(m.group(3))
-            tgt_len = int(m.group(4)) if m.group(4) is not None else 1
-            current_hunk = Hunk(
-                src_start=src_start,
-                src_len=src_len,
-                tgt_start=tgt_start,
-                tgt_len=tgt_len,
-                lines=[],
-            )
-            current_file.hunks.append(current_hunk)
-            remaining_src = src_len
-            remaining_tgt = tgt_len
+            current_hunk = _make_hunk_from_header(m, current_file, line_no)
+            remaining_src = current_hunk.src_len
+            remaining_tgt = current_hunk.tgt_len
             continue
 
         # "\ No newline at end of file"
@@ -352,25 +395,9 @@ def parse_patch(patch_text: str) -> Patch:
         if current_hunk is not None and (remaining_src > 0 or remaining_tgt > 0):
             if not raw:
                 continue
-            tag = raw[0]
-            content = raw[1:]
-            if tag == " ":
-                current_hunk.lines.append((" ", content))
-                remaining_src -= 1
-                remaining_tgt -= 1
-            elif tag == "-":
-                current_hunk.lines.append(("-", content))
-                remaining_src -= 1
-            elif tag == "+":
-                current_hunk.lines.append(("+", content))
-                remaining_tgt -= 1
-            else:
-                # Tolerate unknown prefix (e.g. diff preamble) outside a hunk,
-                # but if we're inside a hunk this is unexpected.
-                raise PatchParseError(
-                    line_no,
-                    f"unexpected line prefix {tag!r} inside hunk body",
-                )
+            remaining_src, remaining_tgt = _classify_body_line(
+                raw, line_no, current_hunk, remaining_src, remaining_tgt
+            )
             continue
 
         # Lines outside hunks (diff --git preamble, index, mode, etc.)
@@ -379,6 +406,92 @@ def parse_patch(patch_text: str) -> Patch:
 
 
 # ── Patch Application ───────────────────────────────────────────────
+
+
+def _resolve_patched_file(
+    source: str, patch: Patch | PatchedFile
+) -> tuple[PatchedFile, str | None]:
+    """Unwrap *patch* to a single :class:`PatchedFile` and handle trivial cases.
+
+    Returns:
+        ``(patched_file, early_result)`` — when *early_result* is not ``None``
+        the caller should return it directly.
+
+    Raises:
+        DiffError: If a :class:`Patch` contains more than one file.
+    """
+    if isinstance(patch, Patch):
+        if len(patch.files) == 0:
+            return PatchedFile(source_file=None, target_file=None, hunks=[]), source
+        if len(patch.files) != 1:
+            raise DiffError(
+                f"patch contains {len(patch.files)} files; "
+                "pass a single PatchedFile instead"
+            )
+        pf = patch.files[0]
+    else:
+        pf = patch
+
+    # Handle file creation from /dev/null.
+    if pf.is_added:
+        lines = [
+            content for hunk in pf.hunks for tag, content in hunk.lines if tag == "+"
+        ]
+        return pf, "".join(lines)
+
+    # Handle file deletion.
+    if pf.is_deleted:
+        return pf, ""
+
+    return pf, None
+
+
+def _verify_source_line(
+    hunk_i: int,
+    content: str,
+    source_lines: list[str],
+    src_pos: int,
+) -> str:
+    """Assert that the source line at *src_pos* matches *content*.
+
+    Returns:
+        The actual source line.
+
+    Raises:
+        PatchApplyError: If the line is past EOF or does not match.
+    """
+    if src_pos >= len(source_lines):
+        raise PatchApplyError(hunk_i, content, "<EOF>", src_pos + 1)
+    actual = source_lines[src_pos]
+    if actual != content:
+        raise PatchApplyError(hunk_i, content, actual, src_pos + 1)
+    return actual
+
+
+def _apply_hunk_lines(
+    hunk_i: int,
+    hunk: Hunk,
+    source_lines: list[str],
+) -> tuple[list[str], int]:
+    """Apply the lines of a single hunk and return the output lines and final source position.
+
+    Returns:
+        ``(output_lines, src_pos_after)`` — the produced lines and the
+        0-based source position after the hunk.
+    """
+    output: list[str] = []
+    src_pos = hunk.src_start - 1  # convert to 0-based
+    for tag, content in hunk.lines:
+        if tag == " ":
+            actual = _verify_source_line(hunk_i, content, source_lines, src_pos)
+            output.append(actual)
+            src_pos += 1
+        elif tag == "-":
+            _verify_source_line(hunk_i, content, source_lines, src_pos)
+            src_pos += 1
+        elif tag == "+":
+            output.append(content)
+    return output, src_pos
 
 
 def apply_patch(source: str, patch: Patch | PatchedFile) -> str:
@@ -397,65 +510,19 @@ def apply_patch(source: str, patch: Patch | PatchedFile) -> str:
             the source.
         DiffError: If a :class:`Patch` contains more than one file.
     """
-    if isinstance(patch, Patch):
-        if len(patch.files) == 0:
-            return source
-        if len(patch.files) != 1:
-            raise DiffError(
-                f"patch contains {len(patch.files)} files; "
-                "pass a single PatchedFile instead"
-            )
-        pf = patch.files[0]
-    else:
-        pf = patch
-
-    # Handle file creation from /dev/null.
-    if pf.is_added:
-        lines: list[str] = []
-        for hunk in pf.hunks:
-            for tag, content in hunk.lines:
-                if tag == "+":
-                    lines.append(content)
-        return "".join(lines)
-
-    # Handle file deletion.
-    if pf.is_deleted:
-        return ""
+    pf, early = _resolve_patched_file(source, patch)
+    if early is not None:
+        return early
 
     source_lines = source.splitlines(True)
     output: list[str] = []
     src_idx = 0  # current position in source_lines (0-based)
 
     for hunk_i, hunk in enumerate(pf.hunks):
-        hunk_start = hunk.src_start - 1  # convert to 0-based
-
-        # Copy unchanged lines before this hunk.
+        hunk_start = hunk.src_start - 1
         output.extend(source_lines[src_idx:hunk_start])
-
-        src_pos = hunk_start
-        for tag, content in hunk.lines:
-            if tag == " ":
-                # Context: must match source.
-                if src_pos >= len(source_lines):
-                    raise PatchApplyError(hunk_i, content, "<EOF>", src_pos + 1)
-                actual = source_lines[src_pos]
-                if actual != content:
-                    raise PatchApplyError(hunk_i, content, actual, src_pos + 1)
-                output.append(actual)
-                src_pos += 1
-            elif tag == "-":
-                # Deletion: verify and skip.
-                if src_pos >= len(source_lines):
-                    raise PatchApplyError(hunk_i, content, "<EOF>", src_pos + 1)
-                actual = source_lines[src_pos]
-                if actual != content:
-                    raise PatchApplyError(hunk_i, content, actual, src_pos + 1)
-                src_pos += 1
-            elif tag == "+":
-                # Addition.
-                output.append(content)
-
-        src_idx = src_pos
+        hunk_output, src_idx = _apply_hunk_lines(hunk_i, hunk, source_lines)
+        output.extend(hunk_output)
 
     # Copy remaining lines after the last hunk.
     output.extend(source_lines[src_idx:])
@@ -519,6 +586,106 @@ def _extract_changes(
     return changes
 
 
+def _resolve_overlap(
+    o_change: tuple[int, int, list[str]],
+    t_change: tuple[int, int, list[str]],
+    label_ours: str,
+    label_theirs: str,
+) -> tuple[list[str], ConflictRegion | None, int]:
+    """Handle overlapping ours/theirs changes on the same base region.
+
+    Returns:
+        ``(merged_lines, conflict_or_none, union_end)``.
+    """
+    o_s, o_e, o_rep = o_change
+    t_s, t_e, t_rep = t_change
+    union_start = min(o_s, t_s)
+    union_end = max(o_e, t_e)
+
+    if o_rep == t_rep:
+        return list(o_rep), None, union_end
+
+    conflict = ConflictRegion(
+        base_start=union_start,
+        base_end=union_end,
+        ours=list(o_rep),
+        theirs=list(t_rep),
+    )
+    lines: list[str] = [f"<<<<<<< {label_ours}\n"]
+    lines.extend(o_rep)
+    lines.append("=======\n")
+    lines.extend(t_rep)
+    lines.append(f">>>>>>> {label_theirs}\n")
+    return lines, conflict, union_end
+
+
+def _skip_subsumed(
+    changes: list[tuple[int, int, list[str]]],
+    idx: int,
+    union_end: int,
+) -> int:
+    """Advance *idx* past any changes whose start falls within [0, *union_end*)."""
+    while idx < len(changes) and changes[idx][0] < union_end:
+        idx += 1
+    return idx
+
+
+def _apply_both_changes(
+    o_change: tuple[int, int, list[str]],
+    t_change: tuple[int, int, list[str]],
+    label_ours: str,
+    label_theirs: str,
+    ours_changes: list[tuple[int, int, list[str]]],
+    theirs_changes: list[tuple[int, int, list[str]]],
+    oi: int,
+    ti: int,
+    merged: list[str],
+    conflicts: list[ConflictRegion],
+) -> tuple[int, int, int]:
+    """Process a step where both sides have pending changes.
+
+    Returns:
+        ``(base_pos, oi, ti)`` after processing.
+    """
+    o_s, o_e, o_rep = o_change
+    t_s, t_e, t_rep = t_change
+
+    if o_e <= t_s:
+        merged.extend(o_rep)
+        return o_e, oi + 1, ti
+
+    if t_e <= o_s:
+        merged.extend(t_rep)
+        return t_e, oi, ti + 1
+
+    # Overlapping ranges.
+    lines, conflict, union_end = _resolve_overlap(
+        o_change, t_change, label_ours, label_theirs
+    )
+    merged.extend(lines)
+    if conflict is not None:
+        conflicts.append(conflict)
+
+    oi = _skip_subsumed(ours_changes, oi + 1, union_end)
+    ti = _skip_subsumed(theirs_changes, ti + 1, union_end)
+    return union_end, oi, ti
+
+
+def _peek_change(
+    changes: list[tuple[int, int, list[str]]],
+    idx: int,
+    sentinel: int,
+) -> tuple[tuple[int, int, list[str]] | None, int]:
+    """Return the next pending change and its start position.
+
+    If there is no pending change, returns ``(None, sentinel)``.
+    """
+    if idx < len(changes):
+        change = changes[idx]
+        return change, change[0]
+    return None, sentinel
+
+
 def merge3(
     base: str,
     ours: str,
@@ -551,22 +718,17 @@ def merge3(
     merged: list[str] = []
     conflicts: list[ConflictRegion] = []
     base_pos = 0
-    oi = 0  # index into ours_changes
-    ti = 0  # index into theirs_changes
+    oi = 0
+    ti = 0
+    sentinel = len(base_lines) + 1
 
-    base_len = len(base_lines)
-
-    while base_pos <= base_len:
-        o_change = ours_changes[oi] if oi < len(ours_changes) else None
-        t_change = theirs_changes[ti] if ti < len(theirs_changes) else None
+    while base_pos < sentinel:
+        o_change, o_start = _peek_change(ours_changes, oi, sentinel)
+        t_change, t_start = _peek_change(theirs_changes, ti, sentinel)
 
         if o_change is None and t_change is None:
-            # No more changes — emit remaining base.
             merged.extend(base_lines[base_pos:])
             break
-
-        o_start = o_change[0] if o_change else base_len + 1
-        t_start = t_change[0] if t_change else base_len + 1
 
         # Emit base lines before the next change.
         next_start = min(o_start, t_start)
@@ -575,62 +737,26 @@ def merge3(
             base_pos = next_start
 
         if o_change is not None and t_change is not None:
-            o_s, o_e, o_rep = o_change
-            t_s, t_e, t_rep = t_change
-
-            if o_e <= t_s:
-                # No overlap: ours first.
-                merged.extend(o_rep)
-                base_pos = o_e
-                oi += 1
-            elif t_e <= o_s:
-                # No overlap: theirs first.
-                merged.extend(t_rep)
-                base_pos = t_e
-                ti += 1
-            else:
-                # Overlapping ranges.
-                union_start = min(o_s, t_s)
-                union_end = max(o_e, t_e)
-
-                if o_rep == t_rep:
-                    # Identical changes — clean merge.
-                    merged.extend(o_rep)
-                else:
-                    # Conflict.
-                    conflicts.append(
-                        ConflictRegion(
-                            base_start=union_start,
-                            base_end=union_end,
-                            ours=list(o_rep),
-                            theirs=list(t_rep),
-                        )
-                    )
-                    merged.append(f"<<<<<<< {label_ours}\n")
-                    merged.extend(o_rep)
-                    merged.append("=======\n")
-                    merged.extend(t_rep)
-                    merged.append(f">>>>>>> {label_theirs}\n")
-
-                base_pos = union_end
-                oi += 1
-                ti += 1
-                # Skip additional changes from either side within the union.
-                while oi < len(ours_changes) and ours_changes[oi][0] < union_end:
-                    oi += 1
-                while ti < len(theirs_changes) and theirs_changes[ti][0] < union_end:
-                    ti += 1
-        elif o_change is not None and o_start == base_pos:
+            base_pos, oi, ti = _apply_both_changes(
+                o_change,
+                t_change,
+                label_ours,
+                label_theirs,
+                ours_changes,
+                theirs_changes,
+                oi,
+                ti,
+                merged,
+                conflicts,
+            )
+        elif o_change is not None:
             merged.extend(o_change[2])
             base_pos = o_change[1]
             oi += 1
-        elif t_change is not None and t_start == base_pos:
+        elif t_change is not None:
             merged.extend(t_change[2])
             base_pos = t_change[1]
             ti += 1
-        else:
-            # Safety: should not reach here.
-            break  # pragma: no cover
 
     return MergeResult(
         content="".join(merged),

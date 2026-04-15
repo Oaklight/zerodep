@@ -163,35 +163,75 @@ def _transitive_dependents(
     return visited
 
 
+def _list_release_tags(repo_root: Path) -> list[str]:
+    """Return all git tags sorted by version descending."""
+    try:
+        result = subprocess.run(
+            ["git", "tag", "--sort=-version:refname"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            return [t for t in result.stdout.strip().splitlines() if t]
+    except subprocess.SubprocessError:
+        pass
+    return []
+
+
+def _git_show_at_tag(repo_root: Path, tag: str, filepath: str) -> str | None:
+    """Return file content at a given git tag, or None if unavailable."""
+    try:
+        result = subprocess.run(
+            ["git", "show", f"{tag}:{filepath}"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return result.stdout if result.returncode == 0 else None
+    except subprocess.SubprocessError:
+        return None
+
+
 def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
     """Detect which modules have been modified since their declared version tag.
 
+    Uses a dual-strategy tag lookup:
+    1. Try ``v{module_version}`` directly (backward compat with old SemVer tags).
+    2. Search all release tags for one where the file has the same frontmatter
+       version (supports CalVer project tags like ``v2026.4.11``).
+
     Returns:
-        Dict mapping module name to status: "up-to-date", "modified", "new", or "error".
+        Dict mapping module name to status: "up-to-date", "modified", "new",
+        or "error".
     """
+    all_tags = _list_release_tags(repo_root)
     status_map: dict[str, str] = {}
+
     for mod_name, mod in sorted(modules.items()):
         version = mod["version"]
-        tag = f"v{version}"
         primary_file = mod["files"][0]
 
-        try:
-            result = subprocess.run(
-                ["git", "show", f"{tag}:{primary_file}"],
-                cwd=repo_root,
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-        except subprocess.SubprocessError:
-            status_map[mod_name] = "error"
-            continue
+        # Strategy 1: exact tag match (e.g. v0.3.0)
+        tag_content = _git_show_at_tag(repo_root, f"v{version}", primary_file)
 
-        if result.returncode != 0:
+        # Strategy 2: search all release tags for matching frontmatter version
+        if tag_content is None:
+            for tag in all_tags:
+                candidate = _git_show_at_tag(repo_root, tag, primary_file)
+                if candidate is not None:
+                    tag_meta = _extract_frontmatter(candidate)
+                    if tag_meta.get("version") == version:
+                        tag_content = candidate
+                        break
+
+        if tag_content is None:
             status_map[mod_name] = "new"
             continue
 
-        tag_hash = _normalized_hash(result.stdout)
+        tag_hash = _normalized_hash(tag_content)
         cur_hash = _normalized_hash(
             (repo_root / primary_file).read_text(encoding="utf-8")
         )
@@ -216,6 +256,7 @@ _SKIP_DIRS = {
     "docs_en",
     "docs_zh",
     "plans",
+    "scripts",
     ".git",
     ".github",
     "__pycache__",
@@ -644,6 +685,98 @@ def cmd_manifest(args: argparse.Namespace) -> None:
             _ok(f"  {name} -> {', '.join(deps)}")
 
 
+def _bump_frontmatter_version(filepath: Path, level: str) -> tuple[str, str]:
+    """Bump the version in a module's frontmatter block.
+
+    Args:
+        filepath: Path to the module file.
+        level: One of "patch", "minor", "major".
+
+    Returns:
+        Tuple of (old_version, new_version).
+
+    Raises:
+        ValueError: If no version is found in frontmatter.
+    """
+    text = filepath.read_text(encoding="utf-8")
+    m = re.search(r'^(# version = ")(\d+)\.(\d+)\.(\d+)(")', text, re.MULTILINE)
+    if not m:
+        raise ValueError(f"no version found in {filepath}")
+
+    major, minor, patch = int(m.group(2)), int(m.group(3)), int(m.group(4))
+    old_ver = f"{major}.{minor}.{patch}"
+
+    if level == "major":
+        new_ver = f"{major + 1}.0.0"
+    elif level == "minor":
+        new_ver = f"{major}.{minor + 1}.0"
+    else:
+        new_ver = f"{major}.{minor}.{patch + 1}"
+
+    text = text.replace(
+        f"{m.group(1)}{old_ver}{m.group(5)}",
+        f"{m.group(1)}{new_ver}{m.group(5)}",
+        1,
+    )
+    filepath.write_text(text, encoding="utf-8")
+    return old_ver, new_ver
+
+
+def cmd_bump(args: argparse.Namespace) -> None:
+    """Bump module versions in frontmatter."""
+    repo_root = Path(__file__).resolve().parent
+    modules = _scan_modules(repo_root)
+    if not modules:
+        _die("no modules found")
+
+    # Determine bump level
+    if getattr(args, "major", False):
+        level = "major"
+    elif getattr(args, "minor", False):
+        level = "minor"
+    else:
+        level = "patch"
+
+    # Determine which modules to bump
+    if args.modules:
+        targets = args.modules
+        for t in targets:
+            if t not in modules:
+                _die(f"unknown module: {t}")
+    else:
+        status_map = _find_changed_modules(repo_root, modules)
+        targets = [m for m, s in status_map.items() if s in ("modified", "new")]
+        if not targets:
+            _ok("all modules up-to-date, nothing to bump")
+            return
+
+    # Bump each module
+    rows: list[tuple[str, str, str]] = []
+    for mod_name in sorted(targets):
+        primary = repo_root / modules[mod_name]["files"][0]
+        try:
+            old_ver, new_ver = _bump_frontmatter_version(primary, level)
+        except ValueError as e:
+            _warn(f"skipping {mod_name}: {e}")
+            continue
+        rows.append((mod_name, old_ver, new_ver))
+
+    # Print summary
+    headers = ("Module", "Old", "New")
+    widths = [max(len(headers[i]), *(len(r[i]) for r in rows)) for i in range(3)]
+    fmt = "  ".join(f"{{:<{w}}}" for w in widths)
+    print(fmt.format(*headers))
+    print(fmt.format(*("-" * w for w in widths)))
+    for row in rows:
+        print(fmt.format(*row))
+
+    _ok(f"bumped {len(rows)} module(s) ({level})")
+
+    # Regenerate manifest
+    _ok("regenerating manifest.json ...")
+    cmd_manifest(args)
+
+
 def cmd_outdated(args: argparse.Namespace) -> None:
     """Check local zerodep files against the upstream manifest for changes."""
     manifest = _load_manifest(local=args.local, offline=args.offline)
@@ -718,6 +851,95 @@ def _normalized_hash(source: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+_VALID_CATEGORIES = (
+    "network",
+    "crypto",
+    "data",
+    "terminal",
+    "process",
+    "devtools",
+    "utility",
+)
+
+_VALID_TIERS = ("simple", "medium", "subsystem")
+
+_NOTE_URL = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
+
+
+def cmd_new(args: argparse.Namespace) -> None:
+    """Scaffold a new module directory with template files."""
+    repo_root = Path(__file__).resolve().parent
+    name = args.name
+
+    # Validate module name
+    if not re.fullmatch(r"[a-z][a-z0-9_]*", name):
+        _die(
+            f"invalid module name '{name}' (use lowercase letters, digits, underscores)"
+        )
+
+    mod_dir = repo_root / name
+    if mod_dir.exists():
+        _die(f"directory '{name}/' already exists")
+
+    year = datetime.now().year
+    deps_str = json.dumps(args.deps) if args.deps else "[]"
+
+    # Module file template
+    module_content = (
+        f"# /// zerodep\n"
+        f'# version = "0.1.0"\n'
+        f"# deps = {deps_str}\n"
+        f'# tier = "{args.tier}"\n'
+        f'# category = "{args.category}"\n'
+        f'# note = "{_NOTE_URL}"\n'
+        f"# ///\n"
+        f'"""<One-line description>.\n'
+        f"\n"
+        f"<Extended description>.\n"
+        f"\n"
+        f"Part of zerodep: https://github.com/Oaklight/zerodep\n"
+        f"Copyright (c) {year} Peng Ding. MIT License.\n"
+        f'"""\n'
+        f"\n"
+        f"from __future__ import annotations\n"
+        f"\n"
+        f"__all__: list[str] = []\n"
+    )
+
+    # Test file template
+    test_content = (
+        f'"""Correctness tests for zerodep {name} module."""\n'
+        f"\n"
+        f"import os\n"
+        f"import sys\n"
+        f"\n"
+        f"import pytest  # noqa: F401\n"
+        f"\n"
+        f"sys.path.insert(0, os.path.dirname(__file__))\n"
+        f"\n"
+        f"# from {name} import ...\n"
+        f"\n"
+        f"\n"
+        f"class TestBasic:\n"
+        f'    """Basic functionality tests."""\n'
+        f"\n"
+        f"    def test_placeholder(self):\n"
+        f"        pass\n"
+    )
+
+    mod_dir.mkdir()
+    (mod_dir / f"{name}.py").write_text(module_content, encoding="utf-8")
+    (mod_dir / f"test_{name}_correctness.py").write_text(test_content, encoding="utf-8")
+
+    _ok(f"created {name}/")
+    _ok(f"  {name}/{name}.py")
+    _ok(f"  {name}/test_{name}_correctness.py")
+
+    # Regenerate manifest
+    _ok("regenerating manifest.json ...")
+    cmd_manifest(args)
+
+
 def cmd_version_check(args: argparse.Namespace) -> None:
     """Check which modules have been modified since their declared version."""
     repo_root = Path(__file__).resolve().parent
@@ -753,6 +975,8 @@ def cmd_version_check(args: argparse.Namespace) -> None:
 
     if modified:
         _warn(f"{modified} module(s) need a version bump")
+        if getattr(args, "strict", False):
+            sys.exit(1)
     else:
         _ok("all modules up-to-date")
 
@@ -941,6 +1165,9 @@ def main(argv: list[str] | None = None) -> None:
               zerodep add sse retry -d lib/  Copy sse + httpclient + retry to lib/
               zerodep add sse --nested       Copy into sse/ and httpclient/ subdirs
               zerodep add sse --no-deps      Copy only sse.py, skip httpclient
+              zerodep new mymodule           Scaffold a new module
+              zerodep bump                   Auto-bump changed module versions
+              zerodep bump --minor yaml      Bump a specific module (minor)
               zerodep manifest               Regenerate manifest.json
               zerodep version-check          Check for modules needing a bump
               zerodep dep-graph              Show all module dependencies
@@ -993,6 +1220,38 @@ def main(argv: list[str] | None = None) -> None:
     )
     p_update.add_argument("--no-deps", action="store_true", help="skip dependencies")
 
+    # new
+    p_new = sub.add_parser("new", help="scaffold a new module")
+    p_new.add_argument("name", help="module name (lowercase, e.g. mymodule)")
+    p_new.add_argument(
+        "--category",
+        default="utility",
+        choices=_VALID_CATEGORIES,
+        help="module category (default: utility)",
+    )
+    p_new.add_argument(
+        "--tier",
+        default="simple",
+        choices=_VALID_TIERS,
+        help="module tier (default: simple)",
+    )
+    p_new.add_argument("--deps", nargs="*", default=[], help="module dependencies")
+
+    # bump
+    p_bump = sub.add_parser("bump", help="bump module versions")
+    p_bump.add_argument(
+        "modules",
+        nargs="*",
+        default=[],
+        help="modules to bump (default: auto-detect changed)",
+    )
+    bump_level = p_bump.add_mutually_exclusive_group()
+    bump_level.add_argument(
+        "--patch", action="store_true", default=True, help="patch bump (default)"
+    )
+    bump_level.add_argument("--minor", action="store_true", help="minor bump")
+    bump_level.add_argument("--major", action="store_true", help="major bump")
+
     # outdated
     sub.add_parser("outdated", help="check local files for upstream changes")
 
@@ -1000,7 +1259,14 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("manifest", help="regenerate manifest.json from source")
 
     # version-check
-    sub.add_parser("version-check", help="check modules for uncommitted version bumps")
+    p_vcheck = sub.add_parser(
+        "version-check", help="check modules for uncommitted version bumps"
+    )
+    p_vcheck.add_argument(
+        "--strict",
+        action="store_true",
+        help="exit with code 1 if any module needs a bump",
+    )
 
     # dep-graph
     p_depgraph = sub.add_parser("dep-graph", help="show module dependency graph")
@@ -1030,6 +1296,8 @@ def main(argv: list[str] | None = None) -> None:
         "info": cmd_info,
         "add": cmd_add,
         "update": cmd_update,
+        "new": cmd_new,
+        "bump": cmd_bump,
         "outdated": cmd_outdated,
         "manifest": cmd_manifest,
         "version-check": cmd_version_check,

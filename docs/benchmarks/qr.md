@@ -4,8 +4,10 @@ zerodep QR 实现与 [`qrcode`](https://pypi.org/project/qrcode/) 库（纯 Pyth
 
 !!! info "测试环境"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10
-    - **工具:** pytest-benchmark（报告均值）
+    - **Python:** 3.12
+    - **工具:** pytest-benchmark 5.2.3（报告均值）
+    - **对标库:** qrcode 8.2, Pillow 12.2.0
+    - **最后更新:** 2026-04-15
 
 ## 实现对比
 
@@ -28,9 +30,9 @@ zerodep QR 实现与 [`qrcode`](https://pypi.org/project/qrcode/) 库（纯 Pyth
 
 | 输入 | zerodep（`qr.py`） | `qrcode` 库 | 倍率 |
 |------|---------------------|-------------|------|
-| 短文本（5 字符） | 3.3 ms | 1.6 ms | 慢 2.1 倍 |
-| URL（46 字符） | 8.7 ms | 4.5 ms | 慢 1.9 倍 |
-| 长文本（200 字符） | 18.3 ms | 10.5 ms | 慢 1.7 倍 |
+| 短文本（5 字符） | 3.5 ms | 1.7 ms | 慢 2.1 倍 |
+| URL（46 字符） | 9.2 ms | 4.8 ms | 慢 1.9 倍 |
+| 长文本（200 字符） | 19.4 ms | 11.3 ms | 慢 1.7 倍 |
 
 ## 要点总结
 

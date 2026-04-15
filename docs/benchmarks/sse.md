@@ -3,9 +3,11 @@
 zerodep SSE 与 [`httpx-sse`](https://pypi.org/project/httpx-sse/) 的解析性能对比。
 
 !!! info "测试环境"
-    - **平台:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **CPU:** x86_64 Linux
+    - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
+    - **对标库:** httpx-sse 0.4.3
+    - **最后更新:** 2026-04-15
 
 ## 实现对比
 
@@ -30,14 +32,14 @@ zerodep SSE 与 [`httpx-sse`](https://pypi.org/project/httpx-sse/) 的解析性�
 
 | 数据规模 | zerodep | httpx-sse | 比率 |
 |----------|---------|-----------|------|
-| Small | 14.9 μs | 13.2 μs | 慢 ~1.13x |
-| Medium | 200.9 μs | 186.9 μs | 慢 ~1.07x |
-| Large | 1,526.4 μs | 1,379.9 μs | 慢 ~1.11x |
+| Small | 22.0 μs | 17.0 μs | 慢 ~1.3x |
+| Medium | 300.3 μs | 240.9 μs | 慢 ~1.2x |
+| Large | 2,153.1 μs | 1,813.2 μs | 慢 ~1.2x |
 
 ## 要点总结
 
-- **解析性能几乎一致** —— 两个库实现了相同的 W3C SSE 解析算法，~10% 的差异来自实现细节。
-- **吞吐量对两者都很优秀** —— 解析 1,000 个事件（200 字符载荷）仅需约 1.5 ms，说明在实际 SSE 场景中解析永远不会成为瓶颈（网络延迟才是主导因素）。
+- **zerodep 慢约 20-30%** —— 两个库实现了相同的 W3C SSE 解析算法。差异来自 zerodep 对每个事件的额外处理（字段规范化、事件类型分发），而 httpx-sse 解析器更为精简。
+- **吞吐量对两者都很优秀** —— 解析 1,000 个事件（200 字符载荷）仅需约 2.2 ms，说明在实际 SSE 场景中解析永远不会成为瓶颈（网络延迟才是主导因素）。
 - **zerodep 功能更丰富** —— 不同于 httpx-sse（仅是 httpx 扩展），zerodep SSE 包含独立解析器（无需 HTTP 依赖）、自动重连、同步+异步客户端和 Last-Event-ID 跟踪。
 - **零 pip 依赖** —— zerodep 仅使用标准库 `dataclasses`、`asyncio`、`time`、`os`（高级客户端另需同项目的 `httpclient` 模块）。
 

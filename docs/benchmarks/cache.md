@@ -4,8 +4,10 @@ zerodep cache 与 [`cachetools`](https://pypi.org/project/cachetools/) 的性能
 
 !!! info "测试环境"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10
+    - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
+    - **对标库:** cachetools 7.0.5
+    - **最后更新:** 2026-04-15
 
 ## 实现对比
 
@@ -32,22 +34,22 @@ zerodep cache 与 [`cachetools`](https://pypi.org/project/cachetools/) 的性能
 
 | 测试项 | zerodep | cachetools | 倍数 |
 |--------|---------|------------|------|
-| LRU 读写 | 734 us | 695 us | 0.95x |
-| LRU 淘汰压力 | 1,251 us | 1,196 us | 0.96x |
-| LFU 淘汰压力 | 2,284 us | 3,680 us | **1.6x 更快** |
-| TTL 过期 | 4,368 us | 4,119 us | 0.94x |
-| 装饰器（LRU） | 258 us | 143 us | 0.56x |
-| 装饰器（TTL） | 214 us | 167 us | 0.78x |
-| hashkey | 232 us | 271 us | **1.2x 更快** |
-| typedkey | 950 us | 899 us | 0.94x |
-| 混合负载 | 623 us | 604 us | 0.97x |
+| LRU 读写 | 894 μs | 928 μs | **快 1.0x** |
+| LRU 淘汰压力 | 1,503 μs | 1,572 μs | **快 1.0x** |
+| LFU 淘汰压力 | 2,611 μs | 1,850 μs | 慢 1.4x |
+| TTL 过期 | 3,587 μs | 3,520 μs | 持平 |
+| 装饰器（LRU） | 203 μs | 202 μs | 持平 |
+| 装饰器（TTL） | 304 μs | 233 μs | 慢 1.3x |
+| hashkey | 405 μs | 430 μs | **快 1.1x** |
+| typedkey | 1,577 μs | 1,256 μs | 慢 1.3x |
+| 混合负载 | 748 μs | 774 μs | **快 1.0x** |
 
 ## 要点总结
 
-- **LFU 快 1.6 倍** -- zerodep 的 O(1) 双向链表频率表在淘汰压力下明显优于 cachetools 基于计数器的 LFU 实现。
-- **缓存类操作持平** -- LRU 读写、淘汰、TTL 过期、混合负载与 cachetools 差距在 5% 以内。
-- **装饰器开销较高** -- cachetools 更简单的包装路径使装饰函数调用快 1.3-1.8 倍。这是固定的每次调用开销（数十纳秒级），对于任何非简单的被包装函数可忽略不计。
-- **hashkey 快 1.2 倍** -- zerodep 的 `_HashedTuple` 实现在键生成上略优于 cachetools。
+- **核心缓存操作持平** -- LRU 读写、LRU 淘汰、TTL 过期、混合负载与 cachetools 在误差范围内持平，zerodep 在 LRU 和混合负载上略快。
+- **LFU 淘汰慢 1.4 倍** -- cachetools 基于计数器的 LFU 在高淘汰压力下比 zerodep 的频率链表方式更快。
+- **TTL 装饰器慢 1.3 倍** -- cachetools 更简单的包装路径在 TTL 装饰函数调用上开销更低。LRU 装饰器开销两者基本一致。
+- **hashkey 快 1.1 倍** -- zerodep 的 `_HashedTuple` 实现在键生成上略优于 cachetools。typedkey 慢 1.3 倍。
 - **异步支持是核心差异化** -- cachetools **完全不支持异步装饰器**。zerodep 的 `cached()` 及所有便捷装饰器自动检测异步函数，使用 `asyncio.Lock` 保证并发安全。
 
 ## 自行运行

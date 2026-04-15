@@ -3,9 +3,11 @@
 zerodep tabulate 与 [`tabulate`](https://pypi.org/project/tabulate/) 的性能对比。
 
 !!! info "测试环境"
-    - **平台:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **CPU:** x86_64 Linux
+    - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
+    - **对标库:** tabulate 0.10.0
+    - **最后更新:** 2026-04-15
 
 ## 实现对比
 
@@ -26,14 +28,14 @@ zerodep tabulate 与 [`tabulate`](https://pypi.org/project/tabulate/) 的性能�
 
 | 数据规模 | zerodep | tabulate | 倍数 |
 |----------|---------|----------|------|
-| Small | 32.5 μs | 93.8 μs | 快 2.89x |
-| Medium | 266.4 μs | 910.1 μs | 快 3.42x |
-| Large | 3,883.4 μs | 13,804.4 μs | 快 3.56x |
+| Small | 45.1 μs | 144.2 μs | 快 3.2x |
+| Medium | 335.1 μs | 1,428.8 μs | 快 4.3x |
+| Large | 5,405.9 μs | 21,904.8 μs | 快 4.1x |
 
 ## 要点总结
 
-- **格式化快 2.9-3.6 倍** —— 单文件实现避免了参考库多模块调度和功能协商的开销。
-- **数据越大优势越明显** —— zerodep 的列宽计算和行渲染具有更好的扩展性。
+- **格式化快 3.2-4.3 倍** —— 单文件实现避免了参考库多模块调度和功能协商的开销。
+- **数据越大优势越明显** —— zerodep 的列宽计算和行渲染具有更好的扩展性，中型表格可达 4.3 倍加速。
 - **无需任何 pip 依赖** —— zerodep 仅使用标准库 `re`、`math`、`unicodedata`、`dataclasses`。
 
 ## 自行运行

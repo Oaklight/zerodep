@@ -4,8 +4,10 @@ zerodep AES 实现与 [`pycryptodome`](https://pypi.org/project/pycryptodome/)�
 
 !!! info "测试环境"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10
-    - **工具:** pytest-benchmark（报告均值）
+    - **Python:** 3.12
+    - **工具:** pytest-benchmark 5.2.3（报告均值）
+    - **对标库:** pycryptodome 3.23.0
+    - **最后更新:** 2026-04-15
 
 ## 实现对比
 
@@ -34,42 +36,66 @@ zerodep AES 实现与 [`pycryptodome`](https://pypi.org/project/pycryptodome/)�
 
 ## ECB 加密（均值）
 
-| 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome |
-|----------|-----------|----------------|--------------|
-| 13 B（小） | ~75 us | ~3 us | ~6 us |
-| 1 KB（中） | ~3,700 us | ~3 us | ~6 us |
-| 64 KB（大） | ~233,000 us | ~11 us | ~13 us |
+| 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome | OpenSSL vs pycryptodome |
+|----------|-----------|----------------|--------------|------------------------|
+| 13 B（小） | ~71 us | ~5 us | ~7 us | 1.5x 更快 |
+| 1 KB（中） | ~3,546 us | ~5 us | ~8 us | 1.4x 更快 |
+| 64 KB（大） | ~226,004 us | ~21 us | ~21 us | ~1.0x（持平） |
+
+## ECB 解密（均值）
+
+| 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome | OpenSSL vs pycryptodome |
+|----------|-----------|----------------|--------------|------------------------|
+| 13 B（小） | ~92 us | ~5 us | ~7 us | 1.5x 更快 |
+| 1 KB（中） | ~4,958 us | ~6 us | ~8 us | 1.5x 更快 |
+| 64 KB（大） | ~309,896 us | ~19 us | ~22 us | 1.1x 更快 |
 
 ## CBC 加密（均值）
 
-| 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome |
-|----------|-----------|----------------|--------------|
-| 13 B（小） | ~100 us | ~3 us | ~6 us |
-| 1 KB（中） | ~3,800 us | ~4 us | ~8 us |
-| 64 KB（大） | ~237,000 us | ~36 us | ~62 us |
+| 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome | OpenSSL vs pycryptodome |
+|----------|-----------|----------------|--------------|------------------------|
+| 13 B（小） | ~74 us | ~5 us | ~9 us | 1.7x 更快 |
+| 1 KB（中） | ~3,762 us | ~6 us | ~11 us | 1.7x 更快 |
+| 64 KB（大） | ~232,631 us | ~68 us | ~110 us | 1.6x 更快 |
+
+## CBC 解密（均值）
+
+| 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome | OpenSSL vs pycryptodome |
+|----------|-----------|----------------|--------------|------------------------|
+| 13 B（小） | ~94 us | ~5 us | ~9 us | 1.7x 更快 |
+| 1 KB（中） | ~5,069 us | ~6 us | ~11 us | 1.9x 更快 |
+| 64 KB（大） | ~319,752 us | ~19 us | ~111 us | 5.7x 更快 |
 
 ## CTR 加密（均值）
 
-| 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome |
-|----------|-----------|----------------|--------------|
-| 13 B（小） | ~75 us | ~3 us | ~8 us |
-| 1 KB（中） | ~3,800 us | ~3 us | ~8 us |
-| 64 KB（大） | ~240,000 us | ~11 us | ~54 us |
+| 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome | OpenSSL vs pycryptodome |
+|----------|-----------|----------------|--------------|------------------------|
+| 13 B（小） | ~72 us | ~5 us | ~10 us | 1.9x 更快 |
+| 1 KB（中） | ~3,652 us | ~6 us | ~12 us | 2.0x 更快 |
+| 64 KB（大） | ~234,149 us | ~21 us | ~97 us | 4.6x 更快 |
 
 ## GCM 加密（均值）
 
-| 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome |
-|----------|-----------|----------------|--------------|
-| 13 B（小） | ~220 us | ~4 us | ~35 us |
-| 1 KB（中） | ~4,800 us | ~4 us | ~35 us |
-| 64 KB（大） | ~292,000 us | ~15 us | ~88 us |
+| 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome | OpenSSL vs pycryptodome |
+|----------|-----------|----------------|--------------|------------------------|
+| 13 B（小） | ~232 us | ~7 us | ~43 us | 6.4x 更快 |
+| 1 KB（中） | ~5,225 us | ~8 us | ~46 us | 6.1x 更快 |
+| 64 KB（大） | ~327,032 us | ~27 us | ~142 us | 5.3x 更快 |
+
+## GCM 解密（均值）
+
+| 数据大小 | 纯 Python | OpenSSL ctypes | pycryptodome | OpenSSL vs pycryptodome |
+|----------|-----------|----------------|--------------|------------------------|
+| 13 B（小） | ~229 us | ~7 us | ~58 us | 8.8x 更快 |
+| 1 KB（中） | ~5,254 us | ~8 us | ~61 us | 8.1x 更快 |
+| 64 KB（大） | ~326,058 us | ~26 us | ~157 us | 6.1x 更快 |
 
 ## 要点总结
 
-- **OpenSSL ctypes**（`aes_openssl.py`）在所有模式下均比 pycryptodome 的 C 扩展快约 **2 倍**，同时不需要任何 pip 依赖——只需系统安装 `libcrypto`。
-- **纯 Python**（`aes.py`）小数据时比 OpenSSL 慢约 30 倍，大数据时差距更大。适合用于少量数据或没有原生库的环境。
-- **GCM 模式** 的纯 Python 实现包含 GF(2^128) 乘法运算，是最慢的纯 Python 模式。OpenSSL 变体则没有此开销。
-- **pycryptodome** 速度很快，但需要通过 pip 安装编译的 C 扩展。
+- **OpenSSL ctypes**（`aes_openssl.py`）稳定优于 pycryptodome 的 C 扩展：ECB/CBC/CTR 模式中小数据快 **1.1--1.9 倍**，大数据在 CBC/CTR 下快 **4.6--5.7 倍**。在 **GCM 模式** 下优势最为显著，达到 **5.3--8.8 倍**。且不需要任何 pip 依赖——只需系统安装 `libcrypto`。
+- **纯 Python**（`aes.py`）比 pycryptodome 慢 7--14,000 倍，取决于模式和数据大小。即使对于 13 字节消息也需要 ~71--232 us（OpenSSL 仅需 ~5--7 us）。仅适合教学用途或在无原生库环境下作为后备方案。
+- **GCM 模式** 的纯 Python 实现包含 GF(2^128) 乘法运算，是最慢的纯 Python 模式（13 字节需 ~232 us，而 ECB/CBC 仅需 ~71--74 us）。OpenSSL 变体则没有此开销。
+- **pycryptodome** 速度较快（C 扩展），但需要通过 pip 安装编译依赖。在所有测试场景中 OpenSSL ctypes 均持平或更快。
 
 ## 自行运行
 

@@ -4,8 +4,10 @@ zerodep Markdown 实现与 [`mistune`](https://pypi.org/project/mistune/) 的同
 
 !!! info "测试环境"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
+    - **对标库:** mistune 3.2.0
+    - **最后更新:** 2026-04-15
 
 ## 实现对比
 
@@ -26,13 +28,13 @@ zerodep Markdown 实现与 [`mistune`](https://pypi.org/project/mistune/) 的同
 
 | 测试 | zerodep | mistune | 比率 |
 |------|---------|---------|------|
-| 小 | ~25 us | ~46 us | **快 1.8 倍** |
-| 中 | ~179 us | ~445 us | **快 2.5 倍** |
-| 大 | ~3,015 us | ~6,610 us | **快 2.2 倍** |
+| 小 | 40.2 us | 62.2 us | **快 1.5 倍** |
+| 中 | 306.3 us | 642.4 us | **快 2.1 倍** |
+| 大 | 5,079.3 us | 9,953.1 us | **快 2.0 倍** |
 
 ## 要点总结
 
-- **持续更快** —— zerodep 的 Markdown 渲染器在所有文档规模下均比 mistune **快 1.8--2.6 倍**。
+- **持续更快** —— zerodep 的 Markdown 渲染器在所有文档规模下均比 mistune **快 1.5--2.1 倍**。
 - **线性增长** —— 两种实现都随文档大小线性增长，符合预期。
 - **更简单的架构** —— zerodep 跳过中间 AST 直接拼接 HTML，这是性能优势的重要来源。代价是仅支持 HTML 输出，且难以通过插件或替代渲染器进行扩展。
 - **输出兼容** —— zerodep 对所有支持的 Markdown 特性生成与 `mistune.html()` 完全一致的 HTML 输出（82 个正确性测试全部精确匹配通过）。

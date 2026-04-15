@@ -3,9 +3,11 @@
 zerodep soup 与 [`beautifulsoup4`](https://pypi.org/project/beautifulsoup4/) 的性能对比。
 
 !!! info "测试环境"
-    - **平台:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **CPU:** x86_64 Linux
+    - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
+    - **对标库:** beautifulsoup4 4.14.3
+    - **最后更新:** 2026-04-15
 
 ## 实现对比
 
@@ -26,14 +28,14 @@ zerodep soup 与 [`beautifulsoup4`](https://pypi.org/project/beautifulsoup4/) �
 
 | 数据规模 | zerodep | beautifulsoup4 | 倍数 |
 |----------|---------|----------------|------|
-| Small | 149.2 μs | 446.2 μs | 快 2.99x |
-| Medium | 1,236.6 μs | 3,683.9 μs | 快 2.98x |
-| Large | 12,662.5 μs | 37,061.8 μs | 快 2.93x |
+| Small | 207.6 μs | 651.0 μs | 快 3.1x |
+| Medium | 1,796.2 μs | 5,482.2 μs | 快 3.1x |
+| Large | 22,110.0 μs | 48,220.6 μs | 快 2.2x |
 
 ## 要点总结
 
-- **全规模快约 3 倍** —— zerodep 直接从 `html.parser` 构建最小化 DOM 树，无需 BeautifulSoup 的抽象层（NavigableString、PageElement 层级、soupsieve 集成）。
-- **加速比稳定** —— 2.9-3.0x 的优势在不同文档复杂度下保持一致，表明开销来自每个元素而非每个文档。
+- **全规模快 2.2-3.1 倍** —— zerodep 直接从 `html.parser` 构建最小化 DOM 树，无需 BeautifulSoup 的抽象层（NavigableString、PageElement 层级、soupsieve 集成）。
+- **中小文档加速比最大** —— 小型和中型文档可达 3.1x 加速，大型文档缩窄至 2.2x，表明每元素开销优势在复杂页面中被树管理工作部分抵消。
 - **无需任何 pip 依赖** —— zerodep 仅使用标准库 `re` 和 `html.parser`。BeautifulSoup 需要 `soupsieve`，可选 `lxml` 或 `html5lib`。
 
 ## 自行运行

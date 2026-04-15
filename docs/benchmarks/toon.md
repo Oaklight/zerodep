@@ -3,9 +3,11 @@
 zerodep TOON 与 [`toon_format`](https://github.com/toon-format/toon-python) 的性能对比。
 
 !!! info "测试环境"
-    - **平台:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **CPU:** x86_64 Linux
+    - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
+    - **对标库:** toon_format 0.9.0b1
+    - **最后更新:** 2026-04-15
 
 ## 实现对比
 
@@ -26,17 +28,17 @@ zerodep TOON 与 [`toon_format`](https://github.com/toon-format/toon-python) 的
 
 | 数据规模 | zerodep | toon_format | 倍数 |
 |----------|---------|-------------|------|
-| Small | 5.3 μs | 7.8 μs | 快 1.47x |
-| Medium | 116.5 μs | 158.8 μs | 快 1.36x |
-| Large | 695.7 μs | 952.6 μs | 快 1.37x |
+| Small | 7.0 μs | 9.9 μs | 快 1.4x |
+| Medium | 168.8 μs | 205.7 μs | 快 1.2x |
+| Large | 995.4 μs | 1,238.4 μs | 快 1.2x |
 
 ## 解码性能（均值）
 
 | 数据规模 | zerodep | toon_format | 倍数 |
 |----------|---------|-------------|------|
-| Small | 13.4 μs | 15.4 μs | 快 1.15x |
-| Medium | 214.4 μs | 229.3 μs | 快 1.07x |
-| Large | 1,463.3 μs | 1,559.1 μs | 快 1.07x |
+| Small | 16.3 μs | 18.9 μs | 快 1.2x |
+| Medium | 259.1 μs | 277.3 μs | 快 1.1x |
+| Large | 1,770.2 μs | 1,873.0 μs | 快 1.1x |
 
 ## Token 效率（TOON vs JSON）
 
@@ -48,8 +50,8 @@ zerodep TOON 与 [`toon_format`](https://github.com/toon-format/toon-python) 的
 
 ## 要点总结
 
-- **编码快 1.3-1.5 倍** —— 将 18 个源文件合并为单文件，减少了导入和调度开销。
-- **解码快约 1.1 倍** —— 单文件布局消除了跨模块函数调用开销。
+- **编码快 1.2-1.4 倍** —— 将 18 个源文件合并为单文件，减少了导入和调度开销。
+- **解码快 1.1-1.2 倍** —— 单文件布局消除了跨模块函数调用开销。
 - **比 JSON 减少 38-71% 字符** —— TOON 的表格数组格式和裸键语法在结构化数据上实现显著压缩。表格数据越多节省越大。
 - **无需任何 pip 依赖** —— zerodep 仅使用标准库 `re`、`math`、`dataclasses`、`collections.abc`。
 

@@ -3,9 +3,11 @@
 zerodep frontmatter 与 [`python-frontmatter`](https://pypi.org/project/python-frontmatter/) 的性能对比。
 
 !!! info "测试环境"
-    - **平台:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **CPU:** x86_64 Linux
+    - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
+    - **对标库:** python-frontmatter 1.1.0
+    - **最后更新:** 2026-04-15
 
 ## 实现对比
 
@@ -26,17 +28,17 @@ zerodep frontmatter 与 [`python-frontmatter`](https://pypi.org/project/python-f
 
 | 测试项 | zerodep | python-frontmatter | 倍数 |
 |--------|---------|---------------------|------|
-| 小型 | 8.7 μs | 8.6 μs | ~1.0x（对等） |
-| 中型 | 13.4 μs | 13.4 μs | ~1.0x（对等） |
-| 大型 | 55.0 μs | 55.0 μs | ~1.0x（对等） |
+| 小型 | 12.3 μs | 12.4 μs | ~1.0x（对等） |
+| 中型 | 82.4 μs | 84.0 μs | ~1.0x（对等） |
+| 大型 | 383.0 μs | 386.2 μs | ~1.0x（对等） |
 
 ## 序列化性能对比（均值）
 
 | 测试项 | zerodep | python-frontmatter | 倍数 |
 |--------|---------|---------------------|------|
-| 小型 | 84.0 μs | 84.2 μs | ~1.0x（对等） |
-| 中型 | 276.7 μs | 276.8 μs | ~1.0x（对等） |
-| 大型 | 407.8 μs | 409.8 μs | ~1.0x（对等） |
+| 小型 | 20.6 μs | 19.7 μs | ~1.0x（对等） |
+| 中型 | 136.7 μs | 132.3 μs | ~1.0x（对等） |
+| 大型 | 688.7 μs | 683.9 μs | ~1.0x（对等） |
 
 ## 要点总结
 

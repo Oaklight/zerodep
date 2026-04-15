@@ -4,8 +4,10 @@ zerodep diff 实现与 [`unidiff`](https://pypi.org/project/unidiff/) 的同条�
 
 !!! info "测试环境"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
+    - **对标库:** unidiff 0.7.5
+    - **最后更新:** 2026-04-15
 
 ## 实现对比
 
@@ -26,9 +28,9 @@ zerodep diff 实现与 [`unidiff`](https://pypi.org/project/unidiff/) 的同条�
 
 | 测试 | zerodep | unidiff | 比率 |
 |------|---------|---------|------|
-| 小 | ~7 us | ~65 us | **快约 9 倍** |
-| 中 | ~18 us | ~145 us | **快约 8 倍** |
-| 大 | ~130 us | ~1,200 us | **快约 9 倍** |
+| 小 | 7.7 μs | 18.1 μs | **快 2.4 倍** |
+| 中 | 24.1 μs | 49.5 μs | **快 2.1 倍** |
+| 大 | 72.2 μs | 149.3 μs | **快 2.1 倍** |
 
 ## 应用性能（仅 zerodep）
 
@@ -36,13 +38,13 @@ zerodep diff 实现与 [`unidiff`](https://pypi.org/project/unidiff/) 的同条�
 
 | 测试 | zerodep |
 |------|---------|
-| 小 | ~5 us |
-| 中 | ~12 us |
-| 大 | ~80 us |
+| 小 | 2.0 μs |
+| 中 | 6.5 μs |
+| 大 | 55.2 μs |
 
 ## 要点总结
 
-- **持续更快** —— zerodep 的 diff 解析器在所有差异规模下均比 unidiff **快约 8-9 倍**。
+- **持续更快** —— zerodep 的 diff 解析器在所有差异规模下均比 unidiff **快 2.1-2.4 倍**。
 - **线性增长** —— 两种实现都随差异大小线性增长，符合预期。
 - **功能更多** —— zerodep 除了解析外，还提供补丁应用、反转和三路合并功能，而 unidiff 仅提供解析。
 - **往返正确性** —— `apply_patch(a, parse_patch(make_diff(a, b))) == b` 已通过 13 个参数化测试用例验证，包括边缘情况（Unicode、无尾换行、Windows 换行符）。

@@ -71,3 +71,15 @@ dict → 对象重建。zerodep 使用 `from_dict()` 进行枚举解析和类型
 pip install pytest pytest-benchmark a2a-protocol
 pytest a2a/test_a2a_benchmark.py --benchmark-only -v
 ```
+
+---
+
+## 最新 CI 结果
+
+<iframe
+  src="https://oaklight.github.io/zerodep/dev/bench/modules/a2a.html"
+  width="100%" height="600" frameborder="0"
+  style="border: 1px solid #dee2e6; border-radius: 8px;">
+</iframe>
+
+> 每次发版时通过 [Benchmark CI](https://github.com/Oaklight/zerodep/actions/workflows/benchmark.yml) 自动更新。

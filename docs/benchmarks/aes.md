@@ -77,3 +77,15 @@ zerodep AES 实现与 [`pycryptodome`](https://pypi.org/project/pycryptodome/)�
 pip install pytest pytest-benchmark pycryptodome
 pytest aes/test_aes_benchmark.py --benchmark-only -v
 ```
+
+---
+
+## 最新 CI 结果
+
+<iframe
+  src="https://oaklight.github.io/zerodep/dev/bench/modules/aes.html"
+  width="100%" height="600" frameborder="0"
+  style="border: 1px solid #dee2e6; border-radius: 8px;">
+</iframe>
+
+> 每次发版时通过 [Benchmark CI](https://github.com/Oaklight/zerodep/actions/workflows/benchmark.yml) 自动更新。

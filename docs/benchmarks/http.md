@@ -62,3 +62,15 @@ zerodep HTTP 客户端与 [`httpx`](https://pypi.org/project/httpx/)（带连接
 pip install pytest pytest-benchmark httpx
 pytest httpclient/test_http_benchmark.py --benchmark-only -v
 ```
+
+---
+
+## 最新 CI 结果
+
+<iframe
+  src="https://oaklight.github.io/zerodep/dev/bench/modules/httpclient.html"
+  width="100%" height="600" frameborder="0"
+  style="border: 1px solid #dee2e6; border-radius: 8px;">
+</iframe>
+
+> 每次发版时通过 [Benchmark CI](https://github.com/Oaklight/zerodep/actions/workflows/benchmark.yml) 自动更新。

@@ -352,119 +352,388 @@ def _render_table(
 # ── List parser ───────────────────────────────────────────────────────────────
 
 
+def _detect_list_type(
+    line: str,
+) -> tuple[bool, int, int] | None:
+    """Detect whether a line starts a list item.
+
+    Returns:
+        (ordered, base_indent, start_num) or None if not a list item.
+    """
+    ol_m = _OL_ITEM_RE.match(line)
+    if ol_m:
+        return True, len(ol_m.group(1)), int(ol_m.group(2))
+    ul_m = _UL_ITEM_RE.match(line)
+    if ul_m:
+        return False, len(ul_m.group(1)), 1
+    return None
+
+
+def _blank_continues_list(
+    lines: list[str],
+    idx: int,
+    ordered: bool,
+    base_indent: int,
+) -> bool:
+    """Check whether a blank line at *idx* is followed by list continuation."""
+    if idx + 1 >= len(lines):
+        return False
+    next_line = lines[idx + 1]
+    if _BLANK_RE.match(next_line):
+        return False
+    # Same-level item?
+    if ordered:
+        m = _OL_ITEM_RE.match(next_line)
+        if m and len(m.group(1)) == base_indent:
+            return True
+    else:
+        m = _UL_ITEM_RE.match(next_line)
+        if m and len(m.group(1)) == base_indent:
+            return True
+    # Indented continuation / nested content
+    next_indent = len(next_line) - len(next_line.lstrip())
+    return next_indent > base_indent
+
+
+def _match_same_level_item(
+    line: str,
+    ordered: bool,
+    base_indent: int,
+) -> str | None:
+    """If *line* is a same-level list item, return its content text."""
+    if ordered:
+        m = _OL_ITEM_RE.match(line)
+        if m and len(m.group(1)) == base_indent:
+            return m.group(4)
+    else:
+        m = _UL_ITEM_RE.match(line)
+        if m and len(m.group(1)) == base_indent:
+            return m.group(3)
+    return None
+
+
+def _collect_list_items(
+    lines: list[str],
+    start_idx: int,
+    ordered: bool,
+    base_indent: int,
+) -> tuple[list[list[str]], int]:
+    """Collect raw item line groups from a list block.
+
+    Returns:
+        (items, next_idx) where each item is a list of content lines.
+    """
+    idx = start_idx
+    items: list[list[str]] = []
+    current: list[str] = []
+
+    while idx < len(lines):
+        line = lines[idx]
+
+        # Blank line — may separate items or end the list
+        if _BLANK_RE.match(line):
+            if _blank_continues_list(lines, idx, ordered, base_indent):
+                current.append("")
+                idx += 1
+                continue
+            break
+
+        # Same-level item starts a new entry
+        content = _match_same_level_item(line, ordered, base_indent)
+        if content is not None:
+            if current:
+                items.append(current)
+            current = [content]
+            idx += 1
+            continue
+
+        # Nested / continuation line
+        indent = len(line) - len(line.lstrip())
+        if indent > base_indent and current:
+            dedented = line[base_indent + 2 :] if len(line) > base_indent + 2 else ""
+            current.append(dedented)
+            idx += 1
+            continue
+
+        break
+
+    if current:
+        items.append(current)
+    return items, idx
+
+
+def _render_list_item(
+    item_lines: list[str],
+    ref_links: dict[str, tuple[str, str | None]],
+) -> str:
+    """Render a single <li> element, recursing for nested sub-lists."""
+    has_sublist = any(
+        _UL_ITEM_RE.match(il) or _OL_ITEM_RE.match(il) for il in item_lines[1:]
+    )
+    if has_sublist:
+        first = _parse_inline(item_lines[0], ref_links)
+        sub_html = _parse_blocks(item_lines[1:], ref_links)
+        return "<li>" + first + sub_html + "</li>\n"
+    content = "\n".join(item_lines).strip()
+    return "<li>" + _parse_inline(content, ref_links) + "</li>\n"
+
+
 def _parse_list_block(
     lines: list[str],
     start_idx: int,
     ref_links: dict[str, tuple[str, str | None]],
 ) -> tuple[str, int]:
-    """Parse a list block starting at start_idx. Returns (html, next_idx)."""
-    idx = start_idx
-    first_line = lines[idx]
-
-    ol_m = _OL_ITEM_RE.match(first_line)
-    ul_m = _UL_ITEM_RE.match(first_line)
-
-    if ol_m:
-        ordered = True
-        base_indent = len(ol_m.group(1))
-        start_num = int(ol_m.group(2))
-    elif ul_m:
-        ordered = False
-        base_indent = len(ul_m.group(1))
-        start_num = 1
-    else:
+    """Parse a list block starting at *start_idx*. Returns (html, next_idx)."""
+    info = _detect_list_type(lines[start_idx])
+    if info is None:
         return "", start_idx
+    ordered, base_indent, start_num = info
 
-    items: list[list[str]] = []
-    current_item_lines: list[str] = []
+    items, idx = _collect_list_items(lines, start_idx, ordered, base_indent)
 
-    while idx < len(lines):
-        line = lines[idx]
-
-        if _BLANK_RE.match(line):
-            # Blank line — could be between items or end of list
-            # Look ahead to see if next line continues the list
-            if idx + 1 < len(lines):
-                next_line = lines[idx + 1]
-                next_ol = _OL_ITEM_RE.match(next_line)
-                next_ul = _UL_ITEM_RE.match(next_line)
-                next_indent = len(next_line) - len(next_line.lstrip())
-
-                if (ordered and next_ol and len(next_ol.group(1)) == base_indent) or (
-                    not ordered and next_ul and len(next_ul.group(1)) == base_indent
-                ):
-                    # Next line is a same-level list item
-                    current_item_lines.append("")
-                    idx += 1
-                    continue
-                elif next_indent > base_indent and not _BLANK_RE.match(next_line):
-                    # Continuation or nested content
-                    current_item_lines.append("")
-                    idx += 1
-                    continue
-            # End of list
-            break
-
-        if ordered:
-            m = _OL_ITEM_RE.match(line)
-            if m and len(m.group(1)) == base_indent:
-                if current_item_lines:
-                    items.append(current_item_lines)
-                current_item_lines = [m.group(4)]
-                idx += 1
-                continue
-        else:
-            m = _UL_ITEM_RE.match(line)
-            if m and len(m.group(1)) == base_indent:
-                if current_item_lines:
-                    items.append(current_item_lines)
-                current_item_lines = [m.group(3)]
-                idx += 1
-                continue
-
-        # Check for nested list or continuation
-        stripped = line.lstrip()
-        indent = len(line) - len(stripped)
-        if indent > base_indent and current_item_lines:
-            # Remove the base indentation for nested content
-            # Keep relative indent for nested lists
-            dedented = line[base_indent + 2 :] if len(line) > base_indent + 2 else ""
-            current_item_lines.append(dedented)
-            idx += 1
-            continue
-
-        # Not part of this list
-        break
-
-    if current_item_lines:
-        items.append(current_item_lines)
-
-    # Render items
     tag = "ol" if ordered else "ul"
     start_attr = f' start="{start_num}"' if ordered and start_num != 1 else ""
-    out: list[str] = [f"<{tag}{start_attr}>\n"]
-
+    parts: list[str] = [f"<{tag}{start_attr}>\n"]
     for item_lines in items:
-        content = "\n".join(item_lines)
-        # Check if item contains sub-list or multi-paragraph
-        has_sublist = False
-        for il in item_lines[1:]:
-            if _UL_ITEM_RE.match(il) or _OL_ITEM_RE.match(il):
-                has_sublist = True
-                break
+        parts.append(_render_list_item(item_lines, ref_links))
+    parts.append(f"</{tag}>\n")
+    return "".join(parts), idx
 
-        if has_sublist:
-            # Parse the first line as inline, then recurse for nested content
-            first = _parse_inline(item_lines[0], ref_links)
-            sub_lines = item_lines[1:]
-            sub_html = _parse_blocks(sub_lines, ref_links)
-            out.append("<li>" + first + sub_html + "</li>\n")
+
+# ── Block-level try-parse helpers ────────────────────────────────────────────
+
+_BlockResult = tuple[str, int, bool]
+"""(html, new_idx, consumed_para) returned by each _try_parse_* helper."""
+
+
+def _try_parse_hr(
+    lines: list[str],
+    idx: int,
+    ref_links: dict[str, tuple[str, str | None]],
+    para_lines: list[str],
+) -> _BlockResult | None:
+    """Try to parse a thematic break."""
+    if para_lines:
+        return None
+    if _THEMATIC_BREAK_RE.match(lines[idx]):
+        return "<hr />\n", idx + 1, False
+    return None
+
+
+def _try_parse_atx_heading(
+    lines: list[str],
+    idx: int,
+    ref_links: dict[str, tuple[str, str | None]],
+    para_lines: list[str],
+) -> _BlockResult | None:
+    """Try to parse an ATX heading."""
+    if para_lines:
+        return None
+    m = _ATX_HEADING_RE.match(lines[idx])
+    if not m:
+        return None
+    level = len(m.group(1))
+    content = re.sub(r"\s+#+\s*$", "", m.group(2).strip())
+    tag = f"h{level}"
+    h = f"<{tag}>{_parse_inline(content, ref_links)}</{tag}>\n"
+    return h, idx + 1, False
+
+
+def _try_parse_setext_heading(
+    lines: list[str],
+    idx: int,
+    ref_links: dict[str, tuple[str, str | None]],
+    para_lines: list[str],
+) -> _BlockResult | None:
+    """Try to parse a Setext heading (requires accumulated paragraph lines)."""
+    if not para_lines:
+        return None
+    line = lines[idx]
+    if not _SETEXT_HEADING_RE.match(line):
+        return None
+    level = 1 if line.strip().startswith("=") else 2
+    content = "\n".join(para_lines)
+    tag = f"h{level}"
+    h = f"<{tag}>{_parse_inline(content.strip(), ref_links)}</{tag}>\n"
+    return h, idx + 1, True  # consumed_para=True
+
+
+def _try_parse_code_fence(
+    lines: list[str],
+    idx: int,
+    ref_links: dict[str, tuple[str, str | None]],
+    para_lines: list[str],
+) -> _BlockResult | None:
+    """Try to parse a fenced code block."""
+    if para_lines:
+        return None
+    m = _FENCED_CODE_RE.match(lines[idx])
+    if not m:
+        return None
+    fence_indent = len(m.group(1))
+    fence_char = m.group(2)[0]
+    fence_len = len(m.group(2))
+    lang = m.group(3).strip()
+
+    code_lines: list[str] = []
+    j = idx + 1
+    close_re = re.compile(
+        r"^ {0,3}" + re.escape(fence_char) + r"{" + str(fence_len) + r",}\s*$"
+    )
+    while j < len(lines):
+        cl = lines[j]
+        if close_re.match(cl):
+            j += 1
+            break
+        code_lines.append(_strip_fence_indent(cl, fence_indent))
+        j += 1
+
+    code = "\n".join(code_lines)
+    if code and not code.endswith("\n"):
+        code += "\n"
+    escaped_code = html.escape(code, quote=False)
+    lang_attr = f' class="language-{html.escape(lang, quote=True)}"' if lang else ""
+    h = f"<pre><code{lang_attr}>{escaped_code}</code></pre>\n"
+    return h, j, False
+
+
+def _strip_fence_indent(line: str, indent: int) -> str:
+    """Remove up to *indent* leading spaces from *line*."""
+    if indent <= 0:
+        return line
+    for _ in range(indent):
+        if line.startswith(" "):
+            line = line[1:]
         else:
-            rendered = _parse_inline(content.strip(), ref_links)
-            out.append("<li>" + rendered + "</li>\n")
+            break
+    return line
 
-    out.append(f"</{tag}>\n")
-    return "".join(out), idx
+
+def _try_parse_indent_code(
+    lines: list[str],
+    idx: int,
+    ref_links: dict[str, tuple[str, str | None]],
+    para_lines: list[str],
+) -> _BlockResult | None:
+    """Try to parse an indented code block (4-space indent)."""
+    if para_lines:
+        return None
+    if not _INDENT_CODE_RE.match(lines[idx]):
+        return None
+
+    code_lines: list[str] = []
+    j = idx
+    while j < len(lines):
+        ic_m = _INDENT_CODE_RE.match(lines[j])
+        if ic_m:
+            code_lines.append(ic_m.group(1))
+            j += 1
+        elif _BLANK_RE.match(lines[j]):
+            if j + 1 < len(lines) and _INDENT_CODE_RE.match(lines[j + 1]):
+                code_lines.append("")
+                j += 1
+            else:
+                break
+        else:
+            break
+    # Remove trailing blank lines
+    while code_lines and code_lines[-1] == "":
+        code_lines.pop()
+    escaped_code = html.escape("\n".join(code_lines), quote=False)
+    h = f"<pre><code>{escaped_code}</code></pre>\n"
+    return h, j, False
+
+
+def _try_parse_blockquote(
+    lines: list[str],
+    idx: int,
+    ref_links: dict[str, tuple[str, str | None]],
+    para_lines: list[str],
+) -> _BlockResult | None:
+    """Try to parse a block quote (can interrupt a paragraph)."""
+    if not _BLOCK_QUOTE_RE.match(lines[idx]):
+        return None
+
+    bq_lines: list[str] = []
+    j = idx
+    while j < len(lines):
+        bq_match = _BLOCK_QUOTE_RE.match(lines[j])
+        if bq_match:
+            bq_lines.append(bq_match.group(1))
+            j += 1
+        elif _BLANK_RE.match(lines[j]):
+            if j + 1 < len(lines) and _BLOCK_QUOTE_RE.match(lines[j + 1]):
+                bq_lines.append("")
+                j += 1
+            else:
+                break
+        elif lines[j].strip():
+            # Lazy continuation
+            bq_lines.append(lines[j])
+            j += 1
+        else:
+            break
+    inner = _parse_blocks(bq_lines, ref_links)
+    h = "<blockquote>\n" + inner + "</blockquote>\n"
+    return h, j, False
+
+
+def _try_parse_list(
+    lines: list[str],
+    idx: int,
+    ref_links: dict[str, tuple[str, str | None]],
+    para_lines: list[str],
+) -> _BlockResult | None:
+    """Try to parse an ordered or unordered list."""
+    if para_lines:
+        return None
+    if not (_UL_ITEM_RE.match(lines[idx]) or _OL_ITEM_RE.match(lines[idx])):
+        return None
+    list_html, new_idx = _parse_list_block(lines, idx, ref_links)
+    return list_html, new_idx, False
+
+
+def _try_parse_table(
+    lines: list[str],
+    idx: int,
+    ref_links: dict[str, tuple[str, str | None]],
+    para_lines: list[str],
+) -> _BlockResult | None:
+    """Try to parse a GFM table."""
+    if para_lines:
+        return None
+    line = lines[idx]
+    if "|" not in line or idx + 1 >= len(lines):
+        return None
+    if not _TABLE_DELIM_RE.match(lines[idx + 1]):
+        return None
+
+    header_line = line
+    align_line = lines[idx + 1]
+    body: list[str] = []
+    j = idx + 2
+    while j < len(lines):
+        tl = lines[j]
+        if "|" in tl and not _BLANK_RE.match(tl):
+            body.append(tl)
+            j += 1
+        else:
+            break
+    h = _render_table(header_line, align_line, body, ref_links)
+    return h, j, False
+
+
+# Ordered list of try-parse functions used by the block dispatcher.
+_BLOCK_PARSERS = (
+    _try_parse_hr,
+    _try_parse_atx_heading,
+    _try_parse_setext_heading,
+    _try_parse_code_fence,
+    _try_parse_indent_code,
+    _try_parse_blockquote,
+    _try_parse_list,
+    _try_parse_table,
+)
 
 
 # ── Block parser ──────────────────────────────────────────────────────────────
@@ -515,165 +784,16 @@ def _parse_blocks(
             idx += 1
             continue
 
-        # Thematic break (check before setext heading and list)
-        if _THEMATIC_BREAK_RE.match(line) and not para_lines:
-            flush_paragraph()
-            out.append("<hr />\n")
-            idx += 1
-            continue
-
-        # ATX heading
-        m = _ATX_HEADING_RE.match(line)
-        if m and not para_lines:
-            flush_paragraph()
-            level = len(m.group(1))
-            content = m.group(2).strip()
-            # Strip trailing # sequences
-            content = re.sub(r"\s+#+\s*$", "", content)
-            tag = f"h{level}"
-            out.append(f"<{tag}>{_parse_inline(content, ref_links)}</{tag}>\n")
-            idx += 1
-            continue
-
-        # Setext heading (only if we have accumulated paragraph lines)
-        if para_lines and _SETEXT_HEADING_RE.match(line):
-            level = 1 if line.strip().startswith("=") else 2
-            content = "\n".join(para_lines)
-            tag = f"h{level}"
-            out.append(f"<{tag}>{_parse_inline(content.strip(), ref_links)}</{tag}>\n")
-            para_lines.clear()
-            idx += 1
-            continue
-
-        # Fenced code block
-        m = _FENCED_CODE_RE.match(line)
-        if m and not para_lines:
-            flush_paragraph()
-            fence_indent = len(m.group(1))
-            fence_char = m.group(2)[0]
-            fence_len = len(m.group(2))
-            lang = m.group(3).strip()
-            code_lines: list[str] = []
-            idx += 1
-            while idx < len(lines):
-                cl = lines[idx]
-                # Check for closing fence
-                close_pat = (
-                    r"^ {0,3}"
-                    + re.escape(fence_char)
-                    + r"{"
-                    + str(fence_len)
-                    + r",}\s*$"
-                )
-                close_m = re.match(close_pat, cl)
-                if close_m:
-                    idx += 1
-                    break
-                # Remove up to fence_indent spaces from start
-                if fence_indent > 0:
-                    stripped = cl
-                    for _ in range(fence_indent):
-                        if stripped.startswith(" "):
-                            stripped = stripped[1:]
-                        else:
-                            break
-                    code_lines.append(stripped)
-                else:
-                    code_lines.append(cl)
-                idx += 1
-            code = "\n".join(code_lines)
-            if code and not code.endswith("\n"):
-                code += "\n"
-            escaped_code = html.escape(code, quote=False)
-            if lang:
-                lang_attr = f' class="language-{html.escape(lang, quote=True)}"'
+        # Try each block-level parser in priority order
+        result = _dispatch_block(lines, idx, ref_links, para_lines)
+        if result is not None:
+            block_html, idx, consumed_para = result
+            if consumed_para:
+                para_lines.clear()
             else:
-                lang_attr = ""
-            out.append(f"<pre><code{lang_attr}>{escaped_code}</code></pre>\n")
-            continue
-
-        # Indented code block (4 spaces, only if not in paragraph)
-        if _INDENT_CODE_RE.match(line) and not para_lines:
-            flush_paragraph()
-            code_lines_ic: list[str] = []
-            while idx < len(lines):
-                ic_line = lines[idx]
-                ic_m = _INDENT_CODE_RE.match(ic_line)
-                if ic_m:
-                    code_lines_ic.append(ic_m.group(1))
-                    idx += 1
-                elif _BLANK_RE.match(ic_line):
-                    # Blank line might be part of code block
-                    if idx + 1 < len(lines) and _INDENT_CODE_RE.match(lines[idx + 1]):
-                        code_lines_ic.append("")
-                        idx += 1
-                    else:
-                        break
-                else:
-                    break
-            # Remove trailing blank lines
-            while code_lines_ic and code_lines_ic[-1] == "":
-                code_lines_ic.pop()
-            code = "\n".join(code_lines_ic)
-            escaped_code = html.escape(code, quote=False)
-            out.append(f"<pre><code>{escaped_code}</code></pre>\n")
-            continue
-
-        # Block quote (can interrupt a paragraph per CommonMark spec)
-        bq_m = _BLOCK_QUOTE_RE.match(line)
-        if bq_m:
-            flush_paragraph()
-            bq_lines: list[str] = []
-            while idx < len(lines):
-                bq_line = lines[idx]
-                bq_match = _BLOCK_QUOTE_RE.match(bq_line)
-                if bq_match:
-                    bq_lines.append(bq_match.group(1))
-                    idx += 1
-                elif _BLANK_RE.match(bq_line):
-                    # Check if quote continues after blank
-                    if idx + 1 < len(lines) and _BLOCK_QUOTE_RE.match(lines[idx + 1]):
-                        bq_lines.append("")
-                        idx += 1
-                    else:
-                        break
-                elif bq_line.strip() and not _BLANK_RE.match(bq_line):
-                    # Lazy continuation (paragraph text without >)
-                    bq_lines.append(bq_line)
-                    idx += 1
-                else:
-                    break
-            inner = _parse_blocks(bq_lines, ref_links)
-            out.append("<blockquote>\n" + inner + "</blockquote>\n")
-            continue
-
-        # Lists
-        if (_UL_ITEM_RE.match(line) or _OL_ITEM_RE.match(line)) and not para_lines:
-            flush_paragraph()
-            list_html, idx = _parse_list_block(lines, idx, ref_links)
-            out.append(list_html)
-            continue
-
-        # Table (check for header + delimiter pattern)
-        if not para_lines and idx + 1 < len(lines) and "|" in line:
-            next_line = lines[idx + 1] if idx + 1 < len(lines) else ""
-            if _TABLE_DELIM_RE.match(next_line):
                 flush_paragraph()
-                header_line = line
-                align_line = next_line
-                body_lines_tbl: list[str] = []
-                idx += 2
-                while idx < len(lines):
-                    tl = lines[idx]
-                    if "|" in tl and not _BLANK_RE.match(tl):
-                        body_lines_tbl.append(tl)
-                        idx += 1
-                    else:
-                        break
-                out.append(
-                    _render_table(header_line, align_line, body_lines_tbl, ref_links)
-                )
-                continue
+            out.append(block_html)
+            continue
 
         # Paragraph accumulation
         para_lines.append(line)
@@ -681,6 +801,20 @@ def _parse_blocks(
 
     flush_paragraph()
     return "".join(out)
+
+
+def _dispatch_block(
+    lines: list[str],
+    idx: int,
+    ref_links: dict[str, tuple[str, str | None]],
+    para_lines: list[str],
+) -> _BlockResult | None:
+    """Try each registered block parser; return first match or None."""
+    for try_fn in _BLOCK_PARSERS:
+        result = try_fn(lines, idx, ref_links, para_lines)
+        if result is not None:
+            return result
+    return None
 
 
 # ── Public API ────────────────────────────────────────────────────────────────

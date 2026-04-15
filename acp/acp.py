@@ -1503,6 +1503,31 @@ class ACPClient:
         """
         self._request_handler = handler
 
+    def _is_response(self, msg: dict[str, Any]) -> bool:
+        """Check if *msg* is a JSON-RPC response (has ``id`` and result/error)."""
+        return "id" in msg and ("result" in msg or "error" in msg)
+
+    def _resolve_pending_future(self, msg: dict[str, Any]) -> None:
+        """Resolve or reject the future associated with a response message."""
+        req_id = msg["id"]
+        fut = self._pending.pop(req_id, None)
+        if not fut or fut.done():
+            return
+        if "error" in msg:
+            fut.set_exception(JSONRPCException(JSONRPCError.from_dict(msg["error"])))
+        else:
+            fut.set_result(msg.get("result") or {})
+
+    async def _handle_notification(self, msg: dict[str, Any]) -> None:
+        """Process an incoming notification from the agent."""
+        method = msg["method"]
+        params = msg.get("params", {})
+        if method == "session/update":
+            await self._update_queue.put(params)
+        handler = self._notification_handlers.get(method)
+        if handler:
+            asyncio.create_task(handler(params))
+
     async def _read_loop(self) -> None:
         """Background task that reads and dispatches incoming messages."""
         assert self._transport is not None
@@ -1513,29 +1538,10 @@ class ACPClient:
                 await self._update_queue.put(None)
                 break
 
-            # Response to one of our requests
-            if "id" in msg and ("result" in msg or "error" in msg):
-                req_id = msg["id"]
-                fut = self._pending.pop(req_id, None)
-                if fut and not fut.done():
-                    if "error" in msg:
-                        fut.set_exception(
-                            JSONRPCException(JSONRPCError.from_dict(msg["error"]))
-                        )
-                    else:
-                        fut.set_result(msg.get("result") or {})
-
-            # Notification from agent
+            if self._is_response(msg):
+                self._resolve_pending_future(msg)
             elif "method" in msg and "id" not in msg:
-                method = msg["method"]
-                params = msg.get("params", {})
-                if method == "session/update":
-                    await self._update_queue.put(params)
-                handler = self._notification_handlers.get(method)
-                if handler:
-                    asyncio.create_task(handler(params))
-
-            # Request from agent (e.g. permission, fs, terminal)
+                await self._handle_notification(msg)
             elif "method" in msg and "id" in msg:
                 asyncio.create_task(self._handle_agent_request(msg))
 
@@ -1661,6 +1667,26 @@ class ACPClient:
             p["mcpServers"] = mcp_servers
         await self._call("session/load", p)
 
+    @staticmethod
+    def _build_prompt_blocks(
+        text: str,
+        extra_content: list[ContentBlock] | None,
+    ) -> list[dict[str, Any]]:
+        """Build the prompt content block list from text and extras."""
+        blocks: list[dict[str, Any]] = [{"type": "text", "text": text}]
+        if extra_content:
+            for b in extra_content:
+                blocks.append(to_dict(b))
+        return blocks
+
+    def _drain_stale_updates(self) -> None:
+        """Discard any stale updates queued before a new prompt."""
+        while not self._update_queue.empty():
+            try:
+                self._update_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+
     async def prompt(
         self,
         session_id: str,
@@ -1680,19 +1706,9 @@ class ACPClient:
         Yields:
             Raw ``session/update`` parameter dictionaries.
         """
-        blocks: list[dict[str, Any]] = [{"type": "text", "text": text}]
-        if extra_content:
-            for b in extra_content:
-                blocks.append(to_dict(b))
-
+        blocks = self._build_prompt_blocks(text, extra_content)
         params = {"sessionId": session_id, "prompt": blocks}
-
-        # Drain any stale updates before sending the prompt
-        while not self._update_queue.empty():
-            try:
-                self._update_queue.get_nowait()
-            except asyncio.QueueEmpty:
-                break
+        self._drain_stale_updates()
 
         assert self._transport is not None
         sent = await self._transport.send_request("session/prompt", params)
@@ -1712,19 +1728,24 @@ class ACPClient:
             if update_task in done:
                 update = update_task.result()
                 if update is None:
-                    # EOF
                     return
                 yield update
             else:
                 update_task.cancel()
 
             if prompt_fut.done():
-                # Drain remaining updates
-                while not self._update_queue.empty():
-                    update = self._update_queue.get_nowait()
-                    if update is not None:
-                        yield update
+                for u in self._drain_remaining_updates():
+                    yield u
                 return
+
+    def _drain_remaining_updates(self) -> list[dict[str, Any]]:
+        """Collect any remaining non-None updates from the queue."""
+        remaining: list[dict[str, Any]] = []
+        while not self._update_queue.empty():
+            update = self._update_queue.get_nowait()
+            if update is not None:
+                remaining.append(update)
+        return remaining
 
     async def prompt_simple(
         self,
@@ -2115,28 +2136,33 @@ class ACPAgent(ABC):
             await self._transport.close()
             read_transport.close()
 
-    async def _dispatch(self, msg: dict[str, Any]) -> None:
-        """Route an incoming JSON-RPC message to the appropriate handler."""
+    def _resolve_agent_response(self, msg: dict[str, Any]) -> bool:
+        """Resolve a response to one of our outgoing requests.
+
+        Returns:
+            ``True`` if the message was a response and was handled.
+        """
+        if not ("id" in msg and ("result" in msg or "error" in msg)):
+            return False
+        req_id = msg["id"]
+        fut = self._pending_requests.pop(req_id, None)
+        if not fut or fut.done():
+            return True
+        if "error" in msg:
+            fut.set_exception(JSONRPCException(JSONRPCError.from_dict(msg["error"])))
+        else:
+            fut.set_result(msg.get("result") or {})
+        return True
+
+    async def _dispatch_and_respond(
+        self,
+        method: str | None,
+        params: dict[str, Any],
+        req_id: int | str | None,
+    ) -> None:
+        """Invoke the method handler and send back the JSON-RPC result/error."""
         assert self._transport is not None
-
-        # Response to a request we made (permission, fs, terminal)
-        if "id" in msg and ("result" in msg or "error" in msg):
-            req_id = msg["id"]
-            fut = self._pending_requests.pop(req_id, None)
-            if fut and not fut.done():
-                if "error" in msg:
-                    fut.set_exception(
-                        JSONRPCException(JSONRPCError.from_dict(msg["error"]))
-                    )
-                else:
-                    fut.set_result(msg.get("result") or {})
-            return
-
-        method = msg.get("method")
-        params = msg.get("params", {})
-        req_id = msg.get("id")
         is_notification = req_id is None
-
         try:
             result = await self._handle_method(method, params)
             if not is_notification:
@@ -2153,6 +2179,14 @@ class ACPAgent(ABC):
                     req_id,
                     JSONRPCError(code=INTERNAL_ERROR, message=str(exc)),
                 )
+
+    async def _dispatch(self, msg: dict[str, Any]) -> None:
+        """Route an incoming JSON-RPC message to the appropriate handler."""
+        if self._resolve_agent_response(msg):
+            return
+        await self._dispatch_and_respond(
+            msg.get("method"), msg.get("params", {}), msg.get("id")
+        )
 
     async def _handle_method(self, method: str | None, params: dict[str, Any]) -> Any:
         """Dispatch a method call to the correct handler."""

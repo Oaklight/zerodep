@@ -13,8 +13,8 @@ zerodep AES 实现与 [`pycryptodome`](https://pypi.org/project/pycryptodome/)�
 
 | 实现 | 文件 | 类型 |
 |------|------|------|
-| **纯 Python** | `aes.py` | 解释执行的 Python |
-| **OpenSSL ctypes** | `aes_openssl.py` | 通过 ctypes 调用系统 libcrypto |
+| **OpenSSL ctypes** | `aes.py` | 通过 ctypes 调用系统 libcrypto（默认） |
+| **纯 Python** | `aes_python.py` | 解释执行的 Python |
 | **pycryptodome** | *（参考库）* | C 扩展 |
 
 ## 测试模式
@@ -92,8 +92,8 @@ zerodep AES 实现与 [`pycryptodome`](https://pypi.org/project/pycryptodome/)�
 
 ## 要点总结
 
-- **OpenSSL ctypes**（`aes_openssl.py`）稳定优于 pycryptodome 的 C 扩展：ECB/CBC/CTR 模式中小数据快 **1.1--1.9 倍**，大数据在 CBC/CTR 下快 **4.6--5.7 倍**。在 **GCM 模式** 下优势最为显著，达到 **5.3--8.8 倍**。且不需要任何 pip 依赖——只需系统安装 `libcrypto`。
-- **纯 Python**（`aes.py`）比 pycryptodome 慢 7--14,000 倍，取决于模式和数据大小。即使对于 13 字节消息也需要 ~71--232 us（OpenSSL 仅需 ~5--7 us）。仅适合教学用途或在无原生库环境下作为后备方案。
+- **OpenSSL ctypes**（`aes.py`）稳定优于 pycryptodome 的 C 扩展：ECB/CBC/CTR 模式中小数据快 **1.1--1.9 倍**，大数据在 CBC/CTR 下快 **4.6--5.7 倍**。在 **GCM 模式** 下优势最为显著，达到 **5.3--8.8 倍**。且不需要任何 pip 依赖——只需系统安装 `libcrypto`。
+- **纯 Python**（`aes_python.py`）比 pycryptodome 慢 7--14,000 倍，取决于模式和数据大小。即使对于 13 字节消息也需要 ~71--232 us（OpenSSL 仅需 ~5--7 us）。仅适合教学用途或在无原生库环境下作为后备方案。
 - **GCM 模式** 的纯 Python 实现包含 GF(2^128) 乘法运算，是最慢的纯 Python 模式（13 字节需 ~232 us，而 ECB/CBC 仅需 ~71--74 us）。OpenSSL 变体则没有此开销。
 - **pycryptodome** 速度较快（C 扩展），但需要通过 pip 安装编译依赖。在所有测试场景中 OpenSSL ctypes 均持平或更快。
 

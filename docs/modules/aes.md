@@ -8,8 +8,8 @@ AES 模块提供多种模式和密钥长度的 AES 加解密功能。提供两�
 
 | 文件 | 说明 | 依赖 |
 |------|------|------|
-| `aes.py` | 纯 Python 实现 | 无（仅标准库） |
-| `aes_openssl.py` | 通过 `ctypes` 调用系统 OpenSSL | 运行时需要系统安装 `libcrypto` |
+| `aes.py` | 通过 `ctypes` 调用系统 OpenSSL（默认） | 运行时需要系统安装 `libcrypto` |
+| `aes_python.py` | 纯 Python 实现 | 无（仅标准库） |
 
 两个文件暴露**完全相同的公开 API**，可以直接替换，无需修改调用代码。
 
@@ -31,19 +31,19 @@ AES 模块提供多种模式和密钥长度的 AES 加解密功能。提供两�
 只需将所需的 `.py` 文件复制到你的项目中：
 
 ```bash
-# 纯 Python -- 到处可用
-cp aes/aes.py your_project/
+# 复制整个包（OpenSSL 为默认，纯 Python 自动降级）
+zerodep add aes --nested
 
-# OpenSSL -- 快得多，需要系统安装 libcrypto
-cp aes/aes_openssl.py your_project/
+# 或者复制单独的文件
+cp aes/aes.py your_project/          # OpenSSL（默认）
+cp aes/aes_python.py your_project/   # 纯 Python 后备
 ```
 
-然后直接导入：
+然后直接导入——包会优先使用 OpenSSL，如果不可用则自动降级到纯 Python：
 
 ```python
 from aes import aes_ecb_encrypt, aes_cbc_encrypt, aes_ctr_encrypt, aes_gcm_encrypt
-# 或者
-from aes_openssl import aes_ecb_encrypt, aes_cbc_encrypt, aes_ctr_encrypt, aes_gcm_encrypt
+from aes import BACKEND  # "openssl" or "python"
 ```
 
 ## 使用示例
@@ -129,27 +129,22 @@ with pytest.raises(ValueError, match="authentication failed"):
     aes_gcm_decrypt(tampered, key, nonce, tag, aad=header)
 ```
 
-### 在两个实现之间切换
+### 检查当前使用的后端
+
+`__init__.py` 会自动优先选择 OpenSSL，不可用时降级到纯 Python。你可以检查当前激活的后端：
 
 ```python
-import importlib
+from aes import BACKEND, aes_ecb_encrypt
 
-def get_aes_module():
-    """Prefer OpenSSL for speed; fall back to pure Python."""
-    try:
-        return importlib.import_module("aes_openssl")
-    except OSError:
-        return importlib.import_module("aes")
-
-aes = get_aes_module()
-ciphertext = aes.aes_ecb_encrypt(b"secret data", b"0123456789abcdef")
+print(BACKEND)  # "openssl" or "python"
+ciphertext = aes_ecb_encrypt(b"secret data", b"0123456789abcdef")
 ```
 
 ### 使用 CBC 加密文件
 
 ```python
 import os
-from aes_openssl import aes_cbc_encrypt, aes_cbc_decrypt
+from aes import aes_cbc_encrypt, aes_cbc_decrypt
 
 key = os.urandom(32)
 iv = os.urandom(16)
@@ -224,7 +219,7 @@ aes_gcm_decrypt(data: bytes, key: bytes, nonce: bytes,
 
 ## OpenSSL 变体细节
 
-`aes_openssl.py` 使用 Python 内置的 `ctypes` 模块调用系统的 OpenSSL `libcrypto` 库。由于 Python 自身就依赖 OpenSSL（`ssl` 和 `hashlib` 模块都链接到 `libcrypto`），任何标准的 Python 3.10+ 安装都已经包含 `libcrypto`——无需额外安装任何软件。
+`aes.py`（OpenSSL 变体）使用 Python 内置的 `ctypes` 模块调用系统的 OpenSSL `libcrypto` 库。由于 Python 自身就依赖 OpenSSL（`ssl` 和 `hashlib` 模块都链接到 `libcrypto`），任何标准的 Python 3.10+ 安装都已经包含 `libcrypto`——无需额外安装任何软件。
 
 运行时按以下顺序查找库文件：
 
@@ -245,7 +240,7 @@ aes_gcm_decrypt(data: bytes, key: bytes, nonce: bytes,
     对于大多数应用场景，推荐使用 **GCM 模式**——它同时提供加密和认证（AEAD），能够防止窃听和篡改。GCM 也是 TLS 1.3 的默认加密模式。
 
 !!! info "性能说明"
-    纯 Python 实现（`aes.py`）设计简洁，偏重教学目的。对于大量数据，它比原生实现**慢数个数量级**。任何对性能敏感的场景，请使用 `aes_openssl.py`。
+    纯 Python 实现（`aes_python.py`）设计简洁，偏重教学目的。对于大量数据，它比原生实现**慢数个数量级**。任何对性能敏感的场景，请使用默认的 `aes.py`（OpenSSL）。
 
 - **密钥长度：** 必须为 16、24 或 32 字节。传入无效长度的密钥会抛出 `ValueError`。
 - **PKCS7 填充：** 在 ECB 和 CBC 模式下自动应用。CTR 和 GCM 不使用填充。

@@ -108,4 +108,4 @@ my-project/
     └── retry.py
 ```
 
-当模块包含变体文件时（如 `aes/aes.py` 和 `aes/aes_openssl.py`），这种方式特别有用。`-d` 和 `--nested` 可以组合使用（如 `zerodep add sse -d lib/ --nested`）。
+当模块包含变体文件时（如 `aes/aes.py` 和 `aes/aes_python.py`），这种方式特别有用。`-d` 和 `--nested` 可以组合使用（如 `zerodep add sse -d lib/ --nested`）。

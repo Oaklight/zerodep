@@ -497,11 +497,34 @@ new Chart(document.getElementById('{cid}'), {{
         ]
     )
 
-    chartjs = "https://cdn.jsdelivr.net/npm/chart.js@4"
+    html = (
+        '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
+        '<meta charset="utf-8">\n'
+        '<meta name="viewport" '
+        'content="width=device-width, initial-scale=1">\n'
+        f"<title>zerodep Benchmark — {version}</title>\n"
+        f"<style>{_CSS}</style>\n"
+        f'<script src="{_CHARTJS_URL}"></script>\n'
+        "</head>\n<body>\n"
+        '<div class="header-row">\n'
+        "<h1>zerodep Benchmark Report</h1>\n"
+        '<button class="theme-toggle" id="theme-toggle">'
+        "\u263e Dark</button>\n</div>\n"
+        f'<p class="meta">{meta_line}</p>\n'
+        f'<div class="summary-grid">\n{cards}\n</div>\n'
+        f"{nav}\n"
+        f"{''.join(sections)}\n"
+        f"<script>\n{''.join(charts_js)}\n"
+        f"{_THEME_JS}\n</script>\n"
+        "</body>\n</html>"
+    )
+    return html
 
-    theme_js = """\
+
+_THEME_JS = """\
 (function() {
   var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
   function setTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
     btn.textContent = t === 'dark' ? '\\u2600 Light' : '\\u263E Dark';
@@ -519,28 +542,139 @@ new Chart(document.getElementById('{cid}'), {{
   });
 })();"""
 
-    html = (
+_CHARTJS_URL = "https://cdn.jsdelivr.net/npm/chart.js@4"
+
+
+def _generate_module_page(mod_data: dict, meta: dict) -> str | None:
+    """Generate a standalone HTML page for a single module."""
+    module = mod_data["module"]
+    pairs = mod_data["pairs"]
+    standalone = mod_data["standalone"]
+
+    if not pairs and not standalone:
+        return None
+
+    version = meta.get("version", "unknown")
+    commit = meta.get("commit", "")
+    commit_short = commit[:8] if commit else "N/A"
+    timestamp = meta.get("datetime", "")
+
+    charts_js = []
+    body = f"<h2>{module}</h2>\n"
+
+    if pairs:
+        body += "<table>\n<thead><tr>"
+        body += "<th>Operation</th><th>zerodep</th>"
+        body += "<th>Reference</th>"
+        body += "<th>zerodep time</th><th>Ref time</th>"
+        body += "<th>zerodep ops/s</th><th>Ref ops/s</th>"
+        body += "<th>Ratio</th></tr></thead>\n<tbody>\n"
+
+        for p in pairs:
+            rc = _ratio_class(p["ratio"])
+            body += "<tr>"
+            body += f"<td>{p['operation']}</td>"
+            body += f"<td>{p['zd_variant']}</td>"
+            body += f"<td>{p['ref_label']}</td>"
+            body += f"<td>{_human_time(p['zd_mean'])}</td>"
+            body += f"<td>{_human_time(p['ref_mean'])}</td>"
+            body += f"<td>{_human_ops(p['zd_ops'])}</td>"
+            body += f"<td>{_human_ops(p['ref_ops'])}</td>"
+            body += f'<td class="ratio-cell {rc}">{_ratio_text(p["ratio"])}</td>'
+            body += "</tr>\n"
+        body += "</tbody></table>\n"
+
+        op_best: dict[str, dict] = {}
+        for p in pairs:
+            op = p["operation"]
+            if op not in op_best or p["ref_ops"] > op_best[op]["ref_ops"]:
+                op_best[op] = p
+
+        labels = list(op_best.keys())
+        zd_ops = [op_best[op]["zd_ops"] for op in labels]
+        ref_ops = [op_best[op]["ref_ops"] for op in labels]
+        ref_labels_list = [op_best[op]["ref_label"] for op in labels]
+
+        cid = "chart_0"
+        body += f'<div class="chart-container"><canvas id="{cid}"></canvas></div>\n'
+
+        ref_name = json.dumps(
+            ref_labels_list[0] if len(set(ref_labels_list)) == 1 else "Reference"
+        )
+        charts_js.append(
+            f"""
+new Chart(document.getElementById('{cid}'), {{
+  type: 'bar',
+  data: {{
+    labels: {json.dumps(labels)},
+    datasets: [
+      {{
+        label: 'zerodep (ops/s)',
+        data: {json.dumps(zd_ops)},
+        backgroundColor: '{_CHART_COLORS["zerodep"]}',
+        borderRadius: 4,
+      }},
+      {{
+        label: {ref_name} + ' (ops/s)',
+        data: {json.dumps(ref_ops)},
+        backgroundColor: '{_CHART_COLORS["reference"]}',
+        borderRadius: 4,
+      }}
+    ]
+  }},
+  options: {{
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {{
+      legend: {{ position: 'top' }},
+      title: {{ display: true, text: '{module} — ops/s (higher is better)' }}
+    }},
+    scales: {{
+      y: {{
+        type: 'logarithmic',
+        title: {{ display: true, text: 'ops/s (log scale)' }}
+      }}
+    }}
+  }}
+}});"""
+        )
+
+    if standalone:
+        body += "<h3>Standalone benchmarks</h3>\n"
+        body += '<table class="standalone-table">\n<thead><tr>'
+        body += "<th>Operation</th><th>Variant</th>"
+        body += "<th>Mean</th><th>ops/s</th>"
+        body += "</tr></thead>\n<tbody>\n"
+        for st in standalone:
+            body += "<tr>"
+            body += f"<td>{st['operation']}</td>"
+            body += f"<td>{st['variant']}</td>"
+            body += f"<td>{_human_time(st['mean'])}</td>"
+            body += f"<td>{_human_ops(st['ops'])}</td>"
+            body += "</tr>\n"
+        body += "</tbody></table>\n"
+
+    meta_line = f"Version: {version} | Commit: {commit_short} | {timestamp}"
+
+    return (
         '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
         '<meta charset="utf-8">\n'
         '<meta name="viewport" '
         'content="width=device-width, initial-scale=1">\n'
-        f"<title>zerodep Benchmark — {version}</title>\n"
+        f"<title>{module} Benchmark — zerodep</title>\n"
         f"<style>{_CSS}</style>\n"
-        f'<script src="{chartjs}"></script>\n'
+        f'<script src="{_CHARTJS_URL}"></script>\n'
         "</head>\n<body>\n"
         '<div class="header-row">\n'
-        "<h1>zerodep Benchmark Report</h1>\n"
+        f"<h1>{module}</h1>\n"
         '<button class="theme-toggle" id="theme-toggle">'
         "\u263e Dark</button>\n</div>\n"
         f'<p class="meta">{meta_line}</p>\n'
-        f'<div class="summary-grid">\n{cards}\n</div>\n'
-        f"{nav}\n"
-        f"{''.join(sections)}\n"
+        f"{body}\n"
         f"<script>\n{''.join(charts_js)}\n"
-        f"{theme_js}\n</script>\n"
+        f"{_THEME_JS}\n</script>\n"
         "</body>\n</html>"
     )
-    return html
 
 
 # ---------------------------------------------------------------------------
@@ -581,10 +715,23 @@ def main() -> None:
     output_path.write_text(html)
     print(f"Report written to {output_path} ({len(html)} bytes)")
 
+    # Generate per-module pages
+    modules_dir = output_path.parent / "modules"
+    modules_dir.mkdir(parents=True, exist_ok=True)
+    mod_count = 0
+    for mod_data in comparisons:
+        page = _generate_module_page(mod_data, meta)
+        if page is None:
+            continue
+        mod_path = modules_dir / f"{mod_data['module']}.html"
+        mod_path.write_text(page)
+        mod_count += 1
+    print(f"  {mod_count} module pages written to {modules_dir}/")
+
     # Print summary
     total_pairs = sum(len(m["pairs"]) for m in comparisons)
-    faster = sum(1 for m in comparisons for p in m["pairs"] if p["ratio"] < 0.8)
-    slower = sum(1 for m in comparisons for p in m["pairs"] if p["ratio"] > 1.5)
+    faster = sum(1 for m in comparisons for p in m["pairs"] if p["ratio"] < 0.95)
+    slower = sum(1 for m in comparisons for p in m["pairs"] if p["ratio"] > 1.05)
     print(f"  {total_pairs} comparisons: {faster} faster, {slower} slower")
 
 

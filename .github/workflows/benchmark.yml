@@ -88,7 +88,7 @@ jobs:
         run: |
           python scripts/generate_bench_report.py \
             benchmark-results.json \
-            benchmark-report.html \
+            bench-output/index.html \
             "${{ steps.bench-name.outputs.name }}" \
             "${{ github.sha }}"
 
@@ -96,9 +96,11 @@ jobs:
         run: |
           git fetch origin gh-pages
           git worktree add gh-pages-wt gh-pages
-          cp benchmark-report.html gh-pages-wt/dev/bench/index.html
+          mkdir -p gh-pages-wt/dev/bench/modules
+          cp bench-output/index.html gh-pages-wt/dev/bench/index.html
+          cp bench-output/modules/*.html gh-pages-wt/dev/bench/modules/
           cd gh-pages-wt
-          git add dev/bench/index.html
+          git add dev/bench/index.html dev/bench/modules/
           if git diff --cached --quiet; then
             echo "No changes to report"
           else

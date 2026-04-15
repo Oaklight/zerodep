@@ -6,6 +6,22 @@
 
 ## [未发布]
 
+### 重构
+
+- **复杂度治理**：对 19 个模块进行重构，使所有函数的认知复杂度（complexipy）和圈复杂度（ruff C901）均降至 20 以下。涉及模块：cache、validate、tabulate、dotenv、runner、xml、diff、soup、sse、search、scheduler、depdetect、qr、acp、yaml、toon、protobuf、markdown、httpclient。
+- 采用的重构模式：按类型分派表、try-parse 提取、分阶段分解、辅助函数提取——均在单文件约束下完成。
+
+### CI
+
+- **Benchmark 工作流**：新增 GitHub Actions 工作流（`.github/workflows/benchmark.yml`），在每次发版和手动触发时运行 `pytest-benchmark`。对比 zerodep 实现与 25+ 参考库的性能。结果存储在 `gh-pages` 分支，性能退化超过 150% 时触发告警。
+- **Benchmark 报告**：自定义 HTML 报告生成器（`scripts/generate_bench_report.py`），按模块分组展示 zerodep 与参考库的性能对比，包含表格和图表，发布至 GitHub Pages。
+- **CI 参考库**：更新 `ci.yml`，补全交叉验证测试所需的全部参考库依赖。
+
+### 内部改进
+
+- 新增 `complexipy>=5.2.0` 开发依赖及 `pyproject.toml` 中的 `[tool.complexipy]` 配置。
+- 启用 ruff `C901` 检查规则，`max-complexity = 20`。
+
 ## [2026.4.11] - 2026-04-11
 
 ### 不兼容变更

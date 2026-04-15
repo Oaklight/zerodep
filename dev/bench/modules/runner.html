@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>qr Benchmark — zerodep</title>
+<title>runner Benchmark — zerodep</title>
 <style>:root, [data-theme="light"] {
   --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
   --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
@@ -80,17 +80,24 @@ td { white-space: nowrap; }
 </head>
 <body>
 <div class="header-row">
-<h1>qr</h1>
+<h1>runner</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
 <p class="meta">Version: v2026.4.15 | Commit: 169356d0 | 2026-04-15T12:25:48.489263+00:00</p>
-<h2>qr</h2>
+<h2>runner</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>20.94 ms</td><td>11.67 ms</td><td>47.7</td><td>85.7</td><td class="ratio-cell slower">1.8x slower</td></tr>
-<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>3.84 ms</td><td>1.80 ms</td><td>260.1</td><td>555.2</td><td class="ratio-cell slower">2.1x slower</td></tr>
-<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>9.99 ms</td><td>5.00 ms</td><td>100.1</td><td>199.9</td><td class="ratio-cell slower">2.0x slower</td></tr>
+<tr><td>Env Passing</td><td>zerodep</td><td>sh</td><td>11.58 ms</td><td>21.03 ms</td><td>86.4</td><td>47.5</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Env Passing</td><td>zerodep</td><td>subprocess</td><td>11.58 ms</td><td>11.22 ms</td><td>86.4</td><td>89.1</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Output Capture</td><td>zerodep</td><td>sh</td><td>11.11 ms</td><td>20.69 ms</td><td>90.0</td><td>48.3</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Output Capture</td><td>zerodep</td><td>subprocess</td><td>11.11 ms</td><td>11.10 ms</td><td>90.0</td><td>90.1</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Simple Command</td><td>zerodep</td><td>sh</td><td>1.99 ms</td><td>9.74 ms</td><td>503.7</td><td>102.7</td><td class="ratio-cell faster">4.9x faster</td></tr>
+<tr><td>Simple Command</td><td>zerodep</td><td>subprocess</td><td>1.99 ms</td><td>892.0 µs</td><td>503.7</td><td>1.1K</td><td class="ratio-cell slower">2.2x slower</td></tr>
+<tr><td>Stdin Input</td><td>zerodep</td><td>sh</td><td>11.38 ms</td><td>20.79 ms</td><td>87.8</td><td>48.1</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Stdin Input</td><td>zerodep</td><td>subprocess</td><td>11.38 ms</td><td>11.30 ms</td><td>87.8</td><td>88.5</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Streaming Lines</td><td>zerodep</td><td>sh</td><td>11.05 ms</td><td>21.33 ms</td><td>90.5</td><td>46.9</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Streaming Lines</td><td>zerodep</td><td>subprocess</td><td>11.05 ms</td><td>11.15 ms</td><td>90.5</td><td>89.7</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -99,17 +106,17 @@ td { white-space: nowrap; }
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
   data: {
-    labels: ["Encode Long", "Encode Short", "Encode URL"],
+    labels: ["Env Passing", "Output Capture", "Simple Command", "Stdin Input", "Streaming Lines"],
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [47.74973005611858, 260.0948421068776, 100.05142873549542],
+        data: [86.37727560378814, 90.01276953594231, 503.68921003935657, 87.8380865617774, 90.52897841544114],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
-        label: "qrcode" + ' (ops/s)',
-        data: [85.67351482506601, 555.2039533633385, 199.93527784990798],
+        label: "subprocess" + ' (ops/s)',
+        data: [89.09094040587613, 90.09803153600897, 1121.1312943667797, 88.51919357974616, 89.66306579218124],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -120,7 +127,7 @@ new Chart(document.getElementById('chart_0'), {
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'top' },
-      title: { display: true, text: 'qr — ops/s (higher is better)' }
+      title: { display: true, text: 'runner — ops/s (higher is better)' }
     },
     scales: {
       y: {

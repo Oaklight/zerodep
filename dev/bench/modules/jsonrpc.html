@@ -83,30 +83,65 @@ td { white-space: nowrap; }
 <h1>jsonrpc</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.4.15 | Commit: 078bd8b1 | 2026-04-15T10:47:09.723612+00:00</p>
+<p class="meta">Version: v2026.4.15 | Commit: 169356d0 | 2026-04-15T12:25:48.489263+00:00</p>
 <h2>jsonrpc</h2>
+<table>
+<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>141.5 µs</td><td>2.74 ms</td><td>7.1K</td><td>364.5</td><td class="ratio-cell faster">19.4x faster</td></tr>
+<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>9.5 µs</td><td>133.4 µs</td><td>104.8K</td><td>7.5K</td><td class="ratio-cell faster">14.0x faster</td></tr>
+<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>7.9 µs</td><td>105.0 µs</td><td>127.3K</td><td>9.5K</td><td class="ratio-cell faster">13.4x faster</td></tr>
+<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>7.4 µs</td><td>141.1 µs</td><td>134.7K</td><td>7.1K</td><td class="ratio-cell faster">19.0x faster</td></tr>
+</tbody></table>
+<div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>test_json_round_trip</td><td>json_round_trip</td><td>6.8 µs</td><td>148.1K</td></tr>
-<tr><td>test_jsonrpcserver_dispatch_batch</td><td>jsonrpcserver</td><td>2.78 ms</td><td>359.5</td></tr>
-<tr><td>test_jsonrpcserver_dispatch_error</td><td>jsonrpcserver</td><td>137.2 µs</td><td>7.3K</td></tr>
-<tr><td>test_jsonrpcserver_dispatch_not_found</td><td>jsonrpcserver</td><td>107.1 µs</td><td>9.3K</td></tr>
-<tr><td>test_jsonrpcserver_dispatch_success</td><td>jsonrpcserver</td><td>140.0 µs</td><td>7.1K</td></tr>
-<tr><td>test_next_id</td><td>next_id</td><td>102.6 ns</td><td>9.75M</td></tr>
-<tr><td>test_request_from_dict</td><td>request_from_dict</td><td>775.9 ns</td><td>1.29M</td></tr>
-<tr><td>test_request_to_dict</td><td>request_to_dict</td><td>361.0 ns</td><td>2.77M</td></tr>
-<tr><td>test_response_from_dict</td><td>response_from_dict</td><td>835.6 ns</td><td>1.20M</td></tr>
-<tr><td>test_response_to_dict</td><td>response_to_dict</td><td>297.5 ns</td><td>3.36M</td></tr>
-<tr><td>test_zerodep_dispatch_batch</td><td>zerodep_dispatch_batch</td><td>148.5 µs</td><td>6.7K</td></tr>
-<tr><td>test_zerodep_dispatch_error</td><td>zerodep_dispatch_error</td><td>10.1 µs</td><td>99.3K</td></tr>
-<tr><td>test_zerodep_dispatch_not_found</td><td>zerodep_dispatch_not_found</td><td>8.2 µs</td><td>122.0K</td></tr>
-<tr><td>test_zerodep_dispatch_success</td><td>zerodep_dispatch_success</td><td>7.5 µs</td><td>133.5K</td></tr>
+<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>951.5 ns</td><td>1.05M</td></tr>
+<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>951.9 ns</td><td>1.05M</td></tr>
+<tr><td>Id Generation</td><td>next_id</td><td>218.4 ns</td><td>4.58M</td></tr>
+<tr><td>Json Round Trip</td><td>json_round_trip</td><td>6.4 µs</td><td>156.2K</td></tr>
+<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>369.1 ns</td><td>2.71M</td></tr>
+<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>301.9 ns</td><td>3.31M</td></tr>
 </tbody></table>
 
 <script>
 
+new Chart(document.getElementById('chart_0'), {
+  type: 'bar',
+  data: {
+    labels: ["Dispatch Batch", "Dispatch Error", "Dispatch Not Found", "Dispatch Success"],
+    datasets: [
+      {
+        label: 'zerodep (ops/s)',
+        data: [7065.167614179607, 104804.93412894903, 127288.90068109814, 134660.51487197683],
+        backgroundColor: 'rgba(111, 66, 193, 0.8)',
+        borderRadius: 4,
+      },
+      {
+        label: "jsonrpcserver" + ' (ops/s)',
+        data: [364.5124606230846, 7494.877704119017, 9525.872272646611, 7085.748967973545],
+        backgroundColor: 'rgba(13, 110, 253, 0.6)',
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      title: { display: true, text: 'jsonrpc — ops/s (higher is better)' }
+    },
+    scales: {
+      y: {
+        type: 'logarithmic',
+        title: { display: true, text: 'ops/s (log scale)' }
+      }
+    }
+  }
+});
 (function() {
   var btn = document.getElementById('theme-toggle');
   if (!btn) return;

@@ -51,7 +51,7 @@ zerodep sparse_search 与 [`rank-bm25`](https://pypi.org/project/rank-bm25/) 的
 
 ```bash
 pip install pytest pytest-benchmark rank-bm25
-pytest search/test_sparse_search_benchmark.py --benchmark-only -v
+pytest sparse_search/test_sparse_search_benchmark.py --benchmark-only -v
 ```
 
 ---

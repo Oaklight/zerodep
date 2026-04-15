@@ -8,7 +8,7 @@ Agent Skills 运行时 -- 零依赖，仅标准库，Python 3.10+。
 
 | 文件 | 描述 | 依赖 |
 |------|------|------|
-| `skills.py` | Agent Skills 运行时 | `frontmatter`（兄弟模块）、`search`（兄弟模块，可选） |
+| `skills.py` | Agent Skills 运行时 | `frontmatter`（兄弟模块）、`sparse_search`（兄弟模块，可选） |
 
 **核心功能：**
 
@@ -29,7 +29,7 @@ cp frontmatter/frontmatter.py your_project/
 cp yaml/yaml.py your_project/
 
 # 可选（用于 BM25 选择）
-cp search/sparse_search.py your_project/
+cp sparse_search/sparse_search.py your_project/
 ```
 
 或通过 CLI 安装：
@@ -230,7 +230,7 @@ combined = compose(skill_a, skill_b)
 | 选择器 | 描述 | 依赖 |
 |--------|------|------|
 | `KeywordSelector` | 基于名称和描述的关键词匹配 | 无（仅标准库） |
-| `BM25Selector` | 基于完整技能内容的 BM25 排序 | 兄弟 `search` 模块 |
+| `BM25Selector` | 基于完整技能内容的 BM25 排序 | 兄弟 `sparse_search` 模块 |
 
 实现 `Selector` 协议即可创建自定义选择器（基于嵌入、重排序、LLM 等）。
 

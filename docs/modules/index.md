@@ -101,7 +101,7 @@ graph LR
     config --> jsonc
     frontmatter --> yaml
     skills --> frontmatter
-    skills --> search
+    skills --> sparse_search
     sse --> httpclient
     vcs --> diff
 ```

@@ -38,87 +38,94 @@ test = [
     "pytest-benchmark>=4.0.0",
 ]
 # Reference libraries for correctness and benchmark comparisons
+# Versions are pinned to ensure reproducible benchmark results.
 bench-aes = [
-    "pycryptodome>=3.20.0",
+    "pycryptodome==3.23.0",
 ]
 bench-qr = [
-    "qrcode>=7.0",
-    "Pillow>=10.0.0",
+    "qrcode==8.2",
+    "Pillow==12.2.0",
 ]
 bench-http = [
-    "httpx>=0.27.0",
+    "httpx==0.28.1",
 ]
 bench-dotenv = [
-    "python-dotenv>=1.0.0",
+    "python-dotenv==1.2.2",
 ]
 bench-yaml = [
-    "PyYAML>=6.0",
+    "PyYAML==6.0.3",
 ]
 bench-jsonc = [
-    "commentjson>=0.9.0",
+    "commentjson==0.9.0",
 ]
 bench-structlog = [
-    "structlog>=24.0.0",
+    "structlog==25.5.0",
 ]
 bench-retry = [
-    "tenacity>=8.0.0",
+    "tenacity==9.1.4",
 ]
 bench-toon = [
     "toon-format>=0.9.0b1",
 ]
 bench-tabulate = [
-    "tabulate>=0.9.0",
+    "tabulate==0.10.0",
 ]
 bench-soup = [
-    "beautifulsoup4>=4.12.0",
+    "beautifulsoup4==4.14.3",
 ]
 bench-validate = [
-    "pydantic>=2.0.0",
+    "pydantic==2.13.0",
 ]
 bench-sse = [
-    "httpx-sse>=0.4.0",
-    "httpx>=0.27.0",
+    "httpx-sse==0.4.3",
+    "httpx==0.28.1",
 ]
 bench-markdown = [
-    "mistune>=3.0.0",
+    "mistune==3.2.0",
 ]
 bench-diff = [
-    "unidiff>=0.7.0",
+    "unidiff==0.7.5",
 ]
 bench-scheduler = [
-    "APScheduler>=3.10.0",
-    "schedule>=1.2.0",
-    "croniter>=1.3.0",
+    "APScheduler==3.11.2",
+    "schedule==1.2.2",
+    "croniter==6.2.2",
 ]
 bench-search = [
-    "rank-bm25>=0.2.2",
+    "rank-bm25==0.2.2",
 ]
 bench-frontmatter = [
-    "python-frontmatter>=1.1.0",
+    "python-frontmatter==1.1.0",
 ]
 bench-config = [
-    "python-decouple>=3.8",
+    "python-decouple==3.8",
 ]
 bench-cache = [
-    "cachetools>=5.0.0",
+    "cachetools==7.0.5",
 ]
 bench-xml = [
-    "xmltodict>=0.13.0",
+    "xmltodict==1.0.4",
 ]
 bench-jsonrpc = [
-    "jsonrpcserver>=5.0.0",
+    "jsonrpcserver==5.0.9",
 ]
 bench-protobuf = [
-    "protobuf>=4.0.0",
+    "protobuf==7.34.1",
 ]
 bench-a2a = [
-    "a2a-protocol>=0.1.0",
+    "a2a-protocol==0.1.0",
 ]
 bench-acp = [
-    "agent-client-protocol>=0.9.0",
+    "agent-client-protocol==0.9.0",
 ]
 bench-semver = [
-    "packaging>=24.0",
+    "packaging==26.1",
+]
+bench-persistdict = [
+    "sqlitedict==2.1.0",
+]
+bench-runner = [
+    "sh==2.2.2",
 ]
 dev = [
     "ruff>=0.1.0",
@@ -126,7 +133,7 @@ dev = [
     "complexipy>=5.2.0",
     "build>=1.2.2.post1",
     "twine>=6.1.0",
-    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver]",
+    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-persistdict,bench-runner]",
 ]
 
 [tool.pytest.ini_options]

@@ -123,6 +123,7 @@ bench-semver = [
 dev = [
     "ruff>=0.1.0",
     "ty>=0.0.24",
+    "complexipy>=5.2.0",
     "build>=1.2.2.post1",
     "twine>=6.1.0",
     "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver]",
@@ -135,7 +136,10 @@ testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", 
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "W"]
+select = ["E", "F", "I", "W", "C901"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 20
 
 [tool.ruff.lint.per-file-ignores]
 "aes/aes.py" = ["E501"]
@@ -150,6 +154,12 @@ select = ["E", "F", "I", "W"]
 "acp/acp.py" = ["E501"]
 "**/test_*.py" = ["E402"]
 "**/test_*_benchmark.py" = ["E501"]
+"**/conftest.py" = ["C901"]
+
+[tool.complexipy]
+paths = ["."]
+max-complexity-allowed = 20
+exclude = ["**/test_*.py", "**/test_*_benchmark.py"]
 
 [tool.ty.environment]
 extra-paths = [

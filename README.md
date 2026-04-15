@@ -111,6 +111,15 @@ Each module is a **self-contained single `.py` file** — copy it into your proj
 | `vcs/` | Git/Hg/Jujutsu CLI wrapper (diff, status, log, blame) | — |
 | `filelock/` | Cross-platform advisory file lock (fcntl/msvcrt) | — |
 | `qr/` | QR Code generation with terminal rendering | `qrcode` |
+| `persistdict/` | Persistent dict with JSON file and SQLite backends | — |
+| `depdetect/` | Dependency detection and verification utility | — |
+
+## Versioning
+
+- **Project**: [CalVer](https://calver.org/) `YYYY.M.D` (e.g., `2026.4.15`)
+- **Modules**: independent [SemVer](https://semver.org/) per module (e.g., `0.4.1`)
+
+Releases are automated via the [Release workflow](https://github.com/Oaklight/zerodep/actions/workflows/release.yml) — lint, test, bump module versions, tag, and create a GitHub Release in one step.
 
 ## Documentation
 

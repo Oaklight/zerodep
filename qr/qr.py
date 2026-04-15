@@ -11,7 +11,8 @@
 Part of zerodep: https://github.com/Oaklight/zerodep
 Copyright (c) 2026 Peng Ding. MIT License.
 
-Based on Project Nayuki's QR Code generator (MIT License):
+Originally derived from Project Nayuki's QR Code generator (MIT License),
+substantially refactored for the zerodep project:
     Copyright (c) Project Nayuki
     https://www.nayuki.io/page/qr-code-generator-library
 """

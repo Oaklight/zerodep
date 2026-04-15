@@ -83,19 +83,19 @@ td { white-space: nowrap; }
 <h1>persistdict</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: e888ae5 | Commit: e888ae50 | 2026-04-15T08:03:16.429735+00:00</p>
+<p class="meta">Version: v2026.4.15 | Commit: 078bd8b1 | 2026-04-15T10:47:09.723612+00:00</p>
 <h2>persistdict</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>shelve</td><td>524.1 µs</td><td>194.8 µs</td><td>1.9K</td><td>5.1K</td><td class="ratio-cell slower">2.7x slower</td></tr>
-<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>884.5 µs</td><td>194.8 µs</td><td>1.1K</td><td>5.1K</td><td class="ratio-cell slower">4.5x slower</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_json</td><td>shelve</td><td>507.1 µs</td><td>168.4 µs</td><td>2.0K</td><td>5.9K</td><td class="ratio-cell slower">3.0x slower</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>852.7 µs</td><td>168.4 µs</td><td>1.2K</td><td>5.9K</td><td class="ratio-cell slower">5.1x slower</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_json</td><td>shelve</td><td>16.69 ms</td><td>14.26 ms</td><td>59.9</td><td>70.1</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>shelve</td><td>439.86 ms</td><td>14.26 ms</td><td>2.3</td><td>70.1</td><td class="ratio-cell slower">30.8x slower</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_json</td><td>shelve</td><td>394.1 µs</td><td>401.5 µs</td><td>2.5K</td><td>2.5K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>23.54 ms</td><td>401.5 µs</td><td>42.5</td><td>2.5K</td><td class="ratio-cell slower">58.6x slower</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>shelve</td><td>448.0 µs</td><td>207.0 µs</td><td>2.2K</td><td>4.8K</td><td class="ratio-cell slower">2.2x slower</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>882.3 µs</td><td>207.0 µs</td><td>1.1K</td><td>4.8K</td><td class="ratio-cell slower">4.3x slower</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_json</td><td>shelve</td><td>425.5 µs</td><td>191.7 µs</td><td>2.4K</td><td>5.2K</td><td class="ratio-cell slower">2.2x slower</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>844.8 µs</td><td>191.7 µs</td><td>1.2K</td><td>5.2K</td><td class="ratio-cell slower">4.4x slower</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_json</td><td>shelve</td><td>16.61 ms</td><td>12.83 ms</td><td>60.2</td><td>77.9</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>shelve</td><td>479.61 ms</td><td>12.83 ms</td><td>2.1</td><td>77.9</td><td class="ratio-cell slower">37.4x slower</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_json</td><td>shelve</td><td>432.3 µs</td><td>411.7 µs</td><td>2.3K</td><td>2.4K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>25.82 ms</td><td>411.7 µs</td><td>38.7</td><td>2.4K</td><td class="ratio-cell slower">62.7x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -108,13 +108,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [1908.2045549704233, 1971.9588698830503, 59.92795080393883, 2537.671357491484],
+        data: [2232.053635214778, 2350.029945915626, 60.21115145768284, 2313.215883004933],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "shelve" + ' (ops/s)',
-        data: [5132.407032134297, 5938.176149403024, 70.12601718077516, 2490.7392929384655],
+        data: [4830.067260872214, 5217.659589152875, 77.91948158423455, 2428.6941470685542],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

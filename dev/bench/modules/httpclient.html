@@ -83,46 +83,41 @@ td { white-space: nowrap; }
 <h1>httpclient</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: e888ae5 | Commit: e888ae50 | 2026-04-15T08:03:16.429735+00:00</p>
+<p class="meta">Version: v2026.4.15 | Commit: 078bd8b1 | 2026-04-15T10:47:09.723612+00:00</p>
 <h2>httpclient</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Async Client Get</td><td>zerodep</td><td>httpx</td><td>363.50 ms</td><td>184.93 ms</td><td>2.8</td><td>5.4</td><td class="ratio-cell slower">2.0x slower</td></tr>
-<tr><td>Async File Upload</td><td>zerodep</td><td>httpx</td><td>578.10 ms</td><td>154.40 ms</td><td>1.7</td><td>6.5</td><td class="ratio-cell slower">3.7x slower</td></tr>
-<tr><td>Async Get</td><td>zerodep</td><td>httpx</td><td>125.29 ms</td><td>74.23 ms</td><td>8.0</td><td>13.5</td><td class="ratio-cell slower">1.7x slower</td></tr>
-<tr><td>Async Streaming</td><td>zerodep</td><td>httpx</td><td>269.34 ms</td><td>155.45 ms</td><td>3.7</td><td>6.4</td><td class="ratio-cell slower">1.7x slower</td></tr>
-<tr><td>Sync Client Get</td><td>zerodep</td><td>httpx</td><td>99.36 ms</td><td>210.38 ms</td><td>10.1</td><td>4.8</td><td class="ratio-cell faster">2.1x faster</td></tr>
-<tr><td>Sync File Upload</td><td>zerodep</td><td>httpx</td><td>170.45 ms</td><td>110.83 ms</td><td>5.9</td><td>9.0</td><td class="ratio-cell slower">1.5x slower</td></tr>
-<tr><td>Sync Get</td><td>zerodep</td><td>httpx</td><td>356.66 ms</td><td>340.70 ms</td><td>2.8</td><td>2.9</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Sync Gzip Decompression</td><td>zerodep</td><td>httpx</td><td>249.73 ms</td><td>215.69 ms</td><td>4.0</td><td>4.6</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Sync Post JSON</td><td>zerodep</td><td>httpx</td><td>118.09 ms</td><td>183.65 ms</td><td>8.5</td><td>5.4</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Sync Streaming</td><td>zerodep</td><td>httpx</td><td>66.89 ms</td><td>81.37 ms</td><td>14.9</td><td>12.3</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Async Client Get</td><td>zerodep</td><td>httpx</td><td>1.15 ms</td><td>28.67 ms</td><td>866.6</td><td>34.9</td><td class="ratio-cell faster">24.9x faster</td></tr>
+<tr><td>Async File Upload</td><td>zerodep</td><td>httpx</td><td>1.48 ms</td><td>30.32 ms</td><td>677.9</td><td>33.0</td><td class="ratio-cell faster">20.6x faster</td></tr>
+<tr><td>Async Get</td><td>zerodep</td><td>httpx</td><td>1.14 ms</td><td>28.84 ms</td><td>878.4</td><td>34.7</td><td class="ratio-cell faster">25.3x faster</td></tr>
+<tr><td>Async Post JSON</td><td>zerodep</td><td>httpx</td><td>1.24 ms</td><td>28.78 ms</td><td>805.7</td><td>34.7</td><td class="ratio-cell faster">23.2x faster</td></tr>
+<tr><td>Async Streaming</td><td>zerodep</td><td>httpx</td><td>1.21 ms</td><td>28.53 ms</td><td>827.2</td><td>35.0</td><td class="ratio-cell faster">23.6x faster</td></tr>
+<tr><td>Sync Client Get</td><td>zerodep</td><td>httpx</td><td>641.8 µs</td><td>1.05 ms</td><td>1.6K</td><td>950.2</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Sync File Upload</td><td>zerodep</td><td>httpx</td><td>1.00 ms</td><td>23.16 ms</td><td>998.7</td><td>43.2</td><td class="ratio-cell faster">23.1x faster</td></tr>
+<tr><td>Sync Get</td><td>zerodep</td><td>httpx</td><td>608.0 µs</td><td>25.08 ms</td><td>1.6K</td><td>39.9</td><td class="ratio-cell faster">41.2x faster</td></tr>
+<tr><td>Sync Gzip Decompression</td><td>zerodep</td><td>httpx</td><td>649.1 µs</td><td>22.28 ms</td><td>1.5K</td><td>44.9</td><td class="ratio-cell faster">34.3x faster</td></tr>
+<tr><td>Sync Post JSON</td><td>zerodep</td><td>httpx</td><td>719.2 µs</td><td>22.52 ms</td><td>1.4K</td><td>44.4</td><td class="ratio-cell faster">31.3x faster</td></tr>
+<tr><td>Sync Streaming</td><td>zerodep</td><td>httpx</td><td>640.5 µs</td><td>22.19 ms</td><td>1.6K</td><td>45.1</td><td class="ratio-cell faster">34.6x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
-<h3>Standalone benchmarks</h3>
-<table class="standalone-table">
-<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
-<tbody>
-<tr><td>Async Post JSON</td><td>zerodep</td><td>168.07 ms</td><td>5.9</td></tr>
-</tbody></table>
 
 <script>
 
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
   data: {
-    labels: ["Async Client Get", "Async File Upload", "Async Get", "Async Streaming", "Sync Client Get", "Sync File Upload", "Sync Get", "Sync Gzip Decompression", "Sync Post JSON", "Sync Streaming"],
+    labels: ["Async Client Get", "Async File Upload", "Async Get", "Async Post JSON", "Async Streaming", "Sync Client Get", "Sync File Upload", "Sync Get", "Sync Gzip Decompression", "Sync Post JSON", "Sync Streaming"],
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [2.7510038408828676, 1.7298093370782055, 7.981457154372628, 3.7127428044015627, 10.064685103314305, 5.86695179927242, 2.803762355695654, 4.004382982978275, 8.468044997253578, 14.949777167309913],
+        data: [866.639363510125, 677.8533288127524, 878.4326505084641, 805.6532692219788, 827.205981608321, 1558.103218796789, 998.732076640916, 1644.6995827463934, 1540.5207868428088, 1390.4157024491512, 1561.316687151587],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "httpx" + ' (ops/s)',
-        data: [5.407477950427392, 6.476799550665735, 13.471091172381028, 6.432792433120791, 4.753237467272575, 9.022689631002306, 2.935119559591569, 4.636185651173525, 5.445139109397393, 12.290140836974672],
+        data: [34.87468659276025, 32.98520742277909, 34.67725143464372, 34.74827149836464, 35.04731173430466, 950.2472251651108, 43.17722893080217, 39.877215306970555, 44.879725074466684, 44.399518490185386, 45.0659323152305],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

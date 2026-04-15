@@ -83,26 +83,26 @@ td { white-space: nowrap; }
 <h1>config</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: e888ae5 | Commit: e888ae50 | 2026-04-15T08:03:16.429735+00:00</p>
+<p class="meta">Version: v2026.4.15 | Commit: 078bd8b1 | 2026-04-15T10:47:09.723612+00:00</p>
 <h2>config</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Cast Bool</td><td>zerodep</td><td>python-decouple</td><td>1.3 µs</td><td>2.5 µs</td><td>757.3K</td><td>392.7K</td><td class="ratio-cell faster">1.9x faster</td></tr>
-<tr><td>Cast Int</td><td>zerodep</td><td>python-decouple</td><td>1.2 µs</td><td>2.3 µs</td><td>802.4K</td><td>430.9K</td><td class="ratio-cell faster">1.9x faster</td></tr>
-<tr><td>Csv Cast</td><td>zerodep</td><td>python-decouple</td><td>2.7 µs</td><td>12.5 µs</td><td>372.6K</td><td>80.1K</td><td class="ratio-cell faster">4.7x faster</td></tr>
-<tr><td>Dotenv Lookup</td><td>zerodep</td><td>python-decouple</td><td>737.4 ns</td><td>1.7 µs</td><td>1.36M</td><td>583.7K</td><td class="ratio-cell faster">2.3x faster</td></tr>
-<tr><td>Env Lookup</td><td>zerodep</td><td>python-decouple</td><td>887.8 ns</td><td>1.7 µs</td><td>1.13M</td><td>579.7K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Cast Bool</td><td>zerodep</td><td>python-decouple</td><td>1.3 µs</td><td>2.5 µs</td><td>756.9K</td><td>395.5K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Cast Int</td><td>zerodep</td><td>python-decouple</td><td>1.3 µs</td><td>2.3 µs</td><td>798.4K</td><td>436.6K</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Csv Cast</td><td>zerodep</td><td>python-decouple</td><td>2.7 µs</td><td>12.3 µs</td><td>364.5K</td><td>81.3K</td><td class="ratio-cell faster">4.5x faster</td></tr>
+<tr><td>Dotenv Lookup</td><td>zerodep</td><td>python-decouple</td><td>780.4 ns</td><td>1.7 µs</td><td>1.28M</td><td>596.3K</td><td class="ratio-cell faster">2.1x faster</td></tr>
+<tr><td>Env Lookup</td><td>zerodep</td><td>python-decouple</td><td>912.0 ns</td><td>1.7 µs</td><td>1.10M</td><td>595.9K</td><td class="ratio-cell faster">1.8x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Config Init</td><td>zerodep_env_only</td><td>528.4 ns</td><td>1.89M</td></tr>
-<tr><td>Config Init</td><td>zerodep_with_dotenv</td><td>765.5 µs</td><td>1.3K</td></tr>
-<tr><td>Config Init</td><td>zerodep_with_json</td><td>48.7 µs</td><td>20.5K</td></tr>
-<tr><td>Nested Json Lookup</td><td>zerodep</td><td>2.1 µs</td><td>474.7K</td></tr>
+<tr><td>Config Init</td><td>zerodep_env_only</td><td>569.0 ns</td><td>1.76M</td></tr>
+<tr><td>Config Init</td><td>zerodep_with_dotenv</td><td>845.8 µs</td><td>1.2K</td></tr>
+<tr><td>Config Init</td><td>zerodep_with_json</td><td>51.6 µs</td><td>19.4K</td></tr>
+<tr><td>Nested Json Lookup</td><td>zerodep</td><td>2.2 µs</td><td>462.2K</td></tr>
 </tbody></table>
 
 <script>
@@ -114,13 +114,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [757286.2430694164, 802354.7542636927, 372572.2385123442, 1356200.1575136196, 1126422.238232971],
+        data: [756941.6584870049, 798383.7834283758, 364459.68202769797, 1281445.0166930254, 1096500.401093825],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-decouple" + ' (ops/s)',
-        data: [392741.5971646408, 430907.0163877885, 80122.28772096793, 583717.8992438777, 579699.1557110983],
+        data: [395465.524052242, 436634.7315532424, 81334.99929954867, 596328.6845818554, 595895.727088377],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

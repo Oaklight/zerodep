@@ -134,6 +134,64 @@ yaml         0.3.0    up-to-date
 
 这是维护者命令——在发布前运行，确保所有修改过的模块都已更新版本号。
 
+使用 `--strict` 可在有模块需要 bump 时以退出码 1 退出（适用于 CI）：
+
+```bash
+$ zerodep version-check --strict
+# 全部最新时退出 0，有模块需要 bump 时退出 1
+```
+
+### `zerodep bump`
+
+自动检测变更模块并 bump 其 frontmatter 版本号。默认执行 patch bump；可使用 `--minor` 或 `--major` 进行更大幅度的版本递增。
+
+```bash
+# 自动检测并 patch bump 所有变更模块
+$ zerodep bump
+Module       Old    New
+-----------  -----  -----
+config       0.3.0  0.3.1
+yaml         0.3.0  0.3.1
+
+bumped 2 module(s) (patch)
+regenerating manifest.json ...
+Generated manifest.json with 34 modules
+
+# 对指定模块进行 minor bump
+$ zerodep bump --minor config yaml
+
+# major bump
+$ zerodep bump --major config
+```
+
+Bump 完成后会自动重新生成 manifest。此命令被 [Release 工作流](https://github.com/Oaklight/zerodep/actions/workflows/release.yml) 用于在打 tag 前 bump 版本号。
+
+### `zerodep new`
+
+生成新模块目录的脚手架模板文件。
+
+```bash
+# 使用默认值创建新模块（tier=simple, category=utility）
+$ zerodep new mymodule
+
+# 指定分类和层级
+$ zerodep new mymodule --category network --tier subsystem
+
+# 带依赖
+$ zerodep new mymodule --deps httpclient yaml
+```
+
+将创建以下结构：
+
+```
+mymodule/
+├── mymodule.py               # 包含 frontmatter 和版权信息的模块文件
+└── test_mymodule_correctness.py  # 测试文件脚手架
+```
+
+可用分类：`agent`、`data`、`network`、`text`、`search`、`config`、`cli`、`security`、`utility`。
+可用层级：`simple`、`medium`、`subsystem`。
+
 ### `zerodep dep-graph`
 
 显示模块依赖关系。无参数时显示所有有依赖关系的模块表格；指定模块名时显示详细的依赖信息，包括传递性影响分析。

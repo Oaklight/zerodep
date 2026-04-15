@@ -6,16 +6,38 @@
 
 ## [未发布]
 
+## [2026.4.15] - 2026-04-15
+
+### 新增命令
+
+- **`zerodep bump`**：自动检测变更模块（通过内容哈希与 git tag 对比）并 bump 其 frontmatter 版本号。支持 `--patch`（默认）、`--minor` 和 `--major` 级别。可选指定模块名。Bump 后自动重新生成 `manifest.json`。
+- **`zerodep new`**：生成新模块目录的脚手架模板——包含 frontmatter、版权信息和 `__all__` 的模块源文件，正确性测试文件。支持 `--category`、`--tier` 和 `--deps` 选项。
+
+### 功能增强
+
+- **`zerodep version-check --strict`**：新增标志，当有模块需要 bump 时以退出码 1 退出，支持 CI 集成。
+
+### CI
+
+- **Release 工作流**：新增 GitHub Actions 工作流（`.github/workflows/release.yml`），自动化完整发布流程——lint、测试、自动检测 CalVer 版本、bump 模块版本、更新项目版本、提交、打 tag、创建 GitHub Release。通过 `workflow_dispatch` 触发，支持手动指定版本号。
+- **Benchmark 版本检查**：在 benchmark 工作流中添加非阻塞的 `version-check` 步骤，提醒未 bump 的模块。
+- Benchmark 告警阈值从 150% 提高至 200%，减少 CI 运行环境波动导致的误报。
+
+### 问题修复
+
+- **a2a 模块**：修复 Python 3.11+ 下 `StrEnum` 字符串表示测试（使用 `.value` 属性替代 f-string 格式化）。
+- **httpclient 模块**：benchmark 测试从 `httpbin.org` 切换到本地测试服务器，提升可靠性。
+
 ### 重构
 
 - **复杂度治理**：对 19 个模块进行重构，使所有函数的认知复杂度（complexipy）和圈复杂度（ruff C901）均降至 20 以下。涉及模块：cache、validate、tabulate、dotenv、runner、xml、diff、soup、sse、search、scheduler、depdetect、qr、acp、yaml、toon、protobuf、markdown、httpclient。
 - 采用的重构模式：按类型分派表、try-parse 提取、分阶段分解、辅助函数提取——均在单文件约束下完成。
+- **qr 模块**：更新版权声明，反映大幅重构（不再是直接移植）。
 
-### CI
+### Benchmark
 
-- **Benchmark 工作流**：新增 GitHub Actions 工作流（`.github/workflows/benchmark.yml`），在每次发版和手动触发时运行 `pytest-benchmark`。对比 zerodep 实现与 25+ 参考库的性能。结果存储在 `gh-pages` 分支，性能退化超过 150% 时触发告警。
-- **Benchmark 报告**：自定义 HTML 报告生成器（`scripts/generate_bench_report.py`），按模块分组展示 zerodep 与参考库的性能对比，包含表格和图表，发布至 GitHub Pages。
-- **CI 参考库**：更新 `ci.yml`，补全交叉验证测试所需的全部参考库依赖。
+- 自定义 HTML 报告生成器，支持明暗主题切换和按模块生成独立 benchmark 页面，可嵌入文档。
+- 修正 benchmark 报告颜色阈值和 AES 模块分类。
 
 ### 内部改进
 

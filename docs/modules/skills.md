@@ -8,7 +8,7 @@ A lightweight runtime for the [Agent Skills](https://agentskills.io) specificati
 
 | File | Description | Dependencies |
 |------|-------------|--------------|
-| `skills.py` | Agent Skills runtime | `frontmatter` (sibling), `search` (sibling, optional) |
+| `skills.py` | Agent Skills runtime | `frontmatter` (sibling), `sparse_search` (sibling, optional) |
 
 **Key capabilities:**
 
@@ -29,7 +29,7 @@ cp frontmatter/frontmatter.py your_project/
 cp yaml/yaml.py your_project/
 
 # Optional (for BM25-based selection)
-cp search/sparse_search.py your_project/
+cp sparse_search/sparse_search.py your_project/
 ```
 
 Or install via the CLI:
@@ -240,7 +240,7 @@ Following the Agent Skills spec, this module supports three levels of progressiv
 | Selector | Description | Dependencies |
 |----------|-------------|--------------|
 | `KeywordSelector` | Token overlap on name + description | None (stdlib only) |
-| `BM25Selector` | BM25 ranking on full skill content | Sibling `search` module |
+| `BM25Selector` | BM25 ranking on full skill content | Sibling `sparse_search` module |
 
 Implement the `Selector` protocol to create custom selectors (embedding-based, reranker, LLM-based, etc.).
 

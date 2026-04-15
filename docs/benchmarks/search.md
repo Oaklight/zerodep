@@ -51,7 +51,7 @@ Apple-to-apple performance comparison between zerodep sparse_search and [`rank-b
 
 ```bash
 pip install pytest pytest-benchmark rank-bm25
-pytest search/test_sparse_search_benchmark.py --benchmark-only -v
+pytest sparse_search/test_sparse_search_benchmark.py --benchmark-only -v
 ```
 
 ---

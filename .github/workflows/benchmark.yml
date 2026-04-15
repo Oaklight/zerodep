@@ -1,0 +1,81 @@
+name: Benchmark
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to benchmark (tag, branch, or SHA)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  deployments: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: pip install pytest pytest-asyncio pytest-benchmark
+
+      - name: Install reference libraries
+        continue-on-error: true
+        run: |
+          pip install pycryptodome "qrcode>=7.0" "Pillow>=10.0.0" \
+            httpx python-dotenv PyYAML commentjson "structlog>=24.0.0" \
+            "tenacity>=8.0.0" "tabulate>=0.9.0" "beautifulsoup4>=4.12.0" \
+            "pydantic>=2.0.0" "httpx-sse>=0.4.0" "mistune>=3.0.0" \
+            "unidiff>=0.7.0" "APScheduler>=3.10.0" "schedule>=1.2.0" \
+            "croniter>=1.3.0" "rank-bm25>=0.2.2" "python-frontmatter>=1.1.0" \
+            "python-decouple>=3.8" "cachetools>=5.0.0" "xmltodict>=0.13.0" \
+            "jsonrpcserver>=5.0.0" "protobuf>=4.0.0" "packaging>=24.0"
+          pip install "toon_format @ git+https://github.com/toon-format/toon-python.git" || true
+          pip install "a2a-protocol>=0.1.0" || true
+          pip install "agent-client-protocol>=0.9.0" || true
+
+      - name: Run benchmarks
+        run: |
+          pytest --ignore-glob="*/test_*_correctness.py" \
+                 --ignore-glob=".claude/*" \
+                 --benchmark-json=benchmark-results.json \
+                 --benchmark-only -q
+
+      - name: Determine benchmark name
+        id: bench-name
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "name=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ github.event.inputs.ref }}" ]; then
+            echo "name=${{ github.event.inputs.ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload benchmark artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-${{ steps.bench-name.outputs.name }}
+          path: benchmark-results.json
+
+      - name: Store benchmark results
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: "pytest"
+          output-file-path: benchmark-results.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          auto-push: true
+          alert-threshold: "150%"
+          comment-on-alert: true
+          fail-on-alert: false

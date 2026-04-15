@@ -33,6 +33,7 @@
     "aes": {
       "description": "Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",
       "files": [
+        "aes/__init__.py",
         "aes/aes.py",
         "aes/aes_openssl.py"
       ],

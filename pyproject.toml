@@ -150,7 +150,7 @@ max-complexity = 20
 
 [tool.ruff.lint.per-file-ignores]
 "aes/aes.py" = ["E501"]
-"aes/aes_openssl.py" = ["E501"]
+"aes/aes_python.py" = ["E501"]
 "qr/qr.py" = ["E501"]
 "yaml/yaml.py" = ["E501"]
 "validate/validate.py" = ["E501"]

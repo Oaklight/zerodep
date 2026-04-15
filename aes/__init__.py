@@ -1,9 +1,9 @@
 """AES encryption — OpenSSL-accelerated by default, pure-Python fallback.
 
-On import this package tries to load ``aes_openssl`` (ctypes binding to the
-system *libcrypto*).  If the library is unavailable the pure-Python
-implementation in ``aes`` is used instead.  The public API is identical
-regardless of which backend is active.
+On import this package tries to load ``aes`` (ctypes binding to the system
+*libcrypto*).  If the library is unavailable the pure-Python implementation
+in ``aes_python`` is used instead.  The public API is identical regardless
+of which backend is active.
 
 Check :data:`BACKEND` to see which one was selected at runtime::
 
@@ -29,7 +29,7 @@ __all__ = [
 ]
 
 try:
-    from .aes_openssl import (  # type: ignore[assignment]
+    from .aes import (  # type: ignore[assignment]
         aes128_ecb_decrypt,
         aes128_ecb_encrypt,
         aes_cbc_decrypt,
@@ -45,7 +45,7 @@ try:
 
     BACKEND: str = "openssl"
 except (OSError, ImportError):
-    from .aes import (  # type: ignore[assignment]
+    from .aes_python import (  # type: ignore[assignment]
         aes128_ecb_decrypt,
         aes128_ecb_encrypt,
         aes_cbc_decrypt,

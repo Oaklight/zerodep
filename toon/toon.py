@@ -272,39 +272,43 @@ def _all_objects(arr: list[Any]) -> bool:
 # ── Value normalization ───────────────────────────────────────────────────────
 
 
+def _normalize_float(value: float | Decimal) -> JsonValue:
+    """Normalize a float or Decimal to a JSON-compatible value."""
+    if isinstance(value, Decimal):
+        return None if not value.is_finite() else float(value)
+    if not math.isfinite(value):
+        return None
+    if value == 0.0 and math.copysign(1.0, value) == -1.0:
+        return 0
+    return value
+
+
+def _normalize_collection(value: list | tuple | set | frozenset) -> list:
+    """Normalize a sequence or set to a JSON-compatible list."""
+    if isinstance(value, (set, frozenset)):
+        try:
+            return [_normalize(x) for x in sorted(value)]
+        except TypeError:
+            return [_normalize(x) for x in sorted(value, key=repr)]
+    return [_normalize(x) for x in value]
+
+
 def _normalize(value: Any) -> JsonValue:
     """Normalize Python value to JSON-compatible type."""
     if value is None or isinstance(value, (bool, str)):
         return value
     if isinstance(value, int):
         return value
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            return None
-        if value == 0.0 and math.copysign(1.0, value) == -1.0:
-            return 0
-        return value
-    if isinstance(value, Decimal):
-        return None if not value.is_finite() else float(value)
+    if isinstance(value, (float, Decimal)):
+        return _normalize_float(value)
     if isinstance(value, PurePath):
         return str(value)
-    if isinstance(value, datetime):
+    if isinstance(value, (datetime, date)):
         return value.isoformat()
-    if isinstance(value, date):
-        return value.isoformat()
-    if isinstance(value, list):
-        return [_normalize(x) for x in value]
-    if isinstance(value, tuple):
-        return [_normalize(x) for x in value]
-    if isinstance(value, (set, frozenset)):
-        try:
-            return [_normalize(x) for x in sorted(value)]
-        except TypeError:
-            return [_normalize(x) for x in sorted(value, key=repr)]
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return _normalize_collection(value)
     if isinstance(value, Mapping):
         return {str(k): _normalize(v) for k, v in value.items()}
-    if callable(value):
-        return None
     return None
 
 
@@ -627,6 +631,19 @@ class _Line:
         return not self.content.strip()
 
 
+def _validate_indent(raw: str, indent: int, indent_size: int, line_num: int) -> None:
+    """Check indentation in strict mode: no tabs, indent is a multiple of size."""
+    ws_end = 0
+    while ws_end < len(raw) and raw[ws_end] in (" ", "\t"):
+        ws_end += 1
+    if "\t" in raw[:ws_end]:
+        raise ToonDecodeError(f"Line {line_num}: Tabs not allowed in indentation")
+    if indent > 0 and indent % indent_size != 0:
+        raise ToonDecodeError(
+            f"Line {line_num}: Indent must be multiple of {indent_size}, got {indent}"
+        )
+
+
 def _scan(source: str, indent_size: int, strict: bool) -> list[_Line]:
     """Scan source text into structured lines with depth info."""
     if not source.strip():
@@ -639,18 +656,8 @@ def _scan(source: str, indent_size: int, strict: bool) -> list[_Line]:
             indent += 1
         content = raw[indent:]
         depth = indent // indent_size if indent_size > 0 else 0
-        is_blank = not content.strip()
-        if strict and not is_blank:
-            ws_end = 0
-            while ws_end < len(raw) and raw[ws_end] in (" ", "\t"):
-                ws_end += 1
-            if "\t" in raw[:ws_end]:
-                raise ToonDecodeError(f"Line {num}: Tabs not allowed in indentation")
-            if indent > 0 and indent % indent_size != 0:
-                raise ToonDecodeError(
-                    f"Line {num}: Indent must be multiple of "
-                    f"{indent_size}, got {indent}"
-                )
+        if strict and content.strip():
+            _validate_indent(raw, indent, indent_size, num)
         lines.append(
             _Line(
                 raw=raw,
@@ -758,6 +765,20 @@ def _is_row_line(line: str, delimiter: str) -> bool:
     return ch == delimiter
 
 
+def _dec_kv_value(
+    lines: list[_Line], i: int, ln: _Line, vs: str, strict: bool
+) -> tuple[Any, int]:
+    """Decode the value side of a key-value pair, returning (value, next_index)."""
+    if vs:
+        return _parse_primitive(vs), i + 1
+    # Empty value → nested object; skip children after decoding
+    child = _dec_object(lines, i + 1, ln.depth, strict)
+    j = i + 1
+    while j < len(lines) and lines[j].depth > ln.depth:
+        j += 1
+    return child, j
+
+
 def _dec_object(
     lines: list[_Line], start: int, parent_depth: int, strict: bool
 ) -> dict[str, Any]:
@@ -788,14 +809,7 @@ def _dec_object(
             i += 1
             continue
         key = _parse_key(ks)
-        if not vs:
-            result[key] = _dec_object(lines, i + 1, ln.depth, strict)
-            i += 1
-            while i < len(lines) and lines[i].depth > ln.depth:
-                i += 1
-        else:
-            result[key] = _parse_primitive(vs)
-            i += 1
+        result[key], i = _dec_kv_value(lines, i, ln, vs, strict)
     return result
 
 

@@ -1798,6 +1798,34 @@ def _value_from_dict(info: FieldInfo, raw: Any) -> Any:
     return raw
 
 
+def _make_default_field(default: Any, metadata: Any) -> dataclasses.Field:
+    """Create a dataclass field with a proto3 zero-value default."""
+    if isinstance(default, (list, dict)):
+        return dataclasses.field(
+            default_factory=lambda d=default: type(d)(d),
+            metadata=metadata,
+        )
+    return dataclasses.field(default=default, metadata=metadata)
+
+
+def _apply_proto3_defaults(cls: type) -> None:
+    """Set proto3 zero-value defaults on class fields that lack them."""
+    annotations = get_type_hints(cls, include_extras=True)
+    for attr_name, annotation in annotations.items():
+        if attr_name.startswith("_"):
+            continue
+        current = getattr(cls, attr_name, dataclasses.MISSING)
+        if not isinstance(current, dataclasses.Field):
+            continue
+        if (
+            current.default is not dataclasses.MISSING
+            or current.default_factory is not dataclasses.MISSING
+        ):
+            continue
+        default = _proto3_default(annotation)
+        setattr(cls, attr_name, _make_default_field(default, current.metadata))
+
+
 def message(cls: type) -> type:
     """Decorator that turns a class into a proto3 message.
 
@@ -1817,39 +1845,8 @@ def message(cls: type) -> type:
     Returns:
         The decorated class with proto3 capabilities.
     """
-    # Apply @dataclass if needed
     if not dataclasses.is_dataclass(cls):
-        # Set defaults for fields without explicit defaults
-        # We need to handle proto3 zero-value defaults
-        annotations = get_type_hints(cls, include_extras=True)
-        for attr_name, annotation in annotations.items():
-            if attr_name.startswith("_"):
-                continue
-            current = getattr(cls, attr_name, dataclasses.MISSING)
-            if isinstance(current, dataclasses.Field):
-                # Already a field() — check if it needs a default
-                if (
-                    current.default is dataclasses.MISSING
-                    and current.default_factory is dataclasses.MISSING
-                ):
-                    # Determine proto3 zero-value default
-                    default = _proto3_default(annotation)
-                    if isinstance(default, (list, dict)):
-                        new_field = dataclasses.field(
-                            default_factory=lambda d=default: type(d)(d),
-                            metadata=current.metadata,
-                        )
-                    else:
-                        new_field = dataclasses.field(
-                            default=default,
-                            metadata=current.metadata,
-                        )
-                    setattr(cls, attr_name, new_field)
-            elif current is dataclasses.MISSING:
-                # No field() annotation and no default — skip, will be handled
-                # by dataclass itself
-                pass
-
+        _apply_proto3_defaults(cls)
         cls = dataclasses.dataclass(cls)
 
     # Build descriptor

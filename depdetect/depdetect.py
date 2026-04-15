@@ -363,6 +363,30 @@ def _resolve_import_name(pip_name: str) -> str:
     return pip_name.replace("-", "_")
 
 
+def _mapping_from_packages_distributions() -> dict[str, str]:
+    """Build import→pip mapping using Python 3.11+ shortcut."""
+    mapping: dict[str, str] = {}
+    pkgs = importlib.metadata.packages_distributions()
+    for import_name, dist_names in pkgs.items():
+        if dist_names:
+            mapping[import_name] = dist_names[0]
+    return mapping
+
+
+def _mapping_from_distributions() -> dict[str, str]:
+    """Build import→pip mapping via manual iteration (Python 3.10)."""
+    mapping: dict[str, str] = {}
+    for dist in importlib.metadata.distributions():
+        dist_name = dist.metadata.get("Name", "")
+        top_level = dist.read_text("top_level.txt")
+        if top_level:
+            for line in top_level.strip().splitlines():
+                name = line.strip()
+                if name:
+                    mapping[name] = dist_name
+    return mapping
+
+
 def _build_import_to_pip_from_metadata() -> dict[str, str]:
     """Build import→pip mapping from installed package metadata.
 
@@ -372,27 +396,12 @@ def _build_import_to_pip_from_metadata() -> dict[str, str]:
     Returns:
         Dict mapping import names to pip distribution names.
     """
-    mapping: dict[str, str] = {}
     try:
         if sys.version_info >= (3, 11):
-            # packages_distributions() returns {import_name: [dist_name, ...]}
-            pkgs = importlib.metadata.packages_distributions()
-            for import_name, dist_names in pkgs.items():
-                if dist_names:
-                    mapping[import_name] = dist_names[0]
-        else:
-            # Python 3.10: manual iteration
-            for dist in importlib.metadata.distributions():
-                dist_name = dist.metadata.get("Name", "")
-                top_level = dist.read_text("top_level.txt")
-                if top_level:
-                    for line in top_level.strip().splitlines():
-                        name = line.strip()
-                        if name:
-                            mapping[name] = dist_name
+            return _mapping_from_packages_distributions()
+        return _mapping_from_distributions()
     except Exception:
-        pass  # graceful degradation
-    return mapping
+        return {}  # graceful degradation
 
 
 def _get_import_to_pip_cache() -> dict[str, str]:
@@ -404,6 +413,28 @@ def _get_import_to_pip_cache() -> dict[str, str]:
 
 
 # ── Parsing Functions ──
+
+
+def _collect_from_import(
+    node: ast.Import, stdlib: frozenset[str], imports: set[str]
+) -> None:
+    """Collect top-level package names from an ``import`` statement."""
+    for alias in node.names:
+        top = alias.name.split(".")[0]
+        if top not in stdlib:
+            imports.add(top)
+
+
+def _collect_from_import_from(
+    node: ast.ImportFrom, stdlib: frozenset[str], imports: set[str]
+) -> None:
+    """Collect top-level package name from a ``from ... import`` statement."""
+    if node.level and node.level > 0:
+        return  # relative import
+    if node.module:
+        top = node.module.split(".")[0]
+        if top not in stdlib:
+            imports.add(top)
 
 
 def parse_imports(
@@ -445,18 +476,9 @@ def parse_imports(
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
-            for alias in node.names:
-                top = alias.name.split(".")[0]
-                if top not in stdlib:
-                    imports.add(top)
+            _collect_from_import(node, stdlib, imports)
         elif isinstance(node, ast.ImportFrom):
-            # Skip relative imports
-            if node.level and node.level > 0:
-                continue
-            if node.module:
-                top = node.module.split(".")[0]
-                if top not in stdlib:
-                    imports.add(top)
+            _collect_from_import_from(node, stdlib, imports)
 
     return imports
 

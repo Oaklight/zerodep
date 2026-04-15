@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-04-10T13:49:30.320316+00:00",
+  "generated": "2026-04-15T09:45:45.456263+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -13,7 +13,7 @@
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "7171e83cee4fda3865a78d996968676c49b6fffbabb996f0b35278a1e6825c49"
     },
     "acp": {
@@ -21,14 +21,14 @@
       "files": [
         "acp/acp.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [
         "jsonrpc"
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "25abb6d41c81ca82c33f42999bca1c464ef98b4078ce923ac6157beb31feb535"
+      "last_updated": "2026-04-15T13:03:30+08:00",
+      "content_hash": "6c7dc3a97e136d0d949f34520952ef31e82f00f882320d997149461e78d5efa6"
     },
     "aes": {
       "description": "Pure-Python AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",
@@ -40,7 +40,7 @@
       "deps": [],
       "tier": "medium",
       "category": "crypto",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "5418668267d5b95354058d5b7c84ac0349ca0fe6350190321b6df670e00c9227"
     },
     "ansi": {
@@ -52,7 +52,7 @@
       "deps": [],
       "tier": "simple",
       "category": "terminal",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "000669bb50fa20ae6f7c4318b9e83f8f05437d00376712f91c9a29a6111f2592"
     },
     "cache": {
@@ -60,12 +60,12 @@
       "files": [
         "cache/cache.py"
       ],
-      "version": "0.2.0",
+      "version": "0.2.1",
       "deps": [],
       "tier": "subsystem",
       "category": "utility",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "12fb372616d1985a218570aee93160de8d44f5a9b1cea5d9d83af9c40fdee9fb"
+      "last_updated": "2026-04-15T12:54:01+08:00",
+      "content_hash": "5161daf28871933063b17526a49429dacea22f6934cd4b2439cefa02a97bdd3d"
     },
     "config": {
       "description": "Unified configuration loader — zero dependencies, stdlib only, Python 3.10+",
@@ -80,7 +80,7 @@
       ],
       "tier": "subsystem",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "c8f8c186275ea8b78da47a199347dbb33dba8abeb9dd5200944ebe4ea5afcf1f"
     },
     "depdetect": {
@@ -88,36 +88,36 @@
       "files": [
         "depdetect/depdetect.py"
       ],
-      "version": "0.4.0",
+      "version": "0.4.1",
       "deps": [],
       "tier": "medium",
       "category": "devtools",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "6385a4a817ebcd41ca2942a6609aa5b5b6e070075d747717a6c05a11af8c2b58"
+      "last_updated": "2026-04-15T12:54:36+08:00",
+      "content_hash": "7e70ad2578f9db0132468ad9591939182fd859a6519f3a5b9141c62674509b82"
     },
     "diff": {
       "description": "Unified diff parser, patch applicator, and three-way merge — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "diff/diff.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [],
       "tier": "simple",
       "category": "devtools",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "db2f8b2bff629b9abe1054651c44cc7598cf5e5390cc27a4bd4eefa71b0e36ea"
+      "last_updated": "2026-04-15T12:55:25+08:00",
+      "content_hash": "32d978f21594cfa95b80a7bb155b294d0ade288588163e59812fa8376093a577"
     },
     "dotenv": {
       "description": ".env file parser and loader — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "dotenv/dotenv.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [],
       "tier": "simple",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "b5928309d3ac746d9471075e7d8428cedfa43afc816c2dd2d99d912f1fbeec55"
+      "last_updated": "2026-04-15T12:53:26+08:00",
+      "content_hash": "96a25bac569969a26f9ca83869855b6480ca3aae433bd8873ec9f81f57d04a21"
     },
     "filelock": {
       "description": "Cross-process file locking (Unix ``fcntl`` / Windows ``msvcrt``)",
@@ -128,7 +128,7 @@
       "deps": [],
       "tier": "simple",
       "category": "utility",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "8f26cd2845d54778baaaecff3c8dd2b293e6f48445385283e6982491278289df"
     },
     "frontmatter": {
@@ -142,7 +142,7 @@
       ],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "d05035b8d2edeb47c1007a8e4fba6ae3a74fab0bf8630042f228e45550bb645f"
     },
     "httpclient": {
@@ -150,12 +150,12 @@
       "files": [
         "httpclient/httpclient.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "f24c9c49f619f071f4a32db345d889ba733f6447531ae62ea727bda55fbbc172"
+      "last_updated": "2026-04-15T13:25:30+08:00",
+      "content_hash": "368292df96dffcbf07bde26a7a7c2f15c90639e3b0f73bdf4dbc3443cd4347fc"
     },
     "jsonc": {
       "description": "JSONC (JSON with Comments) parser — zero dependencies, stdlib only, Python 3.10+",
@@ -166,7 +166,7 @@
       "deps": [],
       "tier": "simple",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "961c4038993865adfd4302ee3b2e7cc74f280ab9d8ef9a4de9295a72dcdcc416"
     },
     "jsonrpc": {
@@ -178,7 +178,7 @@
       "deps": [],
       "tier": "medium",
       "category": "network",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "402d88f2ab1d6736a37a69a6b6269ea9e450e3dd22e9dd49c7d52b570b8b6dda"
     },
     "markdown": {
@@ -186,12 +186,12 @@
       "files": [
         "markdown/markdown.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [],
       "tier": "medium",
       "category": "terminal",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "8ffce9911d78dbb69282215915c7f001f57c1e4bc9309c0d20c3f0bb7baffd1e"
+      "last_updated": "2026-04-15T13:16:54+08:00",
+      "content_hash": "b26d13e113404ced28490ce69a874e499154dd6b8096bd268427364b4a847c41"
     },
     "persistdict": {
       "description": "Persistent dictionary with pluggable backends",
@@ -202,7 +202,7 @@
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "91d5d69ef1bbd4c809620defc54eecd3461e134cea41a6961f04f79fbf4f0fd4"
     },
     "prompt": {
@@ -214,7 +214,7 @@
       "deps": [],
       "tier": "simple",
       "category": "terminal",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "8c6a8d7c4f8a346d7cc3b3169325fcda466e18ac6792b5c8c4d5919d55fcdf91"
     },
     "protobuf": {
@@ -222,24 +222,24 @@
       "files": [
         "protobuf/protobuf.py"
       ],
-      "version": "0.4.0",
+      "version": "0.4.1",
       "deps": [],
       "tier": "subsystem",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "f12d57337154d54b0c8d0d0bedd6e2b1ab01ac40db07e31bddcbf4b031707e99"
+      "last_updated": "2026-04-15T13:21:33+08:00",
+      "content_hash": "e0b1d766b2167965fb5af23a7178d6e1e7bb8698cd44f41249fa62b8a91cc579"
     },
     "qr": {
       "description": "QR Code generator library (Python)",
       "files": [
         "qr/qr.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [],
       "tier": "simple",
       "category": "utility",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "069810cca6ff37c2b8f6025baa740f8379a375af74413d3ce7c9256a29f21264"
+      "last_updated": "2026-04-15T17:41:04+08:00",
+      "content_hash": "dcca726ed431bc0ad27b41d3fa256cd64cb0dbb2770910c3c806cc500e71d8a1"
     },
     "retry": {
       "description": "Zero-dependency retry with configurable backoff strategies",
@@ -250,7 +250,7 @@
       "deps": [],
       "tier": "simple",
       "category": "utility",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "e00d9eed010c2f93ddc51674f7dc4f4f2233e0d619e44b2d01582d09be0684bb"
     },
     "runner": {
@@ -258,36 +258,36 @@
       "files": [
         "runner/runner.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [],
       "tier": "subsystem",
       "category": "process",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "dbd835f490d6c3b078b8c1712b8ceee84aa257f16e8f230e6b7e4f87f57aff1c"
+      "last_updated": "2026-04-15T12:54:43+08:00",
+      "content_hash": "b4864085c534273da7734f69bcbda528ba1c073774db099d146afb32e632bf79"
     },
     "scheduler": {
       "description": "Zero-dependency in-process task scheduler with cron support",
       "files": [
         "scheduler/scheduler.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [],
       "tier": "subsystem",
       "category": "process",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "be2d379c6479eee420a777e2153ba1a5a78dababed016269a76764b4a462d45b"
+      "last_updated": "2026-04-15T12:54:13+08:00",
+      "content_hash": "fe2d6d5a1037a99e48102f5e5d983e706decca2b1616de31d804d9ef333752ea"
     },
     "search": {
       "description": "Zero-dependency sparse text search with BM25 family and TF-IDF ranking",
       "files": [
         "search/sparse_search.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [],
       "tier": "medium",
       "category": "utility",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "2b844f52f446de5e75a9745c55f818b513c64e1b13c06e6628642d1828f6e6d0"
+      "last_updated": "2026-04-15T12:54:59+08:00",
+      "content_hash": "98bfa266b43782668ebfc26ff891e2cf555762d539a0b724090ae6629a45abde"
     },
     "semver": {
       "description": "PEP 440 version parser and comparator -- zero dependencies, stdlib only",
@@ -298,7 +298,7 @@
       "deps": [],
       "tier": "simple",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "b1bc735c260719f90ab48763de22fb7e4af90b11211e7175b4e97795d89fde15"
     },
     "skills": {
@@ -313,7 +313,7 @@
       ],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "ae4df30192fcdff8f611851ac59f99374a317e3d9a6d74d9250286a6b6548271"
     },
     "soup": {
@@ -321,26 +321,26 @@
       "files": [
         "soup/soup.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "0dc7f9f03670faf067e5020454023b08a633a9ef24bbf61748c2cd13d4852b6a"
+      "last_updated": "2026-04-15T12:54:17+08:00",
+      "content_hash": "fc27dceec6932994622fc171a8284fab93f2ae6c2453ce822c46535b08967259"
     },
     "sse": {
       "description": "Zero-dependency SSE (Server-Sent Events) client",
       "files": [
         "sse/sse.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [
         "httpclient"
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "89a2a252039d0215f6f043ae052611a8dbe7b5b1a858f2d2a26cd0195e2e13b0"
+      "last_updated": "2026-04-15T12:53:46+08:00",
+      "content_hash": "1647daea59f9efb7ab87067d93d65cca0c479641a530a08b9688b5313044bacb"
     },
     "structlog": {
       "description": "Zero-dependency structured logging with pretty console output",
@@ -351,7 +351,7 @@
       "deps": [],
       "tier": "medium",
       "category": "utility",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "d2616b1a69fe42b1367d413888c69dd2026c00e58c36e1e83acda77fd3633ed6"
     },
     "tabulate": {
@@ -359,36 +359,36 @@
       "files": [
         "tabulate/tabulate.py"
       ],
-      "version": "0.1.0",
+      "version": "0.1.1",
       "deps": [],
       "tier": "medium",
       "category": "terminal",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "1d885ba8f2ab7ca96b36518fa896a4f73a42e3dee9b39e45e8c184f2a46cd1a6"
+      "last_updated": "2026-04-15T12:54:10+08:00",
+      "content_hash": "effd04109a31f5ae7b87333d4207a70ceda712ef5e5718acc7e97691d7574667"
     },
     "toon": {
       "description": "TOON encoder/decoder — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "toon/toon.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [],
       "tier": "simple",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "010abddaa53971926ff83c6c278be96970c8d391cfa55dec2101e5f7feaba665"
+      "last_updated": "2026-04-15T13:18:10+08:00",
+      "content_hash": "a11d872c486ab693fd668e1b19690a534b426f921f9ec9b8b832f5042e04dbc0"
     },
     "validate": {
       "description": "Zero-dependency runtime validator for TypedDict and dataclass types",
       "files": [
         "validate/validate.py"
       ],
-      "version": "0.4.1",
+      "version": "0.4.2",
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-10T18:07:31+08:00",
-      "content_hash": "f5c2ca582afc03169aa3cf6262221a79d1885063115063af64a616d8883034ea"
+      "last_updated": "2026-04-15T12:53:58+08:00",
+      "content_hash": "9346085a3bb68fd21e5e266748c52b55da6b8c2d71a2ab059bf54015b14d436a"
     },
     "vcs": {
       "description": "VCS CLI wrapper — zero dependencies, stdlib only, Python 3.10+",
@@ -401,7 +401,7 @@
       ],
       "tier": "subsystem",
       "category": "devtools",
-      "last_updated": "2026-04-09T22:14:17+08:00",
+      "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "bc7cf7b24daf282ae4311e432a62c192d1570bce95985c211948c7a25837e225"
     },
     "xml": {
@@ -409,24 +409,24 @@
       "files": [
         "xml/xml.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "60e0617598f6ae0fea9a777663a4717a4d380d01d71633549411427ac291aa32"
+      "last_updated": "2026-04-15T12:53:15+08:00",
+      "content_hash": "bc42c60dad60e7a0af5928772b31ff61c07756c47020404eee40b1f67c18bc3e"
     },
     "yaml": {
       "description": "YAML parser and serializer (common subset) — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "yaml/yaml.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [],
       "tier": "subsystem",
       "category": "data",
-      "last_updated": "2026-04-09T22:14:17+08:00",
-      "content_hash": "eb2b62b488148187efbe6dcd12ce91b2feea3bbc7fe9d6781b4c4d5354675efa"
+      "last_updated": "2026-04-15T13:17:10+08:00",
+      "content_hash": "5fd31be65d0c15cc82ef518e7b6e9cb553f8a7722a70c1ae6f9cda0999c92344"
     }
   }
 }

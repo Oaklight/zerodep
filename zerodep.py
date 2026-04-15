@@ -13,7 +13,7 @@ Requires Python 3.10+, zero external dependencies.
 
 from __future__ import annotations
 
-__version__ = "2026.4.11"
+__version__ = "2026.4.15"
 
 import argparse
 import ast

@@ -204,39 +204,50 @@ class _DictSAXHandler:
         if self.xml_attribs:
             self.item.update(attr_entries)
 
-    def end_element(self, full_name: str) -> None:
-        name = self._build_name(full_name)
+    def _join_text(self) -> str | None:
+        """Join accumulated character data and optionally strip whitespace."""
         text = (
             self.cdata_separator.join(self.data).strip()
             if self.strip_whitespace
             else self.cdata_separator.join(self.data)
         )
-        if not text:
-            text = None
+        return text if text else None
 
-        # Determine the value of this element
+    def _build_element_value(self, text: str | None) -> Any:
+        """Determine the value of the current element from item, text, and attrs."""
         if self.item:
-            # Element has children
             if text is not None:
                 self.item[self.cdata_key] = text
-            value: Any = self.item
-        elif text is not None:
-            # Element has only text content
+            return self.item
+        if text is not None:
             if self.force_cdata:
                 value = self.dict_constructor()
                 value[self.cdata_key] = text
+                return value
+            return text
+        # Empty element — check for attributes
+        if self.xml_attribs and self.path and self.path[-1][1]:
+            value = self.item if self.item else self.dict_constructor()
+            if not value:
+                value.update(self.path[-1][1])
+            return value
+        return None
+
+    def _merge_value(self, key: str, value: Any) -> None:
+        """Merge a child value into the current parent item."""
+        if key in self.item:
+            existing = self.item[key]
+            if isinstance(existing, list):
+                existing.append(value)
             else:
-                value = text
+                self.item[key] = [existing, value]
         else:
-            # Empty element
-            if self.xml_attribs and self.path and self.path[-1][1]:
-                # Has attributes but no text/children
-                value = self.item if self.item else self.dict_constructor()
-                if not value:
-                    # Merge attributes into empty dict
-                    value.update(self.path[-1][1])
-            else:
-                value = None
+            self.item[key] = value
+
+    def end_element(self, full_name: str) -> None:
+        name = self._build_name(full_name)
+        text = self._join_text()
+        value = self._build_element_value(text)
 
         # Pop back to parent
         self.item, self.data = self.stack.pop()
@@ -256,16 +267,7 @@ class _DictSAXHandler:
             if not isinstance(value, list):
                 value = [value]
 
-        # Merge into parent
-        if name in self.item:
-            existing = self.item[name]
-            if isinstance(existing, list):
-                existing.append(value)
-            else:
-                self.item[name] = [existing, value]
-        else:
-            self.item[name] = value
-
+        self._merge_value(name, value)
         self.path.pop()
 
     def characters(self, data: str) -> None:
@@ -439,26 +441,134 @@ class _XMLGen(_XMLGenerator):
         self._write(f"<!--{text}-->")
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class _EmitOpts:
+    """Bundled options for the XML emission helpers."""
+
+    attr_prefix: str
+    cdata_key: str
+    preprocessor: Callable | None
+    pretty: bool
+    newl: str
+    indent: str
+    namespace_separator: str
+    namespaces: dict[str, str] | None
+    full_document: bool
+    comment_key: str
+
+
+def _classify_dict_items(
+    d: dict,
+    opts: _EmitOpts,
+) -> tuple[dict[str, str], list[tuple[str, Any]], str | None, list[str]]:
+    """Partition dict entries into attributes, children, text, and comments.
+
+    Returns:
+        Tuple of (attrs, children, text, comments).
+    """
+    attrs: dict[str, str] = {}
+    children: list[tuple[str, Any]] = []
+    text: str | None = None
+    comments: list[str] = []
+
+    for k, v in d.items():
+        if k == opts.cdata_key:
+            text = v
+        elif k == opts.comment_key:
+            if isinstance(v, list):
+                comments.extend(v)
+            else:
+                comments.append(v)
+        elif k.startswith(opts.attr_prefix):
+            attr_name = k[len(opts.attr_prefix) :]
+            _validate_name(attr_name, "attribute")
+            attrs[attr_name] = str(v)
+        else:
+            children.append((k, v))
+
+    return attrs, children, text, comments
+
+
+def _apply_ns_attrs(
+    key: str,
+    attrs: dict[str, str],
+    opts: _EmitOpts,
+) -> None:
+    """Add xmlns attribute if the element key contains a known namespace prefix."""
+    if not opts.namespaces or opts.namespace_separator not in key:
+        return
+    parts = key.split(opts.namespace_separator, 1)
+    if len(parts) == 2:
+        ns = parts[0]
+        for uri, prefix in opts.namespaces.items():
+            if prefix == ns:
+                attrs[f"xmlns:{ns}"] = uri
+                break
+
+
+def _emit_dict(
+    key: str,
+    v: dict,
+    content_handler: _XMLGen,
+    opts: _EmitOpts,
+    depth: int,
+) -> None:
+    """Emit a single dict value as an XML element with attrs, text, and children."""
+    attrs, children, text, comments = _classify_dict_items(v, opts)
+
+    if opts.pretty and depth > 0:
+        content_handler.ignorableWhitespace(opts.indent * depth)
+
+    _apply_ns_attrs(key, attrs, opts)
+    content_handler.startElement(key, _AttributesImpl(attrs))
+
+    if text is not None:
+        content_handler.characters(str(text))
+
+    for comment_text in comments:
+        content_handler.comment(str(comment_text))
+
+    if children:
+        if opts.pretty:
+            content_handler.ignorableWhitespace(opts.newl)
+        for child_key, child_value in children:
+            _emit(child_key, child_value, content_handler, opts=opts, depth=depth + 1)
+        if opts.pretty:
+            content_handler.ignorableWhitespace(opts.indent * depth)
+
+    content_handler.endElement(key)
+    if opts.pretty:
+        content_handler.ignorableWhitespace(opts.newl)
+
+
+def _emit_scalar(
+    key: str,
+    v: Any,
+    content_handler: _XMLGen,
+    opts: _EmitOpts,
+    depth: int,
+) -> None:
+    """Emit a scalar value as a simple text element."""
+    if opts.pretty and depth > 0:
+        content_handler.ignorableWhitespace(opts.indent * depth)
+    content_handler.startElement(key, _AttributesImpl({}))
+    content_handler.characters(str(v))
+    content_handler.endElement(key)
+    if opts.pretty:
+        content_handler.ignorableWhitespace(opts.newl)
+
+
 def _emit(
     key: str,
     value: Any,
     content_handler: _XMLGen,
     *,
-    attr_prefix: str,
-    cdata_key: str,
+    opts: _EmitOpts,
     depth: int,
-    preprocessor: Callable | None,
-    pretty: bool,
-    newl: str,
-    indent: str,
-    namespace_separator: str,
-    namespaces: dict[str, str] | None,
-    full_document: bool,
-    comment_key: str,
 ) -> None:
     """Recursively emit XML elements via SAX content handler."""
-    if preprocessor is not None:
-        result = preprocessor(key, value)
+    if opts.preprocessor is not None:
+        result = opts.preprocessor(key, value)
         if result is None:
             return
         key, value = result
@@ -469,86 +579,11 @@ def _emit(
     for v in value:
         if v is None:
             v = {}  # noqa: PLW2901
+        _validate_name(key)
         if isinstance(v, dict):
-            _validate_name(key)
-            attrs = {}
-            children = []
-            text = None
-            comments = []
-
-            for k2, v2 in v.items():
-                if k2 == cdata_key:
-                    text = v2
-                elif k2 == comment_key:
-                    if isinstance(v2, list):
-                        comments.extend(v2)
-                    else:
-                        comments.append(v2)
-                elif k2.startswith(attr_prefix):
-                    attr_name = k2[len(attr_prefix) :]
-                    _validate_name(attr_name, "attribute")
-                    attrs[attr_name] = str(v2)
-                else:
-                    children.append((k2, v2))
-
-            if pretty and depth > 0:
-                content_handler.ignorableWhitespace(indent * depth)
-
-            # Handle namespace in element name for output
-            if namespaces and namespace_separator in key:
-                parts = key.split(namespace_separator, 1)
-                if len(parts) == 2:
-                    ns, local = parts
-                    for uri, prefix in namespaces.items():
-                        if prefix == ns:
-                            attrs[f"xmlns:{ns}"] = uri
-                            break
-
-            content_handler.startElement(key, _AttributesImpl(attrs))
-
-            if text is not None:
-                content_handler.characters(str(text))
-
-            for comment_text in comments:
-                content_handler.comment(str(comment_text))
-
-            if children:
-                if pretty:
-                    content_handler.ignorableWhitespace(newl)
-                for child_key, child_value in children:
-                    _emit(
-                        child_key,
-                        child_value,
-                        content_handler,
-                        attr_prefix=attr_prefix,
-                        cdata_key=cdata_key,
-                        depth=depth + 1,
-                        preprocessor=preprocessor,
-                        pretty=pretty,
-                        newl=newl,
-                        indent=indent,
-                        namespace_separator=namespace_separator,
-                        namespaces=namespaces,
-                        full_document=full_document,
-                        comment_key=comment_key,
-                    )
-                if pretty:
-                    content_handler.ignorableWhitespace(indent * depth)
-
-            content_handler.endElement(key)
-            if pretty:
-                content_handler.ignorableWhitespace(newl)
-
+            _emit_dict(key, v, content_handler, opts, depth)
         else:
-            # Scalar value — emit as text element
-            _validate_name(key)
-            if pretty and depth > 0:
-                content_handler.ignorableWhitespace(indent * depth)
-            content_handler.startElement(key, _AttributesImpl({}))
-            content_handler.characters(str(v))
-            content_handler.endElement(key)
-            if pretty:
-                content_handler.ignorableWhitespace(newl)
+            _emit_scalar(key, v, content_handler, opts, depth)
 
 
 def unparse(
@@ -618,14 +653,9 @@ def unparse(
     if pretty:
         content_handler.ignorableWhitespace(newl)
 
-    root_key = root_keys[0]
-    _emit(
-        root_key,
-        input_dict[root_key],
-        content_handler,
+    opts = _EmitOpts(
         attr_prefix=attr_prefix,
         cdata_key=cdata_key,
-        depth=0,
         preprocessor=preprocessor,
         pretty=pretty,
         newl=newl,
@@ -635,6 +665,9 @@ def unparse(
         full_document=full_document,
         comment_key=comment_key,
     )
+
+    root_key = root_keys[0]
+    _emit(root_key, input_dict[root_key], content_handler, opts=opts, depth=0)
 
     if must_return:
         return output.getvalue()  # type: ignore[union-attr]

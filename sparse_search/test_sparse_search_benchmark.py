@@ -1,7 +1,7 @@
 """Benchmarks comparing sparse_search against rank-bm25.
 
 Requires: pip install rank-bm25
-Run: pytest search/test_sparse_search_benchmark.py -v
+Run: pytest sparse_search/test_sparse_search_benchmark.py -v
 """
 
 from __future__ import annotations
@@ -10,6 +10,7 @@ import random
 import string
 
 import pytest
+
 from sparse_search import SparseIndex, _default_tokenize
 
 rank_bm25 = pytest.importorskip("rank_bm25")

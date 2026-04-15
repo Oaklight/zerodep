@@ -76,7 +76,7 @@ Each module is a **self-contained single `.py` file** — copy it into your proj
 
 | Module | Description | Benchmark Against |
 |--------|-------------|-------------------|
-| `search/` | BM25/BM25+/BM25L/BM25F + TF-IDF full-text search with Bayesian calibration | `rank-bm25` |
+| `sparse_search/` | BM25/BM25+/BM25L/BM25F + TF-IDF full-text search with Bayesian calibration | `rank-bm25` |
 
 **Configuration**
 

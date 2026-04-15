@@ -278,10 +278,10 @@
       "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "fe2d6d5a1037a99e48102f5e5d983e706decca2b1616de31d804d9ef333752ea"
     },
-    "search": {
+    "sparse_search": {
       "description": "Zero-dependency sparse text search with BM25 family and TF-IDF ranking",
       "files": [
-        "search/sparse_search.py"
+        "sparse_search/sparse_search.py"
       ],
       "version": "0.3.1",
       "deps": [],
@@ -310,7 +310,7 @@
       "version": "0.4.0",
       "deps": [
         "frontmatter",
-        "search"
+        "sparse_search"
       ],
       "tier": "medium",
       "category": "data",

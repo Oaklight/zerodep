@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from sparse_search import (
     SparseIndex,
     _default_tokenize,

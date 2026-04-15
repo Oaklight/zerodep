@@ -25,7 +25,7 @@ Modules with implementation, correctness tests, and benchmarks.
 | `vcs/` | — | VCS CLI wrapper (Git/SVN/Hg backend protocol), status/log/blame/diff, subprocess-based | — |
 | `ansi/` | — | ANSI escape code primitives, fg/bg/style helpers, color depth detection, strip_ansi, visible_len, cursor control | — |
 | `scheduler/` | APScheduler | In-process task scheduler, 5-field cron expressions, interval/one-shot triggers, async jobs, per-job callbacks, event listeners, job pause/resume, misfire grace time | APScheduler, croniter, schedule |
-| `search/sparse_search` | rank-bm25 | BM25/BM25+/BM25L/BM25F + TF-IDF+Cosine, inverted index with reverse index for fast delete, dynamic add/remove/update, metadata filtering, JSON/SQLite persistence, pluggable tokenizer | rank-bm25 |
+| `sparse_search/sparse_search` | rank-bm25 | BM25/BM25+/BM25L/BM25F + TF-IDF+Cosine, inverted index with reverse index for fast delete, dynamic add/remove/update, metadata filtering, JSON/SQLite persistence, pluggable tokenizer | rank-bm25 |
 | `frontmatter/` | python-frontmatter | Parse and serialize YAML/TOML/JSON file-header metadata, Document model, loads/dumps/load/dump API, auto-detect format | python-frontmatter |
 | `config/` | python-decouple, dynaconf (subset) | Unified config loading from env vars, .env files, JSON/JSONC/YAML/TOML/INI files, type coercion (bool/int/float/list), Csv/Choices helpers, prefix support, nested key access | python-decouple |
 | `runner/` | sh, plumbum (subset) | Structured subprocess execution, sync + async, streaming output (callbacks + iterator), SIGTERM→SIGKILL timeout escalation, environment isolation, command allowlist/blocklist, cross-platform | sh |

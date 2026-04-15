@@ -1,6 +1,6 @@
 # /// zerodep
 # version = "0.4.0"
-# deps = ["frontmatter", "search"]
+# deps = ["frontmatter", "sparse_search"]
 # tier = "medium"
 # category = "data"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
@@ -114,7 +114,7 @@ def _load_frontmatter():
 _HAS_SEARCH = False
 
 try:
-    _ensure_sibling_path("search")
+    _ensure_sibling_path("sparse_search")
     sys.modules.pop("sparse_search", None)
     from sparse_search import Result as _SearchResult  # noqa: F401
     from sparse_search import SparseIndex as _SparseIndex
@@ -558,7 +558,7 @@ class BM25Selector:
         if not _HAS_SEARCH:
             raise ImportError(
                 "BM25Selector requires the sibling search module. "
-                "Copy search/sparse_search.py into your project."
+                "Copy sparse_search/sparse_search.py into your project."
             )
         self._index: _SparseIndex | None = None
         self._skill_map: dict[str, Skill] = {}

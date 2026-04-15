@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sse Benchmark — zerodep</title>
+<style>:root, [data-theme="light"] {
+  --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
+  --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
+  --accent: #6f42c1; --meta: #666;
+}
+[data-theme="dark"] {
+  --bg: #1a1a2e; --fg: #e0e0e0; --card-bg: #16213e; --border: #334155;
+  --green: #4ade80; --red: #f87171; --yellow: #facc15; --blue: #60a5fa;
+  --accent: #a78bfa; --meta: #999;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a2e; --fg: #e0e0e0; --card-bg: #16213e; --border: #334155;
+    --green: #4ade80; --red: #f87171; --yellow: #facc15; --blue: #60a5fa;
+    --accent: #a78bfa; --meta: #999;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg); color: var(--fg); line-height: 1.6;
+  max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;
+  transition: background .2s, color .2s;
+}
+h1 { font-size: 1.8rem; margin-bottom: .5rem; }
+h2 {
+  font-size: 1.4rem; margin: 2rem 0 1rem;
+  border-bottom: 2px solid var(--accent); padding-bottom: .3rem;
+}
+h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
+.meta { color: var(--meta); font-size: .9rem; margin-bottom: 2rem; }
+.header-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.theme-toggle {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: .4rem .8rem; cursor: pointer;
+  color: var(--fg); font-size: .85rem;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+.summary-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem; margin-bottom: 2rem;
+}
+.summary-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; text-align: center;
+}
+.summary-card .num { font-size: 2rem; font-weight: bold; }
+.summary-card .label { font-size: .85rem; color: var(--meta); }
+table {
+  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  font-size: .9rem;
+}
+th, td {
+  padding: .5rem .75rem; border: 1px solid var(--border);
+  text-align: left;
+}
+th { background: var(--card-bg); font-weight: 600; white-space: nowrap; }
+td { white-space: nowrap; }
+.ratio-cell { font-weight: bold; }
+.faster { color: var(--green); }
+.slower { color: var(--red); }
+.similar { color: var(--yellow); }
+.chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+  max-height: 450px;
+}
+.module-section { margin-bottom: 3rem; }
+.standalone-table { margin-top: 1rem; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+<div class="header-row">
+<h1>sse</h1>
+<button class="theme-toggle" id="theme-toggle">☾ Dark</button>
+</div>
+<p class="meta">Version: e888ae5 | Commit: e888ae50 | 2026-04-15T08:03:16.429735+00:00</p>
+<h2>sse</h2>
+<table>
+<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td>Large Stream</td><td>zerodep</td><td>httpx</td><td>2.79 ms</td><td>2.22 ms</td><td>358.4</td><td>451.3</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Medium Stream</td><td>zerodep</td><td>httpx</td><td>376.2 µs</td><td>295.3 µs</td><td>2.7K</td><td>3.4K</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Small Stream</td><td>zerodep</td><td>httpx</td><td>29.7 µs</td><td>21.4 µs</td><td>33.7K</td><td>46.6K</td><td class="ratio-cell slower">1.4x slower</td></tr>
+</tbody></table>
+<div class="chart-container"><canvas id="chart_0"></canvas></div>
+
+<script>
+
+new Chart(document.getElementById('chart_0'), {
+  type: 'bar',
+  data: {
+    labels: ["Large Stream", "Medium Stream", "Small Stream"],
+    datasets: [
+      {
+        label: 'zerodep (ops/s)',
+        data: [358.43447887771424, 2657.9407829263373, 33713.180828284],
+        backgroundColor: 'rgba(111, 66, 193, 0.8)',
+        borderRadius: 4,
+      },
+      {
+        label: "httpx" + ' (ops/s)',
+        data: [451.34285350234694, 3386.8342017546233, 46627.97890142894],
+        backgroundColor: 'rgba(13, 110, 253, 0.6)',
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      title: { display: true, text: 'sse — ops/s (higher is better)' }
+    },
+    scales: {
+      y: {
+        type: 'logarithmic',
+        title: { display: true, text: 'ops/s (log scale)' }
+      }
+    }
+  }
+});
+(function() {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? '\u2600 Light' : '\u263E Dark';
+    localStorage.setItem('bench-theme', t);
+  }
+  var saved = localStorage.getItem('bench-theme');
+  if (saved) setTheme(saved);
+  btn.addEventListener('click', function() {
+    var cur = document.documentElement.getAttribute('data-theme');
+    if (!cur) {
+      cur = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark' : 'light';
+    }
+    setTheme(cur === 'dark' ? 'light' : 'dark');
+  });
+})();
+</script>
+</body>
+</html>

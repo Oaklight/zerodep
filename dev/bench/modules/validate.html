@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>validate Benchmark — zerodep</title>
+<style>:root, [data-theme="light"] {
+  --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
+  --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
+  --accent: #6f42c1; --meta: #666;
+}
+[data-theme="dark"] {
+  --bg: #1a1a2e; --fg: #e0e0e0; --card-bg: #16213e; --border: #334155;
+  --green: #4ade80; --red: #f87171; --yellow: #facc15; --blue: #60a5fa;
+  --accent: #a78bfa; --meta: #999;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a2e; --fg: #e0e0e0; --card-bg: #16213e; --border: #334155;
+    --green: #4ade80; --red: #f87171; --yellow: #facc15; --blue: #60a5fa;
+    --accent: #a78bfa; --meta: #999;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg); color: var(--fg); line-height: 1.6;
+  max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;
+  transition: background .2s, color .2s;
+}
+h1 { font-size: 1.8rem; margin-bottom: .5rem; }
+h2 {
+  font-size: 1.4rem; margin: 2rem 0 1rem;
+  border-bottom: 2px solid var(--accent); padding-bottom: .3rem;
+}
+h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
+.meta { color: var(--meta); font-size: .9rem; margin-bottom: 2rem; }
+.header-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.theme-toggle {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: .4rem .8rem; cursor: pointer;
+  color: var(--fg); font-size: .85rem;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+.summary-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem; margin-bottom: 2rem;
+}
+.summary-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; text-align: center;
+}
+.summary-card .num { font-size: 2rem; font-weight: bold; }
+.summary-card .label { font-size: .85rem; color: var(--meta); }
+table {
+  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  font-size: .9rem;
+}
+th, td {
+  padding: .5rem .75rem; border: 1px solid var(--border);
+  text-align: left;
+}
+th { background: var(--card-bg); font-weight: 600; white-space: nowrap; }
+td { white-space: nowrap; }
+.ratio-cell { font-weight: bold; }
+.faster { color: var(--green); }
+.slower { color: var(--red); }
+.similar { color: var(--yellow); }
+.chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+  max-height: 450px;
+}
+.module-section { margin-bottom: 3rem; }
+.standalone-table { margin-top: 1rem; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+<div class="header-row">
+<h1>validate</h1>
+<button class="theme-toggle" id="theme-toggle">☾ Dark</button>
+</div>
+<p class="meta">Version: e888ae5 | Commit: e888ae50 | 2026-04-15T08:03:16.429735+00:00</p>
+<h2>validate</h2>
+<table>
+<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td>Benchmark Constrained</td><td>ours</td><td>pydantic</td><td>9.5 µs</td><td>1.6 µs</td><td>105.3K</td><td>624.3K</td><td class="ratio-cell slower">5.9x slower</td></tr>
+<tr><td>Benchmark Json Schema</td><td>ours</td><td>pydantic</td><td>10.0 µs</td><td>246.5 µs</td><td>100.3K</td><td>4.1K</td><td class="ratio-cell faster">24.7x faster</td></tr>
+<tr><td>Benchmark List Of Dicts</td><td>ours</td><td>pydantic</td><td>225.2 µs</td><td>31.7 µs</td><td>4.4K</td><td>31.5K</td><td class="ratio-cell slower">7.1x slower</td></tr>
+<tr><td>Benchmark Nested</td><td>ours</td><td>pydantic</td><td>10.1 µs</td><td>2.2 µs</td><td>99.0K</td><td>455.4K</td><td class="ratio-cell slower">4.6x slower</td></tr>
+<tr><td>Benchmark Simple</td><td>ours</td><td>pydantic</td><td>5.6 µs</td><td>1.5 µs</td><td>178.8K</td><td>651.5K</td><td class="ratio-cell slower">3.6x slower</td></tr>
+</tbody></table>
+<div class="chart-container"><canvas id="chart_0"></canvas></div>
+
+<script>
+
+new Chart(document.getElementById('chart_0'), {
+  type: 'bar',
+  data: {
+    labels: ["Benchmark Constrained", "Benchmark Json Schema", "Benchmark List Of Dicts", "Benchmark Nested", "Benchmark Simple"],
+    datasets: [
+      {
+        label: 'zerodep (ops/s)',
+        data: [105339.41274711183, 100292.30096558317, 4440.191073477917, 98969.19025604578, 178758.51716140984],
+        backgroundColor: 'rgba(111, 66, 193, 0.8)',
+        borderRadius: 4,
+      },
+      {
+        label: "pydantic" + ' (ops/s)',
+        data: [624256.2520127825, 4056.2196524633964, 31502.453074109817, 455371.5659793197, 651542.3684296613],
+        backgroundColor: 'rgba(13, 110, 253, 0.6)',
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      title: { display: true, text: 'validate — ops/s (higher is better)' }
+    },
+    scales: {
+      y: {
+        type: 'logarithmic',
+        title: { display: true, text: 'ops/s (log scale)' }
+      }
+    }
+  }
+});
+(function() {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? '\u2600 Light' : '\u263E Dark';
+    localStorage.setItem('bench-theme', t);
+  }
+  var saved = localStorage.getItem('bench-theme');
+  if (saved) setTheme(saved);
+  btn.addEventListener('click', function() {
+    var cur = document.documentElement.getAttribute('data-theme');
+    if (!cur) {
+      cur = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark' : 'light';
+    }
+    setTheme(cur === 'dark' ? 'light' : 'dark');
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cache Benchmark — zerodep</title>
+<style>:root, [data-theme="light"] {
+  --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
+  --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
+  --accent: #6f42c1; --meta: #666;
+}
+[data-theme="dark"] {
+  --bg: #1a1a2e; --fg: #e0e0e0; --card-bg: #16213e; --border: #334155;
+  --green: #4ade80; --red: #f87171; --yellow: #facc15; --blue: #60a5fa;
+  --accent: #a78bfa; --meta: #999;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a2e; --fg: #e0e0e0; --card-bg: #16213e; --border: #334155;
+    --green: #4ade80; --red: #f87171; --yellow: #facc15; --blue: #60a5fa;
+    --accent: #a78bfa; --meta: #999;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg); color: var(--fg); line-height: 1.6;
+  max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;
+  transition: background .2s, color .2s;
+}
+h1 { font-size: 1.8rem; margin-bottom: .5rem; }
+h2 {
+  font-size: 1.4rem; margin: 2rem 0 1rem;
+  border-bottom: 2px solid var(--accent); padding-bottom: .3rem;
+}
+h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
+.meta { color: var(--meta); font-size: .9rem; margin-bottom: 2rem; }
+.header-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.theme-toggle {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: .4rem .8rem; cursor: pointer;
+  color: var(--fg); font-size: .85rem;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+.summary-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem; margin-bottom: 2rem;
+}
+.summary-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; text-align: center;
+}
+.summary-card .num { font-size: 2rem; font-weight: bold; }
+.summary-card .label { font-size: .85rem; color: var(--meta); }
+table {
+  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  font-size: .9rem;
+}
+th, td {
+  padding: .5rem .75rem; border: 1px solid var(--border);
+  text-align: left;
+}
+th { background: var(--card-bg); font-weight: 600; white-space: nowrap; }
+td { white-space: nowrap; }
+.ratio-cell { font-weight: bold; }
+.faster { color: var(--green); }
+.slower { color: var(--red); }
+.similar { color: var(--yellow); }
+.chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+  max-height: 450px;
+}
+.module-section { margin-bottom: 3rem; }
+.standalone-table { margin-top: 1rem; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+<div class="header-row">
+<h1>cache</h1>
+<button class="theme-toggle" id="theme-toggle">☾ Dark</button>
+</div>
+<p class="meta">Version: e888ae5 | Commit: e888ae50 | 2026-04-15T08:03:16.429735+00:00</p>
+<h2>cache</h2>
+<table>
+<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td>Decorator Overhead</td><td>zerodep_lru</td><td>cachetools</td><td>252.1 µs</td><td>255.9 µs</td><td>4.0K</td><td>3.9K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Decorator Overhead</td><td>zerodep_lru</td><td>cachetools</td><td>252.1 µs</td><td>293.2 µs</td><td>4.0K</td><td>3.4K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Decorator Overhead</td><td>zerodep_ttl</td><td>cachetools</td><td>362.1 µs</td><td>255.9 µs</td><td>2.8K</td><td>3.9K</td><td class="ratio-cell slower">1.4x slower</td></tr>
+<tr><td>Decorator Overhead</td><td>zerodep_ttl</td><td>cachetools</td><td>362.1 µs</td><td>293.2 µs</td><td>2.8K</td><td>3.4K</td><td class="ratio-cell slower">1.2x slower</td></tr>
+<tr><td>Eviction Pressure</td><td>zerodep_lru</td><td>cachetools</td><td>1.67 ms</td><td>1.79 ms</td><td>599.3</td><td>559.1</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Eviction Pressure</td><td>zerodep_lru</td><td>cachetools</td><td>1.67 ms</td><td>1.98 ms</td><td>599.3</td><td>504.6</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Eviction Pressure</td><td>zerodep_lfu</td><td>cachetools</td><td>2.73 ms</td><td>1.79 ms</td><td>366.2</td><td>559.1</td><td class="ratio-cell slower">1.5x slower</td></tr>
+<tr><td>Eviction Pressure</td><td>zerodep_lfu</td><td>cachetools</td><td>2.73 ms</td><td>1.98 ms</td><td>366.2</td><td>504.6</td><td class="ratio-cell slower">1.4x slower</td></tr>
+<tr><td>Key Function</td><td>zerodep_hashkey</td><td>cachetools</td><td>631.8 µs</td><td>649.0 µs</td><td>1.6K</td><td>1.5K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Key Function</td><td>zerodep_hashkey</td><td>cachetools</td><td>631.8 µs</td><td>1.68 ms</td><td>1.6K</td><td>594.9</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Key Function</td><td>zerodep_typedkey</td><td>cachetools</td><td>2.26 ms</td><td>649.0 µs</td><td>442.7</td><td>1.5K</td><td class="ratio-cell slower">3.5x slower</td></tr>
+<tr><td>Key Function</td><td>zerodep_typedkey</td><td>cachetools</td><td>2.26 ms</td><td>1.68 ms</td><td>442.7</td><td>594.9</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>LRUGet Set</td><td>zerodep</td><td>cachetools</td><td>970.3 µs</td><td>1.03 ms</td><td>1.0K</td><td>969.1</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Mixed Workload</td><td>zerodep</td><td>cachetools</td><td>799.3 µs</td><td>997.8 µs</td><td>1.3K</td><td>1.0K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>TTLExpiry</td><td>zerodep</td><td>cachetools</td><td>3.36 ms</td><td>3.28 ms</td><td>297.9</td><td>304.7</td><td class="ratio-cell similar">~equal</td></tr>
+</tbody></table>
+<div class="chart-container"><canvas id="chart_0"></canvas></div>
+
+<script>
+
+new Chart(document.getElementById('chart_0'), {
+  type: 'bar',
+  data: {
+    labels: ["Decorator Overhead", "Eviction Pressure", "Key Function", "LRUGet Set", "Mixed Workload", "TTLExpiry"],
+    datasets: [
+      {
+        label: 'zerodep (ops/s)',
+        data: [3966.6556291645297, 599.3333936160154, 1582.786871310926, 1030.6459685556683, 1251.125744594584, 297.90528431301266],
+        backgroundColor: 'rgba(111, 66, 193, 0.8)',
+        borderRadius: 4,
+      },
+      {
+        label: "cachetools" + ' (ops/s)',
+        data: [3907.799293780192, 559.1388601643318, 1540.7307350537017, 969.1099166693872, 1002.1907600368578, 304.7043203636564],
+        backgroundColor: 'rgba(13, 110, 253, 0.6)',
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      title: { display: true, text: 'cache — ops/s (higher is better)' }
+    },
+    scales: {
+      y: {
+        type: 'logarithmic',
+        title: { display: true, text: 'ops/s (log scale)' }
+      }
+    }
+  }
+});
+(function() {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? '\u2600 Light' : '\u263E Dark';
+    localStorage.setItem('bench-theme', t);
+  }
+  var saved = localStorage.getItem('bench-theme');
+  if (saved) setTheme(saved);
+  btn.addEventListener('click', function() {
+    var cur = document.documentElement.getAttribute('data-theme');
+    if (!cur) {
+      cur = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark' : 'light';
+    }
+    setTheme(cur === 'dark' ? 'light' : 'dark');
+  });
+})();
+</script>
+</body>
+</html>

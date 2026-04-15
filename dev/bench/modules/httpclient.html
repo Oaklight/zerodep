@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>httpclient Benchmark — zerodep</title>
+<style>:root, [data-theme="light"] {
+  --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
+  --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
+  --accent: #6f42c1; --meta: #666;
+}
+[data-theme="dark"] {
+  --bg: #1a1a2e; --fg: #e0e0e0; --card-bg: #16213e; --border: #334155;
+  --green: #4ade80; --red: #f87171; --yellow: #facc15; --blue: #60a5fa;
+  --accent: #a78bfa; --meta: #999;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a2e; --fg: #e0e0e0; --card-bg: #16213e; --border: #334155;
+    --green: #4ade80; --red: #f87171; --yellow: #facc15; --blue: #60a5fa;
+    --accent: #a78bfa; --meta: #999;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg); color: var(--fg); line-height: 1.6;
+  max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;
+  transition: background .2s, color .2s;
+}
+h1 { font-size: 1.8rem; margin-bottom: .5rem; }
+h2 {
+  font-size: 1.4rem; margin: 2rem 0 1rem;
+  border-bottom: 2px solid var(--accent); padding-bottom: .3rem;
+}
+h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
+.meta { color: var(--meta); font-size: .9rem; margin-bottom: 2rem; }
+.header-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.theme-toggle {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: .4rem .8rem; cursor: pointer;
+  color: var(--fg); font-size: .85rem;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+.summary-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem; margin-bottom: 2rem;
+}
+.summary-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; text-align: center;
+}
+.summary-card .num { font-size: 2rem; font-weight: bold; }
+.summary-card .label { font-size: .85rem; color: var(--meta); }
+table {
+  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  font-size: .9rem;
+}
+th, td {
+  padding: .5rem .75rem; border: 1px solid var(--border);
+  text-align: left;
+}
+th { background: var(--card-bg); font-weight: 600; white-space: nowrap; }
+td { white-space: nowrap; }
+.ratio-cell { font-weight: bold; }
+.faster { color: var(--green); }
+.slower { color: var(--red); }
+.similar { color: var(--yellow); }
+.chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+  max-height: 450px;
+}
+.module-section { margin-bottom: 3rem; }
+.standalone-table { margin-top: 1rem; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+<div class="header-row">
+<h1>httpclient</h1>
+<button class="theme-toggle" id="theme-toggle">☾ Dark</button>
+</div>
+<p class="meta">Version: e888ae5 | Commit: e888ae50 | 2026-04-15T08:03:16.429735+00:00</p>
+<h2>httpclient</h2>
+<table>
+<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td>Async Client Get</td><td>zerodep</td><td>httpx</td><td>363.50 ms</td><td>184.93 ms</td><td>2.8</td><td>5.4</td><td class="ratio-cell slower">2.0x slower</td></tr>
+<tr><td>Async File Upload</td><td>zerodep</td><td>httpx</td><td>578.10 ms</td><td>154.40 ms</td><td>1.7</td><td>6.5</td><td class="ratio-cell slower">3.7x slower</td></tr>
+<tr><td>Async Get</td><td>zerodep</td><td>httpx</td><td>125.29 ms</td><td>74.23 ms</td><td>8.0</td><td>13.5</td><td class="ratio-cell slower">1.7x slower</td></tr>
+<tr><td>Async Streaming</td><td>zerodep</td><td>httpx</td><td>269.34 ms</td><td>155.45 ms</td><td>3.7</td><td>6.4</td><td class="ratio-cell slower">1.7x slower</td></tr>
+<tr><td>Sync Client Get</td><td>zerodep</td><td>httpx</td><td>99.36 ms</td><td>210.38 ms</td><td>10.1</td><td>4.8</td><td class="ratio-cell faster">2.1x faster</td></tr>
+<tr><td>Sync File Upload</td><td>zerodep</td><td>httpx</td><td>170.45 ms</td><td>110.83 ms</td><td>5.9</td><td>9.0</td><td class="ratio-cell slower">1.5x slower</td></tr>
+<tr><td>Sync Get</td><td>zerodep</td><td>httpx</td><td>356.66 ms</td><td>340.70 ms</td><td>2.8</td><td>2.9</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Sync Gzip Decompression</td><td>zerodep</td><td>httpx</td><td>249.73 ms</td><td>215.69 ms</td><td>4.0</td><td>4.6</td><td class="ratio-cell slower">1.2x slower</td></tr>
+<tr><td>Sync Post JSON</td><td>zerodep</td><td>httpx</td><td>118.09 ms</td><td>183.65 ms</td><td>8.5</td><td>5.4</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Sync Streaming</td><td>zerodep</td><td>httpx</td><td>66.89 ms</td><td>81.37 ms</td><td>14.9</td><td>12.3</td><td class="ratio-cell faster">1.2x faster</td></tr>
+</tbody></table>
+<div class="chart-container"><canvas id="chart_0"></canvas></div>
+<h3>Standalone benchmarks</h3>
+<table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
+<tbody>
+<tr><td>Async Post JSON</td><td>zerodep</td><td>168.07 ms</td><td>5.9</td></tr>
+</tbody></table>
+
+<script>
+
+new Chart(document.getElementById('chart_0'), {
+  type: 'bar',
+  data: {
+    labels: ["Async Client Get", "Async File Upload", "Async Get", "Async Streaming", "Sync Client Get", "Sync File Upload", "Sync Get", "Sync Gzip Decompression", "Sync Post JSON", "Sync Streaming"],
+    datasets: [
+      {
+        label: 'zerodep (ops/s)',
+        data: [2.7510038408828676, 1.7298093370782055, 7.981457154372628, 3.7127428044015627, 10.064685103314305, 5.86695179927242, 2.803762355695654, 4.004382982978275, 8.468044997253578, 14.949777167309913],
+        backgroundColor: 'rgba(111, 66, 193, 0.8)',
+        borderRadius: 4,
+      },
+      {
+        label: "httpx" + ' (ops/s)',
+        data: [5.407477950427392, 6.476799550665735, 13.471091172381028, 6.432792433120791, 4.753237467272575, 9.022689631002306, 2.935119559591569, 4.636185651173525, 5.445139109397393, 12.290140836974672],
+        backgroundColor: 'rgba(13, 110, 253, 0.6)',
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      title: { display: true, text: 'httpclient — ops/s (higher is better)' }
+    },
+    scales: {
+      y: {
+        type: 'logarithmic',
+        title: { display: true, text: 'ops/s (log scale)' }
+      }
+    }
+  }
+});
+(function() {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? '\u2600 Light' : '\u263E Dark';
+    localStorage.setItem('bench-theme', t);
+  }
+  var saved = localStorage.getItem('bench-theme');
+  if (saved) setTheme(saved);
+  btn.addEventListener('click', function() {
+    var cur = document.documentElement.getAttribute('data-theme');
+    if (!cur) {
+      cur = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark' : 'light';
+    }
+    setTheme(cur === 'dark' ? 'light' : 'dark');
+  });
+})();
+</script>
+</body>
+</html>

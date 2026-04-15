@@ -316,44 +316,41 @@ class Tag:
 # ── Match helpers ─────────────────────────────────────────────────────────────
 
 
+def _check_name_match(tag: Tag, name: str | list[str] | None) -> bool:
+    """Return True if *tag* satisfies the *name* filter."""
+    if name is None:
+        return True
+    if isinstance(name, list):
+        return tag.name in name
+    return tag.name == name
+
+
+def _check_attr_filter(tag: Tag, key: str, expected: str | bool) -> bool:
+    """Return True if *tag* satisfies a single attribute filter."""
+    actual = tag.attrs.get(key)
+    if expected is True:
+        return actual is not None
+    if expected is False:
+        return actual is None
+    # Value comparison
+    if key == "class":
+        return _class_matches(actual, expected)
+    if actual is None:
+        return False
+    if isinstance(actual, list):
+        return expected in actual
+    return actual == expected
+
+
 def _matches(
     tag: Tag,
     name: str | list[str] | None,
     attr_filters: dict[str, str | bool],
 ) -> bool:
     """Check whether *tag* satisfies *name* and *attr_filters*."""
-    # Name check
-    if name is not None:
-        if isinstance(name, list):
-            if tag.name not in name:
-                return False
-        elif tag.name != name:
-            return False
-
-    # Attribute checks
-    for key, expected in attr_filters.items():
-        actual = tag.attrs.get(key)
-        if expected is True:
-            # "has this attribute"
-            if actual is None:
-                return False
-        elif expected is False:
-            if actual is not None:
-                return False
-        else:
-            # Value comparison
-            if key == "class":
-                if not _class_matches(actual, expected):
-                    return False
-            else:
-                if actual is None:
-                    return False
-                if isinstance(actual, list):
-                    if expected not in actual:
-                        return False
-                elif actual != expected:
-                    return False
-    return True
+    if not _check_name_match(tag, name):
+        return False
+    return all(_check_attr_filter(tag, k, v) for k, v in attr_filters.items())
 
 
 def _class_matches(actual: str | list[str] | None, expected: str) -> bool:
@@ -400,6 +397,83 @@ _ATTR_RE = re.compile(
 SelectorStep = tuple[str, dict[str, Any]]
 
 
+_WS = frozenset(" \t\n")
+
+
+def _skip_whitespace(selector: str, pos: int) -> int:
+    """Advance *pos* past any whitespace characters."""
+    while pos < len(selector) and selector[pos] in _WS:
+        pos += 1
+    return pos
+
+
+def _tokenize_whitespace(
+    selector: str, pos: int, tokens: list[str | dict[str, Any]]
+) -> int:
+    """Handle whitespace at *pos*, emitting a combinator token if needed.
+
+    Returns the updated position.
+    """
+    rest = selector[pos:].lstrip()
+    if rest.startswith(">"):
+        tokens.append(">")
+        pos = selector.index(">", pos) + 1
+        return _skip_whitespace(selector, pos)
+    # Space combinator only if the previous token is not already a combinator
+    if tokens and tokens[-1] not in (" ", ">"):
+        tokens.append(" ")
+    return pos + 1
+
+
+def _apply_regex_match(m: re.Match[str], compound: dict[str, Any]) -> None:
+    """Populate *compound* dict from a single ``_SIMPLE_RE`` match."""
+    if m.group("tag"):
+        compound["tag"] = m.group("tag")
+    elif m.group("cls"):
+        compound.setdefault("classes", []).append(m.group("cls")[1:])
+    elif m.group("id"):
+        compound["id"] = m.group("id")[1:]
+    elif m.group("attr"):
+        am = _ATTR_RE.match(m.group("attr"))
+        if am:
+            compound.setdefault("attrs", []).append(
+                (am.group("name"), am.group("value"))
+            )
+
+
+def _parse_compound(selector: str, pos: int) -> tuple[dict[str, Any] | None, int]:
+    """Parse a compound simple selector starting at *pos*.
+
+    Returns ``(compound_dict_or_None, new_pos)``.
+    """
+    compound: dict[str, Any] = {}
+    matched_any = False
+    while pos < len(selector):
+        m = _SIMPLE_RE.match(selector, pos)
+        if m is None:
+            break
+        matched_any = True
+        _apply_regex_match(m, compound)
+        pos = m.end()
+    return (compound if matched_any else None), pos
+
+
+def _tokens_to_steps(tokens: list[str | dict[str, Any]]) -> list[SelectorStep]:
+    """Convert a flat token list into ``(combinator, simple)`` step list."""
+    steps: list[SelectorStep] = []
+    combinator = "descendant"
+    for tok in tokens:
+        if tok == " ":
+            combinator = "descendant"
+        elif tok == ">":
+            combinator = "child"
+        else:
+            assert isinstance(tok, dict)
+            steps.append((combinator, tok))
+            combinator = "descendant"
+    return steps
+
+
 def _parse_selector(selector: str) -> list[SelectorStep]:
     """Parse a simple CSS selector string into step list.
 
@@ -410,102 +484,62 @@ def _parse_selector(selector: str) -> list[SelectorStep]:
     selector = selector.strip()
 
     while pos < len(selector):
-        # Skip whitespace, but record it as a potential descendant combinator
-        if selector[pos] in (" ", "\t", "\n"):
-            # Peek ahead for '>'
-            rest = selector[pos:].lstrip()
-            if rest.startswith(">"):
-                tokens.append(">")
-                pos = selector.index(">", pos) + 1
-                # Skip trailing whitespace after '>'
-                while pos < len(selector) and selector[pos] in (" ", "\t", "\n"):
-                    pos += 1
-            else:
-                # Only add space combinator if previous token is not already a
-                # combinator and there is more to parse
-                if tokens and tokens[-1] not in (" ", ">"):
-                    tokens.append(" ")
-                pos += 1
+        if selector[pos] in _WS:
+            pos = _tokenize_whitespace(selector, pos, tokens)
             continue
 
         if selector[pos] == ">":
             tokens.append(">")
-            pos += 1
-            while pos < len(selector) and selector[pos] in (" ", "\t", "\n"):
-                pos += 1
+            pos = _skip_whitespace(selector, pos + 1)
             continue
 
-        # Try to match a compound simple selector (tag, .cls, #id, [attr])
-        compound: dict[str, Any] = {}
-        matched_any = False
-        while pos < len(selector):
-            m = _SIMPLE_RE.match(selector, pos)
-            if m is None:
-                break
-            matched_any = True
-            if m.group("tag"):
-                compound["tag"] = m.group("tag")
-            elif m.group("cls"):
-                compound.setdefault("classes", []).append(m.group("cls")[1:])
-            elif m.group("id"):
-                compound["id"] = m.group("id")[1:]
-            elif m.group("attr"):
-                am = _ATTR_RE.match(m.group("attr"))
-                if am:
-                    attr_name = am.group("name")
-                    attr_val = am.group("value")
-                    compound.setdefault("attrs", []).append((attr_name, attr_val))
-            pos = m.end()
-
-        if matched_any:
+        compound, pos = _parse_compound(selector, pos)
+        if compound is not None:
             tokens.append(compound)
         else:
-            # Skip unknown character to avoid infinite loop
-            pos += 1
+            pos += 1  # skip unknown character to avoid infinite loop
 
-    # Convert token list into steps
-    steps: list[SelectorStep] = []
-    combinator = "descendant"  # implicit for the first compound
-    for tok in tokens:
-        if tok == " ":
-            combinator = "descendant"
-        elif tok == ">":
-            combinator = "child"
-        else:
-            assert isinstance(tok, dict)
-            steps.append((combinator, tok))
-            combinator = "descendant"  # reset default
+    return _tokens_to_steps(tokens)
 
-    return steps
+
+def _classes_match(tag: Tag, required_classes: list[str]) -> bool:
+    """Return True if *tag* has all *required_classes*."""
+    tag_classes = tag.attrs.get("class")
+    if tag_classes is None:
+        return False
+    if isinstance(tag_classes, str):
+        tag_classes = [tag_classes]
+    return all(cls in tag_classes for cls in required_classes)
+
+
+def _attr_value_matches(actual: str | list[str], expected: str) -> bool:
+    """Return True if *actual* attribute value equals *expected*."""
+    if isinstance(actual, list):
+        return expected in actual
+    return actual == expected
+
+
+def _selector_attrs_match(tag: Tag, attrs: list[tuple[str, str | None]]) -> bool:
+    """Return True if *tag* satisfies all attribute constraints from a selector."""
+    for attr_name, attr_val in attrs:
+        actual = tag.attrs.get(attr_name)
+        if actual is None:
+            return False
+        if attr_val is not None and not _attr_value_matches(actual, attr_val):
+            return False
+    return True
 
 
 def _simple_matches(tag: Tag, simple: dict[str, Any]) -> bool:
     """Check if *tag* matches a single compound simple selector."""
     if "tag" in simple and tag.name != simple["tag"]:
         return False
-    if "id" in simple:
-        if tag.attrs.get("id") != simple["id"]:
-            return False
-    if "classes" in simple:
-        tag_classes = tag.attrs.get("class")
-        if tag_classes is None:
-            return False
-        if isinstance(tag_classes, str):
-            tag_classes = [tag_classes]
-        for cls in simple["classes"]:
-            if cls not in tag_classes:
-                return False
-    if "attrs" in simple:
-        for attr_name, attr_val in simple["attrs"]:
-            actual = tag.attrs.get(attr_name)
-            if actual is None:
-                return False
-            if attr_val is not None:
-                if isinstance(actual, list):
-                    if attr_val not in actual:
-                        return False
-                elif actual != attr_val:
-                    return False
+    if "id" in simple and tag.attrs.get("id") != simple["id"]:
+        return False
+    if "classes" in simple and not _classes_match(tag, simple["classes"]):
+        return False
+    if "attrs" in simple and not _selector_attrs_match(tag, simple["attrs"]):
+        return False
     return True
 
 

@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Refactoring
+
+- **Complexity reduction**: refactored 19 modules to bring all functions under cognitive complexity 20 (complexipy) and cyclomatic complexity 20 (ruff C901). Modules refactored: cache, validate, tabulate, dotenv, runner, xml, diff, soup, sse, search, scheduler, depdetect, qr, acp, yaml, toon, protobuf, markdown, httpclient.
+- Refactoring patterns used: per-type dispatch tables, try-parse extraction, phase-based decomposition, helper function extraction — all within single-file constraint.
+
+### CI
+
+- **Benchmark workflow**: new GitHub Actions workflow (`.github/workflows/benchmark.yml`) that runs `pytest-benchmark` on every release and on manual dispatch. Compares zerodep implementations against 25+ reference libraries. Results stored on `gh-pages` branch with regression alerting at 150% threshold.
+- **Benchmark report**: custom HTML report generator (`scripts/generate_bench_report.py`) that groups benchmarks by module, shows zerodep vs reference performance ratios with tables and charts, and publishes to GitHub Pages.
+- **CI reference libraries**: updated `ci.yml` with complete set of reference library dependencies for cross-validation testing.
+
+### Internal
+
+- Added `complexipy>=5.2.0` dev dependency and `[tool.complexipy]` configuration in `pyproject.toml`.
+- Enabled ruff `C901` lint rule with `max-complexity = 20` in `pyproject.toml`.
+
 ## [2026.4.11] - 2026-04-11
 
 ### Breaking Changes

@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep A2A and [`a2a-protocol`](h
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** a2a-protocol 0.1.0
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -26,11 +28,11 @@ Apple-to-apple performance comparison between zerodep A2A and [`a2a-protocol`](h
 
 Object → dict conversion. zerodep uses custom `to_dict()`; reference uses `dataclasses.asdict()`.
 
-| Data Size | zerodep | a2a-protocol | Speedup |
-|-----------|---------|--------------|---------|
-| Small | 5.5 us | 7.2 us | **1.3x faster** |
-| Medium | 118.6 us | 171.8 us | **1.4x faster** |
-| Large | 2,131.6 us | 3,178.0 us | **1.5x faster** |
+| Data Size | zerodep | a2a-protocol | Ratio |
+|-----------|---------|--------------|-------|
+| Small | 9.1 μs | 4.2 μs | 2.1x slower |
+| Medium | 188.0 μs | 93.0 μs | 2.0x slower |
+| Large | 3,205.7 μs | 2,236.7 μs | 1.4x slower |
 
 ## Deserialization Performance (Mean)
 
@@ -38,9 +40,9 @@ Dict → object reconstruction. zerodep uses `from_dict()` with enum parsing and
 
 | Data Size | zerodep | a2a-protocol | Ratio |
 |-----------|---------|--------------|-------|
-| Small | 2.5 us | 0.6 us | 0.24x |
-| Medium | 39.3 us | 20.5 us | 0.52x |
-| Large | 988.6 us | 424.7 us | 0.43x |
+| Small | 3.6 μs | 0.9 μs | 4.1x slower |
+| Medium | 59.5 μs | 25.9 μs | 2.3x slower |
+| Large | 1,256.4 μs | 685.5 μs | 1.8x slower |
 
 !!! note "Deserialization Methodology"
     The reference library (`a2a-protocol`) uses plain dataclasses without a `from_dict()` method. The benchmark constructs objects directly from known fields rather than parsing from an arbitrary dict. zerodep's `from_dict()` performs full dict → object reconstruction with enum resolution and type dispatch, which is a richer operation.
@@ -49,21 +51,21 @@ Dict → object reconstruction. zerodep uses `from_dict()` with enum parsing and
 
 Full cycle: object → dict → JSON string → dict → object.
 
-| Data Size | zerodep | a2a-protocol | Speedup |
-|-----------|---------|--------------|---------|
-| Small | 11.7 us | 12.1 us | 1.0x (on par) |
-| Medium | 192.1 us | 220.7 us | **1.1x faster** |
-| Large | 3,914.0 us | 4,006.5 us | 1.0x (on par) |
+| Data Size | zerodep | a2a-protocol | Ratio |
+|-----------|---------|--------------|-------|
+| Small | 17.2 μs | 10.9 μs | 1.6x slower |
+| Medium | 297.0 μs | 167.4 μs | 1.8x slower |
+| Large | 6,881.9 μs | 4,085.4 μs | 1.7x slower |
 
 !!! note "Round-Trip Methodology"
-    zerodep performs full `to_dict → json.dumps → json.loads → from_dict` reconstruction. The reference does `asdict → json.dumps → json.loads` without object reconstruction (no `from_dict` exists). Despite this extra work, zerodep is on par or faster.
+    zerodep performs full `to_dict → json.dumps → json.loads → from_dict` reconstruction. The reference does `asdict → json.dumps → json.loads` without object reconstruction (no `from_dict` exists). zerodep's additional reconstruction step contributes to the slower round-trip times.
 
 ## Key Takeaways
 
-- **Serialization is 1.3-1.5x faster** -- zerodep's custom `to_dict()` avoids the expensive deep copy that `dataclasses.asdict()` performs, giving a consistent advantage across all scales.
-- **Deserialization is slower but more capable** -- zerodep's `from_dict()` does full dict-to-object reconstruction with enum parsing and type dispatch. The reference library has no equivalent -- it only supports direct construction.
-- **JSON round-trip is on par** -- the serialization advantage compensates for the richer deserialization, resulting in comparable end-to-end performance.
-- **Zero dependencies** -- unlike the reference which requires installation, zerodep's A2A is a single file with no external packages.
+- **Serialization is 1.4-2.1x slower** -- zerodep's pure-Python `to_dict()` is slower than the reference's `dataclasses.asdict()`. The gap narrows at larger data sizes (1.4x at large vs 2.1x at small).
+- **Deserialization is 1.8-4.1x slower** -- zerodep's `from_dict()` does full dict-to-object reconstruction with enum parsing and type dispatch. The reference library constructs dataclasses directly without parsing, which is inherently faster. The gap narrows with data size as per-object overhead becomes less dominant.
+- **JSON round-trip is 1.6-1.8x slower** -- the overhead is consistent across all data sizes. Note that zerodep performs full object reconstruction on the deserialization side while the reference does not.
+- **Zero dependencies** -- unlike the reference which requires installation, zerodep's A2A is a single file with no external packages. The performance tradeoff is the cost of a pure-Python, zero-dependency implementation.
 
 ## Run It Yourself
 

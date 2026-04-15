@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep soup and [`beautifulsoup4`
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** beautifulsoup4 4.14.3
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -26,14 +28,14 @@ Apple-to-apple performance comparison between zerodep soup and [`beautifulsoup4`
 
 | Data Size | zerodep | beautifulsoup4 | Speedup |
 |-----------|---------|----------------|---------|
-| Small | 149.2 us | 446.2 us | 2.99x faster |
-| Medium | 1,236.6 us | 3,683.9 us | 2.98x faster |
-| Large | 12,662.5 us | 37,061.8 us | 2.93x faster |
+| Small | 207.6 us | 651.0 us | 3.1x faster |
+| Medium | 1,796.2 us | 5,482.2 us | 3.1x faster |
+| Large | 22,110.0 us | 48,220.6 us | 2.2x faster |
 
 ## Key Takeaways
 
-- **~3x faster across all sizes** -- zerodep builds a minimal DOM tree directly from `html.parser` without the abstraction layers (NavigableString, PageElement hierarchy, soupsieve integration) that BeautifulSoup carries.
-- **Consistent speedup** -- the 2.9-3.0x advantage holds regardless of document complexity, indicating the overhead is per-element rather than per-document.
+- **2.2-3.1x faster across all sizes** -- zerodep builds a minimal DOM tree directly from `html.parser` without the abstraction layers (NavigableString, PageElement hierarchy, soupsieve integration) that BeautifulSoup carries.
+- **Largest speedup on small/medium documents** -- the 3.1x advantage on small and medium inputs narrows to 2.2x on large documents, suggesting the per-element overhead advantage is partially offset by increased tree-management work in complex pages.
 - **Zero pip dependencies** -- zerodep uses only `re` and `html.parser` from the standard library. BeautifulSoup requires `soupsieve` and optionally `lxml` or `html5lib`.
 
 ## Run It Yourself

@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep QR implementation and the 
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10
-    - **Tool:** pytest-benchmark (mean values reported)
+    - **Python:** 3.12
+    - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** qrcode 8.2, Pillow 12.2.0
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -28,9 +30,9 @@ Both implementations are pure Python, so the comparison is between two interpret
 
 | Input | zerodep (`qr.py`) | `qrcode` library | Ratio |
 |-------|---------------------|-------------------|-------|
-| Short (5 chars) | 3.3 ms | 1.6 ms | 2.1x slower |
-| URL (46 chars) | 8.7 ms | 4.5 ms | 1.9x slower |
-| Long (200 chars) | 18.3 ms | 10.5 ms | 1.7x slower |
+| Short (5 chars) | 3.5 ms | 1.7 ms | 2.1x slower |
+| URL (46 chars) | 9.2 ms | 4.8 ms | 1.9x slower |
+| Long (200 chars) | 19.4 ms | 11.3 ms | 1.7x slower |
 
 ## Key Takeaways
 

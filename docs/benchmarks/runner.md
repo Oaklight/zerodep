@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep runner, [`sh`](https://pyp
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10
+    - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** sh 2.2.2
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -29,18 +31,17 @@ Apple-to-apple performance comparison between zerodep runner, [`sh`](https://pyp
 
 | Test | subprocess | zerodep | sh | zerodep vs subprocess | zerodep vs sh |
 |------|-----------|---------|----|-----------------------|---------------|
-| Simple Command | 0.76 ms | 1.89 ms | 5.9 ms | 2.5x slower | **3.1x faster** |
-| Output Capture | 17.7 ms | 15.9 ms | 21.4 ms | **1.1x faster** | **1.3x faster** |
-| Stdin Input | 17.3 ms | 17.6 ms | 21.4 ms | ~same | **1.2x faster** |
-| Streaming Lines | 15.8 ms | 17.7 ms | 23.5 ms | 1.1x slower | **1.3x faster** |
-| Env Passing | 18.6 ms | 13.5 ms | 25.4 ms | **1.4x faster** | **1.9x faster** |
+| Simple Command | 0.99 ms | 1.61 ms | 27.9 ms | 1.6x slower | **17.3x faster** |
+| Output Capture | 18.9 ms | 19.2 ms | 50.6 ms | ~same | **2.6x faster** |
+| Stdin Input | 18.1 ms | 18.7 ms | 37.7 ms | ~same | **2.0x faster** |
+| Streaming Lines | 18.5 ms | 18.5 ms | 35.9 ms | ~same | **1.9x faster** |
+| Env Passing | 18.5 ms | 18.7 ms | 39.7 ms | ~same | **2.1x faster** |
 
 ## Key Takeaways
 
-- **Consistently faster than sh** -- zerodep runner is 1.2-3.1x faster than `sh` across all scenarios. The `sh` library's magic API and dynamic attribute resolution add measurable overhead.
-- **Near-parity with raw subprocess** -- for real workloads (output capture, stdin, env passing), zerodep runner matches or beats raw `subprocess.run`, despite providing structured results, timeout escalation, and streaming callbacks.
-- **Simple command overhead** -- the 2.5x gap on `echo hello` reflects zerodep's `Popen`-based architecture (needed for timeout escalation and streaming) vs `subprocess.run`'s optimized fast path. This fixed overhead (~1 ms) is negligible for any command that does real work.
-- **Environment passing is 1.4x faster** -- zerodep's `env_extra` avoids the `{**os.environ, ...}` dict copy that both `sh` and raw subprocess require.
+- **Consistently faster than sh** -- zerodep runner is 1.9-17.3x faster than `sh` across all scenarios. The `sh` library's magic API and dynamic attribute resolution add significant overhead.
+- **Near-parity with raw subprocess** -- for real workloads (output capture, stdin, streaming, env passing), zerodep runner matches raw `subprocess.run` within noise margin, despite providing structured results, timeout escalation, and streaming callbacks.
+- **Simple command overhead** -- the 1.6x gap on `echo hello` reflects zerodep's `Popen`-based architecture (needed for timeout escalation and streaming) vs `subprocess.run`'s optimized fast path. This fixed overhead (~0.6 ms) is negligible for any command that does real work.
 - **Feature advantage is the real story** -- unlike raw subprocess, zerodep provides SIGTERM-to-SIGKILL timeout escalation, streaming callbacks with simultaneous capture, command allowlist/blocklist, and environment isolation -- all with comparable performance.
 
 ## Run It Yourself

@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep YAML and [`PyYAML`](https:
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** PyYAML 6.0.3
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -26,22 +28,22 @@ Apple-to-apple performance comparison between zerodep YAML and [`PyYAML`](https:
 
 | Data Size | zerodep | PyYAML | Speedup |
 |-----------|---------|--------|---------|
-| Small | 11.2 us | 118.2 us | 10.6x faster |
-| Medium | 64.2 us | 685.3 us | 10.7x faster |
-| Large | 1,403.9 us | 14,576.1 us | 10.4x faster |
+| Small | 33.7 us | 256.5 us | 7.6x faster |
+| Medium | 229.0 us | 1,650.0 us | 7.2x faster |
+| Large | 4,764.9 us | 38,628.7 us | 8.1x faster |
 
 ## Dump Performance (Mean)
 
 | Data Size | zerodep | PyYAML | Speedup |
 |-----------|---------|--------|---------|
-| Small | 23.8 us | 188.5 us | 7.9x faster |
-| Medium | 170.8 us | 1,234.1 us | 7.2x faster |
-| Large | 3,901.1 us | 27,279.1 us | 7.0x faster |
+| Small | 16.1 us | 152.5 us | 9.5x faster |
+| Medium | 110.8 us | 859.0 us | 7.8x faster |
+| Large | 2,612.9 us | 18,975.4 us | 7.3x faster |
 
 ## Key Takeaways
 
-- **Load is ~10x faster** -- zerodep consistently outperforms PyYAML by over 10x across all data sizes for parsing.
-- **Dump is ~7x faster** -- serialization is 7-8x faster, with the gap slightly narrowing at larger sizes.
+- **Load is ~7--8x faster** -- zerodep consistently outperforms PyYAML across all data sizes for parsing.
+- **Dump is ~7--10x faster** -- serialization is 7.3--9.5x faster, with the largest speedup on small inputs.
 - **Pure Python, yet faster** -- zerodep achieves this speedup despite being pure Python by targeting a common YAML subset without the full spec overhead of PyYAML's scanner/parser/composer pipeline.
 - **Zero pip dependencies** -- unlike PyYAML, zerodep uses only the standard library.
 

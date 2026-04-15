@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep dotenv and [`python-dotenv
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** python-dotenv 1.2.2
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -26,15 +28,16 @@ Apple-to-apple performance comparison between zerodep dotenv and [`python-dotenv
 
 | Test | zerodep | python-dotenv | Ratio |
 |------|---------|---------------|-------|
-| Small (10 entries) | 16.5 us | 16.8 us | ~1.0x |
-| Medium (50 entries) | 118.8 us | 120.8 us | ~1.0x |
-| Large (500 entries) | 841.7 us | 845.3 us | ~1.0x |
+| Small (10 entries) | 26.5 us | 23.0 us | 1.2x slower |
+| Medium (50 entries) | 184.0 us | 180.9 us | ~1.0x |
+| Large (500 entries) | 1,140.6 us | 1,139.4 us | ~1.0x |
 
 ## Key Takeaways
 
-- **Performance parity** -- both implementations are equally fast across all file sizes, with negligible differences well within measurement noise.
+- **Near-parity at medium and large sizes** -- for 50+ entries, both implementations perform within measurement noise of each other.
+- **Slightly slower on small files** -- zerodep is about 1.2x slower on 10-entry files, though the absolute difference (~3.5 us) is negligible in practice.
 - **Linear scaling** -- both libraries scale linearly with the number of entries, as expected for line-by-line parsing.
-- **Zero-dependency advantage** -- since performance is identical, zerodep's benefit is purely in eliminating the external `python-dotenv` dependency from your project.
+- **Zero-dependency advantage** -- since performance is essentially identical for typical file sizes, zerodep's benefit is in eliminating the external `python-dotenv` dependency from your project.
 
 ## Run It Yourself
 

@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep frontmatter and [`python-f
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** python-frontmatter 1.1.0
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -26,17 +28,17 @@ Apple-to-apple performance comparison between zerodep frontmatter and [`python-f
 
 | Data Size | zerodep | python-frontmatter | Ratio |
 |-----------|---------|---------------------|-------|
-| Small | 8.7 us | 8.6 us | ~1.0x (parity) |
-| Medium | 13.4 us | 13.4 us | ~1.0x (parity) |
-| Large | 55.0 us | 55.0 us | ~1.0x (parity) |
+| Small | 12.3 us | 12.4 us | ~1.0x (parity) |
+| Medium | 82.4 us | 84.0 us | ~1.0x (parity) |
+| Large | 383.0 us | 386.2 us | ~1.0x (parity) |
 
 ## Serialize Performance (Mean)
 
 | Data Size | zerodep | python-frontmatter | Ratio |
 |-----------|---------|---------------------|-------|
-| Small | 84.0 us | 84.2 us | ~1.0x (parity) |
-| Medium | 276.7 us | 276.8 us | ~1.0x (parity) |
-| Large | 407.8 us | 409.8 us | ~1.0x (parity) |
+| Small | 20.6 us | 19.7 us | ~1.0x (parity) |
+| Medium | 136.7 us | 132.3 us | ~1.0x (parity) |
+| Large | 688.7 us | 683.9 us | ~1.0x (parity) |
 
 ## Key Takeaways
 

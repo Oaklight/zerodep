@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep semver and [`packaging`](h
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** packaging 26.1
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -29,20 +31,20 @@ Apple-to-apple performance comparison between zerodep semver and [`packaging`](h
 
 | Scenario | zerodep | packaging | Ratio |
 |----------|---------|-----------|-------|
-| Parse Simple | 10.8 us | 8.0 us | 0.74x |
-| Parse Pre-release | 14.6 us | 11.0 us | 0.76x |
-| Parse Complex | 16.0 us | 11.5 us | 0.72x |
-| Sort | 1.2 us | 2.5 us | 2.1x faster |
-| Compare | 5.0 us | 6.6 us | 1.3x faster |
-| Property Access | 4.7 us | 5.8 us | 1.2x faster |
+| Parse Simple | 18.5 μs | 4.1 μs | 4.5x slower |
+| Parse Pre-release | 24.4 μs | 17.5 μs | 1.4x slower |
+| Parse Complex | 29.1 μs | 17.7 μs | 1.6x slower |
+| Sort | 1.8 μs | 1.6 μs | 1.2x slower |
+| Compare | 4.1 μs | 3.3 μs | 1.2x slower |
+| Property Access | 6.2 μs | 7.3 μs | 1.2x faster |
 
 ## Key Takeaways
 
-- **Comparable overall performance** -- zerodep is within the same order of magnitude as packaging across all scenarios.
-- **Faster comparison and sorting** -- once parsed, zerodep Version objects compare and sort 1.2-2.1x faster than packaging, which matters most in version-checking workflows.
-- **Slightly slower parsing** -- initial parsing is ~1.3x slower due to pure Python regex vs. packaging's optimised parser, but the absolute difference is only a few microseconds.
+- **zerodep is generally slower than packaging** -- parsing is 1.4-4.5x slower, and comparison/sorting is ~1.2x slower. The absolute differences are small (a few microseconds).
+- **Property access is slightly faster** -- `is_prerelease`, `is_devrelease`, and `str()` are 1.2x faster in zerodep.
+- **Parsing simple versions has the largest gap** (4.5x) because packaging's parser is highly optimized for common version strings, while zerodep uses pure Python regex.
 - **Zero pip dependencies** -- zerodep uses only `re` and `functools` from the standard library.
-- **Practical trade-off** -- for typical use cases (parse a version once, compare many times), zerodep performs equivalently or better than packaging.
+- **Practical trade-off** -- for typical use cases where version parsing is not on the hot path, the microsecond-level difference is negligible. zerodep's value is in eliminating the packaging dependency.
 
 ## Run It Yourself
 

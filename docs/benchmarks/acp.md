@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep ACP and [`agent-client-pro
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** agent-client-protocol 0.9.0
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -28,19 +30,19 @@ Object → dict conversion. zerodep uses `to_dict()`; reference uses Pydantic's 
 
 | Data Size | zerodep | agent-client-protocol | Ratio |
 |-----------|---------|----------------------|-------|
-| Small | 2.9 us | 0.7 us | 0.24x |
-| Medium | 43.5 us | 6.6 us | 0.15x |
-| Large | 679.4 us | 40.6 us | 0.06x |
+| Small | 3.0 μs | 1.1 μs | 2.7x slower |
+| Medium | 46.5 μs | 12.6 μs | 3.7x slower |
+| Large | 399.8 μs | 76.8 μs | 5.2x slower |
 
 ## Deserialization Performance (Mean)
 
 Dict → object reconstruction. zerodep uses `from_raw()`; reference uses Pydantic's `model_validate()`.
 
-| Data Size | zerodep | agent-client-protocol | Speedup |
-|-----------|---------|----------------------|---------|
-| Small | 0.4 us | 0.8 us | **2.0x faster** |
-| Medium | 0.7 us | 30.5 us | **40.7x faster** |
-| Large | 15.0 us | 39.5 us | **2.6x faster** |
+| Data Size | zerodep | agent-client-protocol | Ratio |
+|-----------|---------|----------------------|-------|
+| Small | 1.4 μs | 1.3 μs | ~same |
+| Medium | 5.0 μs | 49.9 μs | **10.0x faster** |
+| Large | 128.9 μs | 68.4 μs | 1.9x slower |
 
 ## JSON Round-Trip Performance (Mean)
 
@@ -48,15 +50,15 @@ Full cycle: object → dict → JSON string → dict → object.
 
 | Data Size | zerodep | agent-client-protocol | Ratio |
 |-----------|---------|----------------------|-------|
-| Small | 6.0 us | 4.2 us | 0.69x |
-| Medium | 56.9 us | 44.2 us | 0.78x |
-| Large | 868.7 us | 238.6 us | 0.27x |
+| Small | 8.3 μs | 5.9 μs | 1.4x slower |
+| Medium | 72.4 μs | 72.4 μs | ~same |
+| Large | 793.6 μs | 385.5 μs | 2.1x slower |
 
 ## Key Takeaways
 
-- **Deserialization is 2-41x faster** -- zerodep's `from_raw()` uses lightweight dict-based reconstruction without deep schema validation, while Pydantic's `model_validate()` performs full type checking and coercion. This makes zerodep ideal for high-throughput message ingestion.
-- **Serialization is slower** -- Pydantic v2's `model_dump()` is backed by compiled Rust code, making it significantly faster than zerodep's pure-Python `to_dict()` recursive conversion. The gap widens with data size.
-- **JSON round-trip reflects the serialization gap** -- since serialization dominates the round-trip cost, the reference library's Rust-accelerated serialization gives it the edge in end-to-end scenarios.
+- **Deserialization is mixed** -- zerodep's `from_raw()` is 10.0x faster than Pydantic at medium scale, where Pydantic's deep schema validation is most costly. At small scale the two are on par, and at large scale zerodep is 1.9x slower.
+- **Serialization is 2.7-5.2x slower** -- Pydantic v2's `model_dump()` is backed by compiled Rust code, making it significantly faster than zerodep's pure-Python `to_dict()` recursive conversion. The gap widens with data size.
+- **JSON round-trip is mixed** -- at medium scale the two are on par. At small scale zerodep is 1.4x slower, and at large scale 2.1x slower, reflecting the serialization overhead.
 - **Different design tradeoffs** -- zerodep prioritizes zero dependencies and simplicity; the reference library prioritizes raw throughput via compiled extensions. For most ACP use cases (stdio IPC between editor and agent), both are fast enough -- the bottleneck is the AI model, not serialization.
 
 ## Run It Yourself

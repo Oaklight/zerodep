@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep retry and [`tenacity`](htt
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10
-    - **Tool:** pytest-benchmark (mean values reported)
+    - **Python:** 3.12
+    - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** tenacity 9.1.4
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -18,15 +20,15 @@ Apple-to-apple performance comparison between zerodep retry and [`tenacity`](htt
 
 | Test | zerodep | tenacity | Speedup |
 |------|---------|----------|---------|
-| Decorator overhead | 377 ns | 8.4 us | ~22x faster |
-| Retry with 2 failures | 2.5 us | 9.5 us | ~4x faster |
-| Backoff calculation | 3.0 us | 30 us | ~10x faster |
+| Decorator overhead | 0.5 μs | 17.0 μs | 33.7x faster |
+| Retry with 2 failures | 114.8 μs | 180.2 μs | 1.6x faster |
+| Backoff calculation | 5.0 μs | 10.5 μs | 2.1x faster |
 
 ## Key Takeaways
 
-- **Decorator overhead** is ~22x lower than tenacity, making zerodep retry nearly free for hot-path decoration.
-- **Retry execution** with actual failures is ~4x faster, as zerodep avoids the overhead of tenacity's statistics tracking and wait-chain abstraction.
-- **Backoff calculation** is ~10x faster due to direct arithmetic vs. tenacity's composable wait object pipeline.
+- **Decorator overhead** is ~34x lower than tenacity, making zerodep retry nearly free for hot-path decoration.
+- **Retry execution** with actual failures is ~1.6x faster, as zerodep avoids the overhead of tenacity's statistics tracking and wait-chain abstraction.
+- **Backoff calculation** is ~2x faster due to direct arithmetic vs. tenacity's composable wait object pipeline.
 - zerodep has **zero pip dependencies** -- it uses only `time`, `functools`, `random`, `asyncio`, and `inspect` from the standard library.
 
 ## Run It Yourself

@@ -4,9 +4,10 @@ Apple-to-apple performance comparison between zerodep protobuf (pure Python) and
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
-    - **google-protobuf:** 7.34.1 (upb C backend)
+    - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** protobuf (google) 7.34.1
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -27,37 +28,37 @@ Apple-to-apple performance comparison between zerodep protobuf (pure Python) and
 
 | Message Size | zerodep | google-protobuf | Ratio |
 |-------------|---------|-----------------|-------|
-| Small | 4.86 μs | 0.094 μs | 52x slower |
-| Medium | 60.7 μs | 0.169 μs | 359x slower |
-| Large | 294.0 μs | 1.29 μs | 228x slower |
+| Small | 5.3 μs | 0.2 μs | 22x slower |
+| Medium | 49.3 μs | 0.5 μs | 106x slower |
+| Large | 341.1 μs | 2.6 μs | 134x slower |
 
 ## Decode Performance (Mean)
 
 | Message Size | zerodep | google-protobuf | Ratio |
 |-------------|---------|-----------------|-------|
-| Small | 4.60 μs | 0.263 μs | 17x slower |
-| Medium | 51.7 μs | 0.565 μs | 91x slower |
-| Large | 412.4 μs | 2.50 μs | 165x slower |
+| Small | 5.1 μs | 0.5 μs | 11x slower |
+| Medium | 59.6 μs | 1.0 μs | 58x slower |
+| Large | 432.2 μs | 4.7 μs | 93x slower |
 
 ## Roundtrip Performance (Mean)
 
 | Message Size | zerodep | google-protobuf | Ratio |
 |-------------|---------|-----------------|-------|
-| Small | 9.78 μs | 0.367 μs | 27x slower |
-| Medium | 89.4 μs | 0.769 μs | 116x slower |
-| Large | 722.8 μs | 3.84 μs | 188x slower |
+| Small | 10.5 μs | 0.7 μs | 16x slower |
+| Medium | 111.5 μs | 1.4 μs | 78x slower |
+| Large | 800.1 μs | 7.2 μs | 111x slower |
 
 ## Dict Conversion (Large Message, zerodep only)
 
 | Operation | Time |
 |-----------|------|
-| `to_dict()` | 173.2 μs |
-| `from_dict()` | 126.3 μs |
+| `to_dict()` | 138.0 μs |
+| `from_dict()` | 133.9 μs |
 
 ## Key Takeaways
 
-- **google-protobuf is 50-200x faster** -- this is expected since it uses a compiled C/upb backend while zerodep is pure Python. The gap widens with message complexity.
-- **Decode is relatively closer** -- zerodep's decode gap (17-165x) is smaller than encode (52-359x), because Python's overhead is more evenly distributed across field parsing.
+- **google-protobuf is 11-134x faster** -- this is expected since it uses a compiled C/upb backend while zerodep is pure Python. The gap widens with message complexity.
+- **Decode is relatively closer** -- zerodep's decode gap (11-93x) is smaller than encode (22-134x), because Python's overhead is more evenly distributed across field parsing.
 - **zerodep targets a different use case** -- the tradeoff is zero dependencies, no `protoc`, no `.proto` files, no C extensions, and a single-file drop-in. It is suitable for:
     - Configuration and metadata exchange (low frequency)
     - CLI tools, scripts, and prototyping

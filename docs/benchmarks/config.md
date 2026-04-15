@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep config and [`python-decoup
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
-    - **Tool:** pytest-benchmark 5.2.3 (median values reported)
+    - **Python:** 3.12
+    - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** python-decouple 3.8
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -24,30 +26,30 @@ Apple-to-apple performance comparison between zerodep config and [`python-decoup
 | Cast Bool | Env lookup + `cast=bool` |
 | CSV | Env lookup + `cast=Csv()` |
 
-## Performance Comparison (Median)
+## Performance Comparison (Mean)
 
 | Test | zerodep | python-decouple | Speedup |
 |------|---------|-----------------|---------|
-| Env Lookup | 657 ns | 977 ns | **1.5x faster** |
-| Dotenv Lookup | 650 ns | 938 ns | **1.4x faster** |
-| Cast Int | 788 ns | 1,223 ns | **1.6x faster** |
-| Cast Bool | 869 ns | 1,437 ns | **1.7x faster** |
-| CSV | 1,816 ns | 9,509 ns | **5.2x faster** |
+| Env Lookup | 0.8 μs | 1.4 μs | **1.8x faster** |
+| Dotenv Lookup | 0.8 μs | 1.5 μs | **1.9x faster** |
+| Cast Int | 1.0 μs | 1.8 μs | **1.8x faster** |
+| Cast Bool | 1.1 μs | 2.3 μs | **2.2x faster** |
+| CSV | 2.2 μs | 11.2 μs | **5.0x faster** |
 
 ## Additional Benchmarks (zerodep only)
 
-| Test | Median | Description |
-|------|--------|-------------|
-| Nested JSON Lookup | 1,177 ns | Lookup nested key from JSON config file |
-| Config Init (env only) | 319 ns | Construct `Config()` without file loading |
-| Config Init (with JSON) | 19,360 ns | Construct `Config()` with JSON config file |
-| Config Init (with .env) | 95,706 ns | Construct `Config()` with .env file (50 entries) |
+| Test | Mean | Description |
+|------|------|-------------|
+| Nested JSON Lookup | 1.7 μs | Lookup nested key from JSON config file |
+| Config Init (env only) | 0.5 μs | Construct `Config()` without file loading |
+| Config Init (with JSON) | 38.9 μs | Construct `Config()` with JSON config file |
+| Config Init (with .env) | 759.8 μs | Construct `Config()` with .env file (50 entries) |
 
 ## Key Takeaways
 
-- **Consistently faster** -- zerodep config is 1.4x-5.2x faster than python-decouple across all comparable operations.
-- **CSV parsing advantage** -- the largest speedup (5.2x) is in CSV casting, where zerodep's simpler implementation avoids python-decouple's overhead.
-- **Lightweight init** -- constructing a `Config` with no file loading costs only ~319 ns; JSON config loading adds ~19 us, .env loading ~96 us.
+- **Consistently faster** -- zerodep config is 1.8x-5.0x faster than python-decouple across all comparable operations.
+- **CSV parsing advantage** -- the largest speedup (5.0x) is in CSV casting, where zerodep's simpler implementation avoids python-decouple's overhead.
+- **Lightweight init** -- constructing a `Config` with no file loading costs only ~0.5 μs; JSON config loading adds ~39 μs, .env loading ~760 μs.
 - **Extra features at no cost** -- zerodep adds config file support (JSON/YAML/TOML/INI), nested keys, and prefix support while maintaining better performance.
 
 ## Run It Yourself

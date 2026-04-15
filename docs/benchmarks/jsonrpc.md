@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep JSON-RPC and [`jsonrpcserv
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** jsonrpcserver 5.0.9
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -22,10 +24,10 @@ End-to-end dispatch comparison: JSON string → parse → dispatch → serialize
 
 | Scenario | zerodep | jsonrpcserver | Speedup |
 |----------|---------|---------------|---------|
-| Success | 4.5 μs | 69.0 μs | **15.4x faster** |
-| Error | 5.4 μs | 68.9 μs | **12.8x faster** |
-| Method not found | 4.7 μs | 54.3 μs | **11.5x faster** |
-| Batch (20 requests) | 85.2 μs | 1,436.8 μs | **16.9x faster** |
+| Success | 6.3 μs | 118.5 μs | **18.8x faster** |
+| Error | 8.1 μs | 112.0 μs | **13.8x faster** |
+| Method not found | 7.0 μs | 92.4 μs | **13.2x faster** |
+| Batch (20 requests) | 124.9 μs | 2,400.5 μs | **19.2x faster** |
 
 ## Serialization Performance (Mean, zerodep only)
 
@@ -33,24 +35,24 @@ End-to-end dispatch comparison: JSON string → parse → dispatch → serialize
 
 | Operation | Time |
 |-----------|------|
-| Request `to_dict()` | 187 ns |
-| Response `to_dict()` | 143 ns |
-| Request `from_dict()` | 360 ns |
-| Response `from_dict()` | 414 ns |
-| Full JSON round-trip | 3.8 μs |
+| Request `to_dict()` | 300 ns |
+| Response `to_dict()` | 300 ns |
+| Request `from_dict()` | 700 ns |
+| Response `from_dict()` | 700 ns |
+| Full JSON round-trip | 6.4 μs |
 
 ## ID Generation (Mean)
 
 | Operation | Time |
 |-----------|------|
-| `next_id()` | 55 ns |
+| `next_id()` | 93 ns |
 
 ## Key Takeaways
 
-- **Dispatch is ~12-17x faster** -- zerodep dramatically outperforms jsonrpcserver across all dispatch scenarios because it avoids jsonrpcserver's schema validation overhead and function introspection machinery.
-- **Batch scaling is linear** -- 20-request batch shows the same ~17x speedup, confirming zero per-request overhead beyond the handler itself.
+- **Dispatch is ~13-19x faster** -- zerodep dramatically outperforms jsonrpcserver across all dispatch scenarios because it avoids jsonrpcserver's schema validation overhead and function introspection machinery.
+- **Batch scaling is linear** -- 20-request batch shows the same ~19x speedup, confirming zero per-request overhead beyond the handler itself.
 - **Serialization is sub-microsecond** -- dataclass `to_dict()` / `from_dict()` is extremely lightweight compared to full dispatch.
-- **ID generation is ~55 ns** -- `itertools.count` is essentially free.
+- **ID generation is ~93 ns** -- `itertools.count` is essentially free.
 
 ## Run It Yourself
 

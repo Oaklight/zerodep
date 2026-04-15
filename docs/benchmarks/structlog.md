@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep structured logging and [`s
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** structlog 25.5.0
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -18,16 +20,16 @@ Apple-to-apple performance comparison between zerodep structured logging and [`s
 
 | Test | zerodep | structlog | Speedup |
 |------|---------|-----------|---------|
-| Simple log | 5.0 us | 5.7 us | 1.1x faster |
-| Bound log | 5.0 us | 7.3 us | 1.5x faster |
-| JSON rendering | 5.5 us | 10.9 us | 2.0x faster |
-| Bind + log | 5.7 us | 12.9 us | 2.3x faster |
+| Simple log | 8.8 us | 10.9 us | 1.2x faster |
+| Bound log | 10.2 us | 15.4 us | 1.5x faster |
+| JSON rendering | 8.3 us | 9.9 us | 1.2x faster |
+| Bind + log | 10.0 us | 17.0 us | 1.7x faster |
 
 ## Key Takeaways
 
-- **1.1-2.3x faster** -- zerodep outperforms structlog across all scenarios, with the advantage growing as operations become more complex.
-- **Simple logging is near-parity** -- for basic log calls, both libraries are fast (~5 us), with zerodep only marginally ahead.
-- **Biggest wins on complex operations** -- JSON rendering (2.0x) and context propagation with bind + log (2.3x) show the largest speedups, where structlog's processor chain and wrapper overhead become more visible.
+- **1.2-1.7x faster** -- zerodep outperforms structlog across all scenarios, with the advantage growing as operations involve context binding.
+- **Simple logging and JSON rendering are near-parity** -- for basic log calls and JSON output, both libraries perform similarly (~8-11 us), with zerodep about 1.2x ahead.
+- **Biggest wins on context operations** -- bound logging (1.5x) and bind + log (1.7x) show the largest speedups, where structlog's processor chain and wrapper overhead become more visible.
 - **Zero pip dependencies** -- zerodep uses only `json`, `logging`, `io`, and `time` from the standard library.
 
 ## Run It Yourself

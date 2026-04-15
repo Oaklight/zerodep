@@ -4,9 +4,10 @@ Apple-to-apple performance comparison between zerodep validate and [`pydantic`](
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10
-    - **Tool:** pytest-benchmark (mean values reported)
-    - **pydantic:** v2.12.5 (Rust-compiled core)
+    - **Python:** 3.12
+    - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** pydantic 2.13.0
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -19,18 +20,18 @@ Apple-to-apple performance comparison between zerodep validate and [`pydantic`](
 
 | Test | zerodep | pydantic | Ratio |
 |------|---------|----------|-------|
-| Simple (3 fields) | 3.3 us | 650 ns | pydantic 5x faster |
-| Nested (TypedDict in TypedDict) | 5.9 us | 710 ns | pydantic 8.4x faster |
-| Constrained (Annotated Gt/Ge/Le) | 6.2 us | 980 ns | pydantic 6.3x faster |
-| List of 50 dicts | 6.1 us | 11.9 us | zerodep 2x faster |
-| JSON Schema generation | 132 us | 127 us | ~equal |
+| Simple (3 fields) | 4.6 us | 1.1 us | pydantic 4.3x faster |
+| Nested (TypedDict in TypedDict) | 8.1 us | 1.7 us | pydantic 4.9x faster |
+| Constrained (Annotated Gt/Ge/Le) | 8.0 us | 1.1 us | pydantic 7.2x faster |
+| List of 50 dicts | 178.5 us | 24.4 us | pydantic 7.3x faster |
+| JSON Schema generation | 8.1 us | 167.6 us | zerodep 20.6x faster |
 
 ## Key Takeaways
 
 - **pydantic v2 uses a Rust-compiled core** (`pydantic-core`), so raw speed is not a fair pure-Python comparison. zerodep is pure Python with zero dependencies.
-- **For bulk data** (list of 50 dicts), zerodep is now **2x faster** than pydantic -- caching amortizes the per-type overhead, and the Rust-to-Python bridge overhead becomes the bottleneck for pydantic.
-- **In absolute terms**, zerodep validates a simple 3-field TypedDict in **~3.3 us** -- fast enough for API request/response validation where network latency is the bottleneck.
-- **JSON Schema generation** at 132 us is a one-time cost typically called at startup, not per-request. With caching, this is now on par with pydantic.
+- **For per-object validation**, pydantic is 4-7x faster due to its Rust core. zerodep validates a simple 3-field TypedDict in **~4.6 us** -- still fast enough for API request/response validation where network latency is the bottleneck.
+- **JSON Schema generation is zerodep's strong point** -- at 8.1 us, it is **20.6x faster** than pydantic's 167.6 us. This matters for applications that generate schemas dynamically rather than at startup.
+- **Bulk data validation** (list of 50 dicts) shows pydantic 7.3x faster, as pydantic's Rust core handles repetitive type checking very efficiently.
 - zerodep has **zero pip dependencies** and uses only stdlib `typing`, `dataclasses`, and `re`.
 
 !!! tip "Caching Optimization (v0.4.0+)"

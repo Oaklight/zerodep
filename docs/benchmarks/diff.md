@@ -4,8 +4,10 @@ Apple-to-apple performance comparison between zerodep diff and [`unidiff`](https
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.10.20
+    - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** unidiff 0.7.5
+    - **Last Updated:** 2026-04-15
 
 ## Implementations
 
@@ -26,9 +28,9 @@ Apple-to-apple performance comparison between zerodep diff and [`unidiff`](https
 
 | Test | zerodep | unidiff | Ratio |
 |------|---------|---------|-------|
-| Small | ~7 us | ~65 us | **~9x faster** |
-| Medium | ~18 us | ~145 us | **~8x faster** |
-| Large | ~130 us | ~1,200 us | **~9x faster** |
+| Small | 7.7 μs | 18.1 μs | **2.4x faster** |
+| Medium | 24.1 μs | 49.5 μs | **2.1x faster** |
+| Large | 72.2 μs | 149.3 μs | **2.1x faster** |
 
 ## Apply Performance (zerodep only)
 
@@ -36,13 +38,13 @@ Apple-to-apple performance comparison between zerodep diff and [`unidiff`](https
 
 | Test | zerodep |
 |------|---------|
-| Small | ~5 us |
-| Medium | ~12 us |
-| Large | ~80 us |
+| Small | 2.0 μs |
+| Medium | 6.5 μs |
+| Large | 55.2 μs |
 
 ## Key Takeaways
 
-- **Consistently faster** -- zerodep's diff parser is **~8-9x faster** than unidiff across all diff sizes.
+- **Consistently faster** -- zerodep's diff parser is **2.1-2.4x faster** than unidiff across all diff sizes.
 - **Linear scaling** -- both implementations scale linearly with diff size, as expected.
 - **More features** -- zerodep provides patch application, reversal, and three-way merge in addition to parsing, while unidiff only parses.
 - **Round-trip correctness** -- `apply_patch(a, parse_patch(make_diff(a, b))) == b` verified across 13 parametrized test cases including edge cases (Unicode, no trailing newline, Windows line endings).

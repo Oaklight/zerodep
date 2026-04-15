@@ -635,6 +635,92 @@ class TTLCache(LRUCache):
 
 # ── Decorators ─────────────────────────────────────────────────────────────
 
+_MISS = object()  # sentinel for cache lookup miss
+
+
+class _Stats:
+    """Mutable hit/miss counters shared by cache wrapper closures."""
+
+    __slots__ = ("hits", "misses")
+
+    def __init__(self) -> None:
+        self.hits = 0
+        self.misses = 0
+
+
+def _cache_lookup(cache: collections.abc.MutableMapping, k: Any) -> Any:
+    """Return cached value for *k*, or ``_MISS`` on cache miss."""
+    try:
+        return cache[k]
+    except KeyError:
+        return _MISS
+
+
+def _cache_store(cache: collections.abc.MutableMapping, k: Any, v: Any) -> Any:
+    """Store *v* under *k*, silently ignoring ``ValueError``."""
+    try:
+        cache[k] = v
+    except ValueError:
+        pass
+    return v
+
+
+def _cache_store_default(cache: collections.abc.MutableMapping, k: Any, v: Any) -> Any:
+    """Thread-safe store via ``setdefault``, silently ignoring ``ValueError``."""
+    try:
+        return cache.setdefault(k, v)
+    except ValueError:
+        return v
+
+
+def _get_cache_maxsize(
+    cache: collections.abc.MutableMapping,
+) -> int | float | None:
+    """Return maxsize if *cache* is a ``Cache`` instance, else ``None``."""
+    return cache.maxsize if isinstance(cache, Cache) else None
+
+
+def _get_cache_currsize(cache: collections.abc.MutableMapping) -> int | float:
+    """Return current size of *cache*."""
+    return cache.currsize if isinstance(cache, Cache) else len(cache)
+
+
+def _attach_cache_info(
+    wrapper: Callable,
+    cache: collections.abc.MutableMapping,
+    lock: Any | None,
+    stats: _Stats,
+    maxsize: int | float | None,
+) -> None:
+    """Attach ``cache_info()`` and ``cache_clear()`` methods to *wrapper*."""
+
+    def cache_info() -> CacheInfo:
+        return CacheInfo(stats.hits, stats.misses, maxsize, _get_cache_currsize(cache))
+
+    def cache_clear() -> None:
+        with lock if lock else _no_lock():
+            cache.clear()
+        stats.hits = stats.misses = 0
+
+    wrapper.cache_info = cache_info  # type: ignore[attr-defined]
+    wrapper.cache_clear = cache_clear  # type: ignore[attr-defined]
+
+
+def _attach_noop_info(
+    wrapper: Callable,
+    stats: _Stats,
+) -> None:
+    """Attach ``cache_info()`` and ``cache_clear()`` for a no-op wrapper."""
+
+    def cache_info() -> CacheInfo:
+        return CacheInfo(stats.hits, stats.misses, None, 0)
+
+    def cache_clear() -> None:
+        stats.hits = stats.misses = 0
+
+    wrapper.cache_info = cache_info  # type: ignore[attr-defined]
+    wrapper.cache_clear = cache_clear  # type: ignore[attr-defined]
+
 
 def _make_sync_wrapper(
     fn: Callable,
@@ -644,124 +730,46 @@ def _make_sync_wrapper(
     info: bool,
 ) -> Callable:
     """Build a synchronous caching wrapper."""
-    hits = misses = 0
+    stats = _Stats()
 
     if cache is None:
-        # No-op caching
+
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            stats.misses += 1
+            return fn(*args, **kwargs)
+
         if info:
-
-            def wrapper(*args: Any, **kwargs: Any) -> Any:
-                nonlocal misses
-                misses += 1
-                return fn(*args, **kwargs)
-
-            def cache_info() -> CacheInfo:
-                return CacheInfo(hits, misses, None, 0)
-
-            def cache_clear() -> None:
-                nonlocal hits, misses
-                hits = misses = 0
-
-            wrapper.cache_info = cache_info  # type: ignore[attr-defined]
-            wrapper.cache_clear = cache_clear  # type: ignore[attr-defined]
-        else:
-
-            def wrapper(*args: Any, **kwargs: Any) -> Any:
-                return fn(*args, **kwargs)
-
+            _attach_noop_info(wrapper, stats)
         return wrapper
 
-    _maxsize = cache.maxsize if isinstance(cache, Cache) else None
+    if lock is not None:
 
-    def _currsize():
-        return cache.currsize if isinstance(cache, Cache) else len(cache)
-
-    if lock is None:
-        if info:
-
-            def wrapper(*args: Any, **kwargs: Any) -> Any:
-                nonlocal hits, misses
-                k = key(*args, **kwargs)
-                try:
-                    result = cache[k]
-                    hits += 1
-                    return result
-                except KeyError:
-                    pass
-                misses += 1
-                v = fn(*args, **kwargs)
-                try:
-                    cache[k] = v
-                except ValueError:
-                    pass
-                return v
-
-        else:
-
-            def wrapper(*args: Any, **kwargs: Any) -> Any:
-                k = key(*args, **kwargs)
-                try:
-                    return cache[k]
-                except KeyError:
-                    pass
-                v = fn(*args, **kwargs)
-                try:
-                    cache[k] = v
-                except ValueError:
-                    pass
-                return v
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            k = key(*args, **kwargs)
+            with lock:
+                result = _cache_lookup(cache, k)
+            if result is not _MISS:
+                stats.hits += 1
+                return result
+            stats.misses += 1
+            v = fn(*args, **kwargs)
+            with lock:
+                return _cache_store_default(cache, k, v)
 
     else:
-        if info:
 
-            def wrapper(*args: Any, **kwargs: Any) -> Any:
-                nonlocal hits, misses
-                k = key(*args, **kwargs)
-                with lock:
-                    try:
-                        result = cache[k]
-                        hits += 1
-                        return result
-                    except KeyError:
-                        pass
-                misses += 1
-                v = fn(*args, **kwargs)
-                with lock:
-                    try:
-                        result = cache.setdefault(k, v)
-                        return result
-                    except ValueError:
-                        return v
-
-        else:
-
-            def wrapper(*args: Any, **kwargs: Any) -> Any:
-                k = key(*args, **kwargs)
-                with lock:
-                    try:
-                        return cache[k]
-                    except KeyError:
-                        pass
-                v = fn(*args, **kwargs)
-                with lock:
-                    try:
-                        return cache.setdefault(k, v)
-                    except ValueError:
-                        return v
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            k = key(*args, **kwargs)
+            result = _cache_lookup(cache, k)
+            if result is not _MISS:
+                stats.hits += 1
+                return result
+            stats.misses += 1
+            v = fn(*args, **kwargs)
+            return _cache_store(cache, k, v)
 
     if info:
-
-        def cache_info() -> CacheInfo:
-            return CacheInfo(hits, misses, _maxsize, _currsize())
-
-        def cache_clear() -> None:
-            nonlocal hits, misses
-            with lock if lock else _no_lock():
-                cache.clear()
-            hits = misses = 0
-
-        wrapper.cache_info = cache_info  # type: ignore[attr-defined]
-        wrapper.cache_clear = cache_clear  # type: ignore[attr-defined]
+        _attach_cache_info(wrapper, cache, lock, stats, _get_cache_maxsize(cache))
 
     return wrapper
 
@@ -774,122 +782,46 @@ def _make_async_wrapper(
     info: bool,
 ) -> Callable:
     """Build an asynchronous caching wrapper."""
-    hits = misses = 0
+    stats = _Stats()
 
     if cache is None:
+
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            stats.misses += 1
+            return await fn(*args, **kwargs)
+
         if info:
-
-            async def wrapper(*args: Any, **kwargs: Any) -> Any:
-                nonlocal misses
-                misses += 1
-                return await fn(*args, **kwargs)
-
-            def cache_info() -> CacheInfo:
-                return CacheInfo(hits, misses, None, 0)
-
-            def cache_clear() -> None:
-                nonlocal hits, misses
-                hits = misses = 0
-
-            wrapper.cache_info = cache_info  # type: ignore[attr-defined]
-            wrapper.cache_clear = cache_clear  # type: ignore[attr-defined]
-        else:
-
-            async def wrapper(*args: Any, **kwargs: Any) -> Any:
-                return await fn(*args, **kwargs)
-
+            _attach_noop_info(wrapper, stats)
         return wrapper
 
-    _maxsize = cache.maxsize if isinstance(cache, Cache) else None
+    if lock is not None:
 
-    def _currsize():
-        return cache.currsize if isinstance(cache, Cache) else len(cache)
-
-    if lock is None:
-        if info:
-
-            async def wrapper(*args: Any, **kwargs: Any) -> Any:
-                nonlocal hits, misses
-                k = key(*args, **kwargs)
-                try:
-                    result = cache[k]
-                    hits += 1
-                    return result
-                except KeyError:
-                    pass
-                misses += 1
-                v = await fn(*args, **kwargs)
-                try:
-                    cache[k] = v
-                except ValueError:
-                    pass
-                return v
-
-        else:
-
-            async def wrapper(*args: Any, **kwargs: Any) -> Any:
-                k = key(*args, **kwargs)
-                try:
-                    return cache[k]
-                except KeyError:
-                    pass
-                v = await fn(*args, **kwargs)
-                try:
-                    cache[k] = v
-                except ValueError:
-                    pass
-                return v
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            k = key(*args, **kwargs)
+            async with lock:
+                result = _cache_lookup(cache, k)
+            if result is not _MISS:
+                stats.hits += 1
+                return result
+            stats.misses += 1
+            v = await fn(*args, **kwargs)
+            async with lock:
+                return _cache_store_default(cache, k, v)
 
     else:
-        if info:
 
-            async def wrapper(*args: Any, **kwargs: Any) -> Any:
-                nonlocal hits, misses
-                k = key(*args, **kwargs)
-                async with lock:
-                    try:
-                        result = cache[k]
-                        hits += 1
-                        return result
-                    except KeyError:
-                        pass
-                misses += 1
-                v = await fn(*args, **kwargs)
-                async with lock:
-                    try:
-                        result = cache.setdefault(k, v)
-                        return result
-                    except ValueError:
-                        return v
-
-        else:
-
-            async def wrapper(*args: Any, **kwargs: Any) -> Any:
-                k = key(*args, **kwargs)
-                async with lock:
-                    try:
-                        return cache[k]
-                    except KeyError:
-                        pass
-                v = await fn(*args, **kwargs)
-                async with lock:
-                    try:
-                        return cache.setdefault(k, v)
-                    except ValueError:
-                        return v
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            k = key(*args, **kwargs)
+            result = _cache_lookup(cache, k)
+            if result is not _MISS:
+                stats.hits += 1
+                return result
+            stats.misses += 1
+            v = await fn(*args, **kwargs)
+            return _cache_store(cache, k, v)
 
     if info:
-
-        def cache_info() -> CacheInfo:
-            return CacheInfo(hits, misses, _maxsize, _currsize())
-
-        def cache_clear() -> None:
-            nonlocal hits, misses
-            cache.clear()
-            hits = misses = 0
-
-        wrapper.cache_info = cache_info  # type: ignore[attr-defined]
-        wrapper.cache_clear = cache_clear  # type: ignore[attr-defined]
+        _attach_cache_info(wrapper, cache, lock, stats, _get_cache_maxsize(cache))
 
     return wrapper
 

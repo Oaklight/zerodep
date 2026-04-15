@@ -456,11 +456,22 @@ class QrCode:
     def _get_penalty_score(self) -> int:
         """Calculates and returns the penalty score based on state of this QR Code's current modules.
         This is used by the automatic mask choice algorithm to find the mask pattern that yields the lowest score."""
+        result: int = (
+            self._penalty_rule_1()
+            + self._penalty_rule_2()
+            + self._penalty_rule_3()
+            + self._penalty_rule_4()
+        )
+        assert (
+            0 <= result <= 2568888
+        )  # Non-tight upper bound based on default values of PENALTY_N1, ..., N4
+        return result
+
+    def _penalty_rule_1(self) -> int:
+        """Penalty for adjacent modules in rows having same color, and finder-like patterns in rows."""
         result: int = 0
         size: int = self._size
         modules: list[list[bool]] = self._modules
-
-        # Adjacent modules in row having same color, and finder-like patterns
         for y in range(size):
             runcolor: bool = False
             runx: int = 0
@@ -485,9 +496,15 @@ class QrCode:
                 self._finder_penalty_terminate_and_count(runcolor, runx, runhistory)
                 * QrCode._PENALTY_N3
             )
-        # Adjacent modules in column having same color, and finder-like patterns
+        return result
+
+    def _penalty_rule_2(self) -> int:
+        """Penalty for adjacent modules in columns having same color, and finder-like patterns in columns."""
+        result: int = 0
+        size: int = self._size
+        modules: list[list[bool]] = self._modules
         for x in range(size):
-            runcolor = False
+            runcolor: bool = False
             runy: int = 0
             runhistory = collections.deque([0] * 7, 7)
             for y in range(size):
@@ -510,8 +527,13 @@ class QrCode:
                 self._finder_penalty_terminate_and_count(runcolor, runy, runhistory)
                 * QrCode._PENALTY_N3
             )
+        return result
 
-        # 2*2 blocks of modules having same color
+    def _penalty_rule_3(self) -> int:
+        """Penalty for 2x2 blocks of modules having same color."""
+        result: int = 0
+        size: int = self._size
+        modules: list[list[bool]] = self._modules
         for y in range(size - 1):
             for x in range(size - 1):
                 if (
@@ -521,18 +543,18 @@ class QrCode:
                     == modules[y + 1][x + 1]
                 ):
                     result += QrCode._PENALTY_N2
+        return result
 
-        # Balance of dark and light modules
+    def _penalty_rule_4(self) -> int:
+        """Penalty for imbalance of dark and light modules."""
+        size: int = self._size
+        modules: list[list[bool]] = self._modules
         dark: int = sum((1 if cell else 0) for row in modules for cell in row)
         total: int = size**2  # Note that size is odd, so dark/total != 1/2
         # Compute the smallest integer k >= 0 such that (45-5k)% <= dark/total <= (55+5k)%
         k: int = (abs(dark * 20 - total * 10) + total - 1) // total - 1
         assert 0 <= k <= 9
-        result += k * QrCode._PENALTY_N4
-        assert (
-            0 <= result <= 2568888
-        )  # Non-tight upper bound based on default values of PENALTY_N1, ..., N4
-        return result
+        return k * QrCode._PENALTY_N4
 
     # ---- Private helper functions ----
 

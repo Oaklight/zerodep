@@ -180,6 +180,109 @@ _DOW_NAMES = {
 }
 
 
+def _resolve_name_or_int(token: str) -> int:
+    """Resolve a cron token to an integer.
+
+    Checks named month and day-of-week aliases first, then falls back
+    to ``int(token)``.
+
+    Args:
+        token: Raw token string (e.g. ``"jan"``, ``"5"``).
+
+    Returns:
+        The resolved integer value.
+
+    Raises:
+        ValueError: If the token is not a known name and not a valid integer.
+    """
+    lower = token.lower()
+    val = _MONTH_NAMES.get(lower)
+    if val is not None:
+        return val
+    val = _DOW_NAMES.get(lower)
+    if val is not None:
+        return val
+    return int(token)
+
+
+def _extract_step(part: str, field: str) -> tuple[str, int]:
+    """Split a cron part on ``/`` and return ``(base, step)``.
+
+    Args:
+        part: A single comma-separated cron part (e.g. ``"*/2"``).
+        field: The full field string, used in error messages.
+
+    Returns:
+        A tuple of ``(base_string, step_int)``.
+
+    Raises:
+        InvalidCronExpression: On invalid step value.
+    """
+    if "/" not in part:
+        return part, 1
+    base, step_str = part.split("/", 1)
+    try:
+        step = int(step_str)
+    except ValueError:
+        raise InvalidCronExpression(field, f"invalid step: {step_str!r}")
+    if step < 1:
+        raise InvalidCronExpression(field, f"step must be >= 1, got {step}")
+    return base, step
+
+
+def _parse_cron_range(part: str, step: int, lo: int, hi: int, field: str) -> set[int]:
+    """Parse a range expression like ``1-5`` with an optional step.
+
+    Args:
+        part: The range string (e.g. ``"1-5"``, ``"mon-fri"``).
+        step: Step value for the range.
+        lo: Minimum allowed value for the field.
+        hi: Maximum allowed value for the field.
+        field: The full field string, used in error messages.
+
+    Returns:
+        Set of integers in the range.
+
+    Raises:
+        InvalidCronExpression: On invalid range bounds.
+    """
+    rlo_str, rhi_str = part.split("-", 1)
+    try:
+        rlo = _resolve_name_or_int(rlo_str)
+        rhi = _resolve_name_or_int(rhi_str)
+    except ValueError:
+        raise InvalidCronExpression(field, f"invalid range: {part!r}")
+    if rlo < lo or rhi > hi or rlo > rhi:
+        raise InvalidCronExpression(
+            field, f"range {rlo}-{rhi} out of bounds [{lo}-{hi}]"
+        )
+    return set(range(rlo, rhi + 1, step))
+
+
+def _parse_cron_literal(part: str, lo: int, hi: int, field: str) -> int:
+    """Parse a single literal cron value.
+
+    Args:
+        part: The literal string (e.g. ``"5"``, ``"jan"``).
+        lo: Minimum allowed value for the field.
+        hi: Maximum allowed value for the field.
+        field: The full field string, used in error messages.
+
+    Returns:
+        The parsed integer value.
+
+    Raises:
+        InvalidCronExpression: On invalid or out-of-range values.
+    """
+    try:
+        val = _resolve_name_or_int(part)
+    except ValueError:
+        raise InvalidCronExpression(field, f"invalid value: {part!r}")
+    if val < lo or val > hi:
+        raise InvalidCronExpression(field, f"value {val} out of bounds [{lo}-{hi}]")
+    return val
+
+
 def _parse_cron_field(field: str, lo: int, hi: int) -> frozenset[int]:
     """Parse a single cron field into a set of allowed values.
 
@@ -204,65 +307,14 @@ def _parse_cron_field(field: str, lo: int, hi: int) -> frozenset[int]:
         if not part:
             raise InvalidCronExpression(field, "empty part in list")
 
-        # Handle step
-        step = 1
-        if "/" in part:
-            base, step_str = part.split("/", 1)
-            try:
-                step = int(step_str)
-            except ValueError:
-                raise InvalidCronExpression(field, f"invalid step: {step_str!r}")
-            if step < 1:
-                raise InvalidCronExpression(field, f"step must be >= 1, got {step}")
-            part = base
-
-        # Resolve named values
-        part_lower = part.lower()
-        if part_lower in _MONTH_NAMES:
-            val = _MONTH_NAMES[part_lower]
-            if lo <= val <= hi:
-                result.add(val)
-                continue
-        if part_lower in _DOW_NAMES:
-            val = _DOW_NAMES[part_lower]
-            if lo <= val <= hi:
-                result.add(val)
-                continue
+        part, step = _extract_step(part, field)
 
         if part == "*":
             result.update(range(lo, hi + 1, step))
         elif "-" in part:
-            range_parts = part.split("-", 1)
-            try:
-                rlo_str, rhi_str = range_parts
-                # Resolve names in ranges
-                rlo = (
-                    _MONTH_NAMES.get(rlo_str.lower())
-                    or _DOW_NAMES.get(rlo_str.lower())
-                    or int(rlo_str)
-                )
-                rhi = (
-                    _MONTH_NAMES.get(rhi_str.lower())
-                    or _DOW_NAMES.get(rhi_str.lower())
-                    or int(rhi_str)
-                )
-            except ValueError:
-                raise InvalidCronExpression(field, f"invalid range: {part!r}")
-            if rlo < lo or rhi > hi or rlo > rhi:
-                raise InvalidCronExpression(
-                    field, f"range {rlo}-{rhi} out of bounds [{lo}-{hi}]"
-                )
-            result.update(range(rlo, rhi + 1, step))
+            result.update(_parse_cron_range(part, step, lo, hi, field))
         else:
-            try:
-                val = int(part)
-            except ValueError:
-                raise InvalidCronExpression(field, f"invalid value: {part!r}")
-            if val < lo or val > hi:
-                raise InvalidCronExpression(
-                    field, f"value {val} out of bounds [{lo}-{hi}]"
-                )
-            result.add(val)
+            result.add(_parse_cron_literal(part, lo, hi, field))
 
     return frozenset(result)
 

@@ -10,6 +10,7 @@ import base64
 import gzip
 import hashlib
 import json
+import os
 import select
 import socket
 import threading
@@ -269,6 +270,14 @@ class _HttpBinHandler(BaseHTTPRequestHandler):
             )
             self.send_header("Content-Length", "0")
             self.end_headers()
+        elif path.startswith("/stream-bytes/"):
+            n = int(path.rsplit("/", 1)[1])
+            data = os.urandom(n)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Content-Length", str(n))
+            self.end_headers()
+            self.wfile.write(data)
         elif path == "/keep-alive":
             body = json.dumps({"keep-alive": True}).encode()
             self.send_response(200)

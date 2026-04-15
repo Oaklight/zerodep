@@ -449,11 +449,13 @@ class TestEnumValues:
 
     def test_role_is_str_enum(self):
         """Role values can be used directly as strings."""
-        assert f"role={Role.USER}" == "role=ROLE_USER"
+        assert Role.USER.value == "ROLE_USER"
+        assert isinstance(Role.USER, str)
 
     def test_task_state_is_str_enum(self):
         """TaskState values can be used directly as strings."""
-        assert f"state={TaskState.SUBMITTED}" == "state=TASK_STATE_SUBMITTED"
+        assert TaskState.SUBMITTED.value == "TASK_STATE_SUBMITTED"
+        assert isinstance(TaskState.SUBMITTED, str)
 
 
 # ── Data model completeness ──

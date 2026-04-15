@@ -872,6 +872,134 @@ def _dec_tabular(
     return result, i
 
 
+def _dec_sibling_fields(
+    lines: list[_Line],
+    start: int,
+    target_depth: int,
+    obj: dict[str, Any],
+    strict: bool,
+) -> int:
+    """Read consecutive sibling key-value lines at *target_depth* into *obj*.
+
+    Returns the index of the first line that is no longer a sibling field.
+    """
+    i = start
+    while i < len(lines) and lines[i].depth == target_depth:
+        fl = lines[i]
+        if fl.is_blank:
+            i += 1
+            continue
+        fh = _parse_header(fl.content)
+        if fh is not None and fh[0] is not None:
+            fv, i = _dec_array_from_hdr(lines, i, fl.depth, fh, strict)
+            obj[fh[0]] = fv
+            continue
+        try:
+            fks, fvs = _split_kv(fl.content)
+        except ToonDecodeError:
+            break
+        fk = _parse_key(fks)
+        if not fvs:
+            obj[fk] = _dec_object(lines, i + 1, fl.depth, strict)
+            i += 1
+            while i < len(lines) and lines[i].depth > fl.depth:
+                i += 1
+        else:
+            obj[fk] = _parse_primitive(fvs)
+            i += 1
+    return i
+
+
+def _dec_list_item_named_array(
+    lines: list[_Line],
+    idx: int,
+    ln: _Line,
+    hdr_info: tuple[str | None, int, str, list[str] | None],
+    strict: bool,
+) -> tuple[dict[str, Any], int]:
+    """Decode a list item whose content starts with a named array header.
+
+    Returns the decoded object and the next line index.
+    """
+    item_obj: dict[str, Any] = {}
+    arr_val, next_i = _dec_array_from_hdr(lines, idx, ln.depth, hdr_info, strict)
+    item_obj[hdr_info[0]] = arr_val  # type: ignore[index]
+    next_i = _dec_sibling_fields(lines, next_i, ln.depth + 1, item_obj, strict)
+    return item_obj, next_i
+
+
+def _dec_list_item_object(
+    lines: list[_Line],
+    idx: int,
+    ln: _Line,
+    ic: str,
+    strict: bool,
+) -> tuple[dict[str, Any], int]:
+    """Decode a list item whose content is a key-value pair.
+
+    Returns the decoded object and the next line index.
+    """
+    ks, vs = _split_kv(ic)
+    obj_item: dict[str, Any] = {}
+    key = _parse_key(ks)
+    if not vs:
+        obj_item[key] = _dec_object(lines, idx + 1, ln.depth + 1, strict)
+        i = idx + 1
+        while i < len(lines) and lines[i].depth > ln.depth + 1:
+            i += 1
+    else:
+        obj_item[key] = _parse_primitive(vs)
+        i = idx + 1
+    i = _dec_sibling_fields(lines, i, ln.depth + 1, obj_item, strict)
+    return obj_item, i
+
+
+def _try_inline_subarray(
+    ic: str,
+    hdr_info: tuple[str | None, int, str, list[str] | None],
+    strict: bool,
+) -> list[Any] | None:
+    """Try to decode an inline sub-array from a keyless header.
+
+    Returns the decoded list if the header has no key and contains inline data,
+    otherwise returns None.
+    """
+    ikey, ilen, idelim, _ifields = hdr_info
+    if ikey is not None:
+        return None
+    ci = ic.find(_COLON)
+    if ci == -1:
+        return None
+    ip = ic[ci + 1 :].strip()
+    if not ip and ilen != 0:
+        return None
+    return _dec_inline_array(ip, idelim, ilen, strict)
+
+
+def _dec_one_list_item(
+    lines: list[_Line],
+    idx: int,
+    ln: _Line,
+    ic: str,
+    strict: bool,
+) -> tuple[Any, int]:
+    """Decode a single ``- ...`` list item.
+
+    Returns (decoded_value, next_line_index).
+    """
+    ih = _parse_header(ic)
+    if ih is not None:
+        inline = _try_inline_subarray(ic, ih, strict)
+        if inline is not None:
+            return inline, idx + 1
+        if ih[0] is not None:
+            return _dec_list_item_named_array(lines, idx, ln, ih, strict)
+    try:
+        return _dec_list_item_object(lines, idx, ln, ic, strict)
+    except ToonDecodeError:
+        return ({} if not ic else _parse_primitive(ic)), idx + 1
+
+
 def _dec_list_array(
     lines: list[_Line],
     start: int,
@@ -886,9 +1014,9 @@ def _dec_list_array(
     while i < len(lines):
         ln = lines[i]
         if ln.is_blank:
+            if strict and ln.depth >= item_depth:
+                raise ToonDecodeError("Blank lines not allowed inside arrays")
             if strict:
-                if ln.depth >= item_depth:
-                    raise ToonDecodeError("Blank lines not allowed inside arrays")
                 break
             i += 1
             continue
@@ -898,92 +1026,8 @@ def _dec_list_array(
         if not content.startswith("-"):
             break
         ic = content[2:].strip() if len(content) > 2 else ""
-        ih = _parse_header(ic)
-        if ih is not None:
-            ikey, ilen, idelim, ifields = ih
-            if ikey is None:
-                ci = ic.find(_COLON)
-                if ci != -1:
-                    ip = ic[ci + 1 :].strip()
-                    if ip or ilen == 0:
-                        result.append(_dec_inline_array(ip, idelim, ilen, strict))
-                        i += 1
-                        continue
-            else:
-                item_obj: dict[str, Any] = {}
-                arr_val, next_i = _dec_array_from_hdr(lines, i, ln.depth, ih, strict)
-                item_obj[ikey] = arr_val
-                i = next_i
-                while i < len(lines) and lines[i].depth == ln.depth + 1:
-                    fl = lines[i]
-                    if fl.is_blank:
-                        i += 1
-                        continue
-                    fh = _parse_header(fl.content)
-                    if fh is not None and fh[0] is not None:
-                        fv, ni = _dec_array_from_hdr(lines, i, fl.depth, fh, strict)
-                        item_obj[fh[0]] = fv
-                        i = ni
-                        continue
-                    try:
-                        fks, fvs = _split_kv(fl.content)
-                        fk = _parse_key(fks)
-                        if not fvs:
-                            item_obj[fk] = _dec_object(lines, i + 1, fl.depth, strict)
-                            i += 1
-                            while i < len(lines) and lines[i].depth > fl.depth:
-                                i += 1
-                        else:
-                            item_obj[fk] = _parse_primitive(fvs)
-                            i += 1
-                    except ToonDecodeError:
-                        break
-                result.append(item_obj)
-                continue
-        try:
-            ks, vs = _split_kv(ic)
-            obj_item: dict[str, Any] = {}
-            key = _parse_key(ks)
-            if not vs:
-                nested = _dec_object(lines, i + 1, ln.depth + 1, strict)
-                obj_item[key] = nested
-                i += 1
-                while i < len(lines) and lines[i].depth > ln.depth + 1:
-                    i += 1
-            else:
-                obj_item[key] = _parse_primitive(vs)
-                i += 1
-            while i < len(lines) and lines[i].depth == ln.depth + 1:
-                fl = lines[i]
-                if fl.is_blank:
-                    i += 1
-                    continue
-                fh = _parse_header(fl.content)
-                if fh is not None and fh[0] is not None:
-                    fv, ni = _dec_array_from_hdr(lines, i, fl.depth, fh, strict)
-                    obj_item[fh[0]] = fv
-                    i = ni
-                    continue
-                try:
-                    fks, fvs = _split_kv(fl.content)
-                    fk = _parse_key(fks)
-                    if not fvs:
-                        obj_item[fk] = _dec_object(lines, i + 1, fl.depth, strict)
-                        i += 1
-                        while i < len(lines) and lines[i].depth > fl.depth:
-                            i += 1
-                    else:
-                        obj_item[fk] = _parse_primitive(fvs)
-                        i += 1
-                except ToonDecodeError:
-                    break
-            result.append(obj_item)
-        except ToonDecodeError:
-            if not ic:
-                result.append({})
-            else:
-                result.append(_parse_primitive(ic))
-            i += 1
+        item, i = _dec_one_list_item(lines, i, ln, ic, strict)
+        result.append(item)
     if strict and len(result) != expected:
         raise ToonDecodeError(f"Expected {expected} items, got {len(result)}")
     return result, i

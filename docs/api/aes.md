@@ -2,14 +2,14 @@
 
 Auto-generated API documentation for the AES encryption modules.
 
-## aes -- Pure Python Implementation
+## aes -- OpenSSL ctypes Implementation (Default)
 
 ::: aes
     options:
       heading_level: 3
 
-## aes_openssl -- OpenSSL ctypes Implementation
+## aes_python -- Pure Python Implementation
 
-::: aes_openssl
+::: aes_python
     options:
       heading_level: 3

@@ -108,4 +108,4 @@ my-project/
     └── retry.py
 ```
 
-This is useful when modules include variant files (e.g., `aes/aes.py` and `aes/aes_openssl.py`). You can combine `-d` and `--nested` together (e.g., `zerodep add sse -d lib/ --nested`).
+This is useful when modules include variant files (e.g., `aes/aes.py` and `aes/aes_python.py`). You can combine `-d` and `--nested` together (e.g., `zerodep add sse -d lib/ --nested`).

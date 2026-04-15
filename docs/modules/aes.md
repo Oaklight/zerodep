@@ -8,8 +8,8 @@ The AES module provides AES encryption and decryption across multiple modes and 
 
 | File | Description | Dependencies |
 |------|-------------|--------------|
-| `aes.py` | Pure Python implementation | None (stdlib only) |
-| `aes_openssl.py` | Delegates to system OpenSSL via `ctypes` | System `libcrypto` at runtime |
+| `aes.py` | OpenSSL via `ctypes` (default) | System `libcrypto` at runtime |
+| `aes_python.py` | Pure Python implementation | None (stdlib only) |
 
 Both files expose the **same public API**, so you can swap one for the other with no code changes.
 
@@ -31,19 +31,19 @@ All modes support AES-128 (16 bytes), AES-192 (24 bytes), and AES-256 (32 bytes)
 Just copy the single `.py` file you need into your project:
 
 ```bash
-# Pure Python -- works everywhere
-cp aes/aes.py your_project/
+# Copy the whole package (OpenSSL default, pure-Python fallback)
+zerodep add aes --nested
 
-# OpenSSL -- much faster, requires system libcrypto
-cp aes/aes_openssl.py your_project/
+# Or copy individual files
+cp aes/aes.py your_project/          # OpenSSL (default)
+cp aes/aes_python.py your_project/   # Pure Python fallback
 ```
 
-Then import directly:
+Then import directly -- the package prefers OpenSSL and falls back to pure Python automatically:
 
 ```python
 from aes import aes_ecb_encrypt, aes_cbc_encrypt, aes_ctr_encrypt, aes_gcm_encrypt
-# or
-from aes_openssl import aes_ecb_encrypt, aes_cbc_encrypt, aes_ctr_encrypt, aes_gcm_encrypt
+from aes import BACKEND  # "openssl" or "python"
 ```
 
 ## Usage Examples
@@ -129,27 +129,22 @@ with pytest.raises(ValueError, match="authentication failed"):
     aes_gcm_decrypt(tampered, key, nonce, tag, aad=header)
 ```
 
-### Switching Between Implementations
+### Checking the Active Backend
+
+The `__init__.py` automatically selects OpenSSL when available, falling back to pure Python. You can check which backend is active:
 
 ```python
-import importlib
+from aes import BACKEND, aes_ecb_encrypt
 
-def get_aes_module():
-    """Prefer OpenSSL for speed; fall back to pure Python."""
-    try:
-        return importlib.import_module("aes_openssl")
-    except OSError:
-        return importlib.import_module("aes")
-
-aes = get_aes_module()
-ciphertext = aes.aes_ecb_encrypt(b"secret data", b"0123456789abcdef")
+print(BACKEND)  # "openssl" or "python"
+ciphertext = aes_ecb_encrypt(b"secret data", b"0123456789abcdef")
 ```
 
 ### Encrypting a File with CBC
 
 ```python
 import os
-from aes_openssl import aes_cbc_encrypt, aes_cbc_decrypt
+from aes import aes_cbc_encrypt, aes_cbc_decrypt
 
 key = os.urandom(32)
 iv = os.urandom(16)
@@ -224,7 +219,7 @@ aes_gcm_decrypt(data: bytes, key: bytes, nonce: bytes,
 
 ## OpenSSL Variant Details
 
-`aes_openssl.py` uses Python's built-in `ctypes` module to call the system's OpenSSL `libcrypto` library. Since Python itself depends on OpenSSL (`ssl` and `hashlib` modules link against `libcrypto`), any standard Python 3.10+ installation already has `libcrypto` available -- no additional software needs to be installed.
+`aes.py` (the OpenSSL variant) uses Python's built-in `ctypes` module to call the system's OpenSSL `libcrypto` library. Since Python itself depends on OpenSSL (`ssl` and `hashlib` modules link against `libcrypto`), any standard Python 3.10+ installation already has `libcrypto` available -- no additional software needs to be installed.
 
 The library is located at runtime in this order:
 
@@ -245,7 +240,7 @@ If `libcrypto` cannot be found, an `OSError` is raised at **import time**.
     For most applications, use **GCM mode** -- it provides both encryption and authentication (AEAD), preventing both eavesdropping and tampering. It is the default in TLS 1.3.
 
 !!! info "Performance"
-    The pure Python implementation (`aes.py`) is intentionally simple and educational. It is **orders of magnitude slower** than native implementations for large data. For any performance-sensitive workload, use `aes_openssl.py` instead.
+    The pure Python implementation (`aes_python.py`) is intentionally simple and educational. It is **orders of magnitude slower** than native implementations for large data. For any performance-sensitive workload, use the default `aes.py` (OpenSSL) instead.
 
 - **Key length:** Must be 16, 24, or 32 bytes. Invalid lengths raise `ValueError`.
 - **PKCS7 padding:** Applied automatically in ECB and CBC modes. CTR and GCM do not use padding.

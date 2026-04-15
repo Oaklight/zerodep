@@ -13,8 +13,8 @@ Apple-to-apple performance comparison between zerodep AES implementations and [`
 
 | Implementation | File | Type |
 |----------------|------|------|
-| **Pure Python** | `aes.py` | Interpreted Python |
-| **OpenSSL ctypes** | `aes_openssl.py` | System libcrypto via ctypes |
+| **OpenSSL ctypes** | `aes.py` | System libcrypto via ctypes (default) |
+| **Pure Python** | `aes_python.py` | Interpreted Python |
 | **pycryptodome** | *(reference)* | C extension |
 
 ## Modes Tested
@@ -92,8 +92,8 @@ Apple-to-apple performance comparison between zerodep AES implementations and [`
 
 ## Key Takeaways
 
-- **OpenSSL ctypes** (`aes_openssl.py`) consistently outperforms pycryptodome's C extension: **1.1--1.9x faster** in ECB/CBC/CTR for small-to-medium data, scaling up to **4.6--5.7x faster** for large payloads in CBC/CTR. In **GCM mode** the advantage is most pronounced at **5.3--8.8x faster**. All of this requires zero pip dependencies -- only a system-installed `libcrypto`.
-- **Pure Python** (`aes.py`) is 7--14,000x slower than pycryptodome depending on mode and data size. Even for 13-byte messages it takes ~71--232 us (vs ~5--7 us for OpenSSL). It is educational and serves as a fallback when no native library is available.
+- **OpenSSL ctypes** (`aes.py`) consistently outperforms pycryptodome's C extension: **1.1--1.9x faster** in ECB/CBC/CTR for small-to-medium data, scaling up to **4.6--5.7x faster** for large payloads in CBC/CTR. In **GCM mode** the advantage is most pronounced at **5.3--8.8x faster**. All of this requires zero pip dependencies -- only a system-installed `libcrypto`.
+- **Pure Python** (`aes_python.py`) is 7--14,000x slower than pycryptodome depending on mode and data size. Even for 13-byte messages it takes ~71--232 us (vs ~5--7 us for OpenSSL). It is educational and serves as a fallback when no native library is available.
 - **GCM mode** in pure Python includes GF(2^128) multiplication, making it the slowest pure-Python mode (~232 us for 13 bytes vs ~71--74 us for ECB/CBC). The OpenSSL variant shows no such penalty.
 - **pycryptodome** is fast (C extension) but requires a compiled dependency via pip. OpenSSL ctypes matches or beats it in every scenario tested.
 

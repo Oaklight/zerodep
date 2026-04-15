@@ -18,7 +18,7 @@ Every module depends only on Python's standard library (`urllib`, `json`, `ast`,
 
 ### Single File per Module
 
-Each module is one `.py` file (occasionally two for a variant like `aes_openssl.py`). This means:
+Each module is one `.py` file (occasionally two for a variant like `aes_python.py`). This means:
 
 - **Vendor easily** — `cp scheduler.py your_project/`
 - **Audit easily** — one file to read, no hidden package structure

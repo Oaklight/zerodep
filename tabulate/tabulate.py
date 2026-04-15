@@ -240,6 +240,166 @@ def _format_number(v: Any, floatfmt: str, missingval: str) -> str:
 # ── Data normalisation ───────────────────────────────────────────────────────
 
 
+def _resolve_headers(
+    headers: Any,
+    keys_default: list[str],
+) -> list[str]:
+    """Return resolved header list from a header spec and a default.
+
+    Args:
+        headers: ``"keys"`` to use *keys_default*, a list/tuple to use
+            directly, or anything else for no headers.
+        keys_default: Headers to use when *headers* is ``"keys"``.
+
+    Returns:
+        Resolved header strings.
+    """
+    if headers == "keys":
+        return keys_default
+    if isinstance(headers, (list, tuple)) and len(headers) > 0:
+        return [str(h) for h in headers]
+    return []
+
+
+def _rows_from_dict(
+    tabular_data: dict,
+    headers: Any,
+) -> tuple[list[list[Any]], list[str]]:
+    """Normalise a dict into rows and headers.
+
+    Handles two sub-cases: dict-of-lists (columnar) and single dict
+    (key-value pairs).
+
+    Args:
+        tabular_data: A dict.
+        headers: Header specification.
+
+    Returns:
+        Tuple of (rows, headers).
+    """
+    keys = list(tabular_data.keys())
+    vals = list(tabular_data.values())
+    if vals and isinstance(vals[0], (list, tuple)):
+        return _rows_from_dict_of_lists(keys, vals, headers)
+    # single dict → two-column table (key, value)
+    rows = [[str(k), v] for k, v in tabular_data.items()]
+    hdrs = _resolve_headers(headers, ["keys", "values"])
+    return rows, hdrs
+
+
+def _rows_from_dict_of_lists(
+    keys: list,
+    vals: list,
+    headers: Any,
+) -> tuple[list[list[Any]], list[str]]:
+    """Convert dict-of-lists (columnar) into rows.
+
+    Args:
+        keys: Dict keys (column names).
+        vals: Dict values (column data lists).
+        headers: Header specification.
+
+    Returns:
+        Tuple of (rows, headers).
+    """
+    col_lists: list[list[Any] | tuple[Any, ...]] = [
+        v for v in vals if isinstance(v, (list, tuple))
+    ]
+    max_len = max((len(v) for v in col_lists), default=0)
+    rows = [[v[i] if i < len(v) else None for v in col_lists] for i in range(max_len)]
+    hdrs = _resolve_headers(headers, [str(k) for k in keys])
+    return rows, hdrs
+
+
+def _unique_keys_from_dicts(raw: list[dict]) -> list[str]:
+    """Return ordered unique keys across a list of dicts.
+
+    Args:
+        raw: List of dicts.
+
+    Returns:
+        Unique keys in insertion order.
+    """
+    seen: dict[str, None] = {}
+    for d in raw:
+        for k in d:
+            if k not in seen:
+                seen[k] = None
+    return list(seen.keys())
+
+
+def _rows_from_list_of_dicts(
+    raw: list[dict],
+    headers: Any,
+) -> tuple[list[list[Any]], list[str]]:
+    """Convert a list of dicts into rows and headers.
+
+    Args:
+        raw: List of dicts.
+        headers: Header specification.
+
+    Returns:
+        Tuple of (rows, headers).
+    """
+    unique_keys = _unique_keys_from_dicts(raw)
+    if isinstance(headers, (list, tuple)) and len(headers) > 0:
+        hdrs = [str(h) for h in headers]
+    else:
+        hdrs = unique_keys
+    rows = [[d.get(k) for k in hdrs] for d in raw]
+    return rows, hdrs
+
+
+def _rows_from_list_of_lists(
+    raw: list,
+    headers: Any,
+) -> tuple[list[list[Any]], list[str]]:
+    """Convert a list of lists/tuples into rows and headers.
+
+    Args:
+        raw: List of lists/tuples/iterables.
+        headers: Header specification.
+
+    Returns:
+        Tuple of (rows, headers).
+    """
+    rows = [list(r) for r in raw]
+    if headers == "firstrow":
+        if rows:
+            hdrs = [str(h) for h in rows[0]]
+            rows = rows[1:]
+        else:
+            hdrs = []
+        return rows, hdrs
+    hdrs = _resolve_headers(headers, [])
+    return rows, hdrs
+
+
+def _apply_showindex(
+    rows: list[list[Any]],
+    hdrs: list[str],
+    showindex: bool | str | Sequence,
+) -> None:
+    """Prepend index column to *rows* and *hdrs* in-place.
+
+    Args:
+        rows: Data rows (mutated).
+        hdrs: Header list (mutated).
+        showindex: Index specification.
+    """
+    if showindex is False:
+        return
+    if isinstance(showindex, (list, tuple)):
+        indices: Sequence = showindex
+    else:
+        indices = list(range(len(rows)))
+    for i, row in enumerate(rows):
+        idx = indices[i] if i < len(indices) else ""
+        row.insert(0, idx)
+    if hdrs:
+        hdrs.insert(0, "")
+
+
 def _normalise_tabular_data(
     tabular_data: Any,
     headers: Any,
@@ -255,98 +415,20 @@ def _normalise_tabular_data(
     Returns:
         Tuple of (rows as list-of-lists of raw values, header strings).
     """
-    rows: list[list[Any]]
-    hdrs: list[str]
-
-    # --- convert data to list-of-lists ---
     if isinstance(tabular_data, dict):
-        keys = list(tabular_data.keys())
-        vals = list(tabular_data.values())
-        if vals and isinstance(vals[0], (list, tuple)):
-            # dict of lists  →  columns
-            col_lists: list[list[Any] | tuple[Any, ...]] = [
-                v for v in vals if isinstance(v, (list, tuple))
-            ]
-            max_len = max((len(v) for v in col_lists), default=0)
-            rows = []
-            for i in range(max_len):
-                rows.append([v[i] if i < len(v) else None for v in col_lists])
-            if headers == "keys":
-                hdrs = [str(k) for k in keys]
-            elif isinstance(headers, (list, tuple)) and len(headers) > 0:
-                hdrs = [str(h) for h in headers]
-            else:
-                hdrs = []
-        else:
-            # single dict  →  two-column table (key, value)
-            rows = [[str(k), v] for k, v in tabular_data.items()]
-            if headers == "keys":
-                hdrs = ["keys", "values"]
-            elif isinstance(headers, (list, tuple)) and len(headers) > 0:
-                hdrs = [str(h) for h in headers]
-            else:
-                hdrs = []
+        rows, hdrs = _rows_from_dict(tabular_data, headers)
     elif hasattr(tabular_data, "__iter__"):
         raw = list(tabular_data)
         if not raw:
-            rows = []
-            if isinstance(headers, (list, tuple)) and len(headers) > 0:
-                hdrs = [str(h) for h in headers]
-            else:
-                hdrs = []
+            rows, hdrs = [], _resolve_headers(headers, [])
         elif isinstance(raw[0], dict):
-            # list of dicts
-            if headers == "keys":
-                seen: dict[str, None] = {}
-                for d in raw:
-                    for k in d:
-                        if k not in seen:
-                            seen[k] = None
-                hdrs = list(seen.keys())
-            elif isinstance(headers, (list, tuple)) and len(headers) > 0:
-                hdrs = [str(h) for h in headers]
-            else:
-                seen = {}
-                for d in raw:
-                    for k in d:
-                        if k not in seen:
-                            seen[k] = None
-                hdrs = list(seen.keys())
-            rows = [[d.get(k) for k in hdrs] for d in raw]
+            rows, hdrs = _rows_from_list_of_dicts(raw, headers)
         else:
-            # list of lists / tuples / iterables (always copy to avoid
-            # mutating caller's data when showindex inserts values)
-            rows = [list(r) for r in raw]
-            if headers == "firstrow":
-                if rows:
-                    hdrs = [str(h) for h in rows[0]]
-                    rows = rows[1:]
-                else:
-                    hdrs = []
-            elif headers == "keys":
-                hdrs = []
-            elif isinstance(headers, (list, tuple)) and len(headers) > 0:
-                hdrs = [str(h) for h in headers]
-            else:
-                hdrs = []
+            rows, hdrs = _rows_from_list_of_lists(raw, headers)
     else:
-        rows = []
-        hdrs = []
+        rows, hdrs = [], []
 
-    # --- showindex ---
-    if showindex is not False:
-        if isinstance(showindex, (list, tuple)):
-            indices: Sequence = showindex
-        elif isinstance(showindex, str) and showindex != "":
-            indices = list(range(len(rows)))
-        else:
-            indices = list(range(len(rows)))
-        for i, row in enumerate(rows):
-            idx = indices[i] if i < len(indices) else ""
-            row.insert(0, idx)
-        if hdrs:
-            hdrs.insert(0, "")
-
+    _apply_showindex(rows, hdrs, showindex)
     return rows, hdrs
 
 
@@ -515,6 +597,242 @@ def _build_pipe_separator(
     return line.begin + line.sep.join(segments) + line.end
 
 
+# ── Tabulate helpers ────────────────────────────────────────────────────────
+
+
+def _format_cells(
+    rows: list[list[Any]],
+    floatfmt: str,
+    missingval: str,
+) -> list[list[str]]:
+    """Format every cell in *rows* as a display string.
+
+    Args:
+        rows: Raw data rows.
+        floatfmt: Format spec for floats.
+        missingval: Replacement for ``None``.
+
+    Returns:
+        List of lists of formatted strings.
+    """
+    return [[_format_number(v, floatfmt, missingval) for v in row] for row in rows]
+
+
+def _equalise_columns(
+    str_rows: list[list[str]],
+    str_hdrs: list[str],
+    missingval: str,
+) -> tuple[list[str], int]:
+    """Ensure all rows and headers have the same column count.
+
+    *str_rows* is mutated in place. Returns the (possibly truncated/padded)
+    header list and the total column count.
+
+    Args:
+        str_rows: Formatted data rows (mutated).
+        str_hdrs: Header strings.
+        missingval: Fill value for short rows.
+
+    Returns:
+        Tuple of (adjusted headers, ncols).
+    """
+    ncols = max((len(row) for row in str_rows), default=0)
+    if ncols == 0 and str_hdrs:
+        ncols = len(str_hdrs)
+    for row in str_rows:
+        while len(row) < ncols:
+            row.append(missingval)
+    if str_hdrs:
+        str_hdrs = str_hdrs[:ncols]
+        while len(str_hdrs) < ncols:
+            str_hdrs.append("")
+    return str_hdrs, ncols
+
+
+def _determine_alignments(
+    raw_rows: list[list[Any]],
+    ncols: int,
+    colalign: Sequence[str] | None,
+    eff_numalign: str,
+    eff_stralign: str,
+) -> list[str]:
+    """Determine per-column alignment.
+
+    Args:
+        raw_rows: Original (pre-format) rows for type detection.
+        ncols: Number of columns.
+        colalign: Per-column alignment overrides (may be ``None``).
+        eff_numalign: Default alignment for numeric columns.
+        eff_stralign: Default alignment for text columns.
+
+    Returns:
+        List of alignment strings, one per column.
+    """
+    aligns: list[str] = []
+    for col in range(ncols):
+        if colalign and col < len(colalign) and colalign[col]:
+            aligns.append(colalign[col])
+        elif _column_type(raw_rows, col) == "number":
+            aligns.append(eff_numalign)
+        else:
+            aligns.append(eff_stralign)
+    return aligns
+
+
+def _compute_column_widths(
+    str_rows: list[list[str]],
+    str_hdrs: list[str],
+    aligns: list[str],
+    ncols: int,
+    fmt: TableFormat,
+) -> list[int]:
+    """Compute the display width of each column.
+
+    Args:
+        str_rows: Formatted data rows.
+        str_hdrs: Header strings.
+        aligns: Per-column alignment.
+        ncols: Number of columns.
+        fmt: Table format (controls header padding).
+
+    Returns:
+        List of column widths.
+    """
+    has_headers = bool(str_hdrs)
+    colwidths: list[int] = [0] * ncols
+    for col in range(ncols):
+        cells = [row[col] if col < len(row) else "" for row in str_rows]
+        if aligns[col] == "decimal":
+            data_max = _decimal_column_width(cells)
+        else:
+            data_max = max((_visible_width(c) for c in cells), default=0)
+        if has_headers:
+            hdr_w = _visible_width(str_hdrs[col])
+            pad = _HEADER_MIN_PAD if fmt.header_pad_width else 0
+            colwidths[col] = max(data_max, hdr_w + pad)
+        else:
+            colwidths[col] = data_max
+    return colwidths
+
+
+def _align_all_cells(
+    str_rows: list[list[str]],
+    str_hdrs: list[str],
+    aligns: list[str],
+    colwidths: list[int],
+    ncols: int,
+) -> None:
+    """Pad every data cell and header to its column width in place.
+
+    Args:
+        str_rows: Formatted data rows (mutated).
+        str_hdrs: Header strings (mutated).
+        aligns: Per-column alignment.
+        colwidths: Column widths.
+        ncols: Number of columns.
+    """
+    header_aligns = ["right" if a == "decimal" else a for a in aligns]
+
+    for col in range(ncols):
+        col_cells = [row[col] if col < len(row) else "" for row in str_rows]
+        w = colwidths[col]
+        if aligns[col] == "decimal":
+            aligned = _align_decimal(col_cells, w)
+        else:
+            aligned = [_pad(c, w, aligns[col]) for c in col_cells]
+        for ri, row in enumerate(str_rows):
+            if col < len(row):
+                row[col] = aligned[ri]
+
+    if str_hdrs:
+        for col in range(ncols):
+            str_hdrs[col] = _pad(str_hdrs[col], colwidths[col], header_aligns[col])
+
+
+def _build_table_lines(
+    str_rows: list[list[str]],
+    str_hdrs: list[str],
+    aligns: list[str],
+    colwidths: list[int],
+    fmt: TableFormat,
+    tablefmt: str,
+) -> list[str]:
+    """Assemble all table lines (borders, headers, data rows).
+
+    Args:
+        str_rows: Pre-aligned data rows.
+        str_hdrs: Pre-aligned header strings.
+        aligns: Per-column alignment.
+        colwidths: Column widths.
+        fmt: Table format definition.
+        tablefmt: Format name (for pipe/github special-casing).
+
+    Returns:
+        List of line strings (not yet stripped).
+    """
+    has_headers = bool(str_hdrs)
+    padding = fmt.padding
+    lines: list[str] = []
+
+    # Decide which structural elements to show.
+    show_lineabove = fmt.lineabove is not None and not (
+        has_headers and "lineabove" in fmt.with_header_hide
+    )
+    show_linebelow = fmt.linebelow is not None and not (
+        has_headers and "linebelow" in fmt.with_header_hide
+    )
+
+    if show_lineabove and fmt.lineabove is not None:
+        lines.append(_build_line(colwidths, fmt.lineabove, padding))
+
+    if has_headers and fmt.headerrow is not None:
+        lines.append(_build_simple_row(str_hdrs, fmt.headerrow, padding))
+
+    _append_header_separator(lines, has_headers, tablefmt, fmt, colwidths, aligns)
+
+    for i, row in enumerate(str_rows):
+        if fmt.datarow is not None:
+            lines.append(_build_simple_row(row, fmt.datarow, padding))
+        if fmt.linebetweenrows is not None and i < len(str_rows) - 1:
+            lines.append(_build_line(colwidths, fmt.linebetweenrows, padding))
+
+    if show_linebelow and fmt.linebelow is not None:
+        lines.append(_build_line(colwidths, fmt.linebelow, padding))
+
+    return lines
+
+
+def _append_header_separator(
+    lines: list[str],
+    has_headers: bool,
+    tablefmt: str,
+    fmt: TableFormat,
+    colwidths: list[int],
+    aligns: list[str],
+) -> None:
+    """Append the header separator line to *lines* if applicable.
+
+    Args:
+        lines: Accumulator list (mutated).
+        has_headers: Whether headers are present.
+        tablefmt: Format name.
+        fmt: Table format definition.
+        colwidths: Column widths.
+        aligns: Per-column alignment.
+    """
+    if fmt.linebelowheader is None:
+        return
+    show = has_headers or tablefmt in ("pipe", "github")
+    if not show:
+        return
+    if tablefmt == "pipe":
+        lines.append(
+            _build_pipe_separator(colwidths, aligns, fmt.linebelowheader, fmt.padding)
+        )
+    else:
+        lines.append(_build_line(colwidths, fmt.linebelowheader, fmt.padding))
+
+
 # ── Public API ───────────────────────────────────────────────────────────────
 
 
@@ -573,8 +891,7 @@ def tabulate(
 
     # Effective alignment defaults for pretty format (center everything)
     if tablefmt == "pretty":
-        eff_numalign = "center"
-        eff_stralign = "center"
+        eff_numalign, eff_stralign = "center", "center"
     else:
         eff_numalign = numalign if numalign else "decimal"
         eff_stralign = stralign if stralign else "left"
@@ -583,145 +900,25 @@ def tabulate(
     rows, hdrs = _normalise_tabular_data(tabular_data, headers, showindex)
 
     # 2. Format every cell as string
-    str_rows: list[list[str]] = []
-    for row in rows:
-        str_row: list[str] = []
-        for v in row:
-            str_row.append(_format_number(v, floatfmt, missingval))
-        str_rows.append(str_row)
-
+    str_rows = _format_cells(rows, floatfmt, missingval)
     str_hdrs = list(hdrs)
 
-    # 3. Equalise column count.
-    # ncols is driven by data rows; headers are truncated/padded to match.
-    ncols = 0
-    for row in str_rows:
-        ncols = max(ncols, len(row))
-    # If there are no data rows, fall back to header count.
-    if ncols == 0 and str_hdrs:
-        ncols = len(str_hdrs)
-    for row in str_rows:
-        while len(row) < ncols:
-            row.append(missingval)
-    if str_hdrs:
-        # Truncate extra headers beyond data columns
-        str_hdrs = str_hdrs[:ncols]
-        # Pad if data has more columns than headers
-        while len(str_hdrs) < ncols:
-            str_hdrs.append("")
-
+    # 3. Equalise column count
+    str_hdrs, ncols = _equalise_columns(str_rows, str_hdrs, missingval)
     if ncols == 0:
         return ""
 
     # 4. Determine per-column alignment
-    aligns: list[str] = []
-    for col in range(ncols):
-        if colalign and col < len(colalign) and colalign[col]:
-            aligns.append(colalign[col])
-        else:
-            ctype = _column_type(rows, col)
-            if ctype == "number":
-                aligns.append(eff_numalign)
-            else:
-                aligns.append(eff_stralign)
+    aligns = _determine_alignments(rows, ncols, colalign, eff_numalign, eff_stralign)
 
     # 5. Compute column widths
-    has_headers = bool(str_hdrs)
-    colwidths: list[int] = [0] * ncols
-    for col in range(ncols):
-        cells = [row[col] if col < len(row) else "" for row in str_rows]
+    colwidths = _compute_column_widths(str_rows, str_hdrs, aligns, ncols, fmt)
 
-        if aligns[col] == "decimal":
-            # Decimal-aligned width = max(before_dot) + max(after_dot)
-            data_max = _decimal_column_width(cells)
-        else:
-            data_max = max((_visible_width(c) for c in cells), default=0)
+    # 6. Pre-align all cells and headers
+    _align_all_cells(str_rows, str_hdrs, aligns, colwidths, ncols)
 
-        if has_headers:
-            hdr_w = _visible_width(str_hdrs[col])
-            if fmt.header_pad_width:
-                colwidths[col] = max(data_max, hdr_w + _HEADER_MIN_PAD)
-            else:
-                colwidths[col] = max(data_max, hdr_w)
-        else:
-            colwidths[col] = data_max
-
-    # Headers use the same alignment as data columns, except "decimal"
-    # columns use "right" for headers (can't decimal-align a text header).
-    header_aligns = ["right" if a == "decimal" else a for a in aligns]
-
-    # 6. Pre-align data cells per column (needed for decimal alignment).
-    # After this step, each cell string is padded to its column width.
-    for col in range(ncols):
-        col_cells = [row[col] if col < len(row) else "" for row in str_rows]
-        align = aligns[col]
-        w = colwidths[col]
-        if align == "decimal":
-            aligned = _align_decimal(col_cells, w)
-        else:
-            aligned = [_pad(c, w, align) for c in col_cells]
-        for ri, row in enumerate(str_rows):
-            if col < len(row):
-                row[col] = aligned[ri]
-
-    # Also pre-align headers
-    if has_headers:
-        for col in range(ncols):
-            align = header_aligns[col]
-            w = colwidths[col]
-            str_hdrs[col] = _pad(str_hdrs[col], w, align)
-
-    # 7. Build the table
-    padding = fmt.padding
-
-    lines: list[str] = []
-
-    # Decide which structural elements to show.
-    # with_header_hide: elements to HIDE when headers ARE present.
-    show_lineabove = fmt.lineabove is not None
-    show_linebelow = fmt.linebelow is not None
-
-    if has_headers:
-        if "lineabove" in fmt.with_header_hide:
-            show_lineabove = False
-        if "linebelow" in fmt.with_header_hide:
-            show_linebelow = False
-
-    # line above
-    if show_lineabove and fmt.lineabove is not None:
-        lines.append(_build_line(colwidths, fmt.lineabove, padding))
-
-    # header row
-    if has_headers and fmt.headerrow is not None:
-        lines.append(_build_simple_row(str_hdrs, fmt.headerrow, padding))
-
-    # line below header (pipe/github always show the separator)
-    show_header_sep = has_headers and fmt.linebelowheader is not None
-    if (
-        not has_headers
-        and tablefmt in ("pipe", "github")
-        and fmt.linebelowheader is not None
-    ):
-        show_header_sep = True
-    if show_header_sep and fmt.linebelowheader is not None:
-        if tablefmt == "pipe":
-            lines.append(
-                _build_pipe_separator(colwidths, aligns, fmt.linebelowheader, padding)
-            )
-        else:
-            lines.append(_build_line(colwidths, fmt.linebelowheader, padding))
-
-    # data rows
-    for i, row in enumerate(str_rows):
-        if fmt.datarow is not None:
-            lines.append(_build_simple_row(row, fmt.datarow, padding))
-        if fmt.linebetweenrows is not None and i < len(str_rows) - 1:
-            lines.append(_build_line(colwidths, fmt.linebetweenrows, padding))
-
-    # line below
-    if show_linebelow and fmt.linebelow is not None:
-        lines.append(_build_line(colwidths, fmt.linebelow, padding))
-
+    # 7. Build and return the table
+    lines = _build_table_lines(str_rows, str_hdrs, aligns, colwidths, fmt, tablefmt)
     return "\n".join(line.rstrip() for line in lines)
 
 

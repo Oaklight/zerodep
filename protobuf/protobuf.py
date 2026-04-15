@@ -1159,6 +1159,97 @@ def _decode_scalar_from_wire(
     return decoder(data, pos)
 
 
+def _decode_string_value(
+    data: bytes | bytearray | memoryview, pos: int
+) -> tuple[str, int]:
+    """Decode a length-prefixed UTF-8 string value."""
+    length, pos = decode_varint(data, pos)
+    raw_bytes = data[pos : pos + length]
+    if isinstance(raw_bytes, memoryview):
+        raw_bytes = bytes(raw_bytes)
+    return raw_bytes.decode("utf-8"), pos + length
+
+
+def _decode_bytes_value(
+    data: bytes | bytearray | memoryview, pos: int
+) -> tuple[bytes, int]:
+    """Decode a length-prefixed bytes value."""
+    length, pos = decode_varint(data, pos)
+    raw_bytes = data[pos : pos + length]
+    if isinstance(raw_bytes, memoryview):
+        raw_bytes = bytes(raw_bytes)
+    return raw_bytes, pos + length
+
+
+def _decode_enum_value(
+    enum_type: type, data: bytes | bytearray | memoryview, pos: int
+) -> tuple[Any, int]:
+    """Decode a varint and coerce to an enum type."""
+    raw, pos = decode_varint(data, pos)
+    try:
+        return enum_type(raw), pos
+    except ValueError:
+        return raw, pos
+
+
+def _decode_map_key(
+    key_scalar: ProtoScalar,
+    wt: int,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+) -> tuple[Any, int]:
+    """Decode a map entry key field."""
+    if key_scalar.scalar_type == ScalarType.STRING:
+        return _decode_string_value(data, pos)
+    return _decode_scalar_from_wire(key_scalar, wt, data, pos)
+
+
+def _decode_map_value(
+    value_scalar: ProtoScalar | None,
+    value_base: type,
+    value_is_message: bool,
+    value_is_enum: bool,
+    wt: int,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+) -> tuple[Any, int]:
+    """Decode a map entry value field."""
+    if value_is_message:
+        length, pos = decode_varint(data, pos)
+        value = _decode_message_bytes(value_base, data, pos, pos + length)
+        return value, pos + length
+    if value_is_enum:
+        return _decode_enum_value(value_base, data, pos)
+    if value_base is str:
+        return _decode_string_value(data, pos)
+    if value_base is bytes:
+        return _decode_bytes_value(data, pos)
+    if value_scalar is not None:
+        return _decode_scalar_from_wire(value_scalar, wt, data, pos)
+    vs = _infer_scalar(value_base)
+    return _decode_scalar_from_wire(vs, wt, data, pos)
+
+
+def _default_map_value(
+    value_scalar: ProtoScalar | None,
+    value_base: type,
+    value_is_message: bool,
+    value_is_enum: bool,
+) -> Any:
+    """Return the proto3 zero-value default for a map value type."""
+    if value_is_message:
+        return value_base()
+    if value_is_enum:
+        return 0
+    if value_base is str:
+        return ""
+    if value_base is bytes:
+        return b""
+    if value_scalar is not None:
+        return _SCALAR_DEFAULTS[value_scalar.scalar_type]
+    return _SCALAR_DEFAULTS.get(_infer_scalar(value_base).scalar_type, 0)
+
+
 def _decode_map_entry(
     map_marker: MapField,
     data: bytes | bytearray | memoryview,
@@ -1180,80 +1271,208 @@ def _decode_map_entry(
     while pos < end:
         fn, wt, pos = decode_tag(data, pos)
         if fn == 1:
-            # Key field
-            if key_scalar.scalar_type == ScalarType.STRING:
-                length, pos = decode_varint(data, pos)
-                key = data[pos : pos + length]
-                if isinstance(key, memoryview):
-                    key = bytes(key)
-                key = key.decode("utf-8")
-                pos += length
-            else:
-                key, pos = _decode_scalar_from_wire(key_scalar, wt, data, pos)
+            key, pos = _decode_map_key(key_scalar, wt, data, pos)
         elif fn == 2:
-            # Value field
-            if value_is_message:
-                length, pos = decode_varint(data, pos)
-                value = _decode_message_bytes(value_base, data, pos, pos + length)
-                pos += length
-            elif value_is_enum:
-                raw, pos = decode_varint(data, pos)
-                try:
-                    value = value_base(raw)
-                except ValueError:
-                    value = raw
-            elif value_base is str:
-                length, pos = decode_varint(data, pos)
-                raw_bytes = data[pos : pos + length]
-                if isinstance(raw_bytes, memoryview):
-                    raw_bytes = bytes(raw_bytes)
-                value = raw_bytes.decode("utf-8")
-                pos += length
-            elif value_base is bytes:
-                length, pos = decode_varint(data, pos)
-                raw_bytes = data[pos : pos + length]
-                if isinstance(raw_bytes, memoryview):
-                    raw_bytes = bytes(raw_bytes)
-                value = raw_bytes
-                pos += length
-            elif value_scalar is not None:
-                value, pos = _decode_scalar_from_wire(value_scalar, wt, data, pos)
-            else:
-                vs = _infer_scalar(value_base)
-                value, pos = _decode_scalar_from_wire(vs, wt, data, pos)
+            value, pos = _decode_map_value(
+                value_scalar, value_base, value_is_message, value_is_enum, wt, data, pos
+            )
         else:
             _, pos = _skip_field(wt, data, pos)
 
     if value is None:
-        # Set default value for the value type
-        if value_is_message:
-            value = value_base()
-        elif value_is_enum:
-            value = 0
-        elif value_base is str:
-            value = ""
-        elif value_base is bytes:
-            value = b""
-        elif value_scalar is not None:
-            value = _SCALAR_DEFAULTS[value_scalar.scalar_type]
-        else:
-            value = _SCALAR_DEFAULTS.get(_infer_scalar(value_base).scalar_type, 0)
+        value = _default_map_value(
+            value_scalar, value_base, value_is_message, value_is_enum
+        )
 
     return key, value
 
 
-def _decode_message_bytes(
-    cls: type,
+def _get_repeated_enum_base(info: FieldInfo) -> type | None:
+    """Return the inner enum base type for a repeated enum field, or None."""
+    if info.repeated_marker is None:
+        return None
+    inner_base = _get_base_type(info.repeated_marker.item_type)
+    if _is_enum_type(inner_base):
+        return inner_base
+    return None
+
+
+def _decode_field_scalar(
+    info: FieldInfo,
+    wire_type: int,
     data: bytes | bytearray | memoryview,
     pos: int,
-    end: int,
-) -> Any:
-    """Decode a message from a byte range [pos, end)."""
-    desc: _MessageDescriptor = cls._proto_descriptor
-    values: dict[str, Any] = {}
-    unknown_fields: list[tuple[int, int, bytes]] = []
+    values: dict[str, Any],
+) -> int:
+    """Decode a singular scalar field and store it in *values*."""
+    assert info.scalar is not None
+    value, pos = _decode_scalar_from_wire(info.scalar, wire_type, data, pos)
+    values[info.name] = value
+    return pos
 
-    # Initialize repeated/map fields
+
+def _decode_field_enum(
+    info: FieldInfo,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+    values: dict[str, Any],
+) -> int:
+    """Decode a singular enum field and store it in *values*."""
+    enum_type = info.python_type
+    if _is_enum_type(enum_type):
+        values[info.name], pos = _decode_enum_value(enum_type, data, pos)
+    else:
+        values[info.name], pos = decode_varint(data, pos)
+    return pos
+
+
+def _decode_field_message(
+    info: FieldInfo,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+    values: dict[str, Any],
+) -> int:
+    """Decode a singular nested message field and store it in *values*."""
+    assert info.message_type is not None
+    length, pos = decode_varint(data, pos)
+    msg = _decode_message_bytes(info.message_type, data, pos, pos + length)
+    values[info.name] = msg
+    return pos + length
+
+
+def _decode_field_repeated_scalar(
+    info: FieldInfo,
+    wire_type: int,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+    values: dict[str, Any],
+) -> int:
+    """Decode a packed (or non-packed) repeated scalar field."""
+    assert info.scalar is not None
+    if wire_type == WireType.LEN:
+        length, pos = decode_varint(data, pos)
+        pack_end = pos + length
+        while pos < pack_end:
+            val, pos = _decode_scalar_from_wire(
+                info.scalar, info.scalar.wire_type, data, pos
+            )
+            values[info.name].append(val)
+    else:
+        val, pos = _decode_scalar_from_wire(info.scalar, wire_type, data, pos)
+        values[info.name].append(val)
+    return pos
+
+
+def _decode_field_repeated_enum(
+    info: FieldInfo,
+    wire_type: int,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+    values: dict[str, Any],
+) -> int:
+    """Decode a packed (or non-packed) repeated enum field."""
+    inner_base = _get_repeated_enum_base(info)
+    if wire_type == WireType.LEN:
+        length, pos = decode_varint(data, pos)
+        pack_end = pos + length
+        while pos < pack_end:
+            raw_val, pos = decode_varint(data, pos)
+            if inner_base is not None:
+                try:
+                    raw_val = inner_base(raw_val)
+                except ValueError:
+                    pass
+            values[info.name].append(raw_val)
+    else:
+        raw_val, pos = decode_varint(data, pos)
+        if inner_base is not None:
+            try:
+                raw_val = inner_base(raw_val)
+            except ValueError:
+                pass
+        values[info.name].append(raw_val)
+    return pos
+
+
+def _decode_field_repeated_message(
+    info: FieldInfo,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+    values: dict[str, Any],
+) -> int:
+    """Decode a single element of a repeated message field."""
+    assert info.message_type is not None
+    length, pos = decode_varint(data, pos)
+    msg = _decode_message_bytes(info.message_type, data, pos, pos + length)
+    values[info.name].append(msg)
+    return pos + length
+
+
+def _decode_field_string(
+    info: FieldInfo,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+    values: dict[str, Any],
+) -> int:
+    """Decode a singular string field and store it in *values*."""
+    val, pos = _decode_string_value(data, pos)
+    values[info.name] = val
+    return pos
+
+
+def _decode_field_bytes(
+    info: FieldInfo,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+    values: dict[str, Any],
+) -> int:
+    """Decode a singular bytes field and store it in *values*."""
+    val, pos = _decode_bytes_value(data, pos)
+    values[info.name] = val
+    return pos
+
+
+def _decode_field_repeated_string(
+    info: FieldInfo,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+    values: dict[str, Any],
+) -> int:
+    """Decode a single element of a repeated string field."""
+    val, pos = _decode_string_value(data, pos)
+    values[info.name].append(val)
+    return pos
+
+
+def _decode_field_repeated_bytes(
+    info: FieldInfo,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+    values: dict[str, Any],
+) -> int:
+    """Decode a single element of a repeated bytes field."""
+    val, pos = _decode_bytes_value(data, pos)
+    values[info.name].append(val)
+    return pos
+
+
+def _decode_field_map(
+    info: FieldInfo,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+    values: dict[str, Any],
+) -> int:
+    """Decode a single map entry and store it in *values*."""
+    assert info.map_marker is not None
+    length, pos = decode_varint(data, pos)
+    k, v = _decode_map_entry(info.map_marker, data, pos, pos + length)
+    values[info.name][k] = v
+    return pos + length
+
+
+def _init_collection_fields(desc: _MessageDescriptor) -> dict[str, Any]:
+    """Initialize empty lists/dicts for repeated and map fields."""
+    values: dict[str, Any] = {}
     for info in desc.fields.values():
         if info.kind in (
             FieldKind.REPEATED_SCALAR,
@@ -1265,6 +1484,100 @@ def _decode_message_bytes(
             values[info.name] = []
         elif info.kind == FieldKind.MAP:
             values[info.name] = {}
+    return values
+
+
+def _build_message_instance(
+    cls: type,
+    desc: _MessageDescriptor,
+    values: dict[str, Any],
+    unknown_fields: list[tuple[int, int, bytes]],
+) -> Any:
+    """Construct a message instance from decoded field values."""
+    obj = cls.__new__(cls)
+    for finfo in desc.fields.values():
+        val = values.get(finfo.name, finfo.default_value)
+        if val is finfo.default_value and isinstance(val, (list, dict)):
+            val = type(val)(val)
+        object.__setattr__(obj, finfo.name, val)
+    object.__setattr__(obj, "_unknown_fields", unknown_fields)
+    return obj
+
+
+# Dispatch table for _decode_message_bytes field-kind handlers.
+# Each handler signature: (info, wire_type, data, pos, values) -> new_pos
+# Populated after all handler functions are defined.
+def _dispatch_scalar(info: FieldInfo, wt: int, d: Any, p: int, v: dict) -> int:
+    return _decode_field_scalar(info, wt, d, p, v)
+
+
+def _dispatch_enum(info: FieldInfo, wt: int, d: Any, p: int, v: dict) -> int:
+    return _decode_field_enum(info, d, p, v)
+
+
+def _dispatch_string(info: FieldInfo, wt: int, d: Any, p: int, v: dict) -> int:
+    return _decode_field_string(info, d, p, v)
+
+
+def _dispatch_bytes(info: FieldInfo, wt: int, d: Any, p: int, v: dict) -> int:
+    return _decode_field_bytes(info, d, p, v)
+
+
+def _dispatch_message(info: FieldInfo, wt: int, d: Any, p: int, v: dict) -> int:
+    return _decode_field_message(info, d, p, v)
+
+
+def _dispatch_repeated_scalar(info: FieldInfo, wt: int, d: Any, p: int, v: dict) -> int:
+    return _decode_field_repeated_scalar(info, wt, d, p, v)
+
+
+def _dispatch_repeated_enum(info: FieldInfo, wt: int, d: Any, p: int, v: dict) -> int:
+    return _decode_field_repeated_enum(info, wt, d, p, v)
+
+
+def _dispatch_repeated_message(
+    info: FieldInfo, wt: int, d: Any, p: int, v: dict
+) -> int:
+    return _decode_field_repeated_message(info, d, p, v)
+
+
+def _dispatch_repeated_string(info: FieldInfo, wt: int, d: Any, p: int, v: dict) -> int:
+    return _decode_field_repeated_string(info, d, p, v)
+
+
+def _dispatch_repeated_bytes(info: FieldInfo, wt: int, d: Any, p: int, v: dict) -> int:
+    return _decode_field_repeated_bytes(info, d, p, v)
+
+
+def _dispatch_map(info: FieldInfo, wt: int, d: Any, p: int, v: dict) -> int:
+    return _decode_field_map(info, d, p, v)
+
+
+_FIELD_DECODERS: dict[FieldKind, Any] = {
+    FieldKind.SCALAR: _dispatch_scalar,
+    FieldKind.ENUM: _dispatch_enum,
+    FieldKind.STRING: _dispatch_string,
+    FieldKind.BYTES: _dispatch_bytes,
+    FieldKind.MESSAGE: _dispatch_message,
+    FieldKind.REPEATED_SCALAR: _dispatch_repeated_scalar,
+    FieldKind.REPEATED_ENUM: _dispatch_repeated_enum,
+    FieldKind.REPEATED_MESSAGE: _dispatch_repeated_message,
+    FieldKind.REPEATED_STRING: _dispatch_repeated_string,
+    FieldKind.REPEATED_BYTES: _dispatch_repeated_bytes,
+    FieldKind.MAP: _dispatch_map,
+}
+
+
+def _decode_message_bytes(
+    cls: type,
+    data: bytes | bytearray | memoryview,
+    pos: int,
+    end: int,
+) -> Any:
+    """Decode a message from a byte range [pos, end)."""
+    desc: _MessageDescriptor = cls._proto_descriptor
+    values = _init_collection_fields(desc)
+    unknown_fields: list[tuple[int, int, bytes]] = []
 
     while pos < end:
         field_number, wire_type, pos = decode_tag(data, pos)
@@ -1275,141 +1588,13 @@ def _decode_message_bytes(
             unknown_fields.append((field_number, wire_type, raw))
             continue
 
-        # Scalar
-        if info.kind == FieldKind.SCALAR:
-            assert info.scalar is not None
-            value, pos = _decode_scalar_from_wire(info.scalar, wire_type, data, pos)
-            values[info.name] = value
+        handler = _FIELD_DECODERS.get(info.kind)
+        if handler is not None:
+            pos = handler(info, wire_type, data, pos, values)
+        else:  # pragma: no cover
+            raise TypeError(f"Unknown field kind: {info.kind}")
 
-        # Enum
-        elif info.kind == FieldKind.ENUM:
-            raw, pos = decode_varint(data, pos)
-            assert info.message_type is None
-            enum_type = info.python_type
-            try:
-                values[info.name] = enum_type(raw) if _is_enum_type(enum_type) else raw
-            except ValueError:
-                values[info.name] = raw
-
-        # String
-        elif info.kind == FieldKind.STRING:
-            length, pos = decode_varint(data, pos)
-            raw_bytes = data[pos : pos + length]
-            if isinstance(raw_bytes, memoryview):
-                raw_bytes = bytes(raw_bytes)
-            values[info.name] = raw_bytes.decode("utf-8")
-            pos += length
-
-        # Bytes
-        elif info.kind == FieldKind.BYTES:
-            length, pos = decode_varint(data, pos)
-            raw_bytes = data[pos : pos + length]
-            if isinstance(raw_bytes, memoryview):
-                raw_bytes = bytes(raw_bytes)
-            values[info.name] = raw_bytes
-            pos += length
-
-        # Message
-        elif info.kind == FieldKind.MESSAGE:
-            assert info.message_type is not None
-            length, pos = decode_varint(data, pos)
-            msg = _decode_message_bytes(info.message_type, data, pos, pos + length)
-            values[info.name] = msg
-            pos += length
-
-        # Repeated scalar (packed)
-        elif info.kind == FieldKind.REPEATED_SCALAR:
-            assert info.scalar is not None
-            if wire_type == WireType.LEN:
-                # Packed encoding
-                length, pos = decode_varint(data, pos)
-                pack_end = pos + length
-                while pos < pack_end:
-                    val, pos = _decode_scalar_from_wire(
-                        info.scalar, info.scalar.wire_type, data, pos
-                    )
-                    values[info.name].append(val)
-            else:
-                # Non-packed (single element)
-                val, pos = _decode_scalar_from_wire(info.scalar, wire_type, data, pos)
-                values[info.name].append(val)
-
-        # Repeated enum (packed)
-        elif info.kind == FieldKind.REPEATED_ENUM:
-            if wire_type == WireType.LEN:
-                length, pos = decode_varint(data, pos)
-                pack_end = pos + length
-                inner_base = (
-                    _get_base_type(info.repeated_marker.item_type)
-                    if info.repeated_marker
-                    else None
-                )
-                while pos < pack_end:
-                    raw_val, pos = decode_varint(data, pos)
-                    if inner_base is not None and _is_enum_type(inner_base):
-                        try:
-                            raw_val = inner_base(raw_val)
-                        except ValueError:
-                            pass
-                    values[info.name].append(raw_val)
-            else:
-                raw_val, pos = decode_varint(data, pos)
-                inner_base = (
-                    _get_base_type(info.repeated_marker.item_type)
-                    if info.repeated_marker
-                    else None
-                )
-                if inner_base is not None and _is_enum_type(inner_base):
-                    try:
-                        raw_val = inner_base(raw_val)
-                    except ValueError:
-                        pass
-                values[info.name].append(raw_val)
-
-        # Repeated message
-        elif info.kind == FieldKind.REPEATED_MESSAGE:
-            assert info.message_type is not None
-            length, pos = decode_varint(data, pos)
-            msg = _decode_message_bytes(info.message_type, data, pos, pos + length)
-            values[info.name].append(msg)
-            pos += length
-
-        # Repeated string
-        elif info.kind == FieldKind.REPEATED_STRING:
-            length, pos = decode_varint(data, pos)
-            raw_bytes = data[pos : pos + length]
-            if isinstance(raw_bytes, memoryview):
-                raw_bytes = bytes(raw_bytes)
-            values[info.name].append(raw_bytes.decode("utf-8"))
-            pos += length
-
-        # Repeated bytes
-        elif info.kind == FieldKind.REPEATED_BYTES:
-            length, pos = decode_varint(data, pos)
-            raw_bytes = data[pos : pos + length]
-            if isinstance(raw_bytes, memoryview):
-                raw_bytes = bytes(raw_bytes)
-            values[info.name].append(raw_bytes)
-            pos += length
-
-        # Map
-        elif info.kind == FieldKind.MAP:
-            assert info.map_marker is not None
-            length, pos = decode_varint(data, pos)
-            k, v = _decode_map_entry(info.map_marker, data, pos, pos + length)
-            values[info.name][k] = v
-            pos += length
-
-    # Build instance
-    obj = cls.__new__(cls)
-    for finfo in desc.fields.values():
-        val = values.get(finfo.name, finfo.default_value)
-        # Copy mutable defaults
-        if val is finfo.default_value and isinstance(val, (list, dict)):
-            val = type(val)(val)
-        object.__setattr__(obj, finfo.name, val)
-    object.__setattr__(obj, "_unknown_fields", unknown_fields)
-    return obj
+    return _build_message_instance(cls, desc, values, unknown_fields)
 
 
 # ============================================================================
@@ -1520,49 +1705,87 @@ def _msg_from_dict(cls: type, data: dict[str, Any]) -> Any:
     return cls(**kwargs)
 
 
+def _value_from_dict_enum(info: FieldInfo, raw: Any) -> Any:
+    """Convert a dict value to an enum field value."""
+    enum_type = info.python_type
+    if _is_enum_type(enum_type):
+        try:
+            return enum_type(raw)
+        except ValueError:
+            return raw
+    return raw
+
+
+def _value_from_dict_repeated_enum(info: FieldInfo, raw: Any) -> list[Any]:
+    """Convert a dict list to a repeated enum field value."""
+    inner_base = _get_repeated_enum_base(info)
+    if inner_base is not None:
+        result = []
+        for item in raw:
+            try:
+                result.append(inner_base(item))
+            except ValueError:
+                result.append(item)
+        return result
+    return list(raw)
+
+
+def _convert_map_key(key_base: type, k: Any) -> Any:
+    """Convert a JSON string map key back to its Python type."""
+    if key_base is int:
+        return int(k)
+    if key_base is bool:
+        return k in ("true", "True", "1", True)
+    return k
+
+
+def _convert_map_value(value_base: type, v: Any) -> Any:
+    """Convert a JSON map value back to its Python type."""
+    import base64
+
+    if _is_message_type(value_base):
+        return _msg_from_dict(value_base, v)
+    if _is_enum_type(value_base):
+        try:
+            return value_base(v)
+        except ValueError:
+            return v
+    if value_base is bytes:
+        return base64.b64decode(v) if isinstance(v, str) else v
+    return v
+
+
+def _value_from_dict_map(info: FieldInfo, raw: Any) -> dict[Any, Any]:
+    """Convert a dict value to a map field value."""
+    assert info.map_marker is not None
+    key_base = _get_base_type(info.map_marker.key_type)
+    value_base = _get_base_type(info.map_marker.value_type)
+    return {
+        _convert_map_key(key_base, k): _convert_map_value(value_base, v)
+        for k, v in raw.items()
+    }
+
+
 def _value_from_dict(info: FieldInfo, raw: Any) -> Any:
     """Convert a dict value back to the field's Python type."""
     import base64
 
     if info.kind == FieldKind.MESSAGE:
         assert info.message_type is not None
-        if raw is None:
-            return None
-        return _msg_from_dict(info.message_type, raw)
+        return _msg_from_dict(info.message_type, raw) if raw is not None else None
 
     if info.kind == FieldKind.ENUM:
-        enum_type = info.python_type
-        if _is_enum_type(enum_type):
-            try:
-                return enum_type(raw)
-            except ValueError:
-                return raw
-        return raw
+        return _value_from_dict_enum(info, raw)
 
     if info.kind == FieldKind.BYTES:
-        if isinstance(raw, str):
-            return base64.b64decode(raw)
-        return raw
+        return base64.b64decode(raw) if isinstance(raw, str) else raw
 
     if info.kind == FieldKind.REPEATED_MESSAGE:
         assert info.message_type is not None
         return [_msg_from_dict(info.message_type, item) for item in raw]
 
     if info.kind == FieldKind.REPEATED_ENUM:
-        inner_base = (
-            _get_base_type(info.repeated_marker.item_type)
-            if info.repeated_marker
-            else None
-        )
-        if inner_base is not None and _is_enum_type(inner_base):
-            result = []
-            for item in raw:
-                try:
-                    result.append(inner_base(item))
-                except ValueError:
-                    result.append(item)
-            return result
-        return list(raw)
+        return _value_from_dict_repeated_enum(info, raw)
 
     if info.kind == FieldKind.REPEATED_BYTES:
         return [
@@ -1570,32 +1793,7 @@ def _value_from_dict(info: FieldInfo, raw: Any) -> Any:
         ]
 
     if info.kind == FieldKind.MAP:
-        assert info.map_marker is not None
-        key_base = _get_base_type(info.map_marker.key_type)
-        value_base = _get_base_type(info.map_marker.value_type)
-        result = {}
-        for k, v in raw.items():
-            # Convert key from string
-            if key_base is int:
-                dict_key = int(k)
-            elif key_base is bool:
-                dict_key = k in ("true", "True", "1", True)
-            else:
-                dict_key = k
-
-            # Convert value
-            if _is_message_type(value_base):
-                result[dict_key] = _msg_from_dict(value_base, v)
-            elif _is_enum_type(value_base):
-                try:
-                    result[dict_key] = value_base(v)
-                except ValueError:
-                    result[dict_key] = v
-            elif value_base is bytes:
-                result[dict_key] = base64.b64decode(v) if isinstance(v, str) else v
-            else:
-                result[dict_key] = v
-        return result
+        return _value_from_dict_map(info, raw)
 
     return raw
 

@@ -131,6 +131,65 @@ def _interpolate(
     return _INTERPOLATE_RE.sub(_replace, value)
 
 
+def _find_unescaped_quote(text: str) -> int:
+    """Return position of the first unescaped double-quote in *text*, or -1."""
+    pos = 0
+    while pos < len(text):
+        if text[pos] == "\\" and pos + 1 < len(text):
+            pos += 2
+            continue
+        if text[pos] == '"':
+            return pos
+        pos += 1
+    return -1
+
+
+def _collect_multiline_value(
+    lines: list[str], start_idx: int, first_fragment: str
+) -> tuple[str, int]:
+    """Accumulate continuation lines for a multiline double-quoted value.
+
+    Args:
+        lines: All lines of the .env content.
+        start_idx: Index of the first continuation line to inspect.
+        first_fragment: Text after the opening ``"`` on the first line.
+
+    Returns:
+        Tuple of (raw concatenated value, next line index to process).
+    """
+    parts = [first_fragment]
+    i = start_idx
+    while i < len(lines):
+        next_line = lines[i]
+        i += 1
+        close_pos = _find_unescaped_quote(next_line)
+        if close_pos >= 0:
+            parts.append(next_line[:close_pos])
+            break
+        parts.append(next_line)
+    return "".join(parts), i
+
+
+_MULTILINE_OPEN_RE = re.compile(
+    r'\A\s*(?:export\s+)?([A-Za-z_]\w*)\s*=\s*"',
+)
+
+
+def _extract_value_from_match(m: re.Match[str]) -> str | None:
+    """Extract the value from a single-line binding regex match.
+
+    Returns the raw value (unescaped for double-quoted, literal for
+    single-quoted, stripped for unquoted, or None when no ``=`` present).
+    """
+    if m.group("sq") is not None:
+        return m.group("sq")
+    if m.group("dq") is not None:
+        return _unescape_double_quoted(m.group("dq"))
+    if m.group("uq") is not None:
+        return m.group("uq").rstrip()
+    return None
+
+
 def _parse_stream(
     stream: IO[str],
     interpolate: bool = True,
@@ -161,52 +220,13 @@ def _parse_stream(
             continue
 
         # Check for multiline double-quoted values
-        # Detect pattern: KEY="value without closing quote
-        ml_match = re.match(
-            r'\A\s*(?:export\s+)?([A-Za-z_]\w*)\s*=\s*"',
-            line,
-        )
+        ml_match = _MULTILINE_OPEN_RE.match(line)
         if ml_match:
-            # Find the content after the opening quote
             after_eq_quote = line[ml_match.end() :]
-            # Check if the quote is closed on this line
-            # We need to find an unescaped closing quote
-            closed = False
-            temp = after_eq_quote
-            pos = 0
-            while pos < len(temp):
-                if temp[pos] == "\\" and pos + 1 < len(temp):
-                    pos += 2
-                    continue
-                if temp[pos] == '"':
-                    closed = True
-                    break
-                pos += 1
-
-            if not closed:
+            if _find_unescaped_quote(after_eq_quote) < 0:
                 # Multiline: accumulate lines until closing "
                 key = ml_match.group(1)
-                parts = [after_eq_quote]
-                while i < len(lines):
-                    next_line = lines[i]
-                    i += 1
-                    # Check for closing quote
-                    pos = 0
-                    found_close = False
-                    while pos < len(next_line):
-                        if next_line[pos] == "\\" and pos + 1 < len(next_line):
-                            pos += 2
-                            continue
-                        if next_line[pos] == '"':
-                            found_close = True
-                            break
-                        pos += 1
-                    if found_close:
-                        parts.append(next_line[:pos])
-                        break
-                    parts.append(next_line)
-
-                raw_value = "".join(parts)
+                raw_value, i = _collect_multiline_value(lines, i, after_eq_quote)
                 value = _unescape_double_quoted(raw_value)
                 if interpolate:
                     value = _interpolate(value, env, os_environ)
@@ -220,19 +240,7 @@ def _parse_stream(
             continue
 
         key = m.group("key")
-
-        if m.group("sq") is not None:
-            # Single-quoted: literal, no escapes
-            value: str | None = m.group("sq")
-        elif m.group("dq") is not None:
-            # Double-quoted: process escapes
-            value = _unescape_double_quoted(m.group("dq"))
-        elif m.group("uq") is not None:
-            # Unquoted: strip trailing whitespace
-            value = m.group("uq").rstrip()
-        else:
-            # KEY with no =value
-            value = None
+        value: str | None = _extract_value_from_match(m)
 
         if value is not None and interpolate:
             value = _interpolate(value, env, os_environ)
@@ -407,6 +415,39 @@ def unset_key(
 # ── Public API ─────────────────────────────────────────────────────────────────
 
 
+def _resolve_dotenv_path(
+    dotenv_path: str | os.PathLike[str] | None,
+    verbose: bool,
+) -> Path | None:
+    """Resolve *dotenv_path* to an existing file, or return None.
+
+    When *verbose* is True and the file does not exist, a warning is printed.
+    """
+    if dotenv_path is None:
+        dotenv_path = find_dotenv(usecwd=True)
+
+    path = Path(dotenv_path)
+    if path.is_file():
+        return path
+
+    if verbose:
+        print(  # noqa: T201
+            f"Python-dotenv could not find configuration file {path}.",
+            file=sys.stderr,
+        )
+    return None
+
+
+def _apply_to_environ(
+    pairs: Iterator[tuple[str, str | None]],
+    override: bool,
+) -> None:
+    """Write parsed (key, value) pairs into ``os.environ``."""
+    for key, value in pairs:
+        if value is not None and (override or key not in os.environ):
+            os.environ[key] = value
+
+
 def dotenv_values(
     dotenv_path: str | os.PathLike[str] | None = None,
     stream: IO[str] | None = None,
@@ -431,16 +472,8 @@ def dotenv_values(
     if stream is not None:
         return dict(_parse_stream(stream, interpolate=interpolate))
 
-    if dotenv_path is None:
-        dotenv_path = find_dotenv(usecwd=True)
-
-    path = Path(dotenv_path)
-    if not path.is_file():
-        if verbose:
-            print(  # noqa: T201
-                f"Python-dotenv could not find configuration file {path}.",
-                file=sys.stderr,
-            )
+    path = _resolve_dotenv_path(dotenv_path, verbose)
+    if path is None:
         return {}
 
     with open(path, encoding=encoding) as f:
@@ -469,27 +502,13 @@ def load_dotenv(
         True if a file was found and loaded.
     """
     if stream is not None:
-        for key, value in _parse_stream(stream, interpolate=interpolate):
-            if value is not None:
-                if override or key not in os.environ:
-                    os.environ[key] = value
+        _apply_to_environ(_parse_stream(stream, interpolate=interpolate), override)
         return True
 
-    if dotenv_path is None:
-        dotenv_path = find_dotenv(usecwd=True)
-
-    path = Path(dotenv_path)
-    if not path.is_file():
-        if verbose:
-            print(  # noqa: T201
-                f"Python-dotenv could not find configuration file {path}.",
-                file=sys.stderr,
-            )
+    path = _resolve_dotenv_path(dotenv_path, verbose)
+    if path is None:
         return False
 
     with open(path, encoding=encoding) as f:
-        for key, value in _parse_stream(f, interpolate=interpolate):
-            if value is not None:
-                if override or key not in os.environ:
-                    os.environ[key] = value
+        _apply_to_environ(_parse_stream(f, interpolate=interpolate), override)
     return True

@@ -6,16 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.4.15] - 2026-04-15
+
+### New Commands
+
+- **`zerodep bump`**: auto-detect changed modules (via content hash comparison against git tags) and bump their frontmatter version. Supports `--patch` (default), `--minor`, and `--major` levels. Optionally accepts specific module names. Regenerates `manifest.json` after bumping.
+- **`zerodep new`**: scaffold a new module directory with template files — module source (with frontmatter, copyright, and `__all__`), correctness test file. Accepts `--category`, `--tier`, and `--deps` options.
+
+### Enhancements
+
+- **`zerodep version-check --strict`**: new flag that exits with code 1 when any module needs a version bump, enabling CI integration.
+
+### CI
+
+- **Release workflow**: new GitHub Actions workflow (`.github/workflows/release.yml`) that automates the full release process — lint, test, auto-detect CalVer version, bump module versions, update project version, commit, tag, and create GitHub Release. Triggered via `workflow_dispatch` with optional manual version override.
+- **Benchmark version-check**: added non-blocking `version-check` step to benchmark workflow as a reminder for unbumped modules.
+- Raised benchmark alert threshold from 150% to 200% to reduce false positives from CI runner variance.
+
+### Bug Fixes
+
+- **a2a module**: fixed `StrEnum` string representation test for Python 3.11+ (use `.value` attribute instead of f-string formatting).
+- **httpclient module**: switched benchmark tests from `httpbin.org` to local test server for reliability.
+
 ### Refactoring
 
 - **Complexity reduction**: refactored 19 modules to bring all functions under cognitive complexity 20 (complexipy) and cyclomatic complexity 20 (ruff C901). Modules refactored: cache, validate, tabulate, dotenv, runner, xml, diff, soup, sse, search, scheduler, depdetect, qr, acp, yaml, toon, protobuf, markdown, httpclient.
 - Refactoring patterns used: per-type dispatch tables, try-parse extraction, phase-based decomposition, helper function extraction — all within single-file constraint.
+- **qr module**: updated copyright notice to reflect substantial refactoring (no longer a direct port).
 
-### CI
+### Benchmark
 
-- **Benchmark workflow**: new GitHub Actions workflow (`.github/workflows/benchmark.yml`) that runs `pytest-benchmark` on every release and on manual dispatch. Compares zerodep implementations against 25+ reference libraries. Results stored on `gh-pages` branch with regression alerting at 150% threshold.
-- **Benchmark report**: custom HTML report generator (`scripts/generate_bench_report.py`) that groups benchmarks by module, shows zerodep vs reference performance ratios with tables and charts, and publishes to GitHub Pages.
-- **CI reference libraries**: updated `ci.yml` with complete set of reference library dependencies for cross-validation testing.
+- Custom HTML report generator with light/dark theme toggle and per-module benchmark pages for docs embedding.
+- Corrected benchmark report color thresholds and AES classification.
 
 ### Internal
 

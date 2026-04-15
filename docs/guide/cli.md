@@ -134,6 +134,64 @@ yaml         0.3.0    up-to-date
 
 This is a maintainer command — run it before releasing to ensure all modified modules have had their version bumped.
 
+Use `--strict` to exit with code 1 when any module needs a bump (useful in CI):
+
+```bash
+$ zerodep version-check --strict
+# exits 0 if all up-to-date, 1 if any module needs a bump
+```
+
+### `zerodep bump`
+
+Auto-detect changed modules and bump their frontmatter versions. By default performs a patch bump; use `--minor` or `--major` for larger increments.
+
+```bash
+# Auto-detect and patch-bump all changed modules
+$ zerodep bump
+Module       Old    New
+-----------  -----  -----
+config       0.3.0  0.3.1
+yaml         0.3.0  0.3.1
+
+bumped 2 module(s) (patch)
+regenerating manifest.json ...
+Generated manifest.json with 34 modules
+
+# Minor bump specific modules
+$ zerodep bump --minor config yaml
+
+# Major bump
+$ zerodep bump --major config
+```
+
+After bumping, the manifest is automatically regenerated. This command is used by the [release workflow](https://github.com/Oaklight/zerodep/actions/workflows/release.yml) to bump versions before tagging.
+
+### `zerodep new`
+
+Scaffold a new module directory with template files.
+
+```bash
+# Create a new module with defaults (tier=simple, category=utility)
+$ zerodep new mymodule
+
+# Specify category and tier
+$ zerodep new mymodule --category network --tier subsystem
+
+# With dependencies
+$ zerodep new mymodule --deps httpclient yaml
+```
+
+This creates:
+
+```
+mymodule/
+├── mymodule.py               # module file with frontmatter and copyright
+└── test_mymodule_correctness.py  # test file with basic scaffold
+```
+
+Available categories: `agent`, `data`, `network`, `text`, `search`, `config`, `cli`, `security`, `utility`.
+Available tiers: `simple`, `medium`, `subsystem`.
+
 ### `zerodep dep-graph`
 
 Show module dependency relationships. Without arguments, displays a table of all modules that participate in any dependency. With a module name, shows detailed dependency info including transitive impact.

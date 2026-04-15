@@ -361,6 +361,125 @@ def _read_pipe_lines(
         pass
 
 
+def _sync_collect_with_callbacks(
+    proc: subprocess.Popen,  # type: ignore[type-arg]
+    on_stdout: Callable[[str], None] | None,
+    on_stderr: Callable[[str], None] | None,
+    input: str | None,  # noqa: A002
+    timeout: float | None,
+    kill_delay: float,
+    cmd_tuple: tuple[str, ...],
+) -> tuple[str, str]:
+    """Collect stdout/stderr via threaded line readers with callbacks.
+
+    Spawns daemon threads for stdout and stderr, writes optional input,
+    then waits for the process.  On timeout, escalates termination and
+    raises CommandTimeoutError with partial output.
+
+    Args:
+        proc: The running Popen process.
+        on_stdout: Per-line callback for stdout.
+        on_stderr: Per-line callback for stderr.
+        input: Text to send on stdin.
+        timeout: Maximum seconds to wait.
+        kill_delay: Seconds between SIGTERM and SIGKILL.
+        cmd_tuple: The command tuple (for error reporting).
+
+    Returns:
+        Tuple of (stdout_text, stderr_text).
+
+    Raises:
+        CommandTimeoutError: If execution exceeds *timeout*.
+    """
+    stdout_buf: list[str] = []
+    stderr_buf: list[str] = []
+
+    stdout_thread = threading.Thread(
+        target=_read_pipe_lines,
+        args=(proc.stdout, on_stdout, stdout_buf),
+        daemon=True,
+    )
+    stderr_thread = threading.Thread(
+        target=_read_pipe_lines,
+        args=(proc.stderr, on_stderr, stderr_buf),
+        daemon=True,
+    )
+    stdout_thread.start()
+    stderr_thread.start()
+
+    if input is not None and proc.stdin is not None:
+        proc.stdin.write(input)
+        proc.stdin.close()
+
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        _terminate_with_escalation(proc, kill_delay)
+        stdout_thread.join(timeout=2)
+        stderr_thread.join(timeout=2)
+        assert timeout is not None
+        raise CommandTimeoutError(
+            cmd_tuple,
+            timeout,
+            "".join(stdout_buf),
+            "".join(stderr_buf),
+        )
+
+    stdout_thread.join(timeout=5)
+    stderr_thread.join(timeout=5)
+    return "".join(stdout_buf), "".join(stderr_buf)
+
+
+def _sync_collect_simple(
+    proc: subprocess.Popen,  # type: ignore[type-arg]
+    input: str | None,  # noqa: A002
+    timeout: float | None,
+    kill_delay: float,
+    cmd_tuple: tuple[str, ...],
+    encoding: str,
+) -> tuple[str, str]:
+    """Collect stdout/stderr via subprocess.communicate().
+
+    On timeout, escalates termination and raises CommandTimeoutError
+    with any partial output captured by the TimeoutExpired exception.
+
+    Args:
+        proc: The running Popen process.
+        input: Text to send on stdin.
+        timeout: Maximum seconds to wait.
+        kill_delay: Seconds between SIGTERM and SIGKILL.
+        cmd_tuple: The command tuple (for error reporting).
+        encoding: Text encoding for decoding partial output.
+
+    Returns:
+        Tuple of (stdout_text, stderr_text).
+
+    Raises:
+        CommandTimeoutError: If execution exceeds *timeout*.
+    """
+    try:
+        return proc.communicate(input=input, timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        _terminate_with_escalation(proc, kill_delay)
+        partial_out = (
+            exc.stdout.decode(encoding)
+            if isinstance(exc.stdout, bytes)
+            else (exc.stdout or "")
+        )
+        partial_err = (
+            exc.stderr.decode(encoding)
+            if isinstance(exc.stderr, bytes)
+            else (exc.stderr or "")
+        )
+        assert timeout is not None
+        raise CommandTimeoutError(
+            cmd_tuple,
+            timeout,
+            partial_out,
+            partial_err,
+        )
+
+
 # ── Sync Execution (run) ─────────────────────────────────────────────
 
 
@@ -409,28 +528,18 @@ def run(
         CommandBlockedError: If the command violates the policy.
         ValueError: If the command is empty.
     """
-    # NOTE: sync/async alignment — phase 1: command normalization
+    # Phase 1-3: command normalization, policy, environment
     cmd_tuple = _parse_cmd(cmd)
-    # NOTE: sync/async alignment — phase 2: policy validation
     _check_command_policy(cmd_tuple[0], allowed_commands, blocked_commands)
-
-    # NOTE: sync/async alignment — phase 3: environment building
-    # (sync-only: popen_kwargs for platform flags; asyncio doesn't use them)
     computed_env = _build_env(env, env_extra, env_remove)
     popen_kwargs = _popen_platform_kwargs()
 
-    # NOTE: sync/async alignment — phase 3b: command existence check
-    # Pattern 2 convention: binary lookup via which() before process start.
     if which(cmd_tuple[0]) is None and not Path(cmd_tuple[0]).is_absolute():
         raise CommandNotFoundError(cmd_tuple[0])
 
-    has_callbacks = on_stdout is not None or on_stderr is not None
-
     t0 = time.monotonic()
 
-    # NOTE: sync/async alignment — phase 4: process startup
-    # Sync uses subprocess.Popen with text-mode encoding param;
-    # async uses asyncio.create_subprocess_exec with binary pipes.
+    # Phase 4: process startup
     try:
         proc = subprocess.Popen(
             cmd_tuple,
@@ -447,81 +556,19 @@ def run(
 
     pid = proc.pid
 
-    # NOTE: sync/async alignment — phase 5+6: stdout/stderr collection + timeout
+    # Phase 5+6: stdout/stderr collection + timeout
+    has_callbacks = on_stdout is not None or on_stderr is not None
     try:
         if has_callbacks:
-            stdout_buf: list[str] = []
-            stderr_buf: list[str] = []
-
-            stdout_thread = threading.Thread(
-                target=_read_pipe_lines,
-                args=(proc.stdout, on_stdout, stdout_buf),
-                daemon=True,
+            stdout_text, stderr_text = _sync_collect_with_callbacks(
+                proc, on_stdout, on_stderr, input, timeout, kill_delay, cmd_tuple
             )
-            stderr_thread = threading.Thread(
-                target=_read_pipe_lines,
-                args=(proc.stderr, on_stderr, stderr_buf),
-                daemon=True,
-            )
-            stdout_thread.start()
-            stderr_thread.start()
-
-            if input is not None and proc.stdin is not None:
-                proc.stdin.write(input)
-                proc.stdin.close()
-
-            try:
-                proc.wait(timeout=timeout)
-            except subprocess.TimeoutExpired:
-                # NOTE: sync/async alignment — phase 6: timeout handling
-                # Pattern 2 convention: terminate → kill escalation,
-                # then raise with command + timeout value + partial output.
-                _terminate_with_escalation(proc, kill_delay)
-                stdout_thread.join(timeout=2)
-                stderr_thread.join(timeout=2)
-                assert timeout is not None
-                raise CommandTimeoutError(
-                    cmd_tuple,
-                    timeout,
-                    "".join(stdout_buf),
-                    "".join(stderr_buf),
-                )
-
-            stdout_thread.join(timeout=5)
-            stderr_thread.join(timeout=5)
-            stdout_text = "".join(stdout_buf)
-            stderr_text = "".join(stderr_buf)
         else:
-            try:
-                stdout_text, stderr_text = proc.communicate(
-                    input=input, timeout=timeout
-                )
-            except subprocess.TimeoutExpired as exc:
-                # NOTE: sync/async alignment — phase 6: timeout handling
-                # Sync captures partial output from the TimeoutExpired
-                # exception; async non-callback path does NOT — see
-                # TODO(tier2) in run_async().
-                _terminate_with_escalation(proc, kill_delay)
-                partial_out = (
-                    exc.stdout.decode(encoding)
-                    if isinstance(exc.stdout, bytes)
-                    else (exc.stdout or "")
-                )
-                partial_err = (
-                    exc.stderr.decode(encoding)
-                    if isinstance(exc.stderr, bytes)
-                    else (exc.stderr or "")
-                )
-                assert timeout is not None
-                raise CommandTimeoutError(
-                    cmd_tuple,
-                    timeout,
-                    partial_out,
-                    partial_err,
-                )
+            stdout_text, stderr_text = _sync_collect_simple(
+                proc, input, timeout, kill_delay, cmd_tuple, encoding
+            )
     except CommandTimeoutError:
         raise
-    # Tier 1: must-succeed — process termination on unexpected error
     except Exception:
         if proc.poll() is None:
             _terminate_with_escalation(proc, kill_delay)
@@ -529,7 +576,7 @@ def run(
 
     duration = time.monotonic() - t0
 
-    # NOTE: sync/async alignment — phase 7: result construction
+    # Phase 7+8: result construction and exit-code check
     result = RunResult(
         command=cmd_tuple,
         returncode=proc.returncode,
@@ -539,12 +586,181 @@ def run(
         pid=pid,
     )
 
-    # NOTE: sync/async alignment — phase 8: non-zero exit wrapping
-    # Pattern 2 convention: error includes returncode, command, key stderr.
     if check and proc.returncode != 0:
         raise CommandFailedError(result)
 
     return result
+
+
+# ── Async Collection Helpers ────────────────────────────────────────
+
+
+async def _async_read_stream(
+    stream: asyncio.StreamReader | None,
+    callback: Callable[[str], None] | None,
+    buf: list[str],
+    encoding: str,
+) -> None:
+    """Read lines from an async stream, appending to *buf*.
+
+    Args:
+        stream: Async stream reader (stdout or stderr pipe).
+        callback: Optional per-line callback.
+        buf: Accumulator list for captured output.
+        encoding: Text encoding for decoding bytes.
+    """
+    if stream is None:
+        return
+    while True:
+        line_bytes = await stream.readline()
+        if not line_bytes:
+            break
+        line = line_bytes.decode(encoding)
+        buf.append(line)
+        if callback is not None:
+            callback(line)
+
+
+async def _async_collect_with_callbacks(
+    proc: asyncio.subprocess.Process,
+    on_stdout: Callable[[str], None] | None,
+    on_stderr: Callable[[str], None] | None,
+    input_bytes: bytes | None,
+    timeout: float | None,
+    kill_delay: float,
+    cmd_tuple: tuple[str, ...],
+    encoding: str,
+) -> tuple[str, str]:
+    """Collect stdout/stderr via async stream readers with callbacks.
+
+    Sends optional input, reads stdout/stderr concurrently, and waits
+    for the process.  On timeout, escalates termination and raises
+    CommandTimeoutError with partial output.
+
+    Args:
+        proc: The running asyncio subprocess.
+        on_stdout: Per-line callback for stdout.
+        on_stderr: Per-line callback for stderr.
+        input_bytes: Encoded input to send on stdin.
+        timeout: Maximum seconds to wait.
+        kill_delay: Seconds between SIGTERM and SIGKILL.
+        cmd_tuple: The command tuple (for error reporting).
+        encoding: Text encoding for decoding bytes.
+
+    Returns:
+        Tuple of (stdout_text, stderr_text).
+
+    Raises:
+        CommandTimeoutError: If execution exceeds *timeout*.
+    """
+    stdout_buf: list[str] = []
+    stderr_buf: list[str] = []
+
+    async def _run_with_streaming() -> None:
+        if input_bytes is not None and proc.stdin is not None:
+            proc.stdin.write(input_bytes)
+            await proc.stdin.drain()
+            proc.stdin.close()
+            await proc.stdin.wait_closed()
+
+        await asyncio.gather(
+            _async_read_stream(proc.stdout, on_stdout, stdout_buf, encoding),
+            _async_read_stream(proc.stderr, on_stderr, stderr_buf, encoding),
+        )
+        await proc.wait()
+
+    try:
+        await asyncio.wait_for(_run_with_streaming(), timeout=timeout)
+    except asyncio.TimeoutError:
+        await _async_terminate_with_escalation(proc, kill_delay)
+        assert timeout is not None
+        raise CommandTimeoutError(
+            cmd_tuple,
+            timeout,
+            "".join(stdout_buf),
+            "".join(stderr_buf),
+        )
+
+    return "".join(stdout_buf), "".join(stderr_buf)
+
+
+async def _async_drain_partial(
+    proc: asyncio.subprocess.Process,
+    encoding: str,
+) -> tuple[str, str]:
+    """Drain remaining bytes from process pipes after timeout.
+
+    Best-effort: silently returns empty strings on read failure.
+
+    Args:
+        proc: The terminated asyncio subprocess.
+        encoding: Text encoding for decoding bytes.
+
+    Returns:
+        Tuple of (partial_stdout, partial_stderr).
+    """
+    partial_out = ""
+    partial_err = ""
+    try:
+        if proc.stdout is not None:
+            raw_out = await proc.stdout.read()
+            partial_out = raw_out.decode(encoding) if raw_out else ""
+    except Exception:
+        pass
+    try:
+        if proc.stderr is not None:
+            raw_err = await proc.stderr.read()
+            partial_err = raw_err.decode(encoding) if raw_err else ""
+    except Exception:
+        pass
+    return partial_out, partial_err
+
+
+async def _async_collect_simple(
+    proc: asyncio.subprocess.Process,
+    input_bytes: bytes | None,
+    timeout: float | None,
+    kill_delay: float,
+    cmd_tuple: tuple[str, ...],
+    encoding: str,
+) -> tuple[str, str]:
+    """Collect stdout/stderr via asyncio communicate().
+
+    On timeout, escalates termination, drains any remaining pipe bytes,
+    and raises CommandTimeoutError with partial output.
+
+    Args:
+        proc: The running asyncio subprocess.
+        input_bytes: Encoded input to send on stdin.
+        timeout: Maximum seconds to wait.
+        kill_delay: Seconds between SIGTERM and SIGKILL.
+        cmd_tuple: The command tuple (for error reporting).
+        encoding: Text encoding for decoding bytes.
+
+    Returns:
+        Tuple of (stdout_text, stderr_text).
+
+    Raises:
+        CommandTimeoutError: If execution exceeds *timeout*.
+    """
+    try:
+        stdout_bytes, stderr_bytes = await asyncio.wait_for(
+            proc.communicate(input=input_bytes), timeout=timeout
+        )
+    except asyncio.TimeoutError:
+        await _async_terminate_with_escalation(proc, kill_delay)
+        partial_out, partial_err = await _async_drain_partial(proc, encoding)
+        assert timeout is not None
+        raise CommandTimeoutError(
+            cmd_tuple,
+            timeout,
+            partial_out,
+            partial_err,
+        )
+
+    stdout_text = stdout_bytes.decode(encoding) if stdout_bytes else ""
+    stderr_text = stderr_bytes.decode(encoding) if stderr_bytes else ""
+    return stdout_text, stderr_text
 
 
 # ── Async Execution (run_async) ──────────────────────────────────────
@@ -598,24 +814,17 @@ async def run_async(
         CommandBlockedError: If the command violates the policy.
         ValueError: If the command is empty.
     """
-    # NOTE: sync/async alignment — phase 1: command normalization
+    # Phase 1-3: command normalization, policy, environment
     cmd_tuple = _parse_cmd(cmd)
-    # NOTE: sync/async alignment — phase 2: policy validation
     _check_command_policy(cmd_tuple[0], allowed_commands, blocked_commands)
-
-    # NOTE: sync/async alignment — phase 3: environment building
-    # (no popen_kwargs — asyncio.create_subprocess_exec doesn't support
-    # platform-specific creationflags; this is a sync-only concern)
     computed_env = _build_env(env, env_extra, env_remove)
 
-    # NOTE: sync/async alignment — phase 3b: command existence check
     if which(cmd_tuple[0]) is None and not Path(cmd_tuple[0]).is_absolute():
         raise CommandNotFoundError(cmd_tuple[0])
 
     t0 = time.monotonic()
 
-    # NOTE: sync/async alignment — phase 4: process startup
-    # Async uses binary pipes; encoding is applied manually on read.
+    # Phase 4: process startup
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd_tuple,
@@ -633,102 +842,33 @@ async def run_async(
         raise CommandNotFoundError(cmd_tuple[0]) from exc
 
     pid = proc.pid
-
-    has_callbacks = on_stdout is not None or on_stderr is not None
     input_bytes = input.encode(encoding) if input is not None else None
 
-    # NOTE: sync/async alignment — phase 5+6: stdout/stderr collection + timeout
+    # Phase 5+6: stdout/stderr collection + timeout
+    has_callbacks = on_stdout is not None or on_stderr is not None
     try:
         if has_callbacks:
-            stdout_buf: list[str] = []
-            stderr_buf: list[str] = []
-
-            async def _read_stream(
-                stream: asyncio.StreamReader | None,
-                callback: Callable[[str], None] | None,
-                buf: list[str],
-            ) -> None:
-                if stream is None:
-                    return
-                while True:
-                    line_bytes = await stream.readline()
-                    if not line_bytes:
-                        break
-                    line = line_bytes.decode(encoding)
-                    buf.append(line)
-                    if callback is not None:
-                        callback(line)
-
-            async def _run_with_streaming() -> None:
-                if input_bytes is not None and proc.stdin is not None:
-                    proc.stdin.write(input_bytes)
-                    await proc.stdin.drain()
-                    proc.stdin.close()
-                    await proc.stdin.wait_closed()
-
-                await asyncio.gather(
-                    _read_stream(proc.stdout, on_stdout, stdout_buf),
-                    _read_stream(proc.stderr, on_stderr, stderr_buf),
-                )
-                await proc.wait()
-
-            try:
-                await asyncio.wait_for(_run_with_streaming(), timeout=timeout)
-            except asyncio.TimeoutError:
-                # NOTE: sync/async alignment — phase 6: timeout handling
-                # Callback path captures partial output from buffers —
-                # aligned with sync callback path.
-                await _async_terminate_with_escalation(proc, kill_delay)
-                assert timeout is not None
-                raise CommandTimeoutError(
-                    cmd_tuple,
-                    timeout,
-                    "".join(stdout_buf),
-                    "".join(stderr_buf),
-                )
-
-            stdout_text = "".join(stdout_buf)
-            stderr_text = "".join(stderr_buf)
+            stdout_text, stderr_text = await _async_collect_with_callbacks(
+                proc,
+                on_stdout,
+                on_stderr,
+                input_bytes,
+                timeout,
+                kill_delay,
+                cmd_tuple,
+                encoding,
+            )
         else:
-            try:
-                stdout_bytes, stderr_bytes = await asyncio.wait_for(
-                    proc.communicate(input=input_bytes), timeout=timeout
-                )
-            except asyncio.TimeoutError:
-                # NOTE: sync/async alignment — phase 6: timeout handling
-                # asyncio.TimeoutError carries no partial output (unlike
-                # subprocess.TimeoutExpired).  After killing the process,
-                # drain whatever bytes remain in the pipe buffers so the
-                # raised CommandTimeoutError includes partial output —
-                # aligned with the sync non-callback path.
-                await _async_terminate_with_escalation(proc, kill_delay)
-                partial_out = ""
-                partial_err = ""
-                try:
-                    if proc.stdout is not None:
-                        raw_out = await proc.stdout.read()
-                        partial_out = raw_out.decode(encoding) if raw_out else ""
-                except Exception:
-                    pass
-                try:
-                    if proc.stderr is not None:
-                        raw_err = await proc.stderr.read()
-                        partial_err = raw_err.decode(encoding) if raw_err else ""
-                except Exception:
-                    pass
-                assert timeout is not None
-                raise CommandTimeoutError(
-                    cmd_tuple,
-                    timeout,
-                    partial_out,
-                    partial_err,
-                )
-
-            stdout_text = stdout_bytes.decode(encoding) if stdout_bytes else ""
-            stderr_text = stderr_bytes.decode(encoding) if stderr_bytes else ""
+            stdout_text, stderr_text = await _async_collect_simple(
+                proc,
+                input_bytes,
+                timeout,
+                kill_delay,
+                cmd_tuple,
+                encoding,
+            )
     except CommandTimeoutError:
         raise
-    # Tier 1: must-succeed — async process termination on unexpected error
     except Exception:
         if proc.returncode is None:
             await _async_terminate_with_escalation(proc, kill_delay)
@@ -736,10 +876,7 @@ async def run_async(
 
     duration = time.monotonic() - t0
 
-    # NOTE: sync/async alignment — phase 7: result construction
-    # Defensive fallback: returncode should always be set after communicate(),
-    # but asyncio.subprocess.Process.returncode can be None if the process
-    # was terminated abnormally. Sync uses proc.returncode directly.
+    # Phase 7+8: result construction and exit-code check
     result = RunResult(
         command=cmd_tuple,
         returncode=proc.returncode if proc.returncode is not None else -1,
@@ -749,7 +886,6 @@ async def run_async(
         pid=pid,
     )
 
-    # NOTE: sync/async alignment — phase 8: non-zero exit wrapping
     if check and result.returncode != 0:
         raise CommandFailedError(result)
 

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-04-15T14:08:58.639129+00:00",
+  "generated": "2026-04-15T14:33:44.535482+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -61,11 +61,11 @@
       "files": [
         "cache/cache.py"
       ],
-      "version": "0.2.2",
+      "version": "0.2.3",
       "deps": [],
       "tier": "subsystem",
       "category": "utility",
-      "last_updated": "2026-04-15T09:45:45Z",
+      "last_updated": "2026-04-15T14:08:58Z",
       "content_hash": "5161daf28871933063b17526a49429dacea22f6934cd4b2439cefa02a97bdd3d"
     },
     "config": {
@@ -89,11 +89,11 @@
       "files": [
         "depdetect/depdetect.py"
       ],
-      "version": "0.4.2",
+      "version": "0.4.3",
       "deps": [],
       "tier": "medium",
       "category": "devtools",
-      "last_updated": "2026-04-15T21:57:20+08:00",
+      "last_updated": "2026-04-15T14:08:58Z",
       "content_hash": "085c6beded889dfd577738ac05e05b5ce092e62f81dd7e80bdfa8dcbe1471162"
     },
     "diff": {
@@ -223,11 +223,11 @@
       "files": [
         "protobuf/protobuf.py"
       ],
-      "version": "0.4.2",
+      "version": "0.4.3",
       "deps": [],
       "tier": "subsystem",
       "category": "data",
-      "last_updated": "2026-04-15T21:57:20+08:00",
+      "last_updated": "2026-04-15T14:08:58Z",
       "content_hash": "939d31669a88b924bb016674c50c9a50ff283b255b155f5c5372828723458e0a"
     },
     "qr": {
@@ -278,18 +278,6 @@
       "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "fe2d6d5a1037a99e48102f5e5d983e706decca2b1616de31d804d9ef333752ea"
     },
-    "sparse_search": {
-      "description": "Zero-dependency sparse text search with BM25 family and TF-IDF ranking",
-      "files": [
-        "sparse_search/sparse_search.py"
-      ],
-      "version": "0.3.1",
-      "deps": [],
-      "tier": "medium",
-      "category": "utility",
-      "last_updated": "2026-04-15T09:45:45Z",
-      "content_hash": "98bfa266b43782668ebfc26ff891e2cf555762d539a0b724090ae6629a45abde"
-    },
     "semver": {
       "description": "PEP 440 version parser and comparator -- zero dependencies, stdlib only",
       "files": [
@@ -307,15 +295,15 @@
       "files": [
         "skills/skills.py"
       ],
-      "version": "0.4.0",
+      "version": "0.4.1",
       "deps": [
         "frontmatter",
         "sparse_search"
       ],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-11T01:00:28+08:00",
-      "content_hash": "ae4df30192fcdff8f611851ac59f99374a317e3d9a6d74d9250286a6b6548271"
+      "last_updated": "2026-04-15T22:27:20+08:00",
+      "content_hash": "af69314728164602db323a5240feac58260e4b0d5ceedb32945c80e2ddfa13e7"
     },
     "soup": {
       "description": "HTML parser with BeautifulSoup-like API — zero-dep, stdlib only, Python 3.10+",
@@ -328,6 +316,18 @@
       "category": "data",
       "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "fc27dceec6932994622fc171a8284fab93f2ae6c2453ce822c46535b08967259"
+    },
+    "sparse_search": {
+      "description": "Zero-dependency sparse text search with BM25 family and TF-IDF ranking",
+      "files": [
+        "sparse_search/sparse_search.py"
+      ],
+      "version": "0.3.2",
+      "deps": [],
+      "tier": "medium",
+      "category": "utility",
+      "last_updated": "2026-04-15T22:27:20+08:00",
+      "content_hash": "98bfa266b43782668ebfc26ff891e2cf555762d539a0b724090ae6629a45abde"
     },
     "sse": {
       "description": "Zero-dependency SSE (Server-Sent Events) client",
@@ -372,11 +372,11 @@
       "files": [
         "toon/toon.py"
       ],
-      "version": "0.3.2",
+      "version": "0.3.3",
       "deps": [],
       "tier": "simple",
       "category": "data",
-      "last_updated": "2026-04-15T21:57:20+08:00",
+      "last_updated": "2026-04-15T14:08:58Z",
       "content_hash": "7ba503084ede371241d85ba5ef825f0badd0b5084f9807212f664a7a1b79dbc5"
     },
     "validate": {

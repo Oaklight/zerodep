@@ -234,16 +234,21 @@ def _build_comparisons(modules: dict) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 _CSS = """\
-:root {
+:root, [data-theme="light"] {
   --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
-  --green: #198754; --red: #dc3545; --yellow: #ffc107; --blue: #0d6efd;
-  --accent: #6f42c1;
+  --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
+  --accent: #6f42c1; --meta: #666;
+}
+[data-theme="dark"] {
+  --bg: #1a1a2e; --fg: #e0e0e0; --card-bg: #16213e; --border: #334155;
+  --green: #4ade80; --red: #f87171; --yellow: #facc15; --blue: #60a5fa;
+  --accent: #a78bfa; --meta: #999;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #1a1a2e; --fg: #e0e0e0; --card-bg: #16213e; --border: #334155;
     --green: #4ade80; --red: #f87171; --yellow: #facc15; --blue: #60a5fa;
-    --accent: #a78bfa;
+    --accent: #a78bfa; --meta: #999;
   }
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -251,6 +256,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg); color: var(--fg); line-height: 1.6;
   max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;
+  transition: background .2s, color .2s;
 }
 h1 { font-size: 1.8rem; margin-bottom: .5rem; }
 h2 {
@@ -258,7 +264,16 @@ h2 {
   border-bottom: 2px solid var(--accent); padding-bottom: .3rem;
 }
 h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
-.meta { color: #888; font-size: .9rem; margin-bottom: 2rem; }
+.meta { color: var(--meta); font-size: .9rem; margin-bottom: 2rem; }
+.header-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.theme-toggle {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: .4rem .8rem; cursor: pointer;
+  color: var(--fg); font-size: .85rem;
+}
+.theme-toggle:hover { border-color: var(--accent); }
 .summary-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1rem; margin-bottom: 2rem;
@@ -268,12 +283,15 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
   border-radius: 8px; padding: 1rem; text-align: center;
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
-.summary-card .label { font-size: .85rem; color: #888; }
+.summary-card .label { font-size: .85rem; color: var(--meta); }
 table {
   width: 100%; border-collapse: collapse; margin-bottom: 1rem;
   font-size: .9rem;
 }
-th, td { padding: .5rem .75rem; border: 1px solid var(--border); text-align: left; }
+th, td {
+  padding: .5rem .75rem; border: 1px solid var(--border);
+  text-align: left;
+}
 th { background: var(--card-bg); font-weight: 600; white-space: nowrap; }
 td { white-space: nowrap; }
 .ratio-cell { font-weight: bold; }
@@ -286,12 +304,6 @@ td { white-space: nowrap; }
   max-height: 450px;
 }
 .module-section { margin-bottom: 3rem; }
-.toggle-btn {
-  background: var(--card-bg); border: 1px solid var(--border);
-  border-radius: 4px; padding: .3rem .8rem; cursor: pointer;
-  color: var(--fg); font-size: .85rem; margin-bottom: .5rem;
-}
-.toggle-btn:hover { border-color: var(--accent); }
 .standalone-table { margin-top: 1rem; }
 """
 
@@ -487,6 +499,26 @@ new Chart(document.getElementById('{cid}'), {{
 
     chartjs = "https://cdn.jsdelivr.net/npm/chart.js@4"
 
+    theme_js = """\
+(function() {
+  var btn = document.getElementById('theme-toggle');
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? '\\u2600 Light' : '\\u263E Dark';
+    localStorage.setItem('bench-theme', t);
+  }
+  var saved = localStorage.getItem('bench-theme');
+  if (saved) setTheme(saved);
+  btn.addEventListener('click', function() {
+    var cur = document.documentElement.getAttribute('data-theme');
+    if (!cur) {
+      cur = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark' : 'light';
+    }
+    setTheme(cur === 'dark' ? 'light' : 'dark');
+  });
+})();"""
+
     html = (
         '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
         '<meta charset="utf-8">\n'
@@ -496,12 +528,16 @@ new Chart(document.getElementById('{cid}'), {{
         f"<style>{_CSS}</style>\n"
         f'<script src="{chartjs}"></script>\n'
         "</head>\n<body>\n"
+        '<div class="header-row">\n'
         "<h1>zerodep Benchmark Report</h1>\n"
+        '<button class="theme-toggle" id="theme-toggle">'
+        "\u263e Dark</button>\n</div>\n"
         f'<p class="meta">{meta_line}</p>\n'
         f'<div class="summary-grid">\n{cards}\n</div>\n'
         f"{nav}\n"
         f"{''.join(sections)}\n"
-        f"<script>\n{''.join(charts_js)}\n</script>\n"
+        f"<script>\n{''.join(charts_js)}\n"
+        f"{theme_js}\n</script>\n"
         "</body>\n</html>"
     )
     return html

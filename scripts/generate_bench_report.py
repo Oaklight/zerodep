@@ -23,13 +23,13 @@ from pathlib import Path
 _ZERODEP_MARKERS = (
     "zerodep",
     "pure_python",
+    "openssl",
     "_ours",
     "ours_",
 )
 
 # Known reference library method fragments → display name
 _REF_LIBS: dict[str, str] = {
-    "openssl": "OpenSSL",
     "pycryptodome": "PyCryptodome",
     "httpx": "httpx",
     "a2a_protocol": "a2a-protocol",
@@ -302,19 +302,19 @@ _CHART_COLORS = {
 
 
 def _ratio_class(ratio: float) -> str:
-    if ratio <= 0.8:
+    if ratio < 0.95:
         return "faster"
-    if ratio >= 1.5:
+    if ratio > 1.05:
         return "slower"
     return "similar"
 
 
 def _ratio_text(ratio: float) -> str:
-    if ratio < 1:
+    if ratio < 0.95:
         return f"{1 / ratio:.1f}x faster"
-    if ratio > 1:
+    if ratio > 1.05:
         return f"{ratio:.1f}x slower"
-    return "equal"
+    return "~equal"
 
 
 def _generate_html(comparisons: list[dict], meta: dict) -> str:
@@ -322,11 +322,11 @@ def _generate_html(comparisons: list[dict], meta: dict) -> str:
     total_pairs = sum(len(m["pairs"]) for m in comparisons)
     n_modules = len([m for m in comparisons if m["pairs"] or m["standalone"]])
 
-    faster_count = sum(1 for m in comparisons for p in m["pairs"] if p["ratio"] < 0.8)
+    faster_count = sum(1 for m in comparisons for p in m["pairs"] if p["ratio"] < 0.95)
     similar_count = sum(
-        1 for m in comparisons for p in m["pairs"] if 0.8 <= p["ratio"] <= 1.5
+        1 for m in comparisons for p in m["pairs"] if 0.95 <= p["ratio"] <= 1.05
     )
-    slower_count = sum(1 for m in comparisons for p in m["pairs"] if p["ratio"] > 1.5)
+    slower_count = sum(1 for m in comparisons for p in m["pairs"] if p["ratio"] > 1.05)
 
     charts_js = []
     chart_id = 0

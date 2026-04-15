@@ -34,3 +34,6 @@ _build/
 # Worktrees (managed separately)
 docs_en/
 docs_zh/
+
+# complexipy tool local cache
+.complexipy_cache/

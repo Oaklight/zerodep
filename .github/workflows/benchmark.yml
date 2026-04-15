@@ -44,6 +44,10 @@ jobs:
           pip install "a2a-protocol>=0.1.0" || true
           pip install "agent-client-protocol>=0.9.0" || true
 
+      - name: Check module versions
+        continue-on-error: true
+        run: python -m zerodep version-check
+
       - name: Run benchmarks
         run: |
           pytest --ignore-glob="*/test_*_correctness.py" \

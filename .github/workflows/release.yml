@@ -1,0 +1,98 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (leave empty for auto CalVer YYYY.M.D)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pytest pytest-asyncio pytest-benchmark ruff
+
+      - name: Install reference libraries
+        continue-on-error: true
+        run: |
+          pip install pycryptodome "qrcode>=7.0" "Pillow>=10.0.0" \
+            httpx python-dotenv PyYAML commentjson "structlog>=24.0.0" \
+            "tenacity>=8.0.0" "tabulate>=0.9.0" "beautifulsoup4>=4.12.0" \
+            "pydantic>=2.0.0" "httpx-sse>=0.4.0" "mistune>=3.0.0" \
+            "unidiff>=0.7.0" "APScheduler>=3.10.0" "schedule>=1.2.0" \
+            "croniter>=1.3.0" "rank-bm25>=0.2.2" "python-frontmatter>=1.1.0" \
+            "python-decouple>=3.8" "cachetools>=5.0.0" "xmltodict>=0.13.0" \
+            "jsonrpcserver>=5.0.0" "protobuf>=4.0.0" "packaging>=24.0"
+          pip install "toon_format @ git+https://github.com/toon-format/toon-python.git" || true
+          pip install "a2a-protocol>=0.1.0" || true
+          pip install "agent-client-protocol>=0.9.0" || true
+
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Test
+        run: pytest --ignore-glob="*/test_*_benchmark.py" -v
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VER="${{ github.event.inputs.version }}"
+          else
+            VER="$(date +%Y.%-m.%-d)"
+          fi
+          if git tag -l "v${VER}" | grep -q .; then
+            echo "::error::Tag v${VER} already exists"
+            exit 1
+          fi
+          echo "version=${VER}" >> "$GITHUB_OUTPUT"
+          echo "Release version: ${VER}"
+
+      - name: Bump module versions
+        run: |
+          python -m zerodep bump || echo "No modules to bump"
+
+      - name: Bump project version
+        run: |
+          VER="${{ steps.version.outputs.version }}"
+          sed -i "s/^version = .*/version = \"${VER}\"/" pyproject.toml
+          sed -i "s/^__version__ = .*/__version__ = \"${VER}\"/" zerodep.py
+
+      - name: Commit and tag
+        run: |
+          VER="${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "release: v${VER}"
+          fi
+          git tag "v${VER}"
+          git push origin master --tags
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER="${{ steps.version.outputs.version }}"
+          gh release create "v${VER}" \
+            --title "v${VER}" \
+            --generate-notes

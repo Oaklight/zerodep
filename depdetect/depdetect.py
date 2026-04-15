@@ -691,84 +691,121 @@ def get_binary_version(name: str) -> str | None:
 # ── High-Level Functions ──
 
 
+def _version_mismatch(
+    name: str, found_version: str | None, op: str | None, version: str | None
+) -> bool:
+    """Return ``True`` if *found_version* does not satisfy the constraint."""
+    if op and version and found_version:
+        return not _compare_versions(found_version, op, version)
+    return False
+
+
+def _check_binary_or_runtime(
+    req: Requirement, required_str: str | None
+) -> DependencyStatus:
+    """Check a binary or non-Python runtime requirement."""
+    path = check_binary(req.name)
+    if not path:
+        return DependencyStatus(
+            name=req.name,
+            category=req.category,
+            required=required_str,
+            found=False,
+            message=f"{req.name} not found on PATH",
+        )
+    found_version = _run_version_cmd(path, req.name)
+    if _version_mismatch(req.name, found_version, req.op, req.version):
+        return DependencyStatus(
+            name=req.name,
+            category=req.category,
+            required=required_str,
+            found=False,
+            found_version=found_version,
+            path=path,
+            message=f"{req.name} {found_version} !~ {required_str}",
+        )
+    return DependencyStatus(
+        name=req.name,
+        category=req.category,
+        required=required_str,
+        found=True,
+        found_version=found_version,
+        path=path,
+        message=f"found at {path}",
+    )
+
+
+def _get_python_package_version(name: str) -> str | None:
+    """Return the installed version of a Python package, or ``None``."""
+    try:
+        return importlib.metadata.version(name)
+    except importlib.metadata.PackageNotFoundError:
+        pass
+    import_name = _resolve_import_name(name)
+    if import_name != name:
+        try:
+            return importlib.metadata.version(import_name)
+        except importlib.metadata.PackageNotFoundError:
+            pass
+    return None
+
+
+def _check_python_req(req: Requirement, required_str: str | None) -> DependencyStatus:
+    """Check a Python package requirement."""
+    if not check_python_package(req.name):
+        return DependencyStatus(
+            name=req.name,
+            category=req.category,
+            required=required_str,
+            found=False,
+            message=f"{req.name} not importable",
+        )
+    found_version = _get_python_package_version(req.name)
+    if _version_mismatch(req.name, found_version, req.op, req.version):
+        return DependencyStatus(
+            name=req.name,
+            category=req.category,
+            required=required_str,
+            found=False,
+            found_version=found_version,
+            message=f"{req.name} {found_version} !~ {required_str}",
+        )
+    return DependencyStatus(
+        name=req.name,
+        category=req.category,
+        required=required_str,
+        found=True,
+        found_version=found_version,
+        message="importable",
+    )
+
+
+def _check_python_runtime(
+    req: Requirement, required_str: str | None
+) -> DependencyStatus:
+    """Check the current Python interpreter against a version constraint."""
+    vi = sys.version_info
+    ver = f"{vi.major}.{vi.minor}.{vi.micro}"
+    found = not _version_mismatch(req.name, ver, req.op, req.version)
+    return DependencyStatus(
+        name=req.name,
+        category=req.category,
+        required=required_str,
+        found=found,
+        found_version=ver,
+        message="current interpreter" if found else f"Python {ver} !~ {required_str}",
+    )
+
+
 def _check_one(req: Requirement) -> DependencyStatus:
     """Check a single requirement against the current system."""
     required_str = f"{req.op}{req.version}" if req.op and req.version else None
 
     if req.category == "binary":
-        path = check_binary(req.name)
-        if not path:
-            return DependencyStatus(
-                name=req.name,
-                category=req.category,
-                required=required_str,
-                found=False,
-                message=f"{req.name} not found on PATH",
-            )
-        found_version = _run_version_cmd(path, req.name)
-        # Check version constraint
-        if req.op and req.version and found_version:
-            if not _compare_versions(found_version, req.op, req.version):
-                return DependencyStatus(
-                    name=req.name,
-                    category=req.category,
-                    required=required_str,
-                    found=False,
-                    found_version=found_version,
-                    path=path,
-                    message=f"{req.name} {found_version} !~ {required_str}",
-                )
-        return DependencyStatus(
-            name=req.name,
-            category=req.category,
-            required=required_str,
-            found=True,
-            found_version=found_version,
-            path=path,
-            message=f"found at {path}",
-        )
+        return _check_binary_or_runtime(req, required_str)
 
     if req.category == "python":
-        found = check_python_package(req.name)
-        if not found:
-            return DependencyStatus(
-                name=req.name,
-                category=req.category,
-                required=required_str,
-                found=False,
-                message=f"{req.name} not importable",
-            )
-        # Try to get installed version
-        found_version = None
-        try:
-            found_version = importlib.metadata.version(req.name)
-        except importlib.metadata.PackageNotFoundError:
-            # Try with the import name mapped back
-            import_name = _resolve_import_name(req.name)
-            if import_name != req.name:
-                try:
-                    found_version = importlib.metadata.version(import_name)
-                except importlib.metadata.PackageNotFoundError:
-                    pass
-        # Check version constraint
-        if req.op and req.version and found_version:
-            if not _compare_versions(found_version, req.op, req.version):
-                return DependencyStatus(
-                    name=req.name,
-                    category=req.category,
-                    required=required_str,
-                    found=False,
-                    found_version=found_version,
-                    message=f"{req.name} {found_version} !~ {required_str}",
-                )
-        return DependencyStatus(
-            name=req.name,
-            category=req.category,
-            required=required_str,
-            found=True,
-            found_version=found_version,
-            message="importable",
-        )
+        return _check_python_req(req, required_str)
 
     if req.category == "env":
         found = check_env_var(req.name)
@@ -781,54 +818,9 @@ def _check_one(req: Requirement) -> DependencyStatus:
         )
 
     if req.category == "runtime":
-        name_lower = req.name.lower()
-        if name_lower in ("python", "python3"):
-            vi = sys.version_info
-            ver = f"{vi.major}.{vi.minor}.{vi.micro}"
-            found = True
-            if req.op and req.version:
-                found = _compare_versions(ver, req.op, req.version)
-            return DependencyStatus(
-                name=req.name,
-                category=req.category,
-                required=required_str,
-                found=found,
-                found_version=ver,
-                message="current interpreter"
-                if found
-                else f"Python {ver} !~ {required_str}",
-            )
-        # Other runtimes: treat like binary
-        path = check_binary(req.name)
-        if not path:
-            return DependencyStatus(
-                name=req.name,
-                category=req.category,
-                required=required_str,
-                found=False,
-                message=f"{req.name} not found on PATH",
-            )
-        found_version = _run_version_cmd(path, req.name)
-        if req.op and req.version and found_version:
-            if not _compare_versions(found_version, req.op, req.version):
-                return DependencyStatus(
-                    name=req.name,
-                    category=req.category,
-                    required=required_str,
-                    found=False,
-                    found_version=found_version,
-                    path=path,
-                    message=f"{req.name} {found_version} !~ {required_str}",
-                )
-        return DependencyStatus(
-            name=req.name,
-            category=req.category,
-            required=required_str,
-            found=True,
-            found_version=found_version,
-            path=path,
-            message=f"found at {path}",
-        )
+        if req.name.lower() in ("python", "python3"):
+            return _check_python_runtime(req, required_str)
+        return _check_binary_or_runtime(req, required_str)
 
     # Unknown category — report as not checkable
     return DependencyStatus(

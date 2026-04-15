@@ -268,6 +268,43 @@ def _git_last_updated(filepath: Path, repo_root: Path) -> str | None:
         return None
 
 
+def _find_module_py_files(directory: Path) -> list[Path]:
+    """Return sorted non-test ``.py`` files in *directory*."""
+    return sorted(
+        f
+        for f in directory.glob("*.py")
+        if not f.name.startswith("test_") and f.name != "conftest.py"
+    )
+
+
+def _find_primary_file(py_files: list[Path], dir_name: str) -> Path:
+    """Pick the primary module file from *py_files*.
+
+    Prefers the file whose stem matches *dir_name*; falls back to the first
+    file in the sorted list.
+    """
+    for f in py_files:
+        if f.stem == dir_name:
+            return f
+    return py_files[0]
+
+
+def _build_module_entry(primary: Path, py_files: list[Path], repo_root: Path) -> dict:
+    """Build a manifest entry dict from the primary module file."""
+    source = primary.read_text(encoding="utf-8")
+    meta = _extract_frontmatter(source)
+    return {
+        "description": _extract_docstring_first_line(source) or "",
+        "files": [str(f.relative_to(repo_root)) for f in py_files],
+        "version": meta.get("version", "0.0.0"),
+        "deps": meta.get("deps", []),
+        "tier": meta.get("tier", ""),
+        "category": meta.get("category", ""),
+        "last_updated": _git_last_updated(primary, repo_root),
+        "content_hash": _content_hash(primary),
+    }
+
+
 def _scan_modules(repo_root: Path) -> dict:
     """Scan repo recursively for module directories and extract metadata.
 
@@ -287,13 +324,7 @@ def _scan_modules(repo_root: Path) -> dict:
             ):
                 continue
 
-            # Find non-test .py files in this directory
-            py_files = sorted(
-                f
-                for f in entry.glob("*.py")
-                if not f.name.startswith("test_") and f.name != "conftest.py"
-            )
-
+            py_files = _find_module_py_files(entry)
             if py_files:
                 mod_name = entry.name
                 if mod_name in modules:
@@ -304,41 +335,11 @@ def _scan_modules(repo_root: Path) -> dict:
                         f"found in {prev_dir} and {cur_dir}, keeping first"
                     )
                 else:
-                    # Primary module file: prefer dir_name.py, else first file
-                    primary = None
-                    for f in py_files:
-                        if f.stem == entry.name:
-                            primary = f
-                            break
-                    if primary is None:
-                        primary = py_files[0]
+                    primary = _find_primary_file(py_files, entry.name)
+                    modules[mod_name] = _build_module_entry(
+                        primary, py_files, repo_root
+                    )
 
-                    source = primary.read_text(encoding="utf-8")
-                    meta = _extract_frontmatter(source)
-                    version = meta.get("version", "0.0.0")
-                    deps = meta.get("deps", [])
-                    description = _extract_docstring_first_line(source) or ""
-                    files = [str(f.relative_to(repo_root)) for f in py_files]
-
-                    tier = meta.get("tier", "")
-                    category = meta.get("category", "")
-
-                    # Get last commit timestamp for the primary file
-                    last_updated = _git_last_updated(primary, repo_root)
-                    chash = _content_hash(primary)
-
-                    modules[mod_name] = {
-                        "description": description,
-                        "files": files,
-                        "version": version,
-                        "deps": deps,
-                        "tier": tier,
-                        "category": category,
-                        "last_updated": last_updated,
-                        "content_hash": chash,
-                    }
-
-            # Recurse into subdirectories
             _walk(entry)
 
     _walk(repo_root)
@@ -813,14 +814,14 @@ def cmd_dep_graph(args: argparse.Namespace) -> None:
         print(fmt.format(*row))
 
 
-def cmd_dep_check(args: argparse.Namespace) -> None:
-    """Test changed modules and their downstream dependents."""
-    repo_root = Path(__file__).resolve().parent
-    modules = _scan_modules(repo_root)
-    if not modules:
-        _die("no modules found")
+def _determine_changed(
+    args: argparse.Namespace, modules: dict, repo_root: Path
+) -> set[str]:
+    """Return the set of module names to treat as changed.
 
-    # Determine which modules to treat as changed
+    If explicit modules are given on the CLI they are validated and returned;
+    otherwise auto-detection via git is used.
+    """
     if args.modules:
         for name in args.modules:
             if name not in modules:
@@ -828,62 +829,43 @@ def cmd_dep_check(args: argparse.Namespace) -> None:
                     f"unknown module: {name!r}. "
                     "Run 'zerodep list' to see available modules."
                 )
-        changed = set(args.modules)
-    else:
-        status_map = _find_changed_modules(repo_root, modules)
-        changed = {m for m, s in status_map.items() if s in ("modified", "new")}
+        return set(args.modules)
+    status_map = _find_changed_modules(repo_root, modules)
+    return {m for m, s in status_map.items() if s in ("modified", "new")}
 
-    if not changed:
-        _ok("all modules up-to-date, nothing to check")
-        return
 
-    reverse_deps = _build_reverse_deps(modules)
-    affected = _transitive_dependents(changed, reverse_deps)
-    downstream = affected - changed
+def _run_module_test(mod_name: str, modules: dict, repo_root: Path) -> tuple[str, str]:
+    """Run the test suite for a single module.
 
-    print(f"Changed modules: {', '.join(sorted(changed))}")
-    if downstream:
-        print(f"Affected downstream: {', '.join(sorted(downstream))}")
-    print(f"Total modules to test: {len(affected)}")
-    print()
+    Returns:
+        ``(outcome, detail)`` where *outcome* is one of
+        ``"pass"``, ``"FAIL"``, ``"skip"``, or ``"error"``.
+    """
+    test_file = _find_test_file(mod_name, modules, repo_root)
+    if test_file is None:
+        return ("skip", "no test file")
 
-    # Run tests
-    results: list[tuple[str, str, str, str]] = []
-    for mod_name in sorted(affected):
-        test_file = _find_test_file(mod_name, modules, repo_root)
-        is_changed = "yes" if mod_name in changed else "no"
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", str(test_file), "-x", "--tb=short", "-q"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except subprocess.TimeoutExpired:
+        return ("FAIL", "timeout (120s)")
+    except subprocess.SubprocessError as e:
+        return ("error", str(e))
 
-        if test_file is None:
-            results.append((mod_name, is_changed, "skip", "no test file"))
-            continue
+    if result.returncode == 0:
+        return ("pass", "")
+    summary = result.stdout.strip().split("\n")[-1] if result.stdout else ""
+    return ("FAIL", summary)
 
-        try:
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pytest",
-                    str(test_file),
-                    "-x",
-                    "--tb=short",
-                    "-q",
-                ],
-                cwd=repo_root,
-                capture_output=True,
-                text=True,
-                timeout=120,
-            )
-            if result.returncode == 0:
-                results.append((mod_name, is_changed, "pass", ""))
-            else:
-                summary = result.stdout.strip().split("\n")[-1] if result.stdout else ""
-                results.append((mod_name, is_changed, "FAIL", summary))
-        except subprocess.TimeoutExpired:
-            results.append((mod_name, is_changed, "FAIL", "timeout (120s)"))
-        except subprocess.SubprocessError as e:
-            results.append((mod_name, is_changed, "error", str(e)))
 
-    # Print results table
+def _print_test_report(results: list[tuple[str, str, str, str]]) -> None:
+    """Print a formatted test-results table and summary line."""
     headers = ("Module", "Changed", "Test", "Detail")
     widths = [max(len(headers[i]), *(len(r[i]) for r in results)) for i in range(4)]
     fmt = "  ".join(f"{{:<{w}}}" for w in widths)
@@ -903,7 +885,37 @@ def cmd_dep_check(args: argparse.Namespace) -> None:
         parts.append(f"{skipped} skipped")
     print(", ".join(parts))
 
-    if failed:
+
+def cmd_dep_check(args: argparse.Namespace) -> None:
+    """Test changed modules and their downstream dependents."""
+    repo_root = Path(__file__).resolve().parent
+    modules = _scan_modules(repo_root)
+    if not modules:
+        _die("no modules found")
+
+    changed = _determine_changed(args, modules, repo_root)
+    if not changed:
+        _ok("all modules up-to-date, nothing to check")
+        return
+
+    reverse_deps = _build_reverse_deps(modules)
+    affected = _transitive_dependents(changed, reverse_deps)
+    downstream = affected - changed
+
+    print(f"Changed modules: {', '.join(sorted(changed))}")
+    if downstream:
+        print(f"Affected downstream: {', '.join(sorted(downstream))}")
+    print(f"Total modules to test: {len(affected)}")
+    print()
+
+    results: list[tuple[str, str, str, str]] = []
+    for mod_name in sorted(affected):
+        is_changed = "yes" if mod_name in changed else "no"
+        outcome, detail = _run_module_test(mod_name, modules, repo_root)
+        results.append((mod_name, is_changed, outcome, detail))
+
+    _print_test_report(results)
+    if any(r[2] == "FAIL" for r in results):
         sys.exit(1)
 
 

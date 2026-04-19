@@ -21,7 +21,8 @@
 - **Cache 模块**：优化 `TypedKey` 构造——一次性元组构造，移除冗余的 `sorted()` 调用。此前比 cachetools 慢 1.3 倍，现在**快 1.2 倍**。
 - **Cache 模块**：优化 LFU 淘汰——在 `popitem` 中绕过 `__touch`。此前比 cachetools 慢 1.4 倍，现在**基本持平**。
 - **PersistDict 模块**：优化 SQLite 写入性能——`PRAGMA synchronous=NORMAL`、`commit_every` 参数支持批量写入、延迟提交。减少批量操作时每次写入的 fsync 开销。
-- LRU、TTL 及混合负载基准无性能回退（cache）。读取/遍历基准无性能回退（persistdict）。
+- **Semver 模块**：优化解析、比较和属性访问——用纯整数元组替代自定义 `_InfinityType`/`_NegativeInfinityType` 哨兵类，将 `_parse_letter_version`/`_parse_local_version`/`_cmpkey` 内联到 `__init__`，使用 `match.groups()` 元组解构替代 `groupdict()`，缓存 `__str__` 结果，预编译 local 版本分割正则，布尔属性直接访问 `_pre`/`_post`/`_dev`。解析**快约 1.3 倍**，排序**快约 1.4 倍**，比较**快约 1.4 倍**，属性访问**快约 4.5 倍**。
+- LRU、TTL 及混合负载基准无性能回退（cache）。读取/遍历基准无性能回退（persistdict）。所有 semver 正确性测试通过。
 
 ### 问题修复
 

@@ -61,7 +61,7 @@ plugins:
             - ../vcs
             - ../ansi
             - ../scheduler
-            - ../search
+            - ../sparse_search
             - ../frontmatter
             - ../config
             - ../cache
@@ -95,7 +95,7 @@ plugins:
             - vcs
             - ansi
             - scheduler
-            - search
+            - sparse_search
             - frontmatter
             - config
             - cache
@@ -181,7 +181,7 @@ nav:
           - soup / HTML Parser: modules/soup.md
           - diff / Diff Tool: modules/diff.md
       - Search & Retrieval:
-          - search / Sparse Search: modules/search.md
+          - sparse_search / Sparse Search: modules/sparse_search.md
       - Configuration:
           - dotenv / Dotenv Loader: modules/dotenv.md
           - config / Config Loader: modules/config.md
@@ -226,7 +226,7 @@ nav:
           - soup / HTML Parser: api/soup.md
           - diff / Diff Tool: api/diff.md
       - Search & Retrieval:
-          - search / Sparse Search: api/search.md
+          - sparse_search / Sparse Search: api/sparse_search.md
       - Configuration:
           - dotenv / Dotenv Loader: api/dotenv.md
           - config / Config Loader: api/config.md
@@ -271,7 +271,7 @@ nav:
           - soup / HTML Parser: benchmarks/soup.md
           - diff / Diff Tool: benchmarks/diff.md
       - Search & Retrieval:
-          - search / Sparse Search: benchmarks/search.md
+          - sparse_search / Sparse Search: benchmarks/sparse_search.md
       - Configuration:
           - dotenv / Dotenv Loader: benchmarks/dotenv.md
           - config / Config Loader: benchmarks/config.md

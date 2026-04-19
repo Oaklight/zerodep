@@ -16,6 +16,12 @@
 
 - **Soup 模块**：扩展树操作和序列化 API——`append()`、`insert()`、`extract()`、`replace_with()`、`unwrap()` 用于 DOM 树操作；`to_html()` / `__str__()` 用于 HTML 序列化；`__setitem__` / `__delitem__` 用于属性设置/删除；`Soup.new_tag()` 工厂方法用于创建独立的 Tag 节点。
 
+### 性能优化
+
+- **Cache 模块**：优化 `TypedKey` 构造——一次性元组构造，移除冗余的 `sorted()` 调用。此前比 cachetools 慢 1.3 倍，现在**快 1.2 倍**。
+- **Cache 模块**：优化 LFU 淘汰——在 `popitem` 中绕过 `__touch`。此前比 cachetools 慢 1.4 倍，现在**基本持平**。
+- LRU、TTL 及混合负载基准无性能回退。
+
 ### 问题修复
 
 - **文档**：修复 `search` → `sparse_search` 模块重命名导致的 ReadTheDocs 构建失败。

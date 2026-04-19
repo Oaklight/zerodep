@@ -104,11 +104,16 @@ def typedkey(*args: Any, **kwargs: Any) -> _HashedTuple:
     """Like ``hashkey`` but includes type information, so ``f(3)`` and
     ``f(3.0)`` are cached separately.
     """
-    key = hashkey(*args, **kwargs)
-    key += _HashedTuple(type(v) for v in args)
     if kwargs:
-        key += _HashedTuple(type(v) for _, v in sorted(kwargs.items()))
-    return key
+        sorted_items = tuple(sorted(kwargs.items()))
+        return _HashedTuple(
+            args
+            + _KWMARK
+            + sorted_items
+            + tuple(type(v) for v in args)
+            + tuple(type(v) for _, v in sorted_items)
+        )
+    return _HashedTuple(args + tuple(type(v) for v in args))
 
 
 # ── Cache Info ─────────────────────────────────────────────────────────────
@@ -455,7 +460,11 @@ class LFUCache(Cache):
         if node is root:
             raise KeyError(f"{type(self).__name__} is empty")
         key = next(iter(node.keys))
-        return key, self.pop(key)
+        # Bypass self.pop → self[key] → __touch to avoid wasteful
+        # frequency increment on a key that is about to be deleted.
+        value = Cache.__getitem__(self, key)
+        del self[key]
+        return key, value
 
     def clear(self) -> None:
         super().clear()

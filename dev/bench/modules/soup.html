@@ -83,14 +83,20 @@ td { white-space: nowrap; }
 <h1>soup</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.4.15 | Commit: 169356d0 | 2026-04-15T12:25:48.489263+00:00</p>
+<p class="meta">Version: 8aa75a4 | Commit: 8aa75a45 | 2026-04-19T16:41:28.089124+00:00</p>
 <h2>soup</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large</td><td>zerodep</td><td>beautifulsoup4</td><td>24.06 ms</td><td>62.58 ms</td><td>41.6</td><td>16.0</td><td class="ratio-cell faster">2.6x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>beautifulsoup4</td><td>2.30 ms</td><td>6.24 ms</td><td>435.1</td><td>160.1</td><td class="ratio-cell faster">2.7x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>beautifulsoup4</td><td>278.7 µs</td><td>743.1 µs</td><td>3.6K</td><td>1.3K</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>beautifulsoup4</td><td>24.50 ms</td><td>64.54 ms</td><td>40.8</td><td>15.5</td><td class="ratio-cell faster">2.6x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>beautifulsoup4</td><td>2.19 ms</td><td>6.43 ms</td><td>456.9</td><td>155.6</td><td class="ratio-cell faster">2.9x faster</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>24.90 ms</td><td>83.77 ms</td><td>40.2</td><td>11.9</td><td class="ratio-cell faster">3.4x faster</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.28 ms</td><td>8.37 ms</td><td>437.7</td><td>119.5</td><td class="ratio-cell faster">3.7x faster</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>316.8 µs</td><td>1.01 ms</td><td>3.2K</td><td>985.8</td><td class="ratio-cell faster">3.2x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>beautifulsoup4</td><td>271.5 µs</td><td>745.4 µs</td><td>3.7K</td><td>1.3K</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Tree Ops (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>26.83 ms</td><td>71.81 ms</td><td>37.3</td><td>13.9</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Tree Ops (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.46 ms</td><td>6.95 ms</td><td>406.4</td><td>143.9</td><td class="ratio-cell faster">2.8x faster</td></tr>
+<tr><td>Tree Ops (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>341.8 µs</td><td>910.7 µs</td><td>2.9K</td><td>1.1K</td><td class="ratio-cell faster">2.7x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -99,17 +105,17 @@ td { white-space: nowrap; }
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
   data: {
-    labels: ["Large", "Medium", "Small"],
+    labels: ["Large", "Medium", "Serialize (Large)", "Serialize (Medium)", "Serialize (Small)", "Small", "Tree Ops (Large)", "Tree Ops (Medium)", "Tree Ops (Small)"],
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [41.567053908269806, 435.09688093556605, 3587.579998950428],
+        data: [40.81322342192797, 456.90901361989256, 40.154629472361776, 437.6835923512774, 3156.7069237991936, 3683.759361019915, 37.269414250507886, 406.42085926676765, 2925.628872754676],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "beautifulsoup4" + ' (ops/s)',
-        data: [15.979435845344614, 160.1464091416993, 1345.6934109327926],
+        data: [15.493322960954508, 155.56886723782506, 11.93676060432825, 119.50439275373286, 985.8324881141713, 1341.5552961810845, 13.925393317676825, 143.86850562260346, 1098.0694687395244],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

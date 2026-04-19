@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>toon Benchmark — zerodep</title>
+<title>readability Benchmark — zerodep</title>
 <style>:root, [data-theme="light"] {
   --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
   --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
@@ -80,51 +80,45 @@ td { white-space: nowrap; }
 </head>
 <body>
 <div class="header-row">
-<h1>toon</h1>
+<h1>readability</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
 <p class="meta">Version: 8aa75a4 | Commit: 8aa75a45 | 2026-04-19T16:41:28.089124+00:00</p>
-<h2>toon</h2>
+<h2>readability</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_small_ref</td><td>20.5 µs</td><td>22.5 µs</td><td>48.8K</td><td>44.4K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_medium_ref</td><td>20.5 µs</td><td>351.8 µs</td><td>48.8K</td><td>2.8K</td><td class="ratio-cell faster">17.2x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_large_ref</td><td>20.5 µs</td><td>2.36 ms</td><td>48.8K</td><td>423.5</td><td class="ratio-cell faster">115.3x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_small_ref</td><td>333.7 µs</td><td>22.5 µs</td><td>3.0K</td><td>44.4K</td><td class="ratio-cell slower">14.8x slower</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_medium_ref</td><td>333.7 µs</td><td>351.8 µs</td><td>3.0K</td><td>2.8K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_large_ref</td><td>333.7 µs</td><td>2.36 ms</td><td>3.0K</td><td>423.5</td><td class="ratio-cell faster">7.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_small_ref</td><td>2.26 ms</td><td>22.5 µs</td><td>442.7</td><td>44.4K</td><td class="ratio-cell slower">100.3x slower</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_medium_ref</td><td>2.26 ms</td><td>351.8 µs</td><td>442.7</td><td>2.8K</td><td class="ratio-cell slower">6.4x slower</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_large_ref</td><td>2.26 ms</td><td>2.36 ms</td><td>442.7</td><td>423.5</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_small_ref</td><td>8.9 µs</td><td>12.3 µs</td><td>112.6K</td><td>81.3K</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_medium_ref</td><td>8.9 µs</td><td>266.6 µs</td><td>112.6K</td><td>3.8K</td><td class="ratio-cell faster">30.0x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_large_ref</td><td>8.9 µs</td><td>1.65 ms</td><td>112.6K</td><td>604.4</td><td class="ratio-cell faster">186.3x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_small_ref</td><td>204.0 µs</td><td>12.3 µs</td><td>4.9K</td><td>81.3K</td><td class="ratio-cell slower">16.6x slower</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_medium_ref</td><td>204.0 µs</td><td>266.6 µs</td><td>4.9K</td><td>3.8K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_large_ref</td><td>204.0 µs</td><td>1.65 ms</td><td>4.9K</td><td>604.4</td><td class="ratio-cell faster">8.1x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_small_ref</td><td>1.26 ms</td><td>12.3 µs</td><td>796.7</td><td>81.3K</td><td class="ratio-cell slower">102.0x slower</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_medium_ref</td><td>1.26 ms</td><td>266.6 µs</td><td>796.7</td><td>3.8K</td><td class="ratio-cell slower">4.7x slower</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_large_ref</td><td>1.26 ms</td><td>1.65 ms</td><td>796.7</td><td>604.4</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>readability_lxml</td><td>62.08 ms</td><td>24.80 ms</td><td>16.1</td><td>40.3</td><td class="ratio-cell slower">2.5x slower</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>readability_lxml</td><td>4.68 ms</td><td>3.23 ms</td><td>213.6</td><td>309.4</td><td class="ratio-cell slower">1.4x slower</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>readability_lxml</td><td>463.0 µs</td><td>684.4 µs</td><td>2.2K</td><td>1.5K</td><td class="ratio-cell faster">1.5x faster</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability_lxml</td><td>9.18 ms</td><td>12.95 ms</td><td>109.0</td><td>77.2</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability_lxml</td><td>1.93 ms</td><td>2.38 ms</td><td>519.4</td><td>419.8</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability_lxml</td><td>803.6 µs</td><td>770.0 µs</td><td>1.2K</td><td>1.3K</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
+<h3>Standalone benchmarks</h3>
+<table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
+<tbody>
+<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.70 ms</td><td>589.1</td></tr>
+</tbody></table>
 
 <script>
 
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
   data: {
-    labels: ["Decode Benchmark", "Encode Benchmark"],
+    labels: ["Large", "Medium", "Small", "Synthetic (Large)", "Synthetic (Medium)", "Synthetic (Small)"],
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [48827.255101092676, 112578.8150553526],
+        data: [16.109185308721997, 213.58520823863876, 2159.945230622585, 108.97057568630055, 519.3508601674029, 1244.4340199011565],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
-        label: "Reference" + ' (ops/s)',
-        data: [44418.91137809844, 81278.98593027584],
+        label: "readability_lxml" + ' (ops/s)',
+        data: [40.32974807889512, 309.4340749889802, 1461.0362126703276, 77.2097123535699, 419.81976984625055, 1298.6422626099832],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -135,7 +129,7 @@ new Chart(document.getElementById('chart_0'), {
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'top' },
-      title: { display: true, text: 'toon — ops/s (higher is better)' }
+      title: { display: true, text: 'readability — ops/s (higher is better)' }
     },
     scales: {
       y: {

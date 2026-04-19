@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>toon Benchmark — zerodep</title>
+<title>sparse_search Benchmark — zerodep</title>
 <style>:root, [data-theme="light"] {
   --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
   --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
@@ -80,51 +80,44 @@ td { white-space: nowrap; }
 </head>
 <body>
 <div class="header-row">
-<h1>toon</h1>
+<h1>sparse_search</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
 <p class="meta">Version: 8aa75a4 | Commit: 8aa75a45 | 2026-04-19T16:41:28.089124+00:00</p>
-<h2>toon</h2>
+<h2>sparse_search</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_small_ref</td><td>20.5 µs</td><td>22.5 µs</td><td>48.8K</td><td>44.4K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_medium_ref</td><td>20.5 µs</td><td>351.8 µs</td><td>48.8K</td><td>2.8K</td><td class="ratio-cell faster">17.2x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_large_ref</td><td>20.5 µs</td><td>2.36 ms</td><td>48.8K</td><td>423.5</td><td class="ratio-cell faster">115.3x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_small_ref</td><td>333.7 µs</td><td>22.5 µs</td><td>3.0K</td><td>44.4K</td><td class="ratio-cell slower">14.8x slower</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_medium_ref</td><td>333.7 µs</td><td>351.8 µs</td><td>3.0K</td><td>2.8K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_large_ref</td><td>333.7 µs</td><td>2.36 ms</td><td>3.0K</td><td>423.5</td><td class="ratio-cell faster">7.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_small_ref</td><td>2.26 ms</td><td>22.5 µs</td><td>442.7</td><td>44.4K</td><td class="ratio-cell slower">100.3x slower</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_medium_ref</td><td>2.26 ms</td><td>351.8 µs</td><td>442.7</td><td>2.8K</td><td class="ratio-cell slower">6.4x slower</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_large_ref</td><td>2.26 ms</td><td>2.36 ms</td><td>442.7</td><td>423.5</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_small_ref</td><td>8.9 µs</td><td>12.3 µs</td><td>112.6K</td><td>81.3K</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_medium_ref</td><td>8.9 µs</td><td>266.6 µs</td><td>112.6K</td><td>3.8K</td><td class="ratio-cell faster">30.0x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_large_ref</td><td>8.9 µs</td><td>1.65 ms</td><td>112.6K</td><td>604.4</td><td class="ratio-cell faster">186.3x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_small_ref</td><td>204.0 µs</td><td>12.3 µs</td><td>4.9K</td><td>81.3K</td><td class="ratio-cell slower">16.6x slower</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_medium_ref</td><td>204.0 µs</td><td>266.6 µs</td><td>4.9K</td><td>3.8K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_large_ref</td><td>204.0 µs</td><td>1.65 ms</td><td>4.9K</td><td>604.4</td><td class="ratio-cell faster">8.1x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_small_ref</td><td>1.26 ms</td><td>12.3 µs</td><td>796.7</td><td>81.3K</td><td class="ratio-cell slower">102.0x slower</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_medium_ref</td><td>1.26 ms</td><td>266.6 µs</td><td>796.7</td><td>3.8K</td><td class="ratio-cell slower">4.7x slower</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_large_ref</td><td>1.26 ms</td><td>1.65 ms</td><td>796.7</td><td>604.4</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>127.85 ms</td><td>13.23 ms</td><td>7.8</td><td>75.6</td><td class="ratio-cell slower">9.7x slower</td></tr>
+<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>3.1 µs</td><td>391.0 µs</td><td>323.6K</td><td>2.6K</td><td class="ratio-cell faster">126.5x faster</td></tr>
+<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>3.1 µs</td><td>119.4 µs</td><td>322.6K</td><td>8.4K</td><td class="ratio-cell faster">38.5x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
+<h3>Standalone benchmarks</h3>
+<table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
+<tbody>
+<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>1.19 ms</td><td>841.7</td></tr>
+<tr><td>Calibration Performance</td><td>search_raw</td><td>42.0 µs</td><td>23.8K</td></tr>
+<tr><td>Calibration Performance</td><td>search_calibrated</td><td>80.1 µs</td><td>12.5K</td></tr>
+</tbody></table>
 
 <script>
 
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
   data: {
-    labels: ["Decode Benchmark", "Encode Benchmark"],
+    labels: ["Indexing Performance", "Large Search Performance", "Search Performance"],
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [48827.255101092676, 112578.8150553526],
+        data: [7.821927299309176, 323585.31871231704, 322640.2205680329],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
-        label: "Reference" + ' (ops/s)',
-        data: [44418.91137809844, 81278.98593027584],
+        label: "rank-bm25" + ' (ops/s)',
+        data: [75.56645775760396, 2557.472118453171, 8376.38303789348],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -135,7 +128,7 @@ new Chart(document.getElementById('chart_0'), {
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'top' },
-      title: { display: true, text: 'toon — ops/s (higher is better)' }
+      title: { display: true, text: 'sparse_search — ops/s (higher is better)' }
     },
     scales: {
       y: {

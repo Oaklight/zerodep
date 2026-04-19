@@ -74,3 +74,125 @@ class TestLarge:
 
     def test_beautifulsoup4(self, benchmark):
         benchmark(_bs4_parse_and_find, LARGE)
+
+
+# ── to_html serialization benchmarks ──
+
+
+def _zd_parse_and_serialize(html: str) -> str:
+    soup = Soup(html)
+    return soup.to_html()
+
+
+def _bs4_parse_and_serialize(html: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+    return str(soup)
+
+
+class TestSerializeSmall:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_parse_and_serialize, SMALL)
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_parse_and_serialize, SMALL)
+
+
+class TestSerializeMedium:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_parse_and_serialize, MEDIUM)
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_parse_and_serialize, MEDIUM)
+
+
+class TestSerializeLarge:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_parse_and_serialize, LARGE)
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_parse_and_serialize, LARGE)
+
+
+# ── Tree manipulation benchmarks ──
+
+from soup import Tag  # noqa: E402
+
+
+def _zd_tree_ops(html: str) -> None:
+    """Parse, then perform a series of tree manipulation operations."""
+    soup = Soup(html)
+    divs = soup.find_all("div", class_="item")
+    if len(divs) < 2:
+        return
+    # append new child to first div
+    new_tag = Tag("span", {"class": ["added"]})
+    new_tag.children.append("new")
+    divs[0].append(new_tag)
+    # insert at beginning of second div
+    ins_tag = Tag("em", {})
+    ins_tag.children.append("inserted")
+    divs[1].insert(0, ins_tag)
+    # extract third div (if exists)
+    if len(divs) > 2:
+        divs[2].extract()
+    # replace_with on first div's <h3>
+    h3 = divs[0].find("h3")
+    if h3:
+        replacement = Tag("h4", {})
+        replacement.children.append("Replaced")
+        h3.replace_with(replacement)
+    # unwrap all <a> tags
+    for a in soup.find_all("a"):
+        a.unwrap()
+
+
+def _bs4_tree_ops(html: str) -> None:
+    """Parse, then perform a series of tree manipulation operations."""
+    soup = BeautifulSoup(html, "html.parser")
+    divs = soup.find_all("div", class_="item")
+    if len(divs) < 2:
+        return
+    # append new child to first div
+    new_tag = soup.new_tag("span", attrs={"class": ["added"]})
+    new_tag.string = "new"
+    divs[0].append(new_tag)
+    # insert at beginning of second div
+    ins_tag = soup.new_tag("em")
+    ins_tag.string = "inserted"
+    divs[1].insert(0, ins_tag)
+    # extract third div (if exists)
+    if len(divs) > 2:
+        divs[2].extract()
+    # replace_with on first div's <h3>
+    h3 = divs[0].find("h3")
+    if h3:
+        replacement = soup.new_tag("h4")
+        replacement.string = "Replaced"
+        h3.replace_with(replacement)
+    # unwrap all <a> tags
+    for a in soup.find_all("a"):
+        a.unwrap()
+
+
+class TestTreeOpsSmall:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_tree_ops, SMALL)
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_tree_ops, SMALL)
+
+
+class TestTreeOpsMedium:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_tree_ops, MEDIUM)
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_tree_ops, MEDIUM)
+
+
+class TestTreeOpsLarge:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_tree_ops, LARGE)
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_tree_ops, LARGE)

@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.3.1"
+# version = "0.4.0"
 # deps = []
 # tier = "medium"
 # category = "data"
@@ -100,6 +100,14 @@ class Tag:
     def __contains__(self, attr: str) -> bool:
         return attr in self.attrs
 
+    def __setitem__(self, attr: str, value: Any) -> None:
+        """Set an attribute value (e.g. ``tag['id'] = 'main'``)."""
+        self.attrs[attr] = value
+
+    def __delitem__(self, attr: str) -> None:
+        """Delete an attribute (e.g. ``del tag['id']``)."""
+        del self.attrs[attr]
+
     # ── Text helpers ──────────────────────────────────────────────────────
 
     @property
@@ -149,6 +157,98 @@ class Tag:
                 child._collect_text(acc)
 
     # ── Tree modification ─────────────────────────────────────────────────
+
+    def append(self, child: Tag | str) -> None:
+        """Append *child* to this element's children.
+
+        If *child* is a ``Tag`` already attached to a parent, it is first
+        detached from its old position.
+
+        Args:
+            child: A ``Tag`` or plain text string to append.
+        """
+        if isinstance(child, Tag):
+            if child.parent is not None:
+                child.parent.children = [
+                    c for c in child.parent.children if c is not child
+                ]
+            child.parent = self
+        self.children.append(child)
+
+    def insert(self, index: int, child: Tag | str) -> None:
+        """Insert *child* at *index* in this element's children.
+
+        Args:
+            index: Position to insert at (same semantics as ``list.insert``).
+            child: A ``Tag`` or plain text string to insert.
+        """
+        if isinstance(child, Tag):
+            if child.parent is not None:
+                child.parent.children = [
+                    c for c in child.parent.children if c is not child
+                ]
+            child.parent = self
+        self.children.insert(index, child)
+
+    def extract(self) -> Tag:
+        """Remove this element from its parent but keep its content intact.
+
+        Unlike ``decompose``, the element and its subtree remain usable
+        after extraction.
+
+        Returns:
+            This element (now detached).
+        """
+        if self.parent is not None:
+            self.parent.children = [c for c in self.parent.children if c is not self]
+            self.parent = None
+        return self
+
+    def replace_with(self, new_node: Tag | str) -> Tag:
+        """Replace this element with *new_node* in the parent's children.
+
+        Args:
+            new_node: The replacement ``Tag`` or text string.
+
+        Returns:
+            This element (now detached).
+
+        Raises:
+            ValueError: If the element has no parent.
+        """
+        if self.parent is None:
+            raise ValueError("Cannot replace a detached element")
+        parent = self.parent
+        for i, child in enumerate(parent.children):
+            if child is self:
+                parent.children[i] = new_node
+                if isinstance(new_node, Tag):
+                    if new_node.parent is not None:
+                        new_node.parent.children = [
+                            c for c in new_node.parent.children if c is not new_node
+                        ]
+                    new_node.parent = parent
+                self.parent = None
+                return self
+        raise ValueError("Element not found in parent's children")  # pragma: no cover
+
+    def unwrap(self) -> None:
+        """Remove this tag but keep its children (re-parent them).
+
+        The children are spliced into the parent's children list at the
+        position formerly occupied by this element.
+        """
+        if self.parent is None:
+            return
+        parent = self.parent
+        idx = next(i for i, c in enumerate(parent.children) if c is self)
+        # Splice children into parent at the position of this element.
+        for child in self.children:
+            if isinstance(child, Tag):
+                child.parent = parent
+        parent.children[idx : idx + 1] = self.children
+        self.children = []
+        self.parent = None
 
     def decompose(self) -> None:
         """Remove this element from its parent and discard its content."""
@@ -297,6 +397,47 @@ class Tag:
             if isinstance(child, Tag):
                 acc.append(child)
                 child._collect_descendants(acc)
+
+    # ── Serialization ────────────────────────────────────────────────────
+
+    def to_html(self) -> str:
+        """Serialize this element and its descendants back to an HTML string.
+
+        Returns:
+            The HTML markup for this subtree.
+        """
+        parts: list[str] = []
+        self._serialize(parts)
+        return "".join(parts)
+
+    def _serialize(self, acc: list[str]) -> None:
+        """Recursively build HTML string pieces into *acc*."""
+        # Build opening tag
+        attr_parts: list[str] = []
+        for k, v in self.attrs.items():
+            if isinstance(v, list):
+                attr_parts.append(f'{k}="{" ".join(v)}"')
+            elif v == "":
+                attr_parts.append(k)
+            else:
+                attr_parts.append(f'{k}="{v}"')
+        attrs_str = (" " + " ".join(attr_parts)) if attr_parts else ""
+
+        if self.name.lower() in SELF_CLOSING_TAGS:
+            acc.append(f"<{self.name}{attrs_str}>")
+            return
+
+        acc.append(f"<{self.name}{attrs_str}>")
+        for child in self.children:
+            if isinstance(child, str):
+                acc.append(child)
+            else:
+                child._serialize(acc)
+        acc.append(f"</{self.name}>")
+
+    def __str__(self) -> str:
+        """Return the HTML serialization of this element."""
+        return self.to_html()
 
     # ── Repr ──────────────────────────────────────────────────────────────
 
@@ -665,3 +806,31 @@ class Soup(Tag):
         for child in self.children:
             if isinstance(child, Tag):
                 child.parent = self
+
+    def new_tag(
+        self, name: str, attrs: dict[str, str | list[str]] | None = None
+    ) -> Tag:
+        """Create a new detached ``Tag`` (not yet in the tree).
+
+        Args:
+            name: Tag name (e.g. ``"p"``).
+            attrs: Optional attribute dictionary.
+
+        Returns:
+            A new ``Tag`` instance with no parent.
+        """
+        return Tag(name, attrs)
+
+    def to_html(self) -> str:
+        """Serialize the entire document back to an HTML string.
+
+        Returns:
+            The HTML markup for the whole document.
+        """
+        parts: list[str] = []
+        for child in self.children:
+            if isinstance(child, str):
+                parts.append(child)
+            else:
+                child._serialize(parts)
+        return "".join(parts)

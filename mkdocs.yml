@@ -76,6 +76,7 @@ plugins:
             - ../protobuf
             - ../depdetect
             - ../semver
+            - ../readability
             - aes
             - qr
             - httpclient
@@ -110,6 +111,7 @@ plugins:
             - protobuf
             - depdetect
             - semver
+            - readability
           options:
             docstring_style: google
             show_source: true
@@ -179,6 +181,7 @@ nav:
       - Text & Markup:
           - markdown / Markdown Renderer: modules/markdown.md
           - soup / HTML Parser: modules/soup.md
+          - readability / Article Extractor: modules/readability.md
           - diff / Diff Tool: modules/diff.md
       - Search & Retrieval:
           - sparse_search / Sparse Search: modules/sparse_search.md
@@ -224,6 +227,7 @@ nav:
       - Text & Markup:
           - markdown / Markdown Renderer: api/markdown.md
           - soup / HTML Parser: api/soup.md
+          - readability / Article Extractor: api/readability.md
           - diff / Diff Tool: api/diff.md
       - Search & Retrieval:
           - sparse_search / Sparse Search: api/sparse_search.md
@@ -269,6 +273,7 @@ nav:
       - Text & Markup:
           - markdown / Markdown Renderer: benchmarks/markdown.md
           - soup / HTML Parser: benchmarks/soup.md
+          - readability / Article Extractor: benchmarks/readability.md
           - diff / Diff Tool: benchmarks/diff.md
       - Search & Retrieval:
           - sparse_search / Sparse Search: benchmarks/sparse_search.md

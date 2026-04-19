@@ -116,6 +116,78 @@ print(a.get("class"))    # ['nav', 'active']
 print(a.get("missing", "default"))  # default
 ```
 
+### Tree Mutation
+
+```python
+from soup import Soup
+
+html = "<ul><li>A</li><li>B</li></ul>"
+soup = Soup(html)
+ul = soup.find("ul")
+
+# append -- add a child at the end
+new_li = soup.new_tag("li", {"class": "new"})
+new_li.children.append("C")
+ul.append(new_li)
+
+# insert -- add a child at a specific position
+another = soup.new_tag("li")
+another.children.append("Z")
+ul.insert(0, another)
+
+# extract -- remove from parent but keep the node intact
+removed = ul.children[1].extract()
+
+# replace_with -- swap one node for another
+replacement = soup.new_tag("li")
+replacement.children.append("X")
+ul.children[0].replace_with(replacement)
+
+# unwrap -- remove a tag but keep its children
+soup2 = Soup("<div><b>bold text</b></div>")
+soup2.find("b").unwrap()
+print(soup2.get_text())  # bold text
+```
+
+### HTML Serialization
+
+```python
+soup = Soup('<div class="box"><p>Hello <b>world</b></p></div>')
+div = soup.find("div")
+print(div.to_html())
+# <div class="box"><p>Hello <b>world</b></p></div>
+
+# str() also produces HTML
+print(str(div))
+# <div class="box"><p>Hello <b>world</b></p></div>
+```
+
+### Attribute Setting
+
+```python
+soup = Soup('<a href="/old">Link</a>')
+a = soup.find("a")
+
+# Set attribute
+a["href"] = "/new"
+a["class"] = ["nav", "active"]
+
+# Delete attribute
+del a["class"]
+print(a.to_html())  # <a href="/new">Link</a>
+```
+
+### Creating New Tags
+
+```python
+soup = Soup("<div></div>")
+tag = soup.new_tag("span", {"id": "greeting"})
+tag.children.append("Hello!")
+soup.find("div").append(tag)
+print(soup.find("div").to_html())
+# <div><span id="greeting">Hello!</span></div>
+```
+
 ### decompose (Remove Elements)
 
 ```python
@@ -173,6 +245,12 @@ Parse an HTML document and provide a BeautifulSoup-like API.
 | `decompose()` | Remove this element from its parent. |
 | `find_parent(name=None)` | Find the nearest parent, optionally by tag name. |
 | `get(attr, default=None)` | Get attribute value. |
+| `append(child)` | Append a child node (Tag or str). |
+| `insert(index, child)` | Insert a child at the given position. |
+| `extract()` | Remove from parent, return self (keeps children). |
+| `replace_with(new_node)` | Replace this node with another in parent's children. |
+| `unwrap()` | Remove this tag but keep its children (reparent to parent). |
+| `to_html()` | Serialize this element to an HTML string. |
 
 ### `Tag` Properties
 
@@ -184,6 +262,12 @@ Parse an HTML document and provide a BeautifulSoup-like API.
 | `.children` | `list` | Child nodes (`Tag` or `str`). |
 | `.parent` | `Tag \| None` | Parent element. |
 
+### `Soup` Factory Methods
+
+| Method | Description |
+|--------|-------------|
+| `new_tag(name, attrs=None)` | Create a new detached Tag node. |
+
 ## Comparison with BeautifulSoup
 
 | Feature | zerodep soup | BeautifulSoup |
@@ -193,7 +277,8 @@ Parse an HTML document and provide a BeautifulSoup-like API.
 | Parser backends | `html.parser` only | `html.parser`, `lxml`, `html5lib` |
 | find / find_all | Yes | Yes |
 | CSS selectors | Basic (tag, class, id, attr, descendant, child) | Full (via soupsieve) |
-| prettify | No | Yes |
+| Tree mutation (append/insert/extract) | Yes | Yes |
+| HTML serialization (to_html) | Yes | Yes (prettify) |
 | NavigableString | No (plain `str`) | Yes |
 | Parse speed (small) | 149 us | 446 us (2.99x slower) |
 | Parse speed (large) | 12.7 ms | 37.1 ms (2.93x slower) |

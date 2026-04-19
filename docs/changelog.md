@@ -16,6 +16,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Soup module**: extended with tree mutation and serialization APIs — `append()`, `insert()`, `extract()`, `replace_with()`, `unwrap()` for tree manipulation; `to_html()` / `__str__()` for HTML serialization; `__setitem__` / `__delitem__` for attribute setting/deletion; `Soup.new_tag()` factory method for creating detached Tag nodes.
 
+### Performance
+
+- **Cache module**: optimized `TypedKey` construction — one-shot tuple construction and removed redundant `sorted()` call. Previously 1.3x slower than cachetools, now **1.2x faster**.
+- **Cache module**: optimized LFU eviction — bypass `__touch` in `popitem`. Previously 1.4x slower than cachetools, now **~equal**.
+- No regression on LRU, TTL, or mixed workload benchmarks.
+
 ### Bug Fixes
 
 - **Docs**: fixed ReadTheDocs build failure caused by `search` → `sparse_search` module rename.

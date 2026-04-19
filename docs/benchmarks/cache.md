@@ -7,7 +7,7 @@ Apple-to-apple performance comparison between zerodep cache and [`cachetools`](h
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** cachetools 7.0.5
-    - **Last Updated:** 2026-04-15
+    - **Last Updated:** 2026-04-20
 
 ## Implementations
 
@@ -36,20 +36,20 @@ Apple-to-apple performance comparison between zerodep cache and [`cachetools`](h
 |------|---------|------------|-------|
 | LRU Get/Set | 894 μs | 928 μs | **1.0x faster** |
 | LRU Eviction Pressure | 1,503 μs | 1,572 μs | **1.0x faster** |
-| LFU Eviction Pressure | 2,611 μs | 1,850 μs | 1.4x slower |
+| LFU Eviction Pressure | 1,855 μs | 1,850 μs | ~same |
 | TTL Expiry | 3,587 μs | 3,520 μs | ~same |
 | Decorator (LRU) | 203 μs | 202 μs | ~same |
 | Decorator (TTL) | 304 μs | 233 μs | 1.3x slower |
 | hashkey | 405 μs | 430 μs | **1.1x faster** |
-| typedkey | 1,577 μs | 1,256 μs | 1.3x slower |
+| typedkey | 1,056 μs | 1,256 μs | **1.2x faster** |
 | Mixed Workload | 748 μs | 774 μs | **1.0x faster** |
 
 ## Key Takeaways
 
 - **Core cache operations are on par** -- LRU get/set, LRU eviction, TTL expiry, and mixed workloads are within noise margin of cachetools, with zerodep slightly faster on LRU and mixed workloads.
-- **LFU eviction is 1.4x slower** -- cachetools' counter-based LFU is faster than zerodep's frequency-list approach under heavy eviction pressure.
+- **LFU eviction is now ~equal** -- after bypassing `__touch` in `popitem`, LFU eviction pressure is on par with cachetools (previously 1.4x slower).
 - **TTL decorator is 1.3x slower** -- cachetools' simpler wrapper path has lower overhead for TTL-decorated function calls. LRU decorator overhead is essentially the same between the two.
-- **hashkey is 1.1x faster** -- zerodep's `_HashedTuple` implementation edges out cachetools on key generation. typedkey is 1.3x slower.
+- **hashkey is 1.1x faster, typedkey is 1.2x faster** -- zerodep's `_HashedTuple` implementation edges out cachetools on key generation. typedkey is now 1.2x faster after one-shot tuple construction and removing redundant `sorted()` (previously 1.3x slower).
 - **Async support is the key differentiator** -- cachetools has **no async decorator support at all**. zerodep's `cached()` and all convenience decorators auto-detect async functions and use `asyncio.Lock` for concurrency safety.
 
 ## Run It Yourself

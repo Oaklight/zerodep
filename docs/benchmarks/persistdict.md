@@ -7,14 +7,14 @@ Performance comparison between zerodep persistdict (JSON and SQLite backends), s
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** sqlitedict 2.1.0
-    - **Last Updated:** 2026-04-15
+    - **Last Updated:** 2026-04-20
 
 ## Implementations
 
 | Implementation | Backend | Description |
 |----------------|---------|-------------|
 | **zerodep (JSON)** | `persistdict.py` | JSON file backend, buffered writes, atomic flush |
-| **zerodep (SQLite)** | `persistdict.py` | SQLite WAL backend, write-through |
+| **zerodep (SQLite)** | `persistdict.py` | SQLite WAL backend, deferred commits with `PRAGMA synchronous=NORMAL` |
 | **shelve** | *(stdlib)* | dbm-backed persistent dict with pickle serialization |
 | **sqlitedict** | *(reference)* | SQLite-backed dict with pickle serialization |
 
@@ -76,7 +76,7 @@ Performance comparison between zerodep persistdict (JSON and SQLite backends), s
 ## Key Takeaways
 
 - **JSON backend is fastest overall** -- buffered writes + atomic flush makes it the best choice for small-to-medium datasets.
-- **SQLite backend trades write speed for durability** -- write-through commits are slower than JSON's buffered approach, but each write is immediately persistent.
+- **SQLite backend trades write speed for durability** -- deferred commits with `PRAGMA synchronous=NORMAL` balance durability and performance. Batch writes via `commit_every` parameter further reduce per-write overhead.
 - **Both backends massively outperform sqlitedict** -- 10-43x faster writes, 15-31x faster reads. This is because sqlitedict uses pickle serialization and per-operation commit overhead.
 - **Competitive with shelve, often faster** -- zerodep JSON is 3.9-4.7x faster than shelve for writes and 4.0x faster for reads. The SQLite backend is also 1.1-1.9x faster than shelve across operations.
 - **No pickle** -- unlike shelve and sqlitedict, zerodep uses JSON serialization by default, avoiding deserialization vulnerabilities.

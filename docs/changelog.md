@@ -20,7 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Cache module**: optimized `TypedKey` construction — one-shot tuple construction and removed redundant `sorted()` call. Previously 1.3x slower than cachetools, now **1.2x faster**.
 - **Cache module**: optimized LFU eviction — bypass `__touch` in `popitem`. Previously 1.4x slower than cachetools, now **~equal**.
-- No regression on LRU, TTL, or mixed workload benchmarks.
+- **PersistDict module**: optimized SQLite write performance — `PRAGMA synchronous=NORMAL`, `commit_every` parameter for batched writes, deferred commits. Reduces per-write fsync overhead for bulk operations.
+- No regression on LRU, TTL, or mixed workload benchmarks (cache). No regression on read/iterate benchmarks (persistdict).
 
 ### Bug Fixes
 

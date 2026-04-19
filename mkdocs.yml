@@ -76,6 +76,7 @@ plugins:
             - ../protobuf
             - ../depdetect
             - ../semver
+            - ../readability
             - aes
             - qr
             - httpclient
@@ -110,6 +111,7 @@ plugins:
             - protobuf
             - depdetect
             - semver
+            - readability
           options:
             docstring_style: google
             show_source: true
@@ -179,6 +181,7 @@ nav:
       - 文本与标记:
           - markdown / Markdown 渲染器: modules/markdown.md
           - soup / HTML 解析器: modules/soup.md
+          - readability / 正文提取器: modules/readability.md
           - diff / Diff 差异工具: modules/diff.md
       - 搜索与检索:
           - sparse_search / 稀疏搜索: modules/sparse_search.md
@@ -224,6 +227,7 @@ nav:
       - 文本与标记:
           - markdown / Markdown 渲染器: api/markdown.md
           - soup / HTML 解析器: api/soup.md
+          - readability / 正文提取器: api/readability.md
           - diff / Diff 差异工具: api/diff.md
       - 搜索与检索:
           - sparse_search / 稀疏搜索: api/sparse_search.md
@@ -269,6 +273,7 @@ nav:
       - 文本与标记:
           - markdown / Markdown 渲染器: benchmarks/markdown.md
           - soup / HTML 解析器: benchmarks/soup.md
+          - readability / 正文提取器: benchmarks/readability.md
           - diff / Diff 差异工具: benchmarks/diff.md
       - 搜索与检索:
           - sparse_search / 稀疏搜索: benchmarks/sparse_search.md

@@ -116,6 +116,78 @@ print(a.get("class"))    # ['nav', 'active']
 print(a.get("missing", "default"))  # default
 ```
 
+### 树操作
+
+```python
+from soup import Soup
+
+html = "<ul><li>A</li><li>B</li></ul>"
+soup = Soup(html)
+ul = soup.find("ul")
+
+# append —— 在末尾添加子节点
+new_li = soup.new_tag("li", {"class": "new"})
+new_li.children.append("C")
+ul.append(new_li)
+
+# insert —— 在指定位置插入子节点
+another = soup.new_tag("li")
+another.children.append("Z")
+ul.insert(0, another)
+
+# extract —— 从父节点移除但保留节点本身
+removed = ul.children[1].extract()
+
+# replace_with —— 用另一个节点替换
+replacement = soup.new_tag("li")
+replacement.children.append("X")
+ul.children[0].replace_with(replacement)
+
+# unwrap —— 移除标签但保留子节点
+soup2 = Soup("<div><b>bold text</b></div>")
+soup2.find("b").unwrap()
+print(soup2.get_text())  # bold text
+```
+
+### HTML 序列化
+
+```python
+soup = Soup('<div class="box"><p>Hello <b>world</b></p></div>')
+div = soup.find("div")
+print(div.to_html())
+# <div class="box"><p>Hello <b>world</b></p></div>
+
+# str() 也会生成 HTML
+print(str(div))
+# <div class="box"><p>Hello <b>world</b></p></div>
+```
+
+### 属性设置
+
+```python
+soup = Soup('<a href="/old">Link</a>')
+a = soup.find("a")
+
+# 设置属性
+a["href"] = "/new"
+a["class"] = ["nav", "active"]
+
+# 删除属性
+del a["class"]
+print(a.to_html())  # <a href="/new">Link</a>
+```
+
+### 创建新标签
+
+```python
+soup = Soup("<div></div>")
+tag = soup.new_tag("span", {"id": "greeting"})
+tag.children.append("Hello!")
+soup.find("div").append(tag)
+print(soup.find("div").to_html())
+# <div><span id="greeting">Hello!</span></div>
+```
+
 ### decompose（移除元素）
 
 ```python
@@ -173,6 +245,12 @@ print(li.find_parent().name)       # ul
 | `decompose()` | 从父元素中移除此元素。 |
 | `find_parent(name=None)` | 查找最近的父元素，可按标签名过滤。 |
 | `get(attr, default=None)` | 获取属性值。 |
+| `append(child)` | 在末尾添加子节点（Tag 或 str）。 |
+| `insert(index, child)` | 在指定位置插入子节点。 |
+| `extract()` | 从父节点移除，返回自身（保留子节点）。 |
+| `replace_with(new_node)` | 用另一个节点替换此节点。 |
+| `unwrap()` | 移除此标签但保留其子节点（重新挂载到父节点）。 |
+| `to_html()` | 将此元素序列化为 HTML 字符串。 |
 
 ### `Tag` 属性
 
@@ -184,6 +262,12 @@ print(li.find_parent().name)       # ul
 | `.children` | `list` | 子节点（`Tag` 或 `str`）。 |
 | `.parent` | `Tag \| None` | 父元素。 |
 
+### `Soup` 工厂方法
+
+| 方法 | 描述 |
+|------|------|
+| `new_tag(name, attrs=None)` | 创建一个新的独立 Tag 节点。 |
+
 ## 与 BeautifulSoup 的对比
 
 | 特性 | zerodep soup | BeautifulSoup |
@@ -193,7 +277,8 @@ print(li.find_parent().name)       # ul
 | 解析器后端 | 仅 `html.parser` | `html.parser`、`lxml`、`html5lib` |
 | find / find_all | 是 | 是 |
 | CSS 选择器 | 基础（标签、类、ID、属性、后代、子元素） | 完整（通过 soupsieve） |
-| prettify | 否 | 是 |
+| 树操作（append/insert/extract） | 是 | 是 |
+| HTML 序列化（to_html） | 是 | 是（prettify） |
 | NavigableString | 否（使用纯 `str`） | 是 |
 | 解析速度（小） | 149 μs | 446 μs（慢 2.99x） |
 | 解析速度（大） | 12.7 ms | 37.1 ms（慢 2.93x） |

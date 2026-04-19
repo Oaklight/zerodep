@@ -83,62 +83,29 @@ td { white-space: nowrap; }
 <h1>readability</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 8aa75a4 | Commit: 8aa75a45 | 2026-04-19T16:41:28.089124+00:00</p>
+<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
 <h2>readability</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
-<tbody>
-<tr><td>Large</td><td>zerodep</td><td>readability_lxml</td><td>62.08 ms</td><td>24.80 ms</td><td>16.1</td><td>40.3</td><td class="ratio-cell slower">2.5x slower</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>readability_lxml</td><td>4.68 ms</td><td>3.23 ms</td><td>213.6</td><td>309.4</td><td class="ratio-cell slower">1.4x slower</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>readability_lxml</td><td>463.0 µs</td><td>684.4 µs</td><td>2.2K</td><td>1.5K</td><td class="ratio-cell faster">1.5x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability_lxml</td><td>9.18 ms</td><td>12.95 ms</td><td>109.0</td><td>77.2</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability_lxml</td><td>1.93 ms</td><td>2.38 ms</td><td>519.4</td><td>419.8</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability_lxml</td><td>803.6 µs</td><td>770.0 µs</td><td>1.2K</td><td>1.3K</td><td class="ratio-cell similar">~equal</td></tr>
-</tbody></table>
-<div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.70 ms</td><td>589.1</td></tr>
+<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.66 ms</td><td>600.6</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>59.39 ms</td><td>16.8</td></tr>
+<tr><td>Large</td><td>readability_lxml</td><td>24.65 ms</td><td>40.6</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>4.66 ms</td><td>214.5</td></tr>
+<tr><td>Medium</td><td>readability_lxml</td><td>3.21 ms</td><td>311.1</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>464.7 µs</td><td>2.2K</td></tr>
+<tr><td>Small</td><td>readability_lxml</td><td>694.6 µs</td><td>1.4K</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>9.08 ms</td><td>110.2</td></tr>
+<tr><td>Synthetic (Large)</td><td>readability_lxml</td><td>13.05 ms</td><td>76.7</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>1.93 ms</td><td>516.9</td></tr>
+<tr><td>Synthetic (Medium)</td><td>readability_lxml</td><td>2.37 ms</td><td>421.8</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>806.8 µs</td><td>1.2K</td></tr>
+<tr><td>Synthetic (Small)</td><td>readability_lxml</td><td>772.7 µs</td><td>1.3K</td></tr>
 </tbody></table>
 
 <script>
 
-new Chart(document.getElementById('chart_0'), {
-  type: 'bar',
-  data: {
-    labels: ["Large", "Medium", "Small", "Synthetic (Large)", "Synthetic (Medium)", "Synthetic (Small)"],
-    datasets: [
-      {
-        label: 'zerodep (ops/s)',
-        data: [16.109185308721997, 213.58520823863876, 2159.945230622585, 108.97057568630055, 519.3508601674029, 1244.4340199011565],
-        backgroundColor: 'rgba(111, 66, 193, 0.8)',
-        borderRadius: 4,
-      },
-      {
-        label: "readability_lxml" + ' (ops/s)',
-        data: [40.32974807889512, 309.4340749889802, 1461.0362126703276, 77.2097123535699, 419.81976984625055, 1298.6422626099832],
-        backgroundColor: 'rgba(13, 110, 253, 0.6)',
-        borderRadius: 4,
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'top' },
-      title: { display: true, text: 'readability — ops/s (higher is better)' }
-    },
-    scales: {
-      y: {
-        type: 'logarithmic',
-        title: { display: true, text: 'ops/s (log scale)' }
-      }
-    }
-  }
-});
 (function() {
   var btn = document.getElementById('theme-toggle');
   if (!btn) return;

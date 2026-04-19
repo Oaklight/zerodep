@@ -83,66 +83,32 @@ td { white-space: nowrap; }
 <h1>persistdict</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 8aa75a4 | Commit: 8aa75a45 | 2026-04-19T16:41:28.089124+00:00</p>
+<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
 <h2>persistdict</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<h3>Standalone benchmarks</h3>
+<table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>shelve</td><td>440.4 µs</td><td>209.0 µs</td><td>2.3K</td><td>4.8K</td><td class="ratio-cell slower">2.1x slower</td></tr>
-<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>440.4 µs</td><td>1.38 ms</td><td>2.3K</td><td>727.1</td><td class="ratio-cell faster">3.1x faster</td></tr>
-<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>874.3 µs</td><td>209.0 µs</td><td>1.1K</td><td>4.8K</td><td class="ratio-cell slower">4.2x slower</td></tr>
-<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>874.3 µs</td><td>1.38 ms</td><td>1.1K</td><td>727.1</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_json</td><td>shelve</td><td>431.5 µs</td><td>192.4 µs</td><td>2.3K</td><td>5.2K</td><td class="ratio-cell slower">2.2x slower</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>431.5 µs</td><td>10.34 ms</td><td>2.3K</td><td>96.7</td><td class="ratio-cell faster">24.0x faster</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>834.3 µs</td><td>192.4 µs</td><td>1.2K</td><td>5.2K</td><td class="ratio-cell slower">4.3x slower</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>834.3 µs</td><td>10.34 ms</td><td>1.2K</td><td>96.7</td><td class="ratio-cell faster">12.4x faster</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_json</td><td>shelve</td><td>15.96 ms</td><td>12.79 ms</td><td>62.7</td><td>78.2</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_json</td><td>sqlitedict</td><td>15.96 ms</td><td>820.92 ms</td><td>62.7</td><td>1.2</td><td class="ratio-cell faster">51.4x faster</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>shelve</td><td>429.60 ms</td><td>12.79 ms</td><td>2.3</td><td>78.2</td><td class="ratio-cell slower">33.6x slower</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>429.60 ms</td><td>820.92 ms</td><td>2.3</td><td>1.2</td><td class="ratio-cell faster">1.9x faster</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_json</td><td>shelve</td><td>429.9 µs</td><td>397.7 µs</td><td>2.3K</td><td>2.5K</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>429.9 µs</td><td>19.22 ms</td><td>2.3K</td><td>52.0</td><td class="ratio-cell faster">44.7x faster</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>23.61 ms</td><td>397.7 µs</td><td>42.3</td><td>2.5K</td><td class="ratio-cell slower">59.4x slower</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>23.61 ms</td><td>19.22 ms</td><td>42.3</td><td>52.0</td><td class="ratio-cell slower">1.2x slower</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>433.2 µs</td><td>2.3K</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>872.4 µs</td><td>1.1K</td></tr>
+<tr><td>Iterate (Small)</td><td>shelve</td><td>207.4 µs</td><td>4.8K</td></tr>
+<tr><td>Iterate (Small)</td><td>sqlitedict</td><td>1.35 ms</td><td>739.8</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_json</td><td>428.0 µs</td><td>2.3K</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>828.8 µs</td><td>1.2K</td></tr>
+<tr><td>Read (Small)</td><td>shelve</td><td>187.1 µs</td><td>5.3K</td></tr>
+<tr><td>Read (Small)</td><td>sqlitedict</td><td>9.99 ms</td><td>100.1</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_json</td><td>16.08 ms</td><td>62.2</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>412.34 ms</td><td>2.4</td></tr>
+<tr><td>Write (Large)</td><td>shelve</td><td>12.45 ms</td><td>80.3</td></tr>
+<tr><td>Write (Large)</td><td>sqlitedict</td><td>834.57 ms</td><td>1.2</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_json</td><td>425.0 µs</td><td>2.4K</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>25.08 ms</td><td>39.9</td></tr>
+<tr><td>Write (Small)</td><td>shelve</td><td>537.8 µs</td><td>1.9K</td></tr>
+<tr><td>Write (Small)</td><td>sqlitedict</td><td>18.73 ms</td><td>53.4</td></tr>
 </tbody></table>
-<div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <script>
 
-new Chart(document.getElementById('chart_0'), {
-  type: 'bar',
-  data: {
-    labels: ["Iterate (Small)", "Read (Small)", "Write (Large)", "Write (Small)"],
-    datasets: [
-      {
-        label: 'zerodep (ops/s)',
-        data: [2270.7953085973527, 2317.3630833164807, 62.66721390248326, 2326.3549595802037],
-        backgroundColor: 'rgba(111, 66, 193, 0.8)',
-        borderRadius: 4,
-      },
-      {
-        label: "shelve" + ' (ops/s)',
-        data: [4783.737972474072, 5198.618756381379, 78.19009799879558, 2514.7183563441745],
-        backgroundColor: 'rgba(13, 110, 253, 0.6)',
-        borderRadius: 4,
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'top' },
-      title: { display: true, text: 'persistdict — ops/s (higher is better)' }
-    },
-    scales: {
-      y: {
-        type: 'logarithmic',
-        title: { display: true, text: 'ops/s (log scale)' }
-      }
-    }
-  }
-});
 (function() {
   var btn = document.getElementById('theme-toggle');
   if (!btn) return;

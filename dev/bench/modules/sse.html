@@ -83,53 +83,22 @@ td { white-space: nowrap; }
 <h1>sse</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 8aa75a4 | Commit: 8aa75a45 | 2026-04-19T16:41:28.089124+00:00</p>
+<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
 <h2>sse</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<h3>Standalone benchmarks</h3>
+<table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Large Stream</td><td>zerodep</td><td>httpx</td><td>3.21 ms</td><td>2.40 ms</td><td>311.6</td><td>417.5</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Medium Stream</td><td>zerodep</td><td>httpx</td><td>402.8 µs</td><td>326.6 µs</td><td>2.5K</td><td>3.1K</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Small Stream</td><td>zerodep</td><td>httpx</td><td>31.2 µs</td><td>23.0 µs</td><td>32.0K</td><td>43.5K</td><td class="ratio-cell slower">1.4x slower</td></tr>
+<tr><td>Large Stream</td><td>zerodep</td><td>3.21 ms</td><td>311.3</td></tr>
+<tr><td>Large Stream</td><td>httpx</td><td>2.26 ms</td><td>442.1</td></tr>
+<tr><td>Medium Stream</td><td>zerodep</td><td>404.7 µs</td><td>2.5K</td></tr>
+<tr><td>Medium Stream</td><td>httpx</td><td>328.3 µs</td><td>3.0K</td></tr>
+<tr><td>Small Stream</td><td>zerodep</td><td>31.3 µs</td><td>31.9K</td></tr>
+<tr><td>Small Stream</td><td>httpx</td><td>23.3 µs</td><td>42.8K</td></tr>
 </tbody></table>
-<div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <script>
 
-new Chart(document.getElementById('chart_0'), {
-  type: 'bar',
-  data: {
-    labels: ["Large Stream", "Medium Stream", "Small Stream"],
-    datasets: [
-      {
-        label: 'zerodep (ops/s)',
-        data: [311.5607644827524, 2482.619748959987, 32030.607453410397],
-        backgroundColor: 'rgba(111, 66, 193, 0.8)',
-        borderRadius: 4,
-      },
-      {
-        label: "httpx" + ' (ops/s)',
-        data: [417.48052585976257, 3061.9035971319618, 43455.366461657664],
-        backgroundColor: 'rgba(13, 110, 253, 0.6)',
-        borderRadius: 4,
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'top' },
-      title: { display: true, text: 'sse — ops/s (higher is better)' }
-    },
-    scales: {
-      y: {
-        type: 'logarithmic',
-        title: { display: true, text: 'ops/s (log scale)' }
-      }
-    }
-  }
-});
 (function() {
   var btn = document.getElementById('theme-toggle');
   if (!btn) return;

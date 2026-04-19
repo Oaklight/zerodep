@@ -83,68 +83,28 @@ td { white-space: nowrap; }
 <h1>toon</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 8aa75a4 | Commit: 8aa75a45 | 2026-04-19T16:41:28.089124+00:00</p>
+<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
 <h2>toon</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<h3>Standalone benchmarks</h3>
+<table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_small_ref</td><td>20.5 µs</td><td>22.5 µs</td><td>48.8K</td><td>44.4K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_medium_ref</td><td>20.5 µs</td><td>351.8 µs</td><td>48.8K</td><td>2.8K</td><td class="ratio-cell faster">17.2x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_large_ref</td><td>20.5 µs</td><td>2.36 ms</td><td>48.8K</td><td>423.5</td><td class="ratio-cell faster">115.3x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_small_ref</td><td>333.7 µs</td><td>22.5 µs</td><td>3.0K</td><td>44.4K</td><td class="ratio-cell slower">14.8x slower</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_medium_ref</td><td>333.7 µs</td><td>351.8 µs</td><td>3.0K</td><td>2.8K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_large_ref</td><td>333.7 µs</td><td>2.36 ms</td><td>3.0K</td><td>423.5</td><td class="ratio-cell faster">7.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_small_ref</td><td>2.26 ms</td><td>22.5 µs</td><td>442.7</td><td>44.4K</td><td class="ratio-cell slower">100.3x slower</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_medium_ref</td><td>2.26 ms</td><td>351.8 µs</td><td>442.7</td><td>2.8K</td><td class="ratio-cell slower">6.4x slower</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_large_ref</td><td>2.26 ms</td><td>2.36 ms</td><td>442.7</td><td>423.5</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_small_ref</td><td>8.9 µs</td><td>12.3 µs</td><td>112.6K</td><td>81.3K</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_medium_ref</td><td>8.9 µs</td><td>266.6 µs</td><td>112.6K</td><td>3.8K</td><td class="ratio-cell faster">30.0x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_large_ref</td><td>8.9 µs</td><td>1.65 ms</td><td>112.6K</td><td>604.4</td><td class="ratio-cell faster">186.3x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_small_ref</td><td>204.0 µs</td><td>12.3 µs</td><td>4.9K</td><td>81.3K</td><td class="ratio-cell slower">16.6x slower</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_medium_ref</td><td>204.0 µs</td><td>266.6 µs</td><td>4.9K</td><td>3.8K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_large_ref</td><td>204.0 µs</td><td>1.65 ms</td><td>4.9K</td><td>604.4</td><td class="ratio-cell faster">8.1x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_small_ref</td><td>1.26 ms</td><td>12.3 µs</td><td>796.7</td><td>81.3K</td><td class="ratio-cell slower">102.0x slower</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_medium_ref</td><td>1.26 ms</td><td>266.6 µs</td><td>796.7</td><td>3.8K</td><td class="ratio-cell slower">4.7x slower</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_large_ref</td><td>1.26 ms</td><td>1.65 ms</td><td>796.7</td><td>604.4</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>2.29 ms</td><td>435.7</td></tr>
+<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>341.3 µs</td><td>2.9K</td></tr>
+<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>20.9 µs</td><td>47.9K</td></tr>
+<tr><td>Decode Benchmark</td><td>decode_large_ref</td><td>2.39 ms</td><td>418.7</td></tr>
+<tr><td>Decode Benchmark</td><td>decode_medium_ref</td><td>356.0 µs</td><td>2.8K</td></tr>
+<tr><td>Decode Benchmark</td><td>decode_small_ref</td><td>23.0 µs</td><td>43.4K</td></tr>
+<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>1.33 ms</td><td>754.7</td></tr>
+<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>217.2 µs</td><td>4.6K</td></tr>
+<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>9.3 µs</td><td>107.5K</td></tr>
+<tr><td>Encode Benchmark</td><td>encode_large_ref</td><td>1.66 ms</td><td>602.0</td></tr>
+<tr><td>Encode Benchmark</td><td>encode_medium_ref</td><td>278.5 µs</td><td>3.6K</td></tr>
+<tr><td>Encode Benchmark</td><td>encode_small_ref</td><td>12.7 µs</td><td>78.6K</td></tr>
 </tbody></table>
-<div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <script>
 
-new Chart(document.getElementById('chart_0'), {
-  type: 'bar',
-  data: {
-    labels: ["Decode Benchmark", "Encode Benchmark"],
-    datasets: [
-      {
-        label: 'zerodep (ops/s)',
-        data: [48827.255101092676, 112578.8150553526],
-        backgroundColor: 'rgba(111, 66, 193, 0.8)',
-        borderRadius: 4,
-      },
-      {
-        label: "Reference" + ' (ops/s)',
-        data: [44418.91137809844, 81278.98593027584],
-        backgroundColor: 'rgba(13, 110, 253, 0.6)',
-        borderRadius: 4,
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'top' },
-      title: { display: true, text: 'toon — ops/s (higher is better)' }
-    },
-    scales: {
-      y: {
-        type: 'logarithmic',
-        title: { display: true, text: 'ops/s (log scale)' }
-      }
-    }
-  }
-});
 (function() {
   var btn = document.getElementById('theme-toggle');
   if (!btn) return;

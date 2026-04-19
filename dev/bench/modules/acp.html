@@ -83,20 +83,20 @@ td { white-space: nowrap; }
 <h1>acp</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 8aa75a4 | Commit: 8aa75a45 | 2026-04-19T16:41:28.089124+00:00</p>
+<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
 <h2>acp</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Deserialize (Large)</td><td>zerodep</td><td>acp (ref)</td><td>149.3 µs</td><td>77.9 µs</td><td>6.7K</td><td>12.8K</td><td class="ratio-cell slower">1.9x slower</td></tr>
-<tr><td>Deserialize (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>5.9 µs</td><td>61.3 µs</td><td>168.3K</td><td>16.3K</td><td class="ratio-cell faster">10.3x faster</td></tr>
-<tr><td>Deserialize (Small)</td><td>zerodep</td><td>acp (ref)</td><td>1.7 µs</td><td>1.7 µs</td><td>573.5K</td><td>576.1K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Json Round Trip (Large)</td><td>zerodep</td><td>acp (ref)</td><td>950.0 µs</td><td>398.0 µs</td><td>1.1K</td><td>2.5K</td><td class="ratio-cell slower">2.4x slower</td></tr>
-<tr><td>Json Round Trip (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>90.6 µs</td><td>84.9 µs</td><td>11.0K</td><td>11.8K</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Json Round Trip (Small)</td><td>zerodep</td><td>acp (ref)</td><td>10.2 µs</td><td>7.0 µs</td><td>97.8K</td><td>143.2K</td><td class="ratio-cell slower">1.5x slower</td></tr>
-<tr><td>Serialize (Large)</td><td>zerodep</td><td>acp (ref)</td><td>531.9 µs</td><td>73.6 µs</td><td>1.9K</td><td>13.6K</td><td class="ratio-cell slower">7.2x slower</td></tr>
-<tr><td>Serialize (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>63.0 µs</td><td>12.6 µs</td><td>15.9K</td><td>79.4K</td><td class="ratio-cell slower">5.0x slower</td></tr>
-<tr><td>Serialize (Small)</td><td>zerodep</td><td>acp (ref)</td><td>4.1 µs</td><td>1.3 µs</td><td>242.7K</td><td>775.1K</td><td class="ratio-cell slower">3.2x slower</td></tr>
+<tr><td>Deserialize (Large)</td><td>zerodep</td><td>acp (ref)</td><td>156.7 µs</td><td>77.8 µs</td><td>6.4K</td><td>12.9K</td><td class="ratio-cell slower">2.0x slower</td></tr>
+<tr><td>Deserialize (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>6.1 µs</td><td>58.7 µs</td><td>163.2K</td><td>17.0K</td><td class="ratio-cell faster">9.6x faster</td></tr>
+<tr><td>Deserialize (Small)</td><td>zerodep</td><td>acp (ref)</td><td>1.8 µs</td><td>1.7 µs</td><td>550.9K</td><td>576.2K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Json Round Trip (Large)</td><td>zerodep</td><td>acp (ref)</td><td>954.7 µs</td><td>399.4 µs</td><td>1.0K</td><td>2.5K</td><td class="ratio-cell slower">2.4x slower</td></tr>
+<tr><td>Json Round Trip (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>91.1 µs</td><td>84.5 µs</td><td>11.0K</td><td>11.8K</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Json Round Trip (Small)</td><td>zerodep</td><td>acp (ref)</td><td>10.5 µs</td><td>7.1 µs</td><td>95.3K</td><td>140.9K</td><td class="ratio-cell slower">1.5x slower</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>acp (ref)</td><td>535.3 µs</td><td>74.8 µs</td><td>1.9K</td><td>13.4K</td><td class="ratio-cell slower">7.2x slower</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>63.6 µs</td><td>13.0 µs</td><td>15.7K</td><td>77.1K</td><td class="ratio-cell slower">4.9x slower</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>acp (ref)</td><td>4.1 µs</td><td>1.3 µs</td><td>243.1K</td><td>761.2K</td><td class="ratio-cell slower">3.1x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -109,13 +109,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [6696.260726538776, 168313.49461341999, 573543.2712319739, 1052.6230093224756, 11037.522221610283, 97779.58200363918, 1879.9258192632624, 15865.300466292209, 242674.58981892],
+        data: [6383.384249356986, 163223.8897986211, 550880.853148619, 1047.448027942469, 10980.297556875827, 95275.14054416202, 1868.2372502291298, 15717.49127003524, 243121.16361200027],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "acp (ref)" + ' (ops/s)',
-        data: [12832.68236005098, 16306.77943019651, 576051.7661656467, 2512.5288618233853, 11771.939814584779, 143153.36329369037, 13585.09361572902, 79372.19345373778, 775066.1123490074],
+        data: [12852.618331978549, 17047.246787847736, 576189.219187181, 2503.7651289152477, 11836.376556264235, 140885.6561331357, 13364.139478984282, 77131.31419742524, 761249.9418502365],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

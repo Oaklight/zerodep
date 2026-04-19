@@ -83,27 +83,27 @@ td { white-space: nowrap; }
 <h1>jsonrpc</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 8aa75a4 | Commit: 8aa75a45 | 2026-04-19T16:41:28.089124+00:00</p>
+<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
 <h2>jsonrpc</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>145.4 µs</td><td>2.82 ms</td><td>6.9K</td><td>354.4</td><td class="ratio-cell faster">19.4x faster</td></tr>
-<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>9.8 µs</td><td>135.6 µs</td><td>101.8K</td><td>7.4K</td><td class="ratio-cell faster">13.8x faster</td></tr>
-<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>7.9 µs</td><td>107.1 µs</td><td>126.2K</td><td>9.3K</td><td class="ratio-cell faster">13.5x faster</td></tr>
-<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>7.7 µs</td><td>141.8 µs</td><td>129.6K</td><td>7.1K</td><td class="ratio-cell faster">18.4x faster</td></tr>
+<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>143.6 µs</td><td>2.79 ms</td><td>7.0K</td><td>358.5</td><td class="ratio-cell faster">19.4x faster</td></tr>
+<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>9.8 µs</td><td>135.5 µs</td><td>101.9K</td><td>7.4K</td><td class="ratio-cell faster">13.8x faster</td></tr>
+<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>7.8 µs</td><td>105.6 µs</td><td>127.4K</td><td>9.5K</td><td class="ratio-cell faster">13.5x faster</td></tr>
+<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>7.4 µs</td><td>141.8 µs</td><td>135.1K</td><td>7.1K</td><td class="ratio-cell faster">19.2x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>776.5 ns</td><td>1.29M</td></tr>
-<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>959.5 ns</td><td>1.04M</td></tr>
-<tr><td>Id Generation</td><td>next_id</td><td>98.5 ns</td><td>10.15M</td></tr>
-<tr><td>Json Round Trip</td><td>json_round_trip</td><td>6.5 µs</td><td>154.0K</td></tr>
-<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>357.8 ns</td><td>2.79M</td></tr>
-<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>295.1 ns</td><td>3.39M</td></tr>
+<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>938.3 ns</td><td>1.07M</td></tr>
+<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>969.8 ns</td><td>1.03M</td></tr>
+<tr><td>Id Generation</td><td>next_id</td><td>98.4 ns</td><td>10.17M</td></tr>
+<tr><td>Json Round Trip</td><td>json_round_trip</td><td>6.7 µs</td><td>149.0K</td></tr>
+<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>353.4 ns</td><td>2.83M</td></tr>
+<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>294.1 ns</td><td>3.40M</td></tr>
 </tbody></table>
 
 <script>
@@ -115,13 +115,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [6877.169307462939, 101764.25646904903, 126157.3145181917, 129575.52220943653],
+        data: [6963.858617495992, 101886.09973286359, 127439.57657229256, 135125.33236698227],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "jsonrpcserver" + ' (ops/s)',
-        data: [354.4456578646716, 7373.269384548846, 9334.688789619264, 7053.516825270369],
+        data: [358.5199736325945, 7379.418147564105, 9470.668412401874, 7054.663444022352],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

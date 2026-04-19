@@ -83,53 +83,22 @@ td { white-space: nowrap; }
 <h1>tabulate</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 8aa75a4 | Commit: 8aa75a45 | 2026-04-19T16:41:28.089124+00:00</p>
+<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
 <h2>tabulate</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<h3>Standalone benchmarks</h3>
+<table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Large Table</td><td>zerodep</td><td>reference</td><td>6.52 ms</td><td>27.92 ms</td><td>153.4</td><td>35.8</td><td class="ratio-cell faster">4.3x faster</td></tr>
-<tr><td>Medium Table</td><td>zerodep</td><td>reference</td><td>411.6 µs</td><td>1.84 ms</td><td>2.4K</td><td>544.3</td><td class="ratio-cell faster">4.5x faster</td></tr>
-<tr><td>Small Table</td><td>zerodep</td><td>reference</td><td>53.9 µs</td><td>171.6 µs</td><td>18.5K</td><td>5.8K</td><td class="ratio-cell faster">3.2x faster</td></tr>
+<tr><td>Large Table</td><td>zerodep</td><td>6.28 ms</td><td>159.2</td></tr>
+<tr><td>Large Table</td><td>reference</td><td>27.93 ms</td><td>35.8</td></tr>
+<tr><td>Medium Table</td><td>zerodep</td><td>408.9 µs</td><td>2.4K</td></tr>
+<tr><td>Medium Table</td><td>reference</td><td>1.85 ms</td><td>540.3</td></tr>
+<tr><td>Small Table</td><td>zerodep</td><td>53.8 µs</td><td>18.6K</td></tr>
+<tr><td>Small Table</td><td>reference</td><td>173.9 µs</td><td>5.8K</td></tr>
 </tbody></table>
-<div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <script>
 
-new Chart(document.getElementById('chart_0'), {
-  type: 'bar',
-  data: {
-    labels: ["Large Table", "Medium Table", "Small Table"],
-    datasets: [
-      {
-        label: 'zerodep (ops/s)',
-        data: [153.35003203532835, 2429.517348582542, 18536.447960880916],
-        backgroundColor: 'rgba(111, 66, 193, 0.8)',
-        borderRadius: 4,
-      },
-      {
-        label: "reference" + ' (ops/s)',
-        data: [35.81029631605436, 544.2846837187011, 5825.873009822161],
-        backgroundColor: 'rgba(13, 110, 253, 0.6)',
-        borderRadius: 4,
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'top' },
-      title: { display: true, text: 'tabulate — ops/s (higher is better)' }
-    },
-    scales: {
-      y: {
-        type: 'logarithmic',
-        title: { display: true, text: 'ops/s (log scale)' }
-      }
-    }
-  }
-});
 (function() {
   var btn = document.getElementById('theme-toggle');
   if (!btn) return;

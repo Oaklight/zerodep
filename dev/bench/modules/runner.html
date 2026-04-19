@@ -83,60 +83,31 @@ td { white-space: nowrap; }
 <h1>runner</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 8aa75a4 | Commit: 8aa75a45 | 2026-04-19T16:41:28.089124+00:00</p>
+<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
 <h2>runner</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<h3>Standalone benchmarks</h3>
+<table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Env Passing</td><td>zerodep</td><td>sh</td><td>11.40 ms</td><td>19.81 ms</td><td>87.7</td><td>50.5</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Env Passing</td><td>zerodep</td><td>subprocess</td><td>11.40 ms</td><td>11.26 ms</td><td>87.7</td><td>88.8</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Output Capture</td><td>zerodep</td><td>sh</td><td>11.19 ms</td><td>19.37 ms</td><td>89.4</td><td>51.6</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Output Capture</td><td>zerodep</td><td>subprocess</td><td>11.19 ms</td><td>11.11 ms</td><td>89.4</td><td>90.0</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Simple Command</td><td>zerodep</td><td>sh</td><td>2.00 ms</td><td>8.91 ms</td><td>499.6</td><td>112.2</td><td class="ratio-cell faster">4.5x faster</td></tr>
-<tr><td>Simple Command</td><td>zerodep</td><td>subprocess</td><td>2.00 ms</td><td>905.1 µs</td><td>499.6</td><td>1.1K</td><td class="ratio-cell slower">2.2x slower</td></tr>
-<tr><td>Stdin Input</td><td>zerodep</td><td>sh</td><td>11.19 ms</td><td>19.62 ms</td><td>89.4</td><td>51.0</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Stdin Input</td><td>zerodep</td><td>subprocess</td><td>11.19 ms</td><td>11.15 ms</td><td>89.4</td><td>89.7</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Streaming Lines</td><td>zerodep</td><td>sh</td><td>11.15 ms</td><td>19.60 ms</td><td>89.7</td><td>51.0</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Streaming Lines</td><td>zerodep</td><td>subprocess</td><td>11.15 ms</td><td>11.06 ms</td><td>89.7</td><td>90.4</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Env Passing</td><td>zerodep</td><td>11.32 ms</td><td>88.4</td></tr>
+<tr><td>Env Passing</td><td>sh</td><td>19.46 ms</td><td>51.4</td></tr>
+<tr><td>Env Passing</td><td>subprocess</td><td>11.23 ms</td><td>89.0</td></tr>
+<tr><td>Output Capture</td><td>zerodep</td><td>11.08 ms</td><td>90.2</td></tr>
+<tr><td>Output Capture</td><td>sh</td><td>18.87 ms</td><td>53.0</td></tr>
+<tr><td>Output Capture</td><td>subprocess</td><td>11.04 ms</td><td>90.6</td></tr>
+<tr><td>Simple Command</td><td>zerodep</td><td>1.99 ms</td><td>501.7</td></tr>
+<tr><td>Simple Command</td><td>sh</td><td>8.75 ms</td><td>114.2</td></tr>
+<tr><td>Simple Command</td><td>subprocess</td><td>901.2 µs</td><td>1.1K</td></tr>
+<tr><td>Stdin Input</td><td>zerodep</td><td>11.07 ms</td><td>90.3</td></tr>
+<tr><td>Stdin Input</td><td>sh</td><td>18.99 ms</td><td>52.7</td></tr>
+<tr><td>Stdin Input</td><td>subprocess</td><td>11.07 ms</td><td>90.4</td></tr>
+<tr><td>Streaming Lines</td><td>zerodep</td><td>11.02 ms</td><td>90.7</td></tr>
+<tr><td>Streaming Lines</td><td>sh</td><td>19.56 ms</td><td>51.1</td></tr>
+<tr><td>Streaming Lines</td><td>subprocess</td><td>11.03 ms</td><td>90.7</td></tr>
 </tbody></table>
-<div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <script>
 
-new Chart(document.getElementById('chart_0'), {
-  type: 'bar',
-  data: {
-    labels: ["Env Passing", "Output Capture", "Simple Command", "Stdin Input", "Streaming Lines"],
-    datasets: [
-      {
-        label: 'zerodep (ops/s)',
-        data: [87.69451744022163, 89.35407172762163, 499.6392922127187, 89.4051298690474, 89.70108149682633],
-        backgroundColor: 'rgba(111, 66, 193, 0.8)',
-        borderRadius: 4,
-      },
-      {
-        label: "subprocess" + ' (ops/s)',
-        data: [88.78524922116053, 89.97458137098238, 1104.8756710266032, 89.69220745091158, 90.41822312112849],
-        backgroundColor: 'rgba(13, 110, 253, 0.6)',
-        borderRadius: 4,
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'top' },
-      title: { display: true, text: 'runner — ops/s (higher is better)' }
-    },
-    scales: {
-      y: {
-        type: 'logarithmic',
-        title: { display: true, text: 'ops/s (log scale)' }
-      }
-    }
-  }
-});
 (function() {
   var btn = document.getElementById('theme-toggle');
   if (!btn) return;

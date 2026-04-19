@@ -83,55 +83,37 @@ td { white-space: nowrap; }
 <h1>protobuf</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 8aa75a4 | Commit: 8aa75a45 | 2026-04-19T16:41:28.089124+00:00</p>
+<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
 <h2>protobuf</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Decode Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>6.2 µs</td><td>745.2 ns</td><td>160.6K</td><td>1.34M</td><td class="ratio-cell slower">8.4x slower</td></tr>
-<tr><td>Decode Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>6.2 µs</td><td>1.3 µs</td><td>160.6K</td><td>741.1K</td><td class="ratio-cell slower">4.6x slower</td></tr>
-<tr><td>Decode Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>6.2 µs</td><td>4.5 µs</td><td>160.6K</td><td>220.1K</td><td class="ratio-cell slower">1.4x slower</td></tr>
-<tr><td>Decode Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>73.0 µs</td><td>745.2 ns</td><td>13.7K</td><td>1.34M</td><td class="ratio-cell slower">97.9x slower</td></tr>
-<tr><td>Decode Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>73.0 µs</td><td>1.3 µs</td><td>13.7K</td><td>741.1K</td><td class="ratio-cell slower">54.1x slower</td></tr>
-<tr><td>Decode Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>73.0 µs</td><td>4.5 µs</td><td>13.7K</td><td>220.1K</td><td class="ratio-cell slower">16.1x slower</td></tr>
-<tr><td>Decode Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>529.5 µs</td><td>745.2 ns</td><td>1.9K</td><td>1.34M</td><td class="ratio-cell slower">710.6x slower</td></tr>
-<tr><td>Decode Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>529.5 µs</td><td>1.3 µs</td><td>1.9K</td><td>741.1K</td><td class="ratio-cell slower">392.5x slower</td></tr>
-<tr><td>Decode Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>529.5 µs</td><td>4.5 µs</td><td>1.9K</td><td>220.1K</td><td class="ratio-cell slower">116.6x slower</td></tr>
-<tr><td>Encode Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>6.2 µs</td><td>342.6 ns</td><td>160.8K</td><td>2.92M</td><td class="ratio-cell slower">18.2x slower</td></tr>
-<tr><td>Encode Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>6.2 µs</td><td>346.4 ns</td><td>160.8K</td><td>2.89M</td><td class="ratio-cell slower">18.0x slower</td></tr>
-<tr><td>Encode Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>6.2 µs</td><td>2.4 µs</td><td>160.8K</td><td>420.4K</td><td class="ratio-cell slower">2.6x slower</td></tr>
-<tr><td>Encode Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>61.0 µs</td><td>342.6 ns</td><td>16.4K</td><td>2.92M</td><td class="ratio-cell slower">178.1x slower</td></tr>
-<tr><td>Encode Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>61.0 µs</td><td>346.4 ns</td><td>16.4K</td><td>2.89M</td><td class="ratio-cell slower">176.1x slower</td></tr>
-<tr><td>Encode Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>61.0 µs</td><td>2.4 µs</td><td>16.4K</td><td>420.4K</td><td class="ratio-cell slower">25.6x slower</td></tr>
-<tr><td>Encode Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>419.8 µs</td><td>342.6 ns</td><td>2.4K</td><td>2.92M</td><td class="ratio-cell slower">1225.6x slower</td></tr>
-<tr><td>Encode Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>419.8 µs</td><td>346.4 ns</td><td>2.4K</td><td>2.89M</td><td class="ratio-cell slower">1212.1x slower</td></tr>
-<tr><td>Encode Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>419.8 µs</td><td>2.4 µs</td><td>2.4K</td><td>420.4K</td><td class="ratio-cell slower">176.5x slower</td></tr>
-<tr><td>Roundtrip Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>12.9 µs</td><td>1.1 µs</td><td>77.3K</td><td>937.5K</td><td class="ratio-cell slower">12.1x slower</td></tr>
-<tr><td>Roundtrip Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>12.9 µs</td><td>1.8 µs</td><td>77.3K</td><td>554.3K</td><td class="ratio-cell slower">7.2x slower</td></tr>
-<tr><td>Roundtrip Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>12.9 µs</td><td>7.1 µs</td><td>77.3K</td><td>141.3K</td><td class="ratio-cell slower">1.8x slower</td></tr>
-<tr><td>Roundtrip Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>139.2 µs</td><td>1.1 µs</td><td>7.2K</td><td>937.5K</td><td class="ratio-cell slower">130.5x slower</td></tr>
-<tr><td>Roundtrip Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>139.2 µs</td><td>1.8 µs</td><td>7.2K</td><td>554.3K</td><td class="ratio-cell slower">77.1x slower</td></tr>
-<tr><td>Roundtrip Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>139.2 µs</td><td>7.1 µs</td><td>7.2K</td><td>141.3K</td><td class="ratio-cell slower">19.7x slower</td></tr>
-<tr><td>Roundtrip Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>970.5 µs</td><td>1.1 µs</td><td>1.0K</td><td>937.5K</td><td class="ratio-cell slower">909.8x slower</td></tr>
-<tr><td>Roundtrip Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>970.5 µs</td><td>1.8 µs</td><td>1.0K</td><td>554.3K</td><td class="ratio-cell slower">537.9x slower</td></tr>
-<tr><td>Roundtrip Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>970.5 µs</td><td>7.1 µs</td><td>1.0K</td><td>141.3K</td><td class="ratio-cell slower">137.2x slower</td></tr>
+<tr><td>Decode Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>534.1 µs</td><td>4.5 µs</td><td>1.9K</td><td>221.8K</td><td class="ratio-cell slower">118.4x slower</td></tr>
+<tr><td>Decode Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>72.0 µs</td><td>1.3 µs</td><td>13.9K</td><td>744.3K</td><td class="ratio-cell slower">53.6x slower</td></tr>
+<tr><td>Decode Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>6.2 µs</td><td>624.5 ns</td><td>160.1K</td><td>1.60M</td><td class="ratio-cell slower">10.0x slower</td></tr>
+<tr><td>Encode Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>431.9 µs</td><td>2.5 µs</td><td>2.3K</td><td>399.0K</td><td class="ratio-cell slower">172.3x slower</td></tr>
+<tr><td>Encode Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>61.6 µs</td><td>356.1 ns</td><td>16.2K</td><td>2.81M</td><td class="ratio-cell slower">173.0x slower</td></tr>
+<tr><td>Encode Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>6.5 µs</td><td>342.4 ns</td><td>154.8K</td><td>2.92M</td><td class="ratio-cell slower">18.9x slower</td></tr>
+<tr><td>Roundtrip Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>979.6 µs</td><td>7.0 µs</td><td>1.0K</td><td>141.9K</td><td class="ratio-cell slower">139.0x slower</td></tr>
+<tr><td>Roundtrip Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>138.6 µs</td><td>1.8 µs</td><td>7.2K</td><td>549.3K</td><td class="ratio-cell slower">76.2x slower</td></tr>
+<tr><td>Roundtrip Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>13.2 µs</td><td>1.1 µs</td><td>76.0K</td><td>937.4K</td><td class="ratio-cell slower">12.3x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>test_decode_large</td><td>decode_large</td><td>522.1 µs</td><td>1.9K</td></tr>
-<tr><td>test_decode_medium</td><td>decode_medium</td><td>73.2 µs</td><td>13.7K</td></tr>
-<tr><td>test_decode_small</td><td>decode_small</td><td>6.3 µs</td><td>158.4K</td></tr>
-<tr><td>test_encode_large</td><td>encode_large</td><td>421.1 µs</td><td>2.4K</td></tr>
-<tr><td>test_encode_medium</td><td>encode_medium</td><td>61.0 µs</td><td>16.4K</td></tr>
-<tr><td>test_encode_small</td><td>encode_small</td><td>6.1 µs</td><td>164.8K</td></tr>
-<tr><td>test_from_dict_large</td><td>from_dict_large</td><td>175.1 µs</td><td>5.7K</td></tr>
-<tr><td>test_roundtrip_large</td><td>roundtrip_large</td><td>969.3 µs</td><td>1.0K</td></tr>
-<tr><td>test_roundtrip_medium</td><td>roundtrip_medium</td><td>140.5 µs</td><td>7.1K</td></tr>
-<tr><td>test_roundtrip_small</td><td>roundtrip_small</td><td>13.0 µs</td><td>77.2K</td></tr>
-<tr><td>test_to_dict_large</td><td>to_dict_large</td><td>163.1 µs</td><td>6.1K</td></tr>
+<tr><td>test_decode_large</td><td>decode_large</td><td>534.6 µs</td><td>1.9K</td></tr>
+<tr><td>test_decode_medium</td><td>decode_medium</td><td>73.5 µs</td><td>13.6K</td></tr>
+<tr><td>test_decode_small</td><td>decode_small</td><td>6.3 µs</td><td>157.5K</td></tr>
+<tr><td>test_encode_large</td><td>encode_large</td><td>440.4 µs</td><td>2.3K</td></tr>
+<tr><td>test_encode_medium</td><td>encode_medium</td><td>61.8 µs</td><td>16.2K</td></tr>
+<tr><td>test_encode_small</td><td>encode_small</td><td>6.2 µs</td><td>161.2K</td></tr>
+<tr><td>test_from_dict_large</td><td>from_dict_large</td><td>178.8 µs</td><td>5.6K</td></tr>
+<tr><td>test_roundtrip_large</td><td>roundtrip_large</td><td>990.3 µs</td><td>1.0K</td></tr>
+<tr><td>test_roundtrip_medium</td><td>roundtrip_medium</td><td>138.3 µs</td><td>7.2K</td></tr>
+<tr><td>test_roundtrip_small</td><td>roundtrip_small</td><td>13.3 µs</td><td>75.4K</td></tr>
+<tr><td>test_to_dict_large</td><td>to_dict_large</td><td>171.0 µs</td><td>5.8K</td></tr>
 </tbody></table>
 
 <script>
@@ -143,13 +125,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [160563.25585698025, 160793.78705569945, 77317.36172218167],
+        data: [160140.00335701433, 154779.5110311218, 76032.05021397103],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "google (protobuf)" + ' (ops/s)',
-        data: [1341847.1689416321, 2919256.0069975313, 937482.1322322312],
+        data: [1601190.9848644387, 2920345.2199533223, 937419.8443147858],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

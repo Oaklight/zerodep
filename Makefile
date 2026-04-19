@@ -1,4 +1,4 @@
-.PHONY: all test benchmark lint fmt clean help manifest version-check dep-graph dep-check test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi test-frontmatter benchmark-frontmatter test-cache benchmark-cache
+.PHONY: all test benchmark lint fmt clean help manifest version-check dep-graph dep-check test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi test-frontmatter benchmark-frontmatter test-cache benchmark-cache test-readability benchmark-readability benchmark-readability-compare
 
 help:
 	@echo "Available targets:"
@@ -37,6 +37,9 @@ help:
 	@echo "  benchmark-frontmatter - Run frontmatter benchmarks"
 	@echo "  test-cache       - Run cache correctness tests"
 	@echo "  benchmark-cache  - Run cache benchmarks"
+	@echo "  test-readability - Run readability correctness tests"
+	@echo "  benchmark-readability - Run readability benchmarks (Python)"
+	@echo "  benchmark-readability-compare - Run three-way benchmark (zerodep vs lxml vs Mozilla JS)"
 	@echo "  manifest         - Regenerate manifest.json"
 	@echo "  version-check    - Check modules for uncommitted version bumps"
 	@echo "  dep-graph        - Show module dependency graph"
@@ -46,7 +49,7 @@ help:
 	@echo "  clean            - Clean generated files"
 
 test:
-	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_http_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py toon/test_toon_correctness.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py ansi/test_ansi_correctness.py frontmatter/test_frontmatter_correctness.py cache/test_cache_correctness.py -v
+	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_http_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py toon/test_toon_correctness.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py ansi/test_ansi_correctness.py frontmatter/test_frontmatter_correctness.py cache/test_cache_correctness.py readability/test_readability_correctness.py -v
 
 test-aes:
 	pytest aes/test_aes_correctness.py -v
@@ -88,7 +91,7 @@ test-markdown:
 	pytest markdown/test_markdown_correctness.py -v
 
 benchmark:
-	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_http_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonc/test_jsonc_benchmark.py retry/test_retry_benchmark.py toon/test_toon_benchmark.py tabulate/test_tabulate_benchmark.py soup/test_soup_benchmark.py validate/test_validate_benchmark.py markdown/test_markdown_benchmark.py diff/test_diff_benchmark.py frontmatter/test_frontmatter_benchmark.py cache/test_cache_benchmark.py -v
+	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_http_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonc/test_jsonc_benchmark.py retry/test_retry_benchmark.py toon/test_toon_benchmark.py tabulate/test_tabulate_benchmark.py soup/test_soup_benchmark.py validate/test_validate_benchmark.py markdown/test_markdown_benchmark.py diff/test_diff_benchmark.py frontmatter/test_frontmatter_benchmark.py cache/test_cache_benchmark.py readability/test_readability_benchmark.py -v
 
 benchmark-aes:
 	pytest aes/test_aes_benchmark.py -v
@@ -149,6 +152,16 @@ test-cache:
 
 benchmark-cache:
 	pytest cache/test_cache_benchmark.py -v
+
+test-readability:
+	pytest readability/test_readability_correctness.py -v
+
+benchmark-readability:
+	pytest readability/test_readability_benchmark.py -v
+
+benchmark-readability-compare:
+	cd readability && npm install --prefer-offline --no-audit 2>/dev/null; \
+	python readability/benchmark_compare.py
 
 manifest:
 	python zerodep.py manifest

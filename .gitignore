@@ -37,3 +37,7 @@ docs_zh/
 
 # complexipy tool local cache
 .complexipy_cache/
+
+# Node.js (readability JS benchmark dependencies)
+node_modules/
+package-lock.json

@@ -61,7 +61,7 @@ plugins:
             - ../vcs
             - ../ansi
             - ../scheduler
-            - ../search
+            - ../sparse_search
             - ../frontmatter
             - ../config
             - ../cache
@@ -95,7 +95,7 @@ plugins:
             - vcs
             - ansi
             - scheduler
-            - search
+            - sparse_search
             - frontmatter
             - config
             - cache
@@ -181,7 +181,7 @@ nav:
           - soup / HTML 解析器: modules/soup.md
           - diff / Diff 差异工具: modules/diff.md
       - 搜索与检索:
-          - search / 稀疏搜索: modules/search.md
+          - sparse_search / 稀疏搜索: modules/sparse_search.md
       - 配置:
           - dotenv / Dotenv 环境变量: modules/dotenv.md
           - config / 配置加载器: modules/config.md
@@ -226,7 +226,7 @@ nav:
           - soup / HTML 解析器: api/soup.md
           - diff / Diff 差异工具: api/diff.md
       - 搜索与检索:
-          - search / 稀疏搜索: api/search.md
+          - sparse_search / 稀疏搜索: api/sparse_search.md
       - 配置:
           - dotenv / Dotenv 环境变量: api/dotenv.md
           - config / 配置加载器: api/config.md
@@ -271,7 +271,7 @@ nav:
           - soup / HTML 解析器: benchmarks/soup.md
           - diff / Diff 差异工具: benchmarks/diff.md
       - 搜索与检索:
-          - search / 稀疏搜索: benchmarks/search.md
+          - sparse_search / 稀疏搜索: benchmarks/sparse_search.md
       - 配置:
           - dotenv / Dotenv 环境变量: benchmarks/dotenv.md
           - config / 配置加载器: benchmarks/config.md

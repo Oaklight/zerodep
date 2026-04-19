@@ -6,6 +6,20 @@
 
 ## [未发布]
 
+## [2026.4.20] - 2026-04-20
+
+### 新增模块
+
+- **Readability 模块**：零依赖的文章正文提取器，移植自 Mozilla Readability.js。`extract()` 执行完整的文章提取并返回元数据（标题、作者、摘要、发布时间、站点名称、语言、文字方向）。`is_probably_readable()` 提供快速可读性启发式检查。支持 JSON-LD 和 OpenGraph 元数据提取。两级重试机制（ruthless 开/关）确保提取鲁棒性。18 个 Mozilla Readability.js 测试用例用于交叉验证。三方 benchmark 对比：zerodep vs readability-lxml vs Mozilla JS。依赖 `soup` 模块（无 pip 依赖）。
+
+### 功能增强
+
+- **Soup 模块**：扩展树操作和序列化 API——`append()`、`insert()`、`extract()`、`replace_with()`、`unwrap()` 用于 DOM 树操作；`to_html()` / `__str__()` 用于 HTML 序列化；`__setitem__` / `__delitem__` 用于属性设置/删除；`Soup.new_tag()` 工厂方法用于创建独立的 Tag 节点。
+
+### 问题修复
+
+- **文档**：修复 `search` → `sparse_search` 模块重命名导致的 ReadTheDocs 构建失败。
+
 ## [2026.4.15] - 2026-04-15
 
 ### 新增命令

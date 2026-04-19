@@ -85,6 +85,18 @@ class TestWriteSmall:
 
         benchmark(run)
 
+    def test_zerodep_sqlite_batched(self, benchmark, tmp_path):
+        path = str(tmp_path / "bench_batched.db")
+
+        def run():
+            d = pd_open(path, commit_every=SMALL_N)
+            for k, v in _small_data().items():
+                d[k] = v
+            d.close()
+            os.unlink(path)
+
+        benchmark(run)
+
     def test_shelve(self, benchmark, tmp_path):
         path = str(tmp_path / "bench_shelve")
 
@@ -130,6 +142,18 @@ class TestWriteLarge:
 
         def run():
             d = pd_open(path)
+            for k, v in _large_data().items():
+                d[k] = v
+            d.close()
+            os.unlink(path)
+
+        benchmark(run)
+
+    def test_zerodep_sqlite_batched(self, benchmark, tmp_path):
+        path = str(tmp_path / "bench_batched.db")
+
+        def run():
+            d = pd_open(path, commit_every=LARGE_N)
             for k, v in _large_data().items():
                 d[k] = v
             d.close()

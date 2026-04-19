@@ -221,21 +221,32 @@ _TABLE_NAME_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
 class SqliteBackend:
-    """Write-through SQLite backend.
+    """Buffered SQLite backend with deferred commits.
 
-    Each :meth:`set` / :meth:`delete` / :meth:`clear` is committed
-    immediately.  Uses WAL journal mode for concurrency.
+    Writes are accumulated in an open transaction and committed either
+    periodically (every *commit_every* write operations) or explicitly
+    via :meth:`flush` / :meth:`close`.  Uses WAL journal mode with
+    ``synchronous=NORMAL`` for a good balance of performance and crash
+    safety.
+
+    Reads always see uncommitted writes within the same connection
+    (read-your-own-writes), so the buffering is transparent to callers.
 
     Args:
         path: Path to the SQLite database file.
         table: Table name for storage (default ``"items"``).  Must be a
             valid SQL identifier (letters, digits, underscores).
+        commit_every: Number of write operations before an automatic
+            commit.  ``0`` disables periodic commits — only
+            :meth:`flush` and :meth:`close` will commit.
+            Defaults to ``0`` (commit only on flush/close).
     """
 
     def __init__(
         self,
         path: str | os.PathLike[str],
         table: str = "items",
+        commit_every: int = 0,
     ) -> None:
         if not _TABLE_NAME_RE.fullmatch(table):
             raise ValueError(
@@ -243,14 +254,35 @@ class SqliteBackend:
             )
         self._path = Path(path)
         self._table = table
+        self._commit_every = commit_every
+        self._pending = 0
         self._path.parent.mkdir(parents=True, exist_ok=True)
         self._conn = sqlite3.connect(str(self._path), check_same_thread=False)
         self._conn.execute("PRAGMA journal_mode=WAL")
+        self._conn.execute("PRAGMA synchronous=NORMAL")
         self._conn.execute(
             f"CREATE TABLE IF NOT EXISTS {table} "
             "(key TEXT PRIMARY KEY, value TEXT NOT NULL)"
         )
         self._conn.commit()
+
+    # -- Internal helpers --------------------------------------------------
+
+    def _auto_commit(self) -> None:
+        """Commit based on the *commit_every* policy.
+
+        When *commit_every* is ``0`` (the default), every mutation is
+        committed immediately (write-through).  Otherwise commits are
+        deferred until *commit_every* writes have accumulated.
+        """
+        if not self._commit_every:
+            # Write-through: commit every mutation.
+            self._conn.commit()
+            return
+        self._pending += 1
+        if self._pending >= self._commit_every:
+            self._conn.commit()
+            self._pending = 0
 
     # -- Backend interface -------------------------------------------------
 
@@ -267,13 +299,13 @@ class SqliteBackend:
             f"INSERT OR REPLACE INTO {self._table} (key, value) VALUES (?, ?)",
             (key, value),
         )
-        self._conn.commit()
+        self._auto_commit()
 
     def delete(self, key: str) -> None:
         cur = self._conn.execute(f"DELETE FROM {self._table} WHERE key = ?", (key,))
-        self._conn.commit()
         if cur.rowcount == 0:
             raise KeyError(key)
+        self._auto_commit()
 
     def contains(self, key: str) -> bool:
         row = self._conn.execute(
@@ -293,13 +325,19 @@ class SqliteBackend:
     def clear(self) -> None:
         self._conn.execute(f"DELETE FROM {self._table}")
         self._conn.commit()
+        self._pending = 0
 
     def flush(self) -> None:
-        """Commit any pending transaction (no-op in write-through mode)."""
+        """Commit any pending writes to disk."""
         self._conn.commit()
+        self._pending = 0
 
     def close(self) -> None:
-        """Close the database connection."""
+        """Flush pending writes and close the database connection."""
+        try:
+            self._conn.commit()
+        except Exception:
+            pass
         try:
             self._conn.close()
         except Exception:
@@ -458,6 +496,7 @@ def open(
     serializer: Serializer | None = None,
     lock: threading.Lock | bool = True,
     table: str = "items",
+    commit_every: int = 0,
 ) -> PersistDict:
     """Open a persistent dictionary.
 
@@ -468,6 +507,11 @@ def open(
         serializer: Value serializer.  Defaults to :class:`JsonSerializer`.
         lock: Thread-safety control (see :class:`PersistDict`).
         table: Table name for SQLite backend (ignored for JSON).
+        commit_every: (SQLite only) Number of writes between automatic
+            commits.  ``0`` (default) commits every write.  Set to a
+            positive integer to batch writes and commit periodically —
+            :meth:`~PersistDict.flush` and :meth:`~PersistDict.close`
+            always commit remaining writes.  Ignored for JSON backend.
 
     Returns:
         A :class:`PersistDict` instance backed by the chosen storage.
@@ -490,7 +534,7 @@ def open(
     if kind == "json":
         be: Backend = JsonFileBackend(p)
     elif kind == "sqlite":
-        be = SqliteBackend(p, table=table)
+        be = SqliteBackend(p, table=table, commit_every=commit_every)
     else:
         raise ValueError(f"unknown backend {backend!r}")
 

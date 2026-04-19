@@ -859,3 +859,360 @@ class TestRealWorldHTML:
         assert our_tag is not None
         assert their_tag is not None
         assert our_tag.text == their_tag.text
+
+
+# ── TestAppend ──
+
+
+class TestAppend:
+    def test_append_tag(self):
+        ours = _ours("<div></div>")
+        theirs = _theirs("<div></div>")
+        our_div = ours.find("div")
+        their_div = theirs.find("div")
+        our_new = Tag("p", {})
+        our_new.children.append("Appended")
+        their_new = theirs.new_tag("p")
+        their_new.string = "Appended"
+        our_div.append(our_new)
+        their_div.append(their_new)
+        assert our_div.find("p").text == their_div.find("p").text
+
+    def test_append_string(self):
+        ours = _ours("<div></div>")
+        theirs = _theirs("<div></div>")
+        our_div = ours.find("div")
+        their_div = theirs.find("div")
+        our_div.append("hello")
+        their_div.append("hello")
+        assert our_div.get_text() == their_div.get_text()
+
+    def test_append_detaches_from_old_parent(self):
+        ours = _ours("<div><p>Child</p></div><section></section>")
+        p = ours.find("p")
+        section = ours.find("section")
+        section.append(p)
+        assert ours.find("div").find("p") is None
+        assert section.find("p") is not None
+        assert section.find("p").text == "Child"
+
+    def test_append_sets_parent(self):
+        ours = _ours("<div></div>")
+        div = ours.find("div")
+        child = Tag("span", {})
+        div.append(child)
+        assert child.parent is div
+
+    def test_append_multiple(self):
+        ours = _ours("<ul></ul>")
+        ul = ours.find("ul")
+        for i in range(3):
+            li = Tag("li", {})
+            li.children.append(f"Item {i}")
+            ul.append(li)
+        assert len(ul.find_all("li")) == 3
+
+
+# ── TestInsert ──
+
+
+class TestInsert:
+    def test_insert_at_beginning(self):
+        ours = _ours("<div><p>Second</p></div>")
+        div = ours.find("div")
+        new_p = Tag("p", {})
+        new_p.children.append("First")
+        div.insert(0, new_p)
+        ps = div.find_all("p")
+        assert len(ps) == 2
+        assert ps[0].text == "First"
+        assert ps[1].text == "Second"
+
+    def test_insert_at_end(self):
+        ours = _ours("<div><p>First</p></div>")
+        div = ours.find("div")
+        new_p = Tag("p", {})
+        new_p.children.append("Last")
+        div.insert(999, new_p)  # beyond end => append
+        ps = div.find_all("p")
+        assert len(ps) == 2
+        assert ps[-1].text == "Last"
+
+    def test_insert_in_middle(self):
+        ours = _ours("<div><p>A</p><p>C</p></div>")
+        div = ours.find("div")
+        new_p = Tag("p", {})
+        new_p.children.append("B")
+        div.insert(1, new_p)
+        ps = div.find_all("p")
+        assert [p.text for p in ps] == ["A", "B", "C"]
+
+    def test_insert_string(self):
+        ours = _ours("<div><p>After</p></div>")
+        div = ours.find("div")
+        div.insert(0, "Before text ")
+        assert div.get_text().startswith("Before text ")
+
+    def test_insert_detaches_from_old_parent(self):
+        ours = _ours("<div><span>X</span></div><section><p>Y</p></section>")
+        span = ours.find("span")
+        section = ours.find("section")
+        section.insert(0, span)
+        assert ours.find("div").find("span") is None
+        children = [c for c in section.children if isinstance(c, Tag)]
+        assert children[0].name == "span"
+
+
+# ── TestExtractMethod ──
+
+
+class TestExtractMethod:
+    def test_extract_removes_from_parent(self):
+        ours = _ours("<div><p>Keep</p><p>Remove</p></div>")
+        theirs = _theirs("<div><p>Keep</p><p>Remove</p></div>")
+        our_ps = ours.find_all("p")
+        their_ps = theirs.find_all("p")
+        our_ps[1].extract()
+        their_ps[1].extract()
+        assert len(ours.find_all("p")) == len(theirs.find_all("p"))
+        assert len(ours.find_all("p")) == 1
+
+    def test_extract_keeps_subtree(self):
+        ours = _ours("<div><ul><li>A</li><li>B</li></ul></div>")
+        ul = ours.find("ul")
+        extracted = ul.extract()
+        assert extracted.name == "ul"
+        assert len(extracted.find_all("li")) == 2
+        assert extracted.parent is None
+
+    def test_extract_returns_self(self):
+        ours = _ours("<div><span>X</span></div>")
+        span = ours.find("span")
+        result = span.extract()
+        assert result is span
+
+    def test_extract_idempotent(self):
+        ours = _ours("<div><span>X</span></div>")
+        span = ours.find("span")
+        span.extract()
+        # Calling again on detached element should not crash.
+        result = span.extract()
+        assert result is span
+        assert span.parent is None
+
+
+# ── TestReplaceWith ──
+
+
+class TestReplaceWith:
+    def test_replace_tag(self):
+        ours = _ours("<div><p>Old</p></div>")
+        theirs = _theirs("<div><p>Old</p></div>")
+        our_p = ours.find("p")
+        their_p = theirs.find("p")
+        our_new = Tag("span", {})
+        our_new.children.append("New")
+        their_new = theirs.new_tag("span")
+        their_new.string = "New"
+        our_p.replace_with(our_new)
+        their_p.replace_with(their_new)
+        assert ours.find("span").text == theirs.find("span").text
+        assert ours.find("p") is None
+
+    def test_replace_with_string(self):
+        ours = _ours("<div><p>Remove me</p></div>")
+        p = ours.find("p")
+        p.replace_with("Plain text")
+        div = ours.find("div")
+        assert "Plain text" in div.get_text()
+        assert ours.find("p") is None
+
+    def test_replace_detaches_old(self):
+        ours = _ours("<div><p>Old</p></div>")
+        p = ours.find("p")
+        new_tag = Tag("span", {})
+        old = p.replace_with(new_tag)
+        assert old is p
+        assert old.parent is None
+
+    def test_replace_raises_on_detached(self):
+        tag = Tag("p", {})
+        with pytest.raises(ValueError):
+            tag.replace_with(Tag("span", {}))
+
+
+# ── TestUnwrap ──
+
+
+class TestUnwrap:
+    def test_unwrap_keeps_children(self):
+        ours = _ours("<div><b><i>text</i></b></div>")
+        b = ours.find("b")
+        b.unwrap()
+        # <b> should be gone, but <i> should remain inside <div>.
+        assert ours.find("b") is None
+        i = ours.find("i")
+        assert i is not None
+        assert i.text == "text"
+        assert i.parent.name == "div"
+
+    def test_unwrap_text_children(self):
+        ours = _ours("<div><span>hello world</span></div>")
+        span = ours.find("span")
+        span.unwrap()
+        assert ours.find("span") is None
+        div = ours.find("div")
+        assert "hello world" in div.get_text()
+
+    def test_unwrap_mixed_children(self):
+        ours = _ours("<div><span>Text <b>bold</b> more</span></div>")
+        span = ours.find("span")
+        span.unwrap()
+        assert ours.find("span") is None
+        div = ours.find("div")
+        assert "Text" in div.get_text()
+        assert div.find("b") is not None
+        assert div.find("b").text == "bold"
+
+    def test_unwrap_detached_noop(self):
+        tag = Tag("span", {})
+        tag.children.append("text")
+        tag.unwrap()  # should not crash
+        assert tag.parent is None
+
+
+# ── TestSetDelItem ──
+
+
+class TestSetDelItem:
+    def test_set_attribute(self):
+        ours = _ours("<div></div>")
+        theirs = _theirs("<div></div>")
+        our_div = ours.find("div")
+        their_div = theirs.find("div")
+        our_div["id"] = "main"
+        their_div["id"] = "main"
+        assert our_div["id"] == their_div["id"]
+
+    def test_set_class(self):
+        ours = _ours("<div></div>")
+        div = ours.find("div")
+        div["class"] = ["a", "b"]
+        assert div["class"] == ["a", "b"]
+
+    def test_overwrite_attribute(self):
+        ours = _ours('<div id="old"></div>')
+        div = ours.find("div")
+        div["id"] = "new"
+        assert div["id"] == "new"
+
+    def test_delete_attribute(self):
+        ours = _ours('<div id="test" class="x"></div>')
+        theirs = _theirs('<div id="test" class="x"></div>')
+        our_div = ours.find("div")
+        their_div = theirs.find("div")
+        del our_div["id"]
+        del their_div["id"]
+        assert "id" not in our_div
+        assert "id" not in their_div
+
+    def test_delete_missing_raises(self):
+        ours = _ours("<div></div>")
+        div = ours.find("div")
+        with pytest.raises(KeyError):
+            del div["nonexistent"]
+
+
+# ── TestToHtml ──
+
+
+class TestToHtml:
+    def test_simple_tag(self):
+        ours = _ours("<p>Hello</p>")
+        p = ours.find("p")
+        html = p.to_html()
+        assert html == "<p>Hello</p>"
+
+    def test_nested_tags(self):
+        ours = _ours("<div><p>A</p><p>B</p></div>")
+        div = ours.find("div")
+        html = div.to_html()
+        assert "<div>" in html
+        assert "<p>A</p>" in html
+        assert "<p>B</p>" in html
+        assert html.endswith("</div>")
+
+    def test_self_closing_tags(self):
+        ours = _ours("<p>Before<br>After</p>")
+        p = ours.find("p")
+        html = p.to_html()
+        assert "<br>" in html
+        # <br> should NOT have a closing tag.
+        assert "</br>" not in html
+
+    def test_attributes_preserved(self):
+        ours = _ours('<a href="/x" id="link1">Click</a>')
+        a = ours.find("a")
+        html = a.to_html()
+        assert 'href="/x"' in html
+        assert 'id="link1"' in html
+        assert "Click" in html
+
+    def test_class_list_joined(self):
+        ours = _ours('<div class="a b c">X</div>')
+        div = ours.find("div")
+        html = div.to_html()
+        assert 'class="a b c"' in html
+
+    def test_boolean_attribute(self):
+        ours = _ours("<input disabled>")
+        inp = ours.find("input")
+        html = inp.to_html()
+        assert "disabled" in html
+
+    def test_str_equals_to_html(self):
+        ours = _ours("<div><p>Hello</p></div>")
+        div = ours.find("div")
+        assert str(div) == div.to_html()
+
+    def test_soup_to_html(self):
+        html_str = "<html><body><p>Test</p></body></html>"
+        ours = _ours(html_str)
+        result = ours.to_html()
+        assert "<p>Test</p>" in result
+        assert "<html>" in result
+
+    def test_roundtrip_preserves_structure(self):
+        """Parse -> to_html -> re-parse should give same text."""
+        ours = _ours(REAL_WORLD_HTML)
+        html2 = ours.to_html()
+        reparsed = _ours(html2)
+        # Same tag count
+        assert len(ours.find_all("div")) == len(reparsed.find_all("div"))
+        assert len(ours.find_all("a")) == len(reparsed.find_all("a"))
+
+
+# ── TestNewTag ──
+
+
+class TestNewTag:
+    def test_new_tag_basic(self):
+        ours = _ours("<div></div>")
+        tag = ours.new_tag("span")
+        assert tag.name == "span"
+        assert tag.parent is None
+        assert tag.children == []
+
+    def test_new_tag_with_attrs(self):
+        ours = _ours("<div></div>")
+        tag = ours.new_tag("a", {"href": "/link", "class": ["nav"]})
+        assert tag["href"] == "/link"
+        assert tag["class"] == ["nav"]
+
+    def test_new_tag_append_to_tree(self):
+        ours = _ours("<div></div>")
+        div = ours.find("div")
+        span = ours.new_tag("span")
+        span.children.append("Added")
+        div.append(span)
+        assert div.find("span").text == "Added"

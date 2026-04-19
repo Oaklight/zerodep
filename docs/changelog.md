@@ -20,7 +20,8 @@
 
 - **Cache 模块**：优化 `TypedKey` 构造——一次性元组构造，移除冗余的 `sorted()` 调用。此前比 cachetools 慢 1.3 倍，现在**快 1.2 倍**。
 - **Cache 模块**：优化 LFU 淘汰——在 `popitem` 中绕过 `__touch`。此前比 cachetools 慢 1.4 倍，现在**基本持平**。
-- LRU、TTL 及混合负载基准无性能回退。
+- **PersistDict 模块**：优化 SQLite 写入性能——`PRAGMA synchronous=NORMAL`、`commit_every` 参数支持批量写入、延迟提交。减少批量操作时每次写入的 fsync 开销。
+- LRU、TTL 及混合负载基准无性能回退（cache）。读取/遍历基准无性能回退（persistdict）。
 
 ### 问题修复
 

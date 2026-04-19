@@ -7,14 +7,14 @@ zerodep persistdict（JSON 和 SQLite 后端）与标准库 [`shelve`](https://d
     - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
     - **对标库:** sqlitedict 2.1.0
-    - **最后更新:** 2026-04-15
+    - **最后更新:** 2026-04-20
 
 ## 实现对比
 
 | 实现 | 后端 | 说明 |
 |------|------|------|
 | **zerodep (JSON)** | `persistdict.py` | JSON 文件后端，缓冲写入，原子刷新 |
-| **zerodep (SQLite)** | `persistdict.py` | SQLite WAL 后端，直写模式 |
+| **zerodep (SQLite)** | `persistdict.py` | SQLite WAL 后端，延迟提交 + `PRAGMA synchronous=NORMAL` |
 | **shelve** | *（标准库）* | 基于 dbm 的持久化字典，pickle 序列化 |
 | **sqlitedict** | *（参考库）* | 基于 SQLite 的字典，pickle 序列化 |
 
@@ -76,7 +76,7 @@ zerodep persistdict（JSON 和 SQLite 后端）与标准库 [`shelve`](https://d
 ## 要点总结
 
 - **JSON 后端整体最快** -- 缓冲写入 + 原子刷新使其成为中小型数据集的最佳选择。
-- **SQLite 后端以写入速度换取持久性** -- 直写提交比 JSON 的缓冲方式慢，但每次写入都立即持久化。
+- **SQLite 后端以写入速度换取持久性** -- 延迟提交配合 `PRAGMA synchronous=NORMAL` 在持久性和性能间取得平衡。通过 `commit_every` 参数进行批量写入可进一步降低每次写入的开销。
 - **两种后端都远超 sqlitedict** -- 写入快 10-43 倍，读取快 15-31 倍。这是因为 sqlitedict 使用 pickle 序列化且每次操作都有提交开销。
 - **明显快于 shelve** -- zerodep JSON 写入比 shelve 快 3.9-4.7 倍，读取快 4.0 倍。SQLite 后端也比 shelve 在各项操作中快 1.1-1.9 倍。
 - **无 pickle** -- 不同于 shelve 和 sqlitedict，zerodep 默认使用 JSON 序列化，避免反序列化漏洞。

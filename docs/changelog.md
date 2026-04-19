@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.4.20] - 2026-04-20
+
+### New Modules
+
+- **Readability module**: zero-dependency article content extractor ported from Mozilla Readability.js. `extract()` performs full article extraction with metadata (title, author, excerpt, published_time, site_name, lang, dir). `is_probably_readable()` provides a quick readability heuristic check. Supports JSON-LD and OpenGraph metadata extraction. 2-level retry (ruthless on/off) for robust extraction. 18 Mozilla Readability.js test fixtures for cross-validation. Three-way benchmark: zerodep vs readability-lxml vs Mozilla JS. Depends on `soup` module (no pip dependencies).
+
+### Enhancements
+
+- **Soup module**: extended with tree mutation and serialization APIs — `append()`, `insert()`, `extract()`, `replace_with()`, `unwrap()` for tree manipulation; `to_html()` / `__str__()` for HTML serialization; `__setitem__` / `__delitem__` for attribute setting/deletion; `Soup.new_tag()` factory method for creating detached Tag nodes.
+
+### Bug Fixes
+
+- **Docs**: fixed ReadTheDocs build failure caused by `search` → `sparse_search` module rename.
+
 ## [2026.4.15] - 2026-04-15
 
 ### New Commands

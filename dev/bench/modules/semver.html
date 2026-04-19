@@ -83,17 +83,17 @@ td { white-space: nowrap; }
 <h1>semver</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
+<p class="meta">Version: e73d95d | Commit: e73d95d1 | 2026-04-19T17:45:42.639035+00:00</p>
 <h2>semver</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Compare</td><td>zerodep</td><td>packaging</td><td>5.0 µs</td><td>3.8 µs</td><td>201.7K</td><td>266.0K</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Parse Complex</td><td>zerodep</td><td>packaging</td><td>31.4 µs</td><td>22.9 µs</td><td>31.8K</td><td>43.7K</td><td class="ratio-cell slower">1.4x slower</td></tr>
-<tr><td>Parse Prerelease</td><td>zerodep</td><td>packaging</td><td>26.7 µs</td><td>21.5 µs</td><td>37.5K</td><td>46.5K</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Parse Simple</td><td>zerodep</td><td>packaging</td><td>19.8 µs</td><td>6.1 µs</td><td>50.6K</td><td>165.0K</td><td class="ratio-cell slower">3.3x slower</td></tr>
-<tr><td>Property Access</td><td>zerodep</td><td>packaging</td><td>7.6 µs</td><td>9.5 µs</td><td>131.4K</td><td>105.0K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Sort</td><td>zerodep</td><td>packaging</td><td>2.3 µs</td><td>1.9 µs</td><td>427.2K</td><td>530.6K</td><td class="ratio-cell slower">1.2x slower</td></tr>
+<tr><td>Compare</td><td>zerodep</td><td>packaging</td><td>3.5 µs</td><td>3.8 µs</td><td>285.2K</td><td>265.6K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse Complex</td><td>zerodep</td><td>packaging</td><td>23.6 µs</td><td>22.5 µs</td><td>42.4K</td><td>44.5K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse Prerelease</td><td>zerodep</td><td>packaging</td><td>20.5 µs</td><td>21.3 µs</td><td>48.9K</td><td>47.0K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse Simple</td><td>zerodep</td><td>packaging</td><td>14.2 µs</td><td>5.9 µs</td><td>70.4K</td><td>169.5K</td><td class="ratio-cell slower">2.4x slower</td></tr>
+<tr><td>Property Access</td><td>zerodep</td><td>packaging</td><td>1.2 µs</td><td>9.0 µs</td><td>843.6K</td><td>111.1K</td><td class="ratio-cell faster">7.6x faster</td></tr>
+<tr><td>Sort</td><td>zerodep</td><td>packaging</td><td>1.7 µs</td><td>1.9 µs</td><td>580.6K</td><td>515.0K</td><td class="ratio-cell faster">1.1x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -106,13 +106,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [201654.7355542092, 31836.13093977236, 37475.31936392955, 50577.441471851205, 131438.37386042657, 427152.2303518325],
+        data: [285180.81185656943, 42404.073082212955, 48870.4079624961, 70353.11324267287, 843625.0639987565, 580623.0608430075],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "packaging" + ' (ops/s)',
-        data: [266030.85316564835, 43697.33248267529, 46486.25016015409, 165047.43115291497, 105043.77937739519, 530564.6859087739],
+        data: [265637.24377386726, 44451.626464597466, 47027.302556961586, 169510.87409659429, 111111.96613799474, 514962.0283449888],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

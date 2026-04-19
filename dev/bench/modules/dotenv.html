@@ -83,14 +83,14 @@ td { white-space: nowrap; }
 <h1>dotenv</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
+<p class="meta">Version: e73d95d | Commit: e73d95d1 | 2026-04-19T17:45:42.639035+00:00</p>
 <h2>dotenv</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>python-dotenv</td><td>1.38 ms</td><td>1.38 ms</td><td>722.1</td><td>722.5</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-dotenv</td><td>195.7 µs</td><td>195.4 µs</td><td>5.1K</td><td>5.1K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>python-dotenv</td><td>27.9 µs</td><td>27.9 µs</td><td>35.9K</td><td>35.8K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>python-dotenv</td><td>1.33 ms</td><td>1.33 ms</td><td>753.9</td><td>752.7</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-dotenv</td><td>190.1 µs</td><td>189.0 µs</td><td>5.3K</td><td>5.3K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>python-dotenv</td><td>27.1 µs</td><td>27.0 µs</td><td>36.9K</td><td>37.1K</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -103,13 +103,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [722.092746098895, 5109.676561663852, 35857.37099193482],
+        data: [753.8751445711657, 5260.081990509041, 36869.19244599909],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-dotenv" + ' (ops/s)',
-        data: [722.5310709922801, 5117.675555119949, 35798.815841342606],
+        data: [752.6521403152132, 5291.831768374187, 37096.92066038861],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

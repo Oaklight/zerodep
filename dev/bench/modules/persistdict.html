@@ -83,28 +83,30 @@ td { white-space: nowrap; }
 <h1>persistdict</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
+<p class="meta">Version: e73d95d | Commit: e73d95d1 | 2026-04-19T17:45:42.639035+00:00</p>
 <h2>persistdict</h2>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>433.2 µs</td><td>2.3K</td></tr>
-<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>872.4 µs</td><td>1.1K</td></tr>
-<tr><td>Iterate (Small)</td><td>shelve</td><td>207.4 µs</td><td>4.8K</td></tr>
-<tr><td>Iterate (Small)</td><td>sqlitedict</td><td>1.35 ms</td><td>739.8</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_json</td><td>428.0 µs</td><td>2.3K</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>828.8 µs</td><td>1.2K</td></tr>
-<tr><td>Read (Small)</td><td>shelve</td><td>187.1 µs</td><td>5.3K</td></tr>
-<tr><td>Read (Small)</td><td>sqlitedict</td><td>9.99 ms</td><td>100.1</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_json</td><td>16.08 ms</td><td>62.2</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>412.34 ms</td><td>2.4</td></tr>
-<tr><td>Write (Large)</td><td>shelve</td><td>12.45 ms</td><td>80.3</td></tr>
-<tr><td>Write (Large)</td><td>sqlitedict</td><td>834.57 ms</td><td>1.2</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_json</td><td>425.0 µs</td><td>2.4K</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>25.08 ms</td><td>39.9</td></tr>
-<tr><td>Write (Small)</td><td>shelve</td><td>537.8 µs</td><td>1.9K</td></tr>
-<tr><td>Write (Small)</td><td>sqlitedict</td><td>18.73 ms</td><td>53.4</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>416.3 µs</td><td>2.4K</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>880.0 µs</td><td>1.1K</td></tr>
+<tr><td>Iterate (Small)</td><td>shelve</td><td>188.3 µs</td><td>5.3K</td></tr>
+<tr><td>Iterate (Small)</td><td>sqlitedict</td><td>1.26 ms</td><td>796.5</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_json</td><td>402.4 µs</td><td>2.5K</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>848.2 µs</td><td>1.2K</td></tr>
+<tr><td>Read (Small)</td><td>shelve</td><td>175.2 µs</td><td>5.7K</td></tr>
+<tr><td>Read (Small)</td><td>sqlitedict</td><td>9.05 ms</td><td>110.6</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_json</td><td>16.15 ms</td><td>61.9</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>67.18 ms</td><td>14.9</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_sqlite_batched</td><td>22.80 ms</td><td>43.9</td></tr>
+<tr><td>Write (Large)</td><td>shelve</td><td>13.39 ms</td><td>74.7</td></tr>
+<tr><td>Write (Large)</td><td>sqlitedict</td><td>709.44 ms</td><td>1.4</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_json</td><td>389.9 µs</td><td>2.6K</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>3.87 ms</td><td>258.1</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_sqlite_batched</td><td>2.52 ms</td><td>396.7</td></tr>
+<tr><td>Write (Small)</td><td>shelve</td><td>396.9 µs</td><td>2.5K</td></tr>
+<tr><td>Write (Small)</td><td>sqlitedict</td><td>18.08 ms</td><td>55.3</td></tr>
 </tbody></table>
 
 <script>

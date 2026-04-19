@@ -83,23 +83,23 @@ td { white-space: nowrap; }
 <h1>diff</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
+<p class="meta">Version: e73d95d | Commit: e73d95d1 | 2026-04-19T17:45:42.639035+00:00</p>
 <h2>diff</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>unidiff</td><td>97.7 µs</td><td>196.6 µs</td><td>10.2K</td><td>5.1K</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>unidiff</td><td>31.5 µs</td><td>64.4 µs</td><td>31.7K</td><td>15.5K</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>unidiff</td><td>10.6 µs</td><td>22.5 µs</td><td>94.8K</td><td>44.4K</td><td class="ratio-cell faster">2.1x faster</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>unidiff</td><td>94.8 µs</td><td>185.9 µs</td><td>10.5K</td><td>5.4K</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>unidiff</td><td>31.1 µs</td><td>61.3 µs</td><td>32.1K</td><td>16.3K</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>unidiff</td><td>10.4 µs</td><td>21.1 µs</td><td>96.3K</td><td>47.4K</td><td class="ratio-cell faster">2.0x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Apply (Large)</td><td>zerodep</td><td>60.9 µs</td><td>16.4K</td></tr>
-<tr><td>Apply (Medium)</td><td>zerodep</td><td>7.5 µs</td><td>133.7K</td></tr>
-<tr><td>Apply (Small)</td><td>zerodep</td><td>2.6 µs</td><td>391.2K</td></tr>
+<tr><td>Apply (Large)</td><td>zerodep</td><td>60.0 µs</td><td>16.7K</td></tr>
+<tr><td>Apply (Medium)</td><td>zerodep</td><td>7.5 µs</td><td>134.2K</td></tr>
+<tr><td>Apply (Small)</td><td>zerodep</td><td>2.5 µs</td><td>400.3K</td></tr>
 </tbody></table>
 
 <script>
@@ -111,13 +111,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [10234.228926400283, 31709.595226691617, 94772.52674967304],
+        data: [10546.460859475535, 32124.55089243207, 96260.02691942806],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "unidiff" + ' (ops/s)',
-        data: [5087.071273306301, 15523.511863776539, 44403.39014062232],
+        data: [5377.926624302765, 16306.710672158582, 47361.11173451529],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

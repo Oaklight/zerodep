@@ -83,23 +83,23 @@ td { white-space: nowrap; }
 <h1>sparse_search</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 36b8778 | Commit: 36b87780 | 2026-04-19T17:27:11.877795+00:00</p>
+<p class="meta">Version: e73d95d | Commit: e73d95d1 | 2026-04-19T17:45:42.639035+00:00</p>
 <h2>sparse_search</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>108.59 ms</td><td>12.71 ms</td><td>9.2</td><td>78.7</td><td class="ratio-cell slower">8.5x slower</td></tr>
-<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>3.5 µs</td><td>394.4 µs</td><td>284.7K</td><td>2.5K</td><td class="ratio-cell faster">112.3x faster</td></tr>
-<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>3.1 µs</td><td>117.5 µs</td><td>322.4K</td><td>8.5K</td><td class="ratio-cell faster">37.9x faster</td></tr>
+<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>131.47 ms</td><td>14.14 ms</td><td>7.6</td><td>70.7</td><td class="ratio-cell slower">9.3x slower</td></tr>
+<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>3.2 µs</td><td>391.5 µs</td><td>312.3K</td><td>2.6K</td><td class="ratio-cell faster">122.3x faster</td></tr>
+<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>3.1 µs</td><td>103.8 µs</td><td>324.8K</td><td>9.6K</td><td class="ratio-cell faster">33.7x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>1.25 ms</td><td>798.4</td></tr>
-<tr><td>Calibration Performance</td><td>search_raw</td><td>42.3 µs</td><td>23.6K</td></tr>
-<tr><td>Calibration Performance</td><td>search_calibrated</td><td>81.1 µs</td><td>12.3K</td></tr>
+<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>1.02 ms</td><td>984.6</td></tr>
+<tr><td>Calibration Performance</td><td>search_raw</td><td>39.4 µs</td><td>25.4K</td></tr>
+<tr><td>Calibration Performance</td><td>search_calibrated</td><td>73.9 µs</td><td>13.5K</td></tr>
 </tbody></table>
 
 <script>
@@ -111,13 +111,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [9.208584843191021, 284659.3079335626, 322447.6199413838],
+        data: [7.606507086458162, 312349.3612251197, 324783.1346623662],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "rank-bm25" + ' (ops/s)',
-        data: [78.66965940368796, 2535.3392689616735, 8509.257974185588],
+        data: [70.72379620570335, 2554.5791028519106, 9630.310930934884],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -155,6 +155,35 @@ def _class_to_operation(cls_name: str) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _pairing_key(method: str) -> str:
+    """Derive a canonical key by stripping zerodep/reference markers.
+
+    For example ``test_encode_small_ours`` and ``test_encode_small_ref``
+    both map to ``encode_small``, so they will be paired together while
+    ``encode_large_*`` variants form a separate pair.
+    """
+    m = method.lower().removeprefix("test_")
+
+    # Strip zerodep markers
+    for marker in _ZERODEP_MARKERS:
+        if marker in m:
+            m = m.replace(marker, "", 1)
+            break
+    else:
+        # Strip reference library markers (only when no zerodep marker found)
+        for frag in _REF_LIBS:
+            if frag in m:
+                m = m.replace(frag, "", 1)
+                break
+
+    # Normalise residual underscores
+    m = m.strip("_")
+    while "__" in m:
+        m = m.replace("__", "_")
+
+    return m
+
+
 def _build_comparisons(modules: dict) -> list[dict]:
     """Build a list of module summaries with paired comparisons."""
     result = []
@@ -196,25 +225,65 @@ def _build_comparisons(modules: dict) -> list[dict]:
                     )
                 continue
 
-            # Pair each zerodep variant with each reference
-            for zd in zd_entries:
-                for ref in ref_entries:
-                    # ratio = zerodep_time / ref_time
-                    # < 1 means zerodep is faster
-                    ratio = (
-                        zd["mean"] / ref["mean"] if ref["mean"] > 0 else float("inf")
-                    )
-                    zd_variant = zd["method"].removeprefix("test_")
-                    pairs.append(
+            # Group by canonical pairing key so that only same-size /
+            # same-operation variants are compared (e.g. encode_small_ours
+            # pairs with encode_small_ref, NOT encode_large_ref).
+            zd_by_key: dict[str, list] = defaultdict(list)
+            for e in zd_entries:
+                zd_by_key[_pairing_key(e["method"])].append(e)
+
+            ref_by_key: dict[str, list] = defaultdict(list)
+            for e in ref_entries:
+                ref_by_key[_pairing_key(e["method"])].append(e)
+
+            matched_zd_keys: set[str] = set()
+            matched_ref_keys: set[str] = set()
+
+            for key in sorted(set(zd_by_key) & set(ref_by_key)):
+                matched_zd_keys.add(key)
+                matched_ref_keys.add(key)
+                for zd in zd_by_key[key]:
+                    for ref in ref_by_key[key]:
+                        ratio = (
+                            zd["mean"] / ref["mean"]
+                            if ref["mean"] > 0
+                            else float("inf")
+                        )
+                        zd_variant = zd["method"].removeprefix("test_")
+                        pairs.append(
+                            {
+                                "operation": op_name,
+                                "zd_variant": zd_variant,
+                                "zd_mean": zd["mean"],
+                                "zd_ops": zd["ops"],
+                                "ref_label": ref["label"],
+                                "ref_mean": ref["mean"],
+                                "ref_ops": ref["ops"],
+                                "ratio": ratio,
+                            }
+                        )
+
+            # Unmatched zerodep entries → standalone
+            for key in sorted(set(zd_by_key) - matched_zd_keys):
+                for e in zd_by_key[key]:
+                    standalone.append(
                         {
                             "operation": op_name,
-                            "zd_variant": zd_variant,
-                            "zd_mean": zd["mean"],
-                            "zd_ops": zd["ops"],
-                            "ref_label": ref["label"],
-                            "ref_mean": ref["mean"],
-                            "ref_ops": ref["ops"],
-                            "ratio": ratio,
+                            "variant": e["method"].removeprefix("test_"),
+                            "mean": e["mean"],
+                            "ops": e["ops"],
+                        }
+                    )
+
+            # Unmatched reference entries → standalone
+            for key in sorted(set(ref_by_key) - matched_ref_keys):
+                for e in ref_by_key[key]:
+                    standalone.append(
+                        {
+                            "operation": op_name,
+                            "variant": e["label"],
+                            "mean": e["mean"],
+                            "ops": e["ops"],
                         }
                     )
 

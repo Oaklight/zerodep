@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Performance
+
+- **A2A module**: optimized serialization and deserialization paths — `to_dict()` now avoids `dataclasses.asdict()`-style deep copy overhead. Serialization is now **2.2-2.6x faster** than a2a-protocol (previously 1.4-2.1x slower). Deserialization narrowed from 1.8-4.1x slower to **1.1-1.7x slower** via optimized enum resolution and type dispatch. JSON round-trip is now **1.4-1.5x faster** end-to-end.
+- **Cache module**: optimized decorator wrapper path — LRU decorator overhead is now **1.2x faster** than cachetools (previously ~same). TTL decorator overhead reached parity with cachetools (previously 1.3x slower).
+- **QR module**: optimized encoding path — short inputs are now only 1.1x slower (previously 2.1x slower). Medium (URL) and long inputs are now **1.1-1.2x faster** than the `qrcode` library (previously 1.7-1.9x slower).
+- **Readability module**: optimized scoring and tree-walking algorithms — small pages **2.1x faster** (previously 1.7x faster), medium pages now **1.2x faster** (previously 2x slower). Large pages improved from 2x slower to 1.4x slower vs readability-lxml.
+
 ## [2026.4.20] - 2026-04-20
 
 ### New Modules

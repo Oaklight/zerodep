@@ -7,7 +7,7 @@ Apple-to-apple performance comparison between zerodep QR implementation and the 
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** qrcode 8.2, Pillow 12.2.0
-    - **Last Updated:** 2026-04-15
+    - **Last Updated:** 2026-04-20
 
 ## Implementations
 
@@ -30,15 +30,16 @@ Both implementations are pure Python, so the comparison is between two interpret
 
 | Input | zerodep (`qr.py`) | `qrcode` library | Ratio |
 |-------|---------------------|-------------------|-------|
-| Short (5 chars) | 3.5 ms | 1.7 ms | 2.1x slower |
-| URL (46 chars) | 9.2 ms | 4.8 ms | 1.9x slower |
-| Long (200 chars) | 19.4 ms | 11.3 ms | 1.7x slower |
+| Short (5 chars) | 1.9 ms | 1.7 ms | 1.1x slower |
+| URL (46 chars) | 4.4 ms | 4.8 ms | **1.1x faster** |
+| Long (200 chars) | 9.2 ms | 11.3 ms | **1.2x faster** |
 
 ## Key Takeaways
 
-- **zerodep** (`qr.py`) is approximately **~2x slower** than the `qrcode` library. The gap narrows with longer inputs (from 2.1x to 1.7x).
-- Both are pure Python implementations. Unlike AES where system `libcrypto` can be used via ctypes, there is no universally pre-installed C library for QR code generation. zerodep prioritizes **correctness** and **zero-dependency** over raw speed.
-- For most applications, both are fast enough -- QR code generation is rarely a bottleneck. Even the slowest case (200 chars) completes in under 20 ms.
+- **zerodep is now competitive or faster** -- after optimization, zerodep is only 1.1x slower on the shortest inputs and **faster on medium and long inputs** (1.1-1.2x). Previously ~2x slower across the board.
+- **Performance scales better with input size** -- zerodep's optimized encoding path shows better scaling characteristics, becoming faster than `qrcode` as input length increases.
+- Both are pure Python implementations. Unlike AES where system `libcrypto` can be used via ctypes, there is no universally pre-installed C library for QR code generation.
+- For most applications, both are fast enough -- QR code generation is rarely a bottleneck. Even the slowest case (200 chars) completes in under 12 ms.
 
 ## Run It Yourself
 

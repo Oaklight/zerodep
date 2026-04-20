@@ -32,9 +32,9 @@ Benchmarks use real-world HTML fixtures from Mozilla Readability.js test suite:
 
 | Fixture | zerodep | readability-lxml | Ratio |
 |---------|---------|------------------|-------|
-| Small (001) | ~3 ms | ~5 ms | ~1.7x faster |
-| Medium (bbc-1) | ~30 ms | ~15 ms | ~2x slower |
-| Large (wikipedia) | ~25 ms | ~12 ms | ~2x slower |
+| Small (001) | ~2.4 ms | ~5 ms | **~2.1x faster** |
+| Medium (bbc-1) | ~13 ms | ~15 ms | **~1.2x faster** |
+| Large (wikipedia) | ~17 ms | ~12 ms | ~1.4x slower |
 
 ## Three-Way Comparison
 
@@ -48,8 +48,8 @@ This runs all three implementations on the same fixtures and reports timing with
 
 ## Key Takeaways
 
-- **zerodep is competitive on small/medium pages** -- for typical blog posts and news articles, extraction time is in the low milliseconds
-- **readability-lxml is faster on large pages** -- lxml's C-based parser gives it an advantage on complex HTML. zerodep uses pure Python parsing via `html.parser`
+- **zerodep is now faster on small and medium pages** -- for simple articles, zerodep is **~2.1x faster** than readability-lxml (previously ~1.7x faster). For medium-sized news articles, zerodep is now **~1.2x faster** (previously ~2x slower). The optimized scoring and tree-walking algorithms dramatically improved medium-page performance.
+- **readability-lxml retains an edge on large pages** -- lxml's C-based parser still provides an advantage on complex HTML like Wikipedia articles, though the gap narrowed from ~2x to ~1.4x slower.
 - **zerodep has richer metadata** -- JSON-LD extraction, RTL support, and OpenGraph metadata that readability-lxml lacks
 - **Zero pip dependencies** -- zerodep needs only the stdlib, while readability-lxml requires lxml and cssselect
 

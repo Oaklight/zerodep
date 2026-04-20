@@ -336,20 +336,21 @@ class LRUCache(Cache):
         self.__order: collections.OrderedDict[Any, None] = collections.OrderedDict()
 
     def __getitem__(self, key: Any) -> Any:
-        value = super().__getitem__(key)
-        if key in self.__order:
-            self.__order.move_to_end(key)
+        # Bypass super().__getitem__ to avoid MRO dispatch overhead;
+        # call Cache.__getitem__ directly + inline move_to_end.
+        value = Cache.__getitem__(self, key)
+        self.__order.move_to_end(key)
         return value
 
     def __setitem__(self, key: Any, value: Any) -> None:
-        super().__setitem__(key, value)
+        Cache.__setitem__(self, key, value)
         try:
             self.__order.move_to_end(key)
         except KeyError:
             self.__order[key] = None
 
     def __delitem__(self, key: Any) -> None:
-        super().__delitem__(key)
+        Cache.__delitem__(self, key)
         del self.__order[key]
 
     def popitem(self) -> tuple[Any, Any]:
@@ -361,7 +362,7 @@ class LRUCache(Cache):
         return key, self.pop(key)
 
     def clear(self) -> None:
-        super().clear()
+        Cache.clear(self)
         self.__order.clear()
 
 
@@ -482,24 +483,26 @@ class _Timer:
     Used by TTLCache to ensure time consistency within a single operation.
     """
 
+    __slots__ = ("_timer", "_nesting", "_time")
+
     def __init__(self, timer: Callable[[], float] = time.monotonic):
-        self.__timer = timer
-        self.__nesting = 0
-        self.__time: float = 0.0
+        self._timer = timer
+        self._nesting = 0
+        self._time: float = 0.0
 
     def __call__(self) -> float:
-        if self.__nesting == 0:
-            return self.__timer()
-        return self.__time
+        if self._nesting == 0:
+            return self._timer()
+        return self._time
 
     def __enter__(self) -> float:
-        if self.__nesting == 0:
-            self.__time = self.__timer()
-        self.__nesting += 1
-        return self.__time
+        if self._nesting == 0:
+            self._time = self._timer()
+        self._nesting += 1
+        return self._time
 
     def __exit__(self, *exc: Any) -> None:
-        self.__nesting -= 1
+        self._nesting -= 1
 
 
 class _TTLLink:
@@ -543,7 +546,7 @@ class TTLCache(LRUCache):
         timer: Callable[[], float] = time.monotonic,
         getsizeof: Callable[[Any], int] | None = None,
     ):
-        super().__init__(maxsize, getsizeof)
+        LRUCache.__init__(self, maxsize, getsizeof)
         self.__ttl = ttl
         self.__timer = _Timer(timer)
         self.__root = _TTLLink()  # sentinel for expiry list
@@ -560,20 +563,27 @@ class TTLCache(LRUCache):
         return self.__timer
 
     def __contains__(self, key: object) -> bool:
-        if key not in self.__links:
+        link = self.__links.get(key)
+        if link is None:
             return False
-        return self.__timer() < self.__links[key].expires
+        return self.__timer() < link.expires
 
     def __getitem__(self, key: Any) -> Any:
-        if key in self.__links and self.__timer() >= self.__links[key].expires:
+        link = self.__links.get(key)
+        if link is not None and self.__timer() >= link.expires:
             del self[key]
             return self.__missing__(key)
-        return super().__getitem__(key)
+        # Bypass LRUCache.__getitem__ → Cache.__getitem__ call chain;
+        # inline both to save one method-call and one dict lookup.
+        # Same direct-call pattern used by LFUCache.popitem.
+        value = Cache.__getitem__(self, key)
+        self._LRUCache__order.move_to_end(key)  # type: ignore[attr-defined]
+        return value
 
     def __setitem__(self, key: Any, value: Any) -> None:
         with self.__timer as now:
             self.expire(now)
-            super().__setitem__(key, value)
+            LRUCache.__setitem__(self, key, value)
             # Update or create expiry link
             link = self.__links.get(key)
             if link is not None:
@@ -591,7 +601,7 @@ class TTLCache(LRUCache):
             self.__root.prev = link
 
     def __delitem__(self, key: Any) -> None:
-        super().__delitem__(key)
+        LRUCache.__delitem__(self, key)
         link = self.__links.pop(key)
         link.unlink()
 
@@ -604,10 +614,12 @@ class TTLCache(LRUCache):
 
     def __len__(self) -> int:
         now = self.__timer()
+        # Single dict lookup via .get() instead of ``key in`` + ``[key]``.
+        links_get = self.__links.get
         return sum(
             1
             for key in super().__iter__()
-            if key in self.__links and now < self.__links[key].expires
+            if (link := links_get(key)) is not None and now < link.expires
         )
 
     @property
@@ -636,7 +648,7 @@ class TTLCache(LRUCache):
         return expired
 
     def clear(self) -> None:
-        super().clear()
+        LRUCache.clear(self)
         self.__links.clear()
         self.__root.prev = self.__root
         self.__root.next = self.__root
@@ -655,31 +667,6 @@ class _Stats:
     def __init__(self) -> None:
         self.hits = 0
         self.misses = 0
-
-
-def _cache_lookup(cache: collections.abc.MutableMapping, k: Any) -> Any:
-    """Return cached value for *k*, or ``_MISS`` on cache miss."""
-    try:
-        return cache[k]
-    except KeyError:
-        return _MISS
-
-
-def _cache_store(cache: collections.abc.MutableMapping, k: Any, v: Any) -> Any:
-    """Store *v* under *k*, silently ignoring ``ValueError``."""
-    try:
-        cache[k] = v
-    except ValueError:
-        pass
-    return v
-
-
-def _cache_store_default(cache: collections.abc.MutableMapping, k: Any, v: Any) -> Any:
-    """Thread-safe store via ``setdefault``, silently ignoring ``ValueError``."""
-    try:
-        return cache.setdefault(k, v)
-    except ValueError:
-        return v
 
 
 def _get_cache_maxsize(
@@ -751,31 +738,48 @@ def _make_sync_wrapper(
             _attach_noop_info(wrapper, stats)
         return wrapper
 
+    # Pre-cache method references to avoid attribute lookup per call.
+    cache_getitem = cache.__getitem__
+    cache_setitem = cache.__setitem__
+    cache_setdefault = cache.setdefault
+
     if lock is not None:
 
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             k = key(*args, **kwargs)
             with lock:
-                result = _cache_lookup(cache, k)
+                try:
+                    result = cache_getitem(k)
+                except KeyError:
+                    result = _MISS
             if result is not _MISS:
                 stats.hits += 1
                 return result
             stats.misses += 1
             v = fn(*args, **kwargs)
+            # Inline thread-safe store (was _cache_store_default).
             with lock:
-                return _cache_store_default(cache, k, v)
+                try:
+                    return cache_setdefault(k, v)
+                except ValueError:
+                    return v
 
     else:
 
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             k = key(*args, **kwargs)
-            result = _cache_lookup(cache, k)
-            if result is not _MISS:
-                stats.hits += 1
-                return result
-            stats.misses += 1
-            v = fn(*args, **kwargs)
-            return _cache_store(cache, k, v)
+            try:
+                result = cache_getitem(k)
+            except KeyError:
+                stats.misses += 1
+                v = fn(*args, **kwargs)
+                try:
+                    cache_setitem(k, v)
+                except ValueError:
+                    pass
+                return v
+            stats.hits += 1
+            return result
 
     if info:
         _attach_cache_info(wrapper, cache, lock, stats, _get_cache_maxsize(cache))
@@ -803,31 +807,48 @@ def _make_async_wrapper(
             _attach_noop_info(wrapper, stats)
         return wrapper
 
+    # Pre-cache method references to avoid attribute lookup per call.
+    cache_getitem = cache.__getitem__
+    cache_setitem = cache.__setitem__
+    cache_setdefault = cache.setdefault
+
     if lock is not None:
 
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             k = key(*args, **kwargs)
             async with lock:
-                result = _cache_lookup(cache, k)
+                try:
+                    result = cache_getitem(k)
+                except KeyError:
+                    result = _MISS
             if result is not _MISS:
                 stats.hits += 1
                 return result
             stats.misses += 1
             v = await fn(*args, **kwargs)
+            # Inline thread-safe store (was _cache_store_default).
             async with lock:
-                return _cache_store_default(cache, k, v)
+                try:
+                    return cache_setdefault(k, v)
+                except ValueError:
+                    return v
 
     else:
 
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             k = key(*args, **kwargs)
-            result = _cache_lookup(cache, k)
-            if result is not _MISS:
-                stats.hits += 1
-                return result
-            stats.misses += 1
-            v = await fn(*args, **kwargs)
-            return _cache_store(cache, k, v)
+            try:
+                result = cache_getitem(k)
+            except KeyError:
+                stats.misses += 1
+                v = await fn(*args, **kwargs)
+                try:
+                    cache_setitem(k, v)
+                except ValueError:
+                    pass
+                return v
+            stats.hits += 1
+            return result
 
     if info:
         _attach_cache_info(wrapper, cache, lock, stats, _get_cache_maxsize(cache))

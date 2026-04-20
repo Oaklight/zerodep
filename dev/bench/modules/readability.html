@@ -83,24 +83,30 @@ td { white-space: nowrap; }
 <h1>readability</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 2a97975 | Commit: 2a979757 | 2026-04-20T15:08:45.131646+00:00</p>
+<p class="meta">Version: 0ba9e2d | Commit: 0ba9e2de | 2026-04-20T16:31:06.356071+00:00</p>
 <h2>readability</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>37.00 ms</td><td>23.15 ms</td><td>27.0</td><td>43.2</td><td class="ratio-cell slower">1.6x slower</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>2.27 ms</td><td>2.83 ms</td><td>441.3</td><td>352.8</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>233.9 µs</td><td>562.3 µs</td><td>4.3K</td><td>1.8K</td><td class="ratio-cell faster">2.4x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>5.18 ms</td><td>11.91 ms</td><td>192.9</td><td>84.0</td><td class="ratio-cell faster">2.3x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>992.5 µs</td><td>2.07 ms</td><td>1.0K</td><td>483.4</td><td class="ratio-cell faster">2.1x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>385.9 µs</td><td>624.1 µs</td><td>2.6K</td><td>1.6K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>33.85 ms</td><td>28.52 ms</td><td>29.5</td><td>35.1</td><td class="ratio-cell slower">1.2x slower</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>Mozilla Readability.js</td><td>33.85 ms</td><td>626.83 ms</td><td>29.5</td><td>1.6</td><td class="ratio-cell faster">18.5x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>2.59 ms</td><td>3.19 ms</td><td>385.6</td><td>313.6</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>Mozilla Readability.js</td><td>2.59 ms</td><td>26.12 ms</td><td>385.6</td><td>38.3</td><td class="ratio-cell faster">10.1x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>276.1 µs</td><td>680.3 µs</td><td>3.6K</td><td>1.5K</td><td class="ratio-cell faster">2.5x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>Mozilla Readability.js</td><td>276.1 µs</td><td>15.93 ms</td><td>3.6K</td><td>62.8</td><td class="ratio-cell faster">57.7x faster</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>5.69 ms</td><td>13.08 ms</td><td>175.6</td><td>76.4</td><td class="ratio-cell faster">2.3x faster</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>5.69 ms</td><td>44.62 ms</td><td>175.6</td><td>22.4</td><td class="ratio-cell faster">7.8x faster</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>1.16 ms</td><td>2.40 ms</td><td>864.7</td><td>416.1</td><td class="ratio-cell faster">2.1x faster</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>1.16 ms</td><td>12.59 ms</td><td>864.7</td><td>79.4</td><td class="ratio-cell faster">10.9x faster</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>458.7 µs</td><td>757.7 µs</td><td>2.2K</td><td>1.3K</td><td class="ratio-cell faster">1.7x faster</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>458.7 µs</td><td>8.49 ms</td><td>2.2K</td><td>117.8</td><td class="ratio-cell faster">18.5x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.39 ms</td><td>718.1</td></tr>
+<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.61 ms</td><td>622.2</td></tr>
 </tbody></table>
 
 <script>
@@ -112,13 +118,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [27.027404993288187, 441.33361834840156, 4275.213797623632, 192.89130512008504, 1007.5398221349437, 2591.497441438493],
+        data: [29.540470217732537, 385.59458468771106, 3622.3307638526876, 175.6324005354493, 864.6578069809364, 2180.287143278344],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "readability-lxml" + ' (ops/s)',
-        data: [43.19656612163994, 352.81245130187915, 1778.450723632333, 83.98930814864079, 483.4224050301042, 1602.32684421638],
+        data: [35.068311510273695, 313.5596362830255, 1469.8393480610412, 76.43962462806162, 416.05109681211144, 1319.8463871326444],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

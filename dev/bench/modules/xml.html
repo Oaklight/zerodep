@@ -83,26 +83,26 @@ td { white-space: nowrap; }
 <h1>xml</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 2a97975 | Commit: 2a979757 | 2026-04-20T15:08:45.131646+00:00</p>
+<p class="meta">Version: 0ba9e2d | Commit: 0ba9e2de | 2026-04-20T16:31:06.356071+00:00</p>
 <h2>xml</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>xmltodict</td><td>4.76 ms</td><td>5.14 ms</td><td>210.2</td><td>194.5</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>351.3 µs</td><td>387.3 µs</td><td>2.8K</td><td>2.6K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>xmltodict</td><td>13.4 µs</td><td>15.3 µs</td><td>74.7K</td><td>65.4K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Unparse (Large)</td><td>zerodep</td><td>xmltodict</td><td>3.59 ms</td><td>5.85 ms</td><td>278.4</td><td>170.9</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Unparse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>247.5 µs</td><td>415.8 µs</td><td>4.0K</td><td>2.4K</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Unparse (Small)</td><td>zerodep</td><td>xmltodict</td><td>13.3 µs</td><td>17.7 µs</td><td>75.1K</td><td>56.4K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>xmltodict</td><td>5.21 ms</td><td>5.75 ms</td><td>191.9</td><td>173.9</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>380.7 µs</td><td>442.6 µs</td><td>2.6K</td><td>2.3K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>xmltodict</td><td>14.9 µs</td><td>17.4 µs</td><td>66.9K</td><td>57.6K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Unparse (Large)</td><td>zerodep</td><td>xmltodict</td><td>4.03 ms</td><td>6.48 ms</td><td>248.4</td><td>154.3</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Unparse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>278.1 µs</td><td>455.1 µs</td><td>3.6K</td><td>2.2K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Unparse (Small)</td><td>zerodep</td><td>xmltodict</td><td>14.6 µs</td><td>19.9 µs</td><td>68.3K</td><td>50.2K</td><td class="ratio-cell faster">1.4x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Extract Tags</td><td>extract_all</td><td>658.8 µs</td><td>1.5K</td></tr>
-<tr><td>Extract Tags</td><td>extract_filtered</td><td>397.8 µs</td><td>2.5K</td></tr>
-<tr><td>Extract Tags</td><td>extract_first_only</td><td>8.8 µs</td><td>113.9K</td></tr>
+<tr><td>Extract Tags</td><td>extract_all</td><td>737.1 µs</td><td>1.4K</td></tr>
+<tr><td>Extract Tags</td><td>extract_filtered</td><td>441.2 µs</td><td>2.3K</td></tr>
+<tr><td>Extract Tags</td><td>extract_first_only</td><td>9.7 µs</td><td>102.8K</td></tr>
 </tbody></table>
 
 <script>
@@ -114,13 +114,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [210.22006332246525, 2846.891158239278, 74744.9206128321, 278.35614234548956, 4040.355238056662, 75064.44414118881],
+        data: [191.87334292826367, 2626.911447349362, 66894.52515412765, 248.37864470976524, 3595.4904854374868, 68346.80021517084],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "xmltodict" + ' (ops/s)',
-        data: [194.51226964776492, 2582.153271022995, 65431.080343386915, 170.88561690673816, 2405.270140439616, 56437.59373756272],
+        data: [173.86238122390253, 2259.386289025068, 57609.05500975883, 154.31980574708263, 2197.118618144217, 50210.474140036946],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

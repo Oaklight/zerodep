@@ -83,14 +83,14 @@ td { white-space: nowrap; }
 <h1>retry</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 2a97975 | Commit: 2a979757 | 2026-04-20T15:08:45.131646+00:00</p>
+<p class="meta">Version: 0ba9e2d | Commit: 0ba9e2de | 2026-04-20T16:31:06.356071+00:00</p>
 <h2>retry</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Backoff Calculation</td><td>zerodep</td><td>tenacity</td><td>5.4 µs</td><td>13.1 µs</td><td>183.9K</td><td>76.1K</td><td class="ratio-cell faster">2.4x faster</td></tr>
-<tr><td>Decorator Overhead</td><td>zerodep</td><td>tenacity</td><td>581.6 ns</td><td>17.3 µs</td><td>1.72M</td><td>57.7K</td><td class="ratio-cell faster">29.8x faster</td></tr>
-<tr><td>Retry With Failures</td><td>zerodep</td><td>tenacity</td><td>129.9 µs</td><td>175.9 µs</td><td>7.7K</td><td>5.7K</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Backoff Calculation</td><td>zerodep</td><td>tenacity</td><td>5.6 µs</td><td>14.6 µs</td><td>178.6K</td><td>68.6K</td><td class="ratio-cell faster">2.6x faster</td></tr>
+<tr><td>Decorator Overhead</td><td>zerodep</td><td>tenacity</td><td>531.3 ns</td><td>19.8 µs</td><td>1.88M</td><td>50.6K</td><td class="ratio-cell faster">37.2x faster</td></tr>
+<tr><td>Retry With Failures</td><td>zerodep</td><td>tenacity</td><td>246.9 µs</td><td>322.1 µs</td><td>4.0K</td><td>3.1K</td><td class="ratio-cell faster">1.3x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -103,13 +103,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [183867.2930843926, 1719369.0485026084, 7697.603276274721],
+        data: [178571.8439238688, 1882035.692020594, 4049.4936003042367],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "tenacity" + ' (ops/s)',
-        data: [76107.66724746146, 57693.339917529345, 5683.9180933434345],
+        data: [68609.5420996582, 50570.92016198938, 3104.9380906058745],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

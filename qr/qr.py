@@ -25,12 +25,166 @@ import re
 from collections.abc import Sequence
 from typing import Union
 
+# ---- Precomputed GF(2^8) tables for Reed-Solomon ----
+# Primitive polynomial: x^8 + x^4 + x^3 + x^2 + 1 (0x11D)
+
+_GF_EXP: list[int] = [0] * 512  # Anti-log table: _GF_EXP[i] = 2^i mod 0x11D
+_GF_LOG: list[int] = [0] * 256  # Log table: _GF_LOG[_GF_EXP[i]] = i
+
+
+def _init_gf_tables() -> None:
+    """Initialize GF(2^8) exp/log lookup tables at module load time."""
+    x = 1
+    for i in range(255):
+        _GF_EXP[i] = x
+        _GF_LOG[x] = i
+        x = (x << 1) ^ ((x >> 7) * 0x11D)
+    # Extend exp table for easy modular access: EXP[i+j] without % 255
+    for i in range(255, 512):
+        _GF_EXP[i] = _GF_EXP[i - 255]
+
+
+_init_gf_tables()
+
+# Precomputed 256x256 GF multiplication table (64 KB, much faster than function calls)
+_GF_MUL: list[list[int]] = [[0] * 256 for _ in range(256)]
+
+
+def _init_gf_mul_table() -> None:
+    """Precompute full GF(2^8) multiplication table."""
+    for x in range(1, 256):
+        lx = _GF_LOG[x]
+        row = _GF_MUL[x]
+        for y in range(1, 256):
+            row[y] = _GF_EXP[lx + _GF_LOG[y]]
+
+
+_init_gf_mul_table()
+
 __all__ = [
     "QrCode",
     "QrSegment",
     "DataTooLongError",
     "print_qr_terminal",
 ]
+
+
+# ---- Mask applier dispatch functions ----
+# Each function applies one of the 8 QR mask patterns to modules.
+# Kept as module-level functions to avoid method dispatch overhead and to keep
+# cognitive complexity per function low.
+
+
+def _apply_mask_0(modules: list, isfunction: list, size: int) -> None:
+    for y in range(size):
+        modules_y = modules[y]
+        isfunc_y = isfunction[y]
+        for x in range(size):
+            if not isfunc_y[x]:
+                modules_y[x] ^= (x + y) % 2 == 0
+
+
+def _apply_mask_1(modules: list, isfunction: list, size: int) -> None:
+    for y in range(size):
+        modules_y = modules[y]
+        isfunc_y = isfunction[y]
+        flip = y % 2 == 0
+        for x in range(size):
+            if not isfunc_y[x]:
+                modules_y[x] ^= flip
+
+
+def _apply_mask_2(modules: list, isfunction: list, size: int) -> None:
+    for y in range(size):
+        modules_y = modules[y]
+        isfunc_y = isfunction[y]
+        for x in range(size):
+            if not isfunc_y[x]:
+                modules_y[x] ^= x % 3 == 0
+
+
+def _apply_mask_3(modules: list, isfunction: list, size: int) -> None:
+    for y in range(size):
+        modules_y = modules[y]
+        isfunc_y = isfunction[y]
+        for x in range(size):
+            if not isfunc_y[x]:
+                modules_y[x] ^= (x + y) % 3 == 0
+
+
+def _apply_mask_4(modules: list, isfunction: list, size: int) -> None:
+    for y in range(size):
+        modules_y = modules[y]
+        isfunc_y = isfunction[y]
+        yh = y >> 1
+        for x in range(size):
+            if not isfunc_y[x]:
+                modules_y[x] ^= (x // 3 + yh) % 2 == 0
+
+
+def _apply_mask_5(modules: list, isfunction: list, size: int) -> None:
+    for y in range(size):
+        modules_y = modules[y]
+        isfunc_y = isfunction[y]
+        for x in range(size):
+            if not isfunc_y[x]:
+                xy = x * y
+                modules_y[x] ^= xy % 2 + xy % 3 == 0
+
+
+def _apply_mask_6(modules: list, isfunction: list, size: int) -> None:
+    for y in range(size):
+        modules_y = modules[y]
+        isfunc_y = isfunction[y]
+        for x in range(size):
+            if not isfunc_y[x]:
+                xy = x * y
+                modules_y[x] ^= (xy % 2 + xy % 3) % 2 == 0
+
+
+def _apply_mask_7(modules: list, isfunction: list, size: int) -> None:
+    for y in range(size):
+        modules_y = modules[y]
+        isfunc_y = isfunction[y]
+        for x in range(size):
+            if not isfunc_y[x]:
+                modules_y[x] ^= ((x + y) % 2 + x * y % 3) % 2 == 0
+
+
+_MASK_APPLIERS = [
+    _apply_mask_0,
+    _apply_mask_1,
+    _apply_mask_2,
+    _apply_mask_3,
+    _apply_mask_4,
+    _apply_mask_5,
+    _apply_mask_6,
+    _apply_mask_7,
+]
+
+
+# ---- Finder penalty helpers (module-level for performance) ----
+
+
+def _finder_penalty_push(runlength: int, rh: list[int], size: int) -> list[int]:
+    """Push a run length into the history, prepending size padding if first entry is 0."""
+    rl = runlength
+    if rh[0] == 0:
+        rl += size
+    return [rl, rh[0], rh[1], rh[2], rh[3], rh[4], rh[5]]
+
+
+def _finder_penalty_check(rh: list[int], penalty_n3: int) -> int:
+    """Check for finder-like patterns in the run history and return penalty."""
+    result = 0
+    n = rh[1]
+    if n > 0 and rh[2] == n and rh[4] == n and rh[5] == n and rh[3] == n * 3:
+        if rh[0] >= n * 4 and rh[6] >= n:
+            result += penalty_n3
+        if rh[6] >= n * 4 and rh[0] >= n:
+            result += penalty_n3
+    return result
+
 
 # ---- QR Code symbol class ----
 
@@ -447,12 +601,7 @@ class QrCode:
         QR Code needs exactly one (not zero, two, etc.) mask applied."""
         if not (0 <= mask <= 7):
             raise ValueError("Mask value out of range")
-        masker: collections.abc.Callable[[int, int], int] = QrCode._MASK_PATTERNS[mask]
-        for y in range(self._size):
-            for x in range(self._size):
-                self._modules[y][x] ^= (masker(x, y) == 0) and (
-                    not self._isfunction[y][x]
-                )
+        _MASK_APPLIERS[mask](self._modules, self._isfunction, self._size)
 
     def _get_penalty_score(self) -> int:
         """Calculates and returns the penalty score based on state of this QR Code's current modules.
@@ -473,30 +622,34 @@ class QrCode:
         result: int = 0
         size: int = self._size
         modules: list[list[bool]] = self._modules
+        PENALTY_N1 = QrCode._PENALTY_N1
+        PENALTY_N3 = QrCode._PENALTY_N3
+        push = _finder_penalty_push
+        check = _finder_penalty_check
         for y in range(size):
+            row = modules[y]
             runcolor: bool = False
             runx: int = 0
-            runhistory = collections.deque([0] * 7, 7)
+            rh = [0, 0, 0, 0, 0, 0, 0]
             for x in range(size):
-                if modules[y][x] == runcolor:
+                if row[x] == runcolor:
                     runx += 1
                     if runx == 5:
-                        result += QrCode._PENALTY_N1
+                        result += PENALTY_N1
                     elif runx > 5:
                         result += 1
                 else:
-                    self._finder_penalty_add_history(runx, runhistory)
+                    rh = push(runx, rh, size)
                     if not runcolor:
-                        result += (
-                            self._finder_penalty_count_patterns(runhistory)
-                            * QrCode._PENALTY_N3
-                        )
-                    runcolor = modules[y][x]
+                        result += check(rh, PENALTY_N3)
+                    runcolor = row[x]
                     runx = 1
-            result += (
-                self._finder_penalty_terminate_and_count(runcolor, runx, runhistory)
-                * QrCode._PENALTY_N3
-            )
+            # Terminate row
+            if runcolor:
+                rh = push(runx, rh, size)
+                runx = 0
+            rh = push(runx + size, rh, size)
+            result += check(rh, PENALTY_N3)
         return result
 
     def _penalty_rule_2(self) -> int:
@@ -504,30 +657,33 @@ class QrCode:
         result: int = 0
         size: int = self._size
         modules: list[list[bool]] = self._modules
+        PENALTY_N1 = QrCode._PENALTY_N1
+        PENALTY_N3 = QrCode._PENALTY_N3
+        push = _finder_penalty_push
+        check = _finder_penalty_check
         for x in range(size):
             runcolor: bool = False
             runy: int = 0
-            runhistory = collections.deque([0] * 7, 7)
+            rh = [0, 0, 0, 0, 0, 0, 0]
             for y in range(size):
                 if modules[y][x] == runcolor:
                     runy += 1
                     if runy == 5:
-                        result += QrCode._PENALTY_N1
+                        result += PENALTY_N1
                     elif runy > 5:
                         result += 1
                 else:
-                    self._finder_penalty_add_history(runy, runhistory)
+                    rh = push(runy, rh, size)
                     if not runcolor:
-                        result += (
-                            self._finder_penalty_count_patterns(runhistory)
-                            * QrCode._PENALTY_N3
-                        )
+                        result += check(rh, PENALTY_N3)
                     runcolor = modules[y][x]
                     runy = 1
-            result += (
-                self._finder_penalty_terminate_and_count(runcolor, runy, runhistory)
-                * QrCode._PENALTY_N3
-            )
+            # Terminate column
+            if runcolor:
+                rh = push(runy, rh, size)
+                runy = 0
+            rh = push(runy + size, rh, size)
+            result += check(rh, PENALTY_N3)
         return result
 
     def _penalty_rule_3(self) -> int:
@@ -535,22 +691,23 @@ class QrCode:
         result: int = 0
         size: int = self._size
         modules: list[list[bool]] = self._modules
+        PENALTY_N2 = QrCode._PENALTY_N2
         for y in range(size - 1):
+            row0 = modules[y]
+            row1 = modules[y + 1]
             for x in range(size - 1):
-                if (
-                    modules[y][x]
-                    == modules[y][x + 1]
-                    == modules[y + 1][x]
-                    == modules[y + 1][x + 1]
-                ):
-                    result += QrCode._PENALTY_N2
+                c = row0[x]
+                if c == row0[x + 1] == row1[x] == row1[x + 1]:
+                    result += PENALTY_N2
         return result
 
     def _penalty_rule_4(self) -> int:
         """Penalty for imbalance of dark and light modules."""
         size: int = self._size
         modules: list[list[bool]] = self._modules
-        dark: int = sum((1 if cell else 0) for row in modules for cell in row)
+        dark: int = 0
+        for row in modules:
+            dark += sum(row)
         total: int = size**2  # Note that size is odd, so dark/total != 1/2
         # Compute the smallest integer k >= 0 such that (45-5k)% <= dark/total <= (55+5k)%
         k: int = (abs(dark * 20 - total * 10) + total - 1) // total - 1
@@ -614,39 +771,37 @@ class QrCode:
         # and drop the highest monomial term which is always 1x^degree.
         # Note that r = 0x02, which is a generator element of this field GF(2^8/0x11D).
         root: int = 1
+        gf_mul = _GF_MUL
         for _ in range(degree):  # Unused variable i
             # Multiply the current product by (x - r^i)
+            root_row = gf_mul[root]
             for j in range(degree):
-                result[j] = QrCode._reed_solomon_multiply(result[j], root)
+                result[j] = root_row[result[j]]
                 if j + 1 < degree:
                     result[j] ^= result[j + 1]
-            root = QrCode._reed_solomon_multiply(root, 0x02)
+            root = gf_mul[root][0x02]
         return bytes(result)
 
     @staticmethod
     def _reed_solomon_compute_remainder(data: bytes, divisor: bytes) -> bytes:
         """Returns the Reed-Solomon error correction codeword for the given data and divisor polynomials."""
         result = bytearray([0] * len(divisor))
+        gf_mul = _GF_MUL
         for b in data:  # Polynomial division
-            factor: int = b ^ result.pop(0)
+            factor: int = b ^ result[0]
+            del result[0]
             result.append(0)
-            for i, coef in enumerate(divisor):
-                result[i] ^= QrCode._reed_solomon_multiply(coef, factor)
+            if factor != 0:
+                factor_row = gf_mul[factor]
+                for i, coef in enumerate(divisor):
+                    result[i] ^= factor_row[coef]
         return bytes(result)
 
     @staticmethod
     def _reed_solomon_multiply(x: int, y: int) -> int:
         """Returns the product of the two given field elements modulo GF(2^8/0x11D). The arguments and result
-        are unsigned 8-bit integers. This could be implemented as a lookup table of 256*256 entries of uint8."""
-        if (x >> 8 != 0) or (y >> 8 != 0):
-            raise ValueError("Byte out of range")
-        # Russian peasant multiplication
-        z: int = 0
-        for i in reversed(range(8)):
-            z = (z << 1) ^ ((z >> 7) * 0x11D)
-            z ^= ((y >> i) & 1) * x
-        assert z >> 8 == 0
-        return z
+        are unsigned 8-bit integers. Uses precomputed lookup table for O(1) performance."""
+        return _GF_MUL[x][y]
 
     def _finder_penalty_count_patterns(self, runhistory: collections.deque[int]) -> int:
         """Can only be called immediately after a light run is added, and

@@ -83,24 +83,24 @@ td { white-space: nowrap; }
 <h1>readability</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: aafa299 | Commit: aafa2990 | 2026-04-20T05:08:22.935254+00:00</p>
+<p class="meta">Version: 2a97975 | Commit: 2a979757 | 2026-04-20T15:08:45.131646+00:00</p>
 <h2>readability</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>58.19 ms</td><td>24.22 ms</td><td>17.2</td><td>41.3</td><td class="ratio-cell slower">2.4x slower</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>4.57 ms</td><td>3.16 ms</td><td>219.0</td><td>316.3</td><td class="ratio-cell slower">1.4x slower</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>459.9 µs</td><td>672.8 µs</td><td>2.2K</td><td>1.5K</td><td class="ratio-cell faster">1.5x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>9.14 ms</td><td>12.90 ms</td><td>109.5</td><td>77.5</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>1.89 ms</td><td>2.37 ms</td><td>529.4</td><td>422.6</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>792.5 µs</td><td>758.2 µs</td><td>1.3K</td><td>1.3K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>37.00 ms</td><td>23.15 ms</td><td>27.0</td><td>43.2</td><td class="ratio-cell slower">1.6x slower</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>2.27 ms</td><td>2.83 ms</td><td>441.3</td><td>352.8</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>233.9 µs</td><td>562.3 µs</td><td>4.3K</td><td>1.8K</td><td class="ratio-cell faster">2.4x faster</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>5.18 ms</td><td>11.91 ms</td><td>192.9</td><td>84.0</td><td class="ratio-cell faster">2.3x faster</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>992.5 µs</td><td>2.07 ms</td><td>1.0K</td><td>483.4</td><td class="ratio-cell faster">2.1x faster</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>385.9 µs</td><td>624.1 µs</td><td>2.6K</td><td>1.6K</td><td class="ratio-cell faster">1.6x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.62 ms</td><td>618.0</td></tr>
+<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.39 ms</td><td>718.1</td></tr>
 </tbody></table>
 
 <script>
@@ -112,13 +112,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [17.18512738103492, 219.04196447774697, 2174.3176335943285, 109.45677313339111, 529.3614557422532, 1261.8593693950759],
+        data: [27.027404993288187, 441.33361834840156, 4275.213797623632, 192.89130512008504, 1007.5398221349437, 2591.497441438493],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "readability-lxml" + ' (ops/s)',
-        data: [41.29591795853621, 316.29480767698345, 1486.3198625145287, 77.53582363743577, 422.5734296527769, 1318.9178938816524],
+        data: [43.19656612163994, 352.81245130187915, 1778.450723632333, 83.98930814864079, 483.4224050301042, 1602.32684421638],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

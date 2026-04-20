@@ -83,17 +83,17 @@ td { white-space: nowrap; }
 <h1>toon</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: aafa299 | Commit: aafa2990 | 2026-04-20T05:08:22.935254+00:00</p>
+<p class="meta">Version: 2a97975 | Commit: 2a979757 | 2026-04-20T15:08:45.131646+00:00</p>
 <h2>toon</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_large_ref</td><td>2.16 ms</td><td>2.31 ms</td><td>462.1</td><td>433.4</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_medium_ref</td><td>322.8 µs</td><td>341.1 µs</td><td>3.1K</td><td>2.9K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_small_ref</td><td>20.1 µs</td><td>22.1 µs</td><td>49.7K</td><td>45.2K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_large_ref</td><td>1.23 ms</td><td>1.59 ms</td><td>814.1</td><td>627.9</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_medium_ref</td><td>209.7 µs</td><td>270.0 µs</td><td>4.8K</td><td>3.7K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_small_ref</td><td>9.3 µs</td><td>12.4 µs</td><td>108.0K</td><td>80.9K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_large_ref</td><td>1.93 ms</td><td>2.05 ms</td><td>519.0</td><td>486.9</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_medium_ref</td><td>286.2 µs</td><td>305.0 µs</td><td>3.5K</td><td>3.3K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_small_ref</td><td>18.1 µs</td><td>19.8 µs</td><td>55.4K</td><td>50.5K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_large_ref</td><td>1.16 ms</td><td>1.39 ms</td><td>859.6</td><td>718.6</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_medium_ref</td><td>193.1 µs</td><td>240.5 µs</td><td>5.2K</td><td>4.2K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_small_ref</td><td>7.8 µs</td><td>10.6 µs</td><td>128.0K</td><td>94.1K</td><td class="ratio-cell faster">1.4x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -106,13 +106,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [49680.99117037396, 108011.0377381071],
+        data: [55365.08159164395, 128003.24698409764],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "Reference" + ' (ops/s)',
-        data: [45216.127217974834, 80933.24066301754],
+        data: [50464.39774236106, 94126.89768329037],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

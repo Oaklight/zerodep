@@ -83,14 +83,14 @@ td { white-space: nowrap; }
 <h1>markdown</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: aafa299 | Commit: aafa2990 | 2026-04-20T05:08:22.935254+00:00</p>
+<p class="meta">Version: 2a97975 | Commit: 2a979757 | 2026-04-20T15:08:45.131646+00:00</p>
 <h2>markdown</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Render (Large)</td><td>zerodep</td><td>mistune</td><td>5.81 ms</td><td>10.36 ms</td><td>172.0</td><td>96.5</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Render (Medium)</td><td>zerodep</td><td>mistune</td><td>359.6 µs</td><td>689.8 µs</td><td>2.8K</td><td>1.4K</td><td class="ratio-cell faster">1.9x faster</td></tr>
-<tr><td>Render (Small)</td><td>zerodep</td><td>mistune</td><td>51.0 µs</td><td>69.6 µs</td><td>19.6K</td><td>14.4K</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Render (Large)</td><td>zerodep</td><td>mistune</td><td>5.15 ms</td><td>8.57 ms</td><td>194.0</td><td>116.7</td><td class="ratio-cell faster">1.7x faster</td></tr>
+<tr><td>Render (Medium)</td><td>zerodep</td><td>mistune</td><td>319.3 µs</td><td>585.0 µs</td><td>3.1K</td><td>1.7K</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Render (Small)</td><td>zerodep</td><td>mistune</td><td>44.3 µs</td><td>61.0 µs</td><td>22.6K</td><td>16.4K</td><td class="ratio-cell faster">1.4x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -103,13 +103,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [171.98131060537145, 2780.746545114196, 19597.353871362597],
+        data: [194.0054071080809, 3132.30759196453, 22592.158389433524],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "mistune" + ' (ops/s)',
-        data: [96.50757415515687, 1449.7294551426253, 14373.917805103525],
+        data: [116.65110773842927, 1709.5448492460898, 16402.884089681425],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

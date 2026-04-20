@@ -117,6 +117,132 @@ plugins:
             show_source: true
             show_root_heading: true
             members_order: source
+  - llmstxt:
+      full_output: llms-full.txt
+      sections:
+        首页:
+          - index.md
+        指南:
+          - guide/quickstart.md
+          - guide/philosophy.md
+          - guide/design.md
+          - guide/internals.md
+          - guide/installation.md
+          - guide/cli.md
+          - guide/manifest.md
+          - guide/migration.md
+          - guide/faq.md
+        模块:
+          - modules/index.md
+          - modules/http.md
+          - modules/sse.md
+          - modules/jsonrpc.md
+          - modules/a2a.md
+          - modules/acp.md
+          - modules/skills.md
+          - modules/xml.md
+          - modules/yaml.md
+          - modules/jsonc.md
+          - modules/toon.md
+          - modules/frontmatter.md
+          - modules/protobuf.md
+          - modules/validate.md
+          - modules/semver.md
+          - modules/markdown.md
+          - modules/soup.md
+          - modules/readability.md
+          - modules/diff.md
+          - modules/sparse_search.md
+          - modules/dotenv.md
+          - modules/config.md
+          - modules/ansi.md
+          - modules/tabulate.md
+          - modules/prompt.md
+          - modules/aes.md
+          - modules/cache.md
+          - modules/retry.md
+          - modules/scheduler.md
+          - modules/structlog.md
+          - modules/vcs.md
+          - modules/runner.md
+          - modules/filelock.md
+          - modules/persistdict.md
+          - modules/qr.md
+          - modules/depdetect.md
+        API 参考:
+          - api/http.md
+          - api/sse.md
+          - api/jsonrpc.md
+          - api/a2a.md
+          - api/acp.md
+          - api/skills.md
+          - api/xml.md
+          - api/yaml.md
+          - api/jsonc.md
+          - api/toon.md
+          - api/frontmatter.md
+          - api/protobuf.md
+          - api/validate.md
+          - api/semver.md
+          - api/markdown.md
+          - api/soup.md
+          - api/readability.md
+          - api/diff.md
+          - api/sparse_search.md
+          - api/dotenv.md
+          - api/config.md
+          - api/ansi.md
+          - api/tabulate.md
+          - api/prompt.md
+          - api/aes.md
+          - api/cache.md
+          - api/retry.md
+          - api/scheduler.md
+          - api/structlog.md
+          - api/vcs.md
+          - api/runner.md
+          - api/filelock.md
+          - api/persistdict.md
+          - api/qr.md
+          - api/depdetect.md
+        性能测试:
+          - benchmarks/http.md
+          - benchmarks/sse.md
+          - benchmarks/jsonrpc.md
+          - benchmarks/a2a.md
+          - benchmarks/acp.md
+          - benchmarks/skills.md
+          - benchmarks/xml.md
+          - benchmarks/yaml.md
+          - benchmarks/jsonc.md
+          - benchmarks/toon.md
+          - benchmarks/frontmatter.md
+          - benchmarks/protobuf.md
+          - benchmarks/validate.md
+          - benchmarks/semver.md
+          - benchmarks/markdown.md
+          - benchmarks/soup.md
+          - benchmarks/readability.md
+          - benchmarks/diff.md
+          - benchmarks/sparse_search.md
+          - benchmarks/dotenv.md
+          - benchmarks/config.md
+          - benchmarks/ansi.md
+          - benchmarks/tabulate.md
+          - benchmarks/prompt.md
+          - benchmarks/aes.md
+          - benchmarks/cache.md
+          - benchmarks/retry.md
+          - benchmarks/scheduler.md
+          - benchmarks/structlog.md
+          - benchmarks/vcs.md
+          - benchmarks/runner.md
+          - benchmarks/filelock.md
+          - benchmarks/persistdict.md
+          - benchmarks/qr.md
+          - benchmarks/depdetect.md
+        更新日志:
+          - changelog.md
 
 markdown_extensions:
   - admonition

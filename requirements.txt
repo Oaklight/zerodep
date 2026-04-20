@@ -7,3 +7,4 @@ mkdocs-autorefs>=0.5.0
 
 # Additional dependencies
 pymdown-extensions>=10.0.0
+llmstxt-standalone

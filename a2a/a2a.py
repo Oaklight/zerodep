@@ -193,7 +193,28 @@ class Role(str, enum.Enum):
     AGENT = "ROLE_AGENT"
 
 
+# Pre-computed enum value-to-member lookup tables.
+# Eliminates linear scan in _enum_from_value() on every from_dict() call.
+_ROLE_BY_VALUE: dict[str, Role] = {m.value: m for m in Role}
+_TASKSTATE_BY_VALUE: dict[str, TaskState] = {m.value: m for m in TaskState}
+
 # --- Serialization helpers for dataclasses ---
+
+
+# Pre-computed camelCase field-name mapping per dataclass type.
+# Avoids calling _to_camel() (split + join + capitalize) on every field
+# during every _serialize() call.
+_CAMEL_MAP_CACHE: dict[type, list[tuple[str, str]]] = {}
+
+
+def _get_camel_pairs(cls: type) -> list[tuple[str, str]]:
+    """Return cached list of (field_name, camelCaseName) pairs for *cls*."""
+    pairs = _CAMEL_MAP_CACHE.get(cls)
+    if pairs is not None:
+        return pairs
+    pairs = [(f.name, _to_camel(f.name)) for f in fields(cls)]
+    _CAMEL_MAP_CACHE[cls] = pairs
+    return pairs
 
 
 def _serialize(obj: Any) -> Any:
@@ -204,6 +225,20 @@ def _serialize(obj: Any) -> Any:
     """
     if obj is None:
         return None
+    # Check dataclass first (most common recursive case in A2A structures)
+    obj_type = type(obj)
+    if hasattr(obj_type, "__dataclass_fields__"):
+        result: dict[str, Any] = {}
+        for attr, camel in _get_camel_pairs(obj_type):
+            val = getattr(obj, attr)
+            if val is None:
+                continue
+            if isinstance(val, (list, tuple)) and len(val) == 0:
+                continue
+            if isinstance(val, dict) and len(val) == 0:
+                continue
+            result[camel] = _serialize(val)
+        return result
     if isinstance(obj, enum.Enum):
         return obj.value
     if isinstance(obj, (str, int, float, bool)):
@@ -212,18 +247,6 @@ def _serialize(obj: Any) -> Any:
         return {k: _serialize(v) for k, v in obj.items() if v is not None}
     if isinstance(obj, (list, tuple)):
         return [_serialize(v) for v in obj]
-    if hasattr(obj, "__dataclass_fields__"):
-        result: dict[str, Any] = {}
-        for f in fields(obj):
-            val = getattr(obj, f.name)
-            if val is None:
-                continue
-            if isinstance(val, (list, tuple)) and len(val) == 0:
-                continue
-            if isinstance(val, dict) and len(val) == 0:
-                continue
-            result[_to_camel(f.name)] = _serialize(val)
-        return result
     return obj
 
 
@@ -272,15 +295,16 @@ class Part:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "Part":
         """Deserialize from a camelCase dictionary."""
-        return cls(
-            text=d.get("text"),
-            raw=d.get("raw"),
-            url=d.get("url"),
-            data=d.get("data"),
-            metadata=d.get("metadata"),
-            filename=d.get("filename"),
-            media_type=d.get("mediaType"),
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        obj.text = _get("text")
+        obj.raw = _get("raw")
+        obj.url = _get("url")
+        obj.data = _get("data")
+        obj.metadata = _get("metadata")
+        obj.filename = _get("filename")
+        obj.media_type = _get("mediaType")
+        return obj
 
 
 # --- Message ---
@@ -321,17 +345,22 @@ class Message:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "Message":
         """Deserialize from a camelCase dictionary."""
-        role_val = d.get("role", "ROLE_USER")
-        return cls(
-            message_id=d.get("messageId", ""),
-            role=_enum_from_value(Role, role_val),
-            parts=[Part.from_dict(p) for p in d.get("parts", [])],
-            context_id=d.get("contextId"),
-            task_id=d.get("taskId"),
-            metadata=d.get("metadata"),
-            extensions=d.get("extensions"),
-            reference_task_ids=d.get("referenceTaskIds"),
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        msg_id = _get("messageId", "")
+        obj.message_id = msg_id if msg_id else str(uuid.uuid4())
+        role_val = _get("role", "ROLE_USER")
+        obj.role = (
+            _ROLE_BY_VALUE.get(role_val) if isinstance(role_val, str) else role_val
+        )  # type: ignore[assignment]
+        raw_parts = _get("parts")
+        obj.parts = [Part.from_dict(p) for p in raw_parts] if raw_parts else []
+        obj.context_id = _get("contextId")
+        obj.task_id = _get("taskId")
+        obj.metadata = _get("metadata")
+        obj.extensions = _get("extensions")
+        obj.reference_task_ids = _get("referenceTaskIds")
+        return obj
 
 
 # --- Artifact ---
@@ -368,14 +397,17 @@ class Artifact:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "Artifact":
         """Deserialize from a camelCase dictionary."""
-        return cls(
-            artifact_id=d.get("artifactId", ""),
-            parts=[Part.from_dict(p) for p in d.get("parts", [])],
-            name=d.get("name"),
-            description=d.get("description"),
-            metadata=d.get("metadata"),
-            extensions=d.get("extensions"),
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        art_id = _get("artifactId", "")
+        obj.artifact_id = art_id if art_id else str(uuid.uuid4())
+        raw_parts = _get("parts")
+        obj.parts = [Part.from_dict(p) for p in raw_parts] if raw_parts else []
+        obj.name = _get("name")
+        obj.description = _get("description")
+        obj.metadata = _get("metadata")
+        obj.extensions = _get("extensions")
+        return obj
 
 
 # --- TaskStatus ---
@@ -406,12 +438,19 @@ class TaskStatus:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "TaskStatus":
         """Deserialize from a camelCase dictionary."""
-        msg = d.get("message")
-        return cls(
-            state=_enum_from_value(TaskState, d.get("state", "TASK_STATE_UNSPECIFIED")),
-            message=Message.from_dict(msg) if msg else None,
-            timestamp=d.get("timestamp"),
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        state_val = _get("state", "TASK_STATE_UNSPECIFIED")
+        obj.state = (
+            _TASKSTATE_BY_VALUE.get(state_val)
+            if isinstance(state_val, str)
+            else state_val
+        )  # type: ignore[assignment]
+        msg = _get("message")
+        obj.message = Message.from_dict(msg) if msg else None
+        ts = _get("timestamp")
+        obj.timestamp = ts if ts is not None else _now_iso()
+        return obj
 
 
 # --- Task ---
@@ -448,24 +487,27 @@ class Task:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "Task":
         """Deserialize from a camelCase dictionary."""
-        artifacts_raw = d.get("artifacts")
-        history_raw = d.get("history")
-        return cls(
-            id=d.get("id", ""),
-            status=TaskStatus.from_dict(d.get("status", {})),
-            context_id=d.get("contextId"),
-            artifacts=(
-                [Artifact.from_dict(a) for a in artifacts_raw]
-                if artifacts_raw is not None
-                else None
-            ),
-            history=(
-                [Message.from_dict(m) for m in history_raw]
-                if history_raw is not None
-                else None
-            ),
-            metadata=d.get("metadata"),
+        obj = object.__new__(cls)
+        _get = d.get
+        task_id = _get("id", "")
+        obj.id = task_id if task_id else str(uuid.uuid4())
+        status_raw = _get("status")
+        obj.status = TaskStatus.from_dict(status_raw) if status_raw else TaskStatus()
+        obj.context_id = _get("contextId")
+        artifacts_raw = _get("artifacts")
+        obj.artifacts = (
+            [Artifact.from_dict(a) for a in artifacts_raw]
+            if artifacts_raw is not None
+            else None
         )
+        history_raw = _get("history")
+        obj.history = (
+            [Message.from_dict(m) for m in history_raw]
+            if history_raw is not None
+            else None
+        )
+        obj.metadata = _get("metadata")
+        return obj
 
 
 # --- Streaming event types ---
@@ -494,12 +536,14 @@ class TaskStatusUpdateEvent:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "TaskStatusUpdateEvent":
         """Deserialize from a camelCase dictionary."""
-        return cls(
-            task_id=d.get("taskId", ""),
-            context_id=d.get("contextId", ""),
-            status=TaskStatus.from_dict(d.get("status", {})),
-            metadata=d.get("metadata"),
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        obj.task_id = _get("taskId", "")
+        obj.context_id = _get("contextId", "")
+        status_raw = _get("status")
+        obj.status = TaskStatus.from_dict(status_raw) if status_raw else TaskStatus()
+        obj.metadata = _get("metadata")
+        return obj
 
 
 @dataclass
@@ -529,14 +573,16 @@ class TaskArtifactUpdateEvent:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "TaskArtifactUpdateEvent":
         """Deserialize from a camelCase dictionary."""
-        return cls(
-            task_id=d.get("taskId", ""),
-            context_id=d.get("contextId", ""),
-            artifact=Artifact.from_dict(d.get("artifact", {})),
-            append=d.get("append", False),
-            last_chunk=d.get("lastChunk", False),
-            metadata=d.get("metadata"),
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        obj.task_id = _get("taskId", "")
+        obj.context_id = _get("contextId", "")
+        art_raw = _get("artifact")
+        obj.artifact = Artifact.from_dict(art_raw) if art_raw else Artifact()
+        obj.append = _get("append", False)
+        obj.last_chunk = _get("lastChunk", False)
+        obj.metadata = _get("metadata")
+        return obj
 
 
 @dataclass
@@ -572,16 +618,17 @@ class StreamResponse:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "StreamResponse":
         """Deserialize from a camelCase dictionary."""
-        task_d = d.get("task")
-        msg_d = d.get("message")
-        su_d = d.get("statusUpdate")
-        au_d = d.get("artifactUpdate")
-        return cls(
-            task=Task.from_dict(task_d) if task_d else None,
-            message=Message.from_dict(msg_d) if msg_d else None,
-            status_update=(TaskStatusUpdateEvent.from_dict(su_d) if su_d else None),
-            artifact_update=(TaskArtifactUpdateEvent.from_dict(au_d) if au_d else None),
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        task_d = _get("task")
+        msg_d = _get("message")
+        su_d = _get("statusUpdate")
+        au_d = _get("artifactUpdate")
+        obj.task = Task.from_dict(task_d) if task_d else None
+        obj.message = Message.from_dict(msg_d) if msg_d else None
+        obj.status_update = TaskStatusUpdateEvent.from_dict(su_d) if su_d else None
+        obj.artifact_update = TaskArtifactUpdateEvent.from_dict(au_d) if au_d else None
+        return obj
 
 
 # --- Request / Configuration types ---
@@ -606,10 +653,10 @@ class AuthenticationInfo:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "AuthenticationInfo":
         """Deserialize from a camelCase dictionary."""
-        return cls(
-            scheme=d.get("scheme", "Bearer"),
-            credentials=d.get("credentials"),
-        )
+        obj = object.__new__(cls)
+        obj.scheme = d.get("scheme", "Bearer")
+        obj.credentials = d.get("credentials")
+        return obj
 
 
 @dataclass
@@ -641,14 +688,16 @@ class PushNotificationConfig:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "PushNotificationConfig":
         """Deserialize from a camelCase dictionary."""
-        auth = d.get("authentication")
-        return cls(
-            url=d.get("url", ""),
-            id=d.get("id"),
-            task_id=d.get("taskId"),
-            token=d.get("token"),
-            authentication=AuthenticationInfo.from_dict(auth) if auth else None,
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        obj.url = _get("url", "")
+        pnc_id = _get("id")
+        obj.id = pnc_id if pnc_id else str(uuid.uuid4())
+        obj.task_id = _get("taskId")
+        obj.token = _get("token")
+        auth = _get("authentication")
+        obj.authentication = AuthenticationInfo.from_dict(auth) if auth else None
+        return obj
 
 
 @dataclass
@@ -674,15 +723,16 @@ class SendMessageConfiguration:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "SendMessageConfiguration":
         """Deserialize from a camelCase dictionary."""
-        pnc = d.get("pushNotificationConfig") or d.get("taskPushNotificationConfig")
-        return cls(
-            accepted_output_modes=d.get("acceptedOutputModes"),
-            push_notification_config=(
-                PushNotificationConfig.from_dict(pnc) if pnc else None
-            ),
-            history_length=d.get("historyLength"),
-            return_immediately=d.get("returnImmediately", False),
+        obj = object.__new__(cls)
+        _get = d.get
+        obj.accepted_output_modes = _get("acceptedOutputModes")
+        pnc = _get("pushNotificationConfig") or _get("taskPushNotificationConfig")
+        obj.push_notification_config = (
+            PushNotificationConfig.from_dict(pnc) if pnc else None
         )
+        obj.history_length = _get("historyLength")
+        obj.return_immediately = _get("returnImmediately", False)
+        return obj
 
 
 @dataclass
@@ -706,12 +756,14 @@ class SendMessageRequest:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "SendMessageRequest":
         """Deserialize from a camelCase dictionary."""
-        cfg = d.get("configuration")
-        return cls(
-            message=Message.from_dict(d.get("message", {})),
-            configuration=(SendMessageConfiguration.from_dict(cfg) if cfg else None),
-            metadata=d.get("metadata"),
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        msg_raw = _get("message")
+        obj.message = Message.from_dict(msg_raw) if msg_raw else Message()
+        cfg = _get("configuration")
+        obj.configuration = SendMessageConfiguration.from_dict(cfg) if cfg else None
+        obj.metadata = _get("metadata")
+        return obj
 
 
 @dataclass
@@ -737,12 +789,12 @@ class SendMessageResponse:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "SendMessageResponse":
         """Deserialize from a camelCase dictionary."""
+        obj = object.__new__(cls)
         task_d = d.get("task")
         msg_d = d.get("message")
-        return cls(
-            task=Task.from_dict(task_d) if task_d else None,
-            message=Message.from_dict(msg_d) if msg_d else None,
-        )
+        obj.task = Task.from_dict(task_d) if task_d else None
+        obj.message = Message.from_dict(msg_d) if msg_d else None
+        return obj
 
 
 # --- Agent discovery types ---
@@ -767,10 +819,10 @@ class AgentProvider:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "AgentProvider":
         """Deserialize from a camelCase dictionary."""
-        return cls(
-            organization=d.get("organization", ""),
-            url=d.get("url", ""),
-        )
+        obj = object.__new__(cls)
+        obj.organization = d.get("organization", "")
+        obj.url = d.get("url", "")
+        return obj
 
 
 @dataclass
@@ -796,12 +848,13 @@ class AgentExtension:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "AgentExtension":
         """Deserialize from a camelCase dictionary."""
-        return cls(
-            uri=d.get("uri", ""),
-            description=d.get("description"),
-            required=d.get("required", False),
-            params=d.get("params"),
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        obj.uri = _get("uri", "")
+        obj.description = _get("description")
+        obj.required = _get("required", False)
+        obj.params = _get("params")
+        return obj
 
 
 @dataclass
@@ -827,13 +880,14 @@ class AgentCapabilities:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "AgentCapabilities":
         """Deserialize from a camelCase dictionary."""
-        exts = d.get("extensions")
-        return cls(
-            streaming=d.get("streaming"),
-            push_notifications=d.get("pushNotifications"),
-            extensions=([AgentExtension.from_dict(e) for e in exts] if exts else None),
-            extended_agent_card=d.get("extendedAgentCard"),
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        obj.streaming = _get("streaming")
+        obj.push_notifications = _get("pushNotifications")
+        exts = _get("extensions")
+        obj.extensions = [AgentExtension.from_dict(e) for e in exts] if exts else None
+        obj.extended_agent_card = _get("extendedAgentCard")
+        return obj
 
 
 @dataclass
@@ -865,15 +919,16 @@ class AgentSkill:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "AgentSkill":
         """Deserialize from a camelCase dictionary."""
-        return cls(
-            id=d.get("id", ""),
-            name=d.get("name", ""),
-            description=d.get("description", ""),
-            tags=d.get("tags", []),
-            examples=d.get("examples"),
-            input_modes=d.get("inputModes"),
-            output_modes=d.get("outputModes"),
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        obj.id = _get("id", "")
+        obj.name = _get("name", "")
+        obj.description = _get("description", "")
+        obj.tags = _get("tags", [])
+        obj.examples = _get("examples")
+        obj.input_modes = _get("inputModes")
+        obj.output_modes = _get("outputModes")
+        return obj
 
 
 @dataclass
@@ -899,12 +954,13 @@ class AgentInterface:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "AgentInterface":
         """Deserialize from a camelCase dictionary."""
-        return cls(
-            url=d.get("url", ""),
-            protocol_binding=d.get("protocolBinding", "JSONRPC"),
-            protocol_version=d.get("protocolVersion", "1.0"),
-            tenant=d.get("tenant"),
-        )
+        obj = object.__new__(cls)
+        _get = d.get
+        obj.url = _get("url", "")
+        obj.protocol_binding = _get("protocolBinding", "JSONRPC")
+        obj.protocol_version = _get("protocolVersion", "1.0")
+        obj.tenant = _get("tenant")
+        return obj
 
 
 @dataclass
@@ -948,25 +1004,28 @@ class AgentCard:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "AgentCard":
         """Deserialize from a camelCase dictionary."""
-        interfaces = d.get("supportedInterfaces", [])
-        skills = d.get("skills", [])
-        caps = d.get("capabilities")
-        provider = d.get("provider")
-        return cls(
-            name=d.get("name", ""),
-            description=d.get("description", ""),
-            version=d.get("version", "1.0.0"),
-            supported_interfaces=[AgentInterface.from_dict(i) for i in interfaces],
-            default_input_modes=d.get("defaultInputModes", ["text/plain"]),
-            default_output_modes=d.get("defaultOutputModes", ["text/plain"]),
-            skills=[AgentSkill.from_dict(s) for s in skills],
-            capabilities=(AgentCapabilities.from_dict(caps) if caps else None),
-            provider=AgentProvider.from_dict(provider) if provider else None,
-            documentation_url=d.get("documentationUrl"),
-            security_schemes=d.get("securitySchemes"),
-            security_requirements=d.get("securityRequirements"),
-            icon_url=d.get("iconUrl"),
+        obj = object.__new__(cls)
+        _get = d.get
+        obj.name = _get("name", "")
+        obj.description = _get("description", "")
+        obj.version = _get("version", "1.0.0")
+        interfaces = _get("supportedInterfaces")
+        obj.supported_interfaces = (
+            [AgentInterface.from_dict(i) for i in interfaces] if interfaces else []
         )
+        obj.default_input_modes = _get("defaultInputModes", ["text/plain"])
+        obj.default_output_modes = _get("defaultOutputModes", ["text/plain"])
+        skills = _get("skills")
+        obj.skills = [AgentSkill.from_dict(s) for s in skills] if skills else []
+        caps = _get("capabilities")
+        obj.capabilities = AgentCapabilities.from_dict(caps) if caps else None
+        provider = _get("provider")
+        obj.provider = AgentProvider.from_dict(provider) if provider else None
+        obj.documentation_url = _get("documentationUrl")
+        obj.security_schemes = _get("securitySchemes")
+        obj.security_requirements = _get("securityRequirements")
+        obj.icon_url = _get("iconUrl")
+        return obj
 
 
 # ── 2. JSON-RPC 2.0 Layer ──────────────────────────────────────────────────

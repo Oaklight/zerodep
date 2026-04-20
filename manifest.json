@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-04-20T15:13:09.338739+00:00",
+  "generated": "2026-04-20T15:51:53.893137+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -13,7 +13,7 @@
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-04-20T22:27:52+08:00",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "11c6769744f13875563b39b8379295e128762bfeba67fbaa4e316e72e96d9604"
     },
     "acp": {
@@ -31,18 +31,16 @@
       "content_hash": "6c7dc3a97e136d0d949f34520952ef31e82f00f882320d997149461e78d5efa6"
     },
     "aes": {
-      "description": "AES encryption via OpenSSL libcrypto (ctypes): ECB, CBC, CTR, and GCM modes",
+      "description": "AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",
       "files": [
-        "aes/__init__.py",
-        "aes/aes.py",
-        "aes/aes_python.py"
+        "aes/aes.py"
       ],
-      "version": "0.4.0",
+      "version": "0.5.0",
       "deps": [],
       "tier": "medium",
       "category": "crypto",
       "last_updated": "2026-04-15T20:53:03+08:00",
-      "content_hash": "c8efa1b058fb338a54d8afa03001701db40468238572431f06aa4136dd801d0f"
+      "content_hash": "b09c080a243ceee4f955f5c5eb88c05ecbc022e17d0177c22d01662584e5ecb3"
     },
     "ansi": {
       "description": "ANSI escape code primitives for terminal styling",
@@ -65,7 +63,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "utility",
-      "last_updated": "2026-04-20T22:32:50+08:00",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "0daa535d12e0d214a579242ad73d725b9f18145f6c67b319fa4185e7851685ae"
     },
     "config": {
@@ -203,7 +201,7 @@
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-20T01:25:43+08:00",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "22a1f335dbc3899fc27838b4c34413d25455bebadff8f8711e5fbba15d27e2ad"
     },
     "prompt": {
@@ -239,7 +237,7 @@
       "deps": [],
       "tier": "simple",
       "category": "utility",
-      "last_updated": "2026-04-20T22:37:15+08:00",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "8574fe70421245e6a60aaaa65fdf60f8a196c18d5578b7943888ab42702f3ad8"
     },
     "readability": {
@@ -302,7 +300,7 @@
       "deps": [],
       "tier": "simple",
       "category": "data",
-      "last_updated": "2026-04-20T01:32:34+08:00",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "2c9776510dbd235fb9752df25ab8bca390ad29cf1804aeae32de5c7773bc40d9"
     },
     "skills": {
@@ -317,7 +315,7 @@
       ],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-15T14:33:44Z",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "af69314728164602db323a5240feac58260e4b0d5ceedb32945c80e2ddfa13e7"
     },
     "soup": {
@@ -329,7 +327,7 @@
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-20T22:34:09+08:00",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "f8f228c21989d06225b607452417907a26751e6bea837443551e722d84eb16e1"
     },
     "sparse_search": {

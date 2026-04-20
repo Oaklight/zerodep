@@ -7,29 +7,66 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from aes_python import (
-    aes128_ecb_decrypt,
-    aes128_ecb_encrypt,
-    aes_cbc_decrypt,
-    aes_cbc_encrypt,
-    aes_ctr_decrypt,
-    aes_ctr_encrypt,
-    aes_ecb_decrypt,
-    aes_ecb_encrypt,
-    aes_gcm_decrypt,
-    aes_gcm_encrypt,
+from aes import (
+    _py_aes_cbc_decrypt as aes_cbc_decrypt,
 )
-
-from aes import aes128_ecb_decrypt as openssl_legacy_decrypt
-from aes import aes128_ecb_encrypt as openssl_legacy_encrypt
-from aes import aes_cbc_decrypt as openssl_cbc_decrypt
-from aes import aes_cbc_encrypt as openssl_cbc_encrypt
-from aes import aes_ctr_decrypt as openssl_ctr_decrypt
-from aes import aes_ctr_encrypt as openssl_ctr_encrypt
-from aes import aes_ecb_decrypt as openssl_ecb_decrypt
-from aes import aes_ecb_encrypt as openssl_ecb_encrypt
-from aes import aes_gcm_decrypt as openssl_gcm_decrypt
-from aes import aes_gcm_encrypt as openssl_gcm_encrypt
+from aes import (
+    _py_aes_cbc_encrypt as aes_cbc_encrypt,
+)
+from aes import (
+    _py_aes_ctr_decrypt as aes_ctr_decrypt,
+)
+from aes import (
+    _py_aes_ctr_encrypt as aes_ctr_encrypt,
+)
+from aes import (
+    _py_aes_ecb_decrypt as aes128_ecb_decrypt,
+)
+from aes import (
+    _py_aes_ecb_decrypt as aes_ecb_decrypt,
+)
+from aes import (
+    _py_aes_ecb_encrypt as aes128_ecb_encrypt,
+)
+from aes import (
+    _py_aes_ecb_encrypt as aes_ecb_encrypt,
+)
+from aes import (
+    _py_aes_gcm_decrypt as aes_gcm_decrypt,
+)
+from aes import (
+    _py_aes_gcm_encrypt as aes_gcm_encrypt,
+)
+from aes import (
+    aes128_ecb_decrypt as openssl_legacy_decrypt,
+)
+from aes import (
+    aes128_ecb_encrypt as openssl_legacy_encrypt,
+)
+from aes import (
+    aes_cbc_decrypt as openssl_cbc_decrypt,
+)
+from aes import (
+    aes_cbc_encrypt as openssl_cbc_encrypt,
+)
+from aes import (
+    aes_ctr_decrypt as openssl_ctr_decrypt,
+)
+from aes import (
+    aes_ctr_encrypt as openssl_ctr_encrypt,
+)
+from aes import (
+    aes_ecb_decrypt as openssl_ecb_decrypt,
+)
+from aes import (
+    aes_ecb_encrypt as openssl_ecb_encrypt,
+)
+from aes import (
+    aes_gcm_decrypt as openssl_gcm_decrypt,
+)
+from aes import (
+    aes_gcm_encrypt as openssl_gcm_encrypt,
+)
 
 Cipher = pytest.importorskip("Crypto.Cipher", reason="pycryptodome not installed")
 from Crypto.Cipher import AES as PyCryptoAES

@@ -32,9 +32,9 @@ zerodep readability、[`readability-lxml`](https://pypi.org/project/readability-
 
 | Fixture | zerodep | readability-lxml | 比率 |
 |---------|---------|------------------|------|
-| 小型 (001) | ~3 ms | ~5 ms | 快约 1.7x |
-| 中型 (bbc-1) | ~30 ms | ~15 ms | 慢约 2x |
-| 大型 (wikipedia) | ~25 ms | ~12 ms | 慢约 2x |
+| 小型 (001) | ~2.4 ms | ~5 ms | **快约 2.1x** |
+| 中型 (bbc-1) | ~13 ms | ~15 ms | **快约 1.2x** |
+| 大型 (wikipedia) | ~17 ms | ~12 ms | 慢约 1.4x |
 
 ## 三方对比
 
@@ -48,8 +48,8 @@ python readability/benchmark_compare.py --rounds 10
 
 ## 关键结论
 
-- **zerodep 在小/中型页面上具有竞争力** —— 对于典型博客文章和新闻报道，提取时间在几毫秒级别
-- **readability-lxml 在大型页面上更快** —— lxml 的 C 解析器在复杂 HTML 上有优势。zerodep 使用纯 Python 的 `html.parser` 解析
+- **zerodep 在小型和中型页面上现已更快** —— 对于简单文章，zerodep 比 readability-lxml **快约 2.1 倍**（此前快约 1.7 倍）。对于中型新闻文章，zerodep 现在**快约 1.2 倍**（此前慢约 2 倍）。优化后的评分和树遍历算法大幅提升了中型页面的性能。
+- **readability-lxml 在大型页面上仍有优势** —— lxml 的 C 解析器在维基百科等复杂 HTML 上依然占优，但差距从约 2 倍缩小到约 1.4 倍。
 - **zerodep 元数据更丰富** —— JSON-LD 提取、RTL 支持和 OpenGraph 元数据是 readability-lxml 所不具备的
 - **零 pip 依赖** —— zerodep 仅需标准库，而 readability-lxml 依赖 lxml 和 cssselect
 

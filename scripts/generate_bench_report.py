@@ -57,6 +57,9 @@ _REF_LIBS: dict[str, str] = {
     "shelve": "shelve",
     "jsonrpcserver": "jsonrpcserver",
     "google": "google (protobuf)",
+    "readability_lxml": "readability-lxml",
+    "reference": "reference",
+    "sqlitedict": "sqlitedict",
 }
 
 
@@ -162,7 +165,9 @@ def _pairing_key(method: str) -> str:
     both map to ``encode_small``, so they will be paired together while
     ``encode_large_*`` variants form a separate pair.
     """
-    m = method.lower().removeprefix("test_")
+    # Check markers on the FULL lowered name first (before stripping test_),
+    # so that patterns like "_ours" in "test_ours" are detected correctly.
+    m = method.lower()
 
     # Strip zerodep markers
     for marker in _ZERODEP_MARKERS:
@@ -170,11 +175,20 @@ def _pairing_key(method: str) -> str:
             m = m.replace(marker, "", 1)
             break
     else:
-        # Strip reference library markers (only when no zerodep marker found)
-        for frag in _REF_LIBS:
+        # Strip reference library markers — longest key first so that
+        # e.g. "httpx_sse" matches before "httpx".
+        for frag in sorted(_REF_LIBS, key=len, reverse=True):
             if frag in m:
                 m = m.replace(frag, "", 1)
                 break
+        else:
+            # Last resort: strip generic "_ref" suffix
+            # (e.g. toon's test_encode_small_ref)
+            if m.endswith("_ref"):
+                m = m[:-4]
+
+    # NOW strip "test_" prefix (after marker removal to avoid boundary issues)
+    m = m.removeprefix("test_").removeprefix("test")
 
     # Normalise residual underscores
     m = m.strip("_")
@@ -236,14 +250,66 @@ def _build_comparisons(modules: dict) -> list[dict]:
             for e in ref_entries:
                 ref_by_key[_pairing_key(e["method"])].append(e)
 
-            matched_zd_keys: set[str] = set()
-            matched_ref_keys: set[str] = set()
+            common_keys = set(zd_by_key) & set(ref_by_key)
 
-            for key in sorted(set(zd_by_key) & set(ref_by_key)):
-                matched_zd_keys.add(key)
-                matched_ref_keys.add(key)
-                for zd in zd_by_key[key]:
-                    for ref in ref_by_key[key]:
+            if common_keys:
+                # Pair by matching canonical keys
+                matched_zd_keys: set[str] = set()
+                matched_ref_keys: set[str] = set()
+
+                for key in sorted(common_keys):
+                    matched_zd_keys.add(key)
+                    matched_ref_keys.add(key)
+                    for zd in zd_by_key[key]:
+                        for ref in ref_by_key[key]:
+                            ratio = (
+                                zd["mean"] / ref["mean"]
+                                if ref["mean"] > 0
+                                else float("inf")
+                            )
+                            zd_variant = zd["method"].removeprefix("test_")
+                            pairs.append(
+                                {
+                                    "operation": op_name,
+                                    "zd_variant": zd_variant,
+                                    "zd_mean": zd["mean"],
+                                    "zd_ops": zd["ops"],
+                                    "ref_label": ref["label"],
+                                    "ref_mean": ref["mean"],
+                                    "ref_ops": ref["ops"],
+                                    "ratio": ratio,
+                                }
+                            )
+
+                # Unmatched zerodep entries → standalone
+                for key in sorted(set(zd_by_key) - matched_zd_keys):
+                    for e in zd_by_key[key]:
+                        standalone.append(
+                            {
+                                "operation": op_name,
+                                "variant": e["method"].removeprefix("test_"),
+                                "mean": e["mean"],
+                                "ops": e["ops"],
+                            }
+                        )
+
+                # Unmatched reference entries → standalone
+                for key in sorted(set(ref_by_key) - matched_ref_keys):
+                    for e in ref_by_key[key]:
+                        standalone.append(
+                            {
+                                "operation": op_name,
+                                "variant": e["label"],
+                                "mean": e["mean"],
+                                "ops": e["ops"],
+                            }
+                        )
+            else:
+                # No canonical keys overlap — fall back to cross-product
+                # pairing (e.g. persistdict where zerodep variants like
+                # _json/_sqlite have no 1:1 reference counterpart).
+                for zd in zd_entries:
+                    for ref in ref_entries:
                         ratio = (
                             zd["mean"] / ref["mean"]
                             if ref["mean"] > 0
@@ -262,30 +328,6 @@ def _build_comparisons(modules: dict) -> list[dict]:
                                 "ratio": ratio,
                             }
                         )
-
-            # Unmatched zerodep entries → standalone
-            for key in sorted(set(zd_by_key) - matched_zd_keys):
-                for e in zd_by_key[key]:
-                    standalone.append(
-                        {
-                            "operation": op_name,
-                            "variant": e["method"].removeprefix("test_"),
-                            "mean": e["mean"],
-                            "ops": e["ops"],
-                        }
-                    )
-
-            # Unmatched reference entries → standalone
-            for key in sorted(set(ref_by_key) - matched_ref_keys):
-                for e in ref_by_key[key]:
-                    standalone.append(
-                        {
-                            "operation": op_name,
-                            "variant": e["label"],
-                            "mean": e["mean"],
-                            "ops": e["ops"],
-                        }
-                    )
 
         result.append(
             {

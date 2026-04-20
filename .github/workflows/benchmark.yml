@@ -116,9 +116,10 @@ jobs:
           git worktree add gh-pages-wt gh-pages
           mkdir -p gh-pages-wt/dev/bench/modules
           cp bench-output/index.html gh-pages-wt/dev/bench/index.html
+          cp bench-output/history.html gh-pages-wt/dev/bench/history.html
           cp bench-output/modules/*.html gh-pages-wt/dev/bench/modules/
           cd gh-pages-wt
-          git add dev/bench/index.html dev/bench/modules/
+          git add dev/bench/index.html dev/bench/history.html dev/bench/modules/
           if git diff --cached --quiet; then
             echo "No changes to report"
           else

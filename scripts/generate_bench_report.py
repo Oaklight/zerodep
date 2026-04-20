@@ -441,6 +441,50 @@ def _ratio_text(ratio: float) -> str:
     return "~equal"
 
 
+def _build_sparkline_init_js(module_names: list[str], data_js_path: str) -> str:
+    """Generate JS that loads history and draws a sparkline per module."""
+    modules_json = json.dumps(module_names)
+    return f"""\
+(async function() {{
+  var data = await loadHistory('{data_js_path}');
+  if (!data || !data.entries || !data.entries.Benchmark) return;
+  var modules = {modules_json};
+  modules.forEach(function(mod) {{
+    var canvas = document.getElementById('sparkline_' + mod);
+    if (!canvas) return;
+    var filtered = filterBenchesForModule(data.entries.Benchmark, mod);
+    if (filtered.length < 2) {{ canvas.style.display = 'none'; return; }}
+    // Compute median zerodep ops/s per entry
+    var points = filtered.map(function(entry) {{
+      var zdOps = entry.benches
+        .filter(function(b) {{ return isZerodepBench(b.name); }})
+        .map(function(b) {{ return b.value; }});
+      if (!zdOps.length) return null;
+      zdOps.sort(function(a,b) {{ return a - b; }});
+      var mid = Math.floor(zdOps.length / 2);
+      var median = zdOps.length % 2 ? zdOps[mid] : (zdOps[mid-1]+zdOps[mid])/2;
+      return median;
+    }}).filter(function(v) {{ return v !== null; }});
+    if (points.length < 2) {{ canvas.style.display = 'none'; return; }}
+    // Draw simple sparkline on canvas
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width, h = canvas.height;
+    var mn = Math.min.apply(null, points), mx = Math.max.apply(null, points);
+    var range = mx - mn || 1;
+    ctx.strokeStyle = getComputedStyle(document.documentElement)
+      .getPropertyValue('--accent').trim() || '#6f42c1';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    points.forEach(function(v, i) {{
+      var x = (i / (points.length - 1)) * w;
+      var y = h - ((v - mn) / range) * (h - 2) - 1;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }});
+    ctx.stroke();
+  }});
+}})();"""
+
+
 def _generate_html(comparisons: list[dict], meta: dict) -> str:
     # Summary stats
     total_pairs = sum(len(m["pairs"]) for m in comparisons)
@@ -465,7 +509,17 @@ def _generate_html(comparisons: list[dict], meta: dict) -> str:
             continue
 
         s = f'<div class="module-section" id="mod-{module}">\n'
-        s += f"<h2>{module}</h2>\n"
+        sparkline_id = f"sparkline_{module}"
+        s += (
+            f"<h2>{module}"
+            f'<span class="sparkline-container">'
+            f'<canvas id="{sparkline_id}" width="60" height="20">'
+            f"</canvas></span>"
+            f'<a href="modules/{module}.html" '
+            f'style="font-size:.85rem;margin-left:.5rem;'
+            f'color:var(--accent)">\u2197</a>'
+            f"</h2>\n"
+        )
 
         if pairs:
             # --- Comparison table ---
@@ -580,7 +634,8 @@ new Chart(document.getElementById('{cid}'), {{
             nav_links.append(f"{link}{m} ({np})</a>")
 
     nav_open = '<div style="margin-bottom:1.5rem;font-size:.9rem">'
-    nav = nav_open + " ".join(nav_links) + "</div>"
+    history_link = '<a href="history.html" class="history-link">\U0001f4c8 History</a>'
+    nav = nav_open + " ".join(nav_links) + history_link + "</div>"
 
     version = meta.get("version", "unknown")
     commit = meta.get("commit", "")
@@ -609,14 +664,19 @@ new Chart(document.getElementById('{cid}'), {{
         ]
     )
 
+    # Build sparkline init JS for each module
+    module_names = [m["module"] for m in comparisons if m["pairs"] or m["standalone"]]
+    sparkline_init = _build_sparkline_init_js(module_names, "./data.js")
+
     html = (
         '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
         '<meta charset="utf-8">\n'
         '<meta name="viewport" '
         'content="width=device-width, initial-scale=1">\n'
         f"<title>zerodep Benchmark — {version}</title>\n"
-        f"<style>{_CSS}</style>\n"
+        f"<style>{_CSS}\n{_TREND_CSS}</style>\n"
         f'<script src="{_CHARTJS_URL}"></script>\n'
+        f'<script src="{_CHARTJS_ADAPTER_URL}"></script>\n'
         "</head>\n<body>\n"
         '<div class="header-row">\n'
         "<h1>zerodep Benchmark Report</h1>\n"
@@ -626,7 +686,8 @@ new Chart(document.getElementById('{cid}'), {{
         f'<div class="summary-grid">\n{cards}\n</div>\n'
         f"{nav}\n"
         f"{''.join(sections)}\n"
-        f"<script>\n{''.join(charts_js)}\n"
+        f"<script>\n{_HISTORY_JS}\n{''.join(charts_js)}\n"
+        f"{sparkline_init}\n"
         f"{_THEME_JS}\n</script>\n"
         "</body>\n</html>"
     )
@@ -655,6 +716,174 @@ _THEME_JS = """\
 })();"""
 
 _CHARTJS_URL = "https://cdn.jsdelivr.net/npm/chart.js@4"
+
+# ---------------------------------------------------------------------------
+# Historical trend support (client-side)
+# ---------------------------------------------------------------------------
+
+_TREND_CSS = """\
+.trend-section {
+  margin-top: 2rem; padding-top: 1.5rem;
+  border-top: 1px dashed var(--border);
+}
+.trend-section h3 { margin-bottom: .8rem; }
+.trend-chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+  height: 320px; position: relative;
+}
+.trend-empty {
+  color: var(--meta); font-style: italic; text-align: center;
+  padding: 2rem 0;
+}
+.sparkline-container {
+  display: inline-block; vertical-align: middle; margin-left: .5rem;
+}
+.history-link {
+  font-size: .9rem; margin-left: 1rem;
+  color: var(--accent); text-decoration: none;
+}
+.history-link:hover { text-decoration: underline; }
+.history-module-section { margin-bottom: 3rem; }
+.history-chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; height: 400px;
+}
+"""
+
+# Shared JS for loading and processing data.js history
+_HISTORY_JS = """\
+async function loadHistory(dataJsPath) {
+  try {
+    var resp = await fetch(dataJsPath);
+    if (!resp.ok) return null;
+    var text = await resp.text();
+    var jsonStr = text.replace(/^window\\.BENCHMARK_DATA\\s*=\\s*/, '')
+                      .replace(/;\\s*$/, '');
+    return JSON.parse(jsonStr);
+  } catch(e) { return null; }
+}
+
+function filterBenchesForModule(entries, moduleName) {
+  if (!entries || !entries.length) return [];
+  return entries.map(function(entry) {
+    return {
+      date: entry.date,
+      commit: entry.commit,
+      benches: entry.benches.filter(function(b) {
+        return b.name.split('/')[0] === moduleName;
+      })
+    };
+  }).filter(function(e) { return e.benches.length > 0; });
+}
+
+function isZerodepBench(name) {
+  var lower = name.toLowerCase();
+  var markers = ['zerodep','pure_python','openssl','_ours','ours_'];
+  return markers.some(function(m) { return lower.indexOf(m) !== -1; });
+}
+
+function benchLabel(name) {
+  // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
+  // → "ECB Encrypt (Small) / pure_python"
+  var parts = name.split('::');
+  var method = parts[parts.length - 1] || name;
+  return method.replace(/^test_/, '');
+}
+
+// Distinct colors for trend lines
+var TREND_COLORS = [
+  '#6f42c1','#0d6efd','#198754','#dc3545','#fd7e14',
+  '#20c997','#e83e8c','#6610f2','#17a2b8','#ffc107'
+];
+"""
+
+# JS to render a trend chart for a specific module page
+_MODULE_TREND_INIT_JS = """\
+(async function() {{
+  var section = document.getElementById('trend-section');
+  if (!section) return;
+  var data = await loadHistory('{data_js_path}');
+  if (!data || !data.entries || !data.entries.Benchmark) {{
+    section.style.display = 'none'; return;
+  }}
+  var filtered = filterBenchesForModule(data.entries.Benchmark, '{module}');
+  if (!filtered.length) {{ section.style.display = 'none'; return; }}
+
+  // Collect unique zerodep bench names
+  var nameSet = {{}};
+  filtered.forEach(function(entry) {{
+    entry.benches.forEach(function(b) {{
+      if (isZerodepBench(b.name)) nameSet[b.name] = true;
+    }});
+  }});
+  var names = Object.keys(nameSet).sort();
+  if (!names.length) {{ section.style.display = 'none'; return; }}
+
+  // Build datasets: one line per bench name
+  var datasets = names.map(function(name, i) {{
+    var pts = [];
+    filtered.forEach(function(entry) {{
+      var bench = entry.benches.find(function(b) {{ return b.name === name; }});
+      if (bench) pts.push({{ x: new Date(entry.date), y: bench.value }});
+    }});
+    return {{
+      label: benchLabel(name),
+      data: pts,
+      borderColor: TREND_COLORS[i % TREND_COLORS.length],
+      backgroundColor: TREND_COLORS[i % TREND_COLORS.length] + '20',
+      fill: false, tension: 0.3, pointRadius: 3, borderWidth: 2,
+    }};
+  }});
+
+  section.style.display = '';
+  new Chart(document.getElementById('trend-chart'), {{
+    type: 'line',
+    data: {{ datasets: datasets }},
+    options: {{
+      responsive: true, maintainAspectRatio: false,
+      plugins: {{
+        legend: {{
+          position: 'bottom',
+          labels: {{ boxWidth: 12, font: {{ size: 11 }} }}
+        }},
+        title: {{
+          display: true,
+          text: '{module} — zerodep ops/s over time'
+        }},
+        tooltip: {{
+          callbacks: {{
+            title: function(items) {{
+              var d = items[0].raw.x;
+              return d.toLocaleDateString();
+            }},
+            afterTitle: function(items) {{
+              // Show commit from filtered data
+              var ts = items[0].raw.x.getTime();
+              var entry = filtered.find(function(e) {{
+                return Math.abs(e.date - ts) < 86400000;
+              }});
+              return entry ? 'commit: ' + (entry.commit.id || '').substring(0,8) : '';
+            }}
+          }}
+        }}
+      }},
+      scales: {{
+        x: {{
+          type: 'time', time: {{ unit: 'day' }},
+          title: {{ display: true, text: 'Date' }}
+        }},
+        y: {{
+          type: 'logarithmic',
+          title: {{ display: true, text: 'ops/s (log)' }}
+        }}
+      }}
+    }}
+  }});
+}})();"""
+
+# Chartjs-adapter-date-fns for time axis
+_CHARTJS_ADAPTER_URL = "https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"
 
 
 def _generate_module_page(mod_data: dict, meta: dict) -> str | None:
@@ -768,14 +997,29 @@ new Chart(document.getElementById('{cid}'), {{
 
     meta_line = f"Version: {version} | Commit: {commit_short} | {timestamp}"
 
+    # Trend section (initially hidden, revealed by JS if data available)
+    trend_html = (
+        '<div class="trend-section" id="trend-section" style="display:none">\n'
+        "<h3>Performance Trend</h3>\n"
+        '<div class="trend-chart-container">'
+        '<canvas id="trend-chart"></canvas></div>\n'
+        "</div>\n"
+    )
+
+    trend_init = _MODULE_TREND_INIT_JS.format(
+        data_js_path="../data.js",
+        module=module,
+    )
+
     return (
         '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
         '<meta charset="utf-8">\n'
         '<meta name="viewport" '
         'content="width=device-width, initial-scale=1">\n'
         f"<title>{module} Benchmark — zerodep</title>\n"
-        f"<style>{_CSS}</style>\n"
+        f"<style>{_CSS}\n{_TREND_CSS}</style>\n"
         f'<script src="{_CHARTJS_URL}"></script>\n'
+        f'<script src="{_CHARTJS_ADAPTER_URL}"></script>\n'
         "</head>\n<body>\n"
         '<div class="header-row">\n'
         f"<h1>{module}</h1>\n"
@@ -783,7 +1027,160 @@ new Chart(document.getElementById('{cid}'), {{
         "\u263e Dark</button>\n</div>\n"
         f'<p class="meta">{meta_line}</p>\n'
         f"{body}\n"
-        f"<script>\n{''.join(charts_js)}\n"
+        f"{trend_html}\n"
+        f"<script>\n{_HISTORY_JS}\n{''.join(charts_js)}\n"
+        f"{trend_init}\n"
+        f"{_THEME_JS}\n</script>\n"
+        "</body>\n</html>"
+    )
+
+
+def _generate_history_page(module_names: list[str], meta: dict) -> str:
+    """Generate a standalone history.html with trend charts for all modules."""
+    version = meta.get("version", "unknown")
+    commit = meta.get("commit", "")
+    commit_short = commit[:8] if commit else "N/A"
+    timestamp = meta.get("datetime", "")
+    meta_line = (
+        f"Version: {version} &nbsp;|&nbsp; "
+        f"Commit: {commit_short} &nbsp;|&nbsp; {timestamp}"
+    )
+
+    # Build nav links to each module section
+    nav_links = " ".join(
+        f'<a href="#hist-{m}" style="margin-right:1rem">{m}</a>' for m in module_names
+    )
+    nav = (
+        '<div style="margin-bottom:1.5rem;font-size:.9rem">'
+        f'<a href="index.html" style="margin-right:1rem">'
+        f"\u2190 Back to Report</a>"
+        f"{nav_links}</div>"
+    )
+
+    # Module sections — each gets a chart container
+    sections = []
+    for mod in module_names:
+        sections.append(
+            f'<div class="history-module-section" id="hist-{mod}">\n'
+            f"<h2>{mod}</h2>\n"
+            f'<div class="history-chart-container">'
+            f'<canvas id="hist-chart-{mod}"></canvas></div>\n'
+            f"</div>\n"
+        )
+
+    # JS to load data.js and render all charts
+    modules_json = json.dumps(module_names)
+    init_js = f"""\
+(async function() {{
+  var data = await loadHistory('./data.js');
+  var modules = {modules_json};
+  if (!data || !data.entries || !data.entries.Benchmark) {{
+    modules.forEach(function(mod) {{
+      var container = document.getElementById('hist-' + mod);
+      if (container) {{
+        container.querySelector('.history-chart-container').innerHTML =
+          '<p class="trend-empty">No historical data available yet.</p>';
+      }}
+    }});
+    return;
+  }}
+  modules.forEach(function(mod) {{
+    var canvas = document.getElementById('hist-chart-' + mod);
+    if (!canvas) return;
+    var filtered = filterBenchesForModule(data.entries.Benchmark, mod);
+    if (!filtered.length) {{
+      canvas.parentElement.innerHTML =
+        '<p class="trend-empty">No historical data for this module.</p>';
+      return;
+    }}
+    // Collect unique zerodep bench names
+    var nameSet = {{}};
+    filtered.forEach(function(entry) {{
+      entry.benches.forEach(function(b) {{
+        if (isZerodepBench(b.name)) nameSet[b.name] = true;
+      }});
+    }});
+    var names = Object.keys(nameSet).sort();
+    if (!names.length) {{
+      canvas.parentElement.innerHTML =
+        '<p class="trend-empty">No zerodep benchmarks in history.</p>';
+      return;
+    }}
+    var datasets = names.map(function(name, i) {{
+      var pts = [];
+      filtered.forEach(function(entry) {{
+        var bench = entry.benches.find(function(b) {{ return b.name === name; }});
+        if (bench) pts.push({{ x: new Date(entry.date), y: bench.value }});
+      }});
+      return {{
+        label: benchLabel(name),
+        data: pts,
+        borderColor: TREND_COLORS[i % TREND_COLORS.length],
+        backgroundColor: TREND_COLORS[i % TREND_COLORS.length] + '20',
+        fill: false, tension: 0.3, pointRadius: 3, borderWidth: 2,
+      }};
+    }});
+    new Chart(canvas, {{
+      type: 'line',
+      data: {{ datasets: datasets }},
+      options: {{
+        responsive: true, maintainAspectRatio: false,
+        plugins: {{
+          legend: {{
+            position: 'bottom',
+            labels: {{ boxWidth: 12, font: {{ size: 11 }} }}
+          }},
+          title: {{ display: true, text: mod + ' — zerodep ops/s over time' }},
+          tooltip: {{
+            callbacks: {{
+              title: function(items) {{
+                return items[0].raw.x.toLocaleDateString();
+              }},
+              afterTitle: function(items) {{
+                var ts = items[0].raw.x.getTime();
+                var entry = filtered.find(function(e) {{
+                  return Math.abs(e.date - ts) < 86400000;
+                }});
+                return entry
+                  ? 'commit: ' + (entry.commit.id || '').substring(0,8) : '';
+              }}
+            }}
+          }}
+        }},
+        scales: {{
+          x: {{
+            type: 'time',
+            time: {{ unit: 'day' }},
+            title: {{ display: true, text: 'Date' }}
+          }},
+          y: {{
+            type: 'logarithmic',
+            title: {{ display: true, text: 'ops/s (log)' }}
+          }}
+        }}
+      }}
+    }});
+  }});
+}})();"""
+
+    return (
+        '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
+        '<meta charset="utf-8">\n'
+        '<meta name="viewport" '
+        'content="width=device-width, initial-scale=1">\n'
+        f"<title>Performance History — zerodep</title>\n"
+        f"<style>{_CSS}\n{_TREND_CSS}</style>\n"
+        f'<script src="{_CHARTJS_URL}"></script>\n'
+        f'<script src="{_CHARTJS_ADAPTER_URL}"></script>\n'
+        "</head>\n<body>\n"
+        '<div class="header-row">\n'
+        "<h1>\U0001f4c8 Performance History</h1>\n"
+        '<button class="theme-toggle" id="theme-toggle">'
+        "\u263e Dark</button>\n</div>\n"
+        f'<p class="meta">{meta_line}</p>\n'
+        f"{nav}\n"
+        f"{''.join(sections)}\n"
+        f"<script>\n{_HISTORY_JS}\n{init_js}\n"
         f"{_THEME_JS}\n</script>\n"
         "</body>\n</html>"
     )
@@ -839,6 +1236,13 @@ def main() -> None:
         mod_path.write_text(page)
         mod_count += 1
     print(f"  {mod_count} module pages written to {modules_dir}/")
+
+    # Generate history page
+    module_names = [m["module"] for m in comparisons if m["pairs"] or m["standalone"]]
+    history_html = _generate_history_page(module_names, meta)
+    history_path = output_path.parent / "history.html"
+    history_path.write_text(history_html)
+    print(f"  History page written to {history_path}")
 
     # Print summary
     total_pairs = sum(len(m["pairs"]) for m in comparisons)

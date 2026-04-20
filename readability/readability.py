@@ -336,6 +336,11 @@ def _text_length(tag: Any) -> int:
 class _Readability:
     """Internal engine that implements the readability extraction algorithm."""
 
+    # Tags to discard during article-extraction parsing.  These are never
+    # part of the readable content and skipping them speeds up both tree
+    # construction and subsequent traversals.
+    _SKIP_TAGS = frozenset({"script", "style", "link", "noscript"})
+
     def __init__(self, html: str, Soup: type, Tag: type) -> None:
         self._raw_html = html
         self._Soup = Soup
@@ -346,13 +351,15 @@ class _Readability:
 
     def parse(self) -> ReadabilityResult:
         """Run the full extraction pipeline and return a result."""
-        # Extract metadata before we mutate the DOM.
-        metadata_soup = self._Soup(self._raw_html)
-        metadata = self._extract_metadata(metadata_soup)
-        lang = self._detect_lang(metadata_soup)
-        direction = self._detect_dir(metadata_soup)
+        # Parse once: extract metadata from the fresh DOM before mutations.
+        self._soup = self._Soup(self._raw_html)
+        metadata = self._extract_metadata(self._soup)
+        lang = self._detect_lang(self._soup)
+        direction = self._detect_dir(self._soup)
 
-        # Grab article content (with retry logic).
+        # Grab article content.  The first iteration reuses self._soup
+        # (removing non-content tags in-place); retries use a faster
+        # parse that skips those tags during tree construction.
         article_html, article_text = self._grab_article()
 
         # If metadata title is empty, try to derive from article headings.
@@ -376,6 +383,8 @@ class _Readability:
 
     # ── Article grabbing (with retry) ────────────────────────────────────
 
+    _PRE_CLEAN_TAGS = ["script", "style", "link", "noscript"]
+
     def _grab_article(self) -> tuple[str, str]:
         """Extract article content, retrying with relaxed rules if needed.
 
@@ -385,9 +394,14 @@ class _Readability:
         ruthless = True
 
         for _attempt in range(2):
-            # Re-parse for a fresh DOM each attempt.
-            self._soup = self._Soup(self._raw_html)
-            self._pre_clean()
+            if _attempt == 0:
+                # First attempt: reuse the DOM already parsed by parse()
+                # and strip non-content tags in-place.
+                self._pre_clean()
+            else:
+                # Retry: fast re-parse that skips non-content tags at the
+                # parser level (avoids building + decomposing subtrees).
+                self._soup = self._Soup(self._raw_html, skip_tags=self._SKIP_TAGS)
 
             if ruthless:
                 self._remove_unlikely_candidates()
@@ -431,9 +445,8 @@ class _Readability:
 
     def _pre_clean(self) -> None:
         """Remove script, style, link and other non-content tags."""
-        for tag_name in ("script", "style", "link", "noscript"):
-            for tag in list(self._soup.find_all(tag_name)):
-                tag.decompose()
+        for tag in list(self._soup.find_all(self._PRE_CLEAN_TAGS)):
+            tag.decompose()
 
     # ── Metadata extraction ──────────────────────────────────────────────
 
@@ -705,9 +718,10 @@ class _Readability:
                 }
 
             # Content score for this paragraph.
+            inner_len = len(inner_text)
             content_score = 1.0
             content_score += len(COMMAS_RE.findall(inner_text))
-            content_score += min(len(inner_text) / 100.0, 3.0)
+            content_score += min(inner_len / 100.0, 3.0)
 
             # Propagate to parent (full) and grandparent (half).
             if parent is not None and id(parent) in candidates:
@@ -821,30 +835,110 @@ class _Readability:
 
     # ── Sanitization ─────────────────────────────────────────────────────
 
+    _HEADING_TAGS_SET = frozenset({"h1", "h2", "h3", "h4", "h5", "h6"})
+    # Combined list of form-related + heading tags for single find_all pass.
+    _REMOVE_AND_HEADING_TAGS = list(REMOVE_TAGS | _HEADING_TAGS_SET)
+
     def _sanitize(self, article: Any) -> None:
         """Clean the extracted article of low-quality elements."""
-        # 1. Remove form-related elements.
-        for tag_name in REMOVE_TAGS:
-            for tag in list(article.find_all(tag_name)):
+        # 1+2. Remove form-related elements and low-quality headings in
+        # a single find_all pass instead of two separate traversals.
+        for tag in list(article.find_all(self._REMOVE_AND_HEADING_TAGS)):
+            if tag.name in REMOVE_TAGS:
                 tag.decompose()
+            else:
+                # Heading tag — check quality.
+                if self._get_class_weight(tag) < 0:
+                    tag.decompose()
+                elif self._get_link_density(tag) > 0.33:
+                    tag.decompose()
 
-        # 2. Remove low-quality headings.
-        for heading in list(article.find_all(["h1", "h2", "h3", "h4", "h5", "h6"])):
-            if self._get_class_weight(heading) < 0:
-                heading.decompose()
-            elif self._get_link_density(heading) > 0.33:
-                heading.decompose()
-
-        # 3. Conditional cleanup of tables, divs, lists, etc.
-        for tag_name in CLEAN_CONDITIONALLY_TAGS:
-            self._clean_conditionally(article, tag_name)
+        # 3. Conditional cleanup of tables, divs, lists, etc. — single
+        # find_all with all candidate tags instead of per-tag-name loops.
+        self._clean_conditionally_all(article)
 
         # 4. Remove empty tags.
         self._remove_empty_tags(article)
 
-    def _clean_conditionally(self, article: Any, tag_name: str) -> None:
-        """Remove *tag_name* elements that look like non-content."""
-        for tag in list(article.find_all(tag_name)):
+    _EMBED_TAGS = frozenset({"embed", "object", "iframe"})
+
+    @staticmethod
+    def _count_child_tags(tag: Any, embed_tags: frozenset[str]) -> tuple:
+        """Count p, img, li, input, and embed descendant tags in one pass.
+
+        Args:
+            tag: The parent element to inspect.
+            embed_tags: Frozenset of tag names considered "embed-like".
+
+        Returns:
+            ``(p_count, img_count, li_count, input_count, embed_count)``.
+        """
+        p_count = img_count = li_count = input_count = embed_count = 0
+        for desc in tag._all_descendants():
+            dname = desc.name
+            if dname == "p":
+                p_count += 1
+            elif dname == "img":
+                img_count += 1
+            elif dname == "li":
+                li_count += 1
+            elif dname == "input":
+                input_count += 1
+            elif dname in embed_tags:
+                embed_count += 1
+        return p_count, img_count, li_count, input_count, embed_count
+
+    @staticmethod
+    def _should_remove_conditionally(
+        tag_name: str,
+        class_weight: float,
+        content_len: int,
+        link_density: float,
+        p_count: int,
+        img_count: int,
+        li_count: int,
+        input_count: int,
+        embed_count: int,
+    ) -> bool:
+        """Decide whether a conditionally-cleaned element should be removed.
+
+        Args:
+            tag_name: The tag name being evaluated.
+            class_weight: CSS class/id weight for the element.
+            content_len: Length of normalised inner text.
+            link_density: Ratio of link text to total text.
+            p_count: Number of ``<p>`` descendants.
+            img_count: Number of ``<img>`` descendants.
+            li_count: Number of ``<li>`` descendants.
+            input_count: Number of ``<input>`` descendants.
+            embed_count: Number of embed-like descendants.
+
+        Returns:
+            ``True`` if the element should be removed.
+        """
+        if img_count > 1 and p_count > 0 and (p_count / img_count) < 0.5:
+            return True
+        if li_count > p_count and tag_name not in ("ol", "ul"):
+            return True
+        if input_count > p_count / 3:
+            return True
+        if content_len < MIN_PARAGRAPH_LENGTH and (img_count == 0 or img_count > 2):
+            return True
+        if class_weight < 25 and link_density > 0.2:
+            return True
+        if class_weight >= 25 and link_density > 0.5:
+            return True
+        if (embed_count == 1 and content_len < 75) or (
+            embed_count > 1 and content_len < 200
+        ):
+            return True
+        return False
+
+    _CLEAN_COND_TAGS_LIST = list(CLEAN_CONDITIONALLY_TAGS)
+
+    def _clean_conditionally_all(self, article: Any) -> None:
+        """Remove conditionally-cleaned elements in a single find_all pass."""
+        for tag in list(article.find_all(self._CLEAN_COND_TAGS_LIST)):
             class_weight = self._get_class_weight(tag)
             # Quick reject: very negative weight.
             if class_weight < -25:
@@ -858,38 +952,13 @@ class _Readability:
             if comma_count >= 10:
                 continue
 
-            # Detailed heuristic checks.
-            p_count = len(tag.find_all("p"))
-            img_count = len(tag.find_all("img"))
-            li_count = len(tag.find_all("li"))
-            input_count = len(tag.find_all("input"))
-            embed_count = len(tag.find_all(["embed", "object", "iframe"]))
-
+            counts = self._count_child_tags(tag, self._EMBED_TAGS)
             content_len = len(inner_text)
             link_density = self._get_link_density(tag)
 
-            should_remove = False
-
-            if img_count > 1 and p_count > 0 and (p_count / img_count) < 0.5:
-                should_remove = True
-            elif li_count > p_count and tag_name not in ("ol", "ul"):
-                should_remove = True
-            elif input_count > p_count / 3:
-                should_remove = True
-            elif content_len < MIN_PARAGRAPH_LENGTH and (
-                img_count == 0 or img_count > 2
+            if self._should_remove_conditionally(
+                tag.name, class_weight, content_len, link_density, *counts
             ):
-                should_remove = True
-            elif class_weight < 25 and link_density > 0.2:
-                should_remove = True
-            elif class_weight >= 25 and link_density > 0.5:
-                should_remove = True
-            elif (embed_count == 1 and content_len < 75) or (
-                embed_count > 1 and content_len < 200
-            ):
-                should_remove = True
-
-            if should_remove:
                 tag.decompose()
 
     @staticmethod
@@ -898,18 +967,15 @@ class _Readability:
         keep_tags = frozenset(
             {"img", "br", "hr", "embed", "object", "iframe", "video", "audio"}
         )
-        changed = True
-        while changed:
-            changed = False
-            for tag in list(article._all_descendants()):
-                if tag.name in keep_tags:
-                    continue
-                if not tag.children:
-                    tag.decompose()
-                    changed = True
-                elif not tag.get_text(strip=True) and not tag.find_all(list(keep_tags)):
-                    tag.decompose()
-                    changed = True
+        # Process in reverse document order (children before parents) so
+        # that a single pass is sufficient.
+        for tag in reversed(article._all_descendants()):
+            if tag.name in keep_tags:
+                continue
+            if not tag.children:
+                tag.decompose()
+            elif not tag.get_text(strip=True) and not tag.find_all(list(keep_tags)):
+                tag.decompose()
 
     # ── Title fallback from headings ─────────────────────────────────────
 

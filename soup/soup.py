@@ -169,9 +169,10 @@ class Tag:
         """
         if isinstance(child, Tag):
             if child.parent is not None:
-                child.parent.children = [
-                    c for c in child.parent.children if c is not child
-                ]
+                try:
+                    child.parent.children.remove(child)
+                except ValueError:
+                    pass
             child.parent = self
         self.children.append(child)
 
@@ -184,9 +185,10 @@ class Tag:
         """
         if isinstance(child, Tag):
             if child.parent is not None:
-                child.parent.children = [
-                    c for c in child.parent.children if c is not child
-                ]
+                try:
+                    child.parent.children.remove(child)
+                except ValueError:
+                    pass
             child.parent = self
         self.children.insert(index, child)
 
@@ -200,7 +202,10 @@ class Tag:
             This element (now detached).
         """
         if self.parent is not None:
-            self.parent.children = [c for c in self.parent.children if c is not self]
+            try:
+                self.parent.children.remove(self)
+            except ValueError:
+                pass
             self.parent = None
         return self
 
@@ -224,9 +229,10 @@ class Tag:
                 parent.children[i] = new_node
                 if isinstance(new_node, Tag):
                     if new_node.parent is not None:
-                        new_node.parent.children = [
-                            c for c in new_node.parent.children if c is not new_node
-                        ]
+                        try:
+                            new_node.parent.children.remove(new_node)
+                        except ValueError:
+                            pass
                     new_node.parent = parent
                 self.parent = None
                 return self
@@ -253,7 +259,10 @@ class Tag:
     def decompose(self) -> None:
         """Remove this element from its parent and discard its content."""
         if self.parent is not None:
-            self.parent.children = [c for c in self.parent.children if c is not self]
+            try:
+                self.parent.children.remove(self)
+            except ValueError:
+                pass
             self.parent = None
         self.children.clear()
 
@@ -307,8 +316,25 @@ class Tag:
             merged["class"] = class_
         merged.update(kwargs)
 
-        results: list[Tag] = []
-        self._search(name, merged, results, limit)
+        # Fast path: name-only search with no attribute filters.
+        if not merged:
+            if isinstance(name, str):
+                results: list[Tag] = []
+                self._search_by_single_name(name, results, limit)
+                return results
+            if isinstance(name, list):
+                name_set: frozenset[str] = frozenset(name)
+                results = []
+                self._search_by_name_set(name_set, results, limit)
+                return results
+
+        if isinstance(name, list):
+            name_set = frozenset(name)
+        else:
+            name_set = None  # type: ignore[assignment]
+
+        results = []
+        self._search(name, name_set, merged, results, limit)
         return results
 
     def __call__(self, *args: Any, **kwargs: Any) -> list[Tag]:
@@ -318,6 +344,7 @@ class Tag:
     def _search(
         self,
         name: str | list[str] | None,
+        name_set: frozenset[str] | None,
         attr_filters: dict[str, str | bool],
         results: list[Tag],
         limit: int | None,
@@ -326,11 +353,45 @@ class Tag:
             if limit is not None and len(results) >= limit:
                 return
             if isinstance(child, Tag):
-                if _matches(child, name, attr_filters):
+                if _matches(child, name, name_set, attr_filters):
                     results.append(child)
                     if limit is not None and len(results) >= limit:
                         return
-                child._search(name, attr_filters, results, limit)
+                child._search(name, name_set, attr_filters, results, limit)
+
+    def _search_by_name_set(
+        self,
+        name_set: frozenset[str],
+        results: list[Tag],
+        limit: int | None,
+    ) -> None:
+        """Fast path for searching by a set of tag names with no attr filters."""
+        for child in self.children:
+            if limit is not None and len(results) >= limit:
+                return
+            if isinstance(child, Tag):
+                if child.name in name_set:
+                    results.append(child)
+                    if limit is not None and len(results) >= limit:
+                        return
+                child._search_by_name_set(name_set, results, limit)
+
+    def _search_by_single_name(
+        self,
+        name: str,
+        results: list[Tag],
+        limit: int | None,
+    ) -> None:
+        """Fast path for searching by a single tag name with no attr filters."""
+        for child in self.children:
+            if limit is not None and len(results) >= limit:
+                return
+            if isinstance(child, Tag):
+                if child.name == name:
+                    results.append(child)
+                    if limit is not None and len(results) >= limit:
+                        return
+                child._search_by_single_name(name, results, limit)
 
     # ── find_parent ───────────────────────────────────────────────────────
 
@@ -457,10 +518,16 @@ class Tag:
 # ── Match helpers ─────────────────────────────────────────────────────────────
 
 
-def _check_name_match(tag: Tag, name: str | list[str] | None) -> bool:
+def _check_name_match(
+    tag: Tag,
+    name: str | list[str] | None,
+    name_set: frozenset[str] | None = None,
+) -> bool:
     """Return True if *tag* satisfies the *name* filter."""
     if name is None:
         return True
+    if name_set is not None:
+        return tag.name in name_set
     if isinstance(name, list):
         return tag.name in name
     return tag.name == name
@@ -486,10 +553,11 @@ def _check_attr_filter(tag: Tag, key: str, expected: str | bool) -> bool:
 def _matches(
     tag: Tag,
     name: str | list[str] | None,
+    name_set: frozenset[str] | None,
     attr_filters: dict[str, str | bool],
 ) -> bool:
     """Check whether *tag* satisfies *name* and *attr_filters*."""
-    if not _check_name_match(tag, name):
+    if not _check_name_match(tag, name, name_set):
         return False
     return all(_check_attr_filter(tag, k, v) for k, v in attr_filters.items())
 
@@ -730,14 +798,35 @@ def _ancestor_matches(tag: Tag, steps: list[SelectorStep]) -> bool:
 
 
 class _TreeBuilder(HTMLParser):
-    """Build a ``Tag`` tree from HTML markup."""
+    """Build a ``Tag`` tree from HTML markup.
 
-    def __init__(self) -> None:
+    Args:
+        skip_tags: Optional frozenset of tag names to omit from the tree.
+            When a skipped tag is encountered, it and all its descendants
+            (including text) are silently discarded.
+    """
+
+    def __init__(self, skip_tags: frozenset[str] | None = None) -> None:
         super().__init__(convert_charrefs=True)
         self.root = Tag("[document]")
         self.current: Tag = self.root
+        self._skip_tags: frozenset[str] = skip_tags or frozenset()
+        # Depth counter for nested skipped tags (> 0 means discarding).
+        self._skip_depth: int = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        # If we're inside a skipped subtree, track nesting depth only.
+        if self._skip_depth > 0:
+            if tag not in SELF_CLOSING_TAGS:
+                self._skip_depth += 1
+            return
+
+        # Check if this tag should be skipped.
+        if tag in self._skip_tags:
+            if tag not in SELF_CLOSING_TAGS:
+                self._skip_depth = 1
+            return
+
         attr_dict: dict[str, str | list[str]] = {}
         for key, value in attrs:
             if value is None:
@@ -750,10 +839,15 @@ class _TreeBuilder(HTMLParser):
         node = Tag(tag, attr_dict, parent=self.current)
         self.current.children.append(node)
 
-        if tag.lower() not in SELF_CLOSING_TAGS:
+        if tag not in SELF_CLOSING_TAGS:
             self.current = node
 
     def handle_endtag(self, tag: str) -> None:
+        # If we're inside a skipped subtree, decrement depth.
+        if self._skip_depth > 0:
+            self._skip_depth -= 1
+            return
+
         # Walk up to find the matching open tag (tolerates malformed HTML)
         node = self.current
         while node is not None and node.name != tag:
@@ -764,6 +858,8 @@ class _TreeBuilder(HTMLParser):
 
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         # Explicit self-closing tag like <br/>
+        if self._skip_depth > 0 or tag in self._skip_tags:
+            return
         self.handle_starttag(tag, attrs)
         # Don't descend into it — it has no children.  If handle_starttag
         # pushed current down, pop back up.
@@ -772,6 +868,8 @@ class _TreeBuilder(HTMLParser):
                 self.current = self.current.parent
 
     def handle_data(self, data: str) -> None:
+        if self._skip_depth > 0:
+            return
         self.current.children.append(data)
 
     def handle_comment(self, data: str) -> None:
@@ -789,6 +887,10 @@ class Soup(Tag):
         markup: The HTML string to parse.
         parser: Ignored (present only for API compatibility with BS4).
             Only ``"html.parser"`` is supported.
+        skip_tags: Optional frozenset of tag names to omit during parsing.
+            Skipped tags and all their descendants are silently discarded,
+            which can significantly speed up parsing of pages with many
+            ``<script>`` or ``<style>`` blocks.
 
     Example::
 
@@ -797,9 +899,14 @@ class Soup(Tag):
         # world
     """
 
-    def __init__(self, markup: str, parser: str = "html.parser") -> None:
+    def __init__(
+        self,
+        markup: str,
+        parser: str = "html.parser",
+        skip_tags: frozenset[str] | None = None,
+    ) -> None:
         super().__init__("[document]")
-        builder = _TreeBuilder()
+        builder = _TreeBuilder(skip_tags=skip_tags)
         builder.feed(markup)
         # Adopt the root's children as our own.
         self.children = builder.root.children

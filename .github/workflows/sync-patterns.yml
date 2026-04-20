@@ -1,0 +1,186 @@
+name: Sync Readability Patterns
+
+on:
+  schedule:
+    # Monthly on the 1st at 09:17 UTC (off-peak minute)
+    - cron: "17 9 1 * *"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Auto-apply new patterns and create a Draft PR"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  # ── Phase A: Monthly check → Issue ────────────────────────────────
+  sync-check:
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && !inputs.apply)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/readability-module
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run sync report
+        id: sync
+        run: |
+          set +e
+          python scripts/sync_readability_patterns.py --json > report.json 2>sync.log
+          EXIT_CODE=$?
+          set -e
+          echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+          cat sync.log
+          if [ "$EXIT_CODE" -eq 1 ]; then
+            echo "::error::Sync script failed"
+            exit 1
+          fi
+
+      - name: Check for new patterns
+        if: steps.sync.outputs.exit_code == '2'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Build issue body from JSON report
+          python -c "
+          import json, sys
+
+          with open('report.json') as f:
+              data = json.load(f)
+
+          s = data['summary']
+          new = data['new_upstream']
+
+          body = ['## Upstream Pattern Sync Report\n']
+          body.append(f'| Metric | Count |')
+          body.append(f'|--------|-------|')
+          body.append(f'| Upstream total | {s[\"upstream_total\"]} |')
+          body.append(f'| Already covered | {s[\"covered\"]} |')
+          body.append(f'| **New from upstream** | **{s[\"new_upstream\"]}** |')
+          body.append(f'| Local-only | {s[\"local_only\"]} |\n')
+
+          if new:
+              body.append('### New upstream keywords\n')
+              body.append('| Keyword | Role | Source | Match Type |')
+              body.append('|---------|------|--------|------------|')
+              for kw in sorted(new, key=lambda x: x['keyword']):
+                  body.append(
+                      f'| \`{kw[\"keyword\"]}\` | {kw[\"role\"]} '
+                      f'| {kw[\"source\"]} | {kw[\"match_type\"]} |'
+                  )
+
+          body.append('\n---')
+          body.append('To auto-apply, run this workflow manually with **apply=true**.')
+
+          print('\n'.join(body))
+          " > issue_body.md
+
+          # Check for existing open issue with upstream-sync label
+          EXISTING=$(gh issue list --label upstream-sync --state open --json number --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING" ]; then
+            echo "Updating existing issue #$EXISTING"
+            gh issue comment "$EXISTING" --body-file issue_body.md
+          else
+            echo "Creating new issue"
+            gh issue create \
+              --title "Upstream readability pattern sync: new keywords available" \
+              --body-file issue_body.md \
+              --label upstream-sync
+          fi
+
+  # ── Phase B: Manual apply → Draft PR ──────────────────────────────
+  sync-apply:
+    if: github.event_name == 'workflow_dispatch' && inputs.apply
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/readability-module
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Apply upstream patterns
+        id: apply
+        run: |
+          python scripts/sync_readability_patterns.py --apply --json > apply.json 2>apply.log
+          cat apply.log
+
+          # Check if anything was actually applied
+          APPLIED=$(python -c "import json; d=json.load(open('apply.json')); print('true' if d['apply']['applied'] else 'false')")
+          echo "applied=$APPLIED" >> "$GITHUB_OUTPUT"
+
+      - name: Verify changes
+        if: steps.apply.outputs.applied == 'true'
+        run: |
+          ruff check readability/readability.py
+          python -c "import re; exec(open('readability/readability.py').read()); print('Regexes compile OK')"
+
+      - name: Create PR
+        if: steps.apply.outputs.applied == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date +%Y%m%d)
+          BRANCH="chore/sync-readability-patterns-${DATE}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add readability/readability.py
+          git commit -m "chore: sync upstream readability patterns"
+          git push -u origin "$BRANCH"
+
+          # Build PR body from apply report
+          python -c "
+          import json
+
+          with open('apply.json') as f:
+              data = json.load(f)
+
+          a = data['apply']
+          added = a.get('added', {})
+          skipped = a.get('skipped', [])
+
+          body = ['## Summary\n']
+          for var, kws in added.items():
+              body.append(f'- **{var}**: +{len(kws)} keywords')
+              for kw in sorted(kws):
+                  body.append(f'  - \`{kw}\`')
+
+          if skipped:
+              body.append('\n<details><summary>Skipped keywords</summary>\n')
+              for s in skipped:
+                  body.append(f'- \`{s[\"keyword\"]}\` — {s[\"reason\"]}')
+              body.append('\n</details>')
+
+          body.append('\n## Test plan\n')
+          body.append('- [ ] Review added keywords for relevance')
+          body.append('- [ ] CI tests pass (readability correctness)')
+          body.append('- [ ] Manual spot-check on sample pages')
+
+          print('\n'.join(body))
+          " > pr_body.md
+
+          gh pr create \
+            --title "chore: sync upstream readability patterns ($DATE)" \
+            --body-file pr_body.md \
+            --base feature/readability-module \
+            --draft

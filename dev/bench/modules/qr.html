@@ -83,14 +83,14 @@ td { white-space: nowrap; }
 <h1>qr</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: e73d95d | Commit: e73d95d1 | 2026-04-19T17:45:42.639035+00:00</p>
+<p class="meta">Version: aafa299 | Commit: aafa2990 | 2026-04-20T05:08:22.935254+00:00</p>
 <h2>qr</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>21.72 ms</td><td>12.17 ms</td><td>46.0</td><td>82.2</td><td class="ratio-cell slower">1.8x slower</td></tr>
-<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>3.98 ms</td><td>1.83 ms</td><td>251.3</td><td>545.9</td><td class="ratio-cell slower">2.2x slower</td></tr>
-<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>10.40 ms</td><td>5.23 ms</td><td>96.2</td><td>191.1</td><td class="ratio-cell slower">2.0x slower</td></tr>
+<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>12.86 ms</td><td>11.69 ms</td><td>77.7</td><td>85.6</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>2.48 ms</td><td>1.84 ms</td><td>403.1</td><td>543.9</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>5.92 ms</td><td>5.07 ms</td><td>168.8</td><td>197.3</td><td class="ratio-cell slower">1.2x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -103,13 +103,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [46.04777037141349, 251.27522068922008, 96.16583769862997],
+        data: [77.74995358251742, 403.06489685386373, 168.81029779267513],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "qrcode" + ' (ops/s)',
-        data: [82.16077556806606, 545.9148504611918, 191.09012983708232],
+        data: [85.55743199445865, 543.8648463349259, 197.25274009108165],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

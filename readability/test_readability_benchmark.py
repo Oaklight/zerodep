@@ -1,7 +1,11 @@
-"""Benchmark: zerodep readability vs readability-lxml."""
+"""Benchmark: zerodep readability vs readability-lxml vs Mozilla JS."""
 
+import json
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 
 import pytest
 
@@ -103,6 +107,75 @@ def _ref_extract(html: str) -> None:
     doc.summary()
 
 
+# ── Mozilla Readability.js via persistent Node.js process ──
+
+_BENCH_SERVER_JS = os.path.join(os.path.dirname(__file__), "bench_server.js")
+_NODE_MODULES = os.path.join(os.path.dirname(__file__), "node_modules")
+_HAS_NODE = shutil.which("node") is not None and os.path.isdir(_NODE_MODULES)
+
+
+class _JsEngine:
+    """Persistent Node.js process for Mozilla Readability benchmarks."""
+
+    def __init__(self):
+        self._proc = subprocess.Popen(
+            ["node", _BENCH_SERVER_JS],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=os.path.dirname(__file__),
+        )
+        # Wait for ready signal.
+        line = self._proc.stdout.readline()
+        ready = json.loads(line)
+        if not ready.get("ready"):
+            raise RuntimeError("bench_server.js did not start")
+        # Cache for synthetic HTML temp files.
+        self._tmpdir = tempfile.mkdtemp(prefix="readability_bench_")
+        self._tmpfiles: dict[int, str] = {}
+
+    def parse_file(self, path: str) -> None:
+        """Run Readability on a file (result discarded, timing by pytest)."""
+        self._proc.stdin.write(json.dumps({"file": path}).encode() + b"\n")
+        self._proc.stdin.flush()
+        line = self._proc.stdout.readline()
+        resp = json.loads(line)
+        if not resp.get("ok"):
+            raise RuntimeError(f"JS error: {resp.get('error')}")
+
+    def parse_html(self, html: str) -> None:
+        """Run Readability on inline HTML via a temp file."""
+        key = id(html)
+        if key not in self._tmpfiles:
+            path = os.path.join(self._tmpdir, f"{key}.html")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(html)
+            self._tmpfiles[key] = path
+        self.parse_file(self._tmpfiles[key])
+
+    def close(self):
+        try:
+            self._proc.stdin.write(b'{"cmd":"quit"}\n')
+            self._proc.stdin.flush()
+            self._proc.wait(timeout=5)
+        except Exception:
+            self._proc.kill()
+        # Cleanup temp files.
+        import shutil as _shutil
+
+        _shutil.rmtree(self._tmpdir, ignore_errors=True)
+
+
+@pytest.fixture(scope="module")
+def js_engine():
+    """Module-scoped fixture: persistent Node.js benchmark process."""
+    if not _HAS_NODE:
+        pytest.skip("Node.js or npm dependencies not available")
+    engine = _JsEngine()
+    yield engine
+    engine.close()
+
+
 # ── Small fixtures (~1-3 KB) ──
 
 
@@ -119,6 +192,11 @@ class TestSmall:
     def test_readability_lxml(self, benchmark):
         html = _get_fixture(_SMALL)
         benchmark(_ref_extract, html)
+
+    @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
+    def test_mozilla_js(self, benchmark, js_engine):
+        path = os.path.join(_TEST_PAGES_DIR, _SMALL, "source.html")
+        benchmark(js_engine.parse_file, path)
 
 
 # ── Medium fixtures (~12-55 KB) ──
@@ -138,6 +216,11 @@ class TestMedium:
         html = _get_fixture(_MEDIUM)
         benchmark(_ref_extract, html)
 
+    @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
+    def test_mozilla_js(self, benchmark, js_engine):
+        path = os.path.join(_TEST_PAGES_DIR, _MEDIUM, "source.html")
+        benchmark(js_engine.parse_file, path)
+
 
 # ── Large fixtures (~250-1100 KB) ──
 
@@ -155,6 +238,11 @@ class TestLarge:
     def test_readability_lxml(self, benchmark):
         html = _get_fixture(_LARGE)
         benchmark(_ref_extract, html)
+
+    @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
+    def test_mozilla_js(self, benchmark, js_engine):
+        path = os.path.join(_TEST_PAGES_DIR, _LARGE, "source.html")
+        benchmark(js_engine.parse_file, path)
 
 
 # ── is_probably_readable benchmark ──
@@ -219,6 +307,10 @@ class TestSyntheticSmall:
     def test_readability_lxml(self, benchmark):
         benchmark(_ref_extract, SYNTH_SMALL)
 
+    @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
+    def test_mozilla_js(self, benchmark, js_engine):
+        benchmark(js_engine.parse_html, SYNTH_SMALL)
+
 
 class TestSyntheticMedium:
     def test_zerodep(self, benchmark):
@@ -228,6 +320,10 @@ class TestSyntheticMedium:
     def test_readability_lxml(self, benchmark):
         benchmark(_ref_extract, SYNTH_MEDIUM)
 
+    @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
+    def test_mozilla_js(self, benchmark, js_engine):
+        benchmark(js_engine.parse_html, SYNTH_MEDIUM)
+
 
 class TestSyntheticLarge:
     def test_zerodep(self, benchmark):
@@ -236,3 +332,7 @@ class TestSyntheticLarge:
     @pytest.mark.skipif(not _HAS_REFERENCE, reason="readability-lxml missing")
     def test_readability_lxml(self, benchmark):
         benchmark(_ref_extract, SYNTH_LARGE)
+
+    @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
+    def test_mozilla_js(self, benchmark, js_engine):
+        benchmark(js_engine.parse_html, SYNTH_LARGE)

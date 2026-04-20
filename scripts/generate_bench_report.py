@@ -58,6 +58,7 @@ _REF_LIBS: dict[str, str] = {
     "jsonrpcserver": "jsonrpcserver",
     "google": "google (protobuf)",
     "readability_lxml": "readability-lxml",
+    "mozilla_js": "Mozilla Readability.js",
     "reference": "reference",
     "sqlitedict": "sqlitedict",
 }

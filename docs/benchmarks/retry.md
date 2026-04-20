@@ -7,7 +7,7 @@ zerodep retry 与 [`tenacity`](https://pypi.org/project/tenacity/) 的性能对�
     - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
     - **对标库:** tenacity 9.1.4
-    - **最后更新:** 2026-04-15
+    - **最后更新:** 2026-04-21
 
 ## 实现对比
 
@@ -20,16 +20,16 @@ zerodep retry 与 [`tenacity`](https://pypi.org/project/tenacity/) 的性能对�
 
 | 测试项 | zerodep | tenacity | 倍数 |
 |--------|---------|----------|------|
-| 装饰器开销 | 0.5 μs | 17.0 μs | 33.7x 更快 |
-| 含 2 次失败的重试 | 114.8 μs | 180.2 μs | 1.6x 更快 |
-| 退避计算 | 5.0 μs | 10.5 μs | 2.1x 更快 |
+| 装饰器开销 | 0.5 μs | 19.8 μs | 37.3x 更快 |
+| 含 2 次失败的重试 | 246.9 μs | 322.1 μs | 1.3x 更快 |
+| 退避计算 | 5.6 μs | 14.6 μs | 2.6x 更快 |
 
 ## 要点总结
 
-- **装饰器开销**比 tenacity 低约 34 倍，适合高频调用场景。
-- **含实际重试**的场景下仍快约 1.6 倍，zerodep 避免了 tenacity 的统计跟踪和等待链抽象开销。
-- **退避计算**快约 2 倍，直接算术运算对比 tenacity 的可组合等待对象管道。
-- zerodep **无需任何 pip 依赖**——仅使用标准库 `time`、`functools`、`random`。
+- **装饰器开销**比 tenacity 低约 37 倍，适合高频调用场景。
+- **含实际重试**的场景下仍快约 1.3 倍，zerodep 避免了 tenacity 的统计跟踪和等待链抽象开销。
+- **退避计算**快约 2.6 倍，直接算术运算对比 tenacity 的可组合等待对象管道。
+- zerodep **无需任何 pip 依赖**——仅使用标准库 `time`、`functools`、`random`、`asyncio` 和 `inspect`。
 
 ## 自行运行
 

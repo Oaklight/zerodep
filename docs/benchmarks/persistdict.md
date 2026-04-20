@@ -7,7 +7,7 @@ zerodep persistdict（JSON 和 SQLite 后端）与标准库 [`shelve`](https://d
     - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
     - **对标库:** sqlitedict 2.1.0
-    - **最后更新:** 2026-04-20
+    - **最后更新:** 2026-04-21
 
 ## 实现对比
 
@@ -29,57 +29,51 @@ zerodep persistdict（JSON 和 SQLite 后端）与标准库 [`shelve`](https://d
 
 | 数据规模 | zerodep JSON | zerodep SQLite | shelve | sqlitedict |
 |----------|-------------|---------------|--------|------------|
-| 小型 (50) | 307.4 μs | 1,279.4 μs | 1,446.4 μs | 13,415.6 μs |
-| 大型 (2,000) | 12,236.1 μs | 36,017.8 μs | 47,169.7 μs | 526,946.9 μs |
+| 小型 (50) | 422.7 μs | 2,970.0 μs | 449.1 μs | -- |
+| 大型 (2,000) | 16,110.0 μs | 24,510.0 μs | 12,450.0 μs | -- |
 
-### 写入加速倍数
+### 写入对比 vs shelve
 
-| 数据规模 | vs shelve | vs sqlitedict |
-|----------|-----------|---------------|
-| 小型 (JSON) | **快 4.7x** | **快 43.6x** |
-| 小型 (SQLite) | **快 1.1x** | **快 10.5x** |
-| 大型 (JSON) | **快 3.9x** | **快 43.1x** |
-| 大型 (SQLite) | **快 1.3x** | **快 14.6x** |
+| 数据规模 | zerodep JSON vs shelve | zerodep SQLite vs shelve |
+|----------|------------------------|--------------------------|
+| 小型 | 持平 | 慢 6.6x |
+| 大型 | 慢 1.3x | 慢 2.0x |
 
 ## 读取性能 — 小型（50 条目，均值）
 
 | 实现 | 耗时 |
 |------|------|
-| zerodep JSON | 252.9 μs |
-| zerodep SQLite | 532.3 μs |
-| shelve | 1,006.2 μs |
-| sqlitedict | 7,824.1 μs |
+| zerodep JSON | 403.6 μs |
+| zerodep SQLite | 811.2 μs |
+| shelve | 184.5 μs |
 
-### 读取加速倍数
+### 读取对比 vs shelve
 
-| 对比 | zerodep JSON | zerodep SQLite |
-|------|-------------|---------------|
-| shelve | **快 4.0x** | **快 1.9x** |
-| sqlitedict | **快 30.9x** | **快 14.7x** |
+| zerodep JSON | zerodep SQLite |
+|-------------|---------------|
+| 慢 2.2x | 慢 4.4x |
 
 ## 遍历性能 — 小型（50 条目，均值）
 
 | 实现 | 耗时 |
 |------|------|
-| zerodep JSON | 264.5 μs |
-| zerodep SQLite | 591.7 μs |
-| shelve | 1,032.6 μs |
-| sqlitedict | 1,523.3 μs |
+| zerodep JSON | 427.4 μs |
+| zerodep SQLite | 847.1 μs |
+| shelve | 204.0 μs |
 
-### 遍历加速倍数
+### 遍历对比 vs shelve
 
-| 对比 | zerodep JSON | zerodep SQLite |
-|------|-------------|---------------|
-| shelve | **快 3.9x** | **快 1.7x** |
-| sqlitedict | **快 5.8x** | **快 2.6x** |
+| zerodep JSON | zerodep SQLite |
+|-------------|---------------|
+| 慢 2.1x | 慢 4.2x |
 
 ## 要点总结
 
-- **JSON 后端整体最快** -- 缓冲写入 + 原子刷新使其成为中小型数据集的最佳选择。
-- **SQLite 后端以写入速度换取持久性** -- 延迟提交配合 `PRAGMA synchronous=NORMAL` 在持久性和性能间取得平衡。通过 `commit_every` 参数进行批量写入可进一步降低每次写入的开销。
-- **两种后端都远超 sqlitedict** -- 写入快 10-43 倍，读取快 15-31 倍。这是因为 sqlitedict 使用 pickle 序列化且每次操作都有提交开销。
-- **明显快于 shelve** -- zerodep JSON 写入比 shelve 快 3.9-4.7 倍，读取快 4.0 倍。SQLite 后端也比 shelve 在各项操作中快 1.1-1.9 倍。
-- **无 pickle** -- 不同于 shelve 和 sqlitedict，zerodep 默认使用 JSON 序列化，避免反序列化漏洞。
+- **JSON 后端小规模写入持平** -- 50 条目时，zerodep JSON 写入性能与 shelve 持平（速度相当）。
+- **SQLite 后端以速度换取持久性** -- 延迟提交配合 `PRAGMA synchronous=NORMAL` 在持久性和性能间取得平衡。通过 `commit_every` 参数进行批量写入可进一步降低每次写入的开销，但 shelve 的 dbm 后端在原始吞吐量上仍更快。
+- **shelve 读取和遍历更快** -- shelve 基于 dbm 的键值查找比 zerodep 在小型数据集上的读取和遍历操作快 2-4 倍。
+- **无 pickle** -- 不同于 shelve，zerodep 默认使用 JSON 序列化，避免反序列化漏洞。这是安全性需求场景下的主要优势。
+- **可移植性和透明性** -- zerodep 的 JSON 后端生成人类可读的文件，SQLite 后端使用标准数据库格式，两者都比 dbm 文件更便携、更易于检查。
 
 ## 自行运行
 

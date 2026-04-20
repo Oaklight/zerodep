@@ -7,7 +7,7 @@ zerodep JSONC 与 [`commentjson`](https://pypi.org/project/commentjson/) 的性�
     - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
     - **对标库:** commentjson 0.9.0
-    - **最后更新:** 2026-04-15
+    - **最后更新:** 2026-04-21
 
 ## 实现对比
 
@@ -16,17 +16,25 @@ zerodep JSONC 与 [`commentjson`](https://pypi.org/project/commentjson/) 的性�
 | **zerodep** | `jsonc.py` | 基于正则的注释/尾逗号剥离 + 标准库 `json.loads` |
 | **commentjson** | *（参考库）* | Lark LALR 解析器 + AST 重建 + 标准库 `json.loads` |
 
+## 测试数据规模
+
+| 规模 | 说明 |
+|------|------|
+| 小型 | 包含 `//` 注释的 5 个键的对象 |
+| 中型 | 嵌套配置（约 40 行），含 `//`、`#` 注释和尾逗号 |
+| 大型 | 包含行内 `//` 注释和尾逗号的 100 个条目的对象 |
+
 ## 性能对比（均值）
 
 | 测试项 | zerodep | commentjson | 倍数 |
 |--------|---------|-------------|------|
-| 小型 | 14.6 μs | 1,150.8 μs | 快 79x |
-| 中型 | 91.5 μs | 8,466.3 μs | 快 93x |
-| 大型 | 1,809.7 μs | 218,981.4 μs | 快 121x |
+| 小型 | 15.5 μs | 1,330.0 μs | 快 86x |
+| 中型 | 96.4 μs | 9,300.0 μs | 快 97x |
+| 大型 | 1,920.0 μs | 217,820.0 μs | 快 113x |
 
 ## 要点总结
 
-- zerodep 比 commentjson 快 **79--121 倍**，数据量越大优势越明显。
+- zerodep 比 commentjson 快 **86--113 倍**，数据量越大优势越明显。
 - **正则方案**避免了构建完整解析树的开销——zerodep 用正则剥离注释和尾逗号后，直接委托给 C 加速的标准库 `json.loads` 完成解析。
 - **commentjson** 使用 Lark LALR 解析器构建 AST 后重建 JSON，开销远高于正则预处理。
 - zerodep **无需任何 pip 依赖**——仅使用标准库 `re` 和 `json`。

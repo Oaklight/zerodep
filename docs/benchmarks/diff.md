@@ -7,7 +7,7 @@ zerodep diff 实现与 [`unidiff`](https://pypi.org/project/unidiff/) 的同条�
     - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
     - **对标库:** unidiff 0.7.5
-    - **最后更新:** 2026-04-15
+    - **最后更新:** 2026-04-21
 
 ## 实现对比
 
@@ -28,9 +28,9 @@ zerodep diff 实现与 [`unidiff`](https://pypi.org/project/unidiff/) 的同条�
 
 | 测试 | zerodep | unidiff | 比率 |
 |------|---------|---------|------|
-| 小 | 7.7 μs | 18.1 μs | **快 2.4 倍** |
-| 中 | 24.1 μs | 49.5 μs | **快 2.1 倍** |
-| 大 | 72.2 μs | 149.3 μs | **快 2.1 倍** |
+| 小 | 10.5 μs | 21.9 μs | **快 2.1 倍** |
+| 中 | 31.5 μs | 63.2 μs | **快 2.0 倍** |
+| 大 | 96.5 μs | 194.2 μs | **快 2.0 倍** |
 
 ## 应用性能（仅 zerodep）
 
@@ -44,7 +44,7 @@ zerodep diff 实现与 [`unidiff`](https://pypi.org/project/unidiff/) 的同条�
 
 ## 要点总结
 
-- **持续更快** —— zerodep 的 diff 解析器在所有差异规模下均比 unidiff **快 2.1-2.4 倍**。
+- **持续更快** —— zerodep 的 diff 解析器在所有差异规模下均比 unidiff **快 2.0-2.1 倍**。
 - **线性增长** —— 两种实现都随差异大小线性增长，符合预期。
 - **功能更多** —— zerodep 除了解析外，还提供补丁应用、反转和三路合并功能，而 unidiff 仅提供解析。
 - **往返正确性** —— `apply_patch(a, parse_patch(make_diff(a, b))) == b` 已通过 13 个参数化测试用例验证，包括边缘情况（Unicode、无尾换行、Windows 换行符）。

@@ -7,7 +7,7 @@ zerodep config 与 [`python-decouple`](https://pypi.org/project/python-decouple/
     - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
     - **对标库:** python-decouple 3.8
-    - **最后更新:** 2026-04-15
+    - **最后更新:** 2026-04-21
 
 ## 实现
 
@@ -30,11 +30,11 @@ zerodep config 与 [`python-decouple`](https://pypi.org/project/python-decouple/
 
 | 测试 | zerodep | python-decouple | 加速比 |
 |------|---------|-----------------|--------|
-| 环境变量查找 | 0.8 μs | 1.4 μs | **快 1.8 倍** |
-| Dotenv 查找 | 0.8 μs | 1.5 μs | **快 1.9 倍** |
-| 整型转换 | 1.0 μs | 1.8 μs | **快 1.8 倍** |
-| 布尔转换 | 1.1 μs | 2.3 μs | **快 2.2 倍** |
-| CSV | 2.2 μs | 11.2 μs | **快 5.0 倍** |
+| 环境变量查找 | 0.9 μs | 1.7 μs | **快 1.9 倍** |
+| Dotenv 查找 | 0.7 μs | 1.6 μs | **快 2.2 倍** |
+| 整型转换 | 1.2 μs | 2.2 μs | **快 1.8 倍** |
+| 布尔转换 | 1.3 μs | 2.5 μs | **快 1.9 倍** |
+| CSV | 2.7 μs | 12.3 μs | **快 4.6 倍** |
 
 ## 附加基准测试（仅 zerodep）
 
@@ -47,8 +47,8 @@ zerodep config 与 [`python-decouple`](https://pypi.org/project/python-decouple/
 
 ## 要点总结
 
-- **一致更快** -- zerodep config 在所有可比操作中比 python-decouple 快 1.8 到 5.0 倍。
-- **CSV 解析优势** -- 最大加速比（5.0 倍）出现在 CSV 转换中，zerodep 更简洁的实现避免了 python-decouple 的额外开销。
+- **一致更快** -- zerodep config 在所有可比操作中比 python-decouple 快 1.8 到 4.6 倍。
+- **CSV 解析优势** -- 最大加速比（4.6 倍）出现在 CSV 转换中，zerodep 更简洁的实现避免了 python-decouple 的额外开销。
 - **轻量初始化** -- 不加载文件的 `Config` 构造仅需约 0.5 μs；JSON 配置加载增加约 39 μs，.env 加载约 760 μs。
 - **额外功能零开销** -- zerodep 在保持更好性能的同时，增加了配置文件支持（JSON/YAML/TOML/INI）、嵌套键和前缀支持。
 

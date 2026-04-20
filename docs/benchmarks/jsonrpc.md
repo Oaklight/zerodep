@@ -7,7 +7,7 @@ zerodep JSON-RPC 与 [`jsonrpcserver`](https://pypi.org/project/jsonrpcserver/) 
     - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
     - **对标库:** jsonrpcserver 5.0.9
-    - **最后更新:** 2026-04-15
+    - **最后更新:** 2026-04-21
 
 ## 实现对比
 
@@ -24,10 +24,10 @@ zerodep JSON-RPC 与 [`jsonrpcserver`](https://pypi.org/project/jsonrpcserver/) 
 
 | 场景 | zerodep | jsonrpcserver | 倍数 |
 |------|---------|---------------|------|
-| 成功 | 6.3 μs | 118.5 μs | **快 18.8x** |
-| 错误 | 8.1 μs | 112.0 μs | **快 13.8x** |
-| 方法未找到 | 7.0 μs | 92.4 μs | **快 13.2x** |
-| 批量（20 个请求） | 124.9 μs | 2,400.5 μs | **快 19.2x** |
+| 成功 | 7.4 μs | 138.9 μs | **快 18.8x** |
+| 错误 | 9.5 μs | 132.2 μs | **快 13.9x** |
+| 方法未找到 | 7.9 μs | 105.1 μs | **快 13.3x** |
+| 批量（20 个请求） | 144.3 μs | 2,760.0 μs | **快 19.1x** |
 
 ## 序列化性能（均值，仅 zerodep）
 

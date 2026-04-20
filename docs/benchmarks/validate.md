@@ -7,7 +7,7 @@ zerodep validate 与 [`pydantic`](https://pypi.org/project/pydantic/) v2 的性�
     - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
     - **对标库:** pydantic 2.13.0
-    - **最后更新:** 2026-04-15
+    - **最后更新:** 2026-04-21
 
 ## 实现对比
 
@@ -20,18 +20,18 @@ zerodep validate 与 [`pydantic`](https://pypi.org/project/pydantic/) v2 的性�
 
 | 测试项 | zerodep | pydantic | 比率 |
 |--------|---------|----------|------|
-| 简单验证（3 字段） | 4.6 μs | 1.1 μs | pydantic 快 4.3x |
-| 嵌套验证（TypedDict 套 TypedDict） | 8.1 μs | 1.7 μs | pydantic 快 4.9x |
-| 约束验证（Annotated Gt/Ge/Le） | 8.0 μs | 1.1 μs | pydantic 快 7.2x |
-| 列表验证（50 个 dict） | 178.5 μs | 24.4 μs | pydantic 快 7.3x |
-| JSON Schema 生成 | 8.1 μs | 167.6 μs | zerodep 快 20.6x |
+| 简单验证（3 字段） | 5.6 μs | 1.5 μs | pydantic 快 3.8x |
+| 嵌套验证（TypedDict 套 TypedDict） | 10.0 μs | 2.1 μs | pydantic 快 4.7x |
+| 约束验证（Annotated Gt/Ge/Le） | 9.3 μs | 1.5 μs | pydantic 快 6.1x |
+| 列表验证（50 个 dict） | 220.7 μs | 31.6 μs | pydantic 快 7.0x |
+| JSON Schema 生成 | 9.9 μs | 200.5 μs | zerodep 快 20.2x |
 
 ## 要点总结
 
 - **pydantic v2 使用 Rust 编译核心**（`pydantic-core`），因此原始速度对比并不公平。zerodep 是纯 Python 实现，零依赖。
-- **单对象验证**方面，pydantic 凭借 Rust 核心快 4-7 倍。zerodep 验证一个简单 3 字段 TypedDict 仅需 **~4.6 μs**——对于网络延迟是瓶颈的 API 请求/响应验证完全足够。
-- **JSON Schema 生成是 zerodep 的强项** —— 仅需 8.1 μs，比 pydantic 的 167.6 μs **快 20.6 倍**。这对动态生成 Schema 而非仅启动时生成的应用尤为重要。
-- **批量数据验证**（50 个 dict 列表）pydantic 快 7.3 倍，Rust 核心在重复类型检查上效率很高。
+- **单对象验证**方面，pydantic 凭借 Rust 核心快 4-7 倍。zerodep 验证一个简单 3 字段 TypedDict 仅需 **~5.6 μs**——对于网络延迟是瓶颈的 API 请求/响应验证完全足够。
+- **JSON Schema 生成是 zerodep 的强项** —— 仅需 9.9 μs，比 pydantic 的 200.5 μs **快 20.2 倍**。这对动态生成 Schema 而非仅启动时生成的应用尤为重要。
+- **批量数据验证**（50 个 dict 列表）pydantic 快 7.0 倍，Rust 核心在重复类型检查上效率很高。
 - zerodep **无需任何 pip 依赖** —— 仅使用标准库 `typing`、`dataclasses`、`re`。
 
 !!! tip "缓存优化（v0.4.0+）"

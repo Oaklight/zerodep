@@ -7,7 +7,7 @@ Apple-to-apple performance comparison between zerodep tabulate and [`tabulate`](
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** tabulate 0.10.0
-    - **Last Updated:** 2026-04-15
+    - **Last Updated:** 2026-04-21
 
 ## Implementations
 
@@ -28,14 +28,14 @@ Apple-to-apple performance comparison between zerodep tabulate and [`tabulate`](
 
 | Data Size | zerodep | tabulate | Speedup |
 |-----------|---------|----------|---------|
-| Small | 45.1 us | 144.2 us | 3.2x faster |
-| Medium | 335.1 us | 1,428.8 us | 4.3x faster |
-| Large | 5,405.9 us | 21,904.8 us | 4.1x faster |
+| Small | 54.4 us | 169.2 us | 3.1x faster |
+| Medium | 403.2 us | 1,800.0 us | 4.5x faster |
+| Large | 6,570.0 us | 27,340.0 us | 4.2x faster |
 
 ## Key Takeaways
 
-- **3.2-4.3x faster formatting** -- single-file implementation avoids the overhead of the reference library's multi-module dispatch and feature negotiation.
-- **Speed advantage grows with data size** -- zerodep's streamlined column-width calculation and row rendering scale more efficiently, reaching 4.3x on medium tables.
+- **3.1-4.5x faster formatting** -- single-file implementation avoids the overhead of the reference library's multi-module dispatch and feature negotiation.
+- **Speed advantage grows with data size** -- zerodep's streamlined column-width calculation and row rendering scale more efficiently, reaching 4.5x on medium tables.
 - **Zero pip dependencies** -- zerodep uses only `re`, `math`, `unicodedata`, and `dataclasses` from the standard library.
 
 ## Run It Yourself

@@ -7,7 +7,7 @@ Apple-to-apple performance comparison between zerodep soup and [`beautifulsoup4`
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** beautifulsoup4 4.14.3
-    - **Last Updated:** 2026-04-15
+    - **Last Updated:** 2026-04-21
 
 ## Implementations
 
@@ -28,14 +28,31 @@ Apple-to-apple performance comparison between zerodep soup and [`beautifulsoup4`
 
 | Data Size | zerodep | beautifulsoup4 | Speedup |
 |-----------|---------|----------------|---------|
-| Small | 207.6 us | 651.0 us | 3.1x faster |
-| Medium | 1,796.2 us | 5,482.2 us | 3.1x faster |
-| Large | 22,110.0 us | 48,220.6 us | 2.2x faster |
+| Small | 276.5 us | 740.3 us | 2.7x faster |
+| Medium | 2,190.0 us | 6,140.0 us | 2.8x faster |
+| Large | 24,580.0 us | 63,020.0 us | 2.6x faster |
+
+## Serialization Performance (Mean)
+
+| Data Size | zerodep | beautifulsoup4 | Speedup |
+|-----------|---------|----------------|---------|
+| Small | 307.3 us | 986.4 us | 3.2x faster |
+| Medium | 2,230.0 us | 8,310.0 us | 3.7x faster |
+| Large | 25,290.0 us | 83,800.0 us | 3.3x faster |
+
+## Tree Operations Performance (Mean)
+
+| Data Size | zerodep | beautifulsoup4 | Speedup |
+|-----------|---------|----------------|---------|
+| Small | 333.9 us | 888.8 us | 2.7x faster |
+| Medium | 2,370.0 us | 6,810.0 us | 2.9x faster |
+| Large | 26,780.0 us | 67,650.0 us | 2.5x faster |
 
 ## Key Takeaways
 
-- **2.2-3.1x faster across all sizes** -- zerodep builds a minimal DOM tree directly from `html.parser` without the abstraction layers (NavigableString, PageElement hierarchy, soupsieve integration) that BeautifulSoup carries.
-- **Largest speedup on small/medium documents** -- the 3.1x advantage on small and medium inputs narrows to 2.2x on large documents, suggesting the per-element overhead advantage is partially offset by increased tree-management work in complex pages.
+- **2.5-3.7x faster across all sizes and operations** -- zerodep builds a minimal DOM tree directly from `html.parser` without the abstraction layers (NavigableString, PageElement hierarchy, soupsieve integration) that BeautifulSoup carries.
+- **Serialization shows the largest speedup** -- 3.2-3.7x faster, as zerodep's lightweight node structure has less overhead during tree-to-string conversion.
+- **Consistent advantage across workloads** -- parsing (2.7-2.8x), serialization (3.2-3.7x), and tree operations (2.5-2.9x) all show strong gains, with only a slight narrowing on the largest documents.
 - **Zero pip dependencies** -- zerodep uses only `re` and `html.parser` from the standard library. BeautifulSoup requires `soupsieve` and optionally `lxml` or `html5lib`.
 
 ## Run It Yourself

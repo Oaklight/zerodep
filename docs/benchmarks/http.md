@@ -7,7 +7,7 @@ Apple-to-apple performance comparison between zerodep HTTP client and [`httpx`](
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** httpx 0.28.1
-    - **Last Updated:** 2026-04-15
+    - **Last Updated:** 2026-04-21
 
 ## Implementations
 
@@ -22,39 +22,39 @@ Apple-to-apple performance comparison between zerodep HTTP client and [`httpx`](
 
 | Test | zerodep | httpx | Speedup |
 |------|---------|-------|---------|
-| Sync GET | 729.7 us | 11,970.0 us | **16.4x faster** |
-| Sync POST JSON | 871.4 us | 12,279.4 us | **14.1x faster** |
-| Sync Client GET | 808.4 us | 1,541.4 us | **1.9x faster** |
-| Async GET | 1,328.2 us | 19,339.9 us | **14.6x faster** |
-| Async POST JSON | 1,583.1 us | 19,356.7 us | **12.2x faster** |
-| Async Client GET | 1,434.9 us | 20,134.9 us | **14.0x faster** |
+| Sync GET | 613.9 us | 20,830.0 us | **33.9x faster** |
+| Sync POST JSON | 709.6 us | 21,030.0 us | **29.6x faster** |
+| Sync Client GET | 637.6 us | 1,020.0 us | **1.6x faster** |
+| Async GET | 1,110.0 us | 27,530.0 us | **24.8x faster** |
+| Async POST JSON | 1,220.0 us | 28,130.0 us | **23.1x faster** |
+| Async Client GET | 1,160.0 us | 26,590.0 us | **22.9x faster** |
 
 ### Streaming
 
 | Test | zerodep | httpx | Speedup |
 |------|---------|-------|---------|
-| Sync Streaming | 725.4 us | 12,059.9 us | **16.6x faster** |
-| Async Streaming | 1,432.7 us | 20,228.3 us | **14.1x faster** |
+| Sync Streaming | 627.5 us | 20,990.0 us | **33.4x faster** |
+| Async Streaming | 1,150.0 us | 26,780.0 us | **23.3x faster** |
 
 ### File Upload (multipart/form-data)
 
 | Test | zerodep | httpx | Speedup |
 |------|---------|-------|---------|
-| Sync File Upload | 1,472.0 us | 14,130.2 us | **9.6x faster** |
-| Async File Upload | 1,904.0 us | 22,040.0 us | **11.6x faster** |
+| Sync File Upload | 991.3 us | 21,610.0 us | **21.8x faster** |
+| Async File Upload | 1,510.0 us | 28,020.0 us | **18.5x faster** |
 
 ### Content Decompression
 
 | Test | zerodep | httpx | Speedup |
 |------|---------|-------|---------|
-| Sync Gzip GET | 846.6 us | 12,454.8 us | **14.7x faster** |
+| Sync Gzip GET | 646.2 us | 20,710.0 us | **32.1x faster** |
 
 ## Key Takeaways
 
-- **10--17x faster on one-off requests** -- without connection pooling, zerodep is dramatically faster than httpx because it avoids httpx's heavy client initialization and middleware stack overhead.
-- **~2x faster with connection pooling** -- even when both libraries reuse connections, zerodep's lighter abstraction layer still provides a measurable advantage.
-- **Streaming is 14--17x faster** -- zerodep's minimal stream abstraction translates directly into throughput gains.
-- **File upload is 10--12x faster** -- zerodep's simple multipart encoder outperforms httpx's more featureful implementation.
+- **19--34x faster on one-off requests** -- without connection pooling, zerodep is dramatically faster than httpx because it avoids httpx's heavy client initialization and middleware stack overhead.
+- **~1.6x faster with connection pooling** -- even when both libraries reuse connections, zerodep's lighter abstraction layer still provides a measurable advantage.
+- **Streaming is 23--33x faster** -- zerodep's minimal stream abstraction translates directly into throughput gains.
+- **File upload is 19--22x faster** -- zerodep's simple multipart encoder outperforms httpx's more featureful implementation.
 - **Benchmarks use a local server** -- all tests hit `localhost`, so the numbers reflect pure library overhead without network latency.
 - zerodep has **zero pip dependencies** -- it uses only `http.client` (sync) and `asyncio` streams (async) from the standard library.
 

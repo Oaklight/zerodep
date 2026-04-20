@@ -7,7 +7,7 @@ Apple-to-apple performance comparison between zerodep sparse_search and [`rank-b
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** rank-bm25 0.2.2
-    - **Last Updated:** 2026-04-15
+    - **Last Updated:** 2026-04-21
 
 ## Implementations
 
@@ -22,14 +22,14 @@ Apple-to-apple performance comparison between zerodep sparse_search and [`rank-b
 
 | Corpus Size | zerodep | rank-bm25 | Speedup |
 |-------------|---------|-----------|---------|
-| 200 docs | 2.3 μs | 113.2 μs | **50x faster** |
-| 1000 docs | 2.3 μs | 386.1 μs | **171x faster** |
+| 200 docs | 3.0 μs | 108.5 μs | **36x faster** |
+| 1000 docs | 3.0 μs | 395.1 μs | **132x faster** |
 
 ### Indexing Speed
 
 | Corpus Size | zerodep | rank-bm25 | Ratio |
 |-------------|---------|-----------|-------|
-| 1000 docs | 136.1 ms | 12.7 ms | 10.8x slower |
+| 1000 docs | 126.3 ms | 13.4 ms | 9.4x slower |
 
 ### Bayesian Calibration Overhead
 
@@ -41,8 +41,8 @@ Apple-to-apple performance comparison between zerodep sparse_search and [`rank-b
 
 ## Key Takeaways
 
-- **Search is 50-171x faster** thanks to an inverted index that traverses only matching postings O(matched_docs), vs rank-bm25's full corpus scan O(N). The advantage grows with corpus size.
-- **Indexing is ~11x slower** due to richer data structures (reverse index for fast deletes, metadata storage, persistence support). This is a one-time cost vs repeated search savings.
+- **Search is 36-132x faster** thanks to an inverted index that traverses only matching postings O(matched_docs), vs rank-bm25's full corpus scan O(N). The advantage grows with corpus size.
+- **Indexing is ~9.4x slower** due to richer data structures (reverse index for fast deletes, metadata storage, persistence support). This is a one-time cost vs repeated search savings.
 - **Ranking correctness** is validated against rank-bm25 across BM25Okapi, BM25Plus, and BM25L variants with 8 queries -- results match in ranking order.
 - zerodep has **zero pip dependencies** and supports dynamic add/remove/update without rebuilding the index.
 - **Bayesian calibration** adds ~1.9x overhead per search (still faster than rank-bm25). `calibrate()` is a one-time cost (~969 μs for 20 docs).

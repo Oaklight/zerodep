@@ -7,7 +7,7 @@ Apple-to-apple performance comparison between zerodep scheduler and [`APSchedule
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** APScheduler 3.11.2, schedule 1.2.2, croniter 6.2.2
-    - **Last Updated:** 2026-04-15
+    - **Last Updated:** 2026-04-21
 
 ## Implementations
 
@@ -22,17 +22,17 @@ Apple-to-apple performance comparison between zerodep scheduler and [`APSchedule
 
 | Test | zerodep | croniter | APScheduler | schedule | Speedup |
 |------|---------|----------|-------------|----------|---------|
-| Cron parsing (5 expressions) | 33.2 μs | 278.6 μs | 150.0 μs | N/A | 4.5x--8.4x faster |
-| Next fire time (5 expressions) | 40.9 μs | 593.3 μs | 121.2 μs | N/A | 3.0x--14.5x faster |
-| Batch next fire time (100 iterations) | 541.5 μs | 3,492.0 μs | 809.6 μs | N/A | 1.5x--6.4x faster |
-| Job add overhead (100 jobs) | 447.6 μs | N/A | N/A | 523.9 μs | 1.2x faster |
+| Cron parsing (5 expressions) | 43.9 μs | -- | 182.8 μs | N/A | **4.2x faster** |
+| Next fire time (5 expressions) | 53.2 μs | -- | 132.6 μs | N/A | **2.5x faster** |
+| Batch next fire time (100 iterations) | 678.6 μs | -- | 974.8 μs | N/A | **1.4x faster** |
+| Job add overhead (100 jobs) | 530.9 μs | N/A | N/A | 561.5 μs | ~same |
 
 ## Key Takeaways
 
-- **Cron parsing** is 4.5x faster than APScheduler and 8.4x faster than croniter, thanks to a minimal set-based parser.
-- **Next fire time calculation** is 3.0x--14.5x faster, as zerodep uses direct datetime arithmetic without timezone overhead.
-- **Batch computation** (100 consecutive fire times) maintains the speed advantage at scale (1.5x--6.4x faster).
-- **Job add overhead** is comparable to `schedule` (1.2x faster), both adopting a lightweight design.
+- **Cron parsing** is 4.2x faster than APScheduler, thanks to a minimal set-based parser.
+- **Next fire time calculation** is 2.5x faster, as zerodep uses direct datetime arithmetic without timezone overhead.
+- **Batch computation** (100 consecutive fire times) maintains the speed advantage at scale (1.4x faster).
+- **Job add overhead** is comparable to `schedule` (~same), both adopting a lightweight design.
 - zerodep has **zero pip dependencies** -- it uses only `threading`, `asyncio`, `datetime`, `inspect`, and `logging` from the standard library.
 
 ## Run It Yourself

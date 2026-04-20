@@ -8,7 +8,7 @@ Performance comparison between zerodep readability, [`readability-lxml`](https:/
     - **Node.js:** 22 (for Mozilla Readability.js)
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** readability-lxml 0.8.4.1, @mozilla/readability + jsdom
-    - **Last Updated:** 2026-04-20
+    - **Last Updated:** 2026-04-21
 
 ## Implementations
 
@@ -20,49 +20,56 @@ Performance comparison between zerodep readability, [`readability-lxml`](https:/
 
 ## Test Fixtures
 
-Benchmarks use real-world HTML fixtures from Mozilla Readability.js test suite:
+Benchmarks use real-world HTML fixtures from Mozilla Readability.js test suite, plus synthetic fixtures for controlled scaling:
 
 | Tier | Fixture | Description |
 |------|---------|-------------|
 | Small | 001 | Simple article page (~2 KB) |
 | Medium | bbc-1 | BBC news article (~25 KB) |
 | Large | wikipedia | Wikipedia article (~16 KB) |
+| Synthetic Small | generated | Synthetic article (~1 KB, controlled structure) |
+| Synthetic Medium | generated | Synthetic article (~5 KB, controlled structure) |
+| Synthetic Large | generated | Synthetic article (~20 KB, controlled structure) |
 
-## Python Performance (zerodep vs readability-lxml)
+## Performance: zerodep vs readability-lxml
 
 | Fixture | zerodep | readability-lxml | Ratio |
 |---------|---------|------------------|-------|
-| Small (001) | ~2.4 ms | ~5 ms | **~2.1x faster** |
-| Medium (bbc-1) | ~13 ms | ~15 ms | **~1.2x faster** |
-| Large (wikipedia) | ~17 ms | ~12 ms | ~1.4x slower |
+| Small (001) | 276.1 μs | 680.3 μs | **2.5x faster** |
+| Medium (bbc-1) | 2.59 ms | 3.19 ms | **1.2x faster** |
+| Large (wikipedia) | 33.85 ms | 28.52 ms | 1.2x slower |
+| Synthetic Small | 458.7 μs | 757.7 μs | **1.7x faster** |
+| Synthetic Medium | 1.16 ms | 2.40 ms | **2.1x faster** |
+| Synthetic Large | 5.69 ms | 13.08 ms | **2.3x faster** |
 
-## Three-Way Comparison
+## Performance: zerodep vs Mozilla Readability.js
 
-The `benchmark_compare.py` script provides a three-way comparison including Mozilla's JavaScript implementation:
+All three implementations are now benchmarked via pytest-benchmark in the same CI run. Mozilla Readability.js is invoked through a Node.js subprocess.
 
-```bash
-python readability/benchmark_compare.py --rounds 10
-```
-
-This runs all three implementations on the same fixtures and reports timing with ratios.
+| Fixture | zerodep | Mozilla JS | Ratio |
+|---------|---------|------------|-------|
+| Small (001) | 276.1 μs | 5.59 ms | **20x faster** |
+| Medium (bbc-1) | 2.59 ms | 8.21 ms | **3.2x faster** |
+| Large (wikipedia) | 33.85 ms | 423 ms | **12.5x faster** |
+| Synthetic Small | 458.7 μs | 8.10 ms | **17.7x faster** |
+| Synthetic Medium | 1.16 ms | 13.50 ms | **11.6x faster** |
+| Synthetic Large | 5.69 ms | 28.95 ms | **5.1x faster** |
 
 ## Key Takeaways
 
-- **zerodep is now faster on small and medium pages** -- for simple articles, zerodep is **~2.1x faster** than readability-lxml (previously ~1.7x faster). For medium-sized news articles, zerodep is now **~1.2x faster** (previously ~2x slower). The optimized scoring and tree-walking algorithms dramatically improved medium-page performance.
-- **readability-lxml retains an edge on large pages** -- lxml's C-based parser still provides an advantage on complex HTML like Wikipedia articles, though the gap narrowed from ~2x to ~1.4x slower.
+- **zerodep dominates on small and synthetic pages** -- **2.5x faster** on the small real-world fixture and **1.7-2.3x faster** across all synthetic sizes vs readability-lxml. The optimized scoring and tree-walking algorithms shine on cleaner HTML.
+- **readability-lxml retains an edge on large complex pages** -- lxml's C-based parser still provides an advantage on complex HTML like Wikipedia articles (1.2x slower).
+- **Massively faster than Mozilla Readability.js** -- zerodep is **3.2-20x faster** than the original JS reference across all fixtures. The JS implementation pays heavy overhead from jsdom's DOM construction.
 - **zerodep has richer metadata** -- JSON-LD extraction, RTL support, and OpenGraph metadata that readability-lxml lacks
 - **Zero pip dependencies** -- zerodep needs only the stdlib, while readability-lxml requires lxml and cssselect
 
 ## Run It Yourself
 
 ```bash
-# Python benchmarks (zerodep vs readability-lxml)
+# All benchmarks (zerodep vs readability-lxml vs Mozilla JS, requires Node.js)
 pip install pytest pytest-benchmark readability-lxml
-pytest readability/test_readability_benchmark.py --benchmark-only -v
-
-# Three-way comparison (requires Node.js)
 cd readability && npm install
-python readability/benchmark_compare.py --rounds 10
+pytest readability/test_readability_benchmark.py --benchmark-only -v
 ```
 
 ---

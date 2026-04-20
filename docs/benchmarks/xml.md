@@ -7,7 +7,7 @@ Apple-to-apple performance comparison between zerodep XML and [`xmltodict`](http
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** xmltodict 1.0.4
-    - **Last Updated:** 2026-04-15
+    - **Last Updated:** 2026-04-21
 
 ## Implementations
 
@@ -28,17 +28,17 @@ Apple-to-apple performance comparison between zerodep XML and [`xmltodict`](http
 
 | Data Size | zerodep | xmltodict | Speedup |
 |-----------|---------|-----------|---------|
-| Small | 19.5 μs | 15.7 μs | 1.2x slower |
-| Medium | 337.7 μs | 350.4 μs | 1.0x faster |
-| Large | 4,676.4 μs | 4,708.9 μs | 1.0x faster |
+| Small | 14.9 μs | 17.4 μs | **1.2x faster** |
+| Medium | 380.7 μs | 442.6 μs | **1.2x faster** |
+| Large | 5,210.0 μs | 5,750.0 μs | **1.1x faster** |
 
 ## Unparse Performance (Mean)
 
 | Data Size | zerodep | xmltodict | Speedup |
 |-----------|---------|-----------|---------|
-| Small | 12.7 μs | 16.6 μs | 1.3x faster |
-| Medium | 238.2 μs | 395.0 μs | 1.7x faster |
-| Large | 3,613.4 μs | 5,604.0 μs | 1.6x faster |
+| Small | 14.6 μs | 19.9 μs | **1.4x faster** |
+| Medium | 278.1 μs | 455.1 μs | **1.6x faster** |
+| Large | 4,030.0 μs | 6,480.0 μs | **1.6x faster** |
 
 ## extract_tags Performance (Mean)
 
@@ -50,8 +50,8 @@ Apple-to-apple performance comparison between zerodep XML and [`xmltodict`](http
 
 ## Key Takeaways
 
-- **Parse performance is on par** -- for medium and large documents, zerodep and xmltodict perform nearly identically. On small inputs, zerodep is ~1.2x slower due to its richer dict-construction logic.
-- **Unparse is 1.3-1.7x faster** -- serialization is where zerodep shows a clear advantage, with the gap widening on larger documents.
+- **Parse is 1.1-1.2x faster** -- zerodep now edges ahead of xmltodict across all document sizes, including small inputs.
+- **Unparse is 1.4-1.6x faster** -- serialization is where zerodep shows a clear advantage, with the gap widening on larger documents.
 - **extract_tags has no competitor** -- this is a unique feature for LLM output parsing. The `first_only=True` optimization is extremely fast (~7.7 μs).
 - **Both use expat** -- unlike YAML/JSON where zerodep reimplements the parser, both zerodep and xmltodict use the same C-based expat parser underneath, so unparse speedup comes from more efficient string construction.
 

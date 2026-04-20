@@ -7,7 +7,7 @@ Apple-to-apple parsing performance comparison between zerodep SSE and [`httpx-ss
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** httpx-sse 0.4.3
-    - **Last Updated:** 2026-04-15
+    - **Last Updated:** 2026-04-21
 
 ## Implementations
 
@@ -32,14 +32,14 @@ Both libraries implement the same W3C SSE line-parsing algorithm. The benchmark 
 
 | Data Size | zerodep | httpx-sse | Ratio |
 |-----------|---------|-----------|-------|
-| Small | 22.0 us | 17.0 us | ~1.3x slower |
-| Medium | 300.3 us | 240.9 us | ~1.2x slower |
-| Large | 2,153.1 us | 1,813.2 us | ~1.2x slower |
+| Small | 30.7 us | 22.3 us | ~1.4x slower |
+| Medium | 399.6 us | 317.2 us | ~1.3x slower |
+| Large | 3,180.0 us | 2,320.0 us | ~1.4x slower |
 
 ## Key Takeaways
 
-- **zerodep is ~20-30% slower** -- both libraries implement the same W3C SSE parsing algorithm. The difference comes from zerodep's additional per-event processing (field normalization, event type dispatch) compared to httpx-sse's minimal parser.
-- **Throughput is excellent for both** -- parsing 1,000 events with 200-char payloads takes ~2.2 ms, meaning parsing is never the bottleneck in real SSE workloads (network latency dominates).
+- **zerodep is ~30-40% slower** -- both libraries implement the same W3C SSE parsing algorithm. The difference comes from zerodep's additional per-event processing (field normalization, event type dispatch) compared to httpx-sse's minimal parser.
+- **Throughput is excellent for both** -- parsing 1,000 events with 200-char payloads takes ~3.2 ms, meaning parsing is never the bottleneck in real SSE workloads (network latency dominates).
 - **zerodep provides more functionality** -- unlike httpx-sse (which is an httpx extension), zerodep SSE includes a standalone parser (no HTTP dependency), auto-reconnection, sync+async clients, and Last-Event-ID tracking.
 - **Zero pip dependencies** -- zerodep uses only `dataclasses`, `asyncio`, `time`, and `os` from the standard library (plus the optional sibling `httpclient` module for the high-level client).
 

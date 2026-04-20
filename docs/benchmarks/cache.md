@@ -7,7 +7,7 @@ Apple-to-apple performance comparison between zerodep cache and [`cachetools`](h
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** cachetools 7.0.5
-    - **Last Updated:** 2026-04-20
+    - **Last Updated:** 2026-04-21
 
 ## Implementations
 
@@ -34,22 +34,22 @@ Apple-to-apple performance comparison between zerodep cache and [`cachetools`](h
 
 | Test | zerodep | cachetools | Ratio |
 |------|---------|------------|-------|
-| LRU Get/Set | 894 μs | 928 μs | **1.0x faster** |
-| LRU Eviction Pressure | 1,503 μs | 1,572 μs | **1.0x faster** |
-| LFU Eviction Pressure | 1,855 μs | 1,850 μs | ~same |
-| TTL Expiry | 3,587 μs | 3,520 μs | ~same |
-| Decorator (LRU) | 170 μs | 202 μs | **1.2x faster** |
-| Decorator (TTL) | 226 μs | 233 μs | ~same |
-| hashkey | 400 μs | 430 μs | **1.1x faster** |
-| typedkey | 1,018 μs | 1,256 μs | **1.2x faster** |
-| Mixed Workload | 748 μs | 774 μs | **1.0x faster** |
+| LRU Get/Set | 1,000 μs | 1,110 μs | **1.1x faster** |
+| LRU Eviction Pressure | 1,880 μs | 2,030 μs | **1.1x faster** |
+| LFU Eviction Pressure | 1,750 μs | 1,890 μs | **1.1x faster** |
+| TTL Expiry | 3,600 μs | 3,540 μs | ~same |
+| Decorator (LRU) | 228 μs | 267 μs | **1.2x faster** |
+| Decorator (TTL) | 304 μs | 300 μs | ~same |
+| hashkey | 629 μs | 642 μs | ~same |
+| typedkey | 1,280 μs | 1,650 μs | **1.3x faster** |
+| Mixed Workload | 835 μs | 921 μs | **1.1x faster** |
 
 ## Key Takeaways
 
-- **Core cache operations are on par** -- LRU get/set, LRU eviction, TTL expiry, and mixed workloads are within noise margin of cachetools, with zerodep slightly faster on LRU and mixed workloads.
-- **LFU eviction is ~equal** -- after bypassing `__touch` in `popitem`, LFU eviction pressure is on par with cachetools.
-- **Decorator overhead: zerodep now wins on both LRU and TTL** -- LRU decorator is **1.2x faster** (previously ~same), TTL decorator is now at parity (previously 1.3x slower). The optimized decorator wrapper path eliminates the previous TTL overhead.
-- **hashkey is 1.1x faster, typedkey is 1.2x faster** -- zerodep's `_HashedTuple` implementation edges out cachetools on key generation.
+- **Core cache operations are 1.1x faster** -- LRU get/set, LRU eviction, LFU eviction, and mixed workloads consistently show zerodep ~1.1x faster than cachetools.
+- **LFU eviction now also wins** -- LFU eviction pressure is **1.1x faster**, up from ~same in previous runs.
+- **Decorator overhead: LRU is 1.2x faster, TTL at parity** -- the LRU decorator remains **1.2x faster**, while TTL decorator is at parity.
+- **typedkey is 1.3x faster** -- zerodep's `_HashedTuple` implementation shows a clear edge on type-aware key generation. hashkey is at parity.
 - **Async support is the key differentiator** -- cachetools has **no async decorator support at all**. zerodep's `cached()` and all convenience decorators auto-detect async functions and use `asyncio.Lock` for concurrency safety.
 
 ## Run It Yourself

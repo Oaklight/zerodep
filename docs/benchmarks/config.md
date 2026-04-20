@@ -7,7 +7,7 @@ Apple-to-apple performance comparison between zerodep config and [`python-decoup
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** python-decouple 3.8
-    - **Last Updated:** 2026-04-15
+    - **Last Updated:** 2026-04-21
 
 ## Implementations
 
@@ -30,11 +30,11 @@ Apple-to-apple performance comparison between zerodep config and [`python-decoup
 
 | Test | zerodep | python-decouple | Speedup |
 |------|---------|-----------------|---------|
-| Env Lookup | 0.8 μs | 1.4 μs | **1.8x faster** |
-| Dotenv Lookup | 0.8 μs | 1.5 μs | **1.9x faster** |
-| Cast Int | 1.0 μs | 1.8 μs | **1.8x faster** |
-| Cast Bool | 1.1 μs | 2.3 μs | **2.2x faster** |
-| CSV | 2.2 μs | 11.2 μs | **5.0x faster** |
+| Env Lookup | 0.9 μs | 1.7 μs | **1.9x faster** |
+| Dotenv Lookup | 0.7 μs | 1.6 μs | **2.2x faster** |
+| Cast Int | 1.2 μs | 2.2 μs | **1.8x faster** |
+| Cast Bool | 1.3 μs | 2.5 μs | **1.9x faster** |
+| CSV | 2.7 μs | 12.3 μs | **4.6x faster** |
 
 ## Additional Benchmarks (zerodep only)
 
@@ -47,8 +47,8 @@ Apple-to-apple performance comparison between zerodep config and [`python-decoup
 
 ## Key Takeaways
 
-- **Consistently faster** -- zerodep config is 1.8x-5.0x faster than python-decouple across all comparable operations.
-- **CSV parsing advantage** -- the largest speedup (5.0x) is in CSV casting, where zerodep's simpler implementation avoids python-decouple's overhead.
+- **Consistently faster** -- zerodep config is 1.8x-4.6x faster than python-decouple across all comparable operations.
+- **CSV parsing advantage** -- the largest speedup (4.6x) is in CSV casting, where zerodep's simpler implementation avoids python-decouple's overhead.
 - **Lightweight init** -- constructing a `Config` with no file loading costs only ~0.5 μs; JSON config loading adds ~39 μs, .env loading ~760 μs.
 - **Extra features at no cost** -- zerodep adds config file support (JSON/YAML/TOML/INI), nested keys, and prefix support while maintaining better performance.
 

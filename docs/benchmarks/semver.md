@@ -7,7 +7,7 @@ Apple-to-apple performance comparison between zerodep semver and [`packaging`](h
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** packaging 26.1
-    - **Last Updated:** 2026-04-20
+    - **Last Updated:** 2026-04-21
 
 ## Implementations
 
@@ -31,20 +31,20 @@ Apple-to-apple performance comparison between zerodep semver and [`packaging`](h
 
 | Scenario | zerodep | packaging | Ratio |
 |----------|---------|-----------|-------|
-| Parse Simple | 14.2 μs | 4.1 μs | 3.5x slower |
-| Parse Pre-release | 18.8 μs | 17.5 μs | 1.1x slower |
-| Parse Complex | 22.4 μs | 17.7 μs | 1.3x slower |
-| Sort | 1.3 μs | 1.6 μs | **1.3x faster** |
-| Compare | 3.0 μs | 3.3 μs | **1.1x faster** |
-| Property Access | 1.4 μs | 7.3 μs | **5.2x faster** |
+| Parse Simple | 14.0 μs | 6.0 μs | 2.3x slower |
+| Parse Pre-release | 19.2 μs | 21.1 μs | **1.1x faster** |
+| Parse Complex | 22.8 μs | 22.9 μs | ~1.0x |
+| Sort | 1.7 μs | 1.9 μs | **1.1x faster** |
+| Compare | 3.4 μs | 4.0 μs | **1.2x faster** |
+| Property Access | 1.2 μs | 9.3 μs | **7.8x faster** |
 
 ## Key Takeaways
 
-- **Parsing is 1.1-3.5x slower** -- simple version parsing still has a gap (3.5x) because packaging uses highly optimized C regex internals. Pre-release and complex parsing gaps are much smaller (1.1-1.3x).
-- **Sorting and comparison are now faster** -- integer-sentinel comparison keys and inlined `_cmpkey` make sort 1.3x faster and compare 1.1x faster than packaging.
-- **Property access is 5.2x faster** -- cached `__str__`, direct `_pre`/`_post`/`_dev` attribute access instead of property dispatch make boolean checks and string conversion much faster.
+- **Simple parsing is 2.3x slower** -- simple version parsing still has a gap because packaging uses highly optimized C regex internals. Pre-release and complex parsing are now at parity or faster.
+- **Sorting and comparison are faster** -- integer-sentinel comparison keys and inlined `_cmpkey` make sort 1.1x faster and compare 1.2x faster than packaging.
+- **Property access is 7.8x faster** -- cached `__str__`, direct `_pre`/`_post`/`_dev` attribute access instead of property dispatch make boolean checks and string conversion much faster.
 - **Zero pip dependencies** -- zerodep uses only `re` and `functools` from the standard library.
-- **Practical trade-off** -- for typical use cases (version comparison, sorting, property checks), zerodep is now **faster** than packaging. Only bulk parsing of simple versions is slower.
+- **Practical trade-off** -- for typical use cases (version comparison, sorting, property checks, pre-release parsing), zerodep is now **faster** than packaging. Only bulk parsing of simple versions is slower.
 
 ## Run It Yourself
 

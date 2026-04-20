@@ -7,7 +7,7 @@ Performance comparison between zerodep persistdict (JSON and SQLite backends), s
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
     - **Reference:** sqlitedict 2.1.0
-    - **Last Updated:** 2026-04-20
+    - **Last Updated:** 2026-04-21
 
 ## Implementations
 
@@ -29,57 +29,51 @@ Performance comparison between zerodep persistdict (JSON and SQLite backends), s
 
 | Data Size | zerodep JSON | zerodep SQLite | shelve | sqlitedict |
 |-----------|-------------|---------------|--------|------------|
-| Small (50) | 307.4 μs | 1,279.4 μs | 1,446.4 μs | 13,415.6 μs |
-| Large (2,000) | 12,236.1 μs | 36,017.8 μs | 47,169.7 μs | 526,946.9 μs |
+| Small (50) | 422.7 μs | 2,970.0 μs | 449.1 μs | -- |
+| Large (2,000) | 16,110.0 μs | 24,510.0 μs | 12,450.0 μs | -- |
 
-### Write Speedup vs Competitors
+### Write Comparison vs shelve
 
-| Data Size | vs shelve | vs sqlitedict |
-|-----------|-----------|---------------|
-| Small (JSON) | **4.7x faster** | **43.6x faster** |
-| Small (SQLite) | **1.1x faster** | **10.5x faster** |
-| Large (JSON) | **3.9x faster** | **43.1x faster** |
-| Large (SQLite) | **1.3x faster** | **14.6x faster** |
+| Data Size | zerodep JSON vs shelve | zerodep SQLite vs shelve |
+|-----------|------------------------|--------------------------|
+| Small | ~same | 6.6x slower |
+| Large | 1.3x slower | 2.0x slower |
 
 ## Read Performance — Small (50 items, Mean)
 
 | Implementation | Time |
 |----------------|------|
-| zerodep JSON | 252.9 μs |
-| zerodep SQLite | 532.3 μs |
-| shelve | 1,006.2 μs |
-| sqlitedict | 7,824.1 μs |
+| zerodep JSON | 403.6 μs |
+| zerodep SQLite | 811.2 μs |
+| shelve | 184.5 μs |
 
-### Read Speedup
+### Read Comparison vs shelve
 
-| vs | zerodep JSON | zerodep SQLite |
-|----|-------------|---------------|
-| shelve | **4.0x faster** | **1.9x faster** |
-| sqlitedict | **30.9x faster** | **14.7x faster** |
+| zerodep JSON | zerodep SQLite |
+|-------------|---------------|
+| 2.2x slower | 4.4x slower |
 
 ## Iterate Performance — Small (50 items, Mean)
 
 | Implementation | Time |
 |----------------|------|
-| zerodep JSON | 264.5 μs |
-| zerodep SQLite | 591.7 μs |
-| shelve | 1,032.6 μs |
-| sqlitedict | 1,523.3 μs |
+| zerodep JSON | 427.4 μs |
+| zerodep SQLite | 847.1 μs |
+| shelve | 204.0 μs |
 
-### Iterate Speedup
+### Iterate Comparison vs shelve
 
-| vs | zerodep JSON | zerodep SQLite |
-|----|-------------|---------------|
-| shelve | **3.9x faster** | **1.7x faster** |
-| sqlitedict | **5.8x faster** | **2.6x faster** |
+| zerodep JSON | zerodep SQLite |
+|-------------|---------------|
+| 2.1x slower | 4.2x slower |
 
 ## Key Takeaways
 
-- **JSON backend is fastest overall** -- buffered writes + atomic flush makes it the best choice for small-to-medium datasets.
-- **SQLite backend trades write speed for durability** -- deferred commits with `PRAGMA synchronous=NORMAL` balance durability and performance. Batch writes via `commit_every` parameter further reduce per-write overhead.
-- **Both backends massively outperform sqlitedict** -- 10-43x faster writes, 15-31x faster reads. This is because sqlitedict uses pickle serialization and per-operation commit overhead.
-- **Competitive with shelve, often faster** -- zerodep JSON is 3.9-4.7x faster than shelve for writes and 4.0x faster for reads. The SQLite backend is also 1.1-1.9x faster than shelve across operations.
-- **No pickle** -- unlike shelve and sqlitedict, zerodep uses JSON serialization by default, avoiding deserialization vulnerabilities.
+- **JSON backend is competitive for small writes** -- for 50-item datasets, zerodep JSON write performance is on par with shelve (~same speed).
+- **SQLite backend trades speed for durability** -- deferred commits with `PRAGMA synchronous=NORMAL` balance durability and performance. Batch writes via `commit_every` parameter further reduce per-write overhead, but shelve's dbm backend remains faster for raw throughput.
+- **shelve is faster for reads and iteration** -- shelve's dbm-based key-value lookup is 2-4x faster than zerodep for read and iterate operations on small datasets.
+- **No pickle** -- unlike shelve, zerodep uses JSON serialization by default, avoiding deserialization vulnerabilities. This is the primary advantage when security matters.
+- **Portability and transparency** -- zerodep's JSON backend produces human-readable files, and the SQLite backend uses a standard database format, both of which are more portable and inspectable than dbm files.
 
 ## Run It Yourself
 

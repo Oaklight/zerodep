@@ -1,20 +1,20 @@
 {
   "version": "1",
-  "generated": "2026-04-15T14:33:44.535482+00:00",
+  "generated": "2026-04-20T15:13:09.338739+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
       "files": [
         "a2a/a2a.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [
         "jsonrpc"
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-04-11T01:00:28+08:00",
-      "content_hash": "7171e83cee4fda3865a78d996968676c49b6fffbabb996f0b35278a1e6825c49"
+      "last_updated": "2026-04-20T22:27:52+08:00",
+      "content_hash": "11c6769744f13875563b39b8379295e128762bfeba67fbaa4e316e72e96d9604"
     },
     "acp": {
       "description": "ACP (Agent Client Protocol) -- Zero-dependency Python implementation",
@@ -61,12 +61,12 @@
       "files": [
         "cache/cache.py"
       ],
-      "version": "0.2.3",
+      "version": "0.2.4",
       "deps": [],
       "tier": "subsystem",
       "category": "utility",
-      "last_updated": "2026-04-15T14:08:58Z",
-      "content_hash": "5161daf28871933063b17526a49429dacea22f6934cd4b2439cefa02a97bdd3d"
+      "last_updated": "2026-04-20T22:32:50+08:00",
+      "content_hash": "0daa535d12e0d214a579242ad73d725b9f18145f6c67b319fa4185e7851685ae"
     },
     "config": {
       "description": "Unified configuration loader — zero dependencies, stdlib only, Python 3.10+",
@@ -93,7 +93,7 @@
       "deps": [],
       "tier": "medium",
       "category": "devtools",
-      "last_updated": "2026-04-15T14:08:58Z",
+      "last_updated": "2026-04-15T14:33:44Z",
       "content_hash": "085c6beded889dfd577738ac05e05b5ce092e62f81dd7e80bdfa8dcbe1471162"
     },
     "diff": {
@@ -199,12 +199,12 @@
       "files": [
         "persistdict/persistdict.py"
       ],
-      "version": "0.4.0",
+      "version": "0.4.1",
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-11T01:00:28+08:00",
-      "content_hash": "91d5d69ef1bbd4c809620defc54eecd3461e134cea41a6961f04f79fbf4f0fd4"
+      "last_updated": "2026-04-20T01:25:43+08:00",
+      "content_hash": "22a1f335dbc3899fc27838b4c34413d25455bebadff8f8711e5fbba15d27e2ad"
     },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",
@@ -227,7 +227,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "data",
-      "last_updated": "2026-04-15T14:08:58Z",
+      "last_updated": "2026-04-15T14:33:44Z",
       "content_hash": "939d31669a88b924bb016674c50c9a50ff283b255b155f5c5372828723458e0a"
     },
     "qr": {
@@ -235,12 +235,27 @@
       "files": [
         "qr/qr.py"
       ],
-      "version": "0.3.1",
+      "version": "0.3.2",
       "deps": [],
       "tier": "simple",
       "category": "utility",
-      "last_updated": "2026-04-15T09:45:45Z",
-      "content_hash": "dcca726ed431bc0ad27b41d3fa256cd64cb0dbb2770910c3c806cc500e71d8a1"
+      "last_updated": "2026-04-20T22:37:15+08:00",
+      "content_hash": "8574fe70421245e6a60aaaa65fdf60f8a196c18d5578b7943888ab42702f3ad8"
+    },
+    "readability": {
+      "description": "HTML readability content extractor — zero-dep, stdlib only, Python 3.10+",
+      "files": [
+        "readability/benchmark_compare.py",
+        "readability/readability.py"
+      ],
+      "version": "0.1.0",
+      "deps": [
+        "soup"
+      ],
+      "tier": "medium",
+      "category": "data",
+      "last_updated": "2026-04-20T22:34:09+08:00",
+      "content_hash": "78363bb1de017e4f5070f77ffd682eff43e5b2e0ff7c0b2995c2190d56169964"
     },
     "retry": {
       "description": "Zero-dependency retry with configurable backoff strategies",
@@ -283,26 +298,26 @@
       "files": [
         "semver/semver.py"
       ],
-      "version": "0.4.0",
+      "version": "0.4.1",
       "deps": [],
       "tier": "simple",
       "category": "data",
-      "last_updated": "2026-04-11T01:00:28+08:00",
-      "content_hash": "b1bc735c260719f90ab48763de22fb7e4af90b11211e7175b4e97795d89fde15"
+      "last_updated": "2026-04-20T01:32:34+08:00",
+      "content_hash": "2c9776510dbd235fb9752df25ab8bca390ad29cf1804aeae32de5c7773bc40d9"
     },
     "skills": {
       "description": "Agent Skills runtime — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "skills/skills.py"
       ],
-      "version": "0.4.1",
+      "version": "0.4.2",
       "deps": [
         "frontmatter",
         "sparse_search"
       ],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-15T22:27:20+08:00",
+      "last_updated": "2026-04-15T14:33:44Z",
       "content_hash": "af69314728164602db323a5240feac58260e4b0d5ceedb32945c80e2ddfa13e7"
     },
     "soup": {
@@ -310,12 +325,12 @@
       "files": [
         "soup/soup.py"
       ],
-      "version": "0.3.1",
+      "version": "0.5.0",
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-15T09:45:45Z",
-      "content_hash": "fc27dceec6932994622fc171a8284fab93f2ae6c2453ce822c46535b08967259"
+      "last_updated": "2026-04-20T22:34:09+08:00",
+      "content_hash": "f8f228c21989d06225b607452417907a26751e6bea837443551e722d84eb16e1"
     },
     "sparse_search": {
       "description": "Zero-dependency sparse text search with BM25 family and TF-IDF ranking",
@@ -326,7 +341,7 @@
       "deps": [],
       "tier": "medium",
       "category": "utility",
-      "last_updated": "2026-04-15T22:27:20+08:00",
+      "last_updated": "2026-04-15T14:33:44Z",
       "content_hash": "98bfa266b43782668ebfc26ff891e2cf555762d539a0b724090ae6629a45abde"
     },
     "sse": {
@@ -376,7 +391,7 @@
       "deps": [],
       "tier": "simple",
       "category": "data",
-      "last_updated": "2026-04-15T14:08:58Z",
+      "last_updated": "2026-04-15T14:33:44Z",
       "content_hash": "7ba503084ede371241d85ba5ef825f0badd0b5084f9807212f664a7a1b79dbc5"
     },
     "validate": {

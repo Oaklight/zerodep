@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.2.3"
+# version = "0.2.4"
 # deps = []
 # tier = "subsystem"
 # category = "utility"

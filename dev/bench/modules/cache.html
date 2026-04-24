@@ -75,32 +75,110 @@ td { white-space: nowrap; }
 }
 .module-section { margin-bottom: 3rem; }
 .standalone-table { margin-top: 1rem; }
+
+.trend-section {
+  margin-top: 2rem; padding-top: 1.5rem;
+  border-top: 1px dashed var(--border);
+}
+.trend-section h3 { margin-bottom: .8rem; }
+.trend-chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+  height: 320px; position: relative;
+}
+.trend-empty {
+  color: var(--meta); font-style: italic; text-align: center;
+  padding: 2rem 0;
+}
+.sparkline-container {
+  display: inline-block; vertical-align: middle; margin-left: .5rem;
+}
+.history-link {
+  font-size: .9rem; margin-left: 1rem;
+  color: var(--accent); text-decoration: none;
+}
+.history-link:hover { text-decoration: underline; }
+.history-module-section { margin-bottom: 3rem; }
+.history-chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; height: 400px;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
 </head>
 <body>
 <div class="header-row">
 <h1>cache</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 0ba9e2d | Commit: 0ba9e2de | 2026-04-20T16:31:06.356071+00:00</p>
+<p class="meta">Version: 0157c39 | Commit: 0157c390 | 2026-04-24T18:09:43.658041+00:00</p>
 <h2>cache</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Decorator Overhead</td><td>zerodep_lru</td><td>cachetools</td><td>228.3 µs</td><td>267.1 µs</td><td>4.4K</td><td>3.7K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Decorator Overhead</td><td>zerodep_ttl</td><td>cachetools</td><td>303.9 µs</td><td>300.4 µs</td><td>3.3K</td><td>3.3K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Eviction Pressure</td><td>zerodep_lfu</td><td>cachetools</td><td>1.88 ms</td><td>2.03 ms</td><td>531.5</td><td>491.8</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Eviction Pressure</td><td>zerodep_lru</td><td>cachetools</td><td>1.75 ms</td><td>1.89 ms</td><td>571.1</td><td>530.0</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Key Function</td><td>zerodep_hashkey</td><td>cachetools</td><td>628.8 µs</td><td>642.1 µs</td><td>1.6K</td><td>1.6K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Key Function</td><td>zerodep_typedkey</td><td>cachetools</td><td>1.28 ms</td><td>1.65 ms</td><td>778.2</td><td>606.1</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>LRUGet Set</td><td>zerodep</td><td>cachetools</td><td>1.00 ms</td><td>1.11 ms</td><td>996.8</td><td>899.5</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Mixed Workload</td><td>zerodep</td><td>cachetools</td><td>834.9 µs</td><td>920.6 µs</td><td>1.2K</td><td>1.1K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>TTLExpiry</td><td>zerodep</td><td>cachetools</td><td>3.60 ms</td><td>3.54 ms</td><td>278.0</td><td>282.2</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Decorator Overhead</td><td>zerodep_lru</td><td>cachetools</td><td>230.0 µs</td><td>264.7 µs</td><td>4.3K</td><td>3.8K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Decorator Overhead</td><td>zerodep_ttl</td><td>cachetools</td><td>308.0 µs</td><td>299.6 µs</td><td>3.2K</td><td>3.3K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Eviction Pressure</td><td>zerodep_lfu</td><td>cachetools</td><td>1.86 ms</td><td>1.98 ms</td><td>537.7</td><td>505.2</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Eviction Pressure</td><td>zerodep_lru</td><td>cachetools</td><td>1.77 ms</td><td>1.90 ms</td><td>566.5</td><td>526.0</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Key Function</td><td>zerodep_hashkey</td><td>cachetools</td><td>631.1 µs</td><td>634.4 µs</td><td>1.6K</td><td>1.6K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Key Function</td><td>zerodep_typedkey</td><td>cachetools</td><td>1.29 ms</td><td>1.65 ms</td><td>776.1</td><td>604.7</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>LRUGet Set</td><td>zerodep</td><td>cachetools</td><td>1.00 ms</td><td>1.10 ms</td><td>997.5</td><td>907.3</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Mixed Workload</td><td>zerodep</td><td>cachetools</td><td>841.8 µs</td><td>917.7 µs</td><td>1.2K</td><td>1.1K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>TTLExpiry</td><td>zerodep</td><td>cachetools</td><td>3.52 ms</td><td>3.50 ms</td><td>284.4</td><td>285.8</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
+<div class="trend-section" id="trend-section" style="display:none">
+<h3>Performance Trend</h3>
+<div class="trend-chart-container"><canvas id="trend-chart"></canvas></div>
+</div>
+
 <script>
+async function loadHistory(dataJsPath) {
+  try {
+    var resp = await fetch(dataJsPath);
+    if (!resp.ok) return null;
+    var text = await resp.text();
+    var jsonStr = text.replace(/^window\.BENCHMARK_DATA\s*=\s*/, '')
+                      .replace(/;\s*$/, '');
+    return JSON.parse(jsonStr);
+  } catch(e) { return null; }
+}
+
+function filterBenchesForModule(entries, moduleName) {
+  if (!entries || !entries.length) return [];
+  return entries.map(function(entry) {
+    return {
+      date: entry.date,
+      commit: entry.commit,
+      benches: entry.benches.filter(function(b) {
+        return b.name.split('/')[0] === moduleName;
+      })
+    };
+  }).filter(function(e) { return e.benches.length > 0; });
+}
+
+function isZerodepBench(name) {
+  var lower = name.toLowerCase();
+  var markers = ['zerodep','pure_python','openssl','_ours','ours_'];
+  return markers.some(function(m) { return lower.indexOf(m) !== -1; });
+}
+
+function benchLabel(name) {
+  // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
+  // → "ECB Encrypt (Small) / pure_python"
+  var parts = name.split('::');
+  var method = parts[parts.length - 1] || name;
+  return method.replace(/^test_/, '');
+}
+
+// Distinct colors for trend lines
+var TREND_COLORS = [
+  '#6f42c1','#0d6efd','#198754','#dc3545','#fd7e14',
+  '#20c997','#e83e8c','#6610f2','#17a2b8','#ffc107'
+];
+
 
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
@@ -109,13 +187,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [4380.61104820936, 571.1126611162497, 1590.2232117944673, 996.8387072429898, 1197.8158706382014, 278.032974715372],
+        data: [4348.559385729011, 566.4980900666113, 1584.4577254450758, 997.4564472091218, 1187.9364287004537, 284.42649416761003],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "cachetools" + ' (ops/s)',
-        data: [3743.7998887701397, 529.9556792646938, 1557.3404723360081, 899.4548421537946, 1086.216428316474, 282.16191178189285],
+        data: [3778.217744224917, 526.0313503648994, 1576.3966212035418, 907.2976416382742, 1089.6587883677282, 285.77368494728364],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -136,6 +214,87 @@ new Chart(document.getElementById('chart_0'), {
     }
   }
 });
+(async function() {
+  var section = document.getElementById('trend-section');
+  if (!section) return;
+  var data = await loadHistory('../data.js');
+  if (!data || !data.entries || !data.entries.Benchmark) {
+    section.style.display = 'none'; return;
+  }
+  var filtered = filterBenchesForModule(data.entries.Benchmark, 'cache');
+  if (!filtered.length) { section.style.display = 'none'; return; }
+
+  // Collect unique zerodep bench names
+  var nameSet = {};
+  filtered.forEach(function(entry) {
+    entry.benches.forEach(function(b) {
+      if (isZerodepBench(b.name)) nameSet[b.name] = true;
+    });
+  });
+  var names = Object.keys(nameSet).sort();
+  if (!names.length) { section.style.display = 'none'; return; }
+
+  // Build datasets: one line per bench name
+  var datasets = names.map(function(name, i) {
+    var pts = [];
+    filtered.forEach(function(entry) {
+      var bench = entry.benches.find(function(b) { return b.name === name; });
+      if (bench) pts.push({ x: new Date(entry.date), y: bench.value });
+    });
+    return {
+      label: benchLabel(name),
+      data: pts,
+      borderColor: TREND_COLORS[i % TREND_COLORS.length],
+      backgroundColor: TREND_COLORS[i % TREND_COLORS.length] + '20',
+      fill: false, tension: 0.3, pointRadius: 3, borderWidth: 2,
+    };
+  });
+
+  section.style.display = '';
+  new Chart(document.getElementById('trend-chart'), {
+    type: 'line',
+    data: { datasets: datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 12, font: { size: 11 } }
+        },
+        title: {
+          display: true,
+          text: 'cache — zerodep ops/s over time'
+        },
+        tooltip: {
+          callbacks: {
+            title: function(items) {
+              var d = items[0].raw.x;
+              return d.toLocaleDateString();
+            },
+            afterTitle: function(items) {
+              // Show commit from filtered data
+              var ts = items[0].raw.x.getTime();
+              var entry = filtered.find(function(e) {
+                return Math.abs(e.date - ts) < 86400000;
+              });
+              return entry ? 'commit: ' + (entry.commit.id || '').substring(0,8) : '';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time', time: { unit: 'day' },
+          title: { display: true, text: 'Date' }
+        },
+        y: {
+          type: 'logarithmic',
+          title: { display: true, text: 'ops/s (log)' }
+        }
+      }
+    }
+  });
+})();
 (function() {
   var btn = document.getElementById('theme-toggle');
   if (!btn) return;

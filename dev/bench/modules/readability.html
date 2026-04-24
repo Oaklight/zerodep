@@ -75,41 +75,119 @@ td { white-space: nowrap; }
 }
 .module-section { margin-bottom: 3rem; }
 .standalone-table { margin-top: 1rem; }
+
+.trend-section {
+  margin-top: 2rem; padding-top: 1.5rem;
+  border-top: 1px dashed var(--border);
+}
+.trend-section h3 { margin-bottom: .8rem; }
+.trend-chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+  height: 320px; position: relative;
+}
+.trend-empty {
+  color: var(--meta); font-style: italic; text-align: center;
+  padding: 2rem 0;
+}
+.sparkline-container {
+  display: inline-block; vertical-align: middle; margin-left: .5rem;
+}
+.history-link {
+  font-size: .9rem; margin-left: 1rem;
+  color: var(--accent); text-decoration: none;
+}
+.history-link:hover { text-decoration: underline; }
+.history-module-section { margin-bottom: 3rem; }
+.history-chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; height: 400px;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
 </head>
 <body>
 <div class="header-row">
 <h1>readability</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 0ba9e2d | Commit: 0ba9e2de | 2026-04-20T16:31:06.356071+00:00</p>
+<p class="meta">Version: 0157c39 | Commit: 0157c390 | 2026-04-24T18:09:43.658041+00:00</p>
 <h2>readability</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>33.85 ms</td><td>28.52 ms</td><td>29.5</td><td>35.1</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Large</td><td>zerodep</td><td>Mozilla Readability.js</td><td>33.85 ms</td><td>626.83 ms</td><td>29.5</td><td>1.6</td><td class="ratio-cell faster">18.5x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>2.59 ms</td><td>3.19 ms</td><td>385.6</td><td>313.6</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>Mozilla Readability.js</td><td>2.59 ms</td><td>26.12 ms</td><td>385.6</td><td>38.3</td><td class="ratio-cell faster">10.1x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>276.1 µs</td><td>680.3 µs</td><td>3.6K</td><td>1.5K</td><td class="ratio-cell faster">2.5x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>Mozilla Readability.js</td><td>276.1 µs</td><td>15.93 ms</td><td>3.6K</td><td>62.8</td><td class="ratio-cell faster">57.7x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>5.69 ms</td><td>13.08 ms</td><td>175.6</td><td>76.4</td><td class="ratio-cell faster">2.3x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>5.69 ms</td><td>44.62 ms</td><td>175.6</td><td>22.4</td><td class="ratio-cell faster">7.8x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>1.16 ms</td><td>2.40 ms</td><td>864.7</td><td>416.1</td><td class="ratio-cell faster">2.1x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>1.16 ms</td><td>12.59 ms</td><td>864.7</td><td>79.4</td><td class="ratio-cell faster">10.9x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>458.7 µs</td><td>757.7 µs</td><td>2.2K</td><td>1.3K</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>458.7 µs</td><td>8.49 ms</td><td>2.2K</td><td>117.8</td><td class="ratio-cell faster">18.5x faster</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>33.43 ms</td><td>24.49 ms</td><td>29.9</td><td>40.8</td><td class="ratio-cell slower">1.4x slower</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>Mozilla Readability.js</td><td>33.43 ms</td><td>640.03 ms</td><td>29.9</td><td>1.6</td><td class="ratio-cell faster">19.1x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>2.56 ms</td><td>3.19 ms</td><td>390.0</td><td>313.1</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>Mozilla Readability.js</td><td>2.56 ms</td><td>26.76 ms</td><td>390.0</td><td>37.4</td><td class="ratio-cell faster">10.4x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>274.0 µs</td><td>678.4 µs</td><td>3.7K</td><td>1.5K</td><td class="ratio-cell faster">2.5x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>Mozilla Readability.js</td><td>274.0 µs</td><td>16.34 ms</td><td>3.7K</td><td>61.2</td><td class="ratio-cell faster">59.6x faster</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>5.74 ms</td><td>13.25 ms</td><td>174.2</td><td>75.5</td><td class="ratio-cell faster">2.3x faster</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>5.74 ms</td><td>43.76 ms</td><td>174.2</td><td>22.9</td><td class="ratio-cell faster">7.6x faster</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>1.18 ms</td><td>2.39 ms</td><td>846.0</td><td>417.7</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>1.18 ms</td><td>12.53 ms</td><td>846.0</td><td>79.8</td><td class="ratio-cell faster">10.6x faster</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>463.8 µs</td><td>754.9 µs</td><td>2.2K</td><td>1.3K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>463.8 µs</td><td>8.62 ms</td><td>2.2K</td><td>116.0</td><td class="ratio-cell faster">18.6x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.61 ms</td><td>622.2</td></tr>
+<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.63 ms</td><td>614.7</td></tr>
 </tbody></table>
 
+<div class="trend-section" id="trend-section" style="display:none">
+<h3>Performance Trend</h3>
+<div class="trend-chart-container"><canvas id="trend-chart"></canvas></div>
+</div>
+
 <script>
+async function loadHistory(dataJsPath) {
+  try {
+    var resp = await fetch(dataJsPath);
+    if (!resp.ok) return null;
+    var text = await resp.text();
+    var jsonStr = text.replace(/^window\.BENCHMARK_DATA\s*=\s*/, '')
+                      .replace(/;\s*$/, '');
+    return JSON.parse(jsonStr);
+  } catch(e) { return null; }
+}
+
+function filterBenchesForModule(entries, moduleName) {
+  if (!entries || !entries.length) return [];
+  return entries.map(function(entry) {
+    return {
+      date: entry.date,
+      commit: entry.commit,
+      benches: entry.benches.filter(function(b) {
+        return b.name.split('/')[0] === moduleName;
+      })
+    };
+  }).filter(function(e) { return e.benches.length > 0; });
+}
+
+function isZerodepBench(name) {
+  var lower = name.toLowerCase();
+  var markers = ['zerodep','pure_python','openssl','_ours','ours_'];
+  return markers.some(function(m) { return lower.indexOf(m) !== -1; });
+}
+
+function benchLabel(name) {
+  // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
+  // → "ECB Encrypt (Small) / pure_python"
+  var parts = name.split('::');
+  var method = parts[parts.length - 1] || name;
+  return method.replace(/^test_/, '');
+}
+
+// Distinct colors for trend lines
+var TREND_COLORS = [
+  '#6f42c1','#0d6efd','#198754','#dc3545','#fd7e14',
+  '#20c997','#e83e8c','#6610f2','#17a2b8','#ffc107'
+];
+
 
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
@@ -118,13 +196,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [29.540470217732537, 385.59458468771106, 3622.3307638526876, 175.6324005354493, 864.6578069809364, 2180.287143278344],
+        data: [29.910982374029878, 389.98237954606424, 3650.1039781456993, 174.21277601841965, 845.9664341323994, 2156.175196027172],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "readability-lxml" + ' (ops/s)',
-        data: [35.068311510273695, 313.5596362830255, 1469.8393480610412, 76.43962462806162, 416.05109681211144, 1319.8463871326444],
+        data: [40.83499787503691, 313.096218196747, 1474.049648784451, 75.48330882533698, 417.6518212889592, 1324.5913421440962],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -145,6 +223,87 @@ new Chart(document.getElementById('chart_0'), {
     }
   }
 });
+(async function() {
+  var section = document.getElementById('trend-section');
+  if (!section) return;
+  var data = await loadHistory('../data.js');
+  if (!data || !data.entries || !data.entries.Benchmark) {
+    section.style.display = 'none'; return;
+  }
+  var filtered = filterBenchesForModule(data.entries.Benchmark, 'readability');
+  if (!filtered.length) { section.style.display = 'none'; return; }
+
+  // Collect unique zerodep bench names
+  var nameSet = {};
+  filtered.forEach(function(entry) {
+    entry.benches.forEach(function(b) {
+      if (isZerodepBench(b.name)) nameSet[b.name] = true;
+    });
+  });
+  var names = Object.keys(nameSet).sort();
+  if (!names.length) { section.style.display = 'none'; return; }
+
+  // Build datasets: one line per bench name
+  var datasets = names.map(function(name, i) {
+    var pts = [];
+    filtered.forEach(function(entry) {
+      var bench = entry.benches.find(function(b) { return b.name === name; });
+      if (bench) pts.push({ x: new Date(entry.date), y: bench.value });
+    });
+    return {
+      label: benchLabel(name),
+      data: pts,
+      borderColor: TREND_COLORS[i % TREND_COLORS.length],
+      backgroundColor: TREND_COLORS[i % TREND_COLORS.length] + '20',
+      fill: false, tension: 0.3, pointRadius: 3, borderWidth: 2,
+    };
+  });
+
+  section.style.display = '';
+  new Chart(document.getElementById('trend-chart'), {
+    type: 'line',
+    data: { datasets: datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 12, font: { size: 11 } }
+        },
+        title: {
+          display: true,
+          text: 'readability — zerodep ops/s over time'
+        },
+        tooltip: {
+          callbacks: {
+            title: function(items) {
+              var d = items[0].raw.x;
+              return d.toLocaleDateString();
+            },
+            afterTitle: function(items) {
+              // Show commit from filtered data
+              var ts = items[0].raw.x.getTime();
+              var entry = filtered.find(function(e) {
+                return Math.abs(e.date - ts) < 86400000;
+              });
+              return entry ? 'commit: ' + (entry.commit.id || '').substring(0,8) : '';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time', time: { unit: 'day' },
+          title: { display: true, text: 'Date' }
+        },
+        y: {
+          type: 'logarithmic',
+          title: { display: true, text: 'ops/s (log)' }
+        }
+      }
+    }
+  });
+})();
 (function() {
   var btn = document.getElementById('theme-toggle');
   if (!btn) return;

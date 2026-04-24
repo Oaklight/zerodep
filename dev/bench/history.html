@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Performance History — zerodep</title>
+<style>:root, [data-theme="light"] {
+  --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
+  --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
+  --accent: #6f42c1; --meta: #666;
+}
+[data-theme="dark"] {
+  --bg: #1a1a2e; --fg: #e0e0e0; --card-bg: #16213e; --border: #334155;
+  --green: #4ade80; --red: #f87171; --yellow: #facc15; --blue: #60a5fa;
+  --accent: #a78bfa; --meta: #999;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a2e; --fg: #e0e0e0; --card-bg: #16213e; --border: #334155;
+    --green: #4ade80; --red: #f87171; --yellow: #facc15; --blue: #60a5fa;
+    --accent: #a78bfa; --meta: #999;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg); color: var(--fg); line-height: 1.6;
+  max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;
+  transition: background .2s, color .2s;
+}
+h1 { font-size: 1.8rem; margin-bottom: .5rem; }
+h2 {
+  font-size: 1.4rem; margin: 2rem 0 1rem;
+  border-bottom: 2px solid var(--accent); padding-bottom: .3rem;
+}
+h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
+.meta { color: var(--meta); font-size: .9rem; margin-bottom: 2rem; }
+.header-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.theme-toggle {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: .4rem .8rem; cursor: pointer;
+  color: var(--fg); font-size: .85rem;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+.summary-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem; margin-bottom: 2rem;
+}
+.summary-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; text-align: center;
+}
+.summary-card .num { font-size: 2rem; font-weight: bold; }
+.summary-card .label { font-size: .85rem; color: var(--meta); }
+table {
+  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  font-size: .9rem;
+}
+th, td {
+  padding: .5rem .75rem; border: 1px solid var(--border);
+  text-align: left;
+}
+th { background: var(--card-bg); font-weight: 600; white-space: nowrap; }
+td { white-space: nowrap; }
+.ratio-cell { font-weight: bold; }
+.faster { color: var(--green); }
+.slower { color: var(--red); }
+.similar { color: var(--yellow); }
+.chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+  max-height: 450px;
+}
+.module-section { margin-bottom: 3rem; }
+.standalone-table { margin-top: 1rem; }
+
+.trend-section {
+  margin-top: 2rem; padding-top: 1.5rem;
+  border-top: 1px dashed var(--border);
+}
+.trend-section h3 { margin-bottom: .8rem; }
+.trend-chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+  height: 320px; position: relative;
+}
+.trend-empty {
+  color: var(--meta); font-style: italic; text-align: center;
+  padding: 2rem 0;
+}
+.sparkline-container {
+  display: inline-block; vertical-align: middle; margin-left: .5rem;
+}
+.history-link {
+  font-size: .9rem; margin-left: 1rem;
+  color: var(--accent); text-decoration: none;
+}
+.history-link:hover { text-decoration: underline; }
+.history-module-section { margin-bottom: 3rem; }
+.history-chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; height: 400px;
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+</head>
+<body>
+<div class="header-row">
+<h1>📈 Performance History</h1>
+<button class="theme-toggle" id="theme-toggle">☾ Dark</button>
+</div>
+<p class="meta">Version: 0157c39 &nbsp;|&nbsp; Commit: 0157c390 &nbsp;|&nbsp; 2026-04-24T18:09:43.658041+00:00</p>
+<div style="margin-bottom:1.5rem;font-size:.9rem"><a href="index.html" style="margin-right:1rem">← Back to Report</a><a href="#hist-a2a" style="margin-right:1rem">a2a</a> <a href="#hist-acp" style="margin-right:1rem">acp</a> <a href="#hist-aes" style="margin-right:1rem">aes</a> <a href="#hist-cache" style="margin-right:1rem">cache</a> <a href="#hist-config" style="margin-right:1rem">config</a> <a href="#hist-diff" style="margin-right:1rem">diff</a> <a href="#hist-dotenv" style="margin-right:1rem">dotenv</a> <a href="#hist-frontmatter" style="margin-right:1rem">frontmatter</a> <a href="#hist-httpclient" style="margin-right:1rem">httpclient</a> <a href="#hist-jsonc" style="margin-right:1rem">jsonc</a> <a href="#hist-jsonrpc" style="margin-right:1rem">jsonrpc</a> <a href="#hist-jsonschema" style="margin-right:1rem">jsonschema</a> <a href="#hist-markdown" style="margin-right:1rem">markdown</a> <a href="#hist-persistdict" style="margin-right:1rem">persistdict</a> <a href="#hist-protobuf" style="margin-right:1rem">protobuf</a> <a href="#hist-qr" style="margin-right:1rem">qr</a> <a href="#hist-readability" style="margin-right:1rem">readability</a> <a href="#hist-retry" style="margin-right:1rem">retry</a> <a href="#hist-runner" style="margin-right:1rem">runner</a> <a href="#hist-scheduler" style="margin-right:1rem">scheduler</a> <a href="#hist-semver" style="margin-right:1rem">semver</a> <a href="#hist-soup" style="margin-right:1rem">soup</a> <a href="#hist-sparse_search" style="margin-right:1rem">sparse_search</a> <a href="#hist-sse" style="margin-right:1rem">sse</a> <a href="#hist-structlog" style="margin-right:1rem">structlog</a> <a href="#hist-tabulate" style="margin-right:1rem">tabulate</a> <a href="#hist-toon" style="margin-right:1rem">toon</a> <a href="#hist-validate" style="margin-right:1rem">validate</a> <a href="#hist-xml" style="margin-right:1rem">xml</a> <a href="#hist-yaml" style="margin-right:1rem">yaml</a></div>
+<div class="history-module-section" id="hist-a2a">
+<h2>a2a</h2>
+<div class="history-chart-container"><canvas id="hist-chart-a2a"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-acp">
+<h2>acp</h2>
+<div class="history-chart-container"><canvas id="hist-chart-acp"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-aes">
+<h2>aes</h2>
+<div class="history-chart-container"><canvas id="hist-chart-aes"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-cache">
+<h2>cache</h2>
+<div class="history-chart-container"><canvas id="hist-chart-cache"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-config">
+<h2>config</h2>
+<div class="history-chart-container"><canvas id="hist-chart-config"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-diff">
+<h2>diff</h2>
+<div class="history-chart-container"><canvas id="hist-chart-diff"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-dotenv">
+<h2>dotenv</h2>
+<div class="history-chart-container"><canvas id="hist-chart-dotenv"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-frontmatter">
+<h2>frontmatter</h2>
+<div class="history-chart-container"><canvas id="hist-chart-frontmatter"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-httpclient">
+<h2>httpclient</h2>
+<div class="history-chart-container"><canvas id="hist-chart-httpclient"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-jsonc">
+<h2>jsonc</h2>
+<div class="history-chart-container"><canvas id="hist-chart-jsonc"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-jsonrpc">
+<h2>jsonrpc</h2>
+<div class="history-chart-container"><canvas id="hist-chart-jsonrpc"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-jsonschema">
+<h2>jsonschema</h2>
+<div class="history-chart-container"><canvas id="hist-chart-jsonschema"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-markdown">
+<h2>markdown</h2>
+<div class="history-chart-container"><canvas id="hist-chart-markdown"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-persistdict">
+<h2>persistdict</h2>
+<div class="history-chart-container"><canvas id="hist-chart-persistdict"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-protobuf">
+<h2>protobuf</h2>
+<div class="history-chart-container"><canvas id="hist-chart-protobuf"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-qr">
+<h2>qr</h2>
+<div class="history-chart-container"><canvas id="hist-chart-qr"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-readability">
+<h2>readability</h2>
+<div class="history-chart-container"><canvas id="hist-chart-readability"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-retry">
+<h2>retry</h2>
+<div class="history-chart-container"><canvas id="hist-chart-retry"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-runner">
+<h2>runner</h2>
+<div class="history-chart-container"><canvas id="hist-chart-runner"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-scheduler">
+<h2>scheduler</h2>
+<div class="history-chart-container"><canvas id="hist-chart-scheduler"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-semver">
+<h2>semver</h2>
+<div class="history-chart-container"><canvas id="hist-chart-semver"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-soup">
+<h2>soup</h2>
+<div class="history-chart-container"><canvas id="hist-chart-soup"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-sparse_search">
+<h2>sparse_search</h2>
+<div class="history-chart-container"><canvas id="hist-chart-sparse_search"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-sse">
+<h2>sse</h2>
+<div class="history-chart-container"><canvas id="hist-chart-sse"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-structlog">
+<h2>structlog</h2>
+<div class="history-chart-container"><canvas id="hist-chart-structlog"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-tabulate">
+<h2>tabulate</h2>
+<div class="history-chart-container"><canvas id="hist-chart-tabulate"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-toon">
+<h2>toon</h2>
+<div class="history-chart-container"><canvas id="hist-chart-toon"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-validate">
+<h2>validate</h2>
+<div class="history-chart-container"><canvas id="hist-chart-validate"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-xml">
+<h2>xml</h2>
+<div class="history-chart-container"><canvas id="hist-chart-xml"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-yaml">
+<h2>yaml</h2>
+<div class="history-chart-container"><canvas id="hist-chart-yaml"></canvas></div>
+</div>
+
+<script>
+async function loadHistory(dataJsPath) {
+  try {
+    var resp = await fetch(dataJsPath);
+    if (!resp.ok) return null;
+    var text = await resp.text();
+    var jsonStr = text.replace(/^window\.BENCHMARK_DATA\s*=\s*/, '')
+                      .replace(/;\s*$/, '');
+    return JSON.parse(jsonStr);
+  } catch(e) { return null; }
+}
+
+function filterBenchesForModule(entries, moduleName) {
+  if (!entries || !entries.length) return [];
+  return entries.map(function(entry) {
+    return {
+      date: entry.date,
+      commit: entry.commit,
+      benches: entry.benches.filter(function(b) {
+        return b.name.split('/')[0] === moduleName;
+      })
+    };
+  }).filter(function(e) { return e.benches.length > 0; });
+}
+
+function isZerodepBench(name) {
+  var lower = name.toLowerCase();
+  var markers = ['zerodep','pure_python','openssl','_ours','ours_'];
+  return markers.some(function(m) { return lower.indexOf(m) !== -1; });
+}
+
+function benchLabel(name) {
+  // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
+  // → "ECB Encrypt (Small) / pure_python"
+  var parts = name.split('::');
+  var method = parts[parts.length - 1] || name;
+  return method.replace(/^test_/, '');
+}
+
+// Distinct colors for trend lines
+var TREND_COLORS = [
+  '#6f42c1','#0d6efd','#198754','#dc3545','#fd7e14',
+  '#20c997','#e83e8c','#6610f2','#17a2b8','#ffc107'
+];
+
+(async function() {
+  var data = await loadHistory('./data.js');
+  var modules = ["a2a", "acp", "aes", "cache", "config", "diff", "dotenv", "frontmatter", "httpclient", "jsonc", "jsonrpc", "jsonschema", "markdown", "persistdict", "protobuf", "qr", "readability", "retry", "runner", "scheduler", "semver", "soup", "sparse_search", "sse", "structlog", "tabulate", "toon", "validate", "xml", "yaml"];
+  if (!data || !data.entries || !data.entries.Benchmark) {
+    modules.forEach(function(mod) {
+      var container = document.getElementById('hist-' + mod);
+      if (container) {
+        container.querySelector('.history-chart-container').innerHTML =
+          '<p class="trend-empty">No historical data available yet.</p>';
+      }
+    });
+    return;
+  }
+  modules.forEach(function(mod) {
+    var canvas = document.getElementById('hist-chart-' + mod);
+    if (!canvas) return;
+    var filtered = filterBenchesForModule(data.entries.Benchmark, mod);
+    if (!filtered.length) {
+      canvas.parentElement.innerHTML =
+        '<p class="trend-empty">No historical data for this module.</p>';
+      return;
+    }
+    // Collect unique zerodep bench names
+    var nameSet = {};
+    filtered.forEach(function(entry) {
+      entry.benches.forEach(function(b) {
+        if (isZerodepBench(b.name)) nameSet[b.name] = true;
+      });
+    });
+    var names = Object.keys(nameSet).sort();
+    if (!names.length) {
+      canvas.parentElement.innerHTML =
+        '<p class="trend-empty">No zerodep benchmarks in history.</p>';
+      return;
+    }
+    var datasets = names.map(function(name, i) {
+      var pts = [];
+      filtered.forEach(function(entry) {
+        var bench = entry.benches.find(function(b) { return b.name === name; });
+        if (bench) pts.push({ x: new Date(entry.date), y: bench.value });
+      });
+      return {
+        label: benchLabel(name),
+        data: pts,
+        borderColor: TREND_COLORS[i % TREND_COLORS.length],
+        backgroundColor: TREND_COLORS[i % TREND_COLORS.length] + '20',
+        fill: false, tension: 0.3, pointRadius: 3, borderWidth: 2,
+      };
+    });
+    new Chart(canvas, {
+      type: 'line',
+      data: { datasets: datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { boxWidth: 12, font: { size: 11 } }
+          },
+          title: { display: true, text: mod + ' — zerodep ops/s over time' },
+          tooltip: {
+            callbacks: {
+              title: function(items) {
+                return items[0].raw.x.toLocaleDateString();
+              },
+              afterTitle: function(items) {
+                var ts = items[0].raw.x.getTime();
+                var entry = filtered.find(function(e) {
+                  return Math.abs(e.date - ts) < 86400000;
+                });
+                return entry
+                  ? 'commit: ' + (entry.commit.id || '').substring(0,8) : '';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'time',
+            time: { unit: 'day' },
+            title: { display: true, text: 'Date' }
+          },
+          y: {
+            type: 'logarithmic',
+            title: { display: true, text: 'ops/s (log)' }
+          }
+        }
+      }
+    });
+  });
+})();
+(function() {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? '\u2600 Light' : '\u263E Dark';
+    localStorage.setItem('bench-theme', t);
+  }
+  var saved = localStorage.getItem('bench-theme');
+  if (saved) setTheme(saved);
+  btn.addEventListener('click', function() {
+    var cur = document.documentElement.getAttribute('data-theme');
+    if (!cur) {
+      cur = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark' : 'light';
+    }
+    setTheme(cur === 'dark' ? 'light' : 'dark');
+  });
+})();
+</script>
+</body>
+</html>

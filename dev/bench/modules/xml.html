@@ -75,37 +75,115 @@ td { white-space: nowrap; }
 }
 .module-section { margin-bottom: 3rem; }
 .standalone-table { margin-top: 1rem; }
+
+.trend-section {
+  margin-top: 2rem; padding-top: 1.5rem;
+  border-top: 1px dashed var(--border);
+}
+.trend-section h3 { margin-bottom: .8rem; }
+.trend-chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+  height: 320px; position: relative;
+}
+.trend-empty {
+  color: var(--meta); font-style: italic; text-align: center;
+  padding: 2rem 0;
+}
+.sparkline-container {
+  display: inline-block; vertical-align: middle; margin-left: .5rem;
+}
+.history-link {
+  font-size: .9rem; margin-left: 1rem;
+  color: var(--accent); text-decoration: none;
+}
+.history-link:hover { text-decoration: underline; }
+.history-module-section { margin-bottom: 3rem; }
+.history-chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; height: 400px;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
 </head>
 <body>
 <div class="header-row">
 <h1>xml</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 0ba9e2d | Commit: 0ba9e2de | 2026-04-20T16:31:06.356071+00:00</p>
+<p class="meta">Version: 0157c39 | Commit: 0157c390 | 2026-04-24T18:09:43.658041+00:00</p>
 <h2>xml</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>xmltodict</td><td>5.21 ms</td><td>5.75 ms</td><td>191.9</td><td>173.9</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>380.7 µs</td><td>442.6 µs</td><td>2.6K</td><td>2.3K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>xmltodict</td><td>14.9 µs</td><td>17.4 µs</td><td>66.9K</td><td>57.6K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Unparse (Large)</td><td>zerodep</td><td>xmltodict</td><td>4.03 ms</td><td>6.48 ms</td><td>248.4</td><td>154.3</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Unparse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>278.1 µs</td><td>455.1 µs</td><td>3.6K</td><td>2.2K</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Unparse (Small)</td><td>zerodep</td><td>xmltodict</td><td>14.6 µs</td><td>19.9 µs</td><td>68.3K</td><td>50.2K</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>xmltodict</td><td>5.30 ms</td><td>5.84 ms</td><td>188.7</td><td>171.2</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>389.9 µs</td><td>436.5 µs</td><td>2.6K</td><td>2.3K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>xmltodict</td><td>15.5 µs</td><td>17.6 µs</td><td>64.3K</td><td>56.9K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Unparse (Large)</td><td>zerodep</td><td>xmltodict</td><td>4.06 ms</td><td>6.48 ms</td><td>246.2</td><td>154.3</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Unparse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>279.3 µs</td><td>455.4 µs</td><td>3.6K</td><td>2.2K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Unparse (Small)</td><td>zerodep</td><td>xmltodict</td><td>14.7 µs</td><td>19.6 µs</td><td>68.2K</td><td>50.9K</td><td class="ratio-cell faster">1.3x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Extract Tags</td><td>extract_all</td><td>737.1 µs</td><td>1.4K</td></tr>
-<tr><td>Extract Tags</td><td>extract_filtered</td><td>441.2 µs</td><td>2.3K</td></tr>
-<tr><td>Extract Tags</td><td>extract_first_only</td><td>9.7 µs</td><td>102.8K</td></tr>
+<tr><td>Extract Tags</td><td>extract_all</td><td>752.5 µs</td><td>1.3K</td></tr>
+<tr><td>Extract Tags</td><td>extract_filtered</td><td>451.8 µs</td><td>2.2K</td></tr>
+<tr><td>Extract Tags</td><td>extract_first_only</td><td>9.8 µs</td><td>102.1K</td></tr>
 </tbody></table>
 
+<div class="trend-section" id="trend-section" style="display:none">
+<h3>Performance Trend</h3>
+<div class="trend-chart-container"><canvas id="trend-chart"></canvas></div>
+</div>
+
 <script>
+async function loadHistory(dataJsPath) {
+  try {
+    var resp = await fetch(dataJsPath);
+    if (!resp.ok) return null;
+    var text = await resp.text();
+    var jsonStr = text.replace(/^window\.BENCHMARK_DATA\s*=\s*/, '')
+                      .replace(/;\s*$/, '');
+    return JSON.parse(jsonStr);
+  } catch(e) { return null; }
+}
+
+function filterBenchesForModule(entries, moduleName) {
+  if (!entries || !entries.length) return [];
+  return entries.map(function(entry) {
+    return {
+      date: entry.date,
+      commit: entry.commit,
+      benches: entry.benches.filter(function(b) {
+        return b.name.split('/')[0] === moduleName;
+      })
+    };
+  }).filter(function(e) { return e.benches.length > 0; });
+}
+
+function isZerodepBench(name) {
+  var lower = name.toLowerCase();
+  var markers = ['zerodep','pure_python','openssl','_ours','ours_'];
+  return markers.some(function(m) { return lower.indexOf(m) !== -1; });
+}
+
+function benchLabel(name) {
+  // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
+  // → "ECB Encrypt (Small) / pure_python"
+  var parts = name.split('::');
+  var method = parts[parts.length - 1] || name;
+  return method.replace(/^test_/, '');
+}
+
+// Distinct colors for trend lines
+var TREND_COLORS = [
+  '#6f42c1','#0d6efd','#198754','#dc3545','#fd7e14',
+  '#20c997','#e83e8c','#6610f2','#17a2b8','#ffc107'
+];
+
 
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
@@ -114,13 +192,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [191.87334292826367, 2626.911447349362, 66894.52515412765, 248.37864470976524, 3595.4904854374868, 68346.80021517084],
+        data: [188.69724051538137, 2564.878295731116, 64342.02272749087, 246.2198766922399, 3580.245114553915, 68195.95469827527],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "xmltodict" + ' (ops/s)',
-        data: [173.86238122390253, 2259.386289025068, 57609.05500975883, 154.31980574708263, 2197.118618144217, 50210.474140036946],
+        data: [171.18851221635146, 2291.144515582331, 56866.99069979876, 154.34944322525493, 2195.776509816613, 50946.8345743067],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -141,6 +219,87 @@ new Chart(document.getElementById('chart_0'), {
     }
   }
 });
+(async function() {
+  var section = document.getElementById('trend-section');
+  if (!section) return;
+  var data = await loadHistory('../data.js');
+  if (!data || !data.entries || !data.entries.Benchmark) {
+    section.style.display = 'none'; return;
+  }
+  var filtered = filterBenchesForModule(data.entries.Benchmark, 'xml');
+  if (!filtered.length) { section.style.display = 'none'; return; }
+
+  // Collect unique zerodep bench names
+  var nameSet = {};
+  filtered.forEach(function(entry) {
+    entry.benches.forEach(function(b) {
+      if (isZerodepBench(b.name)) nameSet[b.name] = true;
+    });
+  });
+  var names = Object.keys(nameSet).sort();
+  if (!names.length) { section.style.display = 'none'; return; }
+
+  // Build datasets: one line per bench name
+  var datasets = names.map(function(name, i) {
+    var pts = [];
+    filtered.forEach(function(entry) {
+      var bench = entry.benches.find(function(b) { return b.name === name; });
+      if (bench) pts.push({ x: new Date(entry.date), y: bench.value });
+    });
+    return {
+      label: benchLabel(name),
+      data: pts,
+      borderColor: TREND_COLORS[i % TREND_COLORS.length],
+      backgroundColor: TREND_COLORS[i % TREND_COLORS.length] + '20',
+      fill: false, tension: 0.3, pointRadius: 3, borderWidth: 2,
+    };
+  });
+
+  section.style.display = '';
+  new Chart(document.getElementById('trend-chart'), {
+    type: 'line',
+    data: { datasets: datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 12, font: { size: 11 } }
+        },
+        title: {
+          display: true,
+          text: 'xml — zerodep ops/s over time'
+        },
+        tooltip: {
+          callbacks: {
+            title: function(items) {
+              var d = items[0].raw.x;
+              return d.toLocaleDateString();
+            },
+            afterTitle: function(items) {
+              // Show commit from filtered data
+              var ts = items[0].raw.x.getTime();
+              var entry = filtered.find(function(e) {
+                return Math.abs(e.date - ts) < 86400000;
+              });
+              return entry ? 'commit: ' + (entry.commit.id || '').substring(0,8) : '';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time', time: { unit: 'day' },
+          title: { display: true, text: 'Date' }
+        },
+        y: {
+          type: 'logarithmic',
+          title: { display: true, text: 'ops/s (log)' }
+        }
+      }
+    }
+  });
+})();
 (function() {
   var btn = document.getElementById('theme-toggle');
   if (!btn) return;

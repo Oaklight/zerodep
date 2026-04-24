@@ -75,29 +75,107 @@ td { white-space: nowrap; }
 }
 .module-section { margin-bottom: 3rem; }
 .standalone-table { margin-top: 1rem; }
+
+.trend-section {
+  margin-top: 2rem; padding-top: 1.5rem;
+  border-top: 1px dashed var(--border);
+}
+.trend-section h3 { margin-bottom: .8rem; }
+.trend-chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+  height: 320px; position: relative;
+}
+.trend-empty {
+  color: var(--meta); font-style: italic; text-align: center;
+  padding: 2rem 0;
+}
+.sparkline-container {
+  display: inline-block; vertical-align: middle; margin-left: .5rem;
+}
+.history-link {
+  font-size: .9rem; margin-left: 1rem;
+  color: var(--accent); text-decoration: none;
+}
+.history-link:hover { text-decoration: underline; }
+.history-module-section { margin-bottom: 3rem; }
+.history-chart-container {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem; height: 400px;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
 </head>
 <body>
 <div class="header-row">
 <h1>semver</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 0ba9e2d | Commit: 0ba9e2de | 2026-04-20T16:31:06.356071+00:00</p>
+<p class="meta">Version: 0157c39 | Commit: 0157c390 | 2026-04-24T18:09:43.658041+00:00</p>
 <h2>semver</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Compare</td><td>zerodep</td><td>packaging</td><td>3.4 µs</td><td>4.0 µs</td><td>290.6K</td><td>250.6K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Parse Complex</td><td>zerodep</td><td>packaging</td><td>22.8 µs</td><td>22.9 µs</td><td>43.8K</td><td>43.6K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse Prerelease</td><td>zerodep</td><td>packaging</td><td>19.2 µs</td><td>21.1 µs</td><td>52.1K</td><td>47.5K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Parse Simple</td><td>zerodep</td><td>packaging</td><td>14.0 µs</td><td>6.0 µs</td><td>71.3K</td><td>166.9K</td><td class="ratio-cell slower">2.3x slower</td></tr>
-<tr><td>Property Access</td><td>zerodep</td><td>packaging</td><td>1.2 µs</td><td>9.3 µs</td><td>825.1K</td><td>107.2K</td><td class="ratio-cell faster">7.7x faster</td></tr>
-<tr><td>Sort</td><td>zerodep</td><td>packaging</td><td>1.7 µs</td><td>1.9 µs</td><td>604.9K</td><td>527.2K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Compare</td><td>zerodep</td><td>packaging</td><td>3.3 µs</td><td>3.8 µs</td><td>305.2K</td><td>265.8K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse Complex</td><td>zerodep</td><td>packaging</td><td>23.1 µs</td><td>24.7 µs</td><td>43.2K</td><td>40.4K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse Prerelease</td><td>zerodep</td><td>packaging</td><td>19.7 µs</td><td>20.9 µs</td><td>50.7K</td><td>47.9K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse Simple</td><td>zerodep</td><td>packaging</td><td>13.8 µs</td><td>5.8 µs</td><td>72.3K</td><td>171.1K</td><td class="ratio-cell slower">2.4x slower</td></tr>
+<tr><td>Property Access</td><td>zerodep</td><td>packaging</td><td>1.2 µs</td><td>9.4 µs</td><td>834.1K</td><td>106.5K</td><td class="ratio-cell faster">7.8x faster</td></tr>
+<tr><td>Sort</td><td>zerodep</td><td>packaging</td><td>1.7 µs</td><td>1.9 µs</td><td>575.6K</td><td>522.4K</td><td class="ratio-cell faster">1.1x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
+<div class="trend-section" id="trend-section" style="display:none">
+<h3>Performance Trend</h3>
+<div class="trend-chart-container"><canvas id="trend-chart"></canvas></div>
+</div>
+
 <script>
+async function loadHistory(dataJsPath) {
+  try {
+    var resp = await fetch(dataJsPath);
+    if (!resp.ok) return null;
+    var text = await resp.text();
+    var jsonStr = text.replace(/^window\.BENCHMARK_DATA\s*=\s*/, '')
+                      .replace(/;\s*$/, '');
+    return JSON.parse(jsonStr);
+  } catch(e) { return null; }
+}
+
+function filterBenchesForModule(entries, moduleName) {
+  if (!entries || !entries.length) return [];
+  return entries.map(function(entry) {
+    return {
+      date: entry.date,
+      commit: entry.commit,
+      benches: entry.benches.filter(function(b) {
+        return b.name.split('/')[0] === moduleName;
+      })
+    };
+  }).filter(function(e) { return e.benches.length > 0; });
+}
+
+function isZerodepBench(name) {
+  var lower = name.toLowerCase();
+  var markers = ['zerodep','pure_python','openssl','_ours','ours_'];
+  return markers.some(function(m) { return lower.indexOf(m) !== -1; });
+}
+
+function benchLabel(name) {
+  // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
+  // → "ECB Encrypt (Small) / pure_python"
+  var parts = name.split('::');
+  var method = parts[parts.length - 1] || name;
+  return method.replace(/^test_/, '');
+}
+
+// Distinct colors for trend lines
+var TREND_COLORS = [
+  '#6f42c1','#0d6efd','#198754','#dc3545','#fd7e14',
+  '#20c997','#e83e8c','#6610f2','#17a2b8','#ffc107'
+];
+
 
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
@@ -106,13 +184,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [290627.7176801831, 43781.84279504718, 52109.11014894378, 71280.61895682444, 825149.7655724576, 604854.5968108767],
+        data: [305195.97834708495, 43232.42354783988, 50711.97619836006, 72335.51254403201, 834071.1384837707, 575601.9130784122],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "packaging" + ' (ops/s)',
-        data: [250601.68551768697, 43629.18786855355, 47497.5033394422, 166945.47197603298, 107214.70826094945, 527157.5853151649],
+        data: [265840.7334936232, 40420.96785654245, 47865.38039090364, 171136.6871048491, 106451.40199926148, 522390.6700679544],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -133,6 +211,87 @@ new Chart(document.getElementById('chart_0'), {
     }
   }
 });
+(async function() {
+  var section = document.getElementById('trend-section');
+  if (!section) return;
+  var data = await loadHistory('../data.js');
+  if (!data || !data.entries || !data.entries.Benchmark) {
+    section.style.display = 'none'; return;
+  }
+  var filtered = filterBenchesForModule(data.entries.Benchmark, 'semver');
+  if (!filtered.length) { section.style.display = 'none'; return; }
+
+  // Collect unique zerodep bench names
+  var nameSet = {};
+  filtered.forEach(function(entry) {
+    entry.benches.forEach(function(b) {
+      if (isZerodepBench(b.name)) nameSet[b.name] = true;
+    });
+  });
+  var names = Object.keys(nameSet).sort();
+  if (!names.length) { section.style.display = 'none'; return; }
+
+  // Build datasets: one line per bench name
+  var datasets = names.map(function(name, i) {
+    var pts = [];
+    filtered.forEach(function(entry) {
+      var bench = entry.benches.find(function(b) { return b.name === name; });
+      if (bench) pts.push({ x: new Date(entry.date), y: bench.value });
+    });
+    return {
+      label: benchLabel(name),
+      data: pts,
+      borderColor: TREND_COLORS[i % TREND_COLORS.length],
+      backgroundColor: TREND_COLORS[i % TREND_COLORS.length] + '20',
+      fill: false, tension: 0.3, pointRadius: 3, borderWidth: 2,
+    };
+  });
+
+  section.style.display = '';
+  new Chart(document.getElementById('trend-chart'), {
+    type: 'line',
+    data: { datasets: datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 12, font: { size: 11 } }
+        },
+        title: {
+          display: true,
+          text: 'semver — zerodep ops/s over time'
+        },
+        tooltip: {
+          callbacks: {
+            title: function(items) {
+              var d = items[0].raw.x;
+              return d.toLocaleDateString();
+            },
+            afterTitle: function(items) {
+              // Show commit from filtered data
+              var ts = items[0].raw.x.getTime();
+              var entry = filtered.find(function(e) {
+                return Math.abs(e.date - ts) < 86400000;
+              });
+              return entry ? 'commit: ' + (entry.commit.id || '').substring(0,8) : '';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time', time: { unit: 'day' },
+          title: { display: true, text: 'Date' }
+        },
+        y: {
+          type: 'logarithmic',
+          title: { display: true, text: 'ops/s (log)' }
+        }
+      }
+    }
+  });
+})();
 (function() {
   var btn = document.getElementById('theme-toggle');
   if (!btn) return;

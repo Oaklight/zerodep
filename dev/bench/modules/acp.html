@@ -112,20 +112,20 @@ td { white-space: nowrap; }
 <h1>acp</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 0157c39 | Commit: 0157c390 | 2026-04-24T18:09:43.658041+00:00</p>
+<p class="meta">Version: 631d1a4 | Commit: 631d1a4d | 2026-04-24T18:56:40.146370+00:00</p>
 <h2>acp</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Deserialize (Large)</td><td>zerodep</td><td>acp (ref)</td><td>144.1 µs</td><td>78.9 µs</td><td>6.9K</td><td>12.7K</td><td class="ratio-cell slower">1.8x slower</td></tr>
-<tr><td>Deserialize (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>5.7 µs</td><td>58.4 µs</td><td>175.7K</td><td>17.1K</td><td class="ratio-cell faster">10.3x faster</td></tr>
-<tr><td>Deserialize (Small)</td><td>zerodep</td><td>acp (ref)</td><td>1.7 µs</td><td>1.8 µs</td><td>596.3K</td><td>564.7K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Json Round Trip (Large)</td><td>zerodep</td><td>acp (ref)</td><td>929.8 µs</td><td>391.6 µs</td><td>1.1K</td><td>2.6K</td><td class="ratio-cell slower">2.4x slower</td></tr>
-<tr><td>Json Round Trip (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>88.0 µs</td><td>84.1 µs</td><td>11.4K</td><td>11.9K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Json Round Trip (Small)</td><td>zerodep</td><td>acp (ref)</td><td>9.9 µs</td><td>7.2 µs</td><td>100.9K</td><td>138.4K</td><td class="ratio-cell slower">1.4x slower</td></tr>
-<tr><td>Serialize (Large)</td><td>zerodep</td><td>acp (ref)</td><td>532.4 µs</td><td>74.3 µs</td><td>1.9K</td><td>13.5K</td><td class="ratio-cell slower">7.2x slower</td></tr>
-<tr><td>Serialize (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>62.4 µs</td><td>12.6 µs</td><td>16.0K</td><td>79.3K</td><td class="ratio-cell slower">4.9x slower</td></tr>
-<tr><td>Serialize (Small)</td><td>zerodep</td><td>acp (ref)</td><td>4.0 µs</td><td>1.3 µs</td><td>249.2K</td><td>791.2K</td><td class="ratio-cell slower">3.2x slower</td></tr>
+<tr><td>Deserialize (Large)</td><td>zerodep</td><td>acp (ref)</td><td>111.3 µs</td><td>59.2 µs</td><td>9.0K</td><td>16.9K</td><td class="ratio-cell slower">1.9x slower</td></tr>
+<tr><td>Deserialize (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>4.4 µs</td><td>41.8 µs</td><td>224.7K</td><td>23.9K</td><td class="ratio-cell faster">9.4x faster</td></tr>
+<tr><td>Deserialize (Small)</td><td>zerodep</td><td>acp (ref)</td><td>1.3 µs</td><td>1.3 µs</td><td>756.9K</td><td>757.7K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Json Round Trip (Large)</td><td>zerodep</td><td>acp (ref)</td><td>692.2 µs</td><td>299.9 µs</td><td>1.4K</td><td>3.3K</td><td class="ratio-cell slower">2.3x slower</td></tr>
+<tr><td>Json Round Trip (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>66.1 µs</td><td>59.7 µs</td><td>15.1K</td><td>16.7K</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Json Round Trip (Small)</td><td>zerodep</td><td>acp (ref)</td><td>7.5 µs</td><td>5.2 µs</td><td>133.5K</td><td>192.7K</td><td class="ratio-cell slower">1.4x slower</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>acp (ref)</td><td>397.3 µs</td><td>59.6 µs</td><td>2.5K</td><td>16.8K</td><td class="ratio-cell slower">6.7x slower</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>46.5 µs</td><td>10.0 µs</td><td>21.5K</td><td>99.7K</td><td class="ratio-cell slower">4.6x slower</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>acp (ref)</td><td>3.1 µs</td><td>954.1 ns</td><td>326.4K</td><td>1.05M</td><td class="ratio-cell slower">3.2x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -169,8 +169,17 @@ function benchLabel(name) {
   // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
   // → "ECB Encrypt (Small) / pure_python"
   var parts = name.split('::');
-  var method = parts[parts.length - 1] || name;
-  return method.replace(/^test_/, '');
+  var method = (parts[parts.length - 1] || '').replace(/^test_/, '');
+  if (parts.length >= 3) {
+    // Extract class name and convert to readable operation
+    var cls = parts[1].replace(/^Test/, '');
+    // Insert spaces before capitals: "EcbEncryptSmall" → "Ecb Encrypt Small"
+    cls = cls.replace(/([a-z])([A-Z])/g, '$1 $2');
+    // Wrap size suffixes: "Ecb Encrypt Small" → "Ecb Encrypt (Small)"
+    cls = cls.replace(/\s+(Small|Medium|Large|Tiny|Xlarge|1k)$/i, ' ($1)');
+    return cls + ' / ' + method;
+  }
+  return method;
 }
 
 // Distinct colors for trend lines
@@ -187,13 +196,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [6940.22454856794, 175698.31745409436, 596341.921747267, 1075.5376230198635, 11362.932525598782, 100915.77343367378, 1878.1746464120804, 16029.095031320734, 249189.01799320107],
+        data: [8984.899476629473, 224726.26011448953, 756893.4369345213, 1444.739736386278, 15136.711423826491, 133501.4602092216, 2516.991756364522, 21498.017299050407, 326420.62798708014],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "acp (ref)" + ' (ops/s)',
-        data: [12671.525094518905, 17128.66365530479, 564683.7188482183, 2553.775645263636, 11888.956192718058, 138415.75320945506, 13454.696839421138, 79289.03951058269, 791219.836017637],
+        data: [16887.47247156355, 23895.323482212614, 757716.1298797715, 3334.6403206564587, 16746.58362048741, 192732.94013370533, 16773.99483426033, 99657.69706689782, 1048058.1960910722],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

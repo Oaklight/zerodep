@@ -112,20 +112,20 @@ td { white-space: nowrap; }
 <h1>soup</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 0157c39 | Commit: 0157c390 | 2026-04-24T18:09:43.658041+00:00</p>
+<p class="meta">Version: 631d1a4 | Commit: 631d1a4d | 2026-04-24T18:56:40.146370+00:00</p>
 <h2>soup</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large</td><td>zerodep</td><td>beautifulsoup4</td><td>25.39 ms</td><td>64.47 ms</td><td>39.4</td><td>15.5</td><td class="ratio-cell faster">2.5x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>beautifulsoup4</td><td>2.27 ms</td><td>5.90 ms</td><td>440.5</td><td>169.5</td><td class="ratio-cell faster">2.6x faster</td></tr>
-<tr><td>Serialize (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>24.16 ms</td><td>81.46 ms</td><td>41.4</td><td>12.3</td><td class="ratio-cell faster">3.4x faster</td></tr>
-<tr><td>Serialize (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.24 ms</td><td>8.16 ms</td><td>447.0</td><td>122.6</td><td class="ratio-cell faster">3.6x faster</td></tr>
-<tr><td>Serialize (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>312.7 µs</td><td>986.3 µs</td><td>3.2K</td><td>1.0K</td><td class="ratio-cell faster">3.2x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>beautifulsoup4</td><td>280.5 µs</td><td>732.3 µs</td><td>3.6K</td><td>1.4K</td><td class="ratio-cell faster">2.6x faster</td></tr>
-<tr><td>Tree Ops (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>26.35 ms</td><td>72.65 ms</td><td>38.0</td><td>13.8</td><td class="ratio-cell faster">2.8x faster</td></tr>
-<tr><td>Tree Ops (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.52 ms</td><td>6.39 ms</td><td>397.6</td><td>156.6</td><td class="ratio-cell faster">2.5x faster</td></tr>
-<tr><td>Tree Ops (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>303.8 µs</td><td>887.1 µs</td><td>3.3K</td><td>1.1K</td><td class="ratio-cell faster">2.9x faster</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>beautifulsoup4</td><td>20.55 ms</td><td>43.11 ms</td><td>48.7</td><td>23.2</td><td class="ratio-cell faster">2.1x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>beautifulsoup4</td><td>1.67 ms</td><td>3.75 ms</td><td>598.6</td><td>266.9</td><td class="ratio-cell faster">2.2x faster</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>21.57 ms</td><td>57.51 ms</td><td>46.4</td><td>17.4</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>1.58 ms</td><td>5.19 ms</td><td>633.2</td><td>192.5</td><td class="ratio-cell faster">3.3x faster</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>205.7 µs</td><td>612.3 µs</td><td>4.9K</td><td>1.6K</td><td class="ratio-cell faster">3.0x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>beautifulsoup4</td><td>175.6 µs</td><td>445.9 µs</td><td>5.7K</td><td>2.2K</td><td class="ratio-cell faster">2.5x faster</td></tr>
+<tr><td>Tree Ops (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>21.46 ms</td><td>48.64 ms</td><td>46.6</td><td>20.6</td><td class="ratio-cell faster">2.3x faster</td></tr>
+<tr><td>Tree Ops (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>1.66 ms</td><td>4.23 ms</td><td>602.2</td><td>236.2</td><td class="ratio-cell faster">2.5x faster</td></tr>
+<tr><td>Tree Ops (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>218.1 µs</td><td>543.3 µs</td><td>4.6K</td><td>1.8K</td><td class="ratio-cell faster">2.5x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -169,8 +169,17 @@ function benchLabel(name) {
   // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
   // → "ECB Encrypt (Small) / pure_python"
   var parts = name.split('::');
-  var method = parts[parts.length - 1] || name;
-  return method.replace(/^test_/, '');
+  var method = (parts[parts.length - 1] || '').replace(/^test_/, '');
+  if (parts.length >= 3) {
+    // Extract class name and convert to readable operation
+    var cls = parts[1].replace(/^Test/, '');
+    // Insert spaces before capitals: "EcbEncryptSmall" → "Ecb Encrypt Small"
+    cls = cls.replace(/([a-z])([A-Z])/g, '$1 $2');
+    // Wrap size suffixes: "Ecb Encrypt Small" → "Ecb Encrypt (Small)"
+    cls = cls.replace(/\s+(Small|Medium|Large|Tiny|Xlarge|1k)$/i, ' ($1)');
+    return cls + ' / ' + method;
+  }
+  return method;
 }
 
 // Distinct colors for trend lines
@@ -187,13 +196,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [39.38201457832272, 440.50755346645195, 41.39431532023403, 446.95778727861796, 3198.05968208665, 3565.5716202933604, 37.9510148757414, 397.57175875443664, 3292.0734484604864],
+        data: [48.66207324195315, 598.6064802234085, 46.35314351117632, 633.2284088731307, 4860.389727480489, 5695.613370155076, 46.60271065472257, 602.1893952062211, 4585.69084201846],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "beautifulsoup4" + ' (ops/s)',
-        data: [15.512001010823623, 169.45298101266783, 12.275907509083902, 122.62191359720808, 1013.8922242116919, 1365.5450309267574, 13.764438059537389, 156.55825392541098, 1127.304636642542],
+        data: [23.197880839764373, 266.86983518048464, 17.388517154096785, 192.49545241694125, 1633.096646176062, 2242.7568854608717, 20.560327869147457, 236.23173865805808, 1840.5485039083326],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

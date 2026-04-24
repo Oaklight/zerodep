@@ -112,14 +112,14 @@ td { white-space: nowrap; }
 <h1>dotenv</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 0157c39 | Commit: 0157c390 | 2026-04-24T18:09:43.658041+00:00</p>
+<p class="meta">Version: 631d1a4 | Commit: 631d1a4d | 2026-04-24T18:56:40.146370+00:00</p>
 <h2>dotenv</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>python-dotenv</td><td>1.34 ms</td><td>1.34 ms</td><td>745.0</td><td>746.9</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-dotenv</td><td>191.5 µs</td><td>190.2 µs</td><td>5.2K</td><td>5.3K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>python-dotenv</td><td>27.3 µs</td><td>27.1 µs</td><td>36.6K</td><td>36.9K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>python-dotenv</td><td>1.04 ms</td><td>1.04 ms</td><td>957.3</td><td>959.2</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-dotenv</td><td>148.8 µs</td><td>147.9 µs</td><td>6.7K</td><td>6.8K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>python-dotenv</td><td>21.1 µs</td><td>21.0 µs</td><td>47.3K</td><td>47.6K</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -163,8 +163,17 @@ function benchLabel(name) {
   // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
   // → "ECB Encrypt (Small) / pure_python"
   var parts = name.split('::');
-  var method = parts[parts.length - 1] || name;
-  return method.replace(/^test_/, '');
+  var method = (parts[parts.length - 1] || '').replace(/^test_/, '');
+  if (parts.length >= 3) {
+    // Extract class name and convert to readable operation
+    var cls = parts[1].replace(/^Test/, '');
+    // Insert spaces before capitals: "EcbEncryptSmall" → "Ecb Encrypt Small"
+    cls = cls.replace(/([a-z])([A-Z])/g, '$1 $2');
+    // Wrap size suffixes: "Ecb Encrypt Small" → "Ecb Encrypt (Small)"
+    cls = cls.replace(/\s+(Small|Medium|Large|Tiny|Xlarge|1k)$/i, ' ($1)');
+    return cls + ' / ' + method;
+  }
+  return method;
 }
 
 // Distinct colors for trend lines
@@ -181,13 +190,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [744.9670354455089, 5223.295516724995, 36644.91730098942],
+        data: [957.2543737443946, 6719.0630816636385, 47332.05285946306],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-dotenv" + ' (ops/s)',
-        data: [746.9005697957161, 5256.932320530268, 36851.82947286203],
+        data: [959.2156170053197, 6761.7485190206835, 47559.276178215805],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -112,16 +112,16 @@ td { white-space: nowrap; }
 <h1>jsonschema</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 0157c39 | Commit: 0157c390 | 2026-04-24T18:09:43.658041+00:00</p>
+<p class="meta">Version: 631d1a4 | Commit: 631d1a4d | 2026-04-24T18:56:40.146370+00:00</p>
 <h2>jsonschema</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Perf (Large)</td><td>zerodep</td><td>allof-merge (JS)</td><td>247.9 µs</td><td>39.14 ms</td><td>4.0K</td><td>25.5</td><td class="ratio-cell faster">157.9x faster</td></tr>
-<tr><td>Perf (Medium)</td><td>zerodep</td><td>allof-merge (JS)</td><td>85.5 µs</td><td>35.50 ms</td><td>11.7K</td><td>28.2</td><td class="ratio-cell faster">415.2x faster</td></tr>
-<tr><td>Perf (Small)</td><td>zerodep</td><td>allof-merge (JS)</td><td>31.9 µs</td><td>33.69 ms</td><td>31.4K</td><td>29.7</td><td class="ratio-cell faster">1056.7x faster</td></tr>
-<tr><td>Perf Tiny</td><td>zerodep</td><td>allof-merge (JS)</td><td>17.9 µs</td><td>32.85 ms</td><td>55.7K</td><td>30.4</td><td class="ratio-cell faster">1830.8x faster</td></tr>
-<tr><td>Perf Xlarge</td><td>zerodep</td><td>allof-merge (JS)</td><td>1.64 ms</td><td>54.94 ms</td><td>610.7</td><td>18.2</td><td class="ratio-cell faster">33.6x faster</td></tr>
+<tr><td>Perf (Large)</td><td>zerodep</td><td>allof-merge (JS)</td><td>176.5 µs</td><td>572.2 µs</td><td>5.7K</td><td>1.7K</td><td class="ratio-cell faster">3.2x faster</td></tr>
+<tr><td>Perf (Medium)</td><td>zerodep</td><td>allof-merge (JS)</td><td>59.5 µs</td><td>260.5 µs</td><td>16.8K</td><td>3.8K</td><td class="ratio-cell faster">4.4x faster</td></tr>
+<tr><td>Perf (Small)</td><td>zerodep</td><td>allof-merge (JS)</td><td>22.8 µs</td><td>126.6 µs</td><td>43.9K</td><td>7.9K</td><td class="ratio-cell faster">5.6x faster</td></tr>
+<tr><td>Perf Tiny</td><td>zerodep</td><td>allof-merge (JS)</td><td>12.8 µs</td><td>123.4 µs</td><td>77.9K</td><td>8.1K</td><td class="ratio-cell faster">9.6x faster</td></tr>
+<tr><td>Perf Xlarge</td><td>zerodep</td><td>allof-merge (JS)</td><td>1.21 ms</td><td>2.29 ms</td><td>826.8</td><td>436.6</td><td class="ratio-cell faster">1.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -165,8 +165,17 @@ function benchLabel(name) {
   // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
   // → "ECB Encrypt (Small) / pure_python"
   var parts = name.split('::');
-  var method = parts[parts.length - 1] || name;
-  return method.replace(/^test_/, '');
+  var method = (parts[parts.length - 1] || '').replace(/^test_/, '');
+  if (parts.length >= 3) {
+    // Extract class name and convert to readable operation
+    var cls = parts[1].replace(/^Test/, '');
+    // Insert spaces before capitals: "EcbEncryptSmall" → "Ecb Encrypt Small"
+    cls = cls.replace(/([a-z])([A-Z])/g, '$1 $2');
+    // Wrap size suffixes: "Ecb Encrypt Small" → "Ecb Encrypt (Small)"
+    cls = cls.replace(/\s+(Small|Medium|Large|Tiny|Xlarge|1k)$/i, ' ($1)');
+    return cls + ' / ' + method;
+  }
+  return method;
 }
 
 // Distinct colors for trend lines
@@ -183,13 +192,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [4033.4933707964465, 11696.542581967207, 31369.71448160339, 55735.449174305046, 610.696336833717],
+        data: [5665.4288736280905, 16797.8037602593, 43891.7833333682, 77896.17801610212, 826.8245879459068],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "allof-merge (JS)" + ' (ops/s)',
-        data: [25.548484105328992, 28.171056655110164, 29.68627668144725, 30.44240652557403, 18.202527292921264],
+        data: [1747.4903702906588, 3838.3533533845866, 7899.711226005325, 8101.556751432448, 436.61802262512583],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

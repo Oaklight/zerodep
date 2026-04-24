@@ -112,27 +112,27 @@ td { white-space: nowrap; }
 <h1>jsonrpc</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 0157c39 | Commit: 0157c390 | 2026-04-24T18:09:43.658041+00:00</p>
+<p class="meta">Version: 631d1a4 | Commit: 631d1a4d | 2026-04-24T18:56:40.146370+00:00</p>
 <h2>jsonrpc</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>142.3 µs</td><td>2.74 ms</td><td>7.0K</td><td>364.9</td><td class="ratio-cell faster">19.3x faster</td></tr>
-<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>9.7 µs</td><td>133.6 µs</td><td>103.4K</td><td>7.5K</td><td class="ratio-cell faster">13.8x faster</td></tr>
-<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>7.8 µs</td><td>106.3 µs</td><td>127.6K</td><td>9.4K</td><td class="ratio-cell faster">13.6x faster</td></tr>
-<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>7.4 µs</td><td>141.1 µs</td><td>134.9K</td><td>7.1K</td><td class="ratio-cell faster">19.0x faster</td></tr>
+<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>109.4 µs</td><td>1.48 ms</td><td>9.1K</td><td>676.2</td><td class="ratio-cell faster">13.5x faster</td></tr>
+<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>7.3 µs</td><td>71.7 µs</td><td>137.1K</td><td>14.0K</td><td class="ratio-cell faster">9.8x faster</td></tr>
+<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>6.0 µs</td><td>56.9 µs</td><td>166.2K</td><td>17.6K</td><td class="ratio-cell faster">9.5x faster</td></tr>
+<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>5.7 µs</td><td>76.6 µs</td><td>176.1K</td><td>13.0K</td><td class="ratio-cell faster">13.5x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>916.5 ns</td><td>1.09M</td></tr>
-<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>932.2 ns</td><td>1.07M</td></tr>
-<tr><td>Id Generation</td><td>next_id</td><td>100.7 ns</td><td>9.93M</td></tr>
-<tr><td>Json Round Trip</td><td>json_round_trip</td><td>6.4 µs</td><td>156.8K</td></tr>
-<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>380.5 ns</td><td>2.63M</td></tr>
-<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>293.9 ns</td><td>3.40M</td></tr>
+<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>572.6 ns</td><td>1.75M</td></tr>
+<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>732.5 ns</td><td>1.37M</td></tr>
+<tr><td>Id Generation</td><td>next_id</td><td>88.0 ns</td><td>11.37M</td></tr>
+<tr><td>Json Round Trip</td><td>json_round_trip</td><td>5.2 µs</td><td>193.8K</td></tr>
+<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>374.7 ns</td><td>2.67M</td></tr>
+<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>239.3 ns</td><td>4.18M</td></tr>
 </tbody></table>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -175,8 +175,17 @@ function benchLabel(name) {
   // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
   // → "ECB Encrypt (Small) / pure_python"
   var parts = name.split('::');
-  var method = parts[parts.length - 1] || name;
-  return method.replace(/^test_/, '');
+  var method = (parts[parts.length - 1] || '').replace(/^test_/, '');
+  if (parts.length >= 3) {
+    // Extract class name and convert to readable operation
+    var cls = parts[1].replace(/^Test/, '');
+    // Insert spaces before capitals: "EcbEncryptSmall" → "Ecb Encrypt Small"
+    cls = cls.replace(/([a-z])([A-Z])/g, '$1 $2');
+    // Wrap size suffixes: "Ecb Encrypt Small" → "Ecb Encrypt (Small)"
+    cls = cls.replace(/\s+(Small|Medium|Large|Tiny|Xlarge|1k)$/i, ' ($1)');
+    return cls + ' / ' + method;
+  }
+  return method;
 }
 
 // Distinct colors for trend lines
@@ -193,13 +202,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [7029.841314109966, 103403.17661325766, 127581.20474646815, 134937.28783181316],
+        data: [9144.87623002988, 137093.34391007668, 166200.8185793026, 176089.29134605435],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "jsonrpcserver" + ' (ops/s)',
-        data: [364.9419443582806, 7482.64420465365, 9411.679565627946, 7086.358375476999],
+        data: [676.1653253228584, 13953.66998832211, 17583.045810559266, 13046.7377139724],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

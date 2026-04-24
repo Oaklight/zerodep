@@ -112,17 +112,17 @@ td { white-space: nowrap; }
 <h1>yaml</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 0157c39 | Commit: 0157c390 | 2026-04-24T18:09:43.658041+00:00</p>
+<p class="meta">Version: 631d1a4 | Commit: 631d1a4d | 2026-04-24T18:56:40.146370+00:00</p>
 <h2>yaml</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Dump (Large)</td><td>zerodep</td><td>PyYAML</td><td>2.61 ms</td><td>21.54 ms</td><td>382.8</td><td>46.4</td><td class="ratio-cell faster">8.2x faster</td></tr>
-<tr><td>Dump (Medium)</td><td>zerodep</td><td>PyYAML</td><td>144.8 µs</td><td>982.9 µs</td><td>6.9K</td><td>1.0K</td><td class="ratio-cell faster">6.8x faster</td></tr>
-<tr><td>Dump (Small)</td><td>zerodep</td><td>PyYAML</td><td>19.0 µs</td><td>172.9 µs</td><td>52.7K</td><td>5.8K</td><td class="ratio-cell faster">9.1x faster</td></tr>
-<tr><td>Load (Large)</td><td>zerodep</td><td>PyYAML</td><td>5.57 ms</td><td>43.54 ms</td><td>179.4</td><td>23.0</td><td class="ratio-cell faster">7.8x faster</td></tr>
-<tr><td>Load (Medium)</td><td>zerodep</td><td>PyYAML</td><td>292.3 µs</td><td>1.92 ms</td><td>3.4K</td><td>520.6</td><td class="ratio-cell faster">6.6x faster</td></tr>
-<tr><td>Load (Small)</td><td>zerodep</td><td>PyYAML</td><td>40.6 µs</td><td>297.4 µs</td><td>24.6K</td><td>3.4K</td><td class="ratio-cell faster">7.3x faster</td></tr>
+<tr><td>Dump (Large)</td><td>zerodep</td><td>PyYAML</td><td>1.97 ms</td><td>13.44 ms</td><td>506.4</td><td>74.4</td><td class="ratio-cell faster">6.8x faster</td></tr>
+<tr><td>Dump (Medium)</td><td>zerodep</td><td>PyYAML</td><td>114.0 µs</td><td>646.1 µs</td><td>8.8K</td><td>1.5K</td><td class="ratio-cell faster">5.7x faster</td></tr>
+<tr><td>Dump (Small)</td><td>zerodep</td><td>PyYAML</td><td>14.8 µs</td><td>107.1 µs</td><td>67.4K</td><td>9.3K</td><td class="ratio-cell faster">7.2x faster</td></tr>
+<tr><td>Load (Large)</td><td>zerodep</td><td>PyYAML</td><td>4.33 ms</td><td>32.33 ms</td><td>231.2</td><td>30.9</td><td class="ratio-cell faster">7.5x faster</td></tr>
+<tr><td>Load (Medium)</td><td>zerodep</td><td>PyYAML</td><td>222.9 µs</td><td>1.30 ms</td><td>4.5K</td><td>767.0</td><td class="ratio-cell faster">5.8x faster</td></tr>
+<tr><td>Load (Small)</td><td>zerodep</td><td>PyYAML</td><td>31.0 µs</td><td>188.7 µs</td><td>32.3K</td><td>5.3K</td><td class="ratio-cell faster">6.1x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -166,8 +166,17 @@ function benchLabel(name) {
   // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
   // → "ECB Encrypt (Small) / pure_python"
   var parts = name.split('::');
-  var method = parts[parts.length - 1] || name;
-  return method.replace(/^test_/, '');
+  var method = (parts[parts.length - 1] || '').replace(/^test_/, '');
+  if (parts.length >= 3) {
+    // Extract class name and convert to readable operation
+    var cls = parts[1].replace(/^Test/, '');
+    // Insert spaces before capitals: "EcbEncryptSmall" → "Ecb Encrypt Small"
+    cls = cls.replace(/([a-z])([A-Z])/g, '$1 $2');
+    // Wrap size suffixes: "Ecb Encrypt Small" → "Ecb Encrypt (Small)"
+    cls = cls.replace(/\s+(Small|Medium|Large|Tiny|Xlarge|1k)$/i, ' ($1)');
+    return cls + ' / ' + method;
+  }
+  return method;
 }
 
 // Distinct colors for trend lines
@@ -184,13 +193,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [382.77848592037026, 6905.903619027853, 52701.625887200156, 179.3774239241183, 3421.7042351126775, 24605.682975454743],
+        data: [506.40768314187864, 8769.489551529696, 67439.00198367452, 231.20592632283524, 4485.542373382738, 32251.270823564682],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "PyYAML" + ' (ops/s)',
-        data: [46.4325110436629, 1017.3955029939252, 5782.620495855329, 22.966888449358038, 520.5873848402398, 3362.0799680842724],
+        data: [74.41684926397934, 1547.7831236119605, 9339.849599003497, 30.926955077460455, 766.9811361989653, 5298.053560851445],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

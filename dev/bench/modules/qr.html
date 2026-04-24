@@ -112,18 +112,18 @@ td { white-space: nowrap; }
 <h1>qr</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 0157c39 | Commit: 0157c390 | 2026-04-24T18:09:43.658041+00:00</p>
+<p class="meta">Version: 631d1a4 | Commit: 631d1a4d | 2026-04-24T18:56:40.146370+00:00</p>
 <h2>qr</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Encode Binary</td><td>zerodep</td><td>qrcode</td><td>34.06 ms</td><td>41.41 ms</td><td>29.4</td><td>24.1</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Encode High Ecc</td><td>zerodep</td><td>qrcode</td><td>6.40 ms</td><td>6.15 ms</td><td>156.3</td><td>162.6</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Encode Large Data</td><td>zerodep</td><td>qrcode</td><td>34.79 ms</td><td>44.69 ms</td><td>28.7</td><td>22.4</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>10.87 ms</td><td>11.64 ms</td><td>92.0</td><td>85.9</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Encode Numeric</td><td>zerodep</td><td>qrcode</td><td>4.25 ms</td><td>3.93 ms</td><td>235.1</td><td>254.7</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>2.37 ms</td><td>1.82 ms</td><td>421.1</td><td>550.7</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>5.32 ms</td><td>5.00 ms</td><td>188.1</td><td>199.8</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Encode Binary</td><td>zerodep</td><td>qrcode</td><td>27.36 ms</td><td>34.44 ms</td><td>36.5</td><td>29.0</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Encode High Ecc</td><td>zerodep</td><td>qrcode</td><td>5.11 ms</td><td>5.04 ms</td><td>195.8</td><td>198.3</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Encode Large Data</td><td>zerodep</td><td>qrcode</td><td>27.81 ms</td><td>36.95 ms</td><td>36.0</td><td>27.1</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>8.67 ms</td><td>9.48 ms</td><td>115.4</td><td>105.5</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Encode Numeric</td><td>zerodep</td><td>qrcode</td><td>3.38 ms</td><td>3.26 ms</td><td>295.8</td><td>306.9</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>1.83 ms</td><td>1.41 ms</td><td>547.1</td><td>707.3</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>4.25 ms</td><td>4.04 ms</td><td>235.5</td><td>247.4</td><td class="ratio-cell slower">1.1x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -167,8 +167,17 @@ function benchLabel(name) {
   // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
   // → "ECB Encrypt (Small) / pure_python"
   var parts = name.split('::');
-  var method = parts[parts.length - 1] || name;
-  return method.replace(/^test_/, '');
+  var method = (parts[parts.length - 1] || '').replace(/^test_/, '');
+  if (parts.length >= 3) {
+    // Extract class name and convert to readable operation
+    var cls = parts[1].replace(/^Test/, '');
+    // Insert spaces before capitals: "EcbEncryptSmall" → "Ecb Encrypt Small"
+    cls = cls.replace(/([a-z])([A-Z])/g, '$1 $2');
+    // Wrap size suffixes: "Ecb Encrypt Small" → "Ecb Encrypt (Small)"
+    cls = cls.replace(/\s+(Small|Medium|Large|Tiny|Xlarge|1k)$/i, ' ($1)');
+    return cls + ' / ' + method;
+  }
+  return method;
 }
 
 // Distinct colors for trend lines
@@ -185,13 +194,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [29.3623150553656, 156.32363782049853, 28.74259275013937, 91.99432331134756, 235.14326341563756, 421.0615500897786, 188.064857911169],
+        data: [36.54476343304004, 195.80911570162135, 35.96066472429665, 115.35963498714274, 295.823858781028, 547.0882271818366, 235.5290803642489],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "qrcode" + ' (ops/s)',
-        data: [24.14601145558564, 162.57431369676783, 22.375228772063934, 85.8984013293873, 254.6724479018079, 550.7410192214276, 199.8257727590622],
+        data: [29.03825197764085, 198.30150813018392, 27.064148465744154, 105.49847166971563, 306.87006439763724, 707.3329093897635, 247.38478027861322],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

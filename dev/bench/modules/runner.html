@@ -112,21 +112,21 @@ td { white-space: nowrap; }
 <h1>runner</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 0157c39 | Commit: 0157c390 | 2026-04-24T18:09:43.658041+00:00</p>
+<p class="meta">Version: 631d1a4 | Commit: 631d1a4d | 2026-04-24T18:56:40.146370+00:00</p>
 <h2>runner</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Env Passing</td><td>zerodep</td><td>sh</td><td>11.37 ms</td><td>19.53 ms</td><td>87.9</td><td>51.2</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Env Passing</td><td>zerodep</td><td>subprocess</td><td>11.37 ms</td><td>11.15 ms</td><td>87.9</td><td>89.7</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Output Capture</td><td>zerodep</td><td>sh</td><td>11.14 ms</td><td>19.18 ms</td><td>89.7</td><td>52.1</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Output Capture</td><td>zerodep</td><td>subprocess</td><td>11.14 ms</td><td>11.08 ms</td><td>89.7</td><td>90.3</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Simple Command</td><td>zerodep</td><td>sh</td><td>2.01 ms</td><td>8.85 ms</td><td>497.0</td><td>113.0</td><td class="ratio-cell faster">4.4x faster</td></tr>
-<tr><td>Simple Command</td><td>zerodep</td><td>subprocess</td><td>2.01 ms</td><td>909.6 µs</td><td>497.0</td><td>1.1K</td><td class="ratio-cell slower">2.2x slower</td></tr>
-<tr><td>Stdin Input</td><td>zerodep</td><td>sh</td><td>11.12 ms</td><td>19.10 ms</td><td>89.9</td><td>52.4</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Stdin Input</td><td>zerodep</td><td>subprocess</td><td>11.12 ms</td><td>11.04 ms</td><td>89.9</td><td>90.6</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Streaming Lines</td><td>zerodep</td><td>sh</td><td>11.03 ms</td><td>19.32 ms</td><td>90.7</td><td>51.7</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Streaming Lines</td><td>zerodep</td><td>subprocess</td><td>11.03 ms</td><td>10.92 ms</td><td>90.7</td><td>91.6</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Env Passing</td><td>zerodep</td><td>sh</td><td>10.05 ms</td><td>17.41 ms</td><td>99.5</td><td>57.4</td><td class="ratio-cell faster">1.7x faster</td></tr>
+<tr><td>Env Passing</td><td>zerodep</td><td>subprocess</td><td>10.05 ms</td><td>9.81 ms</td><td>99.5</td><td>102.0</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Output Capture</td><td>zerodep</td><td>sh</td><td>9.87 ms</td><td>18.35 ms</td><td>101.3</td><td>54.5</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Output Capture</td><td>zerodep</td><td>subprocess</td><td>9.87 ms</td><td>9.82 ms</td><td>101.3</td><td>101.9</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Simple Command</td><td>zerodep</td><td>sh</td><td>1.83 ms</td><td>8.12 ms</td><td>547.0</td><td>123.1</td><td class="ratio-cell faster">4.4x faster</td></tr>
+<tr><td>Simple Command</td><td>zerodep</td><td>subprocess</td><td>1.83 ms</td><td>753.5 µs</td><td>547.0</td><td>1.3K</td><td class="ratio-cell slower">2.4x slower</td></tr>
+<tr><td>Stdin Input</td><td>zerodep</td><td>sh</td><td>9.91 ms</td><td>18.40 ms</td><td>100.9</td><td>54.4</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Stdin Input</td><td>zerodep</td><td>subprocess</td><td>9.91 ms</td><td>9.97 ms</td><td>100.9</td><td>100.3</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Streaming Lines</td><td>zerodep</td><td>sh</td><td>9.89 ms</td><td>17.43 ms</td><td>101.1</td><td>57.4</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Streaming Lines</td><td>zerodep</td><td>subprocess</td><td>9.89 ms</td><td>9.67 ms</td><td>101.1</td><td>103.4</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -170,8 +170,17 @@ function benchLabel(name) {
   // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
   // → "ECB Encrypt (Small) / pure_python"
   var parts = name.split('::');
-  var method = parts[parts.length - 1] || name;
-  return method.replace(/^test_/, '');
+  var method = (parts[parts.length - 1] || '').replace(/^test_/, '');
+  if (parts.length >= 3) {
+    // Extract class name and convert to readable operation
+    var cls = parts[1].replace(/^Test/, '');
+    // Insert spaces before capitals: "EcbEncryptSmall" → "Ecb Encrypt Small"
+    cls = cls.replace(/([a-z])([A-Z])/g, '$1 $2');
+    // Wrap size suffixes: "Ecb Encrypt Small" → "Ecb Encrypt (Small)"
+    cls = cls.replace(/\s+(Small|Medium|Large|Tiny|Xlarge|1k)$/i, ' ($1)');
+    return cls + ' / ' + method;
+  }
+  return method;
 }
 
 // Distinct colors for trend lines
@@ -188,13 +197,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [87.92150877642523, 89.74752787730844, 497.0394468724796, 89.94933554155035, 90.65872050487762],
+        data: [99.52693410603482, 101.2802012455702, 547.002925524569, 100.92901529210708, 101.09788298272083],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "subprocess" + ' (ops/s)',
-        data: [89.70221115502488, 90.28448484200828, 1099.3450543300864, 90.58866592408135, 91.56097871907023],
+        data: [101.98794374868083, 101.86676596833136, 1327.1688809734778, 100.32173757342274, 103.36088130174717],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

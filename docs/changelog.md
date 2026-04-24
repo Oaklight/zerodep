@@ -6,6 +6,10 @@
 
 ## [未发布]
 
+### 新增模块
+
+- **JSON Schema 模块**：零依赖的 JSON Schema 展平与清理。`flatten_schema()` 解析 `$ref`、合并 `allOf`（深度合并，支持 type 取交集、数值约束取严格值、required 取并集）、简化 `anyOf`/`oneOf`（nullable 检测、单变体展开）并剥离不支持的关键字。每个阶段可独立调用：`resolve_refs`、`merge_allof`、`simplify_unions`、`sanitize`。与 `allof-merge`（JS）在 5 个复杂度层级对比——**快 1.7-5.3 倍**。57 个单元测试 + 13 个跨实现正确性测试。
+
 ### 性能优化
 
 - **A2A 模块**：优化序列化和反序列化路径——`to_dict()` 避免了 `dataclasses.asdict()` 风格的深拷贝开销。序列化现已比 a2a-protocol **快 2.2-2.6 倍**（此前慢 1.4-2.1 倍）。反序列化从慢 1.8-4.1 倍收窄至**慢 1.1-1.7 倍**，得益于优化的枚举解析和类型分发。JSON 往返现已端到端**快 1.4-1.5 倍**。

@@ -77,6 +77,7 @@ plugins:
             - ../depdetect
             - ../semver
             - ../readability
+            - ../jsonschema
             - aes
             - qr
             - httpclient
@@ -112,6 +113,7 @@ plugins:
             - depdetect
             - semver
             - readability
+            - jsonschema
           options:
             docstring_style: google
             show_source: true
@@ -303,6 +305,7 @@ nav:
           - protobuf / Protobuf 编解码器: modules/protobuf.md
       - 数据验证:
           - validate / 验证器: modules/validate.md
+          - jsonschema / Schema 展平器: modules/jsonschema.md
           - semver / 版本解析器: modules/semver.md
       - 文本与标记:
           - markdown / Markdown 渲染器: modules/markdown.md
@@ -349,6 +352,7 @@ nav:
           - protobuf / Protobuf 编解码器: api/protobuf.md
       - 数据验证:
           - validate / 验证器: api/validate.md
+          - jsonschema / Schema 展平器: api/jsonschema.md
           - semver / 版本解析器: api/semver.md
       - 文本与标记:
           - markdown / Markdown 渲染器: api/markdown.md
@@ -395,6 +399,7 @@ nav:
           - protobuf / Protobuf 编解码器: benchmarks/protobuf.md
       - 数据验证:
           - validate / 验证器: benchmarks/validate.md
+          - jsonschema / Schema 展平器: benchmarks/jsonschema.md
           - semver / 版本解析器: benchmarks/semver.md
       - 文本与标记:
           - markdown / Markdown 渲染器: benchmarks/markdown.md

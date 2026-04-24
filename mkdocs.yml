@@ -77,6 +77,7 @@ plugins:
             - ../depdetect
             - ../semver
             - ../readability
+            - ../jsonschema
             - aes
             - qr
             - httpclient
@@ -112,6 +113,7 @@ plugins:
             - depdetect
             - semver
             - readability
+            - jsonschema
           options:
             docstring_style: google
             show_source: true
@@ -303,6 +305,7 @@ nav:
           - protobuf / Protobuf Codec: modules/protobuf.md
       - Data Validation:
           - validate / Validator: modules/validate.md
+          - jsonschema / Schema Flattener: modules/jsonschema.md
           - semver / Version Parser: modules/semver.md
       - Text & Markup:
           - markdown / Markdown Renderer: modules/markdown.md
@@ -349,6 +352,7 @@ nav:
           - protobuf / Protobuf Codec: api/protobuf.md
       - Data Validation:
           - validate / Validator: api/validate.md
+          - jsonschema / Schema Flattener: api/jsonschema.md
           - semver / Version Parser: api/semver.md
       - Text & Markup:
           - markdown / Markdown Renderer: api/markdown.md
@@ -395,6 +399,7 @@ nav:
           - protobuf / Protobuf Codec: benchmarks/protobuf.md
       - Data Validation:
           - validate / Validator: benchmarks/validate.md
+          - jsonschema / Schema Flattener: benchmarks/jsonschema.md
           - semver / Version Parser: benchmarks/semver.md
       - Text & Markup:
           - markdown / Markdown Renderer: benchmarks/markdown.md

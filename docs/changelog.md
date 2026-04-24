@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### New Modules
+
+- **JSON Schema module**: zero-dependency JSON Schema flattening & sanitization. `flatten_schema()` resolves `$ref`, merges `allOf` (deep-merge with type intersection, numeric constraint tightening, required union), simplifies `anyOf`/`oneOf` (nullable detection, single-variant unwrap), and strips unsupported keywords. Each phase is independently callable: `resolve_refs`, `merge_allof`, `simplify_unions`, `sanitize`. Benchmarked against `allof-merge` (JS) across 5 complexity tiers — **1.7-5.3x faster**. 57 unit tests + 13 cross-implementation correctness tests.
+
 ### Performance
 
 - **A2A module**: optimized serialization and deserialization paths — `to_dict()` now avoids `dataclasses.asdict()`-style deep copy overhead. Serialization is now **2.2-2.6x faster** than a2a-protocol (previously 1.4-2.1x slower). Deserialization narrowed from 1.8-4.1x slower to **1.1-1.7x slower** via optimized enum resolution and type dispatch. JSON round-trip is now **1.4-1.5x faster** end-to-end.

@@ -140,7 +140,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema"]
 
 [tool.ruff]
 target-version = "py310"
@@ -162,6 +162,7 @@ max-complexity = 20
 "xml/xml.py" = ["E501"]
 "a2a/a2a.py" = ["E501"]
 "acp/acp.py" = ["E501"]
+"jsonschema/jsonschema.py" = ["E501"]
 "**/test_*.py" = ["E402"]
 "**/test_*_benchmark.py" = ["E501"]
 "**/conftest.py" = ["C901"]

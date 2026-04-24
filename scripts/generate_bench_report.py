@@ -788,8 +788,17 @@ function benchLabel(name) {
   // "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python"
   // → "ECB Encrypt (Small) / pure_python"
   var parts = name.split('::');
-  var method = parts[parts.length - 1] || name;
-  return method.replace(/^test_/, '');
+  var method = (parts[parts.length - 1] || '').replace(/^test_/, '');
+  if (parts.length >= 3) {
+    // Extract class name and convert to readable operation
+    var cls = parts[1].replace(/^Test/, '');
+    // Insert spaces before capitals: "EcbEncryptSmall" → "Ecb Encrypt Small"
+    cls = cls.replace(/([a-z])([A-Z])/g, '$1 $2');
+    // Wrap size suffixes: "Ecb Encrypt Small" → "Ecb Encrypt (Small)"
+    cls = cls.replace(/\\s+(Small|Medium|Large|Tiny|Xlarge|1k)$/i, ' ($1)');
+    return cls + ' / ' + method;
+  }
+  return method;
 }
 
 // Distinct colors for trend lines

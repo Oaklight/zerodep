@@ -26,11 +26,16 @@ sys.path.insert(0, _this_dir)
 from jsonschema import flatten_schema, merge_allof, resolve_refs  # noqa: E402
 
 # ---------------------------------------------------------------------------
-# JS engine
+# JS engine — two modes:
+#   _run_js()  : one-shot subprocess (used by correctness tests that need the
+#                merged result back)
+#   _JsEngine  : persistent Node.js process (used by performance benchmarks
+#                to avoid subprocess startup overhead per iteration)
 # ---------------------------------------------------------------------------
 
 _THIS_DIR = os.path.dirname(__file__)
 _BENCH_JS = os.path.join(_THIS_DIR, "bench_allof_merge.js")
+_BENCH_SERVER_JS = os.path.join(_THIS_DIR, "bench_server.js")
 _NODE_MODULES = os.path.join(_THIS_DIR, "node_modules")
 _HAS_NODE = shutil.which("node") is not None and os.path.isdir(_NODE_MODULES)
 
@@ -48,6 +53,40 @@ def _run_js(schema: dict, rounds: int = 1) -> dict:
     if proc.returncode != 0:
         raise RuntimeError(f"JS error: {proc.stderr}")
     return json.loads(proc.stdout)
+
+
+class _JsEngine:
+    """Persistent Node.js process for allof-merge benchmarks."""
+
+    def __init__(self):
+        self._proc = subprocess.Popen(
+            ["node", _BENCH_SERVER_JS],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=_THIS_DIR,
+        )
+        line = self._proc.stdout.readline()
+        ready = json.loads(line)
+        if not ready.get("ready"):
+            raise RuntimeError("bench_server.js did not start")
+
+    def merge(self, schema: dict) -> None:
+        """Run allof-merge on schema (result discarded, timing by pytest)."""
+        self._proc.stdin.write(json.dumps({"schema": schema}).encode() + b"\n")
+        self._proc.stdin.flush()
+        line = self._proc.stdout.readline()
+        resp = json.loads(line)
+        if not resp.get("ok"):
+            raise RuntimeError(f"JS error: {resp.get('error')}")
+
+    def close(self):
+        try:
+            self._proc.stdin.write(b'{"cmd":"quit"}\n')
+            self._proc.stdin.flush()
+            self._proc.wait(timeout=5)
+        except Exception:
+            self._proc.kill()
 
 
 # ---------------------------------------------------------------------------
@@ -420,7 +459,7 @@ class TestCorrectnessVsJs:
 
 
 # ---------------------------------------------------------------------------
-# Performance benchmarks
+# Performance benchmarks — persistent Node.js process via _JsEngine
 # ---------------------------------------------------------------------------
 
 
@@ -428,13 +467,23 @@ def _zd_flatten(schema: dict) -> None:
     flatten_schema(schema)
 
 
+@pytest.fixture(scope="module")
+def js_engine():
+    """Module-scoped fixture: persistent Node.js benchmark process."""
+    if not _HAS_NODE:
+        pytest.skip("Node.js or npm dependencies not available")
+    engine = _JsEngine()
+    yield engine
+    engine.close()
+
+
 class TestPerfTiny:
     def test_zerodep(self, benchmark):
         benchmark(_zd_flatten, TINY_SCHEMA)
 
     @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
-    def test_allof_merge_js(self, benchmark):
-        benchmark(_run_js, TINY_SCHEMA, 1)
+    def test_allof_merge_js(self, benchmark, js_engine):
+        benchmark(js_engine.merge, TINY_SCHEMA)
 
 
 class TestPerfSmall:
@@ -442,8 +491,8 @@ class TestPerfSmall:
         benchmark(_zd_flatten, SMALL_SCHEMA)
 
     @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
-    def test_allof_merge_js(self, benchmark):
-        benchmark(_run_js, SMALL_SCHEMA, 1)
+    def test_allof_merge_js(self, benchmark, js_engine):
+        benchmark(js_engine.merge, SMALL_SCHEMA)
 
 
 class TestPerfMedium:
@@ -451,8 +500,8 @@ class TestPerfMedium:
         benchmark(_zd_flatten, MEDIUM_SCHEMA)
 
     @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
-    def test_allof_merge_js(self, benchmark):
-        benchmark(_run_js, MEDIUM_SCHEMA, 1)
+    def test_allof_merge_js(self, benchmark, js_engine):
+        benchmark(js_engine.merge, MEDIUM_SCHEMA)
 
 
 class TestPerfLarge:
@@ -460,8 +509,8 @@ class TestPerfLarge:
         benchmark(_zd_flatten, LARGE_SCHEMA)
 
     @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
-    def test_allof_merge_js(self, benchmark):
-        benchmark(_run_js, LARGE_SCHEMA, 1)
+    def test_allof_merge_js(self, benchmark, js_engine):
+        benchmark(js_engine.merge, LARGE_SCHEMA)
 
 
 class TestPerfXlarge:
@@ -469,5 +518,5 @@ class TestPerfXlarge:
         benchmark(_zd_flatten, XLARGE_SCHEMA)
 
     @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
-    def test_allof_merge_js(self, benchmark):
-        benchmark(_run_js, XLARGE_SCHEMA, 1)
+    def test_allof_merge_js(self, benchmark, js_engine):
+        benchmark(js_engine.merge, XLARGE_SCHEMA)

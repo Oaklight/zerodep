@@ -281,12 +281,15 @@ ALL_SCHEMAS = {
 
 # ---------------------------------------------------------------------------
 # Correctness comparison — zerodep output vs allof-merge output
+#
+# allof-merge only resolves $ref and merges allOf.  It does NOT simplify
+# anyOf/oneOf or strip unsupported keys.  So we compare zerodep's
+# resolve_refs + merge_allof (Phase 1+2) against allof-merge's output.
 # ---------------------------------------------------------------------------
 
 
 def _normalize(schema: dict) -> dict:
-    """Normalize a schema for comparison: sort required arrays, remove
-    keys that only one implementation produces (e.g. nullable vs type array)."""
+    """Sort keys and required arrays for deterministic comparison."""
     if not isinstance(schema, dict):
         return schema
     result = {}
@@ -305,106 +308,106 @@ def _normalize(schema: dict) -> dict:
     return result
 
 
-def _structural_match(zd: dict, js: dict, path: str = "") -> list[str]:
-    """Compare two flattened schemas structurally, returning differences.
+def _collect_diffs(zd: dict, js: dict, path: str = "") -> list[str]:
+    """Recursively compare two schema dicts, returning human-readable diffs.
 
-    Allows known semantic divergences between zerodep and allof-merge:
-    - zerodep uses ``nullable: true``; allof-merge may keep ``anyOf``
-    - allof-merge may retain ``$defs``; zerodep strips them
+    Skips ``$defs``/``definitions`` (zerodep strips them, allof-merge keeps).
     """
+    if not isinstance(zd, dict) or not isinstance(js, dict):
+        if zd != js:
+            return [f"{path}: {zd!r} vs {js!r}"]
+        return []
+
     diffs: list[str] = []
     zd_n = _normalize(zd)
     js_n = _normalize(js)
 
-    # Check that all properties and types agree at this level.
+    # If JS side still has a $ref (not inlined), skip this subtree —
+    # zerodep inlined it so the shapes are legitimately different.
+    if "$ref" in js_n:
+        return []
+
     all_keys = set(zd_n) | set(js_n)
-    # Skip keys that represent known implementation differences.
-    skip = {"nullable", "$defs", "definitions", "anyOf", "oneOf"}
-    for key in sorted(all_keys - skip):
+    # zerodep strips $defs and inlines all $ref (including inside anyOf);
+    # allof-merge keeps $defs and only inlines $ref inside allOf.
+    skip_keys = {"$defs", "definitions", "$ref"}
+    for key in sorted(all_keys - skip_keys):
         zval = zd_n.get(key)
         jval = js_n.get(key)
-        if zval != jval:
-            diffs.append(f"{path}.{key}: zerodep={zval!r} vs js={jval!r}")
-
-    # Recurse into properties.
-    zprops = zd_n.get("properties", {})
-    jprops = js_n.get("properties", {})
-    for pname in set(zprops) | set(jprops):
-        if pname in zprops and pname in jprops:
-            if isinstance(zprops[pname], dict) and isinstance(jprops[pname], dict):
-                diffs.extend(
-                    _structural_match(
-                        zprops[pname], jprops[pname], f"{path}.properties.{pname}"
-                    )
-                )
-
+        if zval == jval:
+            continue
+        if isinstance(zval, dict) and isinstance(jval, dict):
+            diffs.extend(_collect_diffs(zval, jval, f"{path}.{key}"))
+        elif isinstance(zval, list) and isinstance(jval, list):
+            if len(zval) != len(jval):
+                diffs.append(f"{path}.{key}: len {len(zval)} vs {len(jval)}")
+            else:
+                for i, (a, b) in enumerate(zip(zval, jval)):
+                    if isinstance(a, dict) and isinstance(b, dict):
+                        diffs.extend(_collect_diffs(a, b, f"{path}.{key}[{i}]"))
+                    elif a != b:
+                        diffs.append(f"{path}.{key}[{i}]: {a!r} vs {b!r}")
+        else:
+            diffs.append(f"{path}.{key}: {zval!r} vs {jval!r}")
     return diffs
+
+
+def _has_keyword(d: dict, keyword: str) -> bool:
+    """Check if *keyword* appears anywhere in *d* recursively."""
+    if not isinstance(d, dict):
+        return False
+    if keyword in d:
+        return True
+    for v in d.values():
+        if isinstance(v, dict) and _has_keyword(v, keyword):
+            return True
+        if isinstance(v, list):
+            for item in v:
+                if isinstance(item, dict) and _has_keyword(item, keyword):
+                    return True
+    return False
 
 
 @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
 class TestCorrectnessVsJs:
-    """Compare zerodep flatten_schema output against allof-merge."""
+    """Compare zerodep resolve_refs+merge_allof against allof-merge.
+
+    Only Phase 1+2 are comparable — allof-merge does not simplify
+    anyOf/oneOf or strip unsupported keys.
+    """
 
     @pytest.mark.parametrize("tier", ["tiny", "small", "medium", "large", "xlarge"])
     def test_structural_match(self, tier):
         schema = ALL_SCHEMAS[tier]
-        zd_result = flatten_schema(schema)
+        # zerodep: Phase 1 + Phase 2 only (matching allof-merge scope).
+        zd_result = merge_allof(resolve_refs(schema))
         js_output = _run_js(schema, rounds=1)
         js_result = js_output["result"]
-        diffs = _structural_match(zd_result, js_result)
+        diffs = _collect_diffs(zd_result, js_result)
         assert not diffs, f"Structural differences at {tier}:\n" + "\n".join(diffs)
 
-    @pytest.mark.parametrize("tier", ["medium", "large"])
+    @pytest.mark.parametrize("tier", ["medium", "large", "xlarge"])
     def test_allof_fully_resolved(self, tier):
         """Both implementations should eliminate all allOf keywords."""
         schema = ALL_SCHEMAS[tier]
-        zd_result = flatten_schema(schema)
-        js_output = _run_js(schema, rounds=1)
-        js_result = js_output["result"]
+        zd_result = merge_allof(resolve_refs(schema))
+        js_result = _run_js(schema, rounds=1)["result"]
+        assert not _has_keyword(zd_result, "allOf"), "zerodep still has allOf"
+        assert not _has_keyword(js_result, "allOf"), "allof-merge still has allOf"
 
-        def _has_allof(d):
-            if not isinstance(d, dict):
-                return False
-            if "allOf" in d:
-                return True
-            return any(
-                _has_allof(v) for v in d.values() if isinstance(v, (dict, list))
-            ) or any(
-                _has_allof(item)
-                for v in d.values()
-                if isinstance(v, list)
-                for item in v
-                if isinstance(item, dict)
-            )
-
-        assert not _has_allof(zd_result), "zerodep output still contains allOf"
-        assert not _has_allof(js_result), "allof-merge output still contains allOf"
+    @pytest.mark.parametrize("tier", ["medium", "large", "xlarge"])
+    def test_zerodep_refs_fully_resolved(self, tier):
+        """zerodep should eliminate all $ref pointers."""
+        schema = ALL_SCHEMAS[tier]
+        zd_result = merge_allof(resolve_refs(schema))
+        assert not _has_keyword(zd_result, "$ref"), "zerodep still has $ref"
 
     @pytest.mark.parametrize("tier", ["medium", "large"])
-    def test_refs_fully_resolved(self, tier):
-        """Both implementations should eliminate all $ref pointers."""
+    def test_js_refs_resolved_in_allof(self, tier):
+        """allof-merge resolves $ref inside allOf contexts."""
         schema = ALL_SCHEMAS[tier]
-        zd_result = flatten_schema(schema)
-        js_output = _run_js(schema, rounds=1)
-        js_result = js_output["result"]
-
-        def _has_ref(d):
-            if not isinstance(d, dict):
-                return False
-            if "$ref" in d:
-                return True
-            return any(
-                _has_ref(v) for v in d.values() if isinstance(v, (dict, list))
-            ) or any(
-                _has_ref(item)
-                for v in d.values()
-                if isinstance(v, list)
-                for item in v
-                if isinstance(item, dict)
-            )
-
-        assert not _has_ref(zd_result), "zerodep output still contains $ref"
-        assert not _has_ref(js_result), "allof-merge output still contains $ref"
+        js_result = _run_js(schema, rounds=1)["result"]
+        assert not _has_keyword(js_result, "$ref"), "allof-merge still has $ref"
 
 
 # ---------------------------------------------------------------------------

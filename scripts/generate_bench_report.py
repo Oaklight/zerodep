@@ -59,6 +59,7 @@ _REF_LIBS: dict[str, str] = {
     "google": "google (protobuf)",
     "readability_lxml": "readability-lxml",
     "mozilla_js": "Mozilla Readability.js",
+    "allof_merge_js": "allof-merge (JS)",
     "reference": "reference",
     "sqlitedict": "sqlitedict",
 }

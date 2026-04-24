@@ -6,7 +6,16 @@ import sys
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(__file__))
+# Our jsonschema.py shadows the third-party 'jsonschema' package (pulled in
+# by pydantic / other deps).  Evict it from sys.modules before importing ours.
+_this_dir = os.path.dirname(__file__)
+_cached_jsonschema = sys.modules.pop("jsonschema", None)
+_cached_jsonschema_sub = {}
+for _k in list(sys.modules):
+    if _k.startswith("jsonschema."):
+        _cached_jsonschema_sub[_k] = sys.modules.pop(_k)
+
+sys.path.insert(0, _this_dir)
 
 from jsonschema import (  # noqa: E402
     UNSUPPORTED_SCHEMA_KEYS,

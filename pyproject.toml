@@ -208,4 +208,5 @@ extra-paths = [
     "./protobuf",
     "./depdetect",
     "./semver",
+    "./jsonschema",
 ]

@@ -54,6 +54,9 @@ jobs:
       - name: Install readability JS dependencies
         run: cd readability && npm install --prefer-offline --no-audit
 
+      - name: Install jsonschema JS dependencies
+        run: cd jsonschema && npm install --prefer-offline --no-audit
+
       - name: Check module versions
         continue-on-error: true
         run: python -m zerodep version-check

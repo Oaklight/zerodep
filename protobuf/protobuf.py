@@ -625,6 +625,7 @@ class FieldInfo:
     default_value: Any  # proto3 zero-value
     _decoder: Any = None  # cached dispatch handler, set after _FIELD_DECODERS is built
     _encoder: Any = None  # cached encode handler, set after _FIELD_ENCODERS is built
+    _is_default: Any = None  # cached default-value check, bound at build time
     _tag: bytes = b""  # cached tag bytes for this field's native wire type
     _len_tag: bytes = b""  # cached tag bytes for LEN wire type (repeated/map)
 
@@ -682,6 +683,8 @@ class _MessageDescriptor:
             enc = _FIELD_ENCODERS.get(info.kind)
             if enc is not None:
                 object.__setattr__(info, "_encoder", enc)
+            # Default-value checker
+            object.__setattr__(info, "_is_default", _make_is_default(info))
             # Cache tag bytes
             object.__setattr__(
                 info, "_tag", make_tag(info.number, info.wire_type)
@@ -947,6 +950,33 @@ class _MessageDescriptor:
 # ============================================================================
 
 
+def _make_is_default(info: FieldInfo) -> Any:
+    """Create a specialized default-value checker for *info*."""
+    kind = info.kind
+    if kind == FieldKind.MAP or kind in (
+        FieldKind.REPEATED_SCALAR,
+        FieldKind.REPEATED_MESSAGE,
+        FieldKind.REPEATED_ENUM,
+        FieldKind.REPEATED_STRING,
+        FieldKind.REPEATED_BYTES,
+    ):
+        return lambda v: not v
+    if kind == FieldKind.MESSAGE:
+        return lambda v: v is None
+    if kind == FieldKind.ENUM:
+        return lambda v: int(v) == 0
+    if kind == FieldKind.STRING:
+        return lambda v: not v
+    if kind == FieldKind.BYTES:
+        return lambda v: not v
+    if info.scalar is not None:
+        default = _SCALAR_DEFAULTS[info.scalar.scalar_type]
+        if isinstance(default, float):
+            return lambda v, _d=default: v == _d
+        return lambda v, _d=default: v == _d
+    return lambda v: False
+
+
 def _is_default_value(info: FieldInfo, value: Any) -> bool:
     """Check if a value is the proto3 zero-value for its field."""
     if info.kind == FieldKind.MAP:
@@ -1208,7 +1238,7 @@ def _encode_message(obj: Any) -> bytes:
     # Encode known fields in field-number order for deterministic output
     for info in desc._sorted_fields:
         value = getattr(obj, info.name)
-        if _is_default_value(info, value):
+        if info._is_default(value):
             continue
         info._encoder(buf, info, value)
 
@@ -1834,7 +1864,7 @@ def _msg_to_dict(self: Any) -> dict[str, Any]:
 
     for info in desc.fields.values():
         value = getattr(self, info.name)
-        if _is_default_value(info, value):
+        if info._is_default(value):
             continue  # Omit proto3 zero-values
         result[info.name] = _value_to_dict(info, value)
 

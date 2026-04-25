@@ -378,7 +378,9 @@ _SCALAR_BUF_WRITERS: dict[ScalarType, Any] = {
     ScalarType.SINT64: lambda buf, v: _write_varint(buf, zigzag_encode(v)),
     ScalarType.BOOL: lambda buf, v: buf.append(1 if v else 0),
     ScalarType.FIXED32: lambda buf, v: buf.extend(struct.pack("<I", v & 0xFFFFFFFF)),
-    ScalarType.FIXED64: lambda buf, v: buf.extend(struct.pack("<Q", v & 0xFFFFFFFFFFFFFFFF)),
+    ScalarType.FIXED64: lambda buf, v: buf.extend(
+        struct.pack("<Q", v & 0xFFFFFFFFFFFFFFFF)
+    ),
     ScalarType.SFIXED32: lambda buf, v: buf.extend(struct.pack("<i", v)),
     ScalarType.SFIXED64: lambda buf, v: buf.extend(struct.pack("<q", v)),
     ScalarType.FLOAT: lambda buf, v: buf.extend(struct.pack("<f", v)),
@@ -725,12 +727,8 @@ class _MessageDescriptor:
             # Default-value checker
             object.__setattr__(info, "_is_default", _make_is_default(info))
             # Cache tag bytes
-            object.__setattr__(
-                info, "_tag", make_tag(info.number, info.wire_type)
-            )
-            object.__setattr__(
-                info, "_len_tag", make_tag(info.number, WireType.LEN)
-            )
+            object.__setattr__(info, "_tag", make_tag(info.number, info.wire_type))
+            object.__setattr__(info, "_len_tag", make_tag(info.number, WireType.LEN))
             # Cache map metadata
             if info.kind == FieldKind.MAP and info.map_marker is not None:
                 object.__setattr__(info, "_map_meta", _MapMeta(info.map_marker))
@@ -1220,9 +1218,9 @@ class _MapMeta:
     )
 
     def __init__(self, map_marker: MapField) -> None:
-        self.key_scalar = _extract_proto_scalar(
-            map_marker.key_type
-        ) or _infer_scalar(_get_base_type(map_marker.key_type))
+        self.key_scalar = _extract_proto_scalar(map_marker.key_type) or _infer_scalar(
+            _get_base_type(map_marker.key_type)
+        )
         self.key_is_string = self.key_scalar.scalar_type == ScalarType.STRING
         self.key_tag = make_tag(1, self.key_scalar.wire_type)
         self.key_buf_writer = _SCALAR_BUF_WRITERS.get(self.key_scalar.scalar_type)
@@ -1348,6 +1346,179 @@ def _encode_message(obj: Any) -> bytes:
     return bytes(buf)
 
 
+# ---- Size calculation (byte_size) ----
+
+_VARINT_MAX_BYTES = 10
+
+
+def _varint_size(value: int) -> int:
+    """Return the number of bytes needed to encode *value* as a varint."""
+    if value < 0:
+        return _VARINT_MAX_BYTES  # negative int32/int64 = 10 bytes
+    if value == 0:
+        return 1
+    return (value.bit_length() + 6) // 7
+
+
+def _tag_size(field_number: int) -> int:
+    """Return the byte size of a field tag."""
+    return _varint_size((field_number << 3))
+
+
+_SCALAR_SIZES: dict[ScalarType, int | None] = {
+    ScalarType.FIXED32: 4,
+    ScalarType.SFIXED32: 4,
+    ScalarType.FLOAT: 4,
+    ScalarType.FIXED64: 8,
+    ScalarType.SFIXED64: 8,
+    ScalarType.DOUBLE: 8,
+}
+
+
+def _scalar_value_size(scalar: ProtoScalar, value: Any) -> int:
+    """Return wire size of a scalar value (without tag)."""
+    fixed = _SCALAR_SIZES.get(scalar.scalar_type)
+    if fixed is not None:
+        return fixed
+    st = scalar.scalar_type
+    if st == ScalarType.BOOL:
+        return 1
+    if st in (ScalarType.SINT32, ScalarType.SINT64):
+        return _varint_size(zigzag_encode(value))
+    if st == ScalarType.INT32:
+        return _varint_size(
+            value & 0xFFFFFFFF if value >= 0 else value & 0xFFFFFFFFFFFFFFFF
+        )
+    if st in (ScalarType.INT64, ScalarType.UINT64):
+        return _varint_size(value & 0xFFFFFFFFFFFFFFFF)
+    if st == ScalarType.UINT32:
+        return _varint_size(value & 0xFFFFFFFF)
+    # STRING / BYTES handled separately
+    return 0  # pragma: no cover
+
+
+def _field_byte_size(info: FieldInfo, value: Any) -> int:
+    """Return the total wire size of a single field (tag + value)."""
+    tag_len = len(info._tag)
+
+    if info.kind == FieldKind.SCALAR:
+        return tag_len + _scalar_value_size(info.scalar, value)
+
+    if info.kind == FieldKind.ENUM:
+        return tag_len + _varint_size(int(value) & 0xFFFFFFFFFFFFFFFF)
+
+    if info.kind == FieldKind.STRING:
+        encoded = value.encode("utf-8")
+        return tag_len + _varint_size(len(encoded)) + len(encoded)
+
+    if info.kind == FieldKind.BYTES:
+        return tag_len + _varint_size(len(value)) + len(value)
+
+    if info.kind == FieldKind.MESSAGE:
+        inner = _message_byte_size(value)
+        return tag_len + _varint_size(inner) + inner
+
+    if info.kind == FieldKind.REPEATED_SCALAR:
+        body_size = 0
+        fixed = _SCALAR_SIZES.get(info.scalar.scalar_type)
+        if fixed is not None:
+            body_size = fixed * len(value)
+        else:
+            for v in value:
+                body_size += _scalar_value_size(info.scalar, v)
+        len_tag = len(info._len_tag)
+        return len_tag + _varint_size(body_size) + body_size
+
+    if info.kind == FieldKind.REPEATED_ENUM:
+        body_size = sum(_varint_size(int(v) & 0xFFFFFFFFFFFFFFFF) for v in value)
+        len_tag = len(info._len_tag)
+        return len_tag + _varint_size(body_size) + body_size
+
+    if info.kind == FieldKind.REPEATED_MESSAGE:
+        total = 0
+        for v in value:
+            inner = _message_byte_size(v)
+            total += tag_len + _varint_size(inner) + inner
+        return total
+
+    if info.kind == FieldKind.REPEATED_STRING:
+        total = 0
+        for v in value:
+            encoded = v.encode("utf-8")
+            total += tag_len + _varint_size(len(encoded)) + len(encoded)
+        return total
+
+    if info.kind == FieldKind.REPEATED_BYTES:
+        total = 0
+        for v in value:
+            total += tag_len + _varint_size(len(v)) + len(v)
+        return total
+
+    if info.kind == FieldKind.MAP:
+        total = 0
+        mm = info._map_meta
+        for k, v in value.items():
+            entry_size = _map_entry_size(mm, k, v)
+            len_tag = len(info._len_tag)
+            total += len_tag + _varint_size(entry_size) + entry_size
+        return total
+
+    return 0  # pragma: no cover
+
+
+def _map_entry_size(mm: _MapMeta, key: Any, value: Any) -> int:
+    """Return the wire size of a single map entry (without outer tag/length)."""
+    size = 0
+    # Key: field 1
+    key_tag_len = len(mm.key_tag)
+    if mm.key_is_string:
+        encoded = key.encode("utf-8")
+        size += key_tag_len + _varint_size(len(encoded)) + len(encoded)
+    else:
+        size += key_tag_len + _scalar_value_size(mm.key_scalar, key)
+    # Value: field 2
+    val_tag_len = len(mm.val_tag)
+    if mm.value_is_message:
+        inner = _message_byte_size(value)
+        size += val_tag_len + _varint_size(inner) + inner
+    elif mm.value_is_enum:
+        size += val_tag_len + _varint_size(int(value) & 0xFFFFFFFFFFFFFFFF)
+    elif mm.value_base is str:
+        encoded = value.encode("utf-8")
+        size += val_tag_len + _varint_size(len(encoded)) + len(encoded)
+    elif mm.value_base is bytes:
+        size += val_tag_len + _varint_size(len(value)) + len(value)
+    else:
+        size += val_tag_len + _scalar_value_size(mm.value_scalar, value)
+    return size
+
+
+def _message_byte_size(obj: Any) -> int:
+    """Return the total wire size of a message (without outer length prefix)."""
+    desc: _MessageDescriptor = obj._proto_descriptor
+    total = 0
+    for info in desc._sorted_fields:
+        value = getattr(obj, info.name)
+        if info._is_default(value):
+            continue
+        total += _field_byte_size(info, value)
+    # Unknown fields
+    unknown = getattr(obj, "_unknown_fields", None)
+    if unknown:
+        for fn, wt, raw in unknown:
+            total += len(make_tag(fn, wt))
+            if wt == WireType.LEN:
+                total += _varint_size(len(raw)) + len(raw)
+            else:
+                total += len(raw)
+    return total
+
+
+def _msg_byte_size(self: Any) -> int:
+    """Return the serialized size of this message in bytes."""
+    return _message_byte_size(self)
+
+
 # Encoder dispatch table — mirrors _FIELD_DECODERS pattern for encode side.
 # Each handler: (buf, info, value) -> None
 
@@ -1383,9 +1554,7 @@ def _dispatch_encode_repeated_scalar(
     _encode_packed_repeated(buf, info, value)
 
 
-def _dispatch_encode_repeated_enum(
-    buf: bytearray, info: FieldInfo, value: Any
-) -> None:
+def _dispatch_encode_repeated_enum(buf: bytearray, info: FieldInfo, value: Any) -> None:
     _encode_packed_enum(buf, info, value)
 
 
@@ -2186,6 +2355,7 @@ def message(cls: type) -> type:
     cls.parse = classmethod(_msg_parse)  # type: ignore[attr-defined]
     cls.to_dict = _msg_to_dict  # type: ignore[attr-defined]
     cls.from_dict = classmethod(_msg_from_dict)  # type: ignore[attr-defined]
+    cls.byte_size = _msg_byte_size  # type: ignore[attr-defined]
 
     # Add _unknown_fields support
     original_init = cls.__init__

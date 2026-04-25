@@ -205,7 +205,7 @@ LOC 高不一定意味着必须拆分。
 
 建议后续补一个：
 
-- `plans/03-pattern-inventory.md`
+- `_plans/03-pattern-inventory.md`
 
 内容专门记录：
 
@@ -321,8 +321,8 @@ LOC 高不一定意味着必须拆分。
 
 ### Tier 1 完成状态
 
-- ✅ 完成 `plans/` 分析文档基线（`283e7dc`）
-- ✅ 增加 `pattern-inventory`（`plans/03-pattern-inventory.md`）
+- ✅ 完成 `_plans/` 分析文档基线（`283e7dc`）
+- ✅ 增加 `pattern-inventory`（`_plans/03-pattern-inventory.md`）
 - ✅ 统一 `config` / `vcs` / `sse` 的 sibling import 模式（`a196e45`）
 - ✅ sibling 模块改为懒加载：config（`240d6b5`）、vcs→diff（`262674a`）
 - ✅ 统一 `structlog` / `prompt` 的颜色能力检测（`87ef4dc`）
@@ -366,16 +366,16 @@ LOC 高不一定意味着必须拆分。
 
 ## 推荐文档组织
 
-建议当前 `plans/` 下的阅读顺序：
+建议当前 `_plans/` 下的阅读顺序：
 
-1. `plans/01-implementation-analysis-overview.md:1`
-2. `plans/02-refactor-roadmap.md:1`
-3. `plans/04-runtime-concurrency-deep-dive.md:1`
-4. `plans/05-httpclient-deep-dive.md:1`
+1. `_plans/01-implementation-analysis-overview.md:1`
+2. `_plans/02-refactor-roadmap.md:1`
+3. `_plans/04-runtime-concurrency-deep-dive.md:1`
+4. `_plans/05-httpclient-deep-dive.md:1`
 
 后续建议新增：
 
-- `plans/03-pattern-inventory.md:1`
+- `_plans/03-pattern-inventory.md:1`
 
 ## 最终立场
 

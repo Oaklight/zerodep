@@ -10,9 +10,9 @@
 
 相关背景文档：
 
-- `plans/01-implementation-analysis-overview.md:1`
-- `plans/02-refactor-roadmap.md:1`
-- `plans/03-pattern-inventory.md:1`
+- `_plans/01-implementation-analysis-overview.md:1`
+- `_plans/02-refactor-roadmap.md:1`
+- `_plans/03-pattern-inventory.md:1`
 
 相关实现位置：
 
@@ -164,7 +164,7 @@
 - 允许用户“拿一个文件就走”
 - 也允许用户“拿一组文件一起用”
 
-这在 `plans/01-implementation-analysis-overview.md:1` 里已经讲得很清楚。
+这在 `_plans/01-implementation-analysis-overview.md:1` 里已经讲得很清楚。
 
 也就是说，这个项目天然需要同时满足两个要求：
 
@@ -498,7 +498,7 @@ n
 
 ## 六、推荐路线
 
-基于 `plans/02-refactor-roadmap.md:1` 和 `plans/03-pattern-inventory.md:1`，我建议 sibling import 的策略分三步走。
+基于 `_plans/02-refactor-roadmap.md:1` 和 `_plans/03-pattern-inventory.md:1`，我建议 sibling import 的策略分三步走。
 
 ## 第一步：统一写法
 

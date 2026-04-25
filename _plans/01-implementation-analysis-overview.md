@@ -355,7 +355,7 @@
 
 建议阅读顺序：
 
-1. `plans/01-implementation-analysis-overview.md:1`
-2. `plans/02-refactor-roadmap.md:1`
-3. `plans/04-runtime-concurrency-deep-dive.md:1`
-4. `plans/05-httpclient-deep-dive.md:1`
+1. `_plans/01-implementation-analysis-overview.md:1`
+2. `_plans/02-refactor-roadmap.md:1`
+3. `_plans/04-runtime-concurrency-deep-dive.md:1`
+4. `_plans/05-httpclient-deep-dive.md:1`

@@ -1,0 +1,2 @@
+# Mark readability test pages as vendored so GitHub excludes them from language stats
+readability/test-pages/**/*.html linguist-vendored

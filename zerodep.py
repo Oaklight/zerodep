@@ -13,7 +13,7 @@ Requires Python 3.10+, zero external dependencies.
 
 from __future__ import annotations
 
-__version__ = "2026.4.15.1"
+__version__ = "2026.4.25"
 
 import argparse
 import ast
@@ -195,6 +195,11 @@ def _git_show_at_tag(repo_root: Path, tag: str, filepath: str) -> str | None:
         return None
 
 
+def _parse_semver(version: str) -> tuple[int, ...]:
+    """Parse a SemVer string into a comparable tuple."""
+    return tuple(int(x) for x in version.split("."))
+
+
 def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
     """Detect which modules have been modified since their declared version tag.
 
@@ -202,6 +207,10 @@ def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
     1. Try ``v{module_version}`` directly (backward compat with old SemVer tags).
     2. Search all release tags for one where the file has the same frontmatter
        version (supports CalVer project tags like ``v2026.4.11``).
+
+    If no tag matches the current version, checks whether the version was
+    already bumped relative to the latest tagged version (prevents
+    double-bumping when a manual bump precedes the release workflow).
 
     Returns:
         Dict mapping module name to status: "up-to-date", "modified", "new",
@@ -228,7 +237,22 @@ def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
                         break
 
         if tag_content is None:
-            status_map[mod_name] = "new"
+            # No tag has this version — check if it was already bumped.
+            # Search tags for the latest tagged version of this module.
+            already_bumped = False
+            for tag in all_tags:
+                candidate = _git_show_at_tag(repo_root, tag, primary_file)
+                if candidate is not None:
+                    tag_meta = _extract_frontmatter(candidate)
+                    tag_ver = tag_meta.get("version")
+                    if tag_ver:
+                        try:
+                            if _parse_semver(version) > _parse_semver(tag_ver):
+                                already_bumped = True
+                        except (ValueError, TypeError):
+                            pass
+                    break  # only check the latest tag
+            status_map[mod_name] = "up-to-date" if already_bumped else "new"
             continue
 
         tag_hash = _normalized_hash(tag_content)

@@ -6,21 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.4.25] - 2026-04-25
+
 ### New Modules
 
 - **JSON Schema module**: zero-dependency JSON Schema flattening & sanitization. `flatten_schema()` resolves `$ref`, merges `allOf` (deep-merge with type intersection, numeric constraint tightening, required union), simplifies `anyOf`/`oneOf` (nullable detection, single-variant unwrap), and strips unsupported keywords. Each phase is independently callable: `resolve_refs`, `merge_allof`, `simplify_unions`, `sanitize`. Benchmarked against `allof-merge` (JS) across 5 complexity tiers — **1.7-5.3x faster**. 57 unit tests + 13 cross-implementation correctness tests.
-
-### Performance
-
-- **A2A module**: optimized serialization and deserialization paths — `to_dict()` now avoids `dataclasses.asdict()`-style deep copy overhead. Serialization is now **2.2-2.6x faster** than a2a-protocol (previously 1.4-2.1x slower). Deserialization narrowed from 1.8-4.1x slower to **1.1-1.7x slower** via optimized enum resolution and type dispatch. JSON round-trip is now **1.4-1.5x faster** end-to-end.
-- **Cache module**: optimized decorator wrapper path — LRU decorator overhead is now **1.2x faster** than cachetools (previously ~same). TTL decorator overhead reached parity with cachetools (previously 1.3x slower).
-- **QR module**: optimized encoding path — short inputs are now only 1.1x slower (previously 2.1x slower). Medium (URL) and long inputs are now **1.1-1.2x faster** than the `qrcode` library (previously 1.7-1.9x slower).
-- **Readability module**: optimized scoring and tree-walking algorithms — small pages **2.1x faster** (previously 1.7x faster), medium pages now **1.2x faster** (previously 2x slower). Large pages improved from 2x slower to 1.4x slower vs readability-lxml.
-
-## [2026.4.20] - 2026-04-20
-
-### New Modules
-
 - **Readability module**: zero-dependency article content extractor ported from Mozilla Readability.js. `extract()` performs full article extraction with metadata (title, author, excerpt, published_time, site_name, lang, dir). `is_probably_readable()` provides a quick readability heuristic check. Supports JSON-LD and OpenGraph metadata extraction. 2-level retry (ruthless on/off) for robust extraction. 18 Mozilla Readability.js test fixtures for cross-validation. Three-way benchmark: zerodep vs readability-lxml vs Mozilla JS. Depends on `soup` module (no pip dependencies).
 
 ### Enhancements
@@ -29,11 +19,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Performance
 
-- **Cache module**: optimized `TypedKey` construction — one-shot tuple construction and removed redundant `sorted()` call. Previously 1.3x slower than cachetools, now **1.2x faster**.
-- **Cache module**: optimized LFU eviction — bypass `__touch` in `popitem`. Previously 1.4x slower than cachetools, now **~equal**.
-- **PersistDict module**: optimized SQLite write performance — `PRAGMA synchronous=NORMAL`, `commit_every` parameter for batched writes, deferred commits. Reduces per-write fsync overhead for bulk operations.
-- **Semver module**: optimized parse, comparison, and property access — replaced custom `_InfinityType`/`_NegativeInfinityType` sentinel classes with plain integer tuples, inlined `_parse_letter_version`/`_parse_local_version`/`_cmpkey` into `__init__`, used `match.groups()` tuple destructuring instead of `groupdict()`, cached `__str__` result, pre-compiled local version split regex, direct `_pre`/`_post`/`_dev` attribute access in boolean properties. Parse **~1.3x faster**, sort **~1.4x faster**, compare **~1.4x faster**, property access **~4.5x faster**.
-- No regression on LRU, TTL, or mixed workload benchmarks (cache). No regression on read/iterate benchmarks (persistdict). All semver correctness tests pass.
+- **A2A module**: optimized serialization and deserialization paths — `to_dict()` now avoids `dataclasses.asdict()`-style deep copy overhead. Serialization is now **2.2-2.6x faster** than a2a-protocol (previously 1.4-2.1x slower). Deserialization narrowed from 1.8-4.1x slower to **1.1-1.7x slower** via optimized enum resolution and type dispatch. JSON round-trip is now **1.4-1.5x faster** end-to-end.
+- **Cache module**: optimized `TypedKey` construction, decorator wrapper path, and LFU eviction. LRU decorator overhead is now **1.2x faster** than cachetools. TTL decorator reached parity. LFU eviction now **~equal** (previously 1.4x slower).
+- **PersistDict module**: optimized SQLite write performance — `PRAGMA synchronous=NORMAL`, `commit_every` parameter for batched writes, deferred commits.
+- **QR module**: optimized encoding path — short inputs now only 1.1x slower (previously 2.1x). Medium/long inputs now **1.1-1.2x faster** (previously 1.7-1.9x slower).
+- **Readability module**: optimized scoring and tree-walking — small pages **2.1x faster**, medium pages now **1.2x faster** (previously 2x slower). Large pages improved from 2x slower to 1.4x slower vs readability-lxml.
+- **Semver module**: optimized parse, comparison, and property access. Parse **~1.3x faster**, sort **~1.4x faster**, compare **~1.4x faster**, property access **~4.5x faster**.
 
 ### Bug Fixes
 

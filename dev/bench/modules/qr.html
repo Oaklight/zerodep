@@ -112,18 +112,18 @@ td { white-space: nowrap; }
 <h1>qr</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.4.25 | Commit: c260c9e0 | 2026-04-25T06:30:14.656307+00:00</p>
+<p class="meta">Version: 7c7330f | Commit: 7c7330fb | 2026-04-25T09:02:47.878347+00:00</p>
 <h2>qr</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Encode Binary</td><td>zerodep</td><td>qrcode</td><td>34.71 ms</td><td>42.10 ms</td><td>28.8</td><td>23.8</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Encode High Ecc</td><td>zerodep</td><td>qrcode</td><td>6.48 ms</td><td>6.21 ms</td><td>154.3</td><td>161.1</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Encode Large Data</td><td>zerodep</td><td>qrcode</td><td>34.43 ms</td><td>45.43 ms</td><td>29.0</td><td>22.0</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>10.98 ms</td><td>11.67 ms</td><td>91.1</td><td>85.7</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Encode Numeric</td><td>zerodep</td><td>qrcode</td><td>4.27 ms</td><td>3.96 ms</td><td>234.0</td><td>252.8</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>2.34 ms</td><td>1.81 ms</td><td>426.5</td><td>551.5</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>5.34 ms</td><td>5.05 ms</td><td>187.2</td><td>198.1</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Encode Binary</td><td>zerodep</td><td>qrcode</td><td>35.40 ms</td><td>41.85 ms</td><td>28.3</td><td>23.9</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Encode High Ecc</td><td>zerodep</td><td>qrcode</td><td>6.44 ms</td><td>6.14 ms</td><td>155.3</td><td>163.0</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Encode Large Data</td><td>zerodep</td><td>qrcode</td><td>34.45 ms</td><td>44.90 ms</td><td>29.0</td><td>22.3</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>11.01 ms</td><td>11.76 ms</td><td>90.8</td><td>85.0</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Encode Numeric</td><td>zerodep</td><td>qrcode</td><td>4.31 ms</td><td>3.99 ms</td><td>232.0</td><td>250.3</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>2.39 ms</td><td>1.82 ms</td><td>418.5</td><td>549.4</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>5.40 ms</td><td>5.10 ms</td><td>185.1</td><td>196.0</td><td class="ratio-cell slower">1.1x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -194,13 +194,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [28.81236743903895, 154.28070107045497, 29.046963100894274, 91.05684931836069, 233.9546941870769, 426.4900862874918, 187.19592723548502],
+        data: [28.252434610467738, 155.25143502335354, 29.028048961897927, 90.80633537521713, 232.03946423096534, 418.4934964863954, 185.0662180580649],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "qrcode" + ' (ops/s)',
-        data: [23.752209136419296, 161.07475027029716, 22.013411849373107, 85.70137034286911, 252.8011361589305, 551.5148271704388, 198.11909649332492],
+        data: [23.89364874139085, 162.9758096971586, 22.271585955183095, 85.02935086659863, 250.34808708039944, 549.3875756219414, 196.0257086757466],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

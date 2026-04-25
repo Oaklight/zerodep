@@ -1813,7 +1813,14 @@ def _decode_message_bytes(
     fields_by_number = desc.fields_by_number
 
     while pos < end:
-        field_number, wire_type, pos = decode_tag(data, pos)
+        # Inline 1-byte tag fast-path: field numbers 1-15 fit in 1 byte
+        byte = data[pos]
+        if byte < 0x80:
+            field_number = byte >> 3
+            wire_type = byte & 0x07
+            pos += 1
+        else:
+            field_number, wire_type, pos = decode_tag(data, pos)
         info = fields_by_number.get(field_number)
 
         if info is None:

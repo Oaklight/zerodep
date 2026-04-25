@@ -6,6 +6,47 @@ title: 模块概览
 
 每个 zerodep 模块都是一个**独立的单 `.py` 文件**，可以直接复制到你的项目中使用，运行时无需 `pip install`。
 
+## 模块状态
+
+| 模块 | 版本 | 最后更新 |
+|------|------|---------|
+| [a2a](a2a.md) | 0.3.2 | 2026-04-20 |
+| [acp](acp.md) | 0.3.1 | 2026-04-15 |
+| [aes](aes.md) | 0.5.1 | 2026-04-20 |
+| [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
+| [cache](cache.md) | 0.2.5 | 2026-04-20 |
+| [config](config.md) | 0.3.0 | 2026-04-11 |
+| [depdetect](depdetect.md) | 0.4.3 | 2026-04-15 |
+| [diff](diff.md) | 0.3.1 | 2026-04-15 |
+| [dotenv](dotenv.md) | 0.3.1 | 2026-04-15 |
+| [filelock](filelock.md) | 0.3.0 | 2026-04-11 |
+| [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-11 |
+| [httpclient](http.md) | 0.3.1 | 2026-04-15 |
+| [jsonc](jsonc.md) | 0.3.0 | 2026-04-11 |
+| [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-11 |
+| [jsonschema](jsonschema.md) | 0.1.1 | 2026-04-25 |
+| [markdown](markdown.md) | 0.3.1 | 2026-04-15 |
+| [persistdict](persistdict.md) | 0.4.2 | 2026-04-20 |
+| [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
+| [protobuf](protobuf.md) | 0.4.3 | 2026-04-15 |
+| [qr](qr.md) | 0.3.3 | 2026-04-20 |
+| [readability](readability.md) | 0.1.0 | 2026-04-20 |
+| [retry](retry.md) | 0.3.0 | 2026-04-11 |
+| [runner](runner.md) | 0.3.1 | 2026-04-15 |
+| [scheduler](scheduler.md) | 0.3.1 | 2026-04-15 |
+| [semver](semver.md) | 0.4.2 | 2026-04-20 |
+| [skills](skills.md) | 0.4.3 | 2026-04-20 |
+| [soup](soup.md) | 0.5.1 | 2026-04-20 |
+| [sparse_search](sparse_search.md) | 0.3.2 | 2026-04-15 |
+| [sse](sse.md) | 0.3.1 | 2026-04-15 |
+| [structlog](structlog.md) | 0.3.0 | 2026-04-11 |
+| [tabulate](tabulate.md) | 0.1.1 | 2026-04-15 |
+| [toon](toon.md) | 0.3.3 | 2026-04-15 |
+| [validate](validate.md) | 0.4.2 | 2026-04-15 |
+| [vcs](vcs.md) | 0.3.0 | 2026-04-11 |
+| [xml](xml.md) | 0.3.1 | 2026-04-15 |
+| [yaml](yaml.md) | 0.3.1 | 2026-04-15 |
+
 ## 全部模块
 
 ### 网络与通信
@@ -33,12 +74,15 @@ title: 模块概览
 | [jsonc](jsonc.md) | JSONC 解析（JSON + 注释 + 尾逗号） | `commentjson` |
 | [toon](toon.md) | TOON（面向 Token 的对象表示法）编码器/解码器 | `toon_format` |
 | [frontmatter](frontmatter.md) | Frontmatter 解析与序列化（YAML/TOML/JSON） | `python-frontmatter` |
+| [protobuf](protobuf.md) | Proto3 编解码器（Python dataclass schema） | `protobuf` |
 
 ### 数据验证
 
 | 模块 | 描述 | 性能对标 |
 |------|------|---------|
 | [validate](validate.md) | TypedDict/dataclass 运行时验证器 + JSON Schema 生成 | `pydantic` |
+| [jsonschema](jsonschema.md) | JSON Schema 展平与清理（`$ref`、`allOf`、`anyOf`） | `allof-merge` |
+| [semver](semver.md) | PEP 440 版本解析与比较器 | `packaging` |
 
 ### 文本与标记
 
@@ -46,13 +90,14 @@ title: 模块概览
 |------|------|---------|
 | [markdown](markdown.md) | Markdown → HTML 渲染器（CommonMark 子集 + GFM 表格） | `mistune` |
 | [soup](soup.md) | 类 BeautifulSoup API 的 HTML 解析器（find、select、CSS 选择器） | `beautifulsoup4` |
+| [readability](readability.md) | 文章正文提取器（移植自 Mozilla Readability.js） | `readability-lxml` |
 | [diff](diff.md) | Unified diff 解析、补丁应用/反转、三方合并 | `unidiff` |
 
 ### 搜索与检索
 
 | 模块 | 描述 | 性能对标 |
 |------|------|---------|
-| [search](search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF 全文搜索（贝叶斯校准） | `rank-bm25` |
+| [sparse_search](sparse_search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF 全文搜索（贝叶斯校准） | `rank-bm25` |
 
 ### 配置
 
@@ -79,14 +124,16 @@ title: 模块概览
 
 | 模块 | 描述 | 性能对标 |
 |------|------|---------|
-| [cache](cache.md) | 内存缓存（TTL、LRU/LFU 淘汰、异步支持） | -- |
+| [cache](cache.md) | 内存缓存（TTL、LRU/LFU 淘汰、异步支持） | `cachetools` |
 | [retry](retry.md) | 装饰器式自动重试（退避、抖动、过滤） | `tenacity` |
 | [scheduler](scheduler.md) | 进程内任务调度器（cron、间隔、一次性触发） | `APScheduler` |
 | [structlog](structlog.md) | 结构化日志与彩色控制台输出 | `structlog` |
 | [vcs](vcs.md) | Git/Hg/Jujutsu CLI 包装器（diff、status、log、blame） | -- |
 | [runner](runner.md) | 结构化子进程执行（超时升级） | -- |
 | [filelock](filelock.md) | 跨平台咨询式文件锁（fcntl/msvcrt） | -- |
+| [persistdict](persistdict.md) | 持久化字典（JSON / SQLite 后端） | -- |
 | [qr](qr.md) | QR Code 生成与终端渲染 | `qrcode` |
+| [depdetect](depdetect.md) | 依赖检测与验证 | -- |
 
 ## 模块间依赖关系
 
@@ -102,6 +149,7 @@ graph LR
     frontmatter --> yaml
     skills --> frontmatter
     skills --> sparse_search
+    readability --> soup
     sse --> httpclient
     vcs --> diff
 ```

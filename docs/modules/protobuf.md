@@ -19,6 +19,7 @@ The `protobuf` module encodes and decodes Protocol Buffers (proto3) wire format 
 - **Proto3 semantics** — zero-value fields not serialized, packed repeated scalars by default
 - **Unknown field preservation** — unknown fields survive parse → serialize round-trips
 - **Dict conversion** — `to_dict()` / `from_dict()` for JSON-friendly representation
+- **Size calculation** — `byte_size()` computes serialized size without allocating bytes
 - **No codegen** — no `.proto` files, no `protoc`, no build step
 
 ## How to Use in Your Project
@@ -219,6 +220,23 @@ reparsed = PersonV2.parse(v1.serialize())
 print(reparsed.age)  # 30
 ```
 
+### Size Calculation
+
+```python
+from protobuf import message, field, int32, repeated
+
+@message
+class Packet:
+    id: int32 = field(1)
+    payload: bytes = field(2)
+    tags: repeated[str] = field(3)
+
+pkt = Packet(id=1, payload=b"hello", tags=["a", "b"])
+size = pkt.byte_size()     # compute size without serializing
+data = pkt.serialize()
+assert size == len(data)   # matches actual serialized length
+```
+
 ### Complex Real-World Example
 
 ```python
@@ -276,6 +294,7 @@ Turns a class into a proto3 message. Applies `@dataclass` (if needed), builds an
 - `parse(data: bytes) -> Self` — class method, decode from wire format
 - `to_dict() -> dict` — recursive dict conversion (zero-value fields omitted)
 - `from_dict(data: dict) -> Self` — class method, create from dict
+- `byte_size() -> int` — compute serialized size without materializing bytes
 
 ### `field(number, *, default=..., default_factory=..., oneof=None)`
 

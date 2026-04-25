@@ -112,14 +112,14 @@ td { white-space: nowrap; }
 <h1>sse</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 631d1a4 | Commit: 631d1a4d | 2026-04-24T18:56:40.146370+00:00</p>
+<p class="meta">Version: v2026.4.25 | Commit: c260c9e0 | 2026-04-25T06:30:14.656307+00:00</p>
 <h2>sse</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large Stream</td><td>zerodep</td><td>httpx</td><td>2.37 ms</td><td>1.76 ms</td><td>422.4</td><td>567.2</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Medium Stream</td><td>zerodep</td><td>httpx</td><td>294.5 µs</td><td>240.9 µs</td><td>3.4K</td><td>4.2K</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Small Stream</td><td>zerodep</td><td>httpx</td><td>23.4 µs</td><td>17.5 µs</td><td>42.7K</td><td>57.2K</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Large Stream</td><td>zerodep</td><td>httpx</td><td>3.20 ms</td><td>2.33 ms</td><td>312.8</td><td>429.0</td><td class="ratio-cell slower">1.4x slower</td></tr>
+<tr><td>Medium Stream</td><td>zerodep</td><td>httpx</td><td>407.2 µs</td><td>333.2 µs</td><td>2.5K</td><td>3.0K</td><td class="ratio-cell slower">1.2x slower</td></tr>
+<tr><td>Small Stream</td><td>zerodep</td><td>httpx</td><td>31.2 µs</td><td>22.9 µs</td><td>32.0K</td><td>43.7K</td><td class="ratio-cell slower">1.4x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -190,13 +190,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [422.4059243924819, 3395.1587250578027, 42702.32322994683],
+        data: [312.78472455001196, 2456.0865568343675, 32023.784956163476],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "httpx" + ' (ops/s)',
-        data: [567.2417207657769, 4150.297053391024, 57243.15470834511],
+        data: [428.99324085700374, 3001.1320941031595, 43671.79533758132],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

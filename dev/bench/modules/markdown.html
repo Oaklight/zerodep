@@ -112,14 +112,14 @@ td { white-space: nowrap; }
 <h1>markdown</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 631d1a4 | Commit: 631d1a4d | 2026-04-24T18:56:40.146370+00:00</p>
+<p class="meta">Version: v2026.4.25 | Commit: c260c9e0 | 2026-04-25T06:30:14.656307+00:00</p>
 <h2>markdown</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Render (Large)</td><td>zerodep</td><td>mistune</td><td>3.79 ms</td><td>6.90 ms</td><td>263.9</td><td>145.0</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Render (Medium)</td><td>zerodep</td><td>mistune</td><td>234.2 µs</td><td>463.4 µs</td><td>4.3K</td><td>2.2K</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Render (Small)</td><td>zerodep</td><td>mistune</td><td>35.3 µs</td><td>41.4 µs</td><td>28.3K</td><td>24.2K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Render (Large)</td><td>zerodep</td><td>mistune</td><td>5.90 ms</td><td>9.88 ms</td><td>169.6</td><td>101.2</td><td class="ratio-cell faster">1.7x faster</td></tr>
+<tr><td>Render (Medium)</td><td>zerodep</td><td>mistune</td><td>363.2 µs</td><td>702.8 µs</td><td>2.8K</td><td>1.4K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Render (Small)</td><td>zerodep</td><td>mistune</td><td>51.2 µs</td><td>71.2 µs</td><td>19.5K</td><td>14.0K</td><td class="ratio-cell faster">1.4x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -190,13 +190,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [263.87641438985, 4269.405088663944, 28302.751725035152],
+        data: [169.55454185168304, 2753.2038506038234, 19535.243074675647],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "mistune" + ' (ops/s)',
-        data: [144.974864946992, 2158.171509475673, 24164.722520262883],
+        data: [101.1886492547493, 1422.9176520743663, 14038.663492996977],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -112,53 +112,53 @@ td { white-space: nowrap; }
 <h1>aes</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 631d1a4 | Commit: 631d1a4d | 2026-04-24T18:56:40.146370+00:00</p>
+<p class="meta">Version: v2026.4.25 | Commit: c260c9e0 | 2026-04-25T06:30:14.656307+00:00</p>
 <h2>aes</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Cbc Decrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>283.88 ms</td><td>168.9 µs</td><td>3.5</td><td>5.9K</td><td class="ratio-cell slower">1680.3x slower</td></tr>
-<tr><td>Cbc Decrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>14.6 µs</td><td>168.9 µs</td><td>68.7K</td><td>5.9K</td><td class="ratio-cell faster">11.6x faster</td></tr>
-<tr><td>Cbc Decrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.58 ms</td><td>11.0 µs</td><td>218.1</td><td>90.9K</td><td class="ratio-cell slower">416.6x slower</td></tr>
-<tr><td>Cbc Decrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>5.6 µs</td><td>11.0 µs</td><td>177.3K</td><td>90.9K</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Cbc Decrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>85.6 µs</td><td>8.0 µs</td><td>11.7K</td><td>124.3K</td><td class="ratio-cell slower">10.6x slower</td></tr>
-<tr><td>Cbc Decrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>5.2 µs</td><td>8.0 µs</td><td>193.5K</td><td>124.3K</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Cbc Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>209.36 ms</td><td>134.6 µs</td><td>4.8</td><td>7.4K</td><td class="ratio-cell slower">1555.6x slower</td></tr>
-<tr><td>Cbc Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>56.0 µs</td><td>134.6 µs</td><td>17.8K</td><td>7.4K</td><td class="ratio-cell faster">2.4x faster</td></tr>
-<tr><td>Cbc Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>3.34 ms</td><td>9.8 µs</td><td>299.7</td><td>102.0K</td><td class="ratio-cell slower">340.2x slower</td></tr>
-<tr><td>Cbc Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>6.4 µs</td><td>9.8 µs</td><td>157.0K</td><td>102.0K</td><td class="ratio-cell faster">1.5x faster</td></tr>
-<tr><td>Cbc Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>66.3 µs</td><td>7.5 µs</td><td>15.1K</td><td>133.5K</td><td class="ratio-cell slower">8.8x slower</td></tr>
-<tr><td>Cbc Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>5.3 µs</td><td>7.5 µs</td><td>188.8K</td><td>133.5K</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Ctr Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>208.79 ms</td><td>77.8 µs</td><td>4.8</td><td>12.9K</td><td class="ratio-cell slower">2685.0x slower</td></tr>
-<tr><td>Ctr Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>16.0 µs</td><td>77.8 µs</td><td>62.6K</td><td>12.9K</td><td class="ratio-cell faster">4.9x faster</td></tr>
-<tr><td>Ctr Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>3.26 ms</td><td>10.0 µs</td><td>306.6</td><td>100.1K</td><td class="ratio-cell slower">326.4x slower</td></tr>
-<tr><td>Ctr Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>6.1 µs</td><td>10.0 µs</td><td>164.7K</td><td>100.1K</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Ctr Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>66.6 µs</td><td>8.8 µs</td><td>15.0K</td><td>113.7K</td><td class="ratio-cell slower">7.6x slower</td></tr>
-<tr><td>Ctr Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>5.6 µs</td><td>8.8 µs</td><td>177.7K</td><td>113.7K</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Ecb Decrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>278.73 ms</td><td>16.2 µs</td><td>3.6</td><td>61.7K</td><td class="ratio-cell slower">17201.5x slower</td></tr>
-<tr><td>Ecb Decrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>14.4 µs</td><td>16.2 µs</td><td>69.3K</td><td>61.7K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Ecb Decrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.45 ms</td><td>7.4 µs</td><td>224.9</td><td>135.7K</td><td class="ratio-cell slower">603.6x slower</td></tr>
-<tr><td>Ecb Decrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>5.6 µs</td><td>7.4 µs</td><td>179.1K</td><td>135.7K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Ecb Decrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>83.9 µs</td><td>6.9 µs</td><td>11.9K</td><td>145.5K</td><td class="ratio-cell slower">12.2x slower</td></tr>
-<tr><td>Ecb Decrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>5.1 µs</td><td>6.9 µs</td><td>196.0K</td><td>145.5K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Ecb Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>202.91 ms</td><td>15.8 µs</td><td>4.9</td><td>63.1K</td><td class="ratio-cell slower">12812.2x slower</td></tr>
-<tr><td>Ecb Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>15.6 µs</td><td>15.8 µs</td><td>64.0K</td><td>63.1K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Ecb Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>3.25 ms</td><td>6.8 µs</td><td>307.8</td><td>146.8K</td><td class="ratio-cell slower">476.7x slower</td></tr>
-<tr><td>Ecb Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>5.6 µs</td><td>6.8 µs</td><td>178.4K</td><td>146.8K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Ecb Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>64.6 µs</td><td>6.3 µs</td><td>15.5K</td><td>158.0K</td><td class="ratio-cell slower">10.2x slower</td></tr>
-<tr><td>Ecb Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>5.1 µs</td><td>6.3 µs</td><td>197.7K</td><td>158.0K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Gcm Decrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>298.62 ms</td><td>122.9 µs</td><td>3.3</td><td>8.1K</td><td class="ratio-cell slower">2429.8x slower</td></tr>
-<tr><td>Gcm Decrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>15.5 µs</td><td>122.9 µs</td><td>64.4K</td><td>8.1K</td><td class="ratio-cell faster">7.9x faster</td></tr>
-<tr><td>Gcm Decrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.79 ms</td><td>46.0 µs</td><td>208.6</td><td>21.7K</td><td class="ratio-cell slower">104.2x slower</td></tr>
-<tr><td>Gcm Decrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>7.4 µs</td><td>46.0 µs</td><td>135.8K</td><td>21.7K</td><td class="ratio-cell faster">6.2x faster</td></tr>
-<tr><td>Gcm Decrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>213.6 µs</td><td>44.3 µs</td><td>4.7K</td><td>22.6K</td><td class="ratio-cell slower">4.8x slower</td></tr>
-<tr><td>Gcm Decrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>6.8 µs</td><td>44.3 µs</td><td>147.9K</td><td>22.6K</td><td class="ratio-cell faster">6.5x faster</td></tr>
-<tr><td>Gcm Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>293.39 ms</td><td>113.4 µs</td><td>3.4</td><td>8.8K</td><td class="ratio-cell slower">2587.2x slower</td></tr>
-<tr><td>Gcm Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>15.6 µs</td><td>113.4 µs</td><td>64.0K</td><td>8.8K</td><td class="ratio-cell faster">7.3x faster</td></tr>
-<tr><td>Gcm Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.79 ms</td><td>34.7 µs</td><td>208.8</td><td>28.8K</td><td class="ratio-cell slower">138.1x slower</td></tr>
-<tr><td>Gcm Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>7.5 µs</td><td>34.7 µs</td><td>133.5K</td><td>28.8K</td><td class="ratio-cell faster">4.6x faster</td></tr>
-<tr><td>Gcm Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>212.4 µs</td><td>34.6 µs</td><td>4.7K</td><td>28.9K</td><td class="ratio-cell slower">6.1x slower</td></tr>
-<tr><td>Gcm Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>6.9 µs</td><td>34.6 µs</td><td>145.3K</td><td>28.9K</td><td class="ratio-cell faster">5.0x faster</td></tr>
+<tr><td>Cbc Decrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>358.27 ms</td><td>135.0 µs</td><td>2.8</td><td>7.4K</td><td class="ratio-cell slower">2653.3x slower</td></tr>
+<tr><td>Cbc Decrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>23.6 µs</td><td>135.0 µs</td><td>42.4K</td><td>7.4K</td><td class="ratio-cell faster">5.7x faster</td></tr>
+<tr><td>Cbc Decrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>5.70 ms</td><td>13.4 µs</td><td>175.4</td><td>74.6K</td><td class="ratio-cell slower">425.3x slower</td></tr>
+<tr><td>Cbc Decrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>7.5 µs</td><td>13.4 µs</td><td>132.5K</td><td>74.6K</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Cbc Decrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>109.0 µs</td><td>10.6 µs</td><td>9.2K</td><td>94.0K</td><td class="ratio-cell slower">10.2x slower</td></tr>
+<tr><td>Cbc Decrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>7.0 µs</td><td>10.6 µs</td><td>143.4K</td><td>94.0K</td><td class="ratio-cell faster">1.5x faster</td></tr>
+<tr><td>Cbc Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>258.99 ms</td><td>133.2 µs</td><td>3.9</td><td>7.5K</td><td class="ratio-cell slower">1944.5x slower</td></tr>
+<tr><td>Cbc Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>68.7 µs</td><td>133.2 µs</td><td>14.6K</td><td>7.5K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Cbc Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.16 ms</td><td>12.5 µs</td><td>240.5</td><td>80.2K</td><td class="ratio-cell slower">333.7x slower</td></tr>
+<tr><td>Cbc Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>8.4 µs</td><td>12.5 µs</td><td>118.4K</td><td>80.2K</td><td class="ratio-cell faster">1.5x faster</td></tr>
+<tr><td>Cbc Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>84.8 µs</td><td>9.9 µs</td><td>11.8K</td><td>100.7K</td><td class="ratio-cell slower">8.5x slower</td></tr>
+<tr><td>Cbc Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>6.9 µs</td><td>9.9 µs</td><td>144.9K</td><td>100.7K</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Ctr Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>266.21 ms</td><td>95.2 µs</td><td>3.8</td><td>10.5K</td><td class="ratio-cell slower">2795.6x slower</td></tr>
+<tr><td>Ctr Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>20.8 µs</td><td>95.2 µs</td><td>48.1K</td><td>10.5K</td><td class="ratio-cell faster">4.6x faster</td></tr>
+<tr><td>Ctr Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.14 ms</td><td>13.6 µs</td><td>241.4</td><td>73.4K</td><td class="ratio-cell slower">303.9x slower</td></tr>
+<tr><td>Ctr Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>8.2 µs</td><td>13.6 µs</td><td>122.0K</td><td>73.4K</td><td class="ratio-cell faster">1.7x faster</td></tr>
+<tr><td>Ctr Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>84.2 µs</td><td>12.1 µs</td><td>11.9K</td><td>82.8K</td><td class="ratio-cell slower">7.0x slower</td></tr>
+<tr><td>Ctr Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>7.5 µs</td><td>12.1 µs</td><td>133.1K</td><td>82.8K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Ecb Decrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>346.34 ms</td><td>22.7 µs</td><td>2.9</td><td>44.1K</td><td class="ratio-cell slower">15274.5x slower</td></tr>
+<tr><td>Ecb Decrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>19.6 µs</td><td>22.7 µs</td><td>51.0K</td><td>44.1K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Ecb Decrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>5.57 ms</td><td>9.9 µs</td><td>179.5</td><td>101.2K</td><td class="ratio-cell slower">564.1x slower</td></tr>
+<tr><td>Ecb Decrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>7.4 µs</td><td>9.9 µs</td><td>135.3K</td><td>101.2K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Ecb Decrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>105.9 µs</td><td>9.1 µs</td><td>9.4K</td><td>109.6K</td><td class="ratio-cell slower">11.6x slower</td></tr>
+<tr><td>Ecb Decrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>6.8 µs</td><td>9.1 µs</td><td>146.9K</td><td>109.6K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Ecb Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>254.95 ms</td><td>21.2 µs</td><td>3.9</td><td>47.1K</td><td class="ratio-cell slower">12000.3x slower</td></tr>
+<tr><td>Ecb Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>20.5 µs</td><td>21.2 µs</td><td>48.8K</td><td>47.1K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Ecb Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.04 ms</td><td>9.2 µs</td><td>247.4</td><td>109.1K</td><td class="ratio-cell slower">441.0x slower</td></tr>
+<tr><td>Ecb Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>7.5 µs</td><td>9.2 µs</td><td>132.9K</td><td>109.1K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Ecb Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>81.4 µs</td><td>8.5 µs</td><td>12.3K</td><td>117.9K</td><td class="ratio-cell slower">9.6x slower</td></tr>
+<tr><td>Ecb Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>6.7 µs</td><td>8.5 µs</td><td>148.8K</td><td>117.9K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Gcm Decrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>369.87 ms</td><td>166.2 µs</td><td>2.7</td><td>6.0K</td><td class="ratio-cell slower">2225.0x slower</td></tr>
+<tr><td>Gcm Decrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>30.7 µs</td><td>166.2 µs</td><td>32.6K</td><td>6.0K</td><td class="ratio-cell faster">5.4x faster</td></tr>
+<tr><td>Gcm Decrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>6.18 ms</td><td>74.1 µs</td><td>161.8</td><td>13.5K</td><td class="ratio-cell slower">83.4x slower</td></tr>
+<tr><td>Gcm Decrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>10.4 µs</td><td>74.1 µs</td><td>96.6K</td><td>13.5K</td><td class="ratio-cell faster">7.2x faster</td></tr>
+<tr><td>Gcm Decrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>274.8 µs</td><td>72.3 µs</td><td>3.6K</td><td>13.8K</td><td class="ratio-cell slower">3.8x slower</td></tr>
+<tr><td>Gcm Decrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>9.6 µs</td><td>72.3 µs</td><td>104.3K</td><td>13.8K</td><td class="ratio-cell faster">7.5x faster</td></tr>
+<tr><td>Gcm Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>368.93 ms</td><td>149.8 µs</td><td>2.7</td><td>6.7K</td><td class="ratio-cell slower">2463.4x slower</td></tr>
+<tr><td>Gcm Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>30.6 µs</td><td>149.8 µs</td><td>32.7K</td><td>6.7K</td><td class="ratio-cell faster">4.9x faster</td></tr>
+<tr><td>Gcm Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>6.11 ms</td><td>56.8 µs</td><td>163.8</td><td>17.6K</td><td class="ratio-cell slower">107.5x slower</td></tr>
+<tr><td>Gcm Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>10.3 µs</td><td>56.8 µs</td><td>96.9K</td><td>17.6K</td><td class="ratio-cell faster">5.5x faster</td></tr>
+<tr><td>Gcm Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>272.5 µs</td><td>55.5 µs</td><td>3.7K</td><td>18.0K</td><td class="ratio-cell slower">4.9x slower</td></tr>
+<tr><td>Gcm Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>9.4 µs</td><td>55.5 µs</td><td>106.3K</td><td>18.0K</td><td class="ratio-cell faster">5.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -229,13 +229,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [3.522670374875506, 218.11929255393005, 11679.077159232873, 4.776415712995413, 299.7229901300639, 15090.518927818686, 4.789553793127959, 306.5908182506178, 15013.732119277687, 3.587661741388382, 224.85146912231167, 11916.055019000869, 4.928347096688875, 307.83411572831733, 15473.024255347606, 3.3486973868884125, 208.58874782664057, 4682.393428766838, 3.4083949427302462, 208.76487476197158, 4708.176573271109],
+        data: [2.7911784192001847, 175.43551726812876, 9177.62799905001, 3.8611348116145976, 240.485281504932, 11791.44890391873, 3.756476601412074, 241.36159845695593, 11878.826919335263, 2.8873010982377094, 179.48213555351683, 9438.92270649621, 3.9223349655656445, 247.42656616967247, 12291.959239141956, 2.70368873359948, 161.84146966273372, 3638.575208290827, 2.7105177186692395, 163.75989059883216, 3669.137632521808],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "PyCryptodome" + ' (ops/s)',
-        data: [5918.989185535938, 90870.18635080413, 124328.57782825107, 7430.143364631072, 101960.21819590624, 133463.87843212098, 12860.128956618415, 100056.36013841035, 113722.90113470766, 61713.33420599954, 135724.54425458616, 145464.96376184304, 63142.85674505238, 146759.56821268075, 157992.7389735687, 8136.7549805245835, 21734.84151215565, 22577.804597609804, 8818.115197604748, 28830.442762628252, 28943.10337309691],
+        data: [7405.754567704541, 74613.8029467083, 93954.33647959819, 7508.012557707512, 80239.54407837387, 100742.09211718022, 10501.782271869106, 73360.65676094305, 82794.12354507556, 44102.00768996002, 101242.4396801327, 109553.55566863882, 47069.383240641924, 109126.15859195229, 117864.72329057506, 6015.728563722089, 13492.104113638052, 13826.336358756165, 6677.086004149566, 17603.74746391073, 18007.644050350624],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

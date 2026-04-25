@@ -106,6 +106,23 @@ def encode_varint(value: int) -> bytes:
     return bytes(buf)
 
 
+def _write_varint(buf: bytearray, value: int) -> None:
+    """Append a varint directly to *buf* (avoids intermediate bytes object)."""
+    if value < 0:
+        value = value & 0xFFFFFFFFFFFFFFFF
+    if value < 0x80:
+        buf.append(value)
+        return
+    if value < 0x4000:
+        buf.append((value & 0x7F) | 0x80)
+        buf.append(value >> 7)
+        return
+    while value > 0x7F:
+        buf.append((value & 0x7F) | 0x80)
+        value >>= 7
+    buf.append(value & 0x7F)
+
+
 def decode_varint(data: bytes | bytearray | memoryview, pos: int) -> tuple[int, int]:
     """Decode a varint from *data* starting at *pos*.
 
@@ -347,6 +364,25 @@ _SCALAR_ENCODERS: dict[ScalarType, Any] = {
     ScalarType.SFIXED64: encode_sfixed64,
     ScalarType.FLOAT: encode_float,
     ScalarType.DOUBLE: encode_double,
+}
+
+# Buffer-writing scalar encoders: write directly to bytearray (no intermediate bytes)
+_SCALAR_BUF_WRITERS: dict[ScalarType, Any] = {
+    ScalarType.INT32: lambda buf, v: _write_varint(
+        buf, v & 0xFFFFFFFF if v >= 0 else v & 0xFFFFFFFFFFFFFFFF
+    ),
+    ScalarType.INT64: lambda buf, v: _write_varint(buf, v & 0xFFFFFFFFFFFFFFFF),
+    ScalarType.UINT32: lambda buf, v: _write_varint(buf, v & 0xFFFFFFFF),
+    ScalarType.UINT64: lambda buf, v: _write_varint(buf, v & 0xFFFFFFFFFFFFFFFF),
+    ScalarType.SINT32: lambda buf, v: _write_varint(buf, zigzag_encode(v)),
+    ScalarType.SINT64: lambda buf, v: _write_varint(buf, zigzag_encode(v)),
+    ScalarType.BOOL: lambda buf, v: buf.append(1 if v else 0),
+    ScalarType.FIXED32: lambda buf, v: buf.extend(struct.pack("<I", v & 0xFFFFFFFF)),
+    ScalarType.FIXED64: lambda buf, v: buf.extend(struct.pack("<Q", v & 0xFFFFFFFFFFFFFFFF)),
+    ScalarType.SFIXED32: lambda buf, v: buf.extend(struct.pack("<i", v)),
+    ScalarType.SFIXED64: lambda buf, v: buf.extend(struct.pack("<q", v)),
+    ScalarType.FLOAT: lambda buf, v: buf.extend(struct.pack("<f", v)),
+    ScalarType.DOUBLE: lambda buf, v: buf.extend(struct.pack("<d", v)),
 }
 
 
@@ -1010,7 +1046,7 @@ def _encode_length_delimited(data: bytes) -> bytes:
 
 def _extend_length_delimited(buf: bytearray, data: bytes | bytearray) -> None:
     """Extend *buf* with a varint length prefix followed by *data*."""
-    buf.extend(encode_varint(len(data)))
+    _write_varint(buf, len(data))
     buf.extend(data)
 
 
@@ -1095,9 +1131,14 @@ def _encode_packed_repeated(buf: bytearray, info: FieldInfo, values: list[Any]) 
         body = struct.pack(f"<{len(values)}{fmt[1]}", *values)
     else:
         body_buf = bytearray()
-        encoder = _SCALAR_ENCODERS[st]
-        for v in values:
-            body_buf.extend(encoder(v))
+        writer = _SCALAR_BUF_WRITERS.get(st)
+        if writer is not None:
+            for v in values:
+                writer(body_buf, v)
+        else:
+            encoder = _SCALAR_ENCODERS[st]
+            for v in values:
+                body_buf.extend(encoder(v))
         body = bytes(body_buf)
     buf.extend(tag)
     _extend_length_delimited(buf, body)
@@ -1109,7 +1150,7 @@ def _encode_packed_enum(buf: bytearray, info: FieldInfo, values: list[Any]) -> N
         return
     body = bytearray()
     for v in values:
-        body.extend(encode_varint(int(v) & 0xFFFFFFFFFFFFFFFF))
+        _write_varint(body, int(v) & 0xFFFFFFFFFFFFFFFF)
     tag = make_tag(info.number, WireType.LEN)
     buf.extend(tag)
     _extend_length_delimited(buf, body)
@@ -1196,7 +1237,7 @@ def _encode_map(buf: bytearray, info: FieldInfo, mapping: dict[Any, Any]) -> Non
         if value_is_message:
             _extend_length_delimited(entry, _encode_message(v))
         elif value_is_enum:
-            entry.extend(encode_varint(int(v) & 0xFFFFFFFFFFFFFFFF))
+            _write_varint(entry, int(v) & 0xFFFFFFFFFFFFFFFF)
         elif value_base is str:
             _extend_length_delimited(entry, v.encode("utf-8"))
         elif value_base is bytes:
@@ -1261,12 +1302,12 @@ def _encode_message(obj: Any) -> bytes:
 
 def _dispatch_encode_scalar(buf: bytearray, info: FieldInfo, value: Any) -> None:
     buf.extend(info._tag)
-    buf.extend(_SCALAR_ENCODERS[info.scalar.scalar_type](value))
+    _SCALAR_BUF_WRITERS[info.scalar.scalar_type](buf, value)
 
 
 def _dispatch_encode_enum(buf: bytearray, info: FieldInfo, value: Any) -> None:
     buf.extend(info._tag)
-    buf.extend(encode_varint(int(value) & 0xFFFFFFFFFFFFFFFF))
+    _write_varint(buf, int(value) & 0xFFFFFFFFFFFFFFFF)
 
 
 def _dispatch_encode_string(buf: bytearray, info: FieldInfo, value: Any) -> None:

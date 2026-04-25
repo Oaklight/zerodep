@@ -10,11 +10,11 @@ title: 模块概览
 
 | 模块 | 版本 | 最后更新 |
 |------|------|---------|
-| [a2a](a2a.md) | 0.3.2 | 2026-04-20 |
+| [a2a](a2a.md) | 0.3.1 | 2026-04-20 |
 | [acp](acp.md) | 0.3.1 | 2026-04-15 |
-| [aes](aes.md) | 0.5.1 | 2026-04-20 |
+| [aes](aes.md) | 0.5.0 | 2026-04-20 |
 | [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
-| [cache](cache.md) | 0.2.5 | 2026-04-20 |
+| [cache](cache.md) | 0.2.4 | 2026-04-20 |
 | [config](config.md) | 0.3.0 | 2026-04-11 |
 | [depdetect](depdetect.md) | 0.4.3 | 2026-04-15 |
 | [diff](diff.md) | 0.3.1 | 2026-04-15 |
@@ -24,19 +24,19 @@ title: 模块概览
 | [httpclient](http.md) | 0.3.1 | 2026-04-15 |
 | [jsonc](jsonc.md) | 0.3.0 | 2026-04-11 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-11 |
-| [jsonschema](jsonschema.md) | 0.1.1 | 2026-04-25 |
+| [jsonschema](jsonschema.md) | 0.1.0 | 2026-04-25 |
 | [markdown](markdown.md) | 0.3.1 | 2026-04-15 |
-| [persistdict](persistdict.md) | 0.4.2 | 2026-04-20 |
+| [persistdict](persistdict.md) | 0.4.1 | 2026-04-20 |
 | [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
 | [protobuf](protobuf.md) | 0.4.3 | 2026-04-15 |
-| [qr](qr.md) | 0.3.3 | 2026-04-20 |
+| [qr](qr.md) | 0.3.2 | 2026-04-20 |
 | [readability](readability.md) | 0.1.0 | 2026-04-20 |
 | [retry](retry.md) | 0.3.0 | 2026-04-11 |
 | [runner](runner.md) | 0.3.1 | 2026-04-15 |
 | [scheduler](scheduler.md) | 0.3.1 | 2026-04-15 |
-| [semver](semver.md) | 0.4.2 | 2026-04-20 |
-| [skills](skills.md) | 0.4.3 | 2026-04-20 |
-| [soup](soup.md) | 0.5.1 | 2026-04-20 |
+| [semver](semver.md) | 0.4.1 | 2026-04-20 |
+| [skills](skills.md) | 0.4.2 | 2026-04-20 |
+| [soup](soup.md) | 0.5.0 | 2026-04-20 |
 | [sparse_search](sparse_search.md) | 0.3.2 | 2026-04-15 |
 | [sse](sse.md) | 0.3.1 | 2026-04-15 |
 | [structlog](structlog.md) | 0.3.0 | 2026-04-11 |

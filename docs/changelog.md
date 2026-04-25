@@ -6,21 +6,11 @@
 
 ## [未发布]
 
+## [2026.4.25] - 2026-04-25
+
 ### 新增模块
 
 - **JSON Schema 模块**：零依赖的 JSON Schema 展平与清理。`flatten_schema()` 解析 `$ref`、合并 `allOf`（深度合并，支持 type 取交集、数值约束取严格值、required 取并集）、简化 `anyOf`/`oneOf`（nullable 检测、单变体展开）并剥离不支持的关键字。每个阶段可独立调用：`resolve_refs`、`merge_allof`、`simplify_unions`、`sanitize`。与 `allof-merge`（JS）在 5 个复杂度层级对比——**快 1.7-5.3 倍**。57 个单元测试 + 13 个跨实现正确性测试。
-
-### 性能优化
-
-- **A2A 模块**：优化序列化和反序列化路径——`to_dict()` 避免了 `dataclasses.asdict()` 风格的深拷贝开销。序列化现已比 a2a-protocol **快 2.2-2.6 倍**（此前慢 1.4-2.1 倍）。反序列化从慢 1.8-4.1 倍收窄至**慢 1.1-1.7 倍**，得益于优化的枚举解析和类型分发。JSON 往返现已端到端**快 1.4-1.5 倍**。
-- **Cache 模块**：优化装饰器包装路径——LRU 装饰器开销现已比 cachetools **快 1.2 倍**（此前基本持平）。TTL 装饰器开销达到与 cachetools 持平（此前慢 1.3 倍）。
-- **QR 模块**：优化编码路径——短输入现仅慢 1.1 倍（此前慢 2.1 倍）。中型（URL）和长输入现已比 `qrcode` 库**快 1.1-1.2 倍**（此前慢 1.7-1.9 倍）。
-- **Readability 模块**：优化评分和树遍历算法——小型页面**快 2.1 倍**（此前快 1.7 倍），中型页面现已**快 1.2 倍**（此前慢 2 倍）。大型页面从慢 2 倍改善至慢 1.4 倍（vs readability-lxml）。
-
-## [2026.4.20] - 2026-04-20
-
-### 新增模块
-
 - **Readability 模块**：零依赖的文章正文提取器，移植自 Mozilla Readability.js。`extract()` 执行完整的文章提取并返回元数据（标题、作者、摘要、发布时间、站点名称、语言、文字方向）。`is_probably_readable()` 提供快速可读性启发式检查。支持 JSON-LD 和 OpenGraph 元数据提取。两级重试机制（ruthless 开/关）确保提取鲁棒性。18 个 Mozilla Readability.js 测试用例用于交叉验证。三方 benchmark 对比：zerodep vs readability-lxml vs Mozilla JS。依赖 `soup` 模块（无 pip 依赖）。
 
 ### 功能增强
@@ -29,11 +19,12 @@
 
 ### 性能优化
 
-- **Cache 模块**：优化 `TypedKey` 构造——一次性元组构造，移除冗余的 `sorted()` 调用。此前比 cachetools 慢 1.3 倍，现在**快 1.2 倍**。
-- **Cache 模块**：优化 LFU 淘汰——在 `popitem` 中绕过 `__touch`。此前比 cachetools 慢 1.4 倍，现在**基本持平**。
-- **PersistDict 模块**：优化 SQLite 写入性能——`PRAGMA synchronous=NORMAL`、`commit_every` 参数支持批量写入、延迟提交。减少批量操作时每次写入的 fsync 开销。
-- **Semver 模块**：优化解析、比较和属性访问——用纯整数元组替代自定义 `_InfinityType`/`_NegativeInfinityType` 哨兵类，将 `_parse_letter_version`/`_parse_local_version`/`_cmpkey` 内联到 `__init__`，使用 `match.groups()` 元组解构替代 `groupdict()`，缓存 `__str__` 结果，预编译 local 版本分割正则，布尔属性直接访问 `_pre`/`_post`/`_dev`。解析**快约 1.3 倍**，排序**快约 1.4 倍**，比较**快约 1.4 倍**，属性访问**快约 4.5 倍**。
-- LRU、TTL 及混合负载基准无性能回退（cache）。读取/遍历基准无性能回退（persistdict）。所有 semver 正确性测试通过。
+- **A2A 模块**：优化序列化和反序列化路径——`to_dict()` 避免了 `dataclasses.asdict()` 风格的深拷贝开销。序列化现已比 a2a-protocol **快 2.2-2.6 倍**（此前慢 1.4-2.1 倍）。反序列化从慢 1.8-4.1 倍收窄至**慢 1.1-1.7 倍**，得益于优化的枚举解析和类型分发。JSON 往返现已端到端**快 1.4-1.5 倍**。
+- **Cache 模块**：优化 `TypedKey` 构造、装饰器包装路径和 LFU 淘汰。LRU 装饰器开销现已比 cachetools **快 1.2 倍**。TTL 装饰器达到持平。LFU 淘汰现已**基本持平**（此前慢 1.4 倍）。
+- **PersistDict 模块**：优化 SQLite 写入性能——`PRAGMA synchronous=NORMAL`、`commit_every` 参数支持批量写入、延迟提交。
+- **QR 模块**：优化编码路径——短输入现仅慢 1.1 倍（此前慢 2.1 倍）。中型/长输入现已比 `qrcode` 库**快 1.1-1.2 倍**（此前慢 1.7-1.9 倍）。
+- **Readability 模块**：优化评分和树遍历算法——小型页面**快 2.1 倍**，中型页面现已**快 1.2 倍**（此前慢 2 倍）。大型页面从慢 2 倍改善至慢 1.4 倍（vs readability-lxml）。
+- **Semver 模块**：优化解析、比较和属性访问。解析**快约 1.3 倍**，排序**快约 1.4 倍**，比较**快约 1.4 倍**，属性访问**快约 4.5 倍**。
 
 ### 问题修复
 

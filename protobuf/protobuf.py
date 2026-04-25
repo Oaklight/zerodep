@@ -93,6 +93,11 @@ def encode_varint(value: int) -> bytes:
     if value < 0:
         # Proto3 treats negative int32/int64 as 10-byte two's complement
         value = value & 0xFFFFFFFFFFFFFFFF
+    # Fast-paths for common small values (tags, lengths, small ints)
+    if value < 0x80:
+        return bytes((value,))
+    if value < 0x4000:
+        return bytes(((value & 0x7F) | 0x80, value >> 7))
     buf = bytearray()
     while value > 0x7F:
         buf.append((value & 0x7F) | 0x80)
@@ -156,6 +161,9 @@ def zigzag_decode(value: int) -> int:
     return (value >> 1) ^ -(value & 1)
 
 
+_TAG_CACHE: dict[tuple[int, int], bytes] = {}
+
+
 def make_tag(field_number: int, wire_type: int) -> bytes:
     """Pack a field number and wire type into a tag varint.
 
@@ -166,7 +174,13 @@ def make_tag(field_number: int, wire_type: int) -> bytes:
     Returns:
         Varint-encoded tag bytes.
     """
-    return encode_varint((field_number << 3) | wire_type)
+    key = (field_number, wire_type)
+    cached = _TAG_CACHE.get(key)
+    if cached is not None:
+        return cached
+    tag = encode_varint((field_number << 3) | wire_type)
+    _TAG_CACHE[key] = tag
+    return tag
 
 
 def decode_tag(data: bytes | bytearray | memoryview, pos: int) -> tuple[int, int, int]:
@@ -335,29 +349,41 @@ _SCALAR_ENCODERS: dict[ScalarType, Any] = {
     ScalarType.DOUBLE: encode_double,
 }
 
+
+def _decode_int32(d: bytes | bytearray | memoryview, p: int) -> tuple[int, int]:
+    v, p = decode_varint(d, p)
+    v &= 0xFFFFFFFF
+    return (v - 0x100000000 if v >= 0x80000000 else v), p
+
+
+def _decode_int64(d: bytes | bytearray | memoryview, p: int) -> tuple[int, int]:
+    v, p = decode_varint(d, p)
+    return (v - 0x10000000000000000 if v >= 0x8000000000000000 else v), p
+
+
+def _decode_uint32(d: bytes | bytearray | memoryview, p: int) -> tuple[int, int]:
+    v, p = decode_varint(d, p)
+    return v & 0xFFFFFFFF, p
+
+
+def _decode_sint32(d: bytes | bytearray | memoryview, p: int) -> tuple[int, int]:
+    v, p = decode_varint(d, p)
+    return zigzag_decode(v), p
+
+
+def _decode_bool(d: bytes | bytearray | memoryview, p: int) -> tuple[bool, int]:
+    v, p = decode_varint(d, p)
+    return bool(v), p
+
+
 _SCALAR_DECODERS: dict[ScalarType, Any] = {
-    ScalarType.INT32: lambda d, p: (
-        lambda v, pp: (
-            (v & 0xFFFFFFFF)
-            if (v & 0xFFFFFFFF) < 0x80000000
-            else (v & 0xFFFFFFFF) - 0x100000000,
-            pp,
-        )
-    )(*decode_varint(d, p)),
-    ScalarType.INT64: lambda d, p: (
-        lambda v, pp: (v if v < 0x8000000000000000 else v - 0x10000000000000000, pp)
-    )(*decode_varint(d, p)),
-    ScalarType.UINT32: lambda d, p: (lambda v, pp: (v & 0xFFFFFFFF, pp))(
-        *decode_varint(d, p)
-    ),
+    ScalarType.INT32: _decode_int32,
+    ScalarType.INT64: _decode_int64,
+    ScalarType.UINT32: _decode_uint32,
     ScalarType.UINT64: decode_varint,
-    ScalarType.SINT32: lambda d, p: (lambda v, pp: (zigzag_decode(v), pp))(
-        *decode_varint(d, p)
-    ),
-    ScalarType.SINT64: lambda d, p: (lambda v, pp: (zigzag_decode(v), pp))(
-        *decode_varint(d, p)
-    ),
-    ScalarType.BOOL: lambda d, p: (lambda v, pp: (bool(v), pp))(*decode_varint(d, p)),
+    ScalarType.SINT32: _decode_sint32,
+    ScalarType.SINT64: _decode_sint32,  # same zigzag logic
+    ScalarType.BOOL: _decode_bool,
     ScalarType.FIXED32: decode_fixed32,
     ScalarType.FIXED64: decode_fixed64,
     ScalarType.SFIXED32: decode_sfixed32,
@@ -597,6 +623,7 @@ class FieldInfo:
     oneof_group: str | None
     python_type: type  # base Python type (int, str, etc.)
     default_value: Any  # proto3 zero-value
+    _decoder: Any = None  # cached dispatch handler, set after _FIELD_DECODERS is built
 
 
 class _MessageDescriptor:
@@ -611,6 +638,7 @@ class _MessageDescriptor:
         self.fields: dict[str, FieldInfo] = {}
         self.fields_by_number: dict[int, FieldInfo] = {}
         self.oneof_groups: dict[str, list[FieldInfo]] = {}
+        self._sorted_fields: list[FieldInfo] = []
         self._build(cls)
 
     def _build(self, cls: type) -> None:
@@ -636,6 +664,16 @@ class _MessageDescriptor:
 
             if oneof_group:
                 self.oneof_groups.setdefault(oneof_group, []).append(info)
+
+        # Pre-sort fields by number for deterministic encoding
+        self._sorted_fields = sorted(self.fields.values(), key=lambda f: f.number)
+
+    def _bind_decoders(self) -> None:
+        """Bind per-field decoder handlers (called after _FIELD_DECODERS is ready)."""
+        for info in self.fields.values():
+            handler = _FIELD_DECODERS.get(info.kind)
+            if handler is not None:
+                object.__setattr__(info, "_decoder", handler)
 
     def _resolve_field(
         self,
@@ -917,8 +955,7 @@ def _is_default_value(info: FieldInfo, value: Any) -> bool:
 
 def _encode_scalar_value(scalar: ProtoScalar, value: Any) -> bytes:
     """Encode a single scalar value (without tag)."""
-    encoder = _SCALAR_ENCODERS[scalar.scalar_type]
-    return encoder(value)
+    return _SCALAR_ENCODERS[scalar.scalar_type](value)
 
 
 def _encode_length_delimited(data: bytes) -> bytes:
@@ -926,107 +963,149 @@ def _encode_length_delimited(data: bytes) -> bytes:
     return encode_varint(len(data)) + data
 
 
-def _encode_field(info: FieldInfo, value: Any) -> bytes:
-    """Encode a single field (tag + value)."""
+def _extend_length_delimited(buf: bytearray, data: bytes | bytearray) -> None:
+    """Extend *buf* with a varint length prefix followed by *data*."""
+    buf.extend(encode_varint(len(data)))
+    buf.extend(data)
+
+
+def _encode_field(buf: bytearray, info: FieldInfo, value: Any) -> None:
+    """Encode a single field into *buf* (tag + value)."""
     tag = make_tag(info.number, info.wire_type)
 
     if info.kind == FieldKind.SCALAR:
         assert info.scalar is not None
-        return tag + _encode_scalar_value(info.scalar, value)
+        buf.extend(tag)
+        buf.extend(_SCALAR_ENCODERS[info.scalar.scalar_type](value))
+        return
 
     if info.kind == FieldKind.ENUM:
-        return tag + encode_varint(int(value) & 0xFFFFFFFFFFFFFFFF)
+        buf.extend(tag)
+        buf.extend(encode_varint(int(value) & 0xFFFFFFFFFFFFFFFF))
+        return
 
     if info.kind == FieldKind.STRING:
-        encoded = value.encode("utf-8")
-        return tag + _encode_length_delimited(encoded)
+        buf.extend(tag)
+        _extend_length_delimited(buf, value.encode("utf-8"))
+        return
 
     if info.kind == FieldKind.BYTES:
-        return tag + _encode_length_delimited(value)
+        buf.extend(tag)
+        _extend_length_delimited(buf, value)
+        return
 
     if info.kind == FieldKind.MESSAGE:
-        msg_bytes = _encode_message(value)
-        return tag + _encode_length_delimited(msg_bytes)
+        buf.extend(tag)
+        _extend_length_delimited(buf, _encode_message(value))
+        return
 
     if info.kind == FieldKind.REPEATED_SCALAR:
-        return _encode_packed_repeated(info, value)
+        _encode_packed_repeated(buf, info, value)
+        return
 
     if info.kind == FieldKind.REPEATED_ENUM:
-        return _encode_packed_enum(info, value)
+        _encode_packed_enum(buf, info, value)
+        return
 
     if info.kind == FieldKind.REPEATED_MESSAGE:
-        return _encode_repeated_messages(info, value)
+        _encode_repeated_messages(buf, info, value)
+        return
 
     if info.kind == FieldKind.REPEATED_STRING:
-        return _encode_repeated_strings(info, value)
+        _encode_repeated_strings(buf, info, value)
+        return
 
     if info.kind == FieldKind.REPEATED_BYTES:
-        return _encode_repeated_bytes(info, value)
+        _encode_repeated_bytes(buf, info, value)
+        return
 
     if info.kind == FieldKind.MAP:
-        return _encode_map(info, value)
+        _encode_map(buf, info, value)
+        return
 
     raise TypeError(f"Unknown field kind: {info.kind}")  # pragma: no cover
 
 
-def _encode_packed_repeated(info: FieldInfo, values: list[Any]) -> bytes:
-    """Encode a packed repeated scalar field."""
+# Batch struct format strings for packed fixed-size scalars
+_PACKED_STRUCT_FMT: dict[ScalarType, str] = {
+    ScalarType.DOUBLE: "<d",
+    ScalarType.FLOAT: "<f",
+    ScalarType.FIXED32: "<I",
+    ScalarType.FIXED64: "<Q",
+    ScalarType.SFIXED32: "<i",
+    ScalarType.SFIXED64: "<q",
+}
+
+
+def _encode_packed_repeated(buf: bytearray, info: FieldInfo, values: list[Any]) -> None:
+    """Encode a packed repeated scalar field into *buf*."""
     if not values:
-        return b""
+        return
     assert info.scalar is not None
-    body = b"".join(_encode_scalar_value(info.scalar, v) for v in values)
+    st = info.scalar.scalar_type
     tag = make_tag(info.number, WireType.LEN)
-    return tag + _encode_length_delimited(body)
+    # Batch encode for fixed-size types
+    fmt = _PACKED_STRUCT_FMT.get(st)
+    if fmt is not None:
+        body = struct.pack(f"<{len(values)}{fmt[1]}", *values)
+    else:
+        body_buf = bytearray()
+        encoder = _SCALAR_ENCODERS[st]
+        for v in values:
+            body_buf.extend(encoder(v))
+        body = bytes(body_buf)
+    buf.extend(tag)
+    _extend_length_delimited(buf, body)
 
 
-def _encode_packed_enum(info: FieldInfo, values: list[Any]) -> bytes:
-    """Encode a packed repeated enum field."""
+def _encode_packed_enum(buf: bytearray, info: FieldInfo, values: list[Any]) -> None:
+    """Encode a packed repeated enum field into *buf*."""
     if not values:
-        return b""
-    body = b"".join(encode_varint(int(v) & 0xFFFFFFFFFFFFFFFF) for v in values)
-    tag = make_tag(info.number, WireType.LEN)
-    return tag + _encode_length_delimited(body)
-
-
-def _encode_repeated_messages(info: FieldInfo, values: list[Any]) -> bytes:
-    """Encode repeated message fields (each length-delimited)."""
-    buf = bytearray()
-    tag = make_tag(info.number, WireType.LEN)
+        return
+    body = bytearray()
     for v in values:
-        msg_bytes = _encode_message(v)
-        buf.extend(tag)
-        buf.extend(_encode_length_delimited(msg_bytes))
-    return bytes(buf)
-
-
-def _encode_repeated_strings(info: FieldInfo, values: list[str]) -> bytes:
-    """Encode repeated string fields (each length-delimited)."""
-    buf = bytearray()
+        body.extend(encode_varint(int(v) & 0xFFFFFFFFFFFFFFFF))
     tag = make_tag(info.number, WireType.LEN)
-    for v in values:
-        encoded = v.encode("utf-8")
-        buf.extend(tag)
-        buf.extend(_encode_length_delimited(encoded))
-    return bytes(buf)
+    buf.extend(tag)
+    _extend_length_delimited(buf, body)
 
 
-def _encode_repeated_bytes(info: FieldInfo, values: list[bytes]) -> bytes:
-    """Encode repeated bytes fields (each length-delimited)."""
-    buf = bytearray()
+def _encode_repeated_messages(
+    buf: bytearray, info: FieldInfo, values: list[Any]
+) -> None:
+    """Encode repeated message fields (each length-delimited) into *buf*."""
     tag = make_tag(info.number, WireType.LEN)
     for v in values:
         buf.extend(tag)
-        buf.extend(_encode_length_delimited(v))
-    return bytes(buf)
+        _extend_length_delimited(buf, _encode_message(v))
 
 
-def _encode_map(info: FieldInfo, mapping: dict[Any, Any]) -> bytes:
+def _encode_repeated_strings(
+    buf: bytearray, info: FieldInfo, values: list[str]
+) -> None:
+    """Encode repeated string fields (each length-delimited) into *buf*."""
+    tag = make_tag(info.number, WireType.LEN)
+    for v in values:
+        buf.extend(tag)
+        _extend_length_delimited(buf, v.encode("utf-8"))
+
+
+def _encode_repeated_bytes(
+    buf: bytearray, info: FieldInfo, values: list[bytes]
+) -> None:
+    """Encode repeated bytes fields (each length-delimited) into *buf*."""
+    tag = make_tag(info.number, WireType.LEN)
+    for v in values:
+        buf.extend(tag)
+        _extend_length_delimited(buf, v)
+
+
+def _encode_map(buf: bytearray, info: FieldInfo, mapping: dict[Any, Any]) -> None:
     """Encode a map field as repeated key-value entry messages.
 
     Each entry is a message with field 1 = key, field 2 = value.
     """
     assert info.map_marker is not None
-    buf = bytearray()
     tag = make_tag(info.number, WireType.LEN)
 
     key_scalar = _extract_proto_scalar(info.map_marker.key_type) or _infer_scalar(
@@ -1037,41 +1116,51 @@ def _encode_map(info: FieldInfo, mapping: dict[Any, Any]) -> bytes:
     value_is_message = _is_message_type(value_base)
     value_is_enum = _is_enum_type(value_base)
 
+    # Pre-compute key/value tags outside the loop
+    key_tag = make_tag(1, key_scalar.wire_type)
+    key_is_string = key_scalar.scalar_type == ScalarType.STRING
+
+    if value_is_message:
+        val_tag = make_tag(2, WireType.LEN)
+    elif value_is_enum:
+        val_tag = make_tag(2, WireType.VARINT)
+    elif value_base is str or value_base is bytes:
+        val_tag = make_tag(2, WireType.LEN)
+    elif value_scalar is not None:
+        val_tag = make_tag(2, value_scalar.wire_type)
+    else:
+        value_scalar = _infer_scalar(value_base)
+        val_tag = make_tag(2, value_scalar.wire_type)
+
+    key_encoder = _SCALAR_ENCODERS.get(key_scalar.scalar_type)
+    val_encoder = (
+        _SCALAR_ENCODERS.get(value_scalar.scalar_type) if value_scalar else None
+    )
+
     for k, v in mapping.items():
         entry = bytearray()
         # Key: field 1
-        entry.extend(make_tag(1, key_scalar.wire_type))
-        if key_scalar.scalar_type == ScalarType.STRING:
-            entry.extend(_encode_length_delimited(k.encode("utf-8")))
+        entry.extend(key_tag)
+        if key_is_string:
+            _extend_length_delimited(entry, k.encode("utf-8"))
         else:
-            entry.extend(_encode_scalar_value(key_scalar, k))
+            entry.extend(key_encoder(k))
 
         # Value: field 2
+        entry.extend(val_tag)
         if value_is_message:
-            msg_bytes = _encode_message(v)
-            entry.extend(make_tag(2, WireType.LEN))
-            entry.extend(_encode_length_delimited(msg_bytes))
+            _extend_length_delimited(entry, _encode_message(v))
         elif value_is_enum:
-            entry.extend(make_tag(2, WireType.VARINT))
             entry.extend(encode_varint(int(v) & 0xFFFFFFFFFFFFFFFF))
         elif value_base is str:
-            entry.extend(make_tag(2, WireType.LEN))
-            entry.extend(_encode_length_delimited(v.encode("utf-8")))
+            _extend_length_delimited(entry, v.encode("utf-8"))
         elif value_base is bytes:
-            entry.extend(make_tag(2, WireType.LEN))
-            entry.extend(_encode_length_delimited(v))
-        elif value_scalar is not None:
-            entry.extend(make_tag(2, value_scalar.wire_type))
-            entry.extend(_encode_scalar_value(value_scalar, v))
+            _extend_length_delimited(entry, v)
         else:
-            vs = _infer_scalar(value_base)
-            entry.extend(make_tag(2, vs.wire_type))
-            entry.extend(_encode_scalar_value(vs, v))
+            entry.extend(val_encoder(v))
 
         buf.extend(tag)
-        buf.extend(_encode_length_delimited(bytes(entry)))
-
-    return bytes(buf)
+        _extend_length_delimited(buf, entry)
 
 
 def _infer_scalar(base: type) -> ProtoScalar:
@@ -1102,11 +1191,11 @@ def _encode_message(obj: Any) -> bytes:
     buf = bytearray()
 
     # Encode known fields in field-number order for deterministic output
-    for info in sorted(desc.fields.values(), key=lambda f: f.number):
+    for info in desc._sorted_fields:
         value = getattr(obj, info.name)
         if _is_default_value(info, value):
             continue
-        buf.extend(_encode_field(info, value))
+        _encode_field(buf, info, value)
 
     # Append unknown fields
     unknown = getattr(obj, "_unknown_fields", None)
@@ -1114,9 +1203,7 @@ def _encode_message(obj: Any) -> bytes:
         for _fn, _wt, raw in unknown:
             buf.extend(make_tag(_fn, _wt))
             if _wt == WireType.LEN:
-                buf.extend(_encode_length_delimited(raw))
-            elif _wt == WireType.VARINT:
-                buf.extend(raw)
+                _extend_length_delimited(buf, raw)
             else:
                 buf.extend(raw)
 
@@ -1340,6 +1427,17 @@ def _decode_field_message(
     return pos + length
 
 
+# struct format char and element size for batch-unpackable packed types
+_PACKED_UNPACK: dict[ScalarType, tuple[str, int]] = {
+    ScalarType.DOUBLE: ("d", 8),
+    ScalarType.FLOAT: ("f", 4),
+    ScalarType.FIXED32: ("I", 4),
+    ScalarType.FIXED64: ("Q", 8),
+    ScalarType.SFIXED32: ("i", 4),
+    ScalarType.SFIXED64: ("q", 8),
+}
+
+
 def _decode_field_repeated_scalar(
     info: FieldInfo,
     wire_type: int,
@@ -1352,11 +1450,22 @@ def _decode_field_repeated_scalar(
     if wire_type == WireType.LEN:
         length, pos = decode_varint(data, pos)
         pack_end = pos + length
-        while pos < pack_end:
-            val, pos = _decode_scalar_from_wire(
-                info.scalar, info.scalar.wire_type, data, pos
-            )
-            values[info.name].append(val)
+        st = info.scalar.scalar_type
+        batch = _PACKED_UNPACK.get(st)
+        if batch is not None:
+            # Batch unpack for fixed-size types (doubles, floats, fixed32/64)
+            fmt_char, elem_size = batch
+            count = length // elem_size
+            vals = struct.unpack_from(f"<{count}{fmt_char}", data, pos)
+            values[info.name].extend(vals)
+            pos = pack_end
+        else:
+            # Varint-based types: inline the decoder lookup
+            decoder = _SCALAR_DECODERS[st]
+            lst = values[info.name]
+            while pos < pack_end:
+                val, pos = decoder(data, pos)
+                lst.append(val)
     else:
         val, pos = _decode_scalar_from_wire(info.scalar, wire_type, data, pos)
         values[info.name].append(val)
@@ -1578,21 +1687,18 @@ def _decode_message_bytes(
     desc: _MessageDescriptor = cls._proto_descriptor
     values = _init_collection_fields(desc)
     unknown_fields: list[tuple[int, int, bytes]] = []
+    fields_by_number = desc.fields_by_number
 
     while pos < end:
         field_number, wire_type, pos = decode_tag(data, pos)
-        info = desc.fields_by_number.get(field_number)
+        info = fields_by_number.get(field_number)
 
         if info is None:
             raw, pos = _skip_field(wire_type, data, pos)
             unknown_fields.append((field_number, wire_type, raw))
             continue
 
-        handler = _FIELD_DECODERS.get(info.kind)
-        if handler is not None:
-            pos = handler(info, wire_type, data, pos, values)
-        else:  # pragma: no cover
-            raise TypeError(f"Unknown field kind: {info.kind}")
+        pos = info._decoder(info, wire_type, data, pos, values)
 
     return _build_message_instance(cls, desc, values, unknown_fields)
 
@@ -1851,6 +1957,7 @@ def message(cls: type) -> type:
 
     # Build descriptor
     descriptor = _MessageDescriptor(cls)
+    descriptor._bind_decoders()
     cls._proto_descriptor = descriptor  # type: ignore[attr-defined]
 
     # Inject methods

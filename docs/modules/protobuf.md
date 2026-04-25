@@ -19,6 +19,7 @@
 - **Proto3 语义** —— 零值字段不序列化，repeated 标量默认 packed 编码
 - **未知字段保留** —— 未知字段在 parse → serialize 往返中保留
 - **字典转换** —— `to_dict()` / `from_dict()` 提供 JSON 友好的表示
+- **大小计算** —— `byte_size()` 计算序列化大小而不分配 bytes
 - **无代码生成** —— 无需 `.proto` 文件、`protoc` 或构建步骤
 
 ## 如何在你的项目中使用
@@ -219,6 +220,23 @@ reparsed = PersonV2.parse(v1.serialize())
 print(reparsed.age)  # 30
 ```
 
+### 大小计算
+
+```python
+from protobuf import message, field, int32, repeated
+
+@message
+class Packet:
+    id: int32 = field(1)
+    payload: bytes = field(2)
+    tags: repeated[str] = field(3)
+
+pkt = Packet(id=1, payload=b"hello", tags=["a", "b"])
+size = pkt.byte_size()     # 不序列化直接计算大小
+data = pkt.serialize()
+assert size == len(data)   # 与实际序列化长度一致
+```
+
 ### 复杂实际示例
 
 ```python
@@ -276,6 +294,7 @@ class MyMessage:
 - `parse(data: bytes) -> Self` —— 类方法，从线格式解码
 - `to_dict() -> dict` —— 递归字典转换（省略零值字段）
 - `from_dict(data: dict) -> Self` —— 类方法，从字典创建
+- `byte_size() -> int` —— 计算序列化大小而不实际分配 bytes
 
 ### `field(number, *, default=..., default_factory=..., oneof=None)`
 

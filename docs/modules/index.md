@@ -6,6 +6,47 @@ title: Module Overview
 
 Each zerodep module is a **self-contained single `.py` file** that you can copy directly into your project. No `pip install` required at runtime.
 
+## Module Status
+
+| Module | Version | Last Updated |
+|--------|---------|--------------|
+| [a2a](a2a.md) | 0.3.2 | 2026-04-20 |
+| [acp](acp.md) | 0.3.1 | 2026-04-15 |
+| [aes](aes.md) | 0.5.1 | 2026-04-20 |
+| [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
+| [cache](cache.md) | 0.2.5 | 2026-04-20 |
+| [config](config.md) | 0.3.0 | 2026-04-11 |
+| [depdetect](depdetect.md) | 0.4.3 | 2026-04-15 |
+| [diff](diff.md) | 0.3.1 | 2026-04-15 |
+| [dotenv](dotenv.md) | 0.3.1 | 2026-04-15 |
+| [filelock](filelock.md) | 0.3.0 | 2026-04-11 |
+| [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-11 |
+| [httpclient](http.md) | 0.3.1 | 2026-04-15 |
+| [jsonc](jsonc.md) | 0.3.0 | 2026-04-11 |
+| [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-11 |
+| [jsonschema](jsonschema.md) | 0.1.1 | 2026-04-25 |
+| [markdown](markdown.md) | 0.3.1 | 2026-04-15 |
+| [persistdict](persistdict.md) | 0.4.2 | 2026-04-20 |
+| [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
+| [protobuf](protobuf.md) | 0.4.3 | 2026-04-15 |
+| [qr](qr.md) | 0.3.3 | 2026-04-20 |
+| [readability](readability.md) | 0.1.0 | 2026-04-20 |
+| [retry](retry.md) | 0.3.0 | 2026-04-11 |
+| [runner](runner.md) | 0.3.1 | 2026-04-15 |
+| [scheduler](scheduler.md) | 0.3.1 | 2026-04-15 |
+| [semver](semver.md) | 0.4.2 | 2026-04-20 |
+| [skills](skills.md) | 0.4.3 | 2026-04-20 |
+| [soup](soup.md) | 0.5.1 | 2026-04-20 |
+| [sparse_search](sparse_search.md) | 0.3.2 | 2026-04-15 |
+| [sse](sse.md) | 0.3.1 | 2026-04-15 |
+| [structlog](structlog.md) | 0.3.0 | 2026-04-11 |
+| [tabulate](tabulate.md) | 0.1.1 | 2026-04-15 |
+| [toon](toon.md) | 0.3.3 | 2026-04-15 |
+| [validate](validate.md) | 0.4.2 | 2026-04-15 |
+| [vcs](vcs.md) | 0.3.0 | 2026-04-11 |
+| [xml](xml.md) | 0.3.1 | 2026-04-15 |
+| [yaml](yaml.md) | 0.3.1 | 2026-04-15 |
+
 ## All Modules
 
 ### Web & Networking
@@ -33,12 +74,15 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [jsonc](jsonc.md) | JSONC parser (JSON with comments and trailing commas) | `commentjson` |
 | [toon](toon.md) | TOON (Token-Oriented Object Notation) encoder/decoder | `toon_format` |
 | [frontmatter](frontmatter.md) | Frontmatter parser and serializer (YAML/TOML/JSON) | `python-frontmatter` |
+| [protobuf](protobuf.md) | Proto3 encoder/decoder using Python dataclass schemas | `protobuf` |
 
 ### Data Validation
 
 | Module | Description | Benchmark Against |
 |--------|-------------|-------------------|
 | [validate](validate.md) | Runtime TypedDict/dataclass validator with JSON Schema generation | `pydantic` |
+| [jsonschema](jsonschema.md) | JSON Schema flattening & sanitization (`$ref`, `allOf`, `anyOf`) | `allof-merge` |
+| [semver](semver.md) | PEP 440 version parser and comparator | `packaging` |
 
 ### Text & Markup
 
@@ -46,13 +90,14 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 |--------|-------------|-------------------|
 | [markdown](markdown.md) | Markdown to HTML renderer (CommonMark subset + GFM tables) | `mistune` |
 | [soup](soup.md) | HTML parser with BeautifulSoup-like API (find, select, CSS selectors) | `beautifulsoup4` |
+| [readability](readability.md) | Article content extractor ported from Mozilla Readability.js | `readability-lxml` |
 | [diff](diff.md) | Unified diff parser, patch apply/reverse, three-way merge | `unidiff` |
 
 ### Search & Retrieval
 
 | Module | Description | Benchmark Against |
 |--------|-------------|-------------------|
-| [search](search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF full-text search with Bayesian calibration | `rank-bm25` |
+| [sparse_search](sparse_search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF full-text search with Bayesian calibration | `rank-bm25` |
 
 ### Configuration
 
@@ -79,14 +124,16 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 
 | Module | Description | Benchmark Against |
 |--------|-------------|-------------------|
-| [cache](cache.md) | In-memory cache with TTL, LRU/LFU eviction, and async support | -- |
+| [cache](cache.md) | In-memory cache with TTL, LRU/LFU eviction, and async support | `cachetools` |
 | [retry](retry.md) | Decorator-based retry with configurable backoff strategies | `tenacity` |
 | [scheduler](scheduler.md) | In-process task scheduler with cron, interval, one-shot triggers | `APScheduler` |
 | [structlog](structlog.md) | Structured logging with pretty console output | `structlog` |
 | [vcs](vcs.md) | Git/Hg/Jujutsu CLI wrapper (diff, status, log, blame) | -- |
 | [runner](runner.md) | Structured subprocess execution with timeout escalation | -- |
 | [filelock](filelock.md) | Cross-platform advisory file lock (fcntl/msvcrt) | -- |
+| [persistdict](persistdict.md) | Persistent dict with pluggable backends (JSON, SQLite) | -- |
 | [qr](qr.md) | QR Code generation with terminal rendering | `qrcode` |
+| [depdetect](depdetect.md) | Dependency detection and verification | -- |
 
 ## Inter-Module Dependencies
 
@@ -102,6 +149,7 @@ graph LR
     frontmatter --> yaml
     skills --> frontmatter
     skills --> sparse_search
+    readability --> soup
     sse --> httpclient
     vcs --> diff
 ```

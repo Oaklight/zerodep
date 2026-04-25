@@ -624,6 +624,9 @@ class FieldInfo:
     python_type: type  # base Python type (int, str, etc.)
     default_value: Any  # proto3 zero-value
     _decoder: Any = None  # cached dispatch handler, set after _FIELD_DECODERS is built
+    _encoder: Any = None  # cached encode handler, set after _FIELD_ENCODERS is built
+    _tag: bytes = b""  # cached tag bytes for this field's native wire type
+    _len_tag: bytes = b""  # cached tag bytes for LEN wire type (repeated/map)
 
 
 class _MessageDescriptor:
@@ -668,12 +671,24 @@ class _MessageDescriptor:
         # Pre-sort fields by number for deterministic encoding
         self._sorted_fields = sorted(self.fields.values(), key=lambda f: f.number)
 
-    def _bind_decoders(self) -> None:
-        """Bind per-field decoder handlers (called after _FIELD_DECODERS is ready)."""
+    def _bind_handlers(self) -> None:
+        """Bind per-field encoder/decoder handlers and cache tags."""
         for info in self.fields.values():
+            # Decoder
             handler = _FIELD_DECODERS.get(info.kind)
             if handler is not None:
                 object.__setattr__(info, "_decoder", handler)
+            # Encoder
+            enc = _FIELD_ENCODERS.get(info.kind)
+            if enc is not None:
+                object.__setattr__(info, "_encoder", enc)
+            # Cache tag bytes
+            object.__setattr__(
+                info, "_tag", make_tag(info.number, info.wire_type)
+            )
+            object.__setattr__(
+                info, "_len_tag", make_tag(info.number, WireType.LEN)
+            )
 
     def _resolve_field(
         self,
@@ -1195,7 +1210,7 @@ def _encode_message(obj: Any) -> bytes:
         value = getattr(obj, info.name)
         if _is_default_value(info, value):
             continue
-        _encode_field(buf, info, value)
+        info._encoder(buf, info, value)
 
     # Append unknown fields
     unknown = getattr(obj, "_unknown_fields", None)
@@ -1208,6 +1223,84 @@ def _encode_message(obj: Any) -> bytes:
                 buf.extend(raw)
 
     return bytes(buf)
+
+
+# Encoder dispatch table — mirrors _FIELD_DECODERS pattern for encode side.
+# Each handler: (buf, info, value) -> None
+
+
+def _dispatch_encode_scalar(buf: bytearray, info: FieldInfo, value: Any) -> None:
+    buf.extend(info._tag)
+    buf.extend(_SCALAR_ENCODERS[info.scalar.scalar_type](value))
+
+
+def _dispatch_encode_enum(buf: bytearray, info: FieldInfo, value: Any) -> None:
+    buf.extend(info._tag)
+    buf.extend(encode_varint(int(value) & 0xFFFFFFFFFFFFFFFF))
+
+
+def _dispatch_encode_string(buf: bytearray, info: FieldInfo, value: Any) -> None:
+    buf.extend(info._tag)
+    _extend_length_delimited(buf, value.encode("utf-8"))
+
+
+def _dispatch_encode_bytes(buf: bytearray, info: FieldInfo, value: Any) -> None:
+    buf.extend(info._tag)
+    _extend_length_delimited(buf, value)
+
+
+def _dispatch_encode_message(buf: bytearray, info: FieldInfo, value: Any) -> None:
+    buf.extend(info._tag)
+    _extend_length_delimited(buf, _encode_message(value))
+
+
+def _dispatch_encode_repeated_scalar(
+    buf: bytearray, info: FieldInfo, value: Any
+) -> None:
+    _encode_packed_repeated(buf, info, value)
+
+
+def _dispatch_encode_repeated_enum(
+    buf: bytearray, info: FieldInfo, value: Any
+) -> None:
+    _encode_packed_enum(buf, info, value)
+
+
+def _dispatch_encode_repeated_message(
+    buf: bytearray, info: FieldInfo, value: Any
+) -> None:
+    _encode_repeated_messages(buf, info, value)
+
+
+def _dispatch_encode_repeated_string(
+    buf: bytearray, info: FieldInfo, value: Any
+) -> None:
+    _encode_repeated_strings(buf, info, value)
+
+
+def _dispatch_encode_repeated_bytes(
+    buf: bytearray, info: FieldInfo, value: Any
+) -> None:
+    _encode_repeated_bytes(buf, info, value)
+
+
+def _dispatch_encode_map(buf: bytearray, info: FieldInfo, value: Any) -> None:
+    _encode_map(buf, info, value)
+
+
+_FIELD_ENCODERS: dict[FieldKind, Any] = {
+    FieldKind.SCALAR: _dispatch_encode_scalar,
+    FieldKind.ENUM: _dispatch_encode_enum,
+    FieldKind.STRING: _dispatch_encode_string,
+    FieldKind.BYTES: _dispatch_encode_bytes,
+    FieldKind.MESSAGE: _dispatch_encode_message,
+    FieldKind.REPEATED_SCALAR: _dispatch_encode_repeated_scalar,
+    FieldKind.REPEATED_ENUM: _dispatch_encode_repeated_enum,
+    FieldKind.REPEATED_MESSAGE: _dispatch_encode_repeated_message,
+    FieldKind.REPEATED_STRING: _dispatch_encode_repeated_string,
+    FieldKind.REPEATED_BYTES: _dispatch_encode_repeated_bytes,
+    FieldKind.MAP: _dispatch_encode_map,
+}
 
 
 # ============================================================================
@@ -1957,7 +2050,7 @@ def message(cls: type) -> type:
 
     # Build descriptor
     descriptor = _MessageDescriptor(cls)
-    descriptor._bind_decoders()
+    descriptor._bind_handlers()
     cls._proto_descriptor = descriptor  # type: ignore[attr-defined]
 
     # Inject methods

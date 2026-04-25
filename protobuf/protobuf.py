@@ -680,6 +680,8 @@ class _MessageDescriptor:
         self.fields_by_number: dict[int, FieldInfo] = {}
         self.oneof_groups: dict[str, list[FieldInfo]] = {}
         self._sorted_fields: list[FieldInfo] = []
+        self._default_attrs: dict[str, Any] = {}
+        self._mutable_defaults: list[str] = []
         self._build(cls)
 
     def _build(self, cls: type) -> None:
@@ -732,6 +734,15 @@ class _MessageDescriptor:
             # Cache map metadata
             if info.kind == FieldKind.MAP and info.map_marker is not None:
                 object.__setattr__(info, "_map_meta", _MapMeta(info.map_marker))
+        # Pre-compute default attrs template for fast message construction
+        self._default_attrs = {
+            info.name: info.default_value for info in self.fields.values()
+        }
+        self._mutable_defaults = [
+            info.name
+            for info in self.fields.values()
+            if isinstance(info.default_value, (list, dict))
+        ]
 
     def _resolve_field(
         self,
@@ -1804,12 +1815,15 @@ def _build_message_instance(
 ) -> Any:
     """Construct a message instance from decoded field values."""
     obj = cls.__new__(cls)
-    for finfo in desc.fields.values():
-        val = values.get(finfo.name, finfo.default_value)
-        if val is finfo.default_value and isinstance(val, (list, dict)):
-            val = type(val)(val)
-        object.__setattr__(obj, finfo.name, val)
-    object.__setattr__(obj, "_unknown_fields", unknown_fields)
+    attrs = dict(desc._default_attrs)
+    attrs.update(values)
+    # Copy mutable defaults (list/dict) that were not overridden by decode
+    for name in desc._mutable_defaults:
+        if name not in values:
+            val = attrs[name]
+            attrs[name] = type(val)(val)
+    attrs["_unknown_fields"] = unknown_fields
+    obj.__dict__.update(attrs)
     return obj
 
 

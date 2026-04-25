@@ -664,6 +664,7 @@ class FieldInfo:
     _is_default: Any = None  # cached default-value check, bound at build time
     _tag: bytes = b""  # cached tag bytes for this field's native wire type
     _len_tag: bytes = b""  # cached tag bytes for LEN wire type (repeated/map)
+    _map_meta: Any = None  # cached _MapMeta for MAP fields
 
 
 class _MessageDescriptor:
@@ -728,6 +729,9 @@ class _MessageDescriptor:
             object.__setattr__(
                 info, "_len_tag", make_tag(info.number, WireType.LEN)
             )
+            # Cache map metadata
+            if info.kind == FieldKind.MAP and info.map_marker is not None:
+                object.__setattr__(info, "_map_meta", _MapMeta(info.map_marker))
 
     def _resolve_field(
         self,
@@ -1186,42 +1190,79 @@ def _encode_repeated_bytes(
         _extend_length_delimited(buf, v)
 
 
+class _MapMeta:
+    """Pre-computed type metadata for a map field (avoids per-entry introspection)."""
+
+    __slots__ = (
+        "key_scalar",
+        "key_is_string",
+        "key_tag",
+        "key_buf_writer",
+        "value_scalar",
+        "value_base",
+        "value_is_message",
+        "value_is_enum",
+        "val_tag",
+        "val_buf_writer",
+        "default_key",
+        "default_value",
+    )
+
+    def __init__(self, map_marker: MapField) -> None:
+        self.key_scalar = _extract_proto_scalar(
+            map_marker.key_type
+        ) or _infer_scalar(_get_base_type(map_marker.key_type))
+        self.key_is_string = self.key_scalar.scalar_type == ScalarType.STRING
+        self.key_tag = make_tag(1, self.key_scalar.wire_type)
+        self.key_buf_writer = _SCALAR_BUF_WRITERS.get(self.key_scalar.scalar_type)
+
+        self.value_scalar = _extract_proto_scalar(map_marker.value_type)
+        self.value_base = _get_base_type(map_marker.value_type)
+        self.value_is_message = _is_message_type(self.value_base)
+        self.value_is_enum = _is_enum_type(self.value_base)
+
+        if self.value_is_message:
+            self.val_tag = make_tag(2, WireType.LEN)
+        elif self.value_is_enum:
+            self.val_tag = make_tag(2, WireType.VARINT)
+        elif self.value_base is str or self.value_base is bytes:
+            self.val_tag = make_tag(2, WireType.LEN)
+        elif self.value_scalar is not None:
+            self.val_tag = make_tag(2, self.value_scalar.wire_type)
+        else:
+            self.value_scalar = _infer_scalar(self.value_base)
+            self.val_tag = make_tag(2, self.value_scalar.wire_type)
+
+        self.val_buf_writer = (
+            _SCALAR_BUF_WRITERS.get(self.value_scalar.scalar_type)
+            if self.value_scalar
+            else None
+        )
+
+        self.default_key = _SCALAR_DEFAULTS.get(self.key_scalar.scalar_type, 0)
+        self.default_value = _default_map_value(
+            self.value_scalar,
+            self.value_base,
+            self.value_is_message,
+            self.value_is_enum,
+        )
+
+
 def _encode_map(buf: bytearray, info: FieldInfo, mapping: dict[Any, Any]) -> None:
     """Encode a map field as repeated key-value entry messages.
 
     Each entry is a message with field 1 = key, field 2 = value.
     """
-    assert info.map_marker is not None
-    tag = make_tag(info.number, WireType.LEN)
-
-    key_scalar = _extract_proto_scalar(info.map_marker.key_type) or _infer_scalar(
-        _get_base_type(info.map_marker.key_type)
-    )
-    value_scalar = _extract_proto_scalar(info.map_marker.value_type)
-    value_base = _get_base_type(info.map_marker.value_type)
-    value_is_message = _is_message_type(value_base)
-    value_is_enum = _is_enum_type(value_base)
-
-    # Pre-compute key/value tags outside the loop
-    key_tag = make_tag(1, key_scalar.wire_type)
-    key_is_string = key_scalar.scalar_type == ScalarType.STRING
-
-    if value_is_message:
-        val_tag = make_tag(2, WireType.LEN)
-    elif value_is_enum:
-        val_tag = make_tag(2, WireType.VARINT)
-    elif value_base is str or value_base is bytes:
-        val_tag = make_tag(2, WireType.LEN)
-    elif value_scalar is not None:
-        val_tag = make_tag(2, value_scalar.wire_type)
-    else:
-        value_scalar = _infer_scalar(value_base)
-        val_tag = make_tag(2, value_scalar.wire_type)
-
-    key_encoder = _SCALAR_ENCODERS.get(key_scalar.scalar_type)
-    val_encoder = (
-        _SCALAR_ENCODERS.get(value_scalar.scalar_type) if value_scalar else None
-    )
+    mm = info._map_meta
+    tag = info._len_tag
+    key_tag = mm.key_tag
+    key_is_string = mm.key_is_string
+    key_buf_writer = mm.key_buf_writer
+    val_tag = mm.val_tag
+    value_is_message = mm.value_is_message
+    value_is_enum = mm.value_is_enum
+    value_base = mm.value_base
+    val_buf_writer = mm.val_buf_writer
 
     for k, v in mapping.items():
         entry = bytearray()
@@ -1230,7 +1271,7 @@ def _encode_map(buf: bytearray, info: FieldInfo, mapping: dict[Any, Any]) -> Non
         if key_is_string:
             _extend_length_delimited(entry, k.encode("utf-8"))
         else:
-            entry.extend(key_encoder(k))
+            key_buf_writer(entry, k)
 
         # Value: field 2
         entry.extend(val_tag)
@@ -1243,7 +1284,7 @@ def _encode_map(buf: bytearray, info: FieldInfo, mapping: dict[Any, Any]) -> Non
         elif value_base is bytes:
             _extend_length_delimited(entry, v)
         else:
-            entry.extend(val_encoder(v))
+            val_buf_writer(entry, v)
 
         buf.extend(tag)
         _extend_length_delimited(buf, entry)
@@ -1502,38 +1543,34 @@ def _default_map_value(
 
 
 def _decode_map_entry(
-    map_marker: MapField,
+    mm: _MapMeta,
     data: bytes | bytearray | memoryview,
     pos: int,
     end: int,
 ) -> tuple[Any, Any]:
     """Decode a single map entry message (fields 1=key, 2=value)."""
-    key_scalar = _extract_proto_scalar(map_marker.key_type) or _infer_scalar(
-        _get_base_type(map_marker.key_type)
-    )
-    value_scalar = _extract_proto_scalar(map_marker.value_type)
-    value_base = _get_base_type(map_marker.value_type)
-    value_is_message = _is_message_type(value_base)
-    value_is_enum = _is_enum_type(value_base)
-
-    key: Any = _SCALAR_DEFAULTS.get(key_scalar.scalar_type, 0)
+    key: Any = mm.default_key
     value: Any = None
 
     while pos < end:
         fn, wt, pos = decode_tag(data, pos)
         if fn == 1:
-            key, pos = _decode_map_key(key_scalar, wt, data, pos)
+            key, pos = _decode_map_key(mm.key_scalar, wt, data, pos)
         elif fn == 2:
             value, pos = _decode_map_value(
-                value_scalar, value_base, value_is_message, value_is_enum, wt, data, pos
+                mm.value_scalar,
+                mm.value_base,
+                mm.value_is_message,
+                mm.value_is_enum,
+                wt,
+                data,
+                pos,
             )
         else:
             _, pos = _skip_field(wt, data, pos)
 
     if value is None:
-        value = _default_map_value(
-            value_scalar, value_base, value_is_message, value_is_enum
-        )
+        value = mm.default_value
 
     return key, value
 
@@ -1736,9 +1773,8 @@ def _decode_field_map(
     values: dict[str, Any],
 ) -> int:
     """Decode a single map entry and store it in *values*."""
-    assert info.map_marker is not None
     length, pos = decode_varint(data, pos)
-    k, v = _decode_map_entry(info.map_marker, data, pos, pos + length)
+    k, v = _decode_map_entry(info._map_meta, data, pos, pos + length)
     values[info.name][k] = v
     return pos + length
 

@@ -4,7 +4,7 @@ Markdown to HTML renderer -- zero dependencies, stdlib only, Python 3.10+.
 
 ## Overview
 
-The Markdown module provides a drop-in replacement for `mistune.html()` to render common Markdown to HTML. It supports a CommonMark subset plus GFM tables -- all without any third-party dependencies.
+The Markdown module provides a drop-in replacement for `mistune.html()` to render common Markdown to HTML. It supports a CommonMark subset plus GFM extensions (tables, strikethrough, task lists, extended autolinks) -- all without any third-party dependencies.
 
 | File | Description | Dependencies |
 |------|-------------|--------------|
@@ -146,6 +146,42 @@ render("""
 
 Column alignment is supported via `:---` (left), `:---:` (center), and `---:` (right) syntax.
 
+### Strikethrough (GFM)
+
+```python
+render("~~deleted text~~")
+# <p><del>deleted text</del></p>
+
+render("~~bold **inside** strike~~")
+# <p><del>bold <strong>inside</strong> strike</del></p>
+```
+
+### Task Lists (GFM)
+
+```python
+render("- [ ] Write the code\n- [x] Write the tests\n- [ ] Review the PR")
+# <ul>
+# <li class="task-list-item"><input class="task-list-item-checkbox" type="checkbox" disabled/>Write the code</li>
+# <li class="task-list-item"><input class="task-list-item-checkbox" type="checkbox" disabled checked/>Write the tests</li>
+# <li class="task-list-item"><input class="task-list-item-checkbox" type="checkbox" disabled/>Review the PR</li>
+# </ul>
+```
+
+Works with both unordered (`- [ ]`) and ordered (`1. [ ]`) lists.
+
+### Extended Autolinks (GFM)
+
+```python
+render("Visit https://example.com for more info")
+# <p>Visit <a href="https://example.com">https://example.com</a> for more info</p>
+
+# Trailing punctuation is excluded from the URL
+render("See https://example.com.")
+# <p>See <a href="https://example.com">https://example.com</a>.</p>
+```
+
+Only `http://` and `https://` schemes are auto-linked. Bare `www.` URLs are not matched.
+
 ### Fenced Code Blocks
 
 ```python
@@ -177,6 +213,9 @@ render("```python\ndef foo():\n    pass\n```")
 | Backslash escapes | `\*`, `\_`, etc. | Escape special characters |
 | Autolinks | `<https://...>` | `<user@example.com>` |
 | GFM tables | Pipe syntax | With column alignment |
+| GFM strikethrough | `~~text~~` | `~~deleted~~` |
+| GFM task lists | `- [ ]` / `- [x]` | Checkbox list items |
+| GFM extended autolinks | Bare `https://` URLs | Auto-linked with punctuation stripping |
 | HTML escaping | Automatic | `<`, `>`, `&` escaped |
 
 ## Not Supported
@@ -184,7 +223,6 @@ render("```python\ndef foo():\n    pass\n```")
 - Raw HTML passthrough (escaped for safety)
 - Footnotes, definition lists
 - Math/LaTeX
-- Strikethrough, task lists
 - Anchors/aliases
 
 ## Security
@@ -202,11 +240,11 @@ render("```python\ndef foo():\n    pass\n```")
     This renderer targets the most commonly used Markdown features. It does not aim for 100% CommonMark spec compliance, but covers all features typically found in LLM output and documentation.
 
 - **Python version:** Requires Python 3.10+ (uses `X | Y` union type syntax).
-- **Output compatibility:** Produces HTML output that matches `mistune.html()` for all supported features.
-- **Performance:** 1.8--2.6x faster than mistune across small, medium, and large documents.
+- **Output compatibility:** Produces HTML output that matches `mistune.html()` (with GFM plugins) for all supported features.
+- **Performance:** ~2x faster than mistune across small, medium, and large documents, including GFM content.
 
 ## Benchmark
 
-Benchmarked against `mistune` across three document sizes (small, medium, large).
+Benchmarked against `mistune` across five test sizes: CommonMark (small, medium, large) and GFM (medium, large).
 
 See [Markdown Benchmark](../benchmarks/markdown.md) for detailed results.

@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Enhancements
 
+- **Markdown module**: added GFM strikethrough (`~~text~~` → `<del>`), task lists (`- [ ]` / `- [x]` with checkbox and class attributes), and extended autolinks (bare `https://` / `http://` URLs auto-linked with trailing punctuation stripping). All outputs match mistune with GFM plugins. 28 new correctness tests + 4 GFM benchmarks. Version 0.3.1 → 0.4.0.
 - **Soup module**: added CSS pseudo-selector support — `:first-child`, `:last-child`, `:only-child`, and `:not(selector)`. Covers the most commonly needed structural pseudo-classes. `:not()` accepts any simple selector (tag, class, ID, attribute, or nested pseudo). Added CSS select and pseudo-select benchmarks. Version 0.5.0 → 0.6.0.
 
 ### Performance

@@ -1,16 +1,16 @@
 # QR 二维码
 
-QR Code 生成与终端渲染 -- 零依赖，仅标准库，Python 3.10+。
+QR Code 生成与终端、SVG、PNG 渲染 -- 零依赖（PNG 需要 sibling `png` 模块），仅标准库，Python 3.10+。
 
 ## 概述
 
-QR 模块提供完整的 QR Code 编码器，符合 **QR Code Model 2** 规范（ISO/IEC 18004）。支持所有版本（尺寸）从 1 到 40，全部 4 种纠错等级，以及 4 种字符编码模式。模块还包含一个便捷函数，可以使用 Unicode 半块字符直接在终端中渲染二维码。
+QR 模块提供完整的 QR Code 编码器，符合 **QR Code Model 2** 规范（ISO/IEC 18004）。支持所有版本（尺寸）从 1 到 40，全部 4 种纠错等级，以及 4 种字符编码模式。模块包含终端输出（Unicode 半块字符）、SVG 导出（字符串模板）和 PNG 导出（通过 sibling `png` 模块）的渲染函数。
 
-基于 [Project Nayuki 的 QR Code 生成器库](https://www.nayuki.io/page/qr-code-generator-library)（MIT 许可证），zerodep 额外添加了终端渲染功能。
+基于 [Project Nayuki 的 QR Code 生成器库](https://www.nayuki.io/page/qr-code-generator-library)（MIT 许可证），zerodep 额外添加了渲染函数。
 
 | 文件 | 说明 | 依赖 |
 |------|------|------|
-| `qr.py` | 完整的 QR Code 编码器 + 终端渲染 | 无（仅标准库） |
+| `qr.py` | 完整的 QR Code 编码器 + 终端/SVG/PNG 渲染 | `png`（sibling，可选 -- 仅 PNG 输出需要） |
 
 ## 如何在你的项目中使用
 
@@ -23,7 +23,7 @@ cp qr/qr.py your_project/
 然后导入所需的类：
 
 ```python
-from qr import QrCode, QrSegment, print_qr_terminal
+from qr import QrCode, QrSegment, print_qr_terminal, qr_to_svg, qr_to_png
 ```
 
 ## API 参考
@@ -199,6 +199,73 @@ def print_qr_terminal(text: str) -> None
 
 ---
 
+### `qr_to_svg(qr, dest, *, scale, border, fg_color, bg_color)`
+
+将 QR Code 渲染为 SVG 图像。使用单个 `<path>` 元素实现紧凑输出。无依赖。
+
+```python
+def qr_to_svg(
+    qr: QrCode,
+    dest: str | os.PathLike[str] | None = None,
+    *,
+    scale: int = 10,
+    border: int = 4,
+    fg_color: str = "#000000",
+    bg_color: str = "#ffffff",
+) -> str | None
+```
+
+**参数：**
+
+| 名称 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `qr` | `QrCode` | *（必填）* | 待渲染的 QR Code。 |
+| `dest` | `str \| PathLike \| None` | `None` | 写入 SVG 的文件路径，`None` 则返回 SVG 字符串。 |
+| `scale` | `int` | `10` | 每个 QR 模块的 SVG 用户单位大小。 |
+| `border` | `int` | `4` | 静默区宽度（QR 模块数）。 |
+| `fg_color` | `str` | `"#000000"` | 深色模块的 CSS 颜色。 |
+| `bg_color` | `str` | `"#ffffff"` | 浅色模块的 CSS 颜色。 |
+
+**返回值：** `dest` 为 `None` 时返回 SVG 字符串，否则返回 `None`。
+
+---
+
+### `qr_to_png(qr, dest, *, scale, border, fg_color, bg_color)`
+
+将 QR Code 渲染为 PNG 图像。需要 sibling `png` 模块（首次调用时懒加载）。
+
+```python
+def qr_to_png(
+    qr: QrCode,
+    dest: str | os.PathLike[str] | None = None,
+    *,
+    scale: int = 10,
+    border: int = 4,
+    fg_color: int = 0,
+    bg_color: int = 255,
+) -> bytes | None
+```
+
+**参数：**
+
+| 名称 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `qr` | `QrCode` | *（必填）* | 待渲染的 QR Code。 |
+| `dest` | `str \| PathLike \| None` | `None` | 写入 PNG 的文件路径，`None` 则返回 PNG 字节。 |
+| `scale` | `int` | `10` | 每个 QR 模块的像素数。 |
+| `border` | `int` | `4` | 静默区宽度（QR 模块数）。 |
+| `fg_color` | `int` | `0` | 深色模块的灰度值（0--255）。 |
+| `bg_color` | `int` | `255` | 浅色模块的灰度值（0--255）。 |
+
+**返回值：** `dest` 为 `None` 时返回 PNG 字节，否则返回 `None`。
+
+**异常：**
+
+- `ImportError` -- sibling `png` 模块不可用时抛出。
+- `ValueError` -- `fg_color` 或 `bg_color` 超出 0--255 范围时抛出。
+
+---
+
 ### `DataTooLongError`
 
 当提供的数据无法放入任何 QR Code 版本时抛出的异常。是 `ValueError` 的子类。
@@ -263,30 +330,32 @@ except DataTooLongError:
     print("数据过长，无法放入请求的版本范围")
 ```
 
-### 导出为 SVG（手动方式）
+### 导出为 SVG
 
 ```python
-from qr import QrCode
+from qr import QrCode, qr_to_svg
 
 qr = QrCode.encode_text("https://example.com", QrCode.Ecc.MEDIUM)
-size = qr.get_size()
-border = 4
 
-parts = []
-for y in range(size):
-    for x in range(size):
-        if qr.get_module(x, y):
-            parts.append(f"M{x + border},{y + border}h1v1h-1z")
+# 返回 SVG 字符串
+svg = qr_to_svg(qr)
 
-svg = f"""<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 {size + border * 2} {size + border * 2}">
-  <rect width="100%" height="100%" fill="white"/>
-  <path d="{''.join(parts)}" fill="black"/>
-</svg>"""
+# 写入文件，自定义颜色
+qr_to_svg(qr, "qr.svg", fg_color="darkblue", bg_color="#f0f0f0")
+```
 
-with open("qr.svg", "w") as f:
-    f.write(svg)
+### 导出为 PNG
+
+```python
+from qr import QrCode, qr_to_png
+
+qr = QrCode.encode_text("https://example.com", QrCode.Ecc.MEDIUM)
+
+# 返回 PNG 字节
+png_bytes = qr_to_png(qr)
+
+# 写入文件，自定义缩放
+qr_to_png(qr, "qr.png", scale=20, border=2)
 ```
 
 ## 注意事项

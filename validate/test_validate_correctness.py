@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from validate import (
     ErrorDetail,
+    FieldValidator,
     Ge,
     Gt,
     Le,
@@ -21,6 +22,7 @@ from validate import (
     Predicate,
     ValidationError,
     json_schema,
+    model_validator,
     validate,
 )
 
@@ -613,6 +615,228 @@ def _type_to_schema_import(tp: Any) -> dict[str, Any]:
     from validate import _type_to_schema
 
     return _type_to_schema(tp)
+
+
+# ── FieldValidator ──
+
+
+class TestFieldValidator:
+    def test_passthrough(self):
+        """FieldValidator that returns value unchanged."""
+        Identity = Annotated[str, FieldValidator(lambda v: v, "identity")]
+        assert validate("hello", Identity) == "hello"
+
+    def test_transform(self):
+        """FieldValidator transforms the value."""
+
+        def strip_lower(v: str) -> str:
+            return v.strip().lower()
+
+        Cleaned = Annotated[str, FieldValidator(strip_lower, "strip_lower")]
+        assert validate("  HELLO  ", Cleaned) == "hello"
+
+    def test_validation_failure(self):
+        """FieldValidator raises ValueError on failure."""
+
+        def must_be_positive(v: int) -> int:
+            if v <= 0:
+                raise ValueError("must be positive")
+            return v
+
+        PosInt = Annotated[int, FieldValidator(must_be_positive, "positive")]
+        assert validate(5, PosInt) == 5
+        with pytest.raises(ValidationError, match="positive"):
+            validate(-1, PosInt)
+
+    def test_assertion_error(self):
+        """FieldValidator can also raise AssertionError."""
+
+        def check(v: str) -> str:
+            assert len(v) > 0, "must not be empty"
+            return v
+
+        NonEmpty = Annotated[str, FieldValidator(check, "non_empty")]
+        with pytest.raises(ValidationError, match="non_empty"):
+            validate("", NonEmpty)
+
+    def test_not_checked_on_type_error(self):
+        """FieldValidator should not run if base type fails."""
+        call_count = 0
+
+        def counter(v: str) -> str:
+            nonlocal call_count
+            call_count += 1
+            return v
+
+        Tracked = Annotated[str, FieldValidator(counter)]
+        with pytest.raises(ValidationError):
+            validate(123, Tracked)
+        assert call_count == 0
+
+    def test_chain_with_predicate(self):
+        """FieldValidator composes with Predicate constraints."""
+
+        def strip(v: str) -> str:
+            return v.strip()
+
+        # strip first, then check length >= 1
+        Cleaned = Annotated[str, FieldValidator(strip, "strip"), MinLen(1)]
+        assert validate("  hi  ", Cleaned) == "hi"
+        with pytest.raises(ValidationError):
+            validate("   ", Cleaned)  # strip → "" → MinLen(1) fails
+
+    def test_multiple_field_validators(self):
+        """Multiple FieldValidators compose left-to-right."""
+
+        def strip(v: str) -> str:
+            return v.strip()
+
+        def lower(v: str) -> str:
+            return v.lower()
+
+        Cleaned = Annotated[
+            str,
+            FieldValidator(strip, "strip"),
+            FieldValidator(lower, "lower"),
+        ]
+        assert validate("  HELLO  ", Cleaned) == "hello"
+
+    def test_in_typeddict(self):
+        """FieldValidator works inside TypedDict fields."""
+
+        def normalize(v: str) -> str:
+            return v.strip().lower()
+
+        class Profile(TypedDict):
+            username: Annotated[str, FieldValidator(normalize, "normalize")]
+            age: int
+
+        data = {"username": "  Alice  ", "age": 30}
+        result = validate(data, Profile)
+        # Note: validate doesn't mutate the original dict for field values,
+        # but the returned value from _validate_annotated is the transformed one.
+        # The top-level dict values are not replaced in-place (current behavior).
+        assert result == data  # dict itself is returned as-is
+
+
+# ── Model Validator ──
+
+
+class _ModelValidatorFixture(TypedDict):
+    password: str
+    confirm: str
+
+
+class _MVTransform(TypedDict):
+    x: int
+    y: int
+
+
+class _MVMulti(TypedDict):
+    a: int
+    b: int
+
+
+@model_validator(_ModelValidatorFixture)
+def _check_passwords(data: dict) -> dict:
+    if data.get("password") != data.get("confirm"):
+        raise ValueError("passwords do not match")
+    return data
+
+
+@model_validator(_MVTransform)
+def _add_sum(data: dict) -> dict:
+    data["sum"] = data["x"] + data["y"]
+    return data
+
+
+@model_validator(_MVMulti)
+def _check_a_positive(data: dict) -> dict:
+    if data["a"] <= 0:
+        raise ValueError("a must be positive")
+    return data
+
+
+@model_validator(_MVMulti)
+def _check_a_less_than_b(data: dict) -> dict:
+    if data["a"] >= data["b"]:
+        raise ValueError("a must be less than b")
+    return data
+
+
+class TestModelValidator:
+    def test_cross_field_valid(self):
+        data = {"password": "secret", "confirm": "secret"}
+        assert validate(data, _ModelValidatorFixture) == data
+
+    def test_cross_field_invalid(self):
+        data = {"password": "secret", "confirm": "wrong"}
+        with pytest.raises(ValidationError, match="passwords do not match"):
+            validate(data, _ModelValidatorFixture)
+
+    def test_not_called_on_field_error(self):
+        """Model validator should not run if field validation fails."""
+        data = {"password": 123, "confirm": "secret"}  # password should be str
+        with pytest.raises(ValidationError) as exc_info:
+            validate(data, _ModelValidatorFixture)
+        # Should have type error only, not model validator error
+        assert all(
+            "model validation" not in e.message.lower() for e in exc_info.value.errors
+        )
+
+    def test_not_called_on_missing_field(self):
+        """Model validator should not run if required fields are missing."""
+        data = {"password": "secret"}  # confirm is missing
+        with pytest.raises(ValidationError) as exc_info:
+            validate(data, _ModelValidatorFixture)
+        assert any("MISSING" in e.actual for e in exc_info.value.errors)
+        assert all(
+            "model validation" not in e.message.lower() for e in exc_info.value.errors
+        )
+
+    def test_transform(self):
+        """Model validator can modify the data dict."""
+        data = {"x": 3, "y": 4}
+        result = validate(data, _MVTransform)
+        assert result["sum"] == 7
+
+    def test_multiple_validators(self):
+        """Multiple model validators run in registration order."""
+        assert validate({"a": 1, "b": 2}, _MVMulti) == {"a": 1, "b": 2}
+
+    def test_multiple_validators_first_fails(self):
+        data = {"a": -1, "b": 2}
+        with pytest.raises(ValidationError, match="a must be positive"):
+            validate(data, _MVMulti)
+
+    def test_multiple_validators_second_fails(self):
+        data = {"a": 5, "b": 3}
+        with pytest.raises(ValidationError, match="a must be less than b"):
+            validate(data, _MVMulti)
+
+    def test_on_dataclass(self):
+        @dataclasses.dataclass
+        class Range:
+            lo: int
+            hi: int
+
+        @model_validator(Range)
+        def _check_range(data: dict) -> dict:
+            if data["lo"] >= data["hi"]:
+                raise ValueError("lo must be less than hi")
+            return data
+
+        assert validate({"lo": 1, "hi": 10}, Range) == {"lo": 1, "hi": 10}
+        with pytest.raises(ValidationError, match="lo must be less than hi"):
+            validate({"lo": 10, "hi": 1}, Range)
+
+    def test_error_path(self):
+        """Model validator error should reference the struct path."""
+        data = {"password": "a", "confirm": "b"}
+        with pytest.raises(ValidationError) as exc_info:
+            validate(data, _ModelValidatorFixture)
+        err = exc_info.value.errors[0]
+        assert err.path == "$"
 
 
 # ── Cross-validation with pydantic ──

@@ -1216,3 +1216,121 @@ class TestNewTag:
         span.children.append("Added")
         div.append(span)
         assert div.find("span").text == "Added"
+
+
+# ── TestPseudoSelectors ──
+
+PSEUDO_HTML = """
+<ul>
+    <li class="a">First</li>
+    <li class="b">Second</li>
+    <li class="c">Third</li>
+</ul>
+<div><span class="only">Alone</span></div>
+<ol>
+    <li class="x">Alpha</li>
+</ol>
+"""
+
+
+class TestPseudoSelectors:
+    """CSS pseudo-selector tests: compare zerodep soup vs beautifulsoup4."""
+
+    def test_first_child(self):
+        ours = _ours(PSEUDO_HTML)
+        theirs = _theirs(PSEUDO_HTML)
+        assert len(ours.select("li:first-child")) == len(
+            theirs.select("li:first-child")
+        )
+        assert ours.select("li:first-child")[0].text == "First"
+
+    def test_last_child(self):
+        ours = _ours(PSEUDO_HTML)
+        theirs = _theirs(PSEUDO_HTML)
+        assert len(ours.select("li:last-child")) == len(
+            theirs.select("li:last-child")
+        )
+        assert ours.select("li:last-child")[0].text == "Third"
+
+    def test_only_child(self):
+        ours = _ours(PSEUDO_HTML)
+        theirs = _theirs(PSEUDO_HTML)
+        our_results = ours.select("span:only-child")
+        their_results = theirs.select("span:only-child")
+        assert len(our_results) == len(their_results)
+        assert our_results[0].text == "Alone"
+
+    def test_only_child_li(self):
+        ours = _ours(PSEUDO_HTML)
+        theirs = _theirs(PSEUDO_HTML)
+        our_results = ours.select("li:only-child")
+        their_results = theirs.select("li:only-child")
+        assert len(our_results) == len(their_results)
+        assert our_results[0].text == "Alpha"
+
+    def test_not_class(self):
+        ours = _ours(PSEUDO_HTML)
+        theirs = _theirs(PSEUDO_HTML)
+        our_results = ours.select("li:not(.a)")
+        their_results = theirs.select("li:not(.a)")
+        assert len(our_results) == len(their_results)
+
+    def test_not_tag(self):
+        html = '<div><span>A</span><em>B</em><span>C</span></div>'
+        ours = _ours(html)
+        theirs = _theirs(html)
+        our_results = ours.select("div > :not(span)")
+        their_results = theirs.select("div > :not(span)")
+        assert len(our_results) == len(their_results)
+        assert our_results[0].text == "B"
+
+    def test_first_child_with_class(self):
+        html = '<div><p class="x">1</p><p class="x">2</p></div>'
+        ours = _ours(html)
+        theirs = _theirs(html)
+        our_results = ours.select("p.x:first-child")
+        their_results = theirs.select("p.x:first-child")
+        assert len(our_results) == len(their_results)
+        assert our_results[0].text == "1"
+
+    def test_last_child_descendant(self):
+        ours = _ours(PSEUDO_HTML)
+        theirs = _theirs(PSEUDO_HTML)
+        our_results = ours.select("ul li:last-child")
+        their_results = theirs.select("ul li:last-child")
+        assert len(our_results) == len(their_results)
+        assert our_results[0].text == "Third"
+
+    def test_not_with_id(self):
+        html = '<div><p id="a">A</p><p id="b">B</p><p id="c">C</p></div>'
+        ours = _ours(html)
+        theirs = _theirs(html)
+        our_results = ours.select("p:not(#b)")
+        their_results = theirs.select("p:not(#b)")
+        assert len(our_results) == len(their_results)
+        assert [t.text for t in our_results] == ["A", "C"]
+
+    def test_combined_pseudo_selectors(self):
+        html = '<ul><li class="a">Only</li></ul>'
+        ours = _ours(html)
+        theirs = _theirs(html)
+        our_results = ours.select("li:first-child:last-child")
+        their_results = theirs.select("li:first-child:last-child")
+        assert len(our_results) == len(their_results)
+        assert our_results[0].text == "Only"
+
+    def test_first_child_no_match(self):
+        html = '<div><span>A</span><p>B</p></div>'
+        ours = _ours(html)
+        theirs = _theirs(html)
+        assert len(ours.select("p:first-child")) == len(
+            theirs.select("p:first-child")
+        )
+        assert len(ours.select("p:first-child")) == 0
+
+    def test_not_first_child(self):
+        ours = _ours(PSEUDO_HTML)
+        theirs = _theirs(PSEUDO_HTML)
+        our_results = ours.select("li:not(:first-child)")
+        their_results = theirs.select("li:not(:first-child)")
+        assert len(our_results) == len(their_results)

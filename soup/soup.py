@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.5.0"
+# version = "0.6.0"
 # deps = []
 # tier = "medium"
 # category = "data"
@@ -16,9 +16,12 @@ Supports ``find``, ``find_all``, ``select``, ``select_one``, ``get_text``,
 ``decompose``, and ``find_parent`` — the subset of BeautifulSoup used by
 the vast majority of real-world scraping scripts.
 
+Supports CSS pseudo-selectors: ``:first-child``, ``:last-child``,
+``:only-child``, and ``:not(selector)``.
+
 Does NOT implement: ``.prettify()``, ``.stripped_strings``, ``.descendants``
 iterator, ``.next_sibling`` / ``.previous_sibling``, ``NavigableString`` class,
-multiple parser backends, CSS pseudo-selectors.
+multiple parser backends.
 
 Example::
 
@@ -589,6 +592,8 @@ _SIMPLE_RE = re.compile(
     |(?P<cls>\.[a-zA-Z_-][a-zA-Z0-9_-]*)  # .class
     |(?P<id>\#[a-zA-Z_-][a-zA-Z0-9_-]*)   # #id
     |(?P<attr>\[[^\]]+\])              # [attr] or [attr="val"]
+    |(?P<pseudo>:(?:first-child|last-child|only-child))  # structural pseudo
+    |(?P<not>:not\()                   # :not( — argument parsed separately
     """,
     re.VERBOSE,
 )
@@ -648,6 +653,23 @@ def _apply_regex_match(m: re.Match[str], compound: dict[str, Any]) -> None:
             compound.setdefault("attrs", []).append(
                 (am.group("name"), am.group("value"))
             )
+    elif m.group("pseudo"):
+        compound.setdefault("pseudos", []).append(m.group("pseudo")[1:])
+
+
+def _parse_not_argument(selector: str, pos: int) -> tuple[dict[str, Any], int]:
+    """Parse the simple selector inside ``:not(...)``, return (inner, new_pos).
+
+    *pos* should point right after the opening ``(``.  The closing ``)`` is
+    consumed and *new_pos* points past it.
+    """
+    inner, pos = _parse_compound(selector, pos)
+    if inner is None:
+        inner = {}
+    pos = _skip_whitespace(selector, pos)
+    if pos < len(selector) and selector[pos] == ")":
+        pos += 1
+    return inner, pos
 
 
 def _parse_compound(selector: str, pos: int) -> tuple[dict[str, Any] | None, int]:
@@ -662,8 +684,14 @@ def _parse_compound(selector: str, pos: int) -> tuple[dict[str, Any] | None, int
         if m is None:
             break
         matched_any = True
-        _apply_regex_match(m, compound)
-        pos = m.end()
+        if m.group("not"):
+            # :not( matched — parse the inner selector and closing paren
+            pos = m.end()
+            inner, pos = _parse_not_argument(selector, pos)
+            compound.setdefault("nots", []).append(inner)
+        else:
+            _apply_regex_match(m, compound)
+            pos = m.end()
     return (compound if matched_any else None), pos
 
 
@@ -739,6 +767,25 @@ def _selector_attrs_match(tag: Tag, attrs: list[tuple[str, str | None]]) -> bool
     return True
 
 
+def _element_siblings(tag: Tag) -> list[Tag]:
+    """Return element (non-text) children of *tag*'s parent."""
+    if tag.parent is None:
+        return [tag]
+    return [c for c in tag.parent.children if isinstance(c, Tag)]
+
+
+def _pseudo_matches(tag: Tag, pseudo: str) -> bool:
+    """Return True if *tag* satisfies the structural pseudo-class *pseudo*."""
+    siblings = _element_siblings(tag)
+    if pseudo == "first-child":
+        return siblings[0] is tag
+    if pseudo == "last-child":
+        return siblings[-1] is tag
+    if pseudo == "only-child":
+        return len(siblings) == 1
+    return False  # pragma: no cover
+
+
 def _simple_matches(tag: Tag, simple: dict[str, Any]) -> bool:
     """Check if *tag* matches a single compound simple selector."""
     if "tag" in simple and tag.name != simple["tag"]:
@@ -749,6 +796,14 @@ def _simple_matches(tag: Tag, simple: dict[str, Any]) -> bool:
         return False
     if "attrs" in simple and not _selector_attrs_match(tag, simple["attrs"]):
         return False
+    if "pseudos" in simple:
+        for pseudo in simple["pseudos"]:
+            if not _pseudo_matches(tag, pseudo):
+                return False
+    if "nots" in simple:
+        for inner in simple["nots"]:
+            if _simple_matches(tag, inner):
+                return False
     return True
 
 

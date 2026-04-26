@@ -27,6 +27,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [jsonschema](jsonschema.md) | 0.1.0 | 2026-04-25 |
 | [markdown](markdown.md) | 0.3.1 | 2026-04-15 |
 | [persistdict](persistdict.md) | 0.4.1 | 2026-04-20 |
+| [png](png.md) | 0.1.0 | 2026-04-26 |
 | [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
 | [protobuf](protobuf.md) | 0.4.3 | 2026-04-15 |
 | [qr](qr.md) | 0.3.2 | 2026-04-20 |
@@ -64,6 +65,12 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [a2a](a2a.md) | Google A2A protocol: JSON-RPC 2.0, SSE streaming, task management | `a2a-python` |
 | [acp](acp.md) | Anthropic ACP protocol: JSON-RPC 2.0 over stdio, async client/agent | `acp-python` |
 | [skills](skills.md) | Agent Skills runtime: parse, discover, manage, select skills | -- |
+
+### Image
+
+| Module | Description | Benchmark Against |
+|--------|-------------|-------------------|
+| [png](png.md) | PNG/BMP image codec with matrix compression API | `Pillow` |
 
 ### Data Formats
 

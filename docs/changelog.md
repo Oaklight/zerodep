@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### New Modules
+
+- **PNG module**: zero-dependency PNG/BMP image codec with matrix compression API. `decode_png`/`encode_png` for PNG images (grayscale/RGB/RGBA, 8/16-bit, all 5 row filters), `decode_bmp`/`encode_bmp` for BMP (24/32-bit uncompressed), `convert()` for mode conversion between L/LA/RGB/RGBA, and `matrix_to_png`/`png_to_matrix` for 2D numeric data compression via PNG row filters with lossless float round-trip through tEXt metadata. 104 correctness tests (apple-to-apple vs Pillow) + 24 benchmark tests.
+
 ### New Features
 
 - **Protobuf module**: added `byte_size()` method for computing serialized message size without materializing bytes. Useful for pre-allocating buffers and protocol frame length calculation.

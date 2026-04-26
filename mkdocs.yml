@@ -152,6 +152,7 @@ plugins:
           - modules/protobuf.md
           - modules/png.md
           - modules/validate.md
+          - modules/jsonschema.md
           - modules/semver.md
           - modules/markdown.md
           - modules/soup.md
@@ -189,6 +190,7 @@ plugins:
           - api/protobuf.md
           - api/png.md
           - api/validate.md
+          - api/jsonschema.md
           - api/semver.md
           - api/markdown.md
           - api/soup.md
@@ -226,6 +228,7 @@ plugins:
           - benchmarks/protobuf.md
           - benchmarks/png.md
           - benchmarks/validate.md
+          - benchmarks/jsonschema.md
           - benchmarks/semver.md
           - benchmarks/markdown.md
           - benchmarks/soup.md

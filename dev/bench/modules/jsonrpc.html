@@ -112,27 +112,27 @@ td { white-space: nowrap; }
 <h1>jsonrpc</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: c4141ba | Commit: c4141bae | 2026-04-26T07:32:09.604130+00:00</p>
+<p class="meta">Version: 08a15f4 | Commit: 08a15f42 | 2026-04-26T19:48:21.885160+00:00</p>
 <h2>jsonrpc</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>142.3 µs</td><td>2.73 ms</td><td>7.0K</td><td>365.9</td><td class="ratio-cell faster">19.2x faster</td></tr>
-<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>9.8 µs</td><td>133.1 µs</td><td>102.5K</td><td>7.5K</td><td class="ratio-cell faster">13.6x faster</td></tr>
-<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>7.9 µs</td><td>104.9 µs</td><td>127.3K</td><td>9.5K</td><td class="ratio-cell faster">13.4x faster</td></tr>
-<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>7.3 µs</td><td>139.8 µs</td><td>136.6K</td><td>7.2K</td><td class="ratio-cell faster">19.1x faster</td></tr>
+<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>138.9 µs</td><td>1.95 ms</td><td>7.2K</td><td>512.5</td><td class="ratio-cell faster">14.1x faster</td></tr>
+<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>9.3 µs</td><td>94.3 µs</td><td>107.6K</td><td>10.6K</td><td class="ratio-cell faster">10.1x faster</td></tr>
+<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>7.7 µs</td><td>74.0 µs</td><td>130.6K</td><td>13.5K</td><td class="ratio-cell faster">9.7x faster</td></tr>
+<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>7.2 µs</td><td>99.8 µs</td><td>139.7K</td><td>10.0K</td><td class="ratio-cell faster">13.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>882.0 ns</td><td>1.13M</td></tr>
-<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>923.2 ns</td><td>1.08M</td></tr>
-<tr><td>Id Generation</td><td>next_id</td><td>99.3 ns</td><td>10.07M</td></tr>
-<tr><td>Json Round Trip</td><td>json_round_trip</td><td>6.5 µs</td><td>155.0K</td></tr>
-<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>357.4 ns</td><td>2.80M</td></tr>
-<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>289.4 ns</td><td>3.46M</td></tr>
+<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>904.8 ns</td><td>1.11M</td></tr>
+<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>925.4 ns</td><td>1.08M</td></tr>
+<tr><td>Id Generation</td><td>next_id</td><td>191.3 ns</td><td>5.23M</td></tr>
+<tr><td>Json Round Trip</td><td>json_round_trip</td><td>6.8 µs</td><td>146.0K</td></tr>
+<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>363.3 ns</td><td>2.75M</td></tr>
+<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>302.3 ns</td><td>3.31M</td></tr>
 </tbody></table>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -202,13 +202,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [7026.931234533411, 102459.8298501893, 127256.73953295028, 136555.63743778114],
+        data: [7201.952504893568, 107569.633816788, 130628.11677839389, 139708.30336793343],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "jsonrpcserver" + ' (ops/s)',
-        data: [365.92834408460556, 7514.389805040621, 9529.476227670748, 7151.995160966227],
+        data: [512.4565656008459, 10607.197120816814, 13519.079657048707, 10017.792687370014],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

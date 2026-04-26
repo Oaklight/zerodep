@@ -13,7 +13,7 @@ hide:
 [![CI](https://img.shields.io/github/actions/workflow/status/Oaklight/zerodep/ci.yml?label=CI)](https://github.com/Oaklight/zerodep/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/readthedocs/zerodep)](https://zerodep.readthedocs.io)
 
-Zero-dependency, single-file Python implementations of popular libraries — stdlib only, Python 3.10+.
+Zero-dependency, single-file Python implementations of popular libraries — stdlib only, benchmarked for performance parity, Python 3.10+.
 
 ## Overview
 

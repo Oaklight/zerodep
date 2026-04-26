@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Performance
 
+- **PNG module**: optimized BMP codec, PNG row filters, and mode conversion. BMP decode/encode replaced per-pixel BGR↔RGB loops with `bytearray` slice assignment (C-level ops) — **42-44x speedup** (from 193-265x slower to ~4.6-6.1x slower vs Pillow). PNG row filters optimized: list comprehension + `zip` for Up filter, prefix handling for Sub filter, local variable caching for Paeth. Pre-allocated pixel buffers in decode/encode paths. 7 lossless mode conversions (L↔RGB↔RGBA etc.) converted from per-pixel loops to slice operations. PNG decode/encode ~10% faster overall.
 - **Protobuf module**: comprehensive encode/decode optimization — encoder dispatch binding on FieldInfo (eliminates 11-way if/elif), per-field specialized `_is_default` checks, inline 1-byte tag decode fast-path (field numbers 1-15), write-to-buffer varint/scalar encoders (eliminates intermediate `bytes` allocation), cached map entry type metadata (`_MapMeta`), batch message construction via `__dict__.update`. Encode **~41-65% faster**, decode **~7-27% faster**, roundtrip **~39% faster** for large messages.
 
 ## [2026.4.25] - 2026-04-25

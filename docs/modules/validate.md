@@ -18,6 +18,8 @@
 - **TypedDict 验证** -- 必需/可选字段、嵌套结构、`Required`/`NotRequired`
 - **dataclass 验证** -- 与 TypedDict 相同的验证逻辑
 - **Annotated 约束** -- `Gt`、`Ge`、`Lt`、`Le`、`MinLen`、`MaxLen`、`Match`、`Predicate`
+- **字段验证器** -- `FieldValidator`，支持值转换和自定义验证（基于 `Annotated`）
+- **模型验证器** -- `model_validator` 装饰器，支持跨字段验证
 - **Union / Optional** -- 包含 discriminated union 的自动检测
 - **Literal** -- 枚举值验证
 - **错误收集** -- 收集所有错误后一次抛出，附带点号/方括号路径
@@ -147,6 +149,69 @@ validate(4, EvenInt)   # 通过
 validate(3, EvenInt)   # 抛出 ValidationError
 ```
 
+### 字段验证器
+
+`FieldValidator` 类似 `Predicate`，但可以**转换**值，并通过抛出异常来表示失败（而不是返回 bool）。配合 `Annotated` 使用，用于逐字段的验证和数据规范化。
+
+```python
+from typing import Annotated, TypedDict
+from validate import validate, FieldValidator, MinLen
+
+def strip_lower(v: str) -> str:
+    """去除空白并转小写。"""
+    v = v.strip().lower()
+    if not v:
+        raise ValueError("去除空白后不能为空")
+    return v
+
+class User(TypedDict):
+    username: Annotated[str, FieldValidator(strip_lower, "strip_lower"), MinLen(2)]
+    age: int
+
+# FieldValidator 先转换值，然后 MinLen 检查转换结果
+validate({"username": "  ALICE  ", "age": 30}, User)
+```
+
+多个 `FieldValidator` 从左到右组合——前一个的输出作为后一个的输入：
+
+```python
+Cleaned = Annotated[
+    str,
+    FieldValidator(lambda v: v.strip(), "strip"),
+    FieldValidator(lambda v: v.lower(), "lower"),
+]
+validate("  HELLO  ", Cleaned)  # 返回 "hello"
+```
+
+### 模型验证器
+
+`model_validator` 在 TypedDict 或 dataclass 类型上注册跨字段验证器。它在**所有字段验证通过后**运行。
+
+```python
+from typing import TypedDict
+from validate import validate, model_validator
+
+class RegisterForm(TypedDict):
+    password: str
+    confirm: str
+
+@model_validator(RegisterForm)
+def passwords_match(data: dict) -> dict:
+    if data["password"] != data["confirm"]:
+        raise ValueError("两次输入的密码不一致")
+    return data
+
+validate({"password": "secret", "confirm": "secret"}, RegisterForm)   # 通过
+validate({"password": "secret", "confirm": "wrong"}, RegisterForm)    # 抛出异常
+```
+
+关键行为：
+
+- 仅当**所有字段验证通过**后才执行模型验证器（无类型错误、无缺失字段）
+- 验证器接收完整的数据字典，应返回该字典（可修改）
+- 抛出 `ValueError` 或 `AssertionError` 表示失败
+- 同一类型上注册的多个验证器按注册顺序执行
+
 ## API 参考
 
 ### `validate(data, tp, *, coerce=False)`
@@ -196,6 +261,23 @@ validate(3, EvenInt)   # 抛出 ValidationError
 | `MaxLen(val)` | `len <= val` | `maxLength` / `maxItems` |
 | `Match(pattern)` | `re.fullmatch` | `pattern` |
 | `Predicate(fn, desc)` | 自定义谓词 | *（不映射）* |
+| `FieldValidator(fn, desc)` | 自定义转换 + 验证 | *（不映射）* |
+
+---
+
+### `model_validator(tp)`
+
+装饰器，用于在 TypedDict 或 dataclass 类型上注册跨字段验证器。
+
+**参数：**
+
+| 参数名 | 类型 | 说明 |
+|--------|------|------|
+| `tp` | `type` | 要附加验证器的 TypedDict 或 dataclass 类型 |
+
+**返回值：** 装饰器，注册函数后原样返回。
+
+注册的函数在所有字段验证通过后接收完整数据字典。应返回该字典（可修改）或抛出 `ValueError` / `AssertionError`。
 
 ---
 
@@ -228,12 +310,13 @@ validate(3, EvenInt)   # 抛出 ValidationError
 | 约束 | `Annotated[int, Gt(0)]` | `Annotated[int, Field(gt=0)]` |
 | JSON Schema | `json_schema(TypedDict)` | `Model.model_json_schema()` |
 | Discriminated union | 自动检测 Literal 字段 | 需显式声明 `Discriminator` |
+| 自定义验证器 | `FieldValidator`、`model_validator`、`Predicate` | `@field_validator`、`@model_validator` |
 | 性能 | 纯 Python（缓存后简单 ~3.3 us；批量数据优于 pydantic） | Rust 核心（简单 ~0.6 us） |
 | 单文件 | 是（~500 行） | 否（Rust 扩展包） |
 
 **何时使用 zerodep：** 已使用 TypedDict/dataclass，需要验证 + JSON Schema，不想引入新类型系统和外部依赖。
 
-**何时使用 pydantic：** 需要极致性能、序列化、自定义验证器或 pydantic 生态（FastAPI、SQLModel 等）。
+**何时使用 pydantic：** 需要极致性能、序列化或 pydantic 生态（FastAPI、SQLModel 等）。
 
 ## 性能测试
 

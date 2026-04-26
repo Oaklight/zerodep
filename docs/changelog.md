@@ -14,6 +14,7 @@
 
 - **Protobuf 模块**：新增 `byte_size()` 方法，计算序列化消息大小而无需实际分配 bytes。适用于预分配缓冲区和协议帧长度计算。
 - **QR 模块**：新增 `qr_to_svg()` 和 `qr_to_png()`，将 QR Code 渲染为 SVG 和 PNG 图像。SVG 使用单个 `<path>` 元素（零依赖）；PNG 通过 sibling `png` 模块懒加载渲染灰度图像。两者均支持可配置的缩放比例、静默区边框和前景/背景色。24 个渲染测试。
+- **Validate 模块**：新增 `FieldValidator` 和 `model_validator` 自定义验证机制。`FieldValidator` 是基于 `Annotated` 的约束，可转换值并在失败时抛出 `ValueError`/`AssertionError`（不同于只返回 bool 的 `Predicate`）。`model_validator` 是装饰器，用于在 TypedDict/dataclass 上注册跨字段验证器，在所有字段验证通过后执行。新增 18 个测试。版本 0.4.2 → 0.5.0。
 
 ### 功能增强
 

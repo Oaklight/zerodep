@@ -10,7 +10,7 @@ The Validate module provides runtime validation of arbitrary data against stdlib
 |------|-------------|--------------|
 | `validate.py` | Pure Python implementation | None (stdlib only: `typing`, `dataclasses`, `re`) |
 
-The module supports TypedDict and dataclass validation, `Annotated` constraints (Gt, Ge, Lt, Le, MinLen, MaxLen, Match, Predicate), `Union`/`Optional`/`Literal` types, discriminated unions, nested structures, optional type coercion, structured error collection with dotted field paths, and JSON Schema generation.
+The module supports TypedDict and dataclass validation, `Annotated` constraints (Gt, Ge, Lt, Le, MinLen, MaxLen, Match, Predicate), `FieldValidator` for per-field transformation and validation, `model_validator` for cross-field checks, `Union`/`Optional`/`Literal` types, discriminated unions, nested structures, optional type coercion, structured error collection with dotted field paths, and JSON Schema generation.
 
 !!! note "v0.4.1 Performance & Correctness"
     Internal field-introspection helpers (`_typeddict_fields`, `_dataclass_fields`, `_find_discriminator`) are now cached with `functools.lru_cache`, avoiding redundant `get_type_hints()` calls and providing **8-10x speedup** for complex nested TypedDict structures. A new `_strip_required()` helper correctly unwraps `Required[T]`/`NotRequired[T]` wrappers so that discriminated union matching works reliably when union members use these annotations.
@@ -28,6 +28,7 @@ Then import directly:
 ```python
 from validate import validate, json_schema, ValidationError
 from validate import Gt, Ge, Lt, Le, MinLen, MaxLen, Match, Predicate
+from validate import FieldValidator, model_validator
 ```
 
 !!! note "typing_extensions"
@@ -203,6 +204,69 @@ validate(4, EvenInt)   # ok
 validate(3, EvenInt)   # raises: Constraint must be even failed
 ```
 
+### Field Validators
+
+`FieldValidator` is like `Predicate` but can **transform** the value and raises exceptions to signal failure (instead of returning bool). Use it with `Annotated` for per-field validation and normalization.
+
+```python
+from typing import Annotated, TypedDict
+from validate import validate, FieldValidator, MinLen
+
+def strip_lower(v: str) -> str:
+    """Strip whitespace and lowercase."""
+    v = v.strip().lower()
+    if not v:
+        raise ValueError("must not be empty after stripping")
+    return v
+
+class User(TypedDict):
+    username: Annotated[str, FieldValidator(strip_lower, "strip_lower"), MinLen(2)]
+    age: int
+
+# FieldValidator transforms the value, then MinLen checks the result
+validate({"username": "  ALICE  ", "age": 30}, User)
+```
+
+Multiple `FieldValidator`s compose left-to-right -- the output of one feeds into the next:
+
+```python
+Cleaned = Annotated[
+    str,
+    FieldValidator(lambda v: v.strip(), "strip"),
+    FieldValidator(lambda v: v.lower(), "lower"),
+]
+validate("  HELLO  ", Cleaned)  # returns "hello"
+```
+
+### Model Validators
+
+`model_validator` registers a cross-field validator on a TypedDict or dataclass type. It runs **after** all field validation passes.
+
+```python
+from typing import TypedDict
+from validate import validate, model_validator
+
+class RegisterForm(TypedDict):
+    password: str
+    confirm: str
+
+@model_validator(RegisterForm)
+def passwords_match(data: dict) -> dict:
+    if data["password"] != data["confirm"]:
+        raise ValueError("passwords do not match")
+    return data
+
+validate({"password": "secret", "confirm": "secret"}, RegisterForm)   # ok
+validate({"password": "secret", "confirm": "wrong"}, RegisterForm)    # raises
+```
+
+Key behaviors:
+
+- Model validators only run if **all field validations pass** (no type errors, no missing fields)
+- Validators receive the full data dict and should return it (possibly modified)
+- Raise `ValueError` or `AssertionError` to signal failure
+- Multiple validators on the same type run in registration order
+
 ## API Reference
 
 ### `validate(data, tp, *, coerce=False)`
@@ -252,6 +316,23 @@ All constraints are frozen dataclasses usable with `typing.Annotated`.
 | `MaxLen(val)` | `len <= val` | `maxLength` / `maxItems` |
 | `Match(pattern)` | `re.fullmatch` | `pattern` |
 | `Predicate(fn, desc)` | Custom check | *(not mapped)* |
+| `FieldValidator(fn, desc)` | Custom transform + validate | *(not mapped)* |
+
+---
+
+### `model_validator(tp)`
+
+Decorator to register a cross-field validator on a TypedDict or dataclass type.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `tp` | `type` | The TypedDict or dataclass type to attach the validator to. |
+
+**Returns:** A decorator that registers the function and returns it unchanged.
+
+The registered function receives the full data dict after all field validation passes. It should return the dict (possibly modified) or raise `ValueError` / `AssertionError`.
 
 ---
 
@@ -287,13 +368,13 @@ Dataclass describing a single validation error.
 | Discriminated unions | Auto-detected via Literal fields | Explicit `Discriminator` |
 | Coercion | `coerce=True` flag | Default behavior (strict mode opt-in) |
 | Serialization | No | Yes |
-| Custom validators | `Predicate` only | `@field_validator`, `@model_validator` |
+| Custom validators | `FieldValidator`, `model_validator`, `Predicate` | `@field_validator`, `@model_validator` |
 | Performance | Pure Python (~3.3 us simple with caching; beats pydantic on bulk data) | Rust core (~0.6 us simple) |
 | Implementation | Single file (~500 lines) | Package (Rust extension) |
 
 **When to use zerodep:** You want zero dependencies, already use TypedDict/dataclass, and need validation + JSON Schema without adopting a new type system.
 
-**When to use pydantic:** You need maximum performance, serialization, custom validators, or pydantic's ecosystem (FastAPI, SQLModel, etc.).
+**When to use pydantic:** You need maximum performance, serialization, or pydantic's ecosystem (FastAPI, SQLModel, etc.).
 
 ## Benchmark
 

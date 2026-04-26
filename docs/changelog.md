@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Protobuf module**: added `byte_size()` method for computing serialized message size without materializing bytes. Useful for pre-allocating buffers and protocol frame length calculation.
 - **QR module**: added `qr_to_svg()` and `qr_to_png()` for rendering QR codes as SVG and PNG images. SVG uses a single `<path>` element (zero deps); PNG renders grayscale via sibling `png` module (lazy import). Both support configurable scale, quiet zone border, and foreground/background colors. 24 render tests.
+- **Validate module**: added `FieldValidator` and `model_validator` for custom validation logic. `FieldValidator` is an `Annotated`-based constraint that can transform values and raise `ValueError`/`AssertionError` on failure (unlike `Predicate` which only returns bool). `model_validator` is a decorator to register cross-field validators on TypedDict/dataclass types, run after all field validation passes. 18 new tests. Version 0.4.2 → 0.5.0.
 
 ### Enhancements
 

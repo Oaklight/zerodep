@@ -9,7 +9,7 @@
 
 Zero-dependency, single-file Python implementations of popular libraries — stdlib only, benchmarked for performance parity, Python 3.10+.
 
-零依赖、单文件的 Python 常用库实现 —— 仅使用标准库，经过性能基准测试，支持 Python 3.10+。
+零依赖、单文件的 Python 常用库实现 —— 仅使用标准库，性能对标主流库，支持 Python 3.10+。
 
 [English Docs](https://zerodep.readthedocs.io/en/) | [中文文档](https://zerodep.readthedocs.io/zh-cn/)
 

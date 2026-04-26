@@ -92,6 +92,28 @@ print(len(children))  # 2
 soup2 = Soup('<a href="/home">Home</a><a href="/about">About</a>')
 links = soup2.select("a[href]")
 print(len(links))  # 2
+
+# Pseudo-selectors
+html3 = """
+<ul>
+  <li class="a">First</li>
+  <li class="b">Second</li>
+  <li class="c">Third</li>
+</ul>
+"""
+soup3 = Soup(html3)
+
+# :first-child / :last-child
+print(soup3.select_one("li:first-child").text)  # First
+print(soup3.select_one("li:last-child").text)   # Third
+
+# :only-child
+soup4 = Soup("<div><span>Alone</span></div>")
+print(soup4.select_one("span:only-child").text)  # Alone
+
+# :not(selector)
+others = soup3.select("li:not(.a)")
+print([li.text for li in others])  # ['Second', 'Third']
 ```
 
 ### get_text
@@ -219,6 +241,10 @@ print(li.find_parent().name)       # ul
 | Descendant | `div p` | Match `p` inside `div` |
 | Child | `div > p` | Match direct children |
 | Compound | `p.intro` | Match `p` with class `intro` |
+| :first-child | `li:first-child` | Match first child element |
+| :last-child | `li:last-child` | Match last child element |
+| :only-child | `span:only-child` | Match element that is the only child |
+| :not() | `li:not(.active)` | Match elements that do NOT match the inner selector |
 
 ## API Reference
 
@@ -276,7 +302,7 @@ Parse an HTML document and provide a BeautifulSoup-like API.
 | Files | Single file | Package (multiple files) |
 | Parser backends | `html.parser` only | `html.parser`, `lxml`, `html5lib` |
 | find / find_all | Yes | Yes |
-| CSS selectors | Basic (tag, class, id, attr, descendant, child) | Full (via soupsieve) |
+| CSS selectors | Tag, class, id, attr, combinators, pseudo-selectors | Full (via soupsieve) |
 | Tree mutation (append/insert/extract) | Yes | Yes |
 | HTML serialization (to_html) | Yes | Yes (prettify) |
 | NavigableString | No (plain `str`) | Yes |
@@ -285,7 +311,7 @@ Parse an HTML document and provide a BeautifulSoup-like API.
 
 **When to use zerodep:** You need basic HTML parsing (find, select, get_text) with zero dependencies and fast performance.
 
-**When to use BeautifulSoup:** You need advanced CSS pseudo-selectors, multiple parser backends, or NavigableString features.
+**When to use BeautifulSoup:** You need the full CSS selector spec (`:nth-child()`, `:has()`, etc.), multiple parser backends, or NavigableString features.
 
 ## Benchmark
 

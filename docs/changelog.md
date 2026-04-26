@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Protobuf module**: added `byte_size()` method for computing serialized message size without materializing bytes. Useful for pre-allocating buffers and protocol frame length calculation.
 
+### Enhancements
+
+- **Soup module**: added CSS pseudo-selector support — `:first-child`, `:last-child`, `:only-child`, and `:not(selector)`. Covers the most commonly needed structural pseudo-classes. `:not()` accepts any simple selector (tag, class, ID, attribute, or nested pseudo). Added CSS select and pseudo-select benchmarks. Version 0.5.0 → 0.6.0.
+
 ### Performance
 
 - **Protobuf module**: comprehensive encode/decode optimization — encoder dispatch binding on FieldInfo (eliminates 11-way if/elif), per-field specialized `_is_default` checks, inline 1-byte tag decode fast-path (field numbers 1-15), write-to-buffer varint/scalar encoders (eliminates intermediate `bytes` allocation), cached map entry type metadata (`_MapMeta`), batch message construction via `__dict__.update`. Encode **~41-65% faster**, decode **~7-27% faster**, roundtrip **~39% faster** for large messages.

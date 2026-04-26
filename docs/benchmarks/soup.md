@@ -48,11 +48,28 @@ Apple-to-apple performance comparison between zerodep soup and [`beautifulsoup4`
 | Medium | 2,370.0 us | 6,810.0 us | 2.9x faster |
 | Large | 26,780.0 us | 67,650.0 us | 2.5x faster |
 
+## CSS Select Performance (Mean)
+
+| Data Size | zerodep | beautifulsoup4 | Speedup |
+|-----------|---------|----------------|---------|
+| Small | 286.0 us | 805.9 us | 2.8x faster |
+| Medium | 2,248.7 us | 6,466.3 us | 2.9x faster |
+| Large | 23,072.9 us | 65,167.6 us | 2.8x faster |
+
+## Pseudo-Select Performance (Mean)
+
+| Data Size | zerodep | beautifulsoup4 | Speedup |
+|-----------|---------|----------------|---------|
+| Small | 303.4 us | 939.4 us | 3.1x faster |
+| Medium | 2,308.3 us | 6,948.2 us | 3.0x faster |
+| Large | 23,489.7 us | 70,329.8 us | 3.0x faster |
+
 ## Key Takeaways
 
 - **2.5-3.7x faster across all sizes and operations** -- zerodep builds a minimal DOM tree directly from `html.parser` without the abstraction layers (NavigableString, PageElement hierarchy, soupsieve integration) that BeautifulSoup carries.
 - **Serialization shows the largest speedup** -- 3.2-3.7x faster, as zerodep's lightweight node structure has less overhead during tree-to-string conversion.
-- **Consistent advantage across workloads** -- parsing (2.7-2.8x), serialization (3.2-3.7x), and tree operations (2.5-2.9x) all show strong gains, with only a slight narrowing on the largest documents.
+- **CSS select and pseudo-selectors are ~3x faster** -- despite BS4 delegating to the optimized soupsieve library, zerodep's inline selector engine avoids the cross-library dispatch overhead.
+- **Consistent advantage across workloads** -- parsing (2.7-2.8x), serialization (3.2-3.7x), tree operations (2.5-2.9x), and CSS selectors (2.8-3.1x) all show strong gains.
 - **Zero pip dependencies** -- zerodep uses only `re` and `html.parser` from the standard library. BeautifulSoup requires `soupsieve` and optionally `lxml` or `html5lib`.
 
 ## Run It Yourself

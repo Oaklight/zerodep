@@ -38,7 +38,7 @@ title: 模块概览
 | [semver](semver.md) | 0.4.1 | 2026-04-20 |
 | [skills](skills.md) | 0.4.2 | 2026-04-20 |
 | [soup](soup.md) | 0.5.0 | 2026-04-20 |
-| [sparse_search](sparse_search.md) | 0.3.2 | 2026-04-15 |
+| [sparse_search](sparse_search.md) | 0.4.0 | 2026-04-27 |
 | [sse](sse.md) | 0.3.1 | 2026-04-15 |
 | [structlog](structlog.md) | 0.3.0 | 2026-04-11 |
 | [tabulate](tabulate.md) | 0.1.1 | 2026-04-15 |
@@ -104,7 +104,7 @@ title: 模块概览
 
 | 模块 | 描述 | 性能对标 |
 |------|------|---------|
-| [sparse_search](sparse_search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF 全文搜索（贝叶斯校准） | `rank-bm25` |
+| [sparse_search](sparse_search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF 全文搜索（贝叶斯校准、RRF 融合、MMR 多样性） | `rank-bm25` |
 
 ### 配置
 

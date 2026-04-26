@@ -21,6 +21,8 @@
 - **可插拔分词器** -- 默认 Unicode 分词；可替换为 `jieba.lcut`、NLTK 等
 - **Bayesian BM25 校准** -- 通过 sigmoid 似然、复合先验和贝叶斯后验，将原始 BM25 分数转换为校准概率 [0, 1]
 - **倒排索引** -- O(matched_docs) 搜索，查询速度比 rank-bm25 快 34-132 倍
+- **RRF（倒数排名融合）** -- 合并多路排名结果列表（如 BM25 + 稠密向量）为统一排序
+- **MMR（最大边际相关性）** -- 使用自定义相似度函数对结果进行多样性重排序
 
 ## 快速开始
 
@@ -201,6 +203,68 @@ loaded = SparseIndex.load("index.json")
 loaded = SparseIndex.load("index.db")
 ```
 
+### 倒数排名融合（RRF）
+
+将多路检索系统的结果（如 BM25 稀疏搜索 + 稠密向量搜索）合并为统一排名列表：
+
+```python
+from sparse_search import SparseIndex, Result, rrf
+
+# 稀疏检索
+index = SparseIndex()
+index.add("d1", "quick brown fox")
+index.add("d2", "lazy dog")
+index.add("d3", "fast red car")
+sparse_results = index.search("quick fox", top_k=20)
+
+# 稠密检索（来自外部系统如 FAISS、Chroma 等）
+dense_results = [Result("d1", 0.92), Result("d3", 0.85), Result("d2", 0.71)]
+
+# 使用 RRF 融合（默认 k=60，遵循 Cormack et al.）
+fused = rrf(sparse_results, dense_results, top_k=10)
+
+# 加权融合（提升稀疏结果权重）
+fused = rrf(sparse_results, dense_results, weights=[2.0, 1.0], top_k=10)
+```
+
+RRF 仅基于排名位置而非原始分数进行融合，非常适合组合分数尺度不一致的检索系统。
+
+### 最大边际相关性（MMR）
+
+对结果进行多样性重排序——适用于顶部结果过于相似的场景：
+
+```python
+from sparse_search import SparseIndex, mmr, jaccard_similarity
+
+index = SparseIndex()
+index.add("d1", "python web framework flask")
+index.add("d2", "python web framework django")
+index.add("d3", "machine learning with python")
+index.add("d4", "python web development guide")
+
+results = index.search("python web", top_k=10)
+
+# 基于文档 token 构建相似度函数
+doc_tokens = {
+    "d1": {"python", "web", "framework", "flask"},
+    "d2": {"python", "web", "framework", "django"},
+    "d3": {"machine", "learning", "with", "python"},
+    "d4": {"python", "web", "development", "guide"},
+}
+
+def sim(a, b):
+    return jaccard_similarity(doc_tokens[a.doc_id], doc_tokens[b.doc_id])
+
+# 选择 top 3 多样化结果（lambda_=0.7 偏向相关性而非多样性）
+diverse = mmr(results, sim, lambda_=0.7, top_k=3)
+```
+
+`lambda_` 参数控制相关性-多样性的权衡：
+
+- `lambda_=1.0` -- 纯相关性（与原始排名相同）
+- `lambda_=0.5` -- 均衡（默认值）
+- `lambda_=0.0` -- 纯多样性（最不相似的项优先）
+
 ## 设计说明
 
 ### 索引参数 vs 评分参数
@@ -281,6 +345,46 @@ loaded = SparseIndex.load("index.db")
 ```
 
 生产环境中建议传入自定义分词器，支持词干提取、停用词移除或 CJK 分词。
+
+---
+
+### `rrf(*result_lists, k=60, top_k=None, weights=None)`
+
+倒数排名融合——将多路排名结果列表合并为统一排名。
+
+**参数：**
+
+| 参数名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `*result_lists` | `list[Result]` | *(必需)* | 一个或多个排名结果列表 |
+| `k` | `int` | `60` | RRF 常数，控制排名位置的敏感度 |
+| `top_k` | `int \| None` | `None` | 最大返回数量。`None` 返回全部 |
+| `weights` | `list[float] \| None` | `None` | 各列表权重。`None` = 等权重 |
+
+**返回值：** `list[Result]`，按 RRF 分数降序排列。元数据取自原始分数最高的出现。
+
+---
+
+### `mmr(results, similarity_fn, *, lambda_=0.5, top_k=None)`
+
+最大边际相关性——对结果进行多样性重排序。
+
+**参数：**
+
+| 参数名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `results` | `list[Result]` | *(必需)* | 待重排序的候选结果 |
+| `similarity_fn` | `Callable[[Result, Result], float]` | *(必需)* | 相似度函数，返回 [0, 1] |
+| `lambda_` | `float` | `0.5` | 权衡参数：1.0 = 纯相关性，0.0 = 纯多样性 |
+| `top_k` | `int \| None` | `None` | 选择的结果数量。`None` = 全部 |
+
+**返回值：** `list[Result]`，分数为 MMR 值。
+
+---
+
+### `jaccard_similarity(set_a, set_b)`
+
+Jaccard 相似度系数：`|A ∩ B| / |A ∪ B|`。两个集合均为空时返回 0.0。
 
 ## 与 rank-bm25 的对比
 

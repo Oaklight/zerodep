@@ -15,6 +15,7 @@
 - **Protobuf 模块**：新增 `byte_size()` 方法，计算序列化消息大小而无需实际分配 bytes。适用于预分配缓冲区和协议帧长度计算。
 - **QR 模块**：新增 `qr_to_svg()` 和 `qr_to_png()`，将 QR Code 渲染为 SVG 和 PNG 图像。SVG 使用单个 `<path>` 元素（零依赖）；PNG 通过 sibling `png` 模块懒加载渲染灰度图像。两者均支持可配置的缩放比例、静默区边框和前景/背景色。24 个渲染测试。
 - **Validate 模块**：新增 `FieldValidator` 和 `model_validator` 自定义验证机制。`FieldValidator` 是基于 `Annotated` 的约束，可转换值并在失败时抛出 `ValueError`/`AssertionError`（不同于只返回 bool 的 `Predicate`）。`model_validator` 是装饰器，用于在 TypedDict/dataclass 上注册跨字段验证器，在所有字段验证通过后执行。新增 18 个测试。版本 0.4.2 → 0.5.0。
+- **Sparse Search 模块**：新增检索后重排序工具，用于混合搜索和 RAG 管道。`rrf()` 实现倒数排名融合（Reciprocal Rank Fusion，Cormack et al., SIGIR 2009），用于合并多路排名结果列表（如 BM25 稀疏搜索 + 稠密向量搜索），支持各列表独立权重和 top_k 截断。`mmr()` 实现最大边际相关性（Maximal Marginal Relevance）结果多样化重排序，接受用户自定义相似度函数，内部自动 min-max 归一化相关性分数。`jaccard_similarity()` 提供基于集合的相似度计算工具，作为 MMR 相似度函数的构建块。三个函数均为独立的模块级函数，操作通用 `list[Result]`。新增 31 个正确性测试 + 5 个性能测试。版本 0.3.2 → 0.4.0。
 
 ### 功能增强
 

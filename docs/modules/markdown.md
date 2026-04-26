@@ -4,7 +4,7 @@ Markdown 转 HTML 渲染器 —— 零依赖，仅使用标准库，支持 Pytho
 
 ## 概述
 
-Markdown 模块提供了 `mistune.html()` 的直接替代品，可将常见 Markdown 渲染为 HTML。支持 CommonMark 子集和 GFM 表格 —— 无需任何第三方依赖。
+Markdown 模块提供了 `mistune.html()` 的直接替代品，可将常见 Markdown 渲染为 HTML。支持 CommonMark 子集和 GFM 扩展（表格、删除线、任务列表、扩展自动链接）—— 无需任何第三方依赖。
 
 | 文件 | 说明 | 依赖 |
 |------|------|------|
@@ -146,6 +146,42 @@ render("""
 
 通过 `:---`（左对齐）、`:---:`（居中）和 `---:`（右对齐）语法支持列对齐。
 
+### 删除线（GFM）
+
+```python
+render("~~删除的文本~~")
+# <p><del>删除的文本</del></p>
+
+render("~~粗体 **嵌套** 删除~~")
+# <p><del>粗体 <strong>嵌套</strong> 删除</del></p>
+```
+
+### 任务列表（GFM）
+
+```python
+render("- [ ] 编写代码\n- [x] 编写测试\n- [ ] 审查 PR")
+# <ul>
+# <li class="task-list-item"><input class="task-list-item-checkbox" type="checkbox" disabled/>编写代码</li>
+# <li class="task-list-item"><input class="task-list-item-checkbox" type="checkbox" disabled checked/>编写测试</li>
+# <li class="task-list-item"><input class="task-list-item-checkbox" type="checkbox" disabled/>审查 PR</li>
+# </ul>
+```
+
+无序列表（`- [ ]`）和有序列表（`1. [ ]`）均支持。
+
+### 扩展自动链接（GFM）
+
+```python
+render("访问 https://example.com 了解更多")
+# <p>访问 <a href="https://example.com">https://example.com</a> 了解更多</p>
+
+# 尾部标点自动排除在 URL 之外
+render("参见 https://example.com。")
+# <p>参见 <a href="https://example.com">https://example.com</a>。</p>
+```
+
+仅自动链接 `http://` 和 `https://` 协议。裸 `www.` URL 不会被匹配。
+
 ### 围栏代码块
 
 ```python
@@ -177,6 +213,9 @@ render("```python\ndef foo():\n    pass\n```")
 | 反斜杠转义 | `\*`、`\_` 等 | 转义特殊字符 |
 | 自动链接 | `<https://...>` | `<user@example.com>` |
 | GFM 表格 | 管道语法 | 支持列对齐 |
+| GFM 删除线 | `~~text~~` | `~~已删除~~` |
+| GFM 任务列表 | `- [ ]` / `- [x]` | 带复选框的列表项 |
+| GFM 扩展自动链接 | 裸 `https://` URL | 自动链接，剥离尾部标点 |
 | HTML 转义 | 自动 | `<`、`>`、`&` 被转义 |
 
 ## 不支持的特性
@@ -184,7 +223,6 @@ render("```python\ndef foo():\n    pass\n```")
 - 原始 HTML 透传（出于安全考虑会被转义）
 - 脚注、定义列表
 - 数学公式 / LaTeX
-- 删除线、任务列表
 
 ## 安全性
 
@@ -201,11 +239,11 @@ render("```python\ndef foo():\n    pass\n```")
     本渲染器针对最常用的 Markdown 特性。不追求 100% CommonMark 规范合规，但覆盖了 LLM 输出和文档中常见的所有特性。
 
 - **Python 版本：** 需要 Python 3.10+（使用 `X | Y` 联合类型语法）。
-- **输出兼容性：** 对所有支持的特性，生成与 `mistune.html()` 完全一致的 HTML 输出。
-- **性能：** 在小、中、大三种文档规模下均比 mistune 快 1.8--2.6 倍。
+- **输出兼容性：** 对所有支持的特性，生成与 `mistune.html()`（含 GFM 插件）完全一致的 HTML 输出。
+- **性能：** 在所有文档规模下（含 GFM 内容）均比 mistune 快约 2 倍。
 
 ## 性能测试
 
-与 `mistune` 在三种文档规模（小、中、大）下进行对比测试。
+与 `mistune` 在五种测试规模下进行对比：CommonMark（小、中、大）和 GFM（中、大）。
 
 详见 [Markdown 性能测试](../benchmarks/markdown.md)。

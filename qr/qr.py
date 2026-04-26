@@ -1,6 +1,6 @@
 # /// zerodep
 # version = "0.3.2"
-# deps = []
+# deps = ["png"]
 # tier = "simple"
 # category = "utility"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
@@ -20,7 +20,9 @@ substantially refactored for the zerodep project:
 from __future__ import annotations
 
 import itertools
+import os
 import re
+import sys
 from collections.abc import Callable, Sequence
 from typing import Union
 
@@ -65,6 +67,8 @@ __all__ = [
     "QrSegment",
     "DataTooLongError",
     "print_qr_terminal",
+    "qr_to_svg",
+    "qr_to_png",
 ]
 
 
@@ -1680,3 +1684,136 @@ def print_qr_terminal(text: str) -> None:
         lines.append("".join(row_chars))
 
     print("\n".join(lines))
+
+
+# ---- Sibling import helpers ----
+
+
+def _ensure_sibling_path(name: str) -> str:
+    """Return the sibling module directory and prepend it to ``sys.path``."""
+    sibling_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", name)
+    if sibling_dir not in sys.path:
+        sys.path.insert(0, sibling_dir)
+    return sibling_dir
+
+
+def _load_png_encoder():
+    """Load sibling ``png`` module's ``Image`` and ``encode_png`` on demand."""
+    _ensure_sibling_path("png")
+    sys.modules.pop("png", None)
+    try:
+        from png import Image, encode_png
+    except ImportError as exc:
+        raise ImportError(
+            "qr_to_png requires the sibling png module. "
+            "Copy png/png.py into your project."
+        ) from exc
+    return Image, encode_png
+
+
+# ---- Image output ----
+
+
+def qr_to_svg(
+    qr: QrCode,
+    dest: str | os.PathLike[str] | None = None,
+    *,
+    scale: int = 10,
+    border: int = 4,
+    fg_color: str = "#000000",
+    bg_color: str = "#ffffff",
+) -> str | None:
+    """Render a QR Code as an SVG image.
+
+    Args:
+        qr: QR Code to render.
+        dest: File path to write SVG to, or ``None`` to return the SVG string.
+        scale: Size of each QR module in SVG user units.
+        border: Width of the quiet zone in QR modules.
+        fg_color: CSS color for dark modules.
+        bg_color: CSS color for light modules.
+
+    Returns:
+        SVG string when *dest* is ``None``, otherwise ``None``.
+    """
+    size = qr.get_size()
+    total = (size + 2 * border) * scale
+
+    # Build a single <path> collecting all dark modules.
+    parts: list[str] = []
+    for y in range(size):
+        for x in range(size):
+            if qr.get_module(x, y):
+                px = (x + border) * scale
+                py = (y + border) * scale
+                parts.append(f"M{px},{py}h{scale}v{scale}h-{scale}z")
+    path_d = "".join(parts)
+
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'viewBox="0 0 {total} {total}" '
+        f'width="{total}" height="{total}">\n'
+        f'<rect width="100%" height="100%" fill="{bg_color}"/>\n'
+        f'<path d="{path_d}" fill="{fg_color}"/>\n'
+        f"</svg>\n"
+    )
+
+    if dest is None:
+        return svg
+    with open(dest, "w", encoding="utf-8") as fh:
+        fh.write(svg)
+    return None
+
+
+def qr_to_png(
+    qr: QrCode,
+    dest: str | os.PathLike[str] | None = None,
+    *,
+    scale: int = 10,
+    border: int = 4,
+    fg_color: int = 0,
+    bg_color: int = 255,
+) -> bytes | None:
+    """Render a QR Code as a PNG image.
+
+    Requires the sibling ``png`` module.
+
+    Args:
+        qr: QR Code to render.
+        dest: File path to write PNG to, or ``None`` to return PNG bytes.
+        scale: Pixels per QR module.
+        border: Width of the quiet zone in QR modules.
+        fg_color: Grayscale value (0--255) for dark modules.
+        bg_color: Grayscale value (0--255) for light modules.
+
+    Returns:
+        PNG bytes when *dest* is ``None``, otherwise ``None``.
+
+    Raises:
+        ImportError: If the sibling ``png`` module is not available.
+        ValueError: If *fg_color* or *bg_color* is outside 0--255.
+    """
+    if not (0 <= fg_color <= 255):
+        raise ValueError(f"fg_color must be 0-255, got {fg_color}")
+    if not (0 <= bg_color <= 255):
+        raise ValueError(f"bg_color must be 0-255, got {bg_color}")
+
+    Image, encode_png = _load_png_encoder()
+
+    size = qr.get_size()
+    total_px = (size + 2 * border) * scale
+
+    # Build grayscale pixel buffer.
+    fg_run = bytes([fg_color]) * scale
+    pixels = bytearray([bg_color]) * (total_px * total_px)
+    for y in range(size):
+        for x in range(size):
+            if qr.get_module(x, y):
+                px = (x + border) * scale
+                py = (y + border) * scale
+                for row in range(py, py + scale):
+                    offset = row * total_px + px
+                    pixels[offset : offset + scale] = fg_run
+
+    img = Image(width=total_px, height=total_px, data=bytes(pixels), mode="L")
+    return encode_png(img, dest)

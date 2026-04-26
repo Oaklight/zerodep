@@ -27,6 +27,7 @@ title: 模块概览
 | [jsonschema](jsonschema.md) | 0.1.0 | 2026-04-25 |
 | [markdown](markdown.md) | 0.3.1 | 2026-04-15 |
 | [persistdict](persistdict.md) | 0.4.1 | 2026-04-20 |
+| [png](png.md) | 0.1.0 | 2026-04-26 |
 | [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
 | [protobuf](protobuf.md) | 0.4.3 | 2026-04-15 |
 | [qr](qr.md) | 0.3.2 | 2026-04-20 |
@@ -64,6 +65,12 @@ title: 模块概览
 | [a2a](a2a.md) | Google A2A 协议：JSON-RPC 2.0、SSE 流式传输、任务管理 | `a2a-python` |
 | [acp](acp.md) | Anthropic ACP 协议：JSON-RPC 2.0 over stdio、异步客户端/代理 | `acp-python` |
 | [skills](skills.md) | Agent Skills 运行时：解析、发现、管理、选择技能 | -- |
+
+### 图像
+
+| 模块 | 描述 | 性能对标 |
+|------|------|---------|
+| [png](png.md) | PNG/BMP 图像编解码器（矩阵压缩 API） | `Pillow` |
 
 ### 数据格式
 

@@ -6,6 +6,10 @@
 
 ## [未发布]
 
+### 新增模块
+
+- **PNG 模块**：零依赖的 PNG/BMP 图像编解码器，附带矩阵压缩 API。`decode_png`/`encode_png` 支持 PNG 图像（灰度/RGB/RGBA、8/16 位、全部 5 种行滤波器），`decode_bmp`/`encode_bmp` 支持 BMP（24/32 位未压缩），`convert()` 支持 L/LA/RGB/RGBA 模式互转，`matrix_to_png`/`png_to_matrix` 通过 PNG 行滤波器实现二维数值数据压缩，通过 tEXt 元数据实现浮点数无损往返。104 个正确性测试（与 Pillow Apple-to-Apple 对比）+ 24 个性能测试。
+
 ### 新功能
 
 - **Protobuf 模块**：新增 `byte_size()` 方法，计算序列化消息大小而无需实际分配 bytes。适用于预分配缓冲区和协议帧长度计算。

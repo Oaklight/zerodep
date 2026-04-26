@@ -1,7 +1,7 @@
 site_name: zerodep
 site_description: Zero-dependency, single-file Python implementations of popular libraries
 site_author: Peng Ding
-site_url: https://zerodep.readthedocs.io/en/
+site_url: https://zerodep.readthedocs.io/en/latest
 repo_name: Oaklight/zerodep
 repo_url: https://github.com/Oaklight/zerodep
 copyright: Copyright &copy; 2026 Peng Ding

@@ -20,7 +20,7 @@ Modules with implementation, correctness tests, and benchmarks.
 | `sse/` | httpx-sse | Low-level SSE parser + high-level client with auto-reconnect, exponential backoff, sync + async, depends on httpclient | httpx-sse |
 | `soup/` | beautifulsoup4 | HTML parser with find/find_all/select/CSS selectors, built on stdlib html.parser | beautifulsoup4 |
 | `prompt/` | questionary | confirm/select/text prompts, arrow key navigation, ANSI colors, cross-platform (termios + msvcrt) | — |
-| `markdown/` | mistune | CommonMark subset (ATX/Setext headings, emphasis, code spans/blocks, links, images, lists, blockquotes, thematic breaks, backslash escapes, autolinks, hard breaks) + GFM tables | mistune |
+| `markdown/` | mistune | CommonMark subset (ATX/Setext headings, emphasis, code spans/blocks, links, images, lists, blockquotes, thematic breaks, backslash escapes, autolinks, hard breaks) + GFM tables, strikethrough, task lists, extended autolinks | mistune |
 | `diff/` | unidiff | Unified diff parser, patch applicator, three-way merge, conflict markers | unidiff |
 | `vcs/` | — | VCS CLI wrapper (Git/SVN/Hg backend protocol), status/log/blame/diff, subprocess-based | — |
 | `ansi/` | — | ANSI escape code primitives, fg/bg/style helpers, color depth detection, strip_ansi, visible_len, cursor control | — |

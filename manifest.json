@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-04-25T06:17:01.148277+00:00",
+  "generated": "2026-04-26T06:58:51.116753+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -13,7 +13,7 @@
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-04-25T02:51:58Z",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "11c6769744f13875563b39b8379295e128762bfeba67fbaa4e316e72e96d9604"
     },
     "acp": {
@@ -39,7 +39,7 @@
       "deps": [],
       "tier": "medium",
       "category": "crypto",
-      "last_updated": "2026-04-25T02:51:58Z",
+      "last_updated": "2026-04-20T23:52:13+08:00",
       "content_hash": "b09c080a243ceee4f955f5c5eb88c05ecbc022e17d0177c22d01662584e5ecb3"
     },
     "ansi": {
@@ -63,7 +63,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "utility",
-      "last_updated": "2026-04-25T02:51:58Z",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "0daa535d12e0d214a579242ad73d725b9f18145f6c67b319fa4185e7851685ae"
     },
     "config": {
@@ -189,7 +189,7 @@
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-25T02:51:58Z",
+      "last_updated": "2026-04-25T01:35:16+08:00",
       "content_hash": "032d65945452db2276c7867f38b7233a376905258f6df085101046fe48606043"
     },
     "markdown": {
@@ -213,8 +213,20 @@
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-25T02:51:58Z",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "22a1f335dbc3899fc27838b4c34413d25455bebadff8f8711e5fbba15d27e2ad"
+    },
+    "png": {
+      "description": "<One-line description>",
+      "files": [
+        "png/png.py"
+      ],
+      "version": "0.1.0",
+      "deps": [],
+      "tier": "medium",
+      "category": "data",
+      "last_updated": null,
+      "content_hash": "a2634f6b1055b60d873e2bc413693dfced5201d4aeaeebdda98793540acf3416"
     },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",
@@ -237,8 +249,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "data",
-      "last_updated": "2026-04-15T14:33:44Z",
-      "content_hash": "939d31669a88b924bb016674c50c9a50ff283b255b155f5c5372828723458e0a"
+      "last_updated": "2026-04-25T23:15:46+08:00",
+      "content_hash": "71eed6f9f7cda282d3bf41ae1009dd838dfcdeae67d767c3dd68103d95959a55"
     },
     "qr": {
       "description": "QR Code generator library (Python)",
@@ -249,7 +261,7 @@
       "deps": [],
       "tier": "simple",
       "category": "utility",
-      "last_updated": "2026-04-25T02:51:58Z",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "8574fe70421245e6a60aaaa65fdf60f8a196c18d5578b7943888ab42702f3ad8"
     },
     "readability": {
@@ -312,7 +324,7 @@
       "deps": [],
       "tier": "simple",
       "category": "data",
-      "last_updated": "2026-04-25T02:51:58Z",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "2c9776510dbd235fb9752df25ab8bca390ad29cf1804aeae32de5c7773bc40d9"
     },
     "skills": {
@@ -327,7 +339,7 @@
       ],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-25T02:51:58Z",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "af69314728164602db323a5240feac58260e4b0d5ceedb32945c80e2ddfa13e7"
     },
     "soup": {
@@ -339,7 +351,7 @@
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-25T02:51:58Z",
+      "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "f8f228c21989d06225b607452417907a26751e6bea837443551e722d84eb16e1"
     },
     "sparse_search": {

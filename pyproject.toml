@@ -8,7 +8,7 @@ py-modules = ["zerodep"]
 [project]
 name = "zerodep"
 version = "2026.4.25"
-description = "Zero-dependency, single-file Python implementations of popular libraries"
+description = "Zero-dependency, single-file Python implementations of popular libraries — benchmarked for performance parity"
 authors = [{ name = "Peng Ding" }]
 readme = "README.md"
 requires-python = ">=3.10"
@@ -130,17 +130,21 @@ bench-runner = [
 bench-readability = [
     "readability-lxml==0.8.4.1",
 ]
+bench-png = [
+    "Pillow==12.2.0",
+    "numpy>=1.26.0",
+]
 dev = [
     "ruff>=0.1.0",
     "ty>=0.0.24",
     "complexipy>=5.2.0",
     "build>=1.2.2.post1",
     "twine>=6.1.0",
-    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-persistdict,bench-runner,bench-readability]",
+    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-persistdict,bench-runner,bench-readability,bench-png]",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema", "png"]
 
 [tool.ruff]
 target-version = "py310"
@@ -163,6 +167,7 @@ max-complexity = 20
 "a2a/a2a.py" = ["E501"]
 "acp/acp.py" = ["E501"]
 "jsonschema/jsonschema.py" = ["E501"]
+"png/png.py" = ["E501", "C901"]
 "**/test_*.py" = ["E402"]
 "**/test_*_benchmark.py" = ["E501"]
 "**/conftest.py" = ["C901"]
@@ -209,4 +214,5 @@ extra-paths = [
     "./depdetect",
     "./semver",
     "./jsonschema",
+    "./png",
 ]

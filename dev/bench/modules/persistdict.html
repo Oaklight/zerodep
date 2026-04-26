@@ -112,31 +112,31 @@ td { white-space: nowrap; }
 <h1>persistdict</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 7c7330f | Commit: 7c7330fb | 2026-04-25T09:02:47.878347+00:00</p>
+<p class="meta">Version: c4141ba | Commit: c4141bae | 2026-04-26T07:32:09.604130+00:00</p>
 <h2>persistdict</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>shelve</td><td>430.1 µs</td><td>202.7 µs</td><td>2.3K</td><td>4.9K</td><td class="ratio-cell slower">2.1x slower</td></tr>
-<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>430.1 µs</td><td>1.30 ms</td><td>2.3K</td><td>766.4</td><td class="ratio-cell faster">3.0x faster</td></tr>
-<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>864.3 µs</td><td>202.7 µs</td><td>1.2K</td><td>4.9K</td><td class="ratio-cell slower">4.3x slower</td></tr>
-<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>864.3 µs</td><td>1.30 ms</td><td>1.2K</td><td>766.4</td><td class="ratio-cell faster">1.5x faster</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_json</td><td>shelve</td><td>425.9 µs</td><td>184.9 µs</td><td>2.3K</td><td>5.4K</td><td class="ratio-cell slower">2.3x slower</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>425.9 µs</td><td>9.99 ms</td><td>2.3K</td><td>100.1</td><td class="ratio-cell faster">23.4x faster</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>821.5 µs</td><td>184.9 µs</td><td>1.2K</td><td>5.4K</td><td class="ratio-cell slower">4.4x slower</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>821.5 µs</td><td>9.99 ms</td><td>1.2K</td><td>100.1</td><td class="ratio-cell faster">12.2x faster</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_json</td><td>shelve</td><td>16.18 ms</td><td>12.39 ms</td><td>61.8</td><td>80.7</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_json</td><td>sqlitedict</td><td>16.18 ms</td><td>783.78 ms</td><td>61.8</td><td>1.3</td><td class="ratio-cell faster">48.4x faster</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>shelve</td><td>72.54 ms</td><td>12.39 ms</td><td>13.8</td><td>80.7</td><td class="ratio-cell slower">5.9x slower</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>72.54 ms</td><td>783.78 ms</td><td>13.8</td><td>1.3</td><td class="ratio-cell faster">10.8x faster</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_sqlite_batched</td><td>shelve</td><td>24.60 ms</td><td>12.39 ms</td><td>40.7</td><td>80.7</td><td class="ratio-cell slower">2.0x slower</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_sqlite_batched</td><td>sqlitedict</td><td>24.60 ms</td><td>783.78 ms</td><td>40.7</td><td>1.3</td><td class="ratio-cell faster">31.9x faster</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_json</td><td>shelve</td><td>425.8 µs</td><td>390.4 µs</td><td>2.3K</td><td>2.6K</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>425.8 µs</td><td>19.22 ms</td><td>2.3K</td><td>52.0</td><td class="ratio-cell faster">45.1x faster</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>4.66 ms</td><td>390.4 µs</td><td>214.6</td><td>2.6K</td><td class="ratio-cell slower">11.9x slower</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>4.66 ms</td><td>19.22 ms</td><td>214.6</td><td>52.0</td><td class="ratio-cell faster">4.1x faster</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_sqlite_batched</td><td>shelve</td><td>3.03 ms</td><td>390.4 µs</td><td>330.4</td><td>2.6K</td><td class="ratio-cell slower">7.8x slower</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_sqlite_batched</td><td>sqlitedict</td><td>3.03 ms</td><td>19.22 ms</td><td>330.4</td><td>52.0</td><td class="ratio-cell faster">6.4x faster</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>shelve</td><td>418.2 µs</td><td>203.5 µs</td><td>2.4K</td><td>4.9K</td><td class="ratio-cell slower">2.1x slower</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>418.2 µs</td><td>1.33 ms</td><td>2.4K</td><td>753.4</td><td class="ratio-cell faster">3.2x faster</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>862.0 µs</td><td>203.5 µs</td><td>1.2K</td><td>4.9K</td><td class="ratio-cell slower">4.2x slower</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>862.0 µs</td><td>1.33 ms</td><td>1.2K</td><td>753.4</td><td class="ratio-cell faster">1.5x faster</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_json</td><td>shelve</td><td>425.8 µs</td><td>188.2 µs</td><td>2.3K</td><td>5.3K</td><td class="ratio-cell slower">2.3x slower</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>425.8 µs</td><td>10.07 ms</td><td>2.3K</td><td>99.3</td><td class="ratio-cell faster">23.7x faster</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>824.1 µs</td><td>188.2 µs</td><td>1.2K</td><td>5.3K</td><td class="ratio-cell slower">4.4x slower</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>824.1 µs</td><td>10.07 ms</td><td>1.2K</td><td>99.3</td><td class="ratio-cell faster">12.2x faster</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_json</td><td>shelve</td><td>14.22 ms</td><td>12.60 ms</td><td>70.3</td><td>79.4</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_json</td><td>sqlitedict</td><td>14.22 ms</td><td>731.86 ms</td><td>70.3</td><td>1.4</td><td class="ratio-cell faster">51.5x faster</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>shelve</td><td>83.20 ms</td><td>12.60 ms</td><td>12.0</td><td>79.4</td><td class="ratio-cell slower">6.6x slower</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>83.20 ms</td><td>731.86 ms</td><td>12.0</td><td>1.4</td><td class="ratio-cell faster">8.8x faster</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_sqlite_batched</td><td>shelve</td><td>21.73 ms</td><td>12.60 ms</td><td>46.0</td><td>79.4</td><td class="ratio-cell slower">1.7x slower</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_sqlite_batched</td><td>sqlitedict</td><td>21.73 ms</td><td>731.86 ms</td><td>46.0</td><td>1.4</td><td class="ratio-cell faster">33.7x faster</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_json</td><td>shelve</td><td>425.8 µs</td><td>398.9 µs</td><td>2.3K</td><td>2.5K</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>425.8 µs</td><td>18.85 ms</td><td>2.3K</td><td>53.0</td><td class="ratio-cell faster">44.3x faster</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>4.83 ms</td><td>398.9 µs</td><td>206.9</td><td>2.5K</td><td class="ratio-cell slower">12.1x slower</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>4.83 ms</td><td>18.85 ms</td><td>206.9</td><td>53.0</td><td class="ratio-cell faster">3.9x faster</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_sqlite_batched</td><td>shelve</td><td>3.16 ms</td><td>398.9 µs</td><td>316.3</td><td>2.5K</td><td class="ratio-cell slower">7.9x slower</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_sqlite_batched</td><td>sqlitedict</td><td>3.16 ms</td><td>18.85 ms</td><td>316.3</td><td>53.0</td><td class="ratio-cell faster">6.0x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -207,13 +207,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [2324.858690472626, 2347.8370659525294, 61.78691065249761, 2348.3427761280213],
+        data: [2391.2687472255416, 2348.6314074428196, 70.34598910382883, 2348.5843704765807],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "shelve" + ' (ops/s)',
-        data: [4933.895350236331, 5408.8655065329, 80.68130762469144, 2561.6353480593853],
+        data: [4913.95330720829, 5313.844423732918, 79.37376187158448, 2507.0527953921537],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

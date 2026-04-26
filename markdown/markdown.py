@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.3.1"
+# version = "0.4.0"
 # deps = []
 # tier = "medium"
 # category = "terminal"
@@ -22,12 +22,14 @@ Supports:
     - Ordered and unordered lists with nesting
     - Block quotes with nesting
     - GFM tables with column alignment
+    - GFM strikethrough (~~text~~)
+    - GFM task lists (- [ ] / - [x])
+    - GFM extended autolinks (bare URLs)
     - Backslash escapes
 
 Does NOT implement:
     - Raw HTML passthrough (escaped for safety)
     - Footnotes, definition lists, math/LaTeX
-    - Strikethrough, task lists
 
 Example::
 
@@ -100,7 +102,12 @@ _REF_LINK_SHORT_RE = re.compile(r"\[([^\[\]]+)\](?!\()")
 _STRONG_EM_RE = re.compile(r"\*{3}(.+?)\*{3}|_{3}(.+?)_{3}")
 _STRONG_RE = re.compile(r"\*{2}(.+?)\*{2}|_{2}(.+?)_{2}")
 _EM_RE = re.compile(r"(?<!\w)\*(.+?)\*(?!\w)|(?<!\w)_(.+?)_(?!\w)")
+_STRIKETHROUGH_RE = re.compile(r"~~(.+?)~~")
+_BARE_URL_RE = re.compile(r"(https?://[^\s<>\[\]]*[^\s<>\[\].,;:!?'\")}\]])")
 _HARD_BREAK_RE = re.compile(r"(?:\\| {2,})\n")
+
+# Task list marker: [ ], [x], or [X] at start of list item content
+_TASK_LIST_RE = re.compile(r"^\[([ xX])\]\s+")
 
 # ── Placeholder system ───────────────────────────────────────────────────────
 
@@ -140,6 +147,58 @@ def _safe_url(url: str) -> str:
     ):
         return "#harmful-link"
     return html.escape(url, quote=True)
+
+
+# ── Inline helper functions ──────────────────────────────────────────────────
+
+
+def _apply_bare_urls(text: str, ph: _Placeholders) -> str:
+    """Replace bare http/https URLs with link placeholders."""
+
+    def _bare_url_repl(m: re.Match[str]) -> str:
+        url = m.group(1)
+        return ph.put('<a href="' + _safe_url(url) + '">' + html.escape(url) + "</a>")
+
+    return _BARE_URL_RE.sub(_bare_url_repl, text)
+
+
+def _apply_emphasis(
+    text: str,
+    ph: _Placeholders,
+    ref_links: dict[str, tuple[str, str | None]],
+) -> str:
+    """Apply bold-italic, bold, italic, and strikethrough replacements."""
+
+    # Bold-italic ***text***
+    def _strong_em_repl(m: re.Match[str]) -> str:
+        content = m.group(1) or m.group(2)
+        return ph.put(
+            "<em><strong>" + _parse_inline(content, ref_links) + "</strong></em>"
+        )
+
+    text = _STRONG_EM_RE.sub(_strong_em_repl, text)
+
+    # Bold **text**
+    def _strong_repl(m: re.Match[str]) -> str:
+        content = m.group(1) or m.group(2)
+        return ph.put("<strong>" + _parse_inline(content, ref_links) + "</strong>")
+
+    text = _STRONG_RE.sub(_strong_repl, text)
+
+    # Italic *text*
+    def _em_repl(m: re.Match[str]) -> str:
+        content = m.group(1) or m.group(2)
+        return ph.put("<em>" + _parse_inline(content, ref_links) + "</em>")
+
+    text = _EM_RE.sub(_em_repl, text)
+
+    # Strikethrough ~~text~~
+    def _strike_repl(m: re.Match[str]) -> str:
+        content = m.group(1)
+        return ph.put("<del>" + _parse_inline(content, ref_links) + "</del>")
+
+    text = _STRIKETHROUGH_RE.sub(_strike_repl, text)
+    return text
 
 
 # ── Inline parser ─────────────────────────────────────────────────────────────
@@ -239,29 +298,11 @@ def _parse_inline(
 
     text = _REF_LINK_SHORT_RE.sub(_ref_short_repl, text)
 
-    # 6. Emphasis (process from longest to shortest, protect with placeholders)
-    # Bold-italic ***text***
-    def _strong_em_repl(m: re.Match[str]) -> str:
-        content = m.group(1) or m.group(2)
-        return ph.put(
-            "<em><strong>" + _parse_inline(content, ref_links) + "</strong></em>"
-        )
+    # 5d. Extended autolinks (bare URLs without angle brackets)
+    text = _apply_bare_urls(text, ph)
 
-    text = _STRONG_EM_RE.sub(_strong_em_repl, text)
-
-    # Bold **text**
-    def _strong_repl(m: re.Match[str]) -> str:
-        content = m.group(1) or m.group(2)
-        return ph.put("<strong>" + _parse_inline(content, ref_links) + "</strong>")
-
-    text = _STRONG_RE.sub(_strong_repl, text)
-
-    # Italic *text*
-    def _em_repl(m: re.Match[str]) -> str:
-        content = m.group(1) or m.group(2)
-        return ph.put("<em>" + _parse_inline(content, ref_links) + "</em>")
-
-    text = _EM_RE.sub(_em_repl, text)
+    # 6. Emphasis + strikethrough
+    text = _apply_emphasis(text, ph, ref_links)
 
     # 7. Hard line breaks (protect with placeholder)
     text = _HARD_BREAK_RE.sub(lambda m: ph.put("<br />\n"), text)
@@ -467,15 +508,32 @@ def _render_list_item(
     ref_links: dict[str, tuple[str, str | None]],
 ) -> str:
     """Render a single <li> element, recursing for nested sub-lists."""
+    # Detect task list marker
+    task_class = ""
+    task_checkbox = ""
+    first_line = item_lines[0]
+    task_m = _TASK_LIST_RE.match(first_line)
+    if task_m:
+        checked = task_m.group(1) in ("x", "X")
+        task_class = ' class="task-list-item"'
+        task_checkbox = (
+            '<input class="task-list-item-checkbox" type="checkbox" disabled'
+        )
+        if checked:
+            task_checkbox += " checked"
+        task_checkbox += "/>"
+        item_lines = [first_line[task_m.end() :]] + item_lines[1:]
+
     has_sublist = any(
         _UL_ITEM_RE.match(il) or _OL_ITEM_RE.match(il) for il in item_lines[1:]
     )
+    open_tag = f"<li{task_class}>" + task_checkbox
     if has_sublist:
         first = _parse_inline(item_lines[0], ref_links)
         sub_html = _parse_blocks(item_lines[1:], ref_links)
-        return "<li>" + first + sub_html + "</li>\n"
+        return open_tag + first + sub_html + "</li>\n"
     content = "\n".join(item_lines).strip()
-    return "<li>" + _parse_inline(content, ref_links) + "</li>\n"
+    return open_tag + _parse_inline(content, ref_links) + "</li>\n"
 
 
 def _parse_list_block(

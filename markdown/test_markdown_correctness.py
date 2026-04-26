@@ -19,6 +19,18 @@ def assert_same(md: str) -> None:
     assert ours == theirs, f"Mismatch:\n  ours:   {ours!r}\n  theirs: {theirs!r}"
 
 
+_gfm_ref = mistune.create_markdown(
+    plugins=["strikethrough", "task_lists", "url", "table"]
+)
+
+
+def assert_same_gfm(md: str) -> None:
+    """Assert our render matches mistune with GFM plugins (stripped)."""
+    ours = render(md).strip()
+    theirs = _gfm_ref(md).strip()
+    assert ours == theirs, f"Mismatch:\n  ours:   {ours!r}\n  theirs: {theirs!r}"
+
+
 # ── ATX Headings ──────────────────────────────────────────────────────────────
 
 
@@ -354,3 +366,111 @@ class TestEdgeCases:
         assert "<h1>" in result
         assert "<h2>" in result
         assert "<h3>" in result
+
+
+# ── Strikethrough ─────────────────────────────────────────────────────────────
+
+
+class TestStrikethrough:
+    def test_basic(self):
+        assert_same_gfm("~~deleted~~")
+
+    def test_with_inline(self):
+        assert_same_gfm("~~bold **inside** strike~~")
+
+    def test_mid_word(self):
+        assert_same_gfm("not~~this~~joined")
+
+    def test_in_paragraph(self):
+        assert_same_gfm("This has ~~struck~~ text in it.")
+
+    def test_in_blockquote(self):
+        assert_same_gfm("> ~~quoted strike~~")
+
+    def test_in_list(self):
+        assert_same_gfm("- ~~list strike~~")
+
+    def test_in_table(self):
+        assert_same_gfm("| ~~header~~ | b |\n| --- | --- |\n| c | d |")
+
+    def test_with_code_inside(self):
+        result = render("~~`code` and text~~")
+        assert "<del>" in result
+        assert "<code>code</code>" in result
+
+    def test_not_single_tilde(self):
+        result = render("~not strike~")
+        assert "<del>" not in result
+
+
+# ── Task Lists ────────────────────────────────────────────────────────────────
+
+
+class TestTaskLists:
+    def test_unchecked(self):
+        assert_same_gfm("- [ ] todo item")
+
+    def test_checked(self):
+        assert_same_gfm("- [x] done item")
+
+    def test_checked_uppercase(self):
+        assert_same_gfm("- [X] done item")
+
+    def test_mixed(self):
+        assert_same_gfm("- [ ] unchecked\n- [x] checked\n- [X] also checked")
+
+    def test_with_inline(self):
+        assert_same_gfm("- [ ] task with **bold**")
+
+    def test_ordered_task_list(self):
+        assert_same_gfm("1. [ ] ordered task\n2. [x] ordered done")
+
+    def test_regular_list_unaffected(self):
+        md = "- normal item\n- another item"
+        result = render(md)
+        assert "task-list-item" not in result
+
+    def test_checkbox_attributes(self):
+        result = render("- [ ] unchecked\n- [x] checked")
+        assert 'type="checkbox"' in result
+        assert "disabled" in result
+        assert "checked" in result
+
+
+# ── Extended Autolinks ────────────────────────────────────────────────────────
+
+
+class TestExtendedAutolinks:
+    def test_https(self):
+        assert_same_gfm("Visit https://example.com for more")
+
+    def test_http(self):
+        assert_same_gfm("See http://example.com here")
+
+    def test_trailing_dot(self):
+        assert_same_gfm("https://example.com.")
+
+    def test_trailing_comma(self):
+        assert_same_gfm("https://example.com,")
+
+    def test_in_parens(self):
+        assert_same_gfm("(https://example.com)")
+
+    def test_with_path(self):
+        assert_same_gfm("https://example.com/path/to/page.html")
+
+    def test_with_query_and_fragment(self):
+        assert_same_gfm("Visit https://example.com/path?q=1&r=2#fragment today")
+
+    def test_with_explicit_link(self):
+        assert_same_gfm("[link](https://example.com) and https://other.com")
+
+    def test_url_with_ampersand(self):
+        assert_same_gfm("See http://foo.bar/baz?a=1&b=2 here")
+
+    def test_not_bare_www(self):
+        result = render("www.example.com")
+        assert "<a " not in result
+
+    def test_angle_bracket_still_works(self):
+        assert_same("<https://example.com>")

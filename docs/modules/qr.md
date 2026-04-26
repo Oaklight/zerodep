@@ -1,16 +1,16 @@
 # QR Code
 
-QR Code generation with terminal rendering -- zero dependencies, stdlib only, Python 3.10+.
+QR Code generation with terminal, SVG, and PNG rendering -- zero dependencies (PNG requires sibling `png` module), stdlib only, Python 3.10+.
 
 ## Overview
 
-The QR module provides a complete QR Code encoder conforming to the **QR Code Model 2** specification (ISO/IEC 18004). It supports all versions (sizes) from 1 to 40, all 4 error correction levels, and 4 character encoding modes. The module also includes a convenience function for rendering QR codes directly in the terminal using Unicode block characters.
+The QR module provides a complete QR Code encoder conforming to the **QR Code Model 2** specification (ISO/IEC 18004). It supports all versions (sizes) from 1 to 40, all 4 error correction levels, and 4 character encoding modes. The module includes rendering functions for terminal output (Unicode block characters), SVG export (string templating), and PNG export (via sibling `png` module).
 
-Based on [Project Nayuki's QR Code generator library](https://www.nayuki.io/page/qr-code-generator-library) (MIT License), with terminal rendering added for zerodep.
+Based on [Project Nayuki's QR Code generator library](https://www.nayuki.io/page/qr-code-generator-library) (MIT License), with rendering functions added for zerodep.
 
 | File | Description | Dependencies |
 |------|-------------|--------------|
-| `qr.py` | Full QR Code encoder + terminal renderer | None (stdlib only) |
+| `qr.py` | Full QR Code encoder + terminal/SVG/PNG renderer | `png` (sibling, optional -- only for PNG output) |
 
 ## How to Use in Your Project
 
@@ -23,7 +23,7 @@ cp qr/qr.py your_project/
 Then import the classes you need:
 
 ```python
-from qr import QrCode, QrSegment, print_qr_terminal
+from qr import QrCode, QrSegment, print_qr_terminal, qr_to_svg, qr_to_png
 ```
 
 ## API Reference
@@ -199,6 +199,73 @@ def print_qr_terminal(text: str) -> None
 
 ---
 
+### `qr_to_svg(qr, dest, *, scale, border, fg_color, bg_color)`
+
+Render a QR Code as an SVG image. Uses a single `<path>` element for compact output. No dependencies.
+
+```python
+def qr_to_svg(
+    qr: QrCode,
+    dest: str | os.PathLike[str] | None = None,
+    *,
+    scale: int = 10,
+    border: int = 4,
+    fg_color: str = "#000000",
+    bg_color: str = "#ffffff",
+) -> str | None
+```
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `qr` | `QrCode` | *(required)* | QR Code to render. |
+| `dest` | `str \| PathLike \| None` | `None` | File path to write SVG to, or `None` to return the SVG string. |
+| `scale` | `int` | `10` | Size of each QR module in SVG user units. |
+| `border` | `int` | `4` | Width of the quiet zone in QR modules. |
+| `fg_color` | `str` | `"#000000"` | CSS color for dark modules. |
+| `bg_color` | `str` | `"#ffffff"` | CSS color for light modules. |
+
+**Returns:** SVG string when `dest` is `None`, otherwise `None`.
+
+---
+
+### `qr_to_png(qr, dest, *, scale, border, fg_color, bg_color)`
+
+Render a QR Code as a PNG image. Requires the sibling `png` module (lazy-loaded on first call).
+
+```python
+def qr_to_png(
+    qr: QrCode,
+    dest: str | os.PathLike[str] | None = None,
+    *,
+    scale: int = 10,
+    border: int = 4,
+    fg_color: int = 0,
+    bg_color: int = 255,
+) -> bytes | None
+```
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `qr` | `QrCode` | *(required)* | QR Code to render. |
+| `dest` | `str \| PathLike \| None` | `None` | File path to write PNG to, or `None` to return PNG bytes. |
+| `scale` | `int` | `10` | Pixels per QR module. |
+| `border` | `int` | `4` | Width of the quiet zone in QR modules. |
+| `fg_color` | `int` | `0` | Grayscale value (0--255) for dark modules. |
+| `bg_color` | `int` | `255` | Grayscale value (0--255) for light modules. |
+
+**Returns:** PNG bytes when `dest` is `None`, otherwise `None`.
+
+**Raises:**
+
+- `ImportError` -- If the sibling `png` module is not available.
+- `ValueError` -- If `fg_color` or `bg_color` is outside 0--255.
+
+---
+
 ### `DataTooLongError`
 
 Exception raised when the supplied data does not fit any QR Code version. Subclass of `ValueError`.
@@ -263,30 +330,32 @@ except DataTooLongError:
     print("Data too long for the requested version range")
 ```
 
-### Export as SVG (Manual)
+### Export as SVG
 
 ```python
-from qr import QrCode
+from qr import QrCode, qr_to_svg
 
 qr = QrCode.encode_text("https://example.com", QrCode.Ecc.MEDIUM)
-size = qr.get_size()
-border = 4
 
-parts = []
-for y in range(size):
-    for x in range(size):
-        if qr.get_module(x, y):
-            parts.append(f"M{x + border},{y + border}h1v1h-1z")
+# Return SVG string
+svg = qr_to_svg(qr)
 
-svg = f"""<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 {size + border * 2} {size + border * 2}">
-  <rect width="100%" height="100%" fill="white"/>
-  <path d="{''.join(parts)}" fill="black"/>
-</svg>"""
+# Write to file with custom colors
+qr_to_svg(qr, "qr.svg", fg_color="darkblue", bg_color="#f0f0f0")
+```
 
-with open("qr.svg", "w") as f:
-    f.write(svg)
+### Export as PNG
+
+```python
+from qr import QrCode, qr_to_png
+
+qr = QrCode.encode_text("https://example.com", QrCode.Ecc.MEDIUM)
+
+# Return PNG bytes
+png_bytes = qr_to_png(qr)
+
+# Write to file with custom scale
+qr_to_png(qr, "qr.png", scale=20, border=2)
 ```
 
 ## Notes and Caveats

@@ -214,27 +214,28 @@ def _paeth(a: int, b: int, c: int) -> int:
 
 def _unfilter_row(ftype: int, raw: bytes, prev: bytes | None, bpp: int) -> bytearray:
     """Reverse one row filter.  *prev* is the previous unfiltered row."""
-    out = bytearray(len(raw))
-    prv = prev or b"\x00" * len(raw)
+    n = len(raw)
     if ftype == 0:  # None
-        out[:] = raw
-    elif ftype == 1:  # Sub
-        for i in range(len(raw)):
-            left = out[i - bpp] if i >= bpp else 0
-            out[i] = (raw[i] + left) & 0xFF
-    elif ftype == 2:  # Up
-        for i in range(len(raw)):
-            out[i] = (raw[i] + prv[i]) & 0xFF
+        return bytearray(raw)
+    prv = prev or b"\x00" * n
+    if ftype == 2:  # Up — no sequential dependency
+        return bytearray([(r + p) & 0xFF for r, p in zip(raw, prv)])
+    out = bytearray(n)
+    if ftype == 1:  # Sub
+        out[:bpp] = raw[:bpp]
+        for i in range(bpp, n):
+            out[i] = (raw[i] + out[i - bpp]) & 0xFF
     elif ftype == 3:  # Average
-        for i in range(len(raw)):
+        for i in range(n):
             left = out[i - bpp] if i >= bpp else 0
             out[i] = (raw[i] + ((left + prv[i]) >> 1)) & 0xFF
     elif ftype == 4:  # Paeth
-        for i in range(len(raw)):
+        _pa = _paeth
+        for i in range(n):
             left = out[i - bpp] if i >= bpp else 0
             up = prv[i]
             upleft = prv[i - bpp] if i >= bpp else 0
-            out[i] = (raw[i] + _paeth(left, up, upleft)) & 0xFF
+            out[i] = (raw[i] + _pa(left, up, upleft)) & 0xFF
     else:
         raise DecodeError(f"unknown filter type {ftype}")
     return out
@@ -245,26 +246,27 @@ def _unfilter_row(ftype: int, raw: bytes, prev: bytes | None, bpp: int) -> bytea
 
 def _filter_row(ftype: int, raw: bytes, prev: bytes, bpp: int) -> bytes:
     """Apply one row filter for encoding."""
-    out = bytearray(len(raw))
+    n = len(raw)
     if ftype == 0:  # None
-        out[:] = raw
-    elif ftype == 1:  # Sub
-        for i in range(len(raw)):
-            left = raw[i - bpp] if i >= bpp else 0
-            out[i] = (raw[i] - left) & 0xFF
-    elif ftype == 2:  # Up
-        for i in range(len(raw)):
-            out[i] = (raw[i] - prev[i]) & 0xFF
+        return bytes(raw)
+    if ftype == 2:  # Up — no sequential dependency
+        return bytes([(r - p) & 0xFF for r, p in zip(raw, prev)])
+    out = bytearray(n)
+    if ftype == 1:  # Sub
+        out[:bpp] = raw[:bpp]
+        for i in range(bpp, n):
+            out[i] = (raw[i] - raw[i - bpp]) & 0xFF
     elif ftype == 3:  # Average
-        for i in range(len(raw)):
+        for i in range(n):
             left = raw[i - bpp] if i >= bpp else 0
             out[i] = (raw[i] - ((left + prev[i]) >> 1)) & 0xFF
     elif ftype == 4:  # Paeth
-        for i in range(len(raw)):
+        _pa = _paeth
+        for i in range(n):
             left = raw[i - bpp] if i >= bpp else 0
             up = prev[i]
             upleft = prev[i - bpp] if i >= bpp else 0
-            out[i] = (raw[i] - _paeth(left, up, upleft)) & 0xFF
+            out[i] = (raw[i] - _pa(left, up, upleft)) & 0xFF
     return bytes(out)
 
 
@@ -276,7 +278,6 @@ def _select_filter(raw: bytes, prev: bytes, bpp: int) -> tuple[int, bytes]:
     best_sum = sum(best_data)
     for ftype in range(1, 5):
         filtered = _filter_row(ftype, raw, prev, bpp)
-        # Sum treating each byte as signed magnitude for the heuristic.
         s = sum((b if b < 128 else 256 - b) for b in filtered)
         if s < best_sum:
             best_sum = s
@@ -363,14 +364,15 @@ def decode_png(source: str | os.PathLike[str] | IO[bytes] | bytes) -> Image:
             f"decompressed size {len(decompressed)} != expected {expected_len}"
         )
 
-    pixels = bytearray()
+    pixels = bytearray(height * row_bytes)
     prev_row: bytes | None = None
+    stride = 1 + row_bytes
     for y in range(height):
-        offset = y * (1 + row_bytes)
+        offset = y * stride
         ftype = decompressed[offset]
         row_data = decompressed[offset + 1 : offset + 1 + row_bytes]
         unfiltered = _unfilter_row(ftype, row_data, prev_row, bpp)
-        pixels.extend(unfiltered)
+        pixels[y * row_bytes : (y + 1) * row_bytes] = unfiltered
         prev_row = bytes(unfiltered)
 
     return Image(
@@ -424,10 +426,13 @@ def encode_png(
     }.get(filter_strategy)
 
     # -- Build filtered scanlines ---------------------------------------------
-    filtered = bytearray()
+    total_filtered = image.height * (1 + row_bytes)
+    filtered = bytearray(total_filtered)
     prev_row = b"\x00" * row_bytes
+    filt_stride = 1 + row_bytes
     for y in range(image.height):
         row = image.data[y * row_bytes : (y + 1) * row_bytes]
+        filt_offset = y * filt_stride
         if filter_strategy == "auto":
             ftype, fdata = _select_filter(row, prev_row, bpp)
         elif fixed_filter is not None:
@@ -435,8 +440,8 @@ def encode_png(
             fdata = _filter_row(ftype, row, prev_row, bpp)
         else:
             raise EncodeError(f"unknown filter_strategy {filter_strategy!r}")
-        filtered.append(ftype)
-        filtered.extend(fdata)
+        filtered[filt_offset] = ftype
+        filtered[filt_offset + 1 : filt_offset + 1 + row_bytes] = fdata
         prev_row = row
 
     compressed = zlib.compress(bytes(filtered), compression_level)
@@ -532,16 +537,21 @@ def decode_bmp(source: str | os.PathLike[str] | IO[bytes] | bytes) -> Image:
         if src_offset + row_data_bytes > len(raw):
             raise DecodeError("truncated BMP pixel data")
 
+        src_row = raw[src_offset : src_offset + row_data_bytes]
         dst_offset = y * width * out_bpp
-        for x in range(width):
-            si = src_offset + x * bmp_bpp
-            b, g, r = raw[si], raw[si + 1], raw[si + 2]
-            di = dst_offset + x * out_bpp
-            pixels[di] = r
-            pixels[di + 1] = g
-            pixels[di + 2] = b
-            if bmp_bpp == 4:
-                pixels[di + 3] = raw[si + 3]
+        dst_row = bytearray(width * out_bpp)
+        if bmp_bpp == 3:
+            # BGR -> RGB via slice assignment (C-level ops)
+            dst_row[0::3] = src_row[2::3]  # R
+            dst_row[1::3] = src_row[1::3]  # G
+            dst_row[2::3] = src_row[0::3]  # B
+        else:
+            # BGRA -> RGBA via slice assignment
+            dst_row[0::4] = src_row[2::4]  # R
+            dst_row[1::4] = src_row[1::4]  # G
+            dst_row[2::4] = src_row[0::4]  # B
+            dst_row[3::4] = src_row[3::4]  # A
+        pixels[dst_offset : dst_offset + width * out_bpp] = dst_row
 
     return Image(width=width, height=height, data=bytes(pixels), mode=mode)
 
@@ -602,16 +612,20 @@ def encode_bmp(
     pad_bytes = b"\x00" * padding
     for y in range(image.height - 1, -1, -1):
         row_offset = y * image.width * src_bpp
-        for x in range(image.width):
-            si = row_offset + x * src_bpp
-            r = image.data[si]
-            g = image.data[si + 1]
-            b = image.data[si + 2]
-            buf.append(b)
-            buf.append(g)
-            buf.append(r)
-            if bmp_bpp == 4:
-                buf.append(image.data[si + 3])
+        src_row = image.data[row_offset : row_offset + image.width * src_bpp]
+        bmp_row = bytearray(row_data_bytes)
+        if bmp_bpp == 3:
+            # RGB -> BGR via slice assignment (C-level ops)
+            bmp_row[0::3] = src_row[2::3]  # B
+            bmp_row[1::3] = src_row[1::3]  # G
+            bmp_row[2::3] = src_row[0::3]  # R
+        else:
+            # RGBA -> BGRA via slice assignment
+            bmp_row[0::4] = src_row[2::4]  # B
+            bmp_row[1::4] = src_row[1::4]  # G
+            bmp_row[2::4] = src_row[0::4]  # R
+            bmp_row[3::4] = src_row[3::4]  # A
+        buf.extend(bmp_row)
         buf.extend(pad_bytes)
 
     return _write_dest(dest, bytes(buf))
@@ -651,43 +665,35 @@ def convert(image: Image, mode: str) -> Image:
     key = (image.mode, mode)
 
     if key == ("L", "RGB"):
-        for i in range(npx):
-            v = src[i]
-            o = i * 3
-            out[o] = out[o + 1] = out[o + 2] = v
+        out[0::3] = src
+        out[1::3] = src
+        out[2::3] = src
     elif key == ("L", "RGBA"):
-        for i in range(npx):
-            v = src[i]
-            o = i * 4
-            out[o] = out[o + 1] = out[o + 2] = v
-            out[o + 3] = 255
+        out[0::4] = src
+        out[1::4] = src
+        out[2::4] = src
+        out[3::4] = b"\xff" * npx
     elif key == ("L", "LA"):
-        for i in range(npx):
-            o = i * 2
-            out[o] = src[i]
-            out[o + 1] = 255
+        out[0::2] = src
+        out[1::2] = b"\xff" * npx
     elif key == ("LA", "L"):
-        for i in range(npx):
-            out[i] = src[i * 2]
+        out[:] = src[0::2]
     elif key == ("LA", "RGBA"):
-        for i in range(npx):
-            si = i * 2
-            o = i * 4
-            out[o] = out[o + 1] = out[o + 2] = src[si]
-            out[o + 3] = src[si + 1]
+        lum = src[0::2]
+        out[0::4] = lum
+        out[1::4] = lum
+        out[2::4] = lum
+        out[3::4] = src[1::2]
     elif key == ("LA", "RGB"):
-        for i in range(npx):
-            v = src[i * 2]
-            o = i * 3
-            out[o] = out[o + 1] = out[o + 2] = v
+        lum = src[0::2]
+        out[0::3] = lum
+        out[1::3] = lum
+        out[2::3] = lum
     elif key == ("RGB", "RGBA"):
-        for i in range(npx):
-            si = i * 3
-            o = i * 4
-            out[o] = src[si]
-            out[o + 1] = src[si + 1]
-            out[o + 2] = src[si + 2]
-            out[o + 3] = 255
+        out[0::4] = src[0::3]
+        out[1::4] = src[1::3]
+        out[2::4] = src[2::3]
+        out[3::4] = b"\xff" * npx
     elif key == ("RGB", "L"):
         for i in range(npx):
             si = i * 3
@@ -703,12 +709,9 @@ def convert(image: Image, mode: str) -> Image:
             ) // 1000
             out[o + 1] = 255
     elif key == ("RGBA", "RGB"):
-        for i in range(npx):
-            si = i * 4
-            o = i * 3
-            out[o] = src[si]
-            out[o + 1] = src[si + 1]
-            out[o + 2] = src[si + 2]
+        out[0::3] = src[0::4]
+        out[1::3] = src[1::4]
+        out[2::3] = src[2::4]
     elif key == ("RGBA", "L"):
         for i in range(npx):
             si = i * 4

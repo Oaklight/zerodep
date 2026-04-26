@@ -196,3 +196,81 @@ class TestTreeOpsLarge:
 
     def test_beautifulsoup4(self, benchmark):
         benchmark(_bs4_tree_ops, LARGE)
+
+
+# ── CSS select benchmarks ──
+
+_SELECT_QUERIES = [
+    "div.item",
+    "div.item > h3",
+    "div.even a",
+    '[data-id="3"]',
+]
+
+_PSEUDO_QUERIES = [
+    "div.item :first-child",
+    "div.item :last-child",
+    "div.item > :not(p)",
+    "div.item > :first-child:not(h3)",
+]
+
+
+def _zd_select(html: str, queries: list[str]) -> list:
+    soup = Soup(html)
+    return [soup.select(q) for q in queries]
+
+
+def _bs4_select(html: str, queries: list[str]) -> list:
+    soup = BeautifulSoup(html, "html.parser")
+    return [soup.select(q) for q in queries]
+
+
+class TestSelectSmall:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_select, SMALL, _SELECT_QUERIES)
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_select, SMALL, _SELECT_QUERIES)
+
+
+class TestSelectMedium:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_select, MEDIUM, _SELECT_QUERIES)
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_select, MEDIUM, _SELECT_QUERIES)
+
+
+class TestSelectLarge:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_select, LARGE, _SELECT_QUERIES)
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_select, LARGE, _SELECT_QUERIES)
+
+
+# ── CSS pseudo-selector benchmarks ──
+
+
+class TestPseudoSelectSmall:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_select, SMALL, _PSEUDO_QUERIES)
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_select, SMALL, _PSEUDO_QUERIES)
+
+
+class TestPseudoSelectMedium:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_select, MEDIUM, _PSEUDO_QUERIES)
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_select, MEDIUM, _PSEUDO_QUERIES)
+
+
+class TestPseudoSelectLarge:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_select, LARGE, _PSEUDO_QUERIES)
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_select, LARGE, _PSEUDO_QUERIES)

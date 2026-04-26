@@ -92,6 +92,28 @@ print(len(children))  # 2
 soup2 = Soup('<a href="/home">Home</a><a href="/about">About</a>')
 links = soup2.select("a[href]")
 print(len(links))  # 2
+
+# 伪选择器
+html3 = """
+<ul>
+  <li class="a">First</li>
+  <li class="b">Second</li>
+  <li class="c">Third</li>
+</ul>
+"""
+soup3 = Soup(html3)
+
+# :first-child / :last-child
+print(soup3.select_one("li:first-child").text)  # First
+print(soup3.select_one("li:last-child").text)   # Third
+
+# :only-child
+soup4 = Soup("<div><span>Alone</span></div>")
+print(soup4.select_one("span:only-child").text)  # Alone
+
+# :not(selector)
+others = soup3.select("li:not(.a)")
+print([li.text for li in others])  # ['Second', 'Third']
 ```
 
 ### get_text
@@ -219,6 +241,10 @@ print(li.find_parent().name)       # ul
 | 后代 | `div p` | 匹配 `div` 内的 `p` |
 | 子元素 | `div > p` | 匹配直接子元素 |
 | 复合 | `p.intro` | 匹配具有 `intro` 类的 `p` |
+| :first-child | `li:first-child` | 匹配第一个子元素 |
+| :last-child | `li:last-child` | 匹配最后一个子元素 |
+| :only-child | `span:only-child` | 匹配唯一子元素 |
+| :not() | `li:not(.active)` | 匹配不满足内部选择器的元素 |
 
 ## API 参考
 
@@ -276,7 +302,7 @@ print(li.find_parent().name)       # ul
 | 文件数 | 单文件 | 多文件包 |
 | 解析器后端 | 仅 `html.parser` | `html.parser`、`lxml`、`html5lib` |
 | find / find_all | 是 | 是 |
-| CSS 选择器 | 基础（标签、类、ID、属性、后代、子元素） | 完整（通过 soupsieve） |
+| CSS 选择器 | 标签、类、ID、属性、组合器、伪选择器 | 完整（通过 soupsieve） |
 | 树操作（append/insert/extract） | 是 | 是 |
 | HTML 序列化（to_html） | 是 | 是（prettify） |
 | NavigableString | 否（使用纯 `str`） | 是 |
@@ -285,7 +311,7 @@ print(li.find_parent().name)       # ul
 
 **适用场景（zerodep）：** 需要基本的 HTML 解析（find、select、get_text），零依赖且高性能。
 
-**适用场景（BeautifulSoup）：** 需要高级 CSS 伪选择器、多解析器后端或 NavigableString 功能。
+**适用场景（BeautifulSoup）：** 需要完整 CSS 选择器规范（`:nth-child()`、`:has()` 等）、多解析器后端或 NavigableString 功能。
 
 ## 性能测试
 

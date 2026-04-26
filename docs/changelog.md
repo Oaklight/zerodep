@@ -10,6 +10,10 @@
 
 - **Protobuf 模块**：新增 `byte_size()` 方法，计算序列化消息大小而无需实际分配 bytes。适用于预分配缓冲区和协议帧长度计算。
 
+### 功能增强
+
+- **Soup 模块**：新增 CSS 伪选择器支持——`:first-child`、`:last-child`、`:only-child` 和 `:not(selector)`。涵盖最常用的结构性伪类。`:not()` 接受任意简单选择器（标签、类名、ID、属性或嵌套伪类）。新增 CSS 选择器和伪选择器性能测试。版本 0.5.0 → 0.6.0。
+
 ### 性能优化
 
 - **Protobuf 模块**：全面优化编解码热路径——FieldInfo 上绑定 encoder 分发（消除 11 路 if/elif）、每字段特化 `_is_default` 检查、内联 1 字节 tag 解码快速路径（字段号 1-15）、write-to-buffer varint/scalar 编码器（消除中间 `bytes` 分配）、缓存 map entry 类型元数据（`_MapMeta`）、`__dict__.update` 批量构造消息实例。编码**提速约 41-65%**，解码**提速约 7-27%**，大型消息往返**提速约 39%**。

@@ -48,11 +48,28 @@ zerodep soup 与 [`beautifulsoup4`](https://pypi.org/project/beautifulsoup4/) �
 | Medium | 2,370.0 μs | 6,810.0 μs | 快 2.9x |
 | Large | 26,780.0 μs | 67,650.0 μs | 快 2.5x |
 
+## CSS 选择器性能（均值）
+
+| 数据规模 | zerodep | beautifulsoup4 | 倍数 |
+|----------|---------|----------------|------|
+| Small | 286.0 μs | 805.9 μs | 快 2.8x |
+| Medium | 2,248.7 μs | 6,466.3 μs | 快 2.9x |
+| Large | 23,072.9 μs | 65,167.6 μs | 快 2.8x |
+
+## 伪选择器性能（均值）
+
+| 数据规模 | zerodep | beautifulsoup4 | 倍数 |
+|----------|---------|----------------|------|
+| Small | 303.4 μs | 939.4 μs | 快 3.1x |
+| Medium | 2,308.3 μs | 6,948.2 μs | 快 3.0x |
+| Large | 23,489.7 μs | 70,329.8 μs | 快 3.0x |
+
 ## 要点总结
 
 - **全规模、全操作快 2.5-3.7 倍** —— zerodep 直接从 `html.parser` 构建最小化 DOM 树，无需 BeautifulSoup 的抽象层（NavigableString、PageElement 层级、soupsieve 集成）。
 - **序列化加速比最大** —— 快 3.2-3.7 倍，zerodep 的轻量节点结构在树到字符串转换时开销更小。
-- **各工作负载表现一致** —— 解析（2.7-2.8x）、序列化（3.2-3.7x）和树操作（2.5-2.9x）均表现出显著优势，仅在最大文档上略有缩窄。
+- **CSS 选择器和伪选择器约快 3 倍** —— 尽管 BS4 委托给优化过的 soupsieve 库，zerodep 的内联选择器引擎避免了跨库调度开销。
+- **各工作负载表现一致** —— 解析（2.7-2.8x）、序列化（3.2-3.7x）、树操作（2.5-2.9x）和 CSS 选择器（2.8-3.1x）均表现出显著优势。
 - **无需任何 pip 依赖** —— zerodep 仅使用标准库 `re` 和 `html.parser`。BeautifulSoup 需要 `soupsieve`，可选 `lxml` 或 `html5lib`。
 
 ## 自行运行

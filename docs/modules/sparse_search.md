@@ -21,6 +21,8 @@ The `sparse_search` module provides a single-file inverted-index search engine s
 - **Pluggable tokenizer** -- default Unicode word splitter; plug in `jieba.lcut`, NLTK, etc.
 - **Bayesian BM25 calibration** -- convert raw BM25 scores to calibrated [0,1] probabilities via sigmoid likelihood, composite prior, and Bayesian posterior
 - **Inverted index** -- O(matched_docs) search, 34-132x faster than rank-bm25 at query time
+- **RRF (Reciprocal Rank Fusion)** -- merge multiple ranked result lists (e.g. BM25 + dense vector) into a single fused ranking
+- **MMR (Maximal Marginal Relevance)** -- re-rank results for diversity with user-provided similarity function
 
 ## How to Use in Your Project
 
@@ -201,6 +203,68 @@ loaded = SparseIndex.load("index.json")
 loaded = SparseIndex.load("index.db")
 ```
 
+### Reciprocal Rank Fusion (RRF)
+
+Merge results from multiple retrieval systems (e.g. BM25 sparse + dense vector search) into a single ranked list:
+
+```python
+from sparse_search import SparseIndex, Result, rrf
+
+# Sparse retrieval
+index = SparseIndex()
+index.add("d1", "quick brown fox")
+index.add("d2", "lazy dog")
+index.add("d3", "fast red car")
+sparse_results = index.search("quick fox", top_k=20)
+
+# Dense retrieval (from external system like FAISS, Chroma, etc.)
+dense_results = [Result("d1", 0.92), Result("d3", 0.85), Result("d2", 0.71)]
+
+# Fuse with RRF (default k=60, per Cormack et al.)
+fused = rrf(sparse_results, dense_results, top_k=10)
+
+# Weighted fusion (boost sparse results)
+fused = rrf(sparse_results, dense_results, weights=[2.0, 1.0], top_k=10)
+```
+
+RRF works purely on rank positions, not raw scores, making it ideal for combining retrieval systems with incompatible score scales.
+
+### Maximal Marginal Relevance (MMR)
+
+Re-rank results for diversity -- useful when top results are too similar:
+
+```python
+from sparse_search import SparseIndex, mmr, jaccard_similarity
+
+index = SparseIndex()
+index.add("d1", "python web framework flask")
+index.add("d2", "python web framework django")
+index.add("d3", "machine learning with python")
+index.add("d4", "python web development guide")
+
+results = index.search("python web", top_k=10)
+
+# Build a similarity function from document tokens
+doc_tokens = {
+    "d1": {"python", "web", "framework", "flask"},
+    "d2": {"python", "web", "framework", "django"},
+    "d3": {"machine", "learning", "with", "python"},
+    "d4": {"python", "web", "development", "guide"},
+}
+
+def sim(a, b):
+    return jaccard_similarity(doc_tokens[a.doc_id], doc_tokens[b.doc_id])
+
+# Select top 3 diverse results (lambda_=0.7 favors relevance over diversity)
+diverse = mmr(results, sim, lambda_=0.7, top_k=3)
+```
+
+The `lambda_` parameter controls the relevance-diversity trade-off:
+
+- `lambda_=1.0` -- pure relevance (same as original ranking)
+- `lambda_=0.5` -- balanced (default)
+- `lambda_=0.0` -- pure diversity (most dissimilar items first)
+
 ## Design Notes
 
 ### Index vs Scoring Parameters
@@ -281,6 +345,46 @@ The built-in tokenizer splits on Unicode word boundaries and lowercases all toke
 ```
 
 For production use, consider passing a custom tokenizer with stemming, stop-word removal, or CJK segmentation.
+
+---
+
+### `rrf(*result_lists, k=60, top_k=None, weights=None)`
+
+Reciprocal Rank Fusion -- merge multiple ranked result lists into one.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `*result_lists` | `list[Result]` | *(required)* | One or more ranked result lists |
+| `k` | `int` | `60` | RRF constant controlling rank sensitivity |
+| `top_k` | `int \| None` | `None` | Max results to return. `None` returns all |
+| `weights` | `list[float] \| None` | `None` | Per-list weights. `None` = equal weights |
+
+**Returns:** `list[Result]` sorted by descending RRF score. Metadata from the highest-scoring original occurrence is preserved.
+
+---
+
+### `mmr(results, similarity_fn, *, lambda_=0.5, top_k=None)`
+
+Maximal Marginal Relevance -- re-rank results for diversity.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `results` | `list[Result]` | *(required)* | Candidate results to re-rank |
+| `similarity_fn` | `Callable[[Result, Result], float]` | *(required)* | Similarity function returning [0, 1] |
+| `lambda_` | `float` | `0.5` | Trade-off: 1.0 = pure relevance, 0.0 = pure diversity |
+| `top_k` | `int \| None` | `None` | Number of results to select. `None` = all |
+
+**Returns:** `list[Result]` with scores set to MMR values.
+
+---
+
+### `jaccard_similarity(set_a, set_b)`
+
+Jaccard similarity coefficient: `|A ∩ B| / |A ∪ B|`. Returns 0.0 when both sets are empty.
 
 ## Comparison with rank-bm25
 

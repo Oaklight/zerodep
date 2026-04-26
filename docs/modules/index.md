@@ -38,7 +38,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [semver](semver.md) | 0.4.1 | 2026-04-20 |
 | [skills](skills.md) | 0.4.2 | 2026-04-20 |
 | [soup](soup.md) | 0.5.0 | 2026-04-20 |
-| [sparse_search](sparse_search.md) | 0.3.2 | 2026-04-15 |
+| [sparse_search](sparse_search.md) | 0.4.0 | 2026-04-27 |
 | [sse](sse.md) | 0.3.1 | 2026-04-15 |
 | [structlog](structlog.md) | 0.3.0 | 2026-04-11 |
 | [tabulate](tabulate.md) | 0.1.1 | 2026-04-15 |
@@ -104,7 +104,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 
 | Module | Description | Benchmark Against |
 |--------|-------------|-------------------|
-| [sparse_search](sparse_search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF full-text search with Bayesian calibration | `rank-bm25` |
+| [sparse_search](sparse_search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF full-text search with Bayesian calibration, RRF fusion, MMR diversity | `rank-bm25` |
 
 ### Configuration
 

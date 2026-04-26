@@ -13,7 +13,7 @@ hide:
 [![CI](https://img.shields.io/github/actions/workflow/status/Oaklight/zerodep/ci.yml?label=CI)](https://github.com/Oaklight/zerodep/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/readthedocs/zerodep)](https://zerodep.readthedocs.io)
 
-零依赖、单文件的 Python 常用库实现 —— 仅使用标准库，支持 Python 3.10+。
+零依赖、单文件的 Python 常用库实现 —— 仅使用标准库，性能对标主流库，支持 Python 3.10+。
 
 ## 概述
 

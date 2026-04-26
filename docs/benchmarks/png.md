@@ -7,7 +7,7 @@ zerodep png（纯 Python）与 [`Pillow`](https://pypi.org/project/Pillow/)（C 
     - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
     - **参考实现:** Pillow 12.2.0
-    - **最后更新:** 2026-04-26
+    - **最后更新:** 2026-04-27
 
 ## 实现方案
 
@@ -29,7 +29,7 @@ zerodep png（纯 Python）与 [`Pillow`](https://pypi.org/project/Pillow/)（C 
 - **Pillow 显著更快** —— 这是预期结果，因为 Pillow 使用编译的 C 扩展（libpng、zlib-ng），而 zerodep 是纯 Python 实现。核心瓶颈在于逐字节的行滤波循环。
 - **PNG 解码主要是 zlib** —— `zlib.decompress` 调用（C 代码）占主导地位；纯 Python 的反滤波循环增加的开销与图像大小成正比。
 - **PNG 编码受滤波限制** —— 最小和启发式对每行尝试全部 5 种滤波器，使编码比解码每像素多约 5 倍工作量。
-- **BMP 很快** —— 无压缩意味着 BMP 编解码主要是内存拷贝 + 字节交换（BGR↔RGB），因此 zerodep 与 Pillow 的差距相对较小。
+- **BMP 已优化** —— BMP 编解码使用 `bytearray` slice 赋值进行 BGR↔RGB 通道交换，该操作在 C 层面执行。因此 BMP 编解码仅比 Pillow 慢约 4-6 倍（而 PNG 约慢 20 倍）。
 - **zerodep 面向不同的使用场景** —— 零依赖和单文件的权衡：
     - 生成二维码、图表或缩略图
     - 读取图像元数据或像素数据

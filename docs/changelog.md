@@ -21,6 +21,7 @@
 
 ### 性能优化
 
+- **PNG 模块**：优化 BMP 编解码器、PNG 行滤波器和模式转换。BMP 编解码将逐像素 BGR↔RGB 循环替换为 `bytearray` slice 赋值（C 级操作）——**提速 42-44 倍**（从比 Pillow 慢 193-265 倍降至约慢 4.6-6.1 倍）。PNG 行滤波器优化：Up 滤波器使用 list comprehension + `zip`，Sub 滤波器前缀单独处理，Paeth 缓存函数引用为局部变量。解码/编码路径预分配像素缓冲区。7 种无损模式转换（L↔RGB↔RGBA 等）从逐像素循环改为 slice 操作。PNG 编解码整体**提速约 10%**。
 - **Protobuf 模块**：全面优化编解码热路径——FieldInfo 上绑定 encoder 分发（消除 11 路 if/elif）、每字段特化 `_is_default` 检查、内联 1 字节 tag 解码快速路径（字段号 1-15）、write-to-buffer varint/scalar 编码器（消除中间 `bytes` 分配）、缓存 map entry 类型元数据（`_MapMeta`）、`__dict__.update` 批量构造消息实例。编码**提速约 41-65%**，解码**提速约 7-27%**，大型消息往返**提速约 39%**。
 
 ## [2026.4.25] - 2026-04-25

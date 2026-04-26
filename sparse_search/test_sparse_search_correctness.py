@@ -5,12 +5,16 @@ from __future__ import annotations
 import pytest
 
 from sparse_search import (
+    Result,
     SparseIndex,
     _default_tokenize,
     _log_odds_conjunction,
     _logit,
     _prob_or,
     _sigmoid,
+    jaccard_similarity,
+    mmr,
+    rrf,
 )
 
 # ---------------------------------------------------------------------------
@@ -652,3 +656,269 @@ class TestBayesianCalibration:
         idx = SparseIndex()
         with pytest.raises(RuntimeError, match="empty index"):
             idx.calibrate()
+
+
+# ---------------------------------------------------------------------------
+# Jaccard similarity
+# ---------------------------------------------------------------------------
+
+
+class TestJaccardSimilarity:
+    def test_identical_sets(self):
+        assert jaccard_similarity({"a", "b", "c"}, {"a", "b", "c"}) == 1.0
+
+    def test_disjoint_sets(self):
+        assert jaccard_similarity({"a", "b"}, {"c", "d"}) == 0.0
+
+    def test_partial_overlap(self):
+        # {a, b, c} & {b, c, d} = {b, c}, union = {a, b, c, d}
+        assert jaccard_similarity({"a", "b", "c"}, {"b", "c", "d"}) == pytest.approx(
+            2 / 4
+        )
+
+    def test_both_empty(self):
+        assert jaccard_similarity(set(), set()) == 0.0
+
+    def test_one_empty(self):
+        assert jaccard_similarity({"a"}, set()) == 0.0
+        assert jaccard_similarity(set(), {"a"}) == 0.0
+
+    def test_subset(self):
+        # {a} & {a, b} = {a}, union = {a, b}
+        assert jaccard_similarity({"a"}, {"a", "b"}) == pytest.approx(1 / 2)
+
+
+# ---------------------------------------------------------------------------
+# RRF (Reciprocal Rank Fusion)
+# ---------------------------------------------------------------------------
+
+
+class TestRRF:
+    def test_basic_two_lists(self):
+        list_a = [Result("d1", 10.0), Result("d2", 5.0)]
+        list_b = [Result("d2", 0.9), Result("d3", 0.8)]
+        fused = rrf(list_a, list_b, k=60)
+        # d1: rank 1 in list_a only → 1/(60+1)
+        # d2: rank 2 in list_a + rank 1 in list_b → 1/(60+2) + 1/(60+1)
+        # d3: rank 2 in list_b only → 1/(60+2)
+        scores = {r.doc_id: r.score for r in fused}
+        assert scores["d2"] == pytest.approx(1.0 / 62 + 1.0 / 61)
+        assert scores["d1"] == pytest.approx(1.0 / 61)
+        assert scores["d3"] == pytest.approx(1.0 / 62)
+        # d2 should rank first
+        assert fused[0].doc_id == "d2"
+
+    def test_single_list(self):
+        results = [Result("d1", 5.0), Result("d2", 3.0)]
+        fused = rrf(results, k=60)
+        assert len(fused) == 2
+        assert fused[0].doc_id == "d1"
+        assert fused[0].score == pytest.approx(1.0 / 61)
+        assert fused[1].score == pytest.approx(1.0 / 62)
+
+    def test_disjoint_lists(self):
+        list_a = [Result("d1", 1.0)]
+        list_b = [Result("d2", 1.0)]
+        fused = rrf(list_a, list_b)
+        doc_ids = {r.doc_id for r in fused}
+        assert doc_ids == {"d1", "d2"}
+
+    def test_weights(self):
+        list_a = [Result("d1", 1.0)]
+        list_b = [Result("d1", 1.0)]
+        fused_equal = rrf(list_a, list_b, k=60)
+        fused_weighted = rrf(list_a, list_b, k=60, weights=[2.0, 1.0])
+        # With weights=[2,1], d1 score = 2/(60+1) + 1/(60+1) = 3/61
+        assert fused_weighted[0].score == pytest.approx(3.0 / 61)
+        # With equal weights, d1 score = 1/(60+1) + 1/(60+1) = 2/61
+        assert fused_equal[0].score == pytest.approx(2.0 / 61)
+
+    def test_top_k(self):
+        results = [Result(f"d{i}", float(10 - i)) for i in range(10)]
+        fused = rrf(results, top_k=3)
+        assert len(fused) == 3
+
+    def test_metadata_from_best_score(self):
+        list_a = [Result("d1", 10.0, metadata={"src": "a"})]
+        list_b = [Result("d1", 20.0, metadata={"src": "b"})]
+        fused = rrf(list_a, list_b)
+        # d1 has higher score in list_b, so metadata should come from there
+        assert fused[0].metadata == {"src": "b"}
+
+    def test_all_empty_lists(self):
+        fused = rrf([], [])
+        assert fused == []
+
+    def test_no_lists_raises(self):
+        with pytest.raises(ValueError, match="at least one"):
+            rrf()
+
+    def test_weights_mismatch_raises(self):
+        with pytest.raises(ValueError, match="weights length"):
+            rrf([Result("d1", 1.0)], weights=[1.0, 2.0])
+
+    def test_k_zero_raises(self):
+        with pytest.raises(ValueError, match="k must be positive"):
+            rrf([Result("d1", 1.0)], k=0)
+
+    def test_duplicate_doc_in_same_list(self):
+        # Only the first occurrence should count
+        results = [Result("d1", 10.0), Result("d1", 5.0)]
+        fused = rrf(results, k=60)
+        assert len(fused) == 1
+        assert fused[0].score == pytest.approx(1.0 / 61)
+
+    def test_composable_with_sparse_index(self):
+        idx1 = SparseIndex()
+        idx1.add("d1", "quick brown fox")
+        idx1.add("d2", "lazy dog")
+
+        idx2 = SparseIndex(variant="tfidf")
+        idx2.add("d1", "quick brown fox")
+        idx2.add("d2", "lazy dog")
+
+        r1 = idx1.search("quick fox")
+        r2 = idx2.search("quick fox")
+        fused = rrf(r1, r2)
+        assert len(fused) >= 1
+        assert all(isinstance(r, Result) for r in fused)
+
+    def test_three_lists(self):
+        a = [Result("d1", 3.0), Result("d2", 2.0)]
+        b = [Result("d2", 3.0), Result("d3", 2.0)]
+        c = [Result("d3", 3.0), Result("d1", 2.0)]
+        fused = rrf(a, b, c, k=60)
+        # Each doc appears twice: at rank 1 and rank 2 in different lists
+        scores = {r.doc_id: r.score for r in fused}
+        # All three docs should have equal scores
+        assert scores["d1"] == pytest.approx(scores["d2"])
+        assert scores["d2"] == pytest.approx(scores["d3"])
+
+
+# ---------------------------------------------------------------------------
+# MMR (Maximal Marginal Relevance)
+# ---------------------------------------------------------------------------
+
+
+class TestMMR:
+    @staticmethod
+    def _const_sim(a: Result, b: Result) -> float:
+        """Constant similarity for testing."""
+        return 0.5
+
+    @staticmethod
+    def _id_sim(a: Result, b: Result) -> float:
+        """High similarity for same-prefix docs, zero otherwise."""
+        return 1.0 if a.doc_id[:-1] == b.doc_id[:-1] else 0.0
+
+    def test_basic_diversity(self):
+        # Cluster A: d_a1 (high rel), d_a2 (medium rel) — similar to each other
+        # Cluster B: d_b1 (medium rel) — different from A
+        results = [
+            Result("a1", 10.0),
+            Result("a2", 9.0),
+            Result("b1", 8.0),
+        ]
+
+        def sim(a: Result, b: Result) -> float:
+            same_cluster = a.doc_id[0] == b.doc_id[0]
+            return 0.9 if same_cluster else 0.1
+
+        diverse = mmr(results, sim, lambda_=0.5, top_k=2)
+        # Should pick a1 first (highest relevance), then b1 (more diverse)
+        assert diverse[0].doc_id == "a1"
+        assert diverse[1].doc_id == "b1"
+
+    def test_lambda_one_preserves_order(self):
+        results = [
+            Result("d1", 10.0),
+            Result("d2", 8.0),
+            Result("d3", 5.0),
+        ]
+        reranked = mmr(results, self._const_sim, lambda_=1.0)
+        assert [r.doc_id for r in reranked] == ["d1", "d2", "d3"]
+
+    def test_lambda_zero_max_diversity(self):
+        # With lambda=0, only diversity matters (minimize max similarity to selected)
+        results = [
+            Result("d1", 10.0),
+            Result("d2", 9.0),
+            Result("d3", 1.0),
+        ]
+
+        def sim(a: Result, b: Result) -> float:
+            # d1 and d2 are very similar, d3 is different
+            if {a.doc_id, b.doc_id} == {"d1", "d2"}:
+                return 0.95
+            return 0.1
+
+        diverse = mmr(results, sim, lambda_=0.0)
+        # First pick: all have max_sim=0 initially, so best_mmr = 0 for all;
+        # among ties, first encountered wins → d1
+        # Second pick: d2 sim to d1=0.95, d3 sim to d1=0.1 → d3 preferred
+        assert diverse[0].doc_id == "d1"
+        assert diverse[1].doc_id == "d3"
+
+    def test_top_k(self):
+        results = [Result(f"d{i}", float(10 - i)) for i in range(10)]
+        reranked = mmr(results, self._const_sim, top_k=3)
+        assert len(reranked) == 3
+
+    def test_single_result(self):
+        results = [Result("d1", 5.0)]
+        reranked = mmr(results, self._const_sim)
+        assert len(reranked) == 1
+        assert reranked[0].doc_id == "d1"
+
+    def test_empty_results(self):
+        assert mmr([], self._const_sim) == []
+
+    def test_invalid_lambda_raises(self):
+        with pytest.raises(ValueError, match="lambda_"):
+            mmr([Result("d1", 1.0)], self._const_sim, lambda_=-0.1)
+        with pytest.raises(ValueError, match="lambda_"):
+            mmr([Result("d1", 1.0)], self._const_sim, lambda_=1.1)
+
+    def test_scores_are_mmr_values(self):
+        results = [Result("d1", 10.0), Result("d2", 5.0)]
+        reranked = mmr(results, self._const_sim, lambda_=0.5)
+        # MMR score for d1 (first picked): lambda*1.0 - 0 = 0.5 (normalized score=1.0)
+        assert reranked[0].score == pytest.approx(0.5)
+
+    def test_metadata_preserved(self):
+        results = [Result("d1", 5.0, metadata={"k": "v"})]
+        reranked = mmr(results, self._const_sim)
+        assert reranked[0].metadata == {"k": "v"}
+
+    def test_all_identical_scores(self):
+        results = [Result(f"d{i}", 5.0) for i in range(5)]
+        reranked = mmr(results, self._const_sim, lambda_=0.5)
+        assert len(reranked) == 5
+
+    def test_composable_with_sparse_index(self):
+        idx = SparseIndex()
+        idx.add("d1", "quick brown fox")
+        idx.add("d2", "lazy brown dog")
+        idx.add("d3", "fast red car")
+
+        search_results = idx.search("brown", top_k=10)
+        tokens = {
+            "d1": {"quick", "brown", "fox"},
+            "d2": {"lazy", "brown", "dog"},
+            "d3": {"fast", "red", "car"},
+        }
+
+        def sim(a, b):
+            return jaccard_similarity(
+                tokens.get(a.doc_id, set()), tokens.get(b.doc_id, set())
+            )
+
+        diverse = mmr(search_results, sim, lambda_=0.7, top_k=2)
+        assert len(diverse) <= 2
+        assert all(isinstance(r, Result) for r in diverse)
+
+    def test_zero_score_normalization(self):
+        """All scores zero should not cause division by zero."""
+        results = [Result("d1", 0.0), Result("d2", 0.0)]
+        reranked = mmr(results, self._const_sim, lambda_=0.5)
+        assert len(reranked) == 2

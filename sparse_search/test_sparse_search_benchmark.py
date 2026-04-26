@@ -11,7 +11,14 @@ import string
 
 import pytest
 
-from sparse_search import SparseIndex, _default_tokenize
+from sparse_search import (
+    Result,
+    SparseIndex,
+    _default_tokenize,
+    jaccard_similarity,
+    mmr,
+    rrf,
+)
 
 rank_bm25 = pytest.importorskip("rank_bm25")
 from rank_bm25 import BM25L as RefBM25L
@@ -277,3 +284,64 @@ class TestCalibrationPerformance:
     def test_search_calibrated(self, benchmark):
         """Calibrated BM25 search (probability output)."""
         benchmark(self.idx_cal.search, self.query, top_k=10)
+
+
+# ---------------------------------------------------------------------------
+# Performance: RRF
+# ---------------------------------------------------------------------------
+
+
+def _make_result_list(n: int, prefix: str, rng: random.Random) -> list[Result]:
+    """Generate a list of n Results with random scores."""
+    return [Result(f"{prefix}_d{i}", rng.uniform(0, 10)) for i in range(n)]
+
+
+class TestRRFPerformance:
+    def test_rrf_2_lists_1000_results(self, benchmark):
+        """RRF: fuse 2 lists of 1000 results each."""
+        rng = random.Random(42)
+        list_a = _make_result_list(1000, "a", rng)
+        list_b = _make_result_list(1000, "b", rng)
+        benchmark(rrf, list_a, list_b, k=60, top_k=10)
+
+    def test_rrf_10_lists_100_results(self, benchmark):
+        """RRF: fuse 10 lists of 100 results each."""
+        rng = random.Random(42)
+        lists = [_make_result_list(100, f"l{i}", rng) for i in range(10)]
+        benchmark(lambda: rrf(*lists, k=60, top_k=10))
+
+    def test_rrf_overlapping_docs(self, benchmark):
+        """RRF: fuse 2 lists with 50% overlap (500 shared doc_ids)."""
+        rng = random.Random(42)
+        shared = [Result(f"d{i}", rng.uniform(0, 10)) for i in range(500)]
+        unique_a = [Result(f"a{i}", rng.uniform(0, 10)) for i in range(500)]
+        unique_b = [Result(f"b{i}", rng.uniform(0, 10)) for i in range(500)]
+        list_a = shared + unique_a
+        list_b = [Result(r.doc_id, rng.uniform(0, 10)) for r in shared] + unique_b
+        benchmark(rrf, list_a, list_b, k=60, top_k=10)
+
+
+# ---------------------------------------------------------------------------
+# Performance: MMR
+# ---------------------------------------------------------------------------
+
+
+class TestMMRPerformance:
+    @staticmethod
+    def _jaccard_sim(a: Result, b: Result) -> float:
+        # Simulate token-based similarity using doc_id hash as proxy
+        set_a = set(a.doc_id)
+        set_b = set(b.doc_id)
+        return jaccard_similarity(set_a, set_b)
+
+    def test_mmr_100_candidates(self, benchmark):
+        """MMR: re-rank 100 candidates, select top 10."""
+        rng = random.Random(42)
+        results = _make_result_list(100, "d", rng)
+        benchmark(mmr, results, self._jaccard_sim, lambda_=0.5, top_k=10)
+
+    def test_mmr_500_candidates(self, benchmark):
+        """MMR: re-rank 500 candidates, select top 10."""
+        rng = random.Random(42)
+        results = _make_result_list(500, "d", rng)
+        benchmark(mmr, results, self._jaccard_sim, lambda_=0.5, top_k=10)

@@ -6,15 +6,23 @@ A zero-dependency parser for the [llms.txt specification](https://llmstxt.org/) 
 
 - **Spec-compliant parsing**: H1 title, blockquote description, detail paragraphs, H2 sections with link entries
 - **Optional section handling**: `## Optional` entries separated automatically per spec semantics
+- **Site-level discovery**: `discover()` probes any URL's root for `/llms.txt` and `/llms-full.txt`
 - **Unified URL discovery**: `find_candidates()` searches parsed llms.txt entries with heuristic fallback
 - **Lenient parsing**: only H1 title is required; everything else gracefully degrades
 - **Immutable results**: frozen dataclasses for parse output
-- **Zero dependencies**: stdlib only (`re`, `urllib.parse`, `dataclasses`)
+- **Zero dependencies**: stdlib only (`re`, `urllib.parse`, `urllib.request`, `dataclasses`)
 
 ## Quick Start
 
 ```python
-from llmstxt import parse, find_candidates
+from llmstxt import parse, find_candidates, discover
+
+# Discover llms.txt from any URL
+result = discover("https://example.com/docs/guide")
+content = result.llms_full_txt or result.llms_txt
+if content:
+    doc = parse(content)
+    print(doc.title)
 
 # Parse an llms.txt file
 doc = parse("""# My Project
@@ -67,6 +75,19 @@ When `doc` is provided, searches all sections and optional entries for URL match
 
 **Returns:** `list[FileEntry]` — candidates ordered by match quality.
 
+### `discover(url, *, timeout=10)`
+
+Probe a site for `/llms.txt` and `/llms-full.txt`.
+
+Given any URL, extracts the root (`{scheme}://{netloc}`) and attempts to fetch both files. If the input URL already points to one of these files, it is still fetched along with its sibling.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `url` | `str` | Any URL belonging to the target site |
+| `timeout` | `int` | HTTP request timeout in seconds (per request), default `10` |
+
+**Returns:** `DiscoveryResult` — raw content of whichever files were found.
+
 ### `LlmsTxt`
 
 Frozen dataclass representing a parsed llms.txt file.
@@ -78,6 +99,16 @@ Frozen dataclass representing a parsed llms.txt file.
 | `details` | `str` | Paragraphs between blockquote and first H2, or `""` |
 | `sections` | `dict[str, list[FileEntry]]` | H2 section name → entries (excludes "Optional") |
 | `optional` | `list[FileEntry]` | Entries from the `## Optional` section |
+
+### `DiscoveryResult`
+
+Frozen dataclass returned by `discover()`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `llms_txt` | `str \| None` | Raw content of `/llms.txt`, or `None` if not found |
+| `llms_full_txt` | `str \| None` | Raw content of `/llms-full.txt`, or `None` if not found |
+| `source_url` | `str` | The root URL (`{scheme}://{netloc}`) that was probed |
 
 ### `FileEntry`
 
@@ -132,21 +163,22 @@ for entry in results:
 ### Typical discovery workflow
 
 ```python
-import urllib.request
-from llmstxt import parse, find_candidates, LlmsTxtError
+from llmstxt import discover, parse, find_candidates
 
 page_url = "https://example.com/docs/guide"
-site_root = "https://example.com"
 
-# Try to fetch and parse site's llms.txt
-try:
-    llms_txt = urllib.request.urlopen(f"{site_root}/llms.txt").read().decode()
-    doc = parse(llms_txt)
-except (Exception, LlmsTxtError):
-    doc = None
+# Discover and fetch llms.txt / llms-full.txt from the site
+result = discover(page_url)
+content = result.llms_full_txt or result.llms_txt
 
-# Unified lookup — uses llms.txt if available, heuristic otherwise
-candidates = find_candidates(page_url, doc=doc)
+if content:
+    doc = parse(content)
+    # Search for per-page markdown matching the original URL
+    candidates = find_candidates(page_url, doc=doc)
+else:
+    # No llms.txt found — fall back to heuristic URL generation
+    candidates = find_candidates(page_url)
+
 for entry in candidates:
     print(f"Try: {entry.url}")
 ```

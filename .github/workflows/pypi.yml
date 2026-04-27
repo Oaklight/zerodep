@@ -1,0 +1,69 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for CLI changes
+        id: check
+        run: |
+          CURRENT_TAG="${GITHUB_REF_NAME}"
+          # Get the previous release tag (second newest vYYYY.* tag)
+          PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | grep -v "^${CURRENT_TAG}$" | head -1)
+
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found — first release, publishing"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Comparing ${PREV_TAG}..${CURRENT_TAG}"
+
+          # Diff zerodep.py excluding __version__ line
+          CLI_DIFF=$(git diff "$PREV_TAG".."$CURRENT_TAG" -- zerodep.py \
+            | grep '^[+-]' | grep -v '^[+-][+-][+-]' | grep -v '__version__' || true)
+          # Diff pyproject.toml excluding version = line
+          TOML_DIFF=$(git diff "$PREV_TAG".."$CURRENT_TAG" -- pyproject.toml \
+            | grep '^[+-]' | grep -v '^[+-][+-][+-]' | grep -v '^[+-]version = ' || true)
+
+          if [ -n "$CLI_DIFF" ] || [ -n "$TOML_DIFF" ]; then
+            echo "Substantive changes detected:"
+            echo "--- zerodep.py diff (excluding version) ---"
+            echo "$CLI_DIFF"
+            echo "--- pyproject.toml diff (excluding version) ---"
+            echo "$TOML_DIFF"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Only version bumps — skipping PyPI publish"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.changed == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Build package
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          pip install build
+          python -m build
+
+      - name: Publish to PyPI
+        if: steps.check.outputs.changed == 'true'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          pip install twine
+          twine upload dist/*

@@ -6,15 +6,23 @@
 
 - **规范兼容解析**：H1 标题、引用描述、详情段落、H2 分节及链接条目
 - **Optional 分节处理**：`## Optional` 条目按规范语义自动分离
+- **站点级发现**：`discover()` 自动探测任意 URL 所在站点的 `/llms.txt` 和 `/llms-full.txt`
 - **统一 URL 发现**：`find_candidates()` 优先搜索 llms.txt 条目，无匹配时回退到启发式规则
 - **宽容解析**：仅 H1 标题为必填，其余缺失项优雅降级
 - **不可变结果**：冻结 dataclass 作为解析输出
-- **零依赖**：仅使用标准库（`re`、`urllib.parse`、`dataclasses`）
+- **零依赖**：仅使用标准库（`re`、`urllib.parse`、`urllib.request`、`dataclasses`）
 
 ## 快速开始
 
 ```python
-from llmstxt import parse, find_candidates
+from llmstxt import parse, find_candidates, discover
+
+# 从任意 URL 发现 llms.txt
+result = discover("https://example.com/docs/guide")
+content = result.llms_full_txt or result.llms_txt
+if content:
+    doc = parse(content)
+    print(doc.title)
 
 # 解析 llms.txt 文件
 doc = parse("""# My Project
@@ -67,6 +75,19 @@ print(doc.optional)     # [FileEntry(name='Advanced', ...)]
 
 **返回值：** `list[FileEntry]` — 按匹配质量排序的候选列表。
 
+### `discover(url, *, timeout=10)`
+
+探测站点的 `/llms.txt` 和 `/llms-full.txt`。
+
+给定任意 URL，提取根地址（`{scheme}://{netloc}`）并尝试获取两个文件。如果输入 URL 本身已指向其中之一，仍会同时获取另一个。
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `url` | `str` | 目标站点的任意 URL |
+| `timeout` | `int` | HTTP 请求超时秒数（每个请求），默认 `10` |
+
+**返回值：** `DiscoveryResult` — 包含成功获取的文件原始内容。
+
 ### `LlmsTxt`
 
 表示已解析 llms.txt 文件的冻结 dataclass。
@@ -78,6 +99,16 @@ print(doc.optional)     # [FileEntry(name='Advanced', ...)]
 | `details` | `str` | 引用与首个 H2 之间的段落，缺失时为 `""` |
 | `sections` | `dict[str, list[FileEntry]]` | H2 分节名 → 条目列表（不含 "Optional"） |
 | `optional` | `list[FileEntry]` | `## Optional` 分节中的条目 |
+
+### `DiscoveryResult`
+
+`discover()` 返回的冻结 dataclass。
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `llms_txt` | `str \| None` | `/llms.txt` 的原始内容，未找到时为 `None` |
+| `llms_full_txt` | `str \| None` | `/llms-full.txt` 的原始内容，未找到时为 `None` |
+| `source_url` | `str` | 探测使用的根 URL（`{scheme}://{netloc}`） |
 
 ### `FileEntry`
 
@@ -132,21 +163,22 @@ for entry in results:
 ### 典型发现流程
 
 ```python
-import urllib.request
-from llmstxt import parse, find_candidates, LlmsTxtError
+from llmstxt import discover, parse, find_candidates
 
 page_url = "https://example.com/docs/guide"
-site_root = "https://example.com"
 
-# 尝试获取并解析站点的 llms.txt
-try:
-    llms_txt = urllib.request.urlopen(f"{site_root}/llms.txt").read().decode()
-    doc = parse(llms_txt)
-except (Exception, LlmsTxtError):
-    doc = None
+# 从站点发现并获取 llms.txt / llms-full.txt
+result = discover(page_url)
+content = result.llms_full_txt or result.llms_txt
 
-# 统一查找 — 有 llms.txt 则使用，否则启发式推导
-candidates = find_candidates(page_url, doc=doc)
+if content:
+    doc = parse(content)
+    # 从 llms.txt 中查找与原始 URL 匹配的页面级 Markdown
+    candidates = find_candidates(page_url, doc=doc)
+else:
+    # 未找到 llms.txt — 回退到启发式 URL 生成
+    candidates = find_candidates(page_url)
+
 for entry in candidates:
     print(f"尝试: {entry.url}")
 ```

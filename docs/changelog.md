@@ -8,7 +8,7 @@
 
 ### 新增模块
 
-- **llms.txt 模块**：零依赖的 [llms.txt 规范](https://llmstxt.org/) 解析器。`parse()` 从 llms.txt 文件中提取结构化数据（标题、描述、详情、H2 分节、Optional 条目）。`find_candidates()` 提供统一的 URL 发现功能 — 搜索已解析的 llms.txt 条目（精确 > 扩展名变体 > 路径前缀），无可用 llms.txt 时回退到启发式 `.md` URL 推导。冻结 dataclass（`LlmsTxt`、`FileEntry`）作为不可变解析结果。45 个正确性测试 + 4 个性能测试。
+- **llms.txt 模块**：零依赖的 [llms.txt 规范](https://llmstxt.org/) 解析器。`parse()` 从 llms.txt 文件中提取结构化数据（标题、描述、详情、H2 分节、Optional 条目）。`find_candidates()` 提供统一的 URL 发现功能 — 搜索已解析的 llms.txt 条目（精确 > 扩展名变体 > 路径前缀），无可用 llms.txt 时回退到启发式 `.md` URL 推导。`discover()` 自动探测任意 URL 所在站点的 `/llms.txt` 和 `/llms-full.txt`，通过 `DiscoveryResult` 返回原始内容。冻结 dataclass（`LlmsTxt`、`FileEntry`、`DiscoveryResult`）作为不可变结果。55 个正确性测试 + 4 个性能测试。
 - **PNG 模块**：零依赖的 PNG/BMP 图像编解码器，附带矩阵压缩 API。`decode_png`/`encode_png` 支持 PNG 图像（灰度/RGB/RGBA、8/16 位、全部 5 种行滤波器），`decode_bmp`/`encode_bmp` 支持 BMP（24/32 位未压缩），`convert()` 支持 L/LA/RGB/RGBA 模式互转，`matrix_to_png`/`png_to_matrix` 通过 PNG 行滤波器实现二维数值数据压缩，通过 tEXt 元数据实现浮点数无损往返。104 个正确性测试（与 Pillow Apple-to-Apple 对比）+ 24 个性能测试。
 
 ### 新功能

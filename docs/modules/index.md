@@ -27,6 +27,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [jsonc](jsonc.md) | 0.3.0 | 2026-04-11 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-11 |
 | [jsonschema](jsonschema.md) | 0.1.0 | 2026-04-25 |
+| [llmstxt](llmstxt.md) | 0.1.0 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.0 | 2026-04-26 |
 | [persistdict](persistdict.md) | 0.4.1 | 2026-04-20 |
 | [png](png.md) | 0.1.0 | 2026-04-27 |
@@ -84,6 +85,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [toon](toon.md) | TOON (Token-Oriented Object Notation) encoder/decoder | `toon_format` |
 | [frontmatter](frontmatter.md) | Frontmatter parser and serializer (YAML/TOML/JSON) | `python-frontmatter` |
 | [protobuf](protobuf.md) | Proto3 encoder/decoder using Python dataclass schemas | `protobuf` |
+| [llmstxt](llmstxt.md) | llms.txt parser and markdown URL candidate finder | -- |
 
 ### Data Validation
 

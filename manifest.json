@@ -192,6 +192,18 @@
       "last_updated": "2026-04-25T01:35:16+08:00",
       "content_hash": "032d65945452db2276c7867f38b7233a376905258f6df085101046fe48606043"
     },
+    "llmstxt": {
+      "description": "llms.txt parser — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "llmstxt/llmstxt.py"
+      ],
+      "version": "0.1.0",
+      "deps": [],
+      "tier": "simple",
+      "category": "data",
+      "last_updated": null,
+      "content_hash": null
+    },
     "markdown": {
       "description": "Markdown to HTML renderer — zero dependencies, stdlib only, Python 3.10+",
       "files": [

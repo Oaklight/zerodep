@@ -27,6 +27,7 @@ title: 模块概览
 | [jsonc](jsonc.md) | 0.3.0 | 2026-04-11 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-11 |
 | [jsonschema](jsonschema.md) | 0.1.0 | 2026-04-25 |
+| [llmstxt](llmstxt.md) | 0.1.0 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.0 | 2026-04-26 |
 | [persistdict](persistdict.md) | 0.4.1 | 2026-04-20 |
 | [png](png.md) | 0.1.0 | 2026-04-27 |
@@ -84,6 +85,7 @@ title: 模块概览
 | [toon](toon.md) | TOON（面向 Token 的对象表示法）编码器/解码器 | `toon_format` |
 | [frontmatter](frontmatter.md) | Frontmatter 解析与序列化（YAML/TOML/JSON） | `python-frontmatter` |
 | [protobuf](protobuf.md) | Proto3 编解码器（Python dataclass schema） | `protobuf` |
+| [llmstxt](llmstxt.md) | llms.txt 解析器与 Markdown URL 候选发现 | -- |
 
 ### 数据验证
 

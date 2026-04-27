@@ -28,7 +28,7 @@ categories:
   - id: data_formats
     name_en: "Data Formats"
     name_zh: "数据格式"
-    modules: [xml, yaml, jsonc, toon, frontmatter, protobuf]
+    modules: [xml, yaml, jsonc, toon, frontmatter, protobuf, llmstxt]
 
   - id: data_validation
     name_en: "Data Validation"
@@ -132,6 +132,9 @@ modules:
     benchmark: protobuf
     desc_en: "Proto3 encoder/decoder using Python dataclass schemas"
     desc_zh: "Proto3 编解码器（Python dataclass schema）"
+  llmstxt:
+    desc_en: "llms.txt parser and markdown URL candidate finder"
+    desc_zh: "llms.txt 解析器与 Markdown URL 候选发现"
   validate:
     benchmark: pydantic
     desc_en: "Runtime TypedDict/dataclass validator with JSON Schema generation"

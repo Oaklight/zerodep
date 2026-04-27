@@ -3,6 +3,7 @@ name: Publish to PyPI
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 jobs:
   publish:
@@ -17,8 +18,14 @@ jobs:
       - name: Check for CLI changes
         id: check
         run: |
-          CURRENT_TAG="${GITHUB_REF_NAME}"
-          # Get the previous release tag (second newest vYYYY.* tag)
+          # When triggered by release, GITHUB_REF_NAME is the tag.
+          # When triggered manually, use the latest tag instead.
+          if [ "${{ github.event_name }}" = "release" ]; then
+            CURRENT_TAG="${GITHUB_REF_NAME}"
+          else
+            CURRENT_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)
+          fi
+          # Get the previous release tag
           PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | grep -v "^${CURRENT_TAG}$" | head -1)
 
           if [ -z "$PREV_TAG" ]; then

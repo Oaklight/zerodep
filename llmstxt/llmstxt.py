@@ -42,14 +42,18 @@ from __future__ import annotations
 
 import dataclasses
 import re
+import urllib.error
 import urllib.parse
+import urllib.request
 
 __all__ = [
     "LlmsTxtError",
     "FileEntry",
     "LlmsTxt",
+    "DiscoveryResult",
     "parse",
     "find_candidates",
+    "discover",
 ]
 
 # ── Exceptions ───────────────────────────────────────────────────────────────
@@ -96,6 +100,22 @@ class LlmsTxt:
     details: str = ""
     sections: dict[str, list[FileEntry]] = dataclasses.field(default_factory=dict)
     optional: list[FileEntry] = dataclasses.field(default_factory=list)
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class DiscoveryResult:
+    """Result of probing a site for llms.txt and llms-full.txt.
+
+    Attributes:
+        llms_txt: Raw content of ``/llms.txt``, or ``None`` if not found.
+        llms_full_txt: Raw content of ``/llms-full.txt``, or ``None`` if not
+            found.
+        source_url: The root URL (``{scheme}://{netloc}``) that was probed.
+    """
+
+    llms_txt: str | None = None
+    llms_full_txt: str | None = None
+    source_url: str = ""
 
 
 # ── Regex Patterns ───────────────────────────────────────────────────────────
@@ -295,3 +315,54 @@ def find_candidates(url: str, doc: LlmsTxt | None = None) -> list[FileEntry]:
 
     # ── Fallback: heuristic URL candidates ──
     return [FileEntry(name="", url=u) for u in _candidate_md_urls(url)]
+
+
+# ── Discovery ──────────────────────────────────────────────────────────────
+
+_USER_AGENT = "zerodep-llmstxt/0.1 (https://github.com/Oaklight/zerodep)"
+
+
+def _fetch_text(url: str, timeout: int) -> str | None:
+    """Fetch a URL and return decoded text, or ``None`` on any failure."""
+    req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.read().decode("utf-8", errors="replace")
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return None
+
+
+def discover(url: str, *, timeout: int = 10) -> DiscoveryResult:
+    """Probe a site for ``/llms.txt`` and ``/llms-full.txt``.
+
+    Given any URL, extracts the root (``{scheme}://{netloc}``) and attempts to
+    fetch both ``/llms.txt`` and ``/llms-full.txt``.  If the input URL already
+    points to one of these files, it is still fetched (along with its sibling).
+
+    Args:
+        url: Any URL belonging to the target site.
+        timeout: HTTP request timeout in seconds (per request).
+
+    Returns:
+        A ``DiscoveryResult`` with the raw content of whichever files were
+        found (fields are ``None`` when the file does not exist or could not
+        be fetched).
+
+    Example::
+
+        result = discover("https://example.com/docs/guide")
+        content = result.llms_full_txt or result.llms_txt
+        if content:
+            doc = parse(content)
+    """
+    parsed = urllib.parse.urlparse(url)
+    root = f"{parsed.scheme}://{parsed.netloc}"
+
+    llms_txt = _fetch_text(f"{root}/llms.txt", timeout)
+    llms_full_txt = _fetch_text(f"{root}/llms-full.txt", timeout)
+
+    return DiscoveryResult(
+        llms_txt=llms_txt,
+        llms_full_txt=llms_full_txt,
+        source_url=root,
+    )

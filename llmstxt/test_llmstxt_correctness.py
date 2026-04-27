@@ -1,14 +1,18 @@
 """Correctness tests for zerodep llmstxt parser."""
 
+import http.server
 import os
 import sys
+import threading
 
 import pytest
 
 sys.path.insert(0, os.path.dirname(__file__))
 
 from llmstxt import (  # noqa: E402
+    DiscoveryResult,
     LlmsTxtError,
+    discover,
     find_candidates,
     parse,
 )
@@ -413,3 +417,162 @@ class TestFindCandidates:
         results = find_candidates("https://example.com/page")
         assert len(results) == 3
         assert results[0].url == "https://example.com/page.md"
+
+
+# ── Local HTTP server for discover() tests ──────────────────────────────────
+
+LLMS_TXT_CONTENT = """\
+# Test Site
+
+> A test site for discovery.
+
+## Docs
+
+- [Guide](https://example.com/guide.md): The main guide
+"""
+
+LLMS_FULL_TXT_CONTENT = """\
+# Test Site
+
+> A test site for discovery.
+
+Full detailed content here.
+
+## Docs
+
+- [Guide](https://example.com/guide.md): The main guide
+- [API](https://example.com/api.md): API reference
+
+## Optional
+
+- [Advanced](https://example.com/advanced.md): Advanced topics
+"""
+
+
+class _DiscoveryHandler(http.server.BaseHTTPRequestHandler):
+    """Handler that serves llms.txt and/or llms-full.txt based on class flags."""
+
+    serve_llms_txt = True
+    serve_llms_full_txt = True
+
+    def do_GET(self):  # noqa: N802
+        if self.path == "/llms.txt" and self.serve_llms_txt:
+            self._respond(200, LLMS_TXT_CONTENT)
+        elif self.path == "/llms-full.txt" and self.serve_llms_full_txt:
+            self._respond(200, LLMS_FULL_TXT_CONTENT)
+        else:
+            self._respond(404, "Not Found")
+
+    def _respond(self, code: int, body: str):
+        self.send_response(code)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(body.encode("utf-8"))
+
+    def log_message(self, format, *args):  # noqa: A002
+        pass  # suppress log output during tests
+
+
+def _make_server(handler_cls):
+    """Start a local HTTP server with the given handler, return (url, server)."""
+    server = http.server.HTTPServer(("127.0.0.1", 0), handler_cls)
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return f"http://127.0.0.1:{port}", server
+
+
+# ── Test: discover() ───────────────────────────────────────────────────────
+
+
+class TestDiscover:
+    @pytest.fixture()
+    def both_server(self):
+        """Server that serves both llms.txt and llms-full.txt."""
+        url, server = _make_server(_DiscoveryHandler)
+        yield url
+        server.shutdown()
+
+    @pytest.fixture()
+    def llms_only_server(self):
+        """Server that serves only llms.txt."""
+
+        class Handler(_DiscoveryHandler):
+            serve_llms_full_txt = False
+
+        url, server = _make_server(Handler)
+        yield url
+        server.shutdown()
+
+    @pytest.fixture()
+    def full_only_server(self):
+        """Server that serves only llms-full.txt."""
+
+        class Handler(_DiscoveryHandler):
+            serve_llms_txt = False
+
+        url, server = _make_server(Handler)
+        yield url
+        server.shutdown()
+
+    @pytest.fixture()
+    def empty_server(self):
+        """Server that serves neither file."""
+
+        class Handler(_DiscoveryHandler):
+            serve_llms_txt = False
+            serve_llms_full_txt = False
+
+        url, server = _make_server(Handler)
+        yield url
+        server.shutdown()
+
+    def test_both_found(self, both_server):
+        result = discover(both_server)
+        assert result.llms_txt is not None
+        assert result.llms_full_txt is not None
+        assert "# Test Site" in result.llms_txt
+        assert "Full detailed content" in result.llms_full_txt
+
+    def test_only_llms_txt(self, llms_only_server):
+        result = discover(llms_only_server)
+        assert result.llms_txt is not None
+        assert result.llms_full_txt is None
+
+    def test_only_llms_full_txt(self, full_only_server):
+        result = discover(full_only_server)
+        assert result.llms_txt is None
+        assert result.llms_full_txt is not None
+
+    def test_neither_found(self, empty_server):
+        result = discover(empty_server)
+        assert result.llms_txt is None
+        assert result.llms_full_txt is None
+
+    def test_deep_path_extracts_root(self, both_server):
+        result = discover(f"{both_server}/docs/guide/page.html?q=1#frag")
+        assert result.llms_txt is not None
+        assert result.source_url == both_server
+
+    def test_input_is_llms_txt_url(self, both_server):
+        result = discover(f"{both_server}/llms.txt")
+        assert result.llms_txt is not None
+        assert result.llms_full_txt is not None
+
+    def test_source_url(self, both_server):
+        result = discover(both_server)
+        assert result.source_url == both_server
+
+    def test_result_is_frozen(self, both_server):
+        result = discover(both_server)
+        with pytest.raises(AttributeError):
+            result.llms_txt = "new"  # type: ignore[misc]
+
+    def test_unreachable_host(self):
+        result = discover("http://127.0.0.1:1", timeout=1)
+        assert result.llms_txt is None
+        assert result.llms_full_txt is None
+
+    def test_result_is_discovery_result(self, both_server):
+        result = discover(both_server)
+        assert isinstance(result, DiscoveryResult)

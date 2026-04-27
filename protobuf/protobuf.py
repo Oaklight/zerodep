@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.3"
+# version = "0.4.4"
 # deps = []
 # tier = "subsystem"
 # category = "serialization"

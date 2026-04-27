@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-04-27T19:15:56.786358+00:00",
+  "generated": "2026-04-27T19:31:53.777759+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -197,7 +197,7 @@
       "files": [
         "llmstxt/llmstxt.py"
       ],
-      "version": "0.1.0",
+      "version": "0.1.1",
       "deps": [],
       "tier": "simple",
       "category": "protocol",
@@ -209,7 +209,7 @@
       "files": [
         "markdown/markdown.py"
       ],
-      "version": "0.4.0",
+      "version": "0.4.1",
       "deps": [],
       "tier": "medium",
       "category": "text",
@@ -233,7 +233,7 @@
       "files": [
         "png/png.py"
       ],
-      "version": "0.1.0",
+      "version": "0.1.1",
       "deps": [],
       "tier": "medium",
       "category": "image",
@@ -257,7 +257,7 @@
       "files": [
         "protobuf/protobuf.py"
       ],
-      "version": "0.4.3",
+      "version": "0.4.4",
       "deps": [],
       "tier": "subsystem",
       "category": "serialization",
@@ -269,7 +269,7 @@
       "files": [
         "qr/qr.py"
       ],
-      "version": "0.3.2",
+      "version": "0.3.3",
       "deps": [
         "png"
       ],
@@ -435,7 +435,7 @@
       "files": [
         "validate/validate.py"
       ],
-      "version": "0.4.2",
+      "version": "0.4.3",
       "deps": [],
       "tier": "medium",
       "category": "validation",

@@ -203,10 +203,8 @@ def _parse_semver(version: str) -> tuple[int, ...]:
 def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
     """Detect which modules have been modified since their declared version tag.
 
-    Uses a dual-strategy tag lookup:
-    1. Try ``v{module_version}`` directly (backward compat with old SemVer tags).
-    2. Search all release tags for one where the file has the same frontmatter
-       version (supports CalVer project tags like ``v2026.4.11``).
+    Searches all release tags (newest first) for one where the file has
+    matching frontmatter version, then compares content hashes.
 
     If no tag matches the current version, checks whether the version was
     already bumped relative to the latest tagged version (prevents
@@ -221,20 +219,18 @@ def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
 
     for mod_name, mod in sorted(modules.items()):
         version = mod["version"]
-        primary_file = mod["files"][0]
+        primary_file = mod["primary_file"]
 
-        # Strategy 1: exact tag match (e.g. v0.3.0)
-        tag_content = _git_show_at_tag(repo_root, f"v{version}", primary_file)
-
-        # Strategy 2: search all release tags for matching frontmatter version
-        if tag_content is None:
-            for tag in all_tags:
-                candidate = _git_show_at_tag(repo_root, tag, primary_file)
-                if candidate is not None:
-                    tag_meta = _extract_frontmatter(candidate)
-                    if tag_meta.get("version") == version:
-                        tag_content = candidate
-                        break
+        # Search all release tags (newest first) for one where the file
+        # has matching frontmatter version.
+        tag_content = None
+        for tag in all_tags:
+            candidate = _git_show_at_tag(repo_root, tag, primary_file)
+            if candidate is not None:
+                tag_meta = _extract_frontmatter(candidate)
+                if tag_meta.get("version") == version:
+                    tag_content = candidate
+                    break
 
         if tag_content is None:
             # No tag has this version — check if it was already bumped.
@@ -361,6 +357,7 @@ def _build_module_entry(primary: Path, py_files: list[Path], repo_root: Path) ->
     return {
         "description": _extract_docstring_first_line(source) or "",
         "files": [str(f.relative_to(repo_root)) for f in py_files],
+        "primary_file": str(primary.relative_to(repo_root)),
         "version": meta.get("version", "0.0.0"),
         "deps": meta.get("deps", []),
         "tier": meta.get("tier", ""),
@@ -467,10 +464,14 @@ def _extract_docstring_first_line(source: str) -> str | None:
 def _generate_manifest(repo_root: Path) -> dict:
     """Generate the full manifest dict."""
     modules = _scan_modules(repo_root)
+    # Strip internal-only keys before serialization
+    cleaned = {}
+    for name, mod in modules.items():
+        cleaned[name] = {k: v for k, v in mod.items() if k != "primary_file"}
     return {
         "version": "1",
         "generated": datetime.now(timezone.utc).isoformat(),
-        "modules": modules,
+        "modules": cleaned,
     }
 
 

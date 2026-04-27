@@ -14,10 +14,13 @@ build:
       # Excludes dotfiles, plans/, and docs_* to avoid conflicts with the docs branch.
       # No manual update needed when adding new modules.
       - for d in $(git ls-tree --name-only -d FETCH_HEAD | grep -v ^[.] | grep -v ^plans | grep -v ^docs_); do git checkout FETCH_HEAD -- "$d/" 2>/dev/null || true; done
+      # Check out manifest.json for module index generation
+      - git checkout FETCH_HEAD -- manifest.json 2>/dev/null || true
     install:
       - pip install -r requirements.txt
     build:
       html:
+        - python scripts/generate_module_index.py --lang en --out-en docs/modules/index.md
         - zensical build
         - python -m llmstxt_standalone build -c mkdocs.yml -s site -v
     post_build:

@@ -140,7 +140,7 @@ plugins:
           - guide/faq.md
         模块:
           - modules/index.md
-          - modules/http.md
+          - modules/httpclient.md
           - modules/sse.md
           - modules/jsonrpc.md
           - modules/a2a.md
@@ -179,7 +179,7 @@ plugins:
           - modules/qr.md
           - modules/depdetect.md
         API 参考:
-          - api/http.md
+          - api/httpclient.md
           - api/sse.md
           - api/jsonrpc.md
           - api/a2a.md
@@ -218,7 +218,7 @@ plugins:
           - api/qr.md
           - api/depdetect.md
         性能测试:
-          - benchmarks/http.md
+          - benchmarks/httpclient.md
           - benchmarks/sse.md
           - benchmarks/jsonrpc.md
           - benchmarks/a2a.md
@@ -302,33 +302,30 @@ nav:
   - 模块:
       - modules/index.md
       - 网络与通信:
-          - httpclient / HTTP 客户端: modules/http.md
+          - httpclient / HTTP 客户端: modules/httpclient.md
           - sse / SSE 客户端: modules/sse.md
       - 智能体协议:
           - jsonrpc / JSON-RPC: modules/jsonrpc.md
           - a2a / A2A 协议: modules/a2a.md
           - acp / ACP 协议: modules/acp.md
           - skills / Agent Skills: modules/skills.md
-      - 图像:
-          - png / PNG 图像编解码器: modules/png.md
-      - 数据格式:
+          - llmstxt / llms.txt 解析器: modules/llmstxt.md
+      - 序列化:
           - xml / XML 转换器: modules/xml.md
           - yaml / YAML 解析器: modules/yaml.md
           - jsonc / JSONC 解析器: modules/jsonc.md
           - toon / TOON 序列化: modules/toon.md
           - frontmatter / Frontmatter 解析器: modules/frontmatter.md
           - protobuf / Protobuf 编解码器: modules/protobuf.md
-          - llmstxt / llms.txt 解析器: modules/llmstxt.md
       - 数据验证:
           - validate / 验证器: modules/validate.md
           - jsonschema / Schema 展平器: modules/jsonschema.md
           - semver / 版本解析器: modules/semver.md
-      - 文本与标记:
+      - 文本与搜索:
           - markdown / Markdown 渲染器: modules/markdown.md
           - soup / HTML 解析器: modules/soup.md
           - readability / 正文提取器: modules/readability.md
           - diff / Diff 差异工具: modules/diff.md
-      - 搜索与检索:
           - sparse_search / 稀疏搜索: modules/sparse_search.md
       - 配置:
           - dotenv / Dotenv 环境变量: modules/dotenv.md
@@ -339,46 +336,47 @@ nav:
           - prompt / 交互式提示: modules/prompt.md
       - 安全:
           - aes / AES 加密: modules/aes.md
-      - 基础设施与工具:
-          - cache / 缓存: modules/cache.md
+      - 图像:
+          - png / PNG 图像编解码器: modules/png.md
+          - qr / QR 二维码: modules/qr.md
+      - 进程与执行:
           - retry / 重试: modules/retry.md
           - scheduler / 任务调度器: modules/scheduler.md
-          - structlog / 结构化日志: modules/structlog.md
-          - vcs / VCS 版本控制: modules/vcs.md
           - runner / 命令运行器: modules/runner.md
           - filelock / 文件锁: modules/filelock.md
+      - 存储:
+          - cache / 缓存: modules/cache.md
           - persistdict / 持久化字典: modules/persistdict.md
-          - qr / QR 二维码: modules/qr.md
+      - 开发工具:
+          - structlog / 结构化日志: modules/structlog.md
+          - vcs / VCS 版本控制: modules/vcs.md
           - depdetect / 依赖检测: modules/depdetect.md
   - API 参考:
       - 网络与通信:
-          - httpclient / HTTP 客户端: api/http.md
+          - httpclient / HTTP 客户端: api/httpclient.md
           - sse / SSE 客户端: api/sse.md
       - 智能体协议:
           - jsonrpc / JSON-RPC: api/jsonrpc.md
           - a2a / A2A 协议: api/a2a.md
           - acp / ACP 协议: api/acp.md
           - skills / Agent Skills: api/skills.md
-      - 图像:
-          - png / PNG 图像编解码器: api/png.md
-      - 数据格式:
+          - llmstxt / llms.txt 解析器: api/llmstxt.md
+      - 序列化:
           - xml / XML 转换器: api/xml.md
           - yaml / YAML 解析器: api/yaml.md
           - jsonc / JSONC 解析器: api/jsonc.md
           - toon / TOON 序列化: api/toon.md
           - frontmatter / Frontmatter 解析器: api/frontmatter.md
           - protobuf / Protobuf 编解码器: api/protobuf.md
-          - llmstxt / llms.txt 解析器: api/llmstxt.md
       - 数据验证:
           - validate / 验证器: api/validate.md
           - jsonschema / Schema 展平器: api/jsonschema.md
           - semver / 版本解析器: api/semver.md
-      - 文本与标记:
+      - 文本与搜索:
           - markdown / Markdown 渲染器: api/markdown.md
           - soup / HTML 解析器: api/soup.md
           - readability / 正文提取器: api/readability.md
           - diff / Diff 差异工具: api/diff.md
-      - 搜索与检索:
           - sparse_search / 稀疏搜索: api/sparse_search.md
       - 配置:
           - dotenv / Dotenv 环境变量: api/dotenv.md
@@ -389,46 +387,47 @@ nav:
           - prompt / 交互式提示: api/prompt.md
       - 安全:
           - aes / AES 加密: api/aes.md
-      - 基础设施与工具:
-          - cache / 缓存: api/cache.md
+      - 图像:
+          - png / PNG 图像编解码器: api/png.md
+          - qr / QR 二维码: api/qr.md
+      - 进程与执行:
           - retry / 重试: api/retry.md
           - scheduler / 任务调度器: api/scheduler.md
-          - structlog / 结构化日志: api/structlog.md
-          - vcs / VCS 版本控制: api/vcs.md
           - runner / 命令运行器: api/runner.md
           - filelock / 文件锁: api/filelock.md
+      - 存储:
+          - cache / 缓存: api/cache.md
           - persistdict / 持久化字典: api/persistdict.md
-          - qr / QR 二维码: api/qr.md
+      - 开发工具:
+          - structlog / 结构化日志: api/structlog.md
+          - vcs / VCS 版本控制: api/vcs.md
           - depdetect / 依赖检测: api/depdetect.md
   - 性能测试:
       - 网络与通信:
-          - httpclient / HTTP 客户端: benchmarks/http.md
+          - httpclient / HTTP 客户端: benchmarks/httpclient.md
           - sse / SSE 客户端: benchmarks/sse.md
       - 智能体协议:
           - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md
           - a2a / A2A 协议: benchmarks/a2a.md
           - acp / ACP 协议: benchmarks/acp.md
           - skills / Agent Skills: benchmarks/skills.md
-      - 图像:
-          - png / PNG 图像编解码器: benchmarks/png.md
-      - 数据格式:
+          - llmstxt / llms.txt 解析器: benchmarks/llmstxt.md
+      - 序列化:
           - xml / XML 转换器: benchmarks/xml.md
           - yaml / YAML 解析器: benchmarks/yaml.md
           - jsonc / JSONC 解析器: benchmarks/jsonc.md
           - toon / TOON 序列化: benchmarks/toon.md
           - frontmatter / Frontmatter 解析器: benchmarks/frontmatter.md
           - protobuf / Protobuf 编解码器: benchmarks/protobuf.md
-          - llmstxt / llms.txt 解析器: benchmarks/llmstxt.md
       - 数据验证:
           - validate / 验证器: benchmarks/validate.md
           - jsonschema / Schema 展平器: benchmarks/jsonschema.md
           - semver / 版本解析器: benchmarks/semver.md
-      - 文本与标记:
+      - 文本与搜索:
           - markdown / Markdown 渲染器: benchmarks/markdown.md
           - soup / HTML 解析器: benchmarks/soup.md
           - readability / 正文提取器: benchmarks/readability.md
           - diff / Diff 差异工具: benchmarks/diff.md
-      - 搜索与检索:
           - sparse_search / 稀疏搜索: benchmarks/sparse_search.md
       - 配置:
           - dotenv / Dotenv 环境变量: benchmarks/dotenv.md
@@ -439,15 +438,19 @@ nav:
           - prompt / 交互式提示: benchmarks/prompt.md
       - 安全:
           - aes / AES 加密: benchmarks/aes.md
-      - 基础设施与工具:
-          - cache / 缓存: benchmarks/cache.md
+      - 图像:
+          - png / PNG 图像编解码器: benchmarks/png.md
+          - qr / QR 二维码: benchmarks/qr.md
+      - 进程与执行:
           - retry / 重试: benchmarks/retry.md
           - scheduler / 任务调度器: benchmarks/scheduler.md
-          - structlog / 结构化日志: benchmarks/structlog.md
-          - vcs / VCS 版本控制: benchmarks/vcs.md
           - runner / 命令运行器: benchmarks/runner.md
           - filelock / 文件锁: benchmarks/filelock.md
+      - 存储:
+          - cache / 缓存: benchmarks/cache.md
           - persistdict / 持久化字典: benchmarks/persistdict.md
-          - qr / QR 二维码: benchmarks/qr.md
+      - 开发工具:
+          - structlog / 结构化日志: benchmarks/structlog.md
+          - vcs / VCS 版本控制: benchmarks/vcs.md
           - depdetect / 依赖检测: benchmarks/depdetect.md
   - 更新日志: changelog.md

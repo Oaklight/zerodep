@@ -20,7 +20,7 @@ build:
       - pip install -r requirements.txt
     build:
       html:
-        - python scripts/generate_module_index.py --lang zh --out-zh docs/modules/index.md
+        - python _scripts/generate_module_index.py --lang zh --out-zh docs/modules/index.md
         - zensical build
         - python -m llmstxt_standalone build -c mkdocs.yml -s site -v
     post_build:

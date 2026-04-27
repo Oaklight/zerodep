@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-04-26T06:58:51.116753+00:00",
+  "generated": "2026-04-27T10:54:29.464112+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -201,20 +201,20 @@
       "deps": [],
       "tier": "simple",
       "category": "data",
-      "last_updated": null,
-      "content_hash": null
+      "last_updated": "2026-04-27T17:24:14+08:00",
+      "content_hash": "3f5575aab6a2c10b3b452e2481aac34e308c9dfaf9eb99d06e5002c2b46b94ef"
     },
     "markdown": {
       "description": "Markdown to HTML renderer — zero dependencies, stdlib only, Python 3.10+",
       "files": [
         "markdown/markdown.py"
       ],
-      "version": "0.3.1",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
       "category": "terminal",
-      "last_updated": "2026-04-15T09:45:45Z",
-      "content_hash": "b26d13e113404ced28490ce69a874e499154dd6b8096bd268427364b4a847c41"
+      "last_updated": "2026-04-26T14:31:17+08:00",
+      "content_hash": "994c0166db9726b626d6f0b2c20979ac28e20fddb7eacd28793aaa01500eb1da"
     },
     "persistdict": {
       "description": "Persistent dictionary with pluggable backends",
@@ -229,7 +229,7 @@
       "content_hash": "22a1f335dbc3899fc27838b4c34413d25455bebadff8f8711e5fbba15d27e2ad"
     },
     "png": {
-      "description": "<One-line description>",
+      "description": "Zero-dependency PNG and BMP image codec with matrix compression API",
       "files": [
         "png/png.py"
       ],
@@ -237,8 +237,8 @@
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": null,
-      "content_hash": "a2634f6b1055b60d873e2bc413693dfced5201d4aeaeebdda98793540acf3416"
+      "last_updated": "2026-04-27T01:55:04+08:00",
+      "content_hash": "a69b7f4a781e5bd8b8ac558c34b068800ee9e3042c28bf7c1e4a10bf672827e4"
     },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",
@@ -261,8 +261,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "data",
-      "last_updated": "2026-04-25T23:15:46+08:00",
-      "content_hash": "71eed6f9f7cda282d3bf41ae1009dd838dfcdeae67d767c3dd68103d95959a55"
+      "last_updated": "2026-04-25T23:52:24+08:00",
+      "content_hash": "73b7b33609328df497b8d8639233e94f2c3bd4c46cbe7d9dbacfce51f1ebc700"
     },
     "qr": {
       "description": "QR Code generator library (Python)",
@@ -270,11 +270,13 @@
         "qr/qr.py"
       ],
       "version": "0.3.2",
-      "deps": [],
+      "deps": [
+        "png"
+      ],
       "tier": "simple",
       "category": "utility",
-      "last_updated": "2026-04-20T23:13:49+08:00",
-      "content_hash": "8574fe70421245e6a60aaaa65fdf60f8a196c18d5578b7943888ab42702f3ad8"
+      "last_updated": "2026-04-27T02:01:54+08:00",
+      "content_hash": "992def53fe2e34c3031a112906b9f4ce5a7b7523f43cdf070415d17117f3e37d"
     },
     "readability": {
       "description": "HTML readability content extractor — zero-dep, stdlib only, Python 3.10+",
@@ -359,24 +361,24 @@
       "files": [
         "soup/soup.py"
       ],
-      "version": "0.5.0",
+      "version": "0.6.0",
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-20T23:13:49+08:00",
-      "content_hash": "f8f228c21989d06225b607452417907a26751e6bea837443551e722d84eb16e1"
+      "last_updated": "2026-04-26T14:20:16+08:00",
+      "content_hash": "ce1118b732c3e70d1d1daeb7d8f650af6685988a24e3ed89b0b9506fca8675ef"
     },
     "sparse_search": {
       "description": "Zero-dependency sparse text search with BM25 family and TF-IDF ranking",
       "files": [
         "sparse_search/sparse_search.py"
       ],
-      "version": "0.3.2",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
       "category": "utility",
-      "last_updated": "2026-04-15T14:33:44Z",
-      "content_hash": "98bfa266b43782668ebfc26ff891e2cf555762d539a0b724090ae6629a45abde"
+      "last_updated": "2026-04-27T03:18:58+08:00",
+      "content_hash": "9da4fd5f87bd0f9c7d21c4af5ff0c52353a08ae222f39c7c7a14f316a96a6e31"
     },
     "sse": {
       "description": "Zero-dependency SSE (Server-Sent Events) client",
@@ -437,8 +439,8 @@
       "deps": [],
       "tier": "medium",
       "category": "data",
-      "last_updated": "2026-04-15T09:45:45Z",
-      "content_hash": "9346085a3bb68fd21e5e266748c52b55da6b8c2d71a2ab059bf54015b14d436a"
+      "last_updated": "2026-04-27T02:38:00+08:00",
+      "content_hash": "3e465a6cc3f234c0a2d0e44ba1339edff95f63c3d1bed70e344d6642a38104ff"
     },
     "vcs": {
       "description": "VCS CLI wrapper — zero dependencies, stdlib only, Python 3.10+",

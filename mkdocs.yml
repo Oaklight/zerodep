@@ -140,7 +140,7 @@ plugins:
           - guide/faq.md
         Modules:
           - modules/index.md
-          - modules/http.md
+          - modules/httpclient.md
           - modules/sse.md
           - modules/jsonrpc.md
           - modules/a2a.md
@@ -179,7 +179,7 @@ plugins:
           - modules/qr.md
           - modules/depdetect.md
         API Reference:
-          - api/http.md
+          - api/httpclient.md
           - api/sse.md
           - api/jsonrpc.md
           - api/a2a.md
@@ -218,7 +218,7 @@ plugins:
           - api/qr.md
           - api/depdetect.md
         Benchmarks:
-          - benchmarks/http.md
+          - benchmarks/httpclient.md
           - benchmarks/sse.md
           - benchmarks/jsonrpc.md
           - benchmarks/a2a.md
@@ -302,33 +302,30 @@ nav:
   - Modules:
       - modules/index.md
       - Web & Networking:
-          - httpclient / HTTP Client: modules/http.md
+          - httpclient / HTTP Client: modules/httpclient.md
           - sse / SSE Client: modules/sse.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: modules/jsonrpc.md
           - a2a / A2A Protocol: modules/a2a.md
           - acp / ACP Protocol: modules/acp.md
           - skills / Agent Skills: modules/skills.md
-      - Image:
-          - png / PNG Image Codec: modules/png.md
-      - Data Formats:
+          - llmstxt / llms.txt Parser: modules/llmstxt.md
+      - Serialization:
           - xml / XML Converter: modules/xml.md
           - yaml / YAML Parser: modules/yaml.md
           - jsonc / JSONC Parser: modules/jsonc.md
           - toon / TOON Serializer: modules/toon.md
           - frontmatter / Frontmatter Parser: modules/frontmatter.md
           - protobuf / Protobuf Codec: modules/protobuf.md
-          - llmstxt / llms.txt Parser: modules/llmstxt.md
-      - Data Validation:
+      - Validation:
           - validate / Validator: modules/validate.md
           - jsonschema / Schema Flattener: modules/jsonschema.md
           - semver / Version Parser: modules/semver.md
-      - Text & Markup:
+      - Text & Search:
           - markdown / Markdown Renderer: modules/markdown.md
           - soup / HTML Parser: modules/soup.md
           - readability / Article Extractor: modules/readability.md
           - diff / Diff Tool: modules/diff.md
-      - Search & Retrieval:
           - sparse_search / Sparse Search: modules/sparse_search.md
       - Configuration:
           - dotenv / Dotenv Loader: modules/dotenv.md
@@ -339,46 +336,47 @@ nav:
           - prompt / CLI Prompts: modules/prompt.md
       - Security:
           - aes / AES Encryption: modules/aes.md
-      - Infrastructure & Tools:
-          - cache / Cache: modules/cache.md
+      - Image:
+          - png / PNG Image Codec: modules/png.md
+          - qr / QR Code: modules/qr.md
+      - Process & Execution:
           - retry / Retry Decorator: modules/retry.md
           - scheduler / Task Scheduler: modules/scheduler.md
-          - structlog / Structured Logging: modules/structlog.md
-          - vcs / VCS Wrapper: modules/vcs.md
           - runner / Command Runner: modules/runner.md
           - filelock / File Lock: modules/filelock.md
+      - Storage:
+          - cache / Cache: modules/cache.md
           - persistdict / Persistent Dict: modules/persistdict.md
-          - qr / QR Code: modules/qr.md
+      - Dev Tools:
+          - structlog / Structured Logging: modules/structlog.md
+          - vcs / VCS Wrapper: modules/vcs.md
           - depdetect / Dependency Detection: modules/depdetect.md
   - API Reference:
       - Web & Networking:
-          - httpclient / HTTP Client: api/http.md
+          - httpclient / HTTP Client: api/httpclient.md
           - sse / SSE Client: api/sse.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: api/jsonrpc.md
           - a2a / A2A Protocol: api/a2a.md
           - acp / ACP Protocol: api/acp.md
           - skills / Agent Skills: api/skills.md
-      - Image:
-          - png / PNG Image Codec: api/png.md
-      - Data Formats:
+          - llmstxt / llms.txt Parser: api/llmstxt.md
+      - Serialization:
           - xml / XML Converter: api/xml.md
           - yaml / YAML Parser: api/yaml.md
           - jsonc / JSONC Parser: api/jsonc.md
           - toon / TOON Serializer: api/toon.md
           - frontmatter / Frontmatter Parser: api/frontmatter.md
           - protobuf / Protobuf Codec: api/protobuf.md
-          - llmstxt / llms.txt Parser: api/llmstxt.md
-      - Data Validation:
+      - Validation:
           - validate / Validator: api/validate.md
           - jsonschema / Schema Flattener: api/jsonschema.md
           - semver / Version Parser: api/semver.md
-      - Text & Markup:
+      - Text & Search:
           - markdown / Markdown Renderer: api/markdown.md
           - soup / HTML Parser: api/soup.md
           - readability / Article Extractor: api/readability.md
           - diff / Diff Tool: api/diff.md
-      - Search & Retrieval:
           - sparse_search / Sparse Search: api/sparse_search.md
       - Configuration:
           - dotenv / Dotenv Loader: api/dotenv.md
@@ -389,46 +387,47 @@ nav:
           - prompt / CLI Prompts: api/prompt.md
       - Security:
           - aes / AES Encryption: api/aes.md
-      - Infrastructure & Tools:
-          - cache / Cache: api/cache.md
+      - Image:
+          - png / PNG Image Codec: api/png.md
+          - qr / QR Code: api/qr.md
+      - Process & Execution:
           - retry / Retry Decorator: api/retry.md
           - scheduler / Task Scheduler: api/scheduler.md
-          - structlog / Structured Logging: api/structlog.md
-          - vcs / VCS Wrapper: api/vcs.md
           - runner / Command Runner: api/runner.md
           - filelock / File Lock: api/filelock.md
+      - Storage:
+          - cache / Cache: api/cache.md
           - persistdict / Persistent Dict: api/persistdict.md
-          - qr / QR Code: api/qr.md
+      - Dev Tools:
+          - structlog / Structured Logging: api/structlog.md
+          - vcs / VCS Wrapper: api/vcs.md
           - depdetect / Dependency Detection: api/depdetect.md
   - Benchmarks:
       - Web & Networking:
-          - httpclient / HTTP Client: benchmarks/http.md
+          - httpclient / HTTP Client: benchmarks/httpclient.md
           - sse / SSE Client: benchmarks/sse.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md
           - a2a / A2A Protocol: benchmarks/a2a.md
           - acp / ACP Protocol: benchmarks/acp.md
           - skills / Agent Skills: benchmarks/skills.md
-      - Image:
-          - png / PNG Image Codec: benchmarks/png.md
-      - Data Formats:
+          - llmstxt / llms.txt Parser: benchmarks/llmstxt.md
+      - Serialization:
           - xml / XML Converter: benchmarks/xml.md
           - yaml / YAML Parser: benchmarks/yaml.md
           - jsonc / JSONC Parser: benchmarks/jsonc.md
           - toon / TOON Serializer: benchmarks/toon.md
           - frontmatter / Frontmatter Parser: benchmarks/frontmatter.md
           - protobuf / Protobuf Codec: benchmarks/protobuf.md
-          - llmstxt / llms.txt Parser: benchmarks/llmstxt.md
-      - Data Validation:
+      - Validation:
           - validate / Validator: benchmarks/validate.md
           - jsonschema / Schema Flattener: benchmarks/jsonschema.md
           - semver / Version Parser: benchmarks/semver.md
-      - Text & Markup:
+      - Text & Search:
           - markdown / Markdown Renderer: benchmarks/markdown.md
           - soup / HTML Parser: benchmarks/soup.md
           - readability / Article Extractor: benchmarks/readability.md
           - diff / Diff Tool: benchmarks/diff.md
-      - Search & Retrieval:
           - sparse_search / Sparse Search: benchmarks/sparse_search.md
       - Configuration:
           - dotenv / Dotenv Loader: benchmarks/dotenv.md
@@ -439,15 +438,19 @@ nav:
           - prompt / CLI Prompts: benchmarks/prompt.md
       - Security:
           - aes / AES Encryption: benchmarks/aes.md
-      - Infrastructure & Tools:
-          - cache / Cache: benchmarks/cache.md
+      - Image:
+          - png / PNG Image Codec: benchmarks/png.md
+          - qr / QR Code: benchmarks/qr.md
+      - Process & Execution:
           - retry / Retry Decorator: benchmarks/retry.md
           - scheduler / Task Scheduler: benchmarks/scheduler.md
-          - structlog / Structured Logging: benchmarks/structlog.md
-          - vcs / VCS Wrapper: benchmarks/vcs.md
           - runner / Command Runner: benchmarks/runner.md
           - filelock / File Lock: benchmarks/filelock.md
+      - Storage:
+          - cache / Cache: benchmarks/cache.md
           - persistdict / Persistent Dict: benchmarks/persistdict.md
-          - qr / QR Code: benchmarks/qr.md
+      - Dev Tools:
+          - structlog / Structured Logging: benchmarks/structlog.md
+          - vcs / VCS Wrapper: benchmarks/vcs.md
           - depdetect / Dependency Detection: benchmarks/depdetect.md
   - Changelog: changelog.md

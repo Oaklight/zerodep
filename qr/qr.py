@@ -2,7 +2,7 @@
 # version = "0.3.2"
 # deps = ["png"]
 # tier = "simple"
-# category = "utility"
+# category = "image"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 

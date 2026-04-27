@@ -2,7 +2,7 @@
 # version = "0.1.0"
 # deps = ["soup"]
 # tier = "medium"
-# category = "data"
+# category = "text"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 

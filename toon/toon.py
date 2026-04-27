@@ -2,7 +2,7 @@
 # version = "0.3.3"
 # deps = []
 # tier = "simple"
-# category = "data"
+# category = "serialization"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 

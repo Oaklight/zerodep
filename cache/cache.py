@@ -2,7 +2,7 @@
 # version = "0.2.4"
 # deps = []
 # tier = "subsystem"
-# category = "utility"
+# category = "storage"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 """Zero-dependency caching with TTL, eviction policies, and async support.

@@ -2,7 +2,7 @@
 # version = "0.3.0"
 # deps = []
 # tier = "medium"
-# category = "network"
+# category = "protocol"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 

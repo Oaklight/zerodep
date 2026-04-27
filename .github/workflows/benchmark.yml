@@ -107,7 +107,7 @@ jobs:
 
       - name: Generate comparison report
         run: |
-          python scripts/generate_bench_report.py \
+          python _scripts/generate_bench_report.py \
             benchmark-results.json \
             bench-output/index.html \
             "${{ steps.bench-name.outputs.name }}" \

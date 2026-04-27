@@ -2,7 +2,7 @@
 # version = "0.1.0"
 # deps = []
 # tier = "medium"
-# category = "data"
+# category = "image"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 """Zero-dependency PNG and BMP image codec with matrix compression API.

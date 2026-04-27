@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-04-27T10:54:29.464112+00:00",
+  "generated": "2026-04-27T14:36:22.167511+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -12,7 +12,7 @@
         "jsonrpc"
       ],
       "tier": "subsystem",
-      "category": "network",
+      "category": "protocol",
       "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "11c6769744f13875563b39b8379295e128762bfeba67fbaa4e316e72e96d9604"
     },
@@ -26,7 +26,7 @@
         "jsonrpc"
       ],
       "tier": "subsystem",
-      "category": "network",
+      "category": "protocol",
       "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "6c7dc3a97e136d0d949f34520952ef31e82f00f882320d997149461e78d5efa6"
     },
@@ -62,7 +62,7 @@
       "version": "0.2.4",
       "deps": [],
       "tier": "subsystem",
-      "category": "utility",
+      "category": "storage",
       "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "0daa535d12e0d214a579242ad73d725b9f18145f6c67b319fa4185e7851685ae"
     },
@@ -78,7 +78,7 @@
         "jsonc"
       ],
       "tier": "subsystem",
-      "category": "data",
+      "category": "config",
       "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "c8f8c186275ea8b78da47a199347dbb33dba8abeb9dd5200944ebe4ea5afcf1f"
     },
@@ -114,7 +114,7 @@
       "version": "0.3.1",
       "deps": [],
       "tier": "simple",
-      "category": "data",
+      "category": "config",
       "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "96a25bac569969a26f9ca83869855b6480ca3aae433bd8873ec9f81f57d04a21"
     },
@@ -126,7 +126,7 @@
       "version": "0.3.0",
       "deps": [],
       "tier": "simple",
-      "category": "utility",
+      "category": "process",
       "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "8f26cd2845d54778baaaecff3c8dd2b293e6f48445385283e6982491278289df"
     },
@@ -140,7 +140,7 @@
         "yaml"
       ],
       "tier": "medium",
-      "category": "data",
+      "category": "serialization",
       "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "d05035b8d2edeb47c1007a8e4fba6ae3a74fab0bf8630042f228e45550bb645f"
     },
@@ -164,7 +164,7 @@
       "version": "0.3.0",
       "deps": [],
       "tier": "simple",
-      "category": "data",
+      "category": "serialization",
       "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "961c4038993865adfd4302ee3b2e7cc74f280ab9d8ef9a4de9295a72dcdcc416"
     },
@@ -176,7 +176,7 @@
       "version": "0.3.0",
       "deps": [],
       "tier": "medium",
-      "category": "network",
+      "category": "protocol",
       "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "402d88f2ab1d6736a37a69a6b6269ea9e450e3dd22e9dd49c7d52b570b8b6dda"
     },
@@ -188,7 +188,7 @@
       "version": "0.1.0",
       "deps": [],
       "tier": "medium",
-      "category": "data",
+      "category": "validation",
       "last_updated": "2026-04-25T01:35:16+08:00",
       "content_hash": "032d65945452db2276c7867f38b7233a376905258f6df085101046fe48606043"
     },
@@ -200,9 +200,9 @@
       "version": "0.1.0",
       "deps": [],
       "tier": "simple",
-      "category": "data",
-      "last_updated": "2026-04-27T17:24:14+08:00",
-      "content_hash": "3f5575aab6a2c10b3b452e2481aac34e308c9dfaf9eb99d06e5002c2b46b94ef"
+      "category": "protocol",
+      "last_updated": "2026-04-27T20:51:47+08:00",
+      "content_hash": "e68f0aa5558b55f608180104e689f7fb623a1c1dec5ed5b63b11864bf2d52d69"
     },
     "markdown": {
       "description": "Markdown to HTML renderer — zero dependencies, stdlib only, Python 3.10+",
@@ -212,7 +212,7 @@
       "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "terminal",
+      "category": "text",
       "last_updated": "2026-04-26T14:31:17+08:00",
       "content_hash": "994c0166db9726b626d6f0b2c20979ac28e20fddb7eacd28793aaa01500eb1da"
     },
@@ -224,7 +224,7 @@
       "version": "0.4.1",
       "deps": [],
       "tier": "medium",
-      "category": "data",
+      "category": "storage",
       "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "22a1f335dbc3899fc27838b4c34413d25455bebadff8f8711e5fbba15d27e2ad"
     },
@@ -236,7 +236,7 @@
       "version": "0.1.0",
       "deps": [],
       "tier": "medium",
-      "category": "data",
+      "category": "image",
       "last_updated": "2026-04-27T01:55:04+08:00",
       "content_hash": "a69b7f4a781e5bd8b8ac558c34b068800ee9e3042c28bf7c1e4a10bf672827e4"
     },
@@ -260,7 +260,7 @@
       "version": "0.4.3",
       "deps": [],
       "tier": "subsystem",
-      "category": "data",
+      "category": "serialization",
       "last_updated": "2026-04-25T23:52:24+08:00",
       "content_hash": "73b7b33609328df497b8d8639233e94f2c3bd4c46cbe7d9dbacfce51f1ebc700"
     },
@@ -274,7 +274,7 @@
         "png"
       ],
       "tier": "simple",
-      "category": "utility",
+      "category": "image",
       "last_updated": "2026-04-27T02:01:54+08:00",
       "content_hash": "992def53fe2e34c3031a112906b9f4ce5a7b7523f43cdf070415d17117f3e37d"
     },
@@ -289,7 +289,7 @@
         "soup"
       ],
       "tier": "medium",
-      "category": "data",
+      "category": "text",
       "last_updated": "2026-04-20T22:34:09+08:00",
       "content_hash": "78363bb1de017e4f5070f77ffd682eff43e5b2e0ff7c0b2995c2190d56169964"
     },
@@ -301,7 +301,7 @@
       "version": "0.3.0",
       "deps": [],
       "tier": "simple",
-      "category": "utility",
+      "category": "process",
       "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "e00d9eed010c2f93ddc51674f7dc4f4f2233e0d619e44b2d01582d09be0684bb"
     },
@@ -337,7 +337,7 @@
       "version": "0.4.1",
       "deps": [],
       "tier": "simple",
-      "category": "data",
+      "category": "validation",
       "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "2c9776510dbd235fb9752df25ab8bca390ad29cf1804aeae32de5c7773bc40d9"
     },
@@ -352,7 +352,7 @@
         "sparse_search"
       ],
       "tier": "medium",
-      "category": "data",
+      "category": "protocol",
       "last_updated": "2026-04-20T23:13:49+08:00",
       "content_hash": "af69314728164602db323a5240feac58260e4b0d5ceedb32945c80e2ddfa13e7"
     },
@@ -364,7 +364,7 @@
       "version": "0.6.0",
       "deps": [],
       "tier": "medium",
-      "category": "data",
+      "category": "text",
       "last_updated": "2026-04-26T14:20:16+08:00",
       "content_hash": "ce1118b732c3e70d1d1daeb7d8f650af6685988a24e3ed89b0b9506fca8675ef"
     },
@@ -376,7 +376,7 @@
       "version": "0.4.0",
       "deps": [],
       "tier": "medium",
-      "category": "utility",
+      "category": "text",
       "last_updated": "2026-04-27T03:18:58+08:00",
       "content_hash": "9da4fd5f87bd0f9c7d21c4af5ff0c52353a08ae222f39c7c7a14f316a96a6e31"
     },
@@ -402,7 +402,7 @@
       "version": "0.3.0",
       "deps": [],
       "tier": "medium",
-      "category": "utility",
+      "category": "devtools",
       "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "d2616b1a69fe42b1367d413888c69dd2026c00e58c36e1e83acda77fd3633ed6"
     },
@@ -426,7 +426,7 @@
       "version": "0.3.3",
       "deps": [],
       "tier": "simple",
-      "category": "data",
+      "category": "serialization",
       "last_updated": "2026-04-15T14:33:44Z",
       "content_hash": "7ba503084ede371241d85ba5ef825f0badd0b5084f9807212f664a7a1b79dbc5"
     },
@@ -438,7 +438,7 @@
       "version": "0.4.2",
       "deps": [],
       "tier": "medium",
-      "category": "data",
+      "category": "validation",
       "last_updated": "2026-04-27T02:38:00+08:00",
       "content_hash": "3e465a6cc3f234c0a2d0e44ba1339edff95f63c3d1bed70e344d6642a38104ff"
     },
@@ -464,7 +464,7 @@
       "version": "0.3.1",
       "deps": [],
       "tier": "medium",
-      "category": "data",
+      "category": "serialization",
       "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "bc42c60dad60e7a0af5928772b31ff61c07756c47020404eee40b1f67c18bc3e"
     },
@@ -476,7 +476,7 @@
       "version": "0.3.1",
       "deps": [],
       "tier": "subsystem",
-      "category": "data",
+      "category": "serialization",
       "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "5fd31be65d0c15cc82ef518e7b6e9cb553f8a7722a70c1ae6f9cda0999c92344"
     }

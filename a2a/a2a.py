@@ -2,7 +2,7 @@
 # version = "0.3.1"
 # deps = ["jsonrpc"]
 # tier = "subsystem"
-# category = "network"
+# category = "protocol"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 

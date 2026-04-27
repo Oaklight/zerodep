@@ -2,7 +2,7 @@
 # version = "0.4.0"
 # deps = []
 # tier = "medium"
-# category = "utility"
+# category = "text"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 """Zero-dependency sparse text search with BM25 family and TF-IDF ranking.

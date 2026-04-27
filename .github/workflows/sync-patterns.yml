@@ -36,7 +36,7 @@ jobs:
         id: sync
         run: |
           set +e
-          python scripts/sync_readability_patterns.py --json > report.json 2>sync.log
+          python _scripts/sync_readability_patterns.py --json > report.json 2>sync.log
           EXIT_CODE=$?
           set -e
           echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
@@ -119,7 +119,7 @@ jobs:
       - name: Apply upstream patterns
         id: apply
         run: |
-          python scripts/sync_readability_patterns.py --apply --json > apply.json 2>apply.log
+          python _scripts/sync_readability_patterns.py --apply --json > apply.json 2>apply.log
           cat apply.log
 
           # Check if anything was actually applied

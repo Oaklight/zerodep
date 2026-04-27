@@ -2,7 +2,7 @@
 # version = "0.4.2"
 # deps = ["frontmatter", "sparse_search"]
 # tier = "medium"
-# category = "data"
+# category = "protocol"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 """Agent Skills runtime — zero dependencies, stdlib only, Python 3.10+.

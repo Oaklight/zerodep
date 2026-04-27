@@ -280,7 +280,7 @@ _SKIP_DIRS = {
     "docs_en",
     "docs_zh",
     "plans",
-    "scripts",
+    "_scripts",
     ".git",
     ".github",
     "__pycache__",
@@ -505,21 +505,31 @@ def cmd_list(args: argparse.Namespace) -> None:
     # Canonical category display order
     _CATEGORY_ORDER = [
         "network",
+        "protocol",
+        "serialization",
+        "validation",
+        "text",
+        "config",
         "terminal",
-        "data",
         "crypto",
+        "image",
         "process",
+        "storage",
         "devtools",
-        "utility",
     ]
     _CATEGORY_LABELS = {
         "network": "Network",
+        "protocol": "Agent Protocols",
+        "serialization": "Serialization",
+        "validation": "Validation",
+        "text": "Text & Search",
+        "config": "Configuration",
         "terminal": "Terminal",
-        "data": "Data",
         "crypto": "Crypto",
+        "image": "Image",
         "process": "Process",
+        "storage": "Storage",
         "devtools": "Dev Tools",
-        "utility": "Utility",
     }
 
     # Group modules by category
@@ -877,12 +887,17 @@ def _normalized_hash(source: str) -> str:
 
 _VALID_CATEGORIES = (
     "network",
-    "crypto",
-    "data",
+    "protocol",
+    "serialization",
+    "validation",
+    "text",
+    "config",
     "terminal",
+    "crypto",
+    "image",
     "process",
+    "storage",
     "devtools",
-    "utility",
 )
 
 _VALID_TIERS = ("simple", "medium", "subsystem")

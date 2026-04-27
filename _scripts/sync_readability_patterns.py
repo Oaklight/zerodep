@@ -21,10 +21,10 @@ Exit codes:
 
 Usage::
 
-    python scripts/sync_readability_patterns.py            # report
-    python scripts/sync_readability_patterns.py --json      # CI report
-    python scripts/sync_readability_patterns.py --apply     # auto-patch
-    python scripts/sync_readability_patterns.py --apply --dry-run  # preview
+    python _scripts/sync_readability_patterns.py            # report
+    python _scripts/sync_readability_patterns.py --json      # CI report
+    python _scripts/sync_readability_patterns.py --apply     # auto-patch
+    python _scripts/sync_readability_patterns.py --apply --dry-run  # preview
 
 Requires only the Python standard library (urllib, re, pathlib, subprocess).
 """
@@ -130,7 +130,7 @@ def fetch_upstream(url: str | None = None, local_path: str | None = None) -> str
             file=sys.stderr,
         )
         print(
-            "[HINT] Try: python scripts/sync_readability_patterns.py"
+            "[HINT] Try: python _scripts/sync_readability_patterns.py"
             " --local /path/to/xpaths.py",
             file=sys.stderr,
         )

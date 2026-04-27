@@ -2,7 +2,7 @@
 # version = "0.4.0"
 # deps = []
 # tier = "medium"
-# category = "terminal"
+# category = "text"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 

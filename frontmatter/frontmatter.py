@@ -2,7 +2,7 @@
 # version = "0.3.0"
 # deps = ["yaml"]
 # tier = "medium"
-# category = "data"
+# category = "serialization"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 """Frontmatter parser and serializer — zero dependencies, stdlib only, Python 3.10+.

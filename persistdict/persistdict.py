@@ -2,7 +2,7 @@
 # version = "0.4.1"
 # deps = []
 # tier = "medium"
-# category = "data"
+# category = "storage"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 """Persistent dictionary with pluggable backends.

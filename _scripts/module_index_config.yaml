@@ -3,77 +3,72 @@
 # benchmark targets, and doc-page overrides.
 # Runtime data (version, last_updated, deps) comes from manifest.json.
 #
-# Usage: python scripts/generate_module_index.py
+# Usage: python _scripts/generate_module_index.py
 
 # -- Ordered category definitions --
 # Each entry defines a doc category with display names and its member
 # modules in display order.
 
 categories:
-  - id: web_networking
+  - id: network
     name_en: "Web & Networking"
     name_zh: "网络与通信"
     modules: [httpclient, sse]
 
-  - id: agent_protocols
+  - id: protocol
     name_en: "Agent Protocols"
     name_zh: "智能体协议"
-    modules: [jsonrpc, a2a, acp, skills]
+    modules: [jsonrpc, a2a, acp, skills, llmstxt]
 
-  - id: image
-    name_en: "Image"
-    name_zh: "图像"
-    modules: [png]
+  - id: serialization
+    name_en: "Serialization"
+    name_zh: "序列化"
+    modules: [xml, yaml, jsonc, toon, frontmatter, protobuf]
 
-  - id: data_formats
-    name_en: "Data Formats"
-    name_zh: "数据格式"
-    modules: [xml, yaml, jsonc, toon, frontmatter, protobuf, llmstxt]
-
-  - id: data_validation
-    name_en: "Data Validation"
+  - id: validation
+    name_en: "Validation"
     name_zh: "数据验证"
     modules: [validate, jsonschema, semver]
 
-  - id: text_markup
-    name_en: "Text & Markup"
-    name_zh: "文本与标记"
-    modules: [markdown, soup, readability, diff]
+  - id: text
+    name_en: "Text & Search"
+    name_zh: "文本与搜索"
+    modules: [markdown, soup, readability, diff, sparse_search]
 
-  - id: search_retrieval
-    name_en: "Search & Retrieval"
-    name_zh: "搜索与检索"
-    modules: [sparse_search]
-
-  - id: configuration
+  - id: config
     name_en: "Configuration"
     name_zh: "配置"
     modules: [dotenv, config]
 
-  - id: cli_terminal
+  - id: terminal
     name_en: "CLI & Terminal"
     name_zh: "命令行与终端"
     modules: [ansi, tabulate, prompt]
 
-  - id: security
+  - id: crypto
     name_en: "Security"
     name_zh: "安全"
     modules: [aes]
 
-  - id: infra_tools
-    name_en: "Infrastructure & Tools"
-    name_zh: "基础设施与工具"
-    modules:
-      - cache
-      - retry
-      - scheduler
-      - structlog
-      - vcs
-      - runner
-      - filelock
-      - persistdict
-      - qr
-      - depdetect
+  - id: image
+    name_en: "Image"
+    name_zh: "图像"
+    modules: [png, qr]
+
+  - id: process
+    name_en: "Process & Execution"
+    name_zh: "进程与执行"
+    modules: [retry, scheduler, runner, filelock]
+
+  - id: storage
+    name_en: "Storage"
+    name_zh: "存储"
+    modules: [cache, persistdict]
+
+  - id: devtools
+    name_en: "Dev Tools"
+    name_zh: "开发工具"
+    modules: [structlog, vcs, depdetect]
 
 # -- Per-module doc metadata --
 # Keys: desc_en, desc_zh (required), benchmark (optional, default "--"),
@@ -81,7 +76,6 @@ categories:
 
 modules:
   httpclient:
-    doc_page: http.md
     benchmark: httpx
     desc_en: "Sync + async REST client with connection pooling, proxy, and auth"
     desc_zh: "同步 + 异步 REST 客户端（连接池、代理、认证）"
@@ -104,6 +98,9 @@ modules:
   skills:
     desc_en: "Agent Skills runtime: parse, discover, manage, select skills"
     desc_zh: "Agent Skills 运行时：解析、发现、管理、选择技能"
+  llmstxt:
+    desc_en: "llms.txt parser and markdown URL candidate finder"
+    desc_zh: "llms.txt 解析器与 Markdown URL 候选发现"
   png:
     benchmark: Pillow
     desc_en: "PNG/BMP image codec with matrix compression API"
@@ -132,9 +129,6 @@ modules:
     benchmark: protobuf
     desc_en: "Proto3 encoder/decoder using Python dataclass schemas"
     desc_zh: "Proto3 编解码器（Python dataclass schema）"
-  llmstxt:
-    desc_en: "llms.txt parser and markdown URL candidate finder"
-    desc_zh: "llms.txt 解析器与 Markdown URL 候选发现"
   validate:
     benchmark: pydantic
     desc_en: "Runtime TypedDict/dataclass validator with JSON Schema generation"
@@ -190,6 +184,10 @@ modules:
     benchmark: pycryptodome
     desc_en: "AES encryption: ECB, CBC, CTR, GCM modes (pure Python + OpenSSL via ctypes)"
     desc_zh: "AES 加密：ECB、CBC、CTR、GCM 模式（纯 Python + OpenSSL ctypes）"
+  qr:
+    benchmark: qrcode
+    desc_en: "QR Code generation with terminal rendering"
+    desc_zh: "QR Code 生成与终端渲染"
   cache:
     benchmark: cachetools
     desc_en: "In-memory cache with TTL, LRU/LFU eviction, and async support"
@@ -202,6 +200,12 @@ modules:
     benchmark: APScheduler
     desc_en: "In-process task scheduler with cron, interval, one-shot triggers"
     desc_zh: "进程内任务调度器（cron、间隔、一次性触发）"
+  runner:
+    desc_en: "Structured subprocess execution with timeout escalation"
+    desc_zh: "结构化子进程执行（超时升级）"
+  filelock:
+    desc_en: "Cross-platform advisory file lock (fcntl/msvcrt)"
+    desc_zh: "跨平台咨询式文件锁（fcntl/msvcrt）"
   structlog:
     benchmark: structlog
     desc_en: "Structured logging with pretty console output"
@@ -209,19 +213,9 @@ modules:
   vcs:
     desc_en: "Git/Hg/Jujutsu CLI wrapper (diff, status, log, blame)"
     desc_zh: "Git/Hg/Jujutsu CLI 包装器（diff、status、log、blame）"
-  runner:
-    desc_en: "Structured subprocess execution with timeout escalation"
-    desc_zh: "结构化子进程执行（超时升级）"
-  filelock:
-    desc_en: "Cross-platform advisory file lock (fcntl/msvcrt)"
-    desc_zh: "跨平台咨询式文件锁（fcntl/msvcrt）"
   persistdict:
     desc_en: "Persistent dict with pluggable backends (JSON, SQLite)"
     desc_zh: "持久化字典（JSON / SQLite 后端）"
-  qr:
-    benchmark: qrcode
-    desc_en: "QR Code generation with terminal rendering"
-    desc_zh: "QR Code 生成与终端渲染"
   depdetect:
     desc_en: "Dependency detection and verification"
     desc_zh: "依赖检测与验证"

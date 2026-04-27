@@ -185,10 +185,10 @@ manifest:
 	python zerodep.py manifest
 
 docs-index: manifest
-	python scripts/generate_module_index.py
+	python _scripts/generate_module_index.py
 
 docs-index-check: manifest
-	python scripts/generate_module_index.py --check
+	python _scripts/generate_module_index.py --check
 
 version-check:
 	python zerodep.py version-check

@@ -2,7 +2,7 @@
 # version = "0.3.0"
 # deps = ["dotenv", "yaml", "jsonc"]
 # tier = "subsystem"
-# category = "data"
+# category = "config"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 

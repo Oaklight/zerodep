@@ -409,4 +409,4 @@ Jaccard 相似度系数：`|A ∩ B| / |A ∪ B|`。两个集合均为空时返�
 
 与 rank-bm25 的性能对比，使用 pytest-benchmark 测试。
 
-详见 [稀疏搜索性能测试](../benchmarks/search.md)。
+详见 [稀疏搜索性能测试](../benchmarks/sparse_search.md)。

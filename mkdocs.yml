@@ -79,6 +79,7 @@ plugins:
             - ../readability
             - ../jsonschema
             - ../png
+            - ../llmstxt
             - aes
             - qr
             - httpclient
@@ -116,6 +117,7 @@ plugins:
             - readability
             - jsonschema
             - png
+            - llmstxt
           options:
             docstring_style: google
             show_source: true
@@ -150,6 +152,7 @@ plugins:
           - modules/toon.md
           - modules/frontmatter.md
           - modules/protobuf.md
+          - modules/llmstxt.md
           - modules/png.md
           - modules/validate.md
           - modules/jsonschema.md
@@ -188,6 +191,7 @@ plugins:
           - api/toon.md
           - api/frontmatter.md
           - api/protobuf.md
+          - api/llmstxt.md
           - api/png.md
           - api/validate.md
           - api/jsonschema.md
@@ -226,6 +230,7 @@ plugins:
           - benchmarks/toon.md
           - benchmarks/frontmatter.md
           - benchmarks/protobuf.md
+          - benchmarks/llmstxt.md
           - benchmarks/png.md
           - benchmarks/validate.md
           - benchmarks/jsonschema.md
@@ -313,6 +318,7 @@ nav:
           - toon / TOON 序列化: modules/toon.md
           - frontmatter / Frontmatter 解析器: modules/frontmatter.md
           - protobuf / Protobuf 编解码器: modules/protobuf.md
+          - llmstxt / llms.txt 解析器: modules/llmstxt.md
       - 数据验证:
           - validate / 验证器: modules/validate.md
           - jsonschema / Schema 展平器: modules/jsonschema.md
@@ -362,6 +368,7 @@ nav:
           - toon / TOON 序列化: api/toon.md
           - frontmatter / Frontmatter 解析器: api/frontmatter.md
           - protobuf / Protobuf 编解码器: api/protobuf.md
+          - llmstxt / llms.txt 解析器: api/llmstxt.md
       - 数据验证:
           - validate / 验证器: api/validate.md
           - jsonschema / Schema 展平器: api/jsonschema.md
@@ -411,6 +418,7 @@ nav:
           - toon / TOON 序列化: benchmarks/toon.md
           - frontmatter / Frontmatter 解析器: benchmarks/frontmatter.md
           - protobuf / Protobuf 编解码器: benchmarks/protobuf.md
+          - llmstxt / llms.txt 解析器: benchmarks/llmstxt.md
       - 数据验证:
           - validate / 验证器: benchmarks/validate.md
           - jsonschema / Schema 展平器: benchmarks/jsonschema.md

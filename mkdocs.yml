@@ -79,6 +79,7 @@ plugins:
             - ../readability
             - ../jsonschema
             - ../png
+            - ../llmstxt
             - aes
             - qr
             - httpclient
@@ -116,6 +117,7 @@ plugins:
             - readability
             - jsonschema
             - png
+            - llmstxt
           options:
             docstring_style: google
             show_source: true
@@ -150,6 +152,7 @@ plugins:
           - modules/toon.md
           - modules/frontmatter.md
           - modules/protobuf.md
+          - modules/llmstxt.md
           - modules/png.md
           - modules/validate.md
           - modules/jsonschema.md
@@ -188,6 +191,7 @@ plugins:
           - api/toon.md
           - api/frontmatter.md
           - api/protobuf.md
+          - api/llmstxt.md
           - api/png.md
           - api/validate.md
           - api/jsonschema.md
@@ -226,6 +230,7 @@ plugins:
           - benchmarks/toon.md
           - benchmarks/frontmatter.md
           - benchmarks/protobuf.md
+          - benchmarks/llmstxt.md
           - benchmarks/png.md
           - benchmarks/validate.md
           - benchmarks/jsonschema.md
@@ -313,6 +318,7 @@ nav:
           - toon / TOON Serializer: modules/toon.md
           - frontmatter / Frontmatter Parser: modules/frontmatter.md
           - protobuf / Protobuf Codec: modules/protobuf.md
+          - llmstxt / llms.txt Parser: modules/llmstxt.md
       - Data Validation:
           - validate / Validator: modules/validate.md
           - jsonschema / Schema Flattener: modules/jsonschema.md
@@ -362,6 +368,7 @@ nav:
           - toon / TOON Serializer: api/toon.md
           - frontmatter / Frontmatter Parser: api/frontmatter.md
           - protobuf / Protobuf Codec: api/protobuf.md
+          - llmstxt / llms.txt Parser: api/llmstxt.md
       - Data Validation:
           - validate / Validator: api/validate.md
           - jsonschema / Schema Flattener: api/jsonschema.md
@@ -411,6 +418,7 @@ nav:
           - toon / TOON Serializer: benchmarks/toon.md
           - frontmatter / Frontmatter Parser: benchmarks/frontmatter.md
           - protobuf / Protobuf Codec: benchmarks/protobuf.md
+          - llmstxt / llms.txt Parser: benchmarks/llmstxt.md
       - Data Validation:
           - validate / Validator: benchmarks/validate.md
           - jsonschema / Schema Flattener: benchmarks/jsonschema.md

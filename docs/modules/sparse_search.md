@@ -409,4 +409,4 @@ Jaccard similarity coefficient: `|A ∩ B| / |A ∪ B|`. Returns 0.0 when both s
 
 Performance comparison against rank-bm25, tested with pytest-benchmark.
 
-See [Sparse Search Benchmark](../benchmarks/search.md) for detailed results.
+See [Sparse Search Benchmark](../benchmarks/sparse_search.md) for detailed results.

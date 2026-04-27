@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.4.27] - 2026-04-27
+
 ### New Modules
 
 - **llms.txt module**: zero-dependency parser for the [llms.txt specification](https://llmstxt.org/). `parse()` extracts structured data (title, description, details, H2 sections, Optional entries) from llms.txt files. `find_candidates()` provides unified URL discovery — searches parsed llms.txt entries (exact > extension variation > path prefix) with heuristic `.md` URL fallback when no llms.txt is available. `discover()` probes any URL's root for `/llms.txt` and `/llms-full.txt`, returning raw content via `DiscoveryResult`. Frozen dataclasses (`LlmsTxt`, `FileEntry`, `DiscoveryResult`) for immutable results. 55 correctness tests + 4 benchmarks.
@@ -27,6 +29,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **PNG module**: optimized BMP codec, PNG row filters, and mode conversion. BMP decode/encode replaced per-pixel BGR↔RGB loops with `bytearray` slice assignment (C-level ops) — **42-44x speedup** (from 193-265x slower to ~4.6-6.1x slower vs Pillow). PNG row filters optimized: list comprehension + `zip` for Up filter, prefix handling for Sub filter, local variable caching for Paeth. Pre-allocated pixel buffers in decode/encode paths. 7 lossless mode conversions (L↔RGB↔RGBA etc.) converted from per-pixel loops to slice operations. PNG decode/encode ~10% faster overall.
 - **Protobuf module**: comprehensive encode/decode optimization — encoder dispatch binding on FieldInfo (eliminates 11-way if/elif), per-field specialized `_is_default` checks, inline 1-byte tag decode fast-path (field numbers 1-15), write-to-buffer varint/scalar encoders (eliminates intermediate `bytes` allocation), cached map entry type metadata (`_MapMeta`), batch message construction via `__dict__.update`. Encode **~41-65% faster**, decode **~7-27% faster**, roundtrip **~39% faster** for large messages.
+
+### Infrastructure
+
+- Refined module categories from 7 to 12 fine-grained groups: network, protocol, serialization, validation, text, config, terminal, crypto, image, process, storage, devtools.
+- Renamed `scripts/` → `_scripts/` (internal convention).
+- Auto-generate `modules/index.md` during docs build from `manifest.json` + config.
+- Fixed `version-check` false positives caused by old project-level SemVer tag collisions and wrong primary file selection.
 
 ## [2026.4.25] - 2026-04-25
 

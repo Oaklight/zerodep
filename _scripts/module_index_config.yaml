@@ -33,7 +33,7 @@ categories:
   - id: text
     name_en: "Text & Search"
     name_zh: "文本与搜索"
-    modules: [markdown, soup, readability, diff, sparse_search]
+    modules: [markdown, soup, readability, diff, sparse_search, synctex]
 
   - id: config
     name_en: "Configuration"
@@ -223,3 +223,6 @@ modules:
     benchmark: ua-generator
     desc_en: "Lightweight Chrome/Edge User-Agent generator with Client Hints"
     desc_zh: "轻量级 Chrome/Edge User-Agent 生成器（含 Client Hints）"
+  synctex:
+    desc_en: "SyncTeX inverse-search parser (PDF position → source location)"
+    desc_zh: "SyncTeX 反向搜索解析器（PDF 位置 → 源代码位置）"

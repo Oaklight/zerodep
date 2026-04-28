@@ -220,4 +220,5 @@ extra-paths = [
     "./png",
     "./llmstxt",
     "./useragent",
+    "./synctex",
 ]

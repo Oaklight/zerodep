@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### New Modules
+
+- **SyncTeX module**: zero-dependency SyncTeX parser for inverse search (PDF position to source location). Parses `.synctex` and `.synctex.gz` files produced by TeX engines. `parse_synctex()` extracts input file mappings, page hbox records, and preamble metadata. `inverse_search()` maps PDF page coordinates back to source file and line number using a multi-phase spatial matching algorithm. Supports configurable path prefix stripping for Docker/remote builds. 20 correctness tests.
+- **useragent module**: lightweight Chrome/Edge User-Agent string generator with Client Hints headers. `generate()` creates realistic UA strings with matching `Sec-CH-UA-*` headers for Windows, macOS, Linux (desktop) and Android (mobile). Supports low-entropy hints (always included) and high-entropy hints via `accept_ch()` (platform version, architecture, bitness, model, full version list). Deterministic output via `random.seed()`. Single file, ~470 lines, stdlib `random` only. 47 correctness tests + 8 benchmarks (2-3x faster than ua-generator). Inspired by [ua-generator](https://github.com/iamdual/ua-generator) (Apache-2.0).
+
+### Infrastructure
+
+- Added `ua-generator` to benchmark CI workflow for useragent performance tracking.
+- Added automated PyPI publish workflow (`.github/workflows/pypi.yml`) triggered on GitHub Release, with change detection to skip version-only bumps.
+
 ## [2026.4.27] - 2026-04-27
 
 ### New Modules

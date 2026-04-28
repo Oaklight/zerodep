@@ -80,6 +80,7 @@ plugins:
             - ../jsonschema
             - ../png
             - ../llmstxt
+            - ../synctex
             - aes
             - qr
             - httpclient
@@ -118,6 +119,7 @@ plugins:
             - jsonschema
             - png
             - llmstxt
+            - synctex
           options:
             docstring_style: google
             show_source: true
@@ -178,6 +180,7 @@ plugins:
           - modules/persistdict.md
           - modules/qr.md
           - modules/depdetect.md
+          - modules/synctex.md
         API Reference:
           - api/httpclient.md
           - api/sse.md
@@ -217,6 +220,7 @@ plugins:
           - api/persistdict.md
           - api/qr.md
           - api/depdetect.md
+          - api/synctex.md
         Benchmarks:
           - benchmarks/httpclient.md
           - benchmarks/sse.md
@@ -304,6 +308,7 @@ nav:
       - Web & Networking:
           - httpclient / HTTP Client: modules/httpclient.md
           - sse / SSE Client: modules/sse.md
+          - useragent / User-Agent Generator: modules/useragent.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: modules/jsonrpc.md
           - a2a / A2A Protocol: modules/a2a.md
@@ -327,6 +332,7 @@ nav:
           - readability / Article Extractor: modules/readability.md
           - diff / Diff Tool: modules/diff.md
           - sparse_search / Sparse Search: modules/sparse_search.md
+          - synctex / SyncTeX Parser: modules/synctex.md
       - Configuration:
           - dotenv / Dotenv Loader: modules/dotenv.md
           - config / Config Loader: modules/config.md
@@ -355,6 +361,7 @@ nav:
       - Web & Networking:
           - httpclient / HTTP Client: api/httpclient.md
           - sse / SSE Client: api/sse.md
+          - useragent / User-Agent Generator: api/useragent.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: api/jsonrpc.md
           - a2a / A2A Protocol: api/a2a.md
@@ -378,6 +385,7 @@ nav:
           - readability / Article Extractor: api/readability.md
           - diff / Diff Tool: api/diff.md
           - sparse_search / Sparse Search: api/sparse_search.md
+          - synctex / SyncTeX Parser: api/synctex.md
       - Configuration:
           - dotenv / Dotenv Loader: api/dotenv.md
           - config / Config Loader: api/config.md
@@ -406,6 +414,7 @@ nav:
       - Web & Networking:
           - httpclient / HTTP Client: benchmarks/httpclient.md
           - sse / SSE Client: benchmarks/sse.md
+          - useragent / User-Agent Generator: benchmarks/useragent.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md
           - a2a / A2A Protocol: benchmarks/a2a.md

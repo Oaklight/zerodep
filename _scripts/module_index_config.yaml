@@ -13,7 +13,7 @@ categories:
   - id: network
     name_en: "Web & Networking"
     name_zh: "网络与通信"
-    modules: [httpclient, sse]
+    modules: [httpclient, sse, useragent]
 
   - id: protocol
     name_en: "Agent Protocols"
@@ -219,3 +219,7 @@ modules:
   depdetect:
     desc_en: "Dependency detection and verification"
     desc_zh: "依赖检测与验证"
+  useragent:
+    benchmark: ua-generator
+    desc_en: "Lightweight Chrome/Edge User-Agent generator with Client Hints"
+    desc_zh: "轻量级 Chrome/Edge User-Agent 生成器（含 Client Hints）"

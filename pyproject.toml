@@ -144,7 +144,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema", "png", "llmstxt"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema", "png", "llmstxt", "useragent"]
 
 [tool.ruff]
 target-version = "py310"
@@ -216,4 +216,5 @@ extra-paths = [
     "./jsonschema",
     "./png",
     "./llmstxt",
+    "./useragent",
 ]

@@ -112,28 +112,28 @@ td { white-space: nowrap; }
 <h1>sparse_search</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 08a15f4 | Commit: 08a15f42 | 2026-04-26T19:48:21.885160+00:00</p>
+<p class="meta">Version: 50b9a51 | Commit: 50b9a51f | 2026-04-28T18:18:10.022844+00:00</p>
 <h2>sparse_search</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>135.46 ms</td><td>14.33 ms</td><td>7.4</td><td>69.8</td><td class="ratio-cell slower">9.5x slower</td></tr>
-<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>3.0 µs</td><td>381.0 µs</td><td>336.6K</td><td>2.6K</td><td class="ratio-cell faster">128.2x faster</td></tr>
-<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>3.0 µs</td><td>103.0 µs</td><td>336.5K</td><td>9.7K</td><td class="ratio-cell faster">34.6x faster</td></tr>
+<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>125.80 ms</td><td>13.45 ms</td><td>7.9</td><td>74.3</td><td class="ratio-cell slower">9.4x slower</td></tr>
+<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>3.0 µs</td><td>391.8 µs</td><td>330.0K</td><td>2.6K</td><td class="ratio-cell faster">129.3x faster</td></tr>
+<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>3.0 µs</td><td>114.0 µs</td><td>333.8K</td><td>8.8K</td><td class="ratio-cell faster">38.0x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>1.10 ms</td><td>907.3</td></tr>
-<tr><td>Calibration Performance</td><td>search_raw</td><td>40.0 µs</td><td>25.0K</td></tr>
-<tr><td>Calibration Performance</td><td>search_calibrated</td><td>74.2 µs</td><td>13.5K</td></tr>
-<tr><td>MMRPerformance</td><td>mmr_100_candidates</td><td>3.85 ms</td><td>259.7</td></tr>
-<tr><td>MMRPerformance</td><td>mmr_500_candidates</td><td>24.05 ms</td><td>41.6</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_2_lists_1000_results</td><td>922.8 µs</td><td>1.1K</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_10_lists_100_results</td><td>447.5 µs</td><td>2.2K</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_overlapping_docs</td><td>850.2 µs</td><td>1.2K</td></tr>
+<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>1.01 ms</td><td>987.3</td></tr>
+<tr><td>Calibration Performance</td><td>search_raw</td><td>41.1 µs</td><td>24.3K</td></tr>
+<tr><td>Calibration Performance</td><td>search_calibrated</td><td>79.4 µs</td><td>12.6K</td></tr>
+<tr><td>MMRPerformance</td><td>mmr_100_candidates</td><td>4.11 ms</td><td>243.3</td></tr>
+<tr><td>MMRPerformance</td><td>mmr_500_candidates</td><td>25.12 ms</td><td>39.8</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_2_lists_1000_results</td><td>885.3 µs</td><td>1.1K</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_10_lists_100_results</td><td>428.8 µs</td><td>2.3K</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_overlapping_docs</td><td>835.3 µs</td><td>1.2K</td></tr>
 </tbody></table>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -203,13 +203,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [7.382483502506093, 336585.79468255216, 336468.60547786974],
+        data: [7.949048858886363, 330024.9943441586, 333753.1895333062],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "rank-bm25" + ' (ops/s)',
-        data: [69.7785308613903, 2624.6276672222075, 9711.972601907073],
+        data: [74.33254977886484, 2552.1218859885794, 8773.915363841392],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -112,8 +112,8 @@ td { white-space: nowrap; }
 <h1>📈 Performance History</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 08a15f4 &nbsp;|&nbsp; Commit: 08a15f42 &nbsp;|&nbsp; 2026-04-26T19:48:21.885160+00:00</p>
-<div style="margin-bottom:1.5rem;font-size:.9rem"><a href="index.html" style="margin-right:1rem">← Back to Report</a><a href="#hist-a2a" style="margin-right:1rem">a2a</a> <a href="#hist-acp" style="margin-right:1rem">acp</a> <a href="#hist-aes" style="margin-right:1rem">aes</a> <a href="#hist-cache" style="margin-right:1rem">cache</a> <a href="#hist-config" style="margin-right:1rem">config</a> <a href="#hist-diff" style="margin-right:1rem">diff</a> <a href="#hist-dotenv" style="margin-right:1rem">dotenv</a> <a href="#hist-frontmatter" style="margin-right:1rem">frontmatter</a> <a href="#hist-httpclient" style="margin-right:1rem">httpclient</a> <a href="#hist-jsonc" style="margin-right:1rem">jsonc</a> <a href="#hist-jsonrpc" style="margin-right:1rem">jsonrpc</a> <a href="#hist-jsonschema" style="margin-right:1rem">jsonschema</a> <a href="#hist-markdown" style="margin-right:1rem">markdown</a> <a href="#hist-persistdict" style="margin-right:1rem">persistdict</a> <a href="#hist-png" style="margin-right:1rem">png</a> <a href="#hist-protobuf" style="margin-right:1rem">protobuf</a> <a href="#hist-qr" style="margin-right:1rem">qr</a> <a href="#hist-readability" style="margin-right:1rem">readability</a> <a href="#hist-retry" style="margin-right:1rem">retry</a> <a href="#hist-runner" style="margin-right:1rem">runner</a> <a href="#hist-scheduler" style="margin-right:1rem">scheduler</a> <a href="#hist-semver" style="margin-right:1rem">semver</a> <a href="#hist-soup" style="margin-right:1rem">soup</a> <a href="#hist-sparse_search" style="margin-right:1rem">sparse_search</a> <a href="#hist-sse" style="margin-right:1rem">sse</a> <a href="#hist-structlog" style="margin-right:1rem">structlog</a> <a href="#hist-tabulate" style="margin-right:1rem">tabulate</a> <a href="#hist-toon" style="margin-right:1rem">toon</a> <a href="#hist-validate" style="margin-right:1rem">validate</a> <a href="#hist-xml" style="margin-right:1rem">xml</a> <a href="#hist-yaml" style="margin-right:1rem">yaml</a></div>
+<p class="meta">Version: 50b9a51 &nbsp;|&nbsp; Commit: 50b9a51f &nbsp;|&nbsp; 2026-04-28T18:18:10.022844+00:00</p>
+<div style="margin-bottom:1.5rem;font-size:.9rem"><a href="index.html" style="margin-right:1rem">← Back to Report</a><a href="#hist-a2a" style="margin-right:1rem">a2a</a> <a href="#hist-acp" style="margin-right:1rem">acp</a> <a href="#hist-aes" style="margin-right:1rem">aes</a> <a href="#hist-cache" style="margin-right:1rem">cache</a> <a href="#hist-config" style="margin-right:1rem">config</a> <a href="#hist-diff" style="margin-right:1rem">diff</a> <a href="#hist-dotenv" style="margin-right:1rem">dotenv</a> <a href="#hist-frontmatter" style="margin-right:1rem">frontmatter</a> <a href="#hist-httpclient" style="margin-right:1rem">httpclient</a> <a href="#hist-jsonc" style="margin-right:1rem">jsonc</a> <a href="#hist-jsonrpc" style="margin-right:1rem">jsonrpc</a> <a href="#hist-jsonschema" style="margin-right:1rem">jsonschema</a> <a href="#hist-llmstxt" style="margin-right:1rem">llmstxt</a> <a href="#hist-markdown" style="margin-right:1rem">markdown</a> <a href="#hist-persistdict" style="margin-right:1rem">persistdict</a> <a href="#hist-png" style="margin-right:1rem">png</a> <a href="#hist-protobuf" style="margin-right:1rem">protobuf</a> <a href="#hist-qr" style="margin-right:1rem">qr</a> <a href="#hist-readability" style="margin-right:1rem">readability</a> <a href="#hist-retry" style="margin-right:1rem">retry</a> <a href="#hist-runner" style="margin-right:1rem">runner</a> <a href="#hist-scheduler" style="margin-right:1rem">scheduler</a> <a href="#hist-semver" style="margin-right:1rem">semver</a> <a href="#hist-soup" style="margin-right:1rem">soup</a> <a href="#hist-sparse_search" style="margin-right:1rem">sparse_search</a> <a href="#hist-sse" style="margin-right:1rem">sse</a> <a href="#hist-structlog" style="margin-right:1rem">structlog</a> <a href="#hist-tabulate" style="margin-right:1rem">tabulate</a> <a href="#hist-toon" style="margin-right:1rem">toon</a> <a href="#hist-validate" style="margin-right:1rem">validate</a> <a href="#hist-xml" style="margin-right:1rem">xml</a> <a href="#hist-yaml" style="margin-right:1rem">yaml</a></div>
 <div class="history-module-section" id="hist-a2a">
 <h2>a2a</h2>
 <div class="history-chart-container"><canvas id="hist-chart-a2a"></canvas></div>
@@ -161,6 +161,10 @@ td { white-space: nowrap; }
 <div class="history-module-section" id="hist-jsonschema">
 <h2>jsonschema</h2>
 <div class="history-chart-container"><canvas id="hist-chart-jsonschema"></canvas></div>
+</div>
+<div class="history-module-section" id="hist-llmstxt">
+<h2>llmstxt</h2>
+<div class="history-chart-container"><canvas id="hist-chart-llmstxt"></canvas></div>
 </div>
 <div class="history-module-section" id="hist-markdown">
 <h2>markdown</h2>
@@ -295,7 +299,7 @@ var TREND_COLORS = [
 
 (async function() {
   var data = await loadHistory('./data.js');
-  var modules = ["a2a", "acp", "aes", "cache", "config", "diff", "dotenv", "frontmatter", "httpclient", "jsonc", "jsonrpc", "jsonschema", "markdown", "persistdict", "png", "protobuf", "qr", "readability", "retry", "runner", "scheduler", "semver", "soup", "sparse_search", "sse", "structlog", "tabulate", "toon", "validate", "xml", "yaml"];
+  var modules = ["a2a", "acp", "aes", "cache", "config", "diff", "dotenv", "frontmatter", "httpclient", "jsonc", "jsonrpc", "jsonschema", "llmstxt", "markdown", "persistdict", "png", "protobuf", "qr", "readability", "retry", "runner", "scheduler", "semver", "soup", "sparse_search", "sse", "structlog", "tabulate", "toon", "validate", "xml", "yaml"];
   if (!data || !data.entries || !data.entries.Benchmark) {
     modules.forEach(function(mod) {
       var container = document.getElementById('hist-' + mod);

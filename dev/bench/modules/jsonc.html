@@ -112,14 +112,14 @@ td { white-space: nowrap; }
 <h1>jsonc</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 08a15f4 | Commit: 08a15f42 | 2026-04-26T19:48:21.885160+00:00</p>
+<p class="meta">Version: 50b9a51 | Commit: 50b9a51f | 2026-04-28T18:18:10.022844+00:00</p>
 <h2>jsonc</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Load (Large)</td><td>zerodep</td><td>commentjson</td><td>1.73 ms</td><td>195.83 ms</td><td>579.1</td><td>5.1</td><td class="ratio-cell faster">113.4x faster</td></tr>
-<tr><td>Load (Medium)</td><td>zerodep</td><td>commentjson</td><td>89.1 µs</td><td>7.96 ms</td><td>11.2K</td><td>125.6</td><td class="ratio-cell faster">89.3x faster</td></tr>
-<tr><td>Load (Small)</td><td>zerodep</td><td>commentjson</td><td>14.7 µs</td><td>1.05 ms</td><td>68.2K</td><td>951.0</td><td class="ratio-cell faster">71.7x faster</td></tr>
+<tr><td>Load (Large)</td><td>zerodep</td><td>commentjson</td><td>1.90 ms</td><td>218.45 ms</td><td>525.0</td><td>4.6</td><td class="ratio-cell faster">114.7x faster</td></tr>
+<tr><td>Load (Medium)</td><td>zerodep</td><td>commentjson</td><td>96.0 µs</td><td>9.24 ms</td><td>10.4K</td><td>108.2</td><td class="ratio-cell faster">96.2x faster</td></tr>
+<tr><td>Load (Small)</td><td>zerodep</td><td>commentjson</td><td>15.4 µs</td><td>1.26 ms</td><td>64.9K</td><td>792.3</td><td class="ratio-cell faster">81.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -190,13 +190,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [579.1330878410656, 11218.13700474266, 68158.66079397818],
+        data: [524.9530030841806, 10411.384155054628, 64909.327972271596],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "commentjson" + ' (ops/s)',
-        data: [5.106406924512446, 125.6262282966951, 950.9932393011453],
+        data: [4.5777321724567885, 108.24156827402616, 792.3020967197988],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

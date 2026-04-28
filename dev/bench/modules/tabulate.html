@@ -112,14 +112,14 @@ td { white-space: nowrap; }
 <h1>tabulate</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 08a15f4 | Commit: 08a15f42 | 2026-04-26T19:48:21.885160+00:00</p>
+<p class="meta">Version: 50b9a51 | Commit: 50b9a51f | 2026-04-28T18:18:10.022844+00:00</p>
 <h2>tabulate</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large Table</td><td>zerodep</td><td>reference</td><td>6.38 ms</td><td>26.73 ms</td><td>156.7</td><td>37.4</td><td class="ratio-cell faster">4.2x faster</td></tr>
-<tr><td>Medium Table</td><td>zerodep</td><td>reference</td><td>388.6 µs</td><td>1.72 ms</td><td>2.6K</td><td>581.8</td><td class="ratio-cell faster">4.4x faster</td></tr>
-<tr><td>Small Table</td><td>zerodep</td><td>reference</td><td>45.5 µs</td><td>141.3 µs</td><td>22.0K</td><td>7.1K</td><td class="ratio-cell faster">3.1x faster</td></tr>
+<tr><td>Large Table</td><td>zerodep</td><td>reference</td><td>6.48 ms</td><td>27.64 ms</td><td>154.4</td><td>36.2</td><td class="ratio-cell faster">4.3x faster</td></tr>
+<tr><td>Medium Table</td><td>zerodep</td><td>reference</td><td>403.6 µs</td><td>1.82 ms</td><td>2.5K</td><td>548.8</td><td class="ratio-cell faster">4.5x faster</td></tr>
+<tr><td>Small Table</td><td>zerodep</td><td>reference</td><td>52.5 µs</td><td>170.1 µs</td><td>19.0K</td><td>5.9K</td><td class="ratio-cell faster">3.2x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -190,13 +190,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [156.7028687301509, 2573.551005763398, 21971.636668975643],
+        data: [154.40939518090943, 2477.615020179465, 19045.297335198764],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "reference" + ' (ops/s)',
-        data: [37.41783600583002, 581.7679948057817, 7076.61149819833],
+        data: [36.177399932436195, 548.8329627466695, 5877.226541130709],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-04-27T19:31:53.777759+00:00",
+  "generated": "2026-04-28T17:57:58.462585+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -201,7 +201,7 @@
       "deps": [],
       "tier": "simple",
       "category": "protocol",
-      "last_updated": "2026-04-27T23:17:36+08:00",
+      "last_updated": "2026-04-27T19:31:53Z",
       "content_hash": "e68f0aa5558b55f608180104e689f7fb623a1c1dec5ed5b63b11864bf2d52d69"
     },
     "markdown": {
@@ -213,7 +213,7 @@
       "deps": [],
       "tier": "medium",
       "category": "text",
-      "last_updated": "2026-04-27T23:17:36+08:00",
+      "last_updated": "2026-04-27T19:31:53Z",
       "content_hash": "994c0166db9726b626d6f0b2c20979ac28e20fddb7eacd28793aaa01500eb1da"
     },
     "persistdict": {
@@ -237,7 +237,7 @@
       "deps": [],
       "tier": "medium",
       "category": "image",
-      "last_updated": "2026-04-27T23:17:36+08:00",
+      "last_updated": "2026-04-27T19:31:53Z",
       "content_hash": "a69b7f4a781e5bd8b8ac558c34b068800ee9e3042c28bf7c1e4a10bf672827e4"
     },
     "prompt": {
@@ -261,7 +261,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "serialization",
-      "last_updated": "2026-04-27T23:17:36+08:00",
+      "last_updated": "2026-04-27T19:31:53Z",
       "content_hash": "73b7b33609328df497b8d8639233e94f2c3bd4c46cbe7d9dbacfce51f1ebc700"
     },
     "qr": {
@@ -275,7 +275,7 @@
       ],
       "tier": "simple",
       "category": "image",
-      "last_updated": "2026-04-27T23:17:36+08:00",
+      "last_updated": "2026-04-27T19:31:53Z",
       "content_hash": "992def53fe2e34c3031a112906b9f4ce5a7b7523f43cdf070415d17117f3e37d"
     },
     "readability": {
@@ -430,6 +430,18 @@
       "last_updated": "2026-04-27T23:17:36+08:00",
       "content_hash": "7ba503084ede371241d85ba5ef825f0badd0b5084f9807212f664a7a1b79dbc5"
     },
+    "useragent": {
+      "description": "Lightweight User-Agent generator for Chrome/Edge with Client Hints",
+      "files": [
+        "useragent/useragent.py"
+      ],
+      "version": "0.1.0",
+      "deps": [],
+      "tier": "simple",
+      "category": "network",
+      "last_updated": null,
+      "content_hash": "a2cfc9d3b07bcf670a94477df013f4cc4006d422539b3e7750c479435e6759bd"
+    },
     "validate": {
       "description": "Zero-dependency runtime validator for TypedDict and dataclass types",
       "files": [
@@ -439,7 +451,7 @@
       "deps": [],
       "tier": "medium",
       "category": "validation",
-      "last_updated": "2026-04-27T23:17:36+08:00",
+      "last_updated": "2026-04-27T19:31:53Z",
       "content_hash": "3e465a6cc3f234c0a2d0e44ba1339edff95f63c3d1bed70e344d6642a38104ff"
     },
     "vcs": {

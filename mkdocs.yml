@@ -80,6 +80,7 @@ plugins:
             - ../jsonschema
             - ../png
             - ../llmstxt
+            - ../synctex
             - aes
             - qr
             - httpclient
@@ -118,6 +119,7 @@ plugins:
             - jsonschema
             - png
             - llmstxt
+            - synctex
           options:
             docstring_style: google
             show_source: true
@@ -178,6 +180,7 @@ plugins:
           - modules/persistdict.md
           - modules/qr.md
           - modules/depdetect.md
+          - modules/synctex.md
         API 参考:
           - api/httpclient.md
           - api/sse.md
@@ -217,6 +220,7 @@ plugins:
           - api/persistdict.md
           - api/qr.md
           - api/depdetect.md
+          - api/synctex.md
         性能测试:
           - benchmarks/httpclient.md
           - benchmarks/sse.md
@@ -304,6 +308,7 @@ nav:
       - 网络与通信:
           - httpclient / HTTP 客户端: modules/httpclient.md
           - sse / SSE 客户端: modules/sse.md
+          - useragent / User-Agent 生成器: modules/useragent.md
       - 智能体协议:
           - jsonrpc / JSON-RPC: modules/jsonrpc.md
           - a2a / A2A 协议: modules/a2a.md
@@ -327,6 +332,7 @@ nav:
           - readability / 正文提取器: modules/readability.md
           - diff / Diff 差异工具: modules/diff.md
           - sparse_search / 稀疏搜索: modules/sparse_search.md
+          - synctex / SyncTeX 解析器: modules/synctex.md
       - 配置:
           - dotenv / Dotenv 环境变量: modules/dotenv.md
           - config / 配置加载器: modules/config.md
@@ -355,6 +361,7 @@ nav:
       - 网络与通信:
           - httpclient / HTTP 客户端: api/httpclient.md
           - sse / SSE 客户端: api/sse.md
+          - useragent / User-Agent 生成器: api/useragent.md
       - 智能体协议:
           - jsonrpc / JSON-RPC: api/jsonrpc.md
           - a2a / A2A 协议: api/a2a.md
@@ -378,6 +385,7 @@ nav:
           - readability / 正文提取器: api/readability.md
           - diff / Diff 差异工具: api/diff.md
           - sparse_search / 稀疏搜索: api/sparse_search.md
+          - synctex / SyncTeX 解析器: api/synctex.md
       - 配置:
           - dotenv / Dotenv 环境变量: api/dotenv.md
           - config / 配置加载器: api/config.md
@@ -406,6 +414,7 @@ nav:
       - 网络与通信:
           - httpclient / HTTP 客户端: benchmarks/httpclient.md
           - sse / SSE 客户端: benchmarks/sse.md
+          - useragent / User-Agent 生成器: benchmarks/useragent.md
       - 智能体协议:
           - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md
           - a2a / A2A 协议: benchmarks/a2a.md

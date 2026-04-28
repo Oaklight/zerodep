@@ -12,44 +12,46 @@ title: 模块概览
 
 | 模块 | 版本 | 最后更新 |
 |--------|---------|--------------|
-| [a2a](a2a.md) | 0.3.1 | 2026-04-20 |
-| [acp](acp.md) | 0.3.1 | 2026-04-15 |
+| [a2a](a2a.md) | 0.3.1 | 2026-04-27 |
+| [acp](acp.md) | 0.3.1 | 2026-04-27 |
 | [aes](aes.md) | 0.5.0 | 2026-04-20 |
 | [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
-| [cache](cache.md) | 0.2.4 | 2026-04-20 |
-| [config](config.md) | 0.3.0 | 2026-04-11 |
+| [cache](cache.md) | 0.2.4 | 2026-04-27 |
+| [config](config.md) | 0.3.0 | 2026-04-27 |
 | [depdetect](depdetect.md) | 0.4.3 | 2026-04-15 |
 | [diff](diff.md) | 0.3.1 | 2026-04-15 |
-| [dotenv](dotenv.md) | 0.3.1 | 2026-04-15 |
-| [filelock](filelock.md) | 0.3.0 | 2026-04-11 |
-| [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-11 |
+| [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
+| [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
+| [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
 | [httpclient](httpclient.md) | 0.3.1 | 2026-04-15 |
-| [jsonc](jsonc.md) | 0.3.0 | 2026-04-11 |
-| [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-11 |
-| [jsonschema](jsonschema.md) | 0.1.0 | 2026-04-25 |
-| [llmstxt](llmstxt.md) | 0.1.0 | 2026-04-27 |
-| [markdown](markdown.md) | 0.4.0 | 2026-04-26 |
-| [persistdict](persistdict.md) | 0.4.1 | 2026-04-20 |
-| [png](png.md) | 0.1.0 | 2026-04-27 |
+| [jsonc](jsonc.md) | 0.3.0 | 2026-04-27 |
+| [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
+| [jsonschema](jsonschema.md) | 0.1.0 | 2026-04-27 |
+| [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
+| [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
+| [persistdict](persistdict.md) | 0.4.1 | 2026-04-27 |
+| [png](png.md) | 0.1.1 | 2026-04-27 |
 | [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
-| [protobuf](protobuf.md) | 0.4.3 | 2026-04-25 |
-| [qr](qr.md) | 0.3.2 | 2026-04-27 |
-| [readability](readability.md) | 0.1.0 | 2026-04-20 |
-| [retry](retry.md) | 0.3.0 | 2026-04-11 |
+| [protobuf](protobuf.md) | 0.4.4 | 2026-04-27 |
+| [qr](qr.md) | 0.3.3 | 2026-04-27 |
+| [readability](readability.md) | 0.1.0 | 2026-04-27 |
+| [retry](retry.md) | 0.3.0 | 2026-04-27 |
 | [runner](runner.md) | 0.3.1 | 2026-04-15 |
 | [scheduler](scheduler.md) | 0.3.1 | 2026-04-15 |
-| [semver](semver.md) | 0.4.1 | 2026-04-20 |
-| [skills](skills.md) | 0.4.2 | 2026-04-20 |
-| [soup](soup.md) | 0.6.0 | 2026-04-26 |
+| [semver](semver.md) | 0.4.1 | 2026-04-27 |
+| [skills](skills.md) | 0.4.2 | 2026-04-27 |
+| [soup](soup.md) | 0.6.0 | 2026-04-27 |
 | [sparse_search](sparse_search.md) | 0.4.0 | 2026-04-27 |
 | [sse](sse.md) | 0.3.1 | 2026-04-15 |
-| [structlog](structlog.md) | 0.3.0 | 2026-04-11 |
+| [structlog](structlog.md) | 0.3.0 | 2026-04-27 |
+| [synctex](synctex.md) | 0.1.0 | — |
 | [tabulate](tabulate.md) | 0.1.1 | 2026-04-15 |
-| [toon](toon.md) | 0.3.3 | 2026-04-15 |
-| [validate](validate.md) | 0.4.2 | 2026-04-27 |
+| [toon](toon.md) | 0.3.3 | 2026-04-27 |
+| [useragent](useragent.md) | 0.1.0 | 2026-04-29 |
+| [validate](validate.md) | 0.4.3 | 2026-04-27 |
 | [vcs](vcs.md) | 0.3.0 | 2026-04-11 |
-| [xml](xml.md) | 0.3.1 | 2026-04-15 |
-| [yaml](yaml.md) | 0.3.1 | 2026-04-15 |
+| [xml](xml.md) | 0.3.1 | 2026-04-27 |
+| [yaml](yaml.md) | 0.3.1 | 2026-04-27 |
 
 ## 全部模块
 
@@ -59,6 +61,7 @@ title: 模块概览
 |--------|-------------|-------------------|
 | [httpclient](httpclient.md) | 同步 + 异步 REST 客户端（连接池、代理、认证） | `httpx` |
 | [sse](sse.md) | Server-Sent Events 客户端（自动重连） | `httpx-sse` |
+| [useragent](useragent.md) | 轻量级 Chrome/Edge User-Agent 生成器（含 Client Hints） | `ua-generator` |
 
 ### 智能体协议
 
@@ -98,6 +101,7 @@ title: 模块概览
 | [readability](readability.md) | 文章正文提取器（移植自 Mozilla Readability.js） | `readability-lxml` |
 | [diff](diff.md) | Unified diff 解析、补丁应用/反转、三方合并 | `unidiff` |
 | [sparse_search](sparse_search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF 全文搜索（贝叶斯校准、RRF 融合、MMR 多样性） | `rank-bm25` |
+| [synctex](synctex.md) | SyncTeX 反向搜索解析器（PDF 位置 → 源代码位置） | -- |
 
 ### 配置
 

@@ -6,6 +6,16 @@
 
 ## [未发布]
 
+### 新增模块
+
+- **SyncTeX 模块**：零依赖的 SyncTeX 反向搜索解析器（PDF 位置到源代码位置）。解析 TeX 引擎生成的 `.synctex` 和 `.synctex.gz` 文件。`parse_synctex()` 提取输入文件映射、页面 hbox 记录和前导元数据。`inverse_search()` 通过多阶段空间匹配算法将 PDF 页面坐标映射回源文件和行号。支持可配置的路径前缀去除，适用于 Docker/远程构建场景。20 个正确性测试。
+- **useragent 模块**：轻量级 Chrome/Edge User-Agent 字符串生成器，附带 Client Hints 头部。`generate()` 为 Windows、macOS、Linux（桌面）和 Android（移动端）生成逼真的 UA 字符串及对应的 `Sec-CH-UA-*` 头部。支持低熵 hints（始终包含）和通过 `accept_ch()` 获取的高熵 hints（平台版本、架构、位数、型号、完整版本列表）。通过 `random.seed()` 实现确定性输出。单文件，约 470 行，仅标准库 `random`。47 个正确性测试 + 8 个性能测试（比 ua-generator 快 2-3 倍）。灵感来自 [ua-generator](https://github.com/iamdual/ua-generator)（Apache-2.0）。
+
+### 基础设施
+
+- 在 benchmark CI 工作流中添加 `ua-generator`，用于 useragent 性能跟踪。
+- 新增自动 PyPI 发布工作流（`.github/workflows/pypi.yml`），在 GitHub Release 发布时触发，带变更检测以跳过仅版本号变更。
+
 ## [2026.4.27] - 2026-04-27
 
 ### 新增模块

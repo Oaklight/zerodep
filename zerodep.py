@@ -906,26 +906,10 @@ _VALID_TIERS = ("simple", "medium", "subsystem")
 _NOTE_URL = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 
 
-def cmd_new(args: argparse.Namespace) -> None:
-    """Scaffold a new module directory with template files."""
-    repo_root = Path(__file__).resolve().parent
-    name = args.name
-
-    # Validate module name
-    if not re.fullmatch(r"[a-z][a-z0-9_]*", name):
-        _die(
-            f"invalid module name '{name}' (use lowercase letters, digits, underscores)"
-        )
-
-    mod_dir = repo_root / name
-    if mod_dir.exists():
-        _die(f"directory '{name}/' already exists")
-
-    year = datetime.now().year
+def _new_scaffold(args: argparse.Namespace, year: int) -> str:
+    """Generate module content from scratch (empty scaffold)."""
     deps_str = json.dumps(args.deps) if args.deps else "[]"
-
-    # Module file template
-    module_content = (
+    return (
         f"# /// zerodep\n"
         f'# version = "0.1.0"\n'
         f"# deps = {deps_str}\n"
@@ -945,6 +929,123 @@ def cmd_new(args: argparse.Namespace) -> None:
         f"\n"
         f"__all__: list[str] = []\n"
     )
+
+
+def _scan_third_party_imports(source: str) -> set[str]:
+    """Extract third-party import names from Python source (inline, no deps)."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set()
+    stdlib = getattr(sys, "stdlib_module_names", frozenset())
+    imports: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                top = alias.name.split(".")[0]
+                if top not in stdlib:
+                    imports.add(top)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            top = node.module.split(".")[0]
+            if top not in stdlib:
+                imports.add(top)
+    return imports
+
+
+def _inject_frontmatter(source: str, frontmatter: str) -> str:
+    """Insert frontmatter block after shebang/encoding lines, if any."""
+    lines = source.split("\n")
+    insert_at = 0
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if i == 0 and stripped.startswith("#!"):
+            insert_at = i + 1
+        elif stripped.startswith("# -*-") or stripped.startswith("# coding"):
+            insert_at = i + 1
+        else:
+            break
+    before = "\n".join(lines[:insert_at])
+    after = "\n".join(lines[insert_at:])
+    parts = [p for p in (before, frontmatter, after) if p]
+    return "\n".join(parts)
+
+
+def _new_from_file(args: argparse.Namespace, year: int) -> str:
+    """Generate module content from an existing Python file."""
+    src_path = Path(args.from_file).resolve()
+
+    if not src_path.exists():
+        _die(f"source file not found: {src_path}")
+    if src_path.suffix != ".py":
+        _die(f"source file must be a .py file: {src_path}")
+
+    source = src_path.read_text(encoding="utf-8")
+
+    # Validate syntax
+    try:
+        ast.parse(source)
+    except SyntaxError as exc:
+        _die(f"syntax error in {src_path}: {exc}")
+
+    # Check for third-party imports
+    third_party = _scan_third_party_imports(source)
+    if third_party:
+        _warn(
+            f"third-party imports detected: {', '.join(sorted(third_party))}\n"
+            f"  zerodep modules must use only stdlib. "
+            f"Remove or replace these before release."
+        )
+
+    # Check if source already has zerodep frontmatter
+    existing_fm = _extract_frontmatter(source)
+    if existing_fm:
+        # Use existing frontmatter, CLI args override if explicitly set
+        _ok(f"found existing frontmatter in {src_path.name}")
+        # Override with CLI args only when user explicitly specified them
+        # (argparse defaults: category="utility", tier="simple", deps=[])
+        if args.category != "utility":
+            existing_fm["category"] = args.category
+        if args.tier != "simple":
+            existing_fm["tier"] = args.tier
+        if args.deps:
+            existing_fm["deps"] = args.deps
+        return source
+
+    # No frontmatter — inject one
+    deps_str = json.dumps(args.deps) if args.deps else "[]"
+    frontmatter = (
+        f"# /// zerodep\n"
+        f'# version = "0.1.0"\n'
+        f"# deps = {deps_str}\n"
+        f'# tier = "{args.tier}"\n'
+        f'# category = "{args.category}"\n'
+        f'# note = "{_NOTE_URL}"\n'
+        f"# ///"
+    )
+    return _inject_frontmatter(source, frontmatter)
+
+
+def cmd_new(args: argparse.Namespace) -> None:
+    """Scaffold a new module directory with template files."""
+    repo_root = Path(__file__).resolve().parent
+    name = args.name
+
+    # Validate module name
+    if not re.fullmatch(r"[a-z][a-z0-9_]*", name):
+        _die(
+            f"invalid module name '{name}' (use lowercase letters, digits, underscores)"
+        )
+
+    mod_dir = repo_root / name
+    if mod_dir.exists():
+        _die(f"directory '{name}/' already exists")
+
+    year = datetime.now().year
+
+    if args.from_file:
+        module_content = _new_from_file(args, year)
+    else:
+        module_content = _new_scaffold(args, year)
 
     # Test file template
     test_content = (
@@ -1276,6 +1377,13 @@ def main(argv: list[str] | None = None) -> None:
         help="module tier (default: simple)",
     )
     p_new.add_argument("--deps", nargs="*", default=[], help="module dependencies")
+    p_new.add_argument(
+        "--from",
+        dest="from_file",
+        default=None,
+        metavar="FILE",
+        help="create module from existing Python file",
+    )
 
     # bump
     p_bump = sub.add_parser("bump", help="bump module versions")

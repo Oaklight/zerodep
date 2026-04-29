@@ -124,17 +124,17 @@ td { white-space: nowrap; }
 <h1>yaml</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 3b7e074 | Commit: 3b7e0741 | 2026-04-29T02:56:10.773663+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T02:56:10.773663+00:00"></span></p>
+<p class="meta">Version: 082b9cb | Commit: 082b9cb6 | 2026-04-29T04:21:26.587556+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T04:21:26.587556+00:00"></span></p>
 <h2>yaml</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Dump (Large)</td><td>zerodep</td><td>PyYAML</td><td>2.79 ms</td><td>22.31 ms</td><td>358.3</td><td>44.8</td><td class="ratio-cell faster">8.0x faster</td></tr>
-<tr><td>Dump (Medium)</td><td>zerodep</td><td>PyYAML</td><td>148.5 µs</td><td>1.02 ms</td><td>6.7K</td><td>980.4</td><td class="ratio-cell faster">6.9x faster</td></tr>
-<tr><td>Dump (Small)</td><td>zerodep</td><td>PyYAML</td><td>20.6 µs</td><td>180.1 µs</td><td>48.5K</td><td>5.6K</td><td class="ratio-cell faster">8.7x faster</td></tr>
-<tr><td>Load (Large)</td><td>zerodep</td><td>PyYAML</td><td>5.61 ms</td><td>44.25 ms</td><td>178.3</td><td>22.6</td><td class="ratio-cell faster">7.9x faster</td></tr>
-<tr><td>Load (Medium)</td><td>zerodep</td><td>PyYAML</td><td>295.3 µs</td><td>1.98 ms</td><td>3.4K</td><td>504.7</td><td class="ratio-cell faster">6.7x faster</td></tr>
-<tr><td>Load (Small)</td><td>zerodep</td><td>PyYAML</td><td>44.4 µs</td><td>304.7 µs</td><td>22.5K</td><td>3.3K</td><td class="ratio-cell faster">6.9x faster</td></tr>
+<tr><td>Dump (Large)</td><td>zerodep</td><td>PyYAML</td><td>2.76 ms</td><td>21.73 ms</td><td>362.5</td><td>46.0</td><td class="ratio-cell faster">7.9x faster</td></tr>
+<tr><td>Dump (Medium)</td><td>zerodep</td><td>PyYAML</td><td>143.3 µs</td><td>996.0 µs</td><td>7.0K</td><td>1.0K</td><td class="ratio-cell faster">6.9x faster</td></tr>
+<tr><td>Dump (Small)</td><td>zerodep</td><td>PyYAML</td><td>20.3 µs</td><td>180.5 µs</td><td>49.2K</td><td>5.5K</td><td class="ratio-cell faster">8.9x faster</td></tr>
+<tr><td>Load (Large)</td><td>zerodep</td><td>PyYAML</td><td>5.66 ms</td><td>44.25 ms</td><td>176.6</td><td>22.6</td><td class="ratio-cell faster">7.8x faster</td></tr>
+<tr><td>Load (Medium)</td><td>zerodep</td><td>PyYAML</td><td>282.5 µs</td><td>1.95 ms</td><td>3.5K</td><td>513.7</td><td class="ratio-cell faster">6.9x faster</td></tr>
+<tr><td>Load (Small)</td><td>zerodep</td><td>PyYAML</td><td>39.2 µs</td><td>291.4 µs</td><td>25.5K</td><td>3.4K</td><td class="ratio-cell faster">7.4x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -206,13 +206,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [358.25929876998794, 6733.364881470588, 48532.903077004754, 178.2587896179711, 3386.110509582238, 22503.31174168445],
+        data: [362.48570588676665, 6976.715041635809, 49162.407430658066, 176.63233410013373, 3540.1308097858714, 25480.647112719344],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "PyYAML" + ' (ops/s)',
-        data: [44.81623106400532, 980.439479649477, 5552.645319057463, 22.60048398975815, 504.73708043192676, 3281.964933367026],
+        data: [46.01263069719314, 1004.0426953173848, 5540.655214775644, 22.598127265876855, 513.7390662357609, 3431.5560253256454],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -1,22 +1,30 @@
 # /// zerodep
-# version = "0.1.0"
+# version = "0.2.0"
 # deps = []
 # tier = "simple"
 # category = "text"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
-"""SyncTeX parser for inverse search (PDF position -> source location).
+"""SyncTeX parser for bidirectional search between PDF and source.
 
 Pure Python implementation using only the standard library.
 Parses .synctex or .synctex.gz files produced by TeX engines with
-``-synctex=1`` and provides spatial queries to map PDF coordinates
-back to source file and line number.
+``-synctex=1`` and provides spatial queries for both directions:
+
+- **Inverse search**: PDF position → source file and line number
+- **Forward search**: Source file and line number → PDF position
 
 Typical usage::
 
     data = parse_synctex("main.synctex.gz", strip_prefix="/workspace/")
+
+    # Inverse: click on PDF → find source
     result = inverse_search(data, page=1, x=150.0, y=300.0)
     # result: {"file": "main.tex", "line": 42}
+
+    # Forward: jump from source → find PDF position
+    result = forward_search(data, file="main.tex", line=42)
+    # result: {"page": 1, "x": 150.0, "y": 300.0}
 
 Part of zerodep: https://github.com/Oaklight/zerodep
 Copyright (c) 2026 Peng Ding. MIT License.
@@ -32,6 +40,7 @@ __all__ = [
     "SyncTeXData",
     "parse_synctex",
     "inverse_search",
+    "forward_search",
 ]
 
 # 1 TeX point = 65536 scaled points
@@ -139,6 +148,61 @@ def inverse_search(
         return None
 
     return {"file": file_path, "line": best.line}
+
+
+def forward_search(
+    data: SyncTeXData,
+    file: str,
+    line: int,
+) -> dict[str, int | float] | None:
+    """Find the PDF position for a source file and line number.
+
+    Args:
+        data: Parsed SyncTeX data from :func:`parse_synctex`.
+        file: Source file path (relative, as stored in ``data.inputs``).
+        line: 1-based line number in the source file.
+
+    Returns:
+        A dict ``{"page": N, "x": float, "y": float}`` with coordinates
+        in PDF points (72 DPI) on success, or ``None`` if no matching
+        position is found.
+    """
+    # Reverse-lookup: find all tags that map to this file
+    tags = {tag for tag, path in data.inputs.items() if path == file}
+    if not tags:
+        return None
+
+    scale = data.unit * data.magnification / 1000.0
+    if scale == 0:
+        scale = 1.0
+
+    # Search all pages for matching hboxes
+    best_box: HBox | None = None
+    best_page: int = 0
+    best_line_dist: int = -1
+
+    for page_num, boxes in data.pages.items():
+        for box in boxes:
+            if box.tag not in tags:
+                continue
+            dist = abs(box.line - line)
+            if best_box is None or dist < best_line_dist:
+                best_box = box
+                best_page = page_num
+                best_line_dist = dist
+                if dist == 0:
+                    break  # exact match on this page
+        if best_line_dist == 0:
+            break  # exact match found
+
+    if best_box is None:
+        return None
+
+    # Convert scaled points back to PDF points
+    pdf_x = (best_box.x - data.x_offset) * scale / _BP_TO_SP
+    pdf_y = (best_box.y - data.y_offset) * scale / _BP_TO_SP
+
+    return {"page": best_page, "x": round(pdf_x, 2), "y": round(pdf_y, 2)}
 
 
 # -- Internal helpers ------------------------------------------------------

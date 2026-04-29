@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-04-28T18:09:08.534073+00:00",
+  "generated": "2026-04-29T02:59:19.219795+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -407,16 +407,16 @@
       "content_hash": "d2616b1a69fe42b1367d413888c69dd2026c00e58c36e1e83acda77fd3633ed6"
     },
     "synctex": {
-      "description": "SyncTeX parser for inverse search (PDF position -> source location)",
+      "description": "SyncTeX parser for bidirectional search between PDF and source",
       "files": [
         "synctex/synctex.py"
       ],
-      "version": "0.1.0",
+      "version": "0.2.0",
       "deps": [],
       "tier": "simple",
       "category": "text",
-      "last_updated": null,
-      "content_hash": "42b0dccbc469f39e074da5097b83f8cfa1504a27775494e6052323e56d1c188c"
+      "last_updated": "2026-04-29T02:10:32+08:00",
+      "content_hash": "2373a0036723d65ddb14deb3aec0d0fa1c9038264e25e3b8c5fd015e7b2e2ff2"
     },
     "tabulate": {
       "description": "Tabulate — zero dependencies, stdlib only, Python 3.10+",

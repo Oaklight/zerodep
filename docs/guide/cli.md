@@ -179,9 +179,22 @@ $ zerodep new mymodule --category network --tier subsystem
 
 # With dependencies
 $ zerodep new mymodule --deps httpclient yaml
+
+# Create from an existing Python file
+$ zerodep new mymodule --from ~/projects/other/mymodule.py
+
+# From existing file with category/tier override
+$ zerodep new mymodule --from ./mymodule.py --category text --tier medium
 ```
 
-This creates:
+When using `--from`, the command:
+
+- Copies the source file into the new module directory
+- Injects zerodep frontmatter if the file doesn't already have one (preserves shebang/encoding lines)
+- Preserves existing frontmatter if present; `--category`, `--tier`, `--deps` can override
+- Warns if third-party imports are detected (zerodep modules must use stdlib only)
+
+Without `--from`, this creates an empty scaffold:
 
 ```
 mymodule/

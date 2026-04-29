@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Added `ua-generator` to benchmark CI workflow for useragent performance tracking.
 - Added automated PyPI publish workflow (`.github/workflows/pypi.yml`) triggered on GitHub Release, with change detection to skip version-only bumps.
+- Added `AGENTS.md` (unified AI coding assistant instructions) with `CLAUDE.md` symlink for cross-tool compatibility (Claude Code, Codex, Cursor, Copilot, Gemini CLI).
+
+### Enhancements
+
+- **CLI**: added `--from FILE` flag to `zerodep new` for creating modules from existing Python source files. Automatically injects frontmatter if missing (respects shebang/encoding lines), preserves existing frontmatter with CLI override support, and warns on third-party imports.
 
 ## [2026.4.27] - 2026-04-27
 

@@ -124,27 +124,27 @@ td { white-space: nowrap; }
 <h1>jsonrpc</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 082b9cb | Commit: 082b9cb6 | 2026-04-29T04:21:26.587556+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T04:21:26.587556+00:00"></span></p>
+<p class="meta">Version: b4c1e3b | Commit: b4c1e3b6 | 2026-04-29T11:32:17.741764+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T11:32:17.741764+00:00"></span></p>
 <h2>jsonrpc</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>145.2 µs</td><td>2.82 ms</td><td>6.9K</td><td>354.9</td><td class="ratio-cell faster">19.4x faster</td></tr>
-<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>9.8 µs</td><td>134.8 µs</td><td>102.4K</td><td>7.4K</td><td class="ratio-cell faster">13.8x faster</td></tr>
-<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>8.0 µs</td><td>105.9 µs</td><td>125.4K</td><td>9.4K</td><td class="ratio-cell faster">13.3x faster</td></tr>
-<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>7.5 µs</td><td>140.8 µs</td><td>133.8K</td><td>7.1K</td><td class="ratio-cell faster">18.8x faster</td></tr>
+<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>146.4 µs</td><td>1.96 ms</td><td>6.8K</td><td>511.3</td><td class="ratio-cell faster">13.4x faster</td></tr>
+<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>9.5 µs</td><td>96.8 µs</td><td>105.7K</td><td>10.3K</td><td class="ratio-cell faster">10.2x faster</td></tr>
+<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>7.9 µs</td><td>76.3 µs</td><td>125.8K</td><td>13.1K</td><td class="ratio-cell faster">9.6x faster</td></tr>
+<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>7.4 µs</td><td>103.2 µs</td><td>134.9K</td><td>9.7K</td><td class="ratio-cell faster">13.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>942.2 ns</td><td>1.06M</td></tr>
-<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>944.1 ns</td><td>1.06M</td></tr>
-<tr><td>Id Generation</td><td>next_id</td><td>101.5 ns</td><td>9.85M</td></tr>
-<tr><td>Json Round Trip</td><td>json_round_trip</td><td>6.6 µs</td><td>150.4K</td></tr>
-<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>357.4 ns</td><td>2.80M</td></tr>
-<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>296.9 ns</td><td>3.37M</td></tr>
+<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>935.9 ns</td><td>1.07M</td></tr>
+<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>925.2 ns</td><td>1.08M</td></tr>
+<tr><td>Id Generation</td><td>next_id</td><td>118.7 ns</td><td>8.42M</td></tr>
+<tr><td>Json Round Trip</td><td>json_round_trip</td><td>6.5 µs</td><td>153.2K</td></tr>
+<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>384.3 ns</td><td>2.60M</td></tr>
+<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>311.5 ns</td><td>3.21M</td></tr>
 </tbody></table>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -215,13 +215,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [6885.666381640443, 102361.28100507979, 125369.83916353453, 133797.78567325728],
+        data: [6828.672411874756, 105665.41033383299, 125848.78430627573, 134937.37084862287],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "jsonrpcserver" + ' (ops/s)',
-        data: [354.9208951115359, 7418.417492282818, 9442.027456155345, 7100.304511434291],
+        data: [511.27962654594296, 10330.023561452375, 13113.046513343299, 9690.53082548604],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

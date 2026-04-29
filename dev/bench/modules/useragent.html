@@ -124,15 +124,15 @@ td { white-space: nowrap; }
 <h1>useragent</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 082b9cb | Commit: 082b9cb6 | 2026-04-29T04:21:26.587556+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T04:21:26.587556+00:00"></span></p>
+<p class="meta">Version: b4c1e3b | Commit: b4c1e3b6 | 2026-04-29T11:32:17.741764+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T11:32:17.741764+00:00"></span></p>
 <h2>useragent</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Generate Chrome Desktop</td><td>zerodep</td><td>ua_generator</td><td>5.3 µs</td><td>11.8 µs</td><td>188.9K</td><td>84.8K</td><td class="ratio-cell faster">2.2x faster</td></tr>
-<tr><td>Generate Default</td><td>zerodep</td><td>ua_generator</td><td>5.7 µs</td><td>13.6 µs</td><td>176.1K</td><td>73.3K</td><td class="ratio-cell faster">2.4x faster</td></tr>
-<tr><td>Generate Edge Mobile</td><td>zerodep</td><td>ua_generator</td><td>5.4 µs</td><td>14.5 µs</td><td>184.3K</td><td>69.0K</td><td class="ratio-cell faster">2.7x faster</td></tr>
-<tr><td>Headers Get</td><td>zerodep</td><td>ua_generator</td><td>8.1 µs</td><td>16.0 µs</td><td>123.6K</td><td>62.5K</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Generate Chrome Desktop</td><td>zerodep</td><td>ua_generator</td><td>5.0 µs</td><td>11.5 µs</td><td>198.3K</td><td>87.1K</td><td class="ratio-cell faster">2.3x faster</td></tr>
+<tr><td>Generate Default</td><td>zerodep</td><td>ua_generator</td><td>5.7 µs</td><td>12.0 µs</td><td>175.9K</td><td>83.4K</td><td class="ratio-cell faster">2.1x faster</td></tr>
+<tr><td>Generate Edge Mobile</td><td>zerodep</td><td>ua_generator</td><td>5.3 µs</td><td>13.4 µs</td><td>187.4K</td><td>74.5K</td><td class="ratio-cell faster">2.5x faster</td></tr>
+<tr><td>Headers Get</td><td>zerodep</td><td>ua_generator</td><td>8.0 µs</td><td>14.8 µs</td><td>125.1K</td><td>67.4K</td><td class="ratio-cell faster">1.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -204,13 +204,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [188875.66291501294, 176083.28377905412, 184327.4804176385, 123595.0671146546],
+        data: [198347.1213416089, 175909.6014128529, 187410.88572792223, 125132.8673651456],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "ua_generator" + ' (ops/s)',
-        data: [84814.1256982314, 73266.76188856835, 68980.32363695676, 62547.65758116347],
+        data: [87140.65604712967, 83423.5938848228, 74543.82504413645, 67412.63411004694],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

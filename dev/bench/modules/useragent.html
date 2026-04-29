@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>retry Benchmark — zerodep</title>
+<title>useragent Benchmark — zerodep</title>
 <style>:root, [data-theme="light"] {
   --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
   --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
@@ -109,17 +109,18 @@ td { white-space: nowrap; }
 </head>
 <body>
 <div class="header-row">
-<h1>retry</h1>
+<h1>useragent</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
 <p class="meta">Version: ff747a7 | Commit: ff747a73 | 2026-04-29T02:20:05.641984+00:00</p>
-<h2>retry</h2>
+<h2>useragent</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Backoff Calculation</td><td>zerodep</td><td>tenacity</td><td>5.4 µs</td><td>14.9 µs</td><td>184.9K</td><td>67.2K</td><td class="ratio-cell faster">2.8x faster</td></tr>
-<tr><td>Decorator Overhead</td><td>zerodep</td><td>tenacity</td><td>491.5 ns</td><td>18.4 µs</td><td>2.03M</td><td>54.4K</td><td class="ratio-cell faster">37.4x faster</td></tr>
-<tr><td>Retry With Failures</td><td>zerodep</td><td>tenacity</td><td>129.3 µs</td><td>176.7 µs</td><td>7.7K</td><td>5.7K</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Generate Chrome Desktop</td><td>zerodep</td><td>ua_generator</td><td>5.0 µs</td><td>11.6 µs</td><td>198.7K</td><td>86.3K</td><td class="ratio-cell faster">2.3x faster</td></tr>
+<tr><td>Generate Default</td><td>zerodep</td><td>ua_generator</td><td>5.5 µs</td><td>12.0 µs</td><td>181.2K</td><td>83.5K</td><td class="ratio-cell faster">2.2x faster</td></tr>
+<tr><td>Generate Edge Mobile</td><td>zerodep</td><td>ua_generator</td><td>5.2 µs</td><td>13.4 µs</td><td>192.7K</td><td>74.5K</td><td class="ratio-cell faster">2.6x faster</td></tr>
+<tr><td>Headers Get</td><td>zerodep</td><td>ua_generator</td><td>7.8 µs</td><td>15.0 µs</td><td>128.4K</td><td>66.9K</td><td class="ratio-cell faster">1.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -186,17 +187,17 @@ var TREND_COLORS = [
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
   data: {
-    labels: ["Backoff Calculation", "Decorator Overhead", "Retry With Failures"],
+    labels: ["Generate Chrome Desktop", "Generate Default", "Generate Edge Mobile", "Headers Get"],
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [184889.73662665114, 2034743.9944728788, 7736.780745463728],
+        data: [198723.35700948292, 181161.04816180497, 192678.57568136154, 128386.19419652261],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
-        label: "tenacity" + ' (ops/s)',
-        data: [67208.55378486733, 54422.7835443926, 5658.09397884332],
+        label: "ua_generator" + ' (ops/s)',
+        data: [86274.55960597286, 83508.42094683972, 74519.44353659099, 66886.11195260394],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -207,7 +208,7 @@ new Chart(document.getElementById('chart_0'), {
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'top' },
-      title: { display: true, text: 'retry — ops/s (higher is better)' }
+      title: { display: true, text: 'useragent — ops/s (higher is better)' }
     },
     scales: {
       y: {
@@ -224,7 +225,7 @@ new Chart(document.getElementById('chart_0'), {
   if (!data || !data.entries || !data.entries.Benchmark) {
     section.style.display = 'none'; return;
   }
-  var filtered = filterBenchesForModule(data.entries.Benchmark, 'retry');
+  var filtered = filterBenchesForModule(data.entries.Benchmark, 'useragent');
   if (!filtered.length) { section.style.display = 'none'; return; }
 
   // Collect unique zerodep bench names
@@ -266,7 +267,7 @@ new Chart(document.getElementById('chart_0'), {
         },
         title: {
           display: true,
-          text: 'retry — zerodep ops/s over time'
+          text: 'useragent — zerodep ops/s over time'
         },
         tooltip: {
           callbacks: {

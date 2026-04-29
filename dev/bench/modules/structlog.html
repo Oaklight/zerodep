@@ -112,15 +112,15 @@ td { white-space: nowrap; }
 <h1>structlog</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 50b9a51 | Commit: 50b9a51f | 2026-04-28T18:18:10.022844+00:00</p>
+<p class="meta">Version: ff747a7 | Commit: ff747a73 | 2026-04-29T02:20:05.641984+00:00</p>
 <h2>structlog</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Bind And Log</td><td>zerodep</td><td>structlog</td><td>11.9 µs</td><td>23.5 µs</td><td>84.3K</td><td>42.5K</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Bound Log</td><td>zerodep</td><td>structlog</td><td>12.3 µs</td><td>21.6 µs</td><td>81.4K</td><td>46.3K</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>JSONRendering</td><td>zerodep</td><td>structlog</td><td>9.7 µs</td><td>12.2 µs</td><td>103.3K</td><td>82.2K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Simple Log</td><td>zerodep</td><td>structlog</td><td>10.4 µs</td><td>13.6 µs</td><td>96.3K</td><td>73.4K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Bind And Log</td><td>zerodep</td><td>structlog</td><td>10.5 µs</td><td>19.1 µs</td><td>94.9K</td><td>52.4K</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Bound Log</td><td>zerodep</td><td>structlog</td><td>11.0 µs</td><td>17.6 µs</td><td>90.8K</td><td>56.8K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>JSONRendering</td><td>zerodep</td><td>structlog</td><td>9.2 µs</td><td>10.8 µs</td><td>108.2K</td><td>92.4K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Simple Log</td><td>zerodep</td><td>structlog</td><td>9.6 µs</td><td>12.3 µs</td><td>104.2K</td><td>81.1K</td><td class="ratio-cell faster">1.3x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -191,13 +191,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [84278.2453382899, 81408.41801641116, 103327.98580935762, 96327.20055717012],
+        data: [94895.05421015824, 90842.63055662892, 108244.04765157204, 104181.69470595576],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "structlog" + ' (ops/s)',
-        data: [42530.40776845167, 46280.43825842275, 82172.30874968237, 73410.99030331959],
+        data: [52394.470976497076, 56785.3563381467, 92419.56393336697, 81097.15653517103],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

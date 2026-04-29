@@ -112,21 +112,21 @@ td { white-space: nowrap; }
 <h1>runner</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 50b9a51 | Commit: 50b9a51f | 2026-04-28T18:18:10.022844+00:00</p>
+<p class="meta">Version: ff747a7 | Commit: ff747a73 | 2026-04-29T02:20:05.641984+00:00</p>
 <h2>runner</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Env Passing</td><td>zerodep</td><td>sh</td><td>11.26 ms</td><td>19.75 ms</td><td>88.8</td><td>50.6</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Env Passing</td><td>zerodep</td><td>subprocess</td><td>11.26 ms</td><td>11.09 ms</td><td>88.8</td><td>90.1</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Output Capture</td><td>zerodep</td><td>sh</td><td>11.03 ms</td><td>19.63 ms</td><td>90.7</td><td>50.9</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Output Capture</td><td>zerodep</td><td>subprocess</td><td>11.03 ms</td><td>11.08 ms</td><td>90.7</td><td>90.2</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Simple Command</td><td>zerodep</td><td>sh</td><td>2.01 ms</td><td>9.42 ms</td><td>498.7</td><td>106.1</td><td class="ratio-cell faster">4.7x faster</td></tr>
-<tr><td>Simple Command</td><td>zerodep</td><td>subprocess</td><td>2.01 ms</td><td>906.9 µs</td><td>498.7</td><td>1.1K</td><td class="ratio-cell slower">2.2x slower</td></tr>
-<tr><td>Stdin Input</td><td>zerodep</td><td>sh</td><td>11.04 ms</td><td>19.59 ms</td><td>90.6</td><td>51.0</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Stdin Input</td><td>zerodep</td><td>subprocess</td><td>11.04 ms</td><td>11.00 ms</td><td>90.6</td><td>90.9</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Streaming Lines</td><td>zerodep</td><td>sh</td><td>11.01 ms</td><td>19.95 ms</td><td>90.8</td><td>50.1</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Streaming Lines</td><td>zerodep</td><td>subprocess</td><td>11.01 ms</td><td>11.06 ms</td><td>90.8</td><td>90.4</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Env Passing</td><td>zerodep</td><td>sh</td><td>12.76 ms</td><td>23.02 ms</td><td>78.3</td><td>43.4</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Env Passing</td><td>zerodep</td><td>subprocess</td><td>12.76 ms</td><td>12.65 ms</td><td>78.3</td><td>79.0</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Output Capture</td><td>zerodep</td><td>sh</td><td>12.85 ms</td><td>21.48 ms</td><td>77.8</td><td>46.5</td><td class="ratio-cell faster">1.7x faster</td></tr>
+<tr><td>Output Capture</td><td>zerodep</td><td>subprocess</td><td>12.85 ms</td><td>12.43 ms</td><td>77.8</td><td>80.4</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Simple Command</td><td>zerodep</td><td>sh</td><td>2.04 ms</td><td>9.75 ms</td><td>491.4</td><td>102.5</td><td class="ratio-cell faster">4.8x faster</td></tr>
+<tr><td>Simple Command</td><td>zerodep</td><td>subprocess</td><td>2.04 ms</td><td>960.2 µs</td><td>491.4</td><td>1.0K</td><td class="ratio-cell slower">2.1x slower</td></tr>
+<tr><td>Stdin Input</td><td>zerodep</td><td>sh</td><td>12.51 ms</td><td>21.56 ms</td><td>79.9</td><td>46.4</td><td class="ratio-cell faster">1.7x faster</td></tr>
+<tr><td>Stdin Input</td><td>zerodep</td><td>subprocess</td><td>12.51 ms</td><td>12.52 ms</td><td>79.9</td><td>79.9</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Streaming Lines</td><td>zerodep</td><td>sh</td><td>12.70 ms</td><td>21.60 ms</td><td>78.8</td><td>46.3</td><td class="ratio-cell faster">1.7x faster</td></tr>
+<tr><td>Streaming Lines</td><td>zerodep</td><td>subprocess</td><td>12.70 ms</td><td>12.55 ms</td><td>78.8</td><td>79.7</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -197,13 +197,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [88.79425860519038, 90.6510580681619, 498.70555868065793, 90.58910029447372, 90.806198489062],
+        data: [78.34247893951365, 77.80157420694692, 491.3703432282173, 79.9252760212037, 78.75921146052585],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "subprocess" + ' (ops/s)',
-        data: [90.14684984639213, 90.23368025357465, 1102.601341190051, 90.88902171177995, 90.44583847655],
+        data: [79.04592301835268, 80.42646641442252, 1041.489023899293, 79.90242501957997, 79.66725584383796],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

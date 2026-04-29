@@ -112,26 +112,26 @@ td { white-space: nowrap; }
 <h1>config</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 50b9a51 | Commit: 50b9a51f | 2026-04-28T18:18:10.022844+00:00</p>
+<p class="meta">Version: ff747a7 | Commit: ff747a73 | 2026-04-29T02:20:05.641984+00:00</p>
 <h2>config</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Cast Bool</td><td>zerodep</td><td>python-decouple</td><td>1.3 µs</td><td>2.5 µs</td><td>782.7K</td><td>405.5K</td><td class="ratio-cell faster">1.9x faster</td></tr>
-<tr><td>Cast Int</td><td>zerodep</td><td>python-decouple</td><td>1.2 µs</td><td>2.2 µs</td><td>820.9K</td><td>450.6K</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Csv Cast</td><td>zerodep</td><td>python-decouple</td><td>2.7 µs</td><td>12.6 µs</td><td>369.9K</td><td>79.1K</td><td class="ratio-cell faster">4.7x faster</td></tr>
-<tr><td>Dotenv Lookup</td><td>zerodep</td><td>python-decouple</td><td>717.6 ns</td><td>1.6 µs</td><td>1.39M</td><td>616.6K</td><td class="ratio-cell faster">2.3x faster</td></tr>
-<tr><td>Env Lookup</td><td>zerodep</td><td>python-decouple</td><td>878.6 ns</td><td>1.6 µs</td><td>1.14M</td><td>614.0K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Cast Bool</td><td>zerodep</td><td>python-decouple</td><td>1.3 µs</td><td>2.5 µs</td><td>781.6K</td><td>400.0K</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Cast Int</td><td>zerodep</td><td>python-decouple</td><td>1.2 µs</td><td>2.3 µs</td><td>831.0K</td><td>439.2K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Csv Cast</td><td>zerodep</td><td>python-decouple</td><td>2.7 µs</td><td>12.5 µs</td><td>376.7K</td><td>79.7K</td><td class="ratio-cell faster">4.7x faster</td></tr>
+<tr><td>Dotenv Lookup</td><td>zerodep</td><td>python-decouple</td><td>668.7 ns</td><td>1.6 µs</td><td>1.50M</td><td>612.4K</td><td class="ratio-cell faster">2.4x faster</td></tr>
+<tr><td>Env Lookup</td><td>zerodep</td><td>python-decouple</td><td>835.3 ns</td><td>1.6 µs</td><td>1.20M</td><td>606.7K</td><td class="ratio-cell faster">2.0x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Config Init</td><td>zerodep_env_only</td><td>572.2 ns</td><td>1.75M</td></tr>
-<tr><td>Config Init</td><td>zerodep_with_dotenv</td><td>940.6 µs</td><td>1.1K</td></tr>
-<tr><td>Config Init</td><td>zerodep_with_json</td><td>51.5 µs</td><td>19.4K</td></tr>
-<tr><td>Nested Json Lookup</td><td>zerodep</td><td>2.1 µs</td><td>482.2K</td></tr>
+<tr><td>Config Init</td><td>zerodep_env_only</td><td>533.3 ns</td><td>1.88M</td></tr>
+<tr><td>Config Init</td><td>zerodep_with_dotenv</td><td>898.5 µs</td><td>1.1K</td></tr>
+<tr><td>Config Init</td><td>zerodep_with_json</td><td>44.7 µs</td><td>22.3K</td></tr>
+<tr><td>Nested Json Lookup</td><td>zerodep</td><td>2.1 µs</td><td>479.3K</td></tr>
 </tbody></table>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -201,13 +201,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [782679.7211261651, 820944.3321296279, 369945.93289095425, 1393553.5310961322, 1138138.3813560726],
+        data: [781599.8869420213, 831024.1527309247, 376746.71403095656, 1495461.089908595, 1197225.440125861],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-decouple" + ' (ops/s)',
-        data: [405495.40903749, 450613.56673769007, 79128.08768541721, 616580.9253248932, 614044.5408429011],
+        data: [399964.08829361404, 439195.8758036447, 79714.02944455013, 612390.3796301739, 606723.4485859165],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

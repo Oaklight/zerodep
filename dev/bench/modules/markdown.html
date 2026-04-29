@@ -112,16 +112,16 @@ td { white-space: nowrap; }
 <h1>markdown</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 50b9a51 | Commit: 50b9a51f | 2026-04-28T18:18:10.022844+00:00</p>
+<p class="meta">Version: ff747a7 | Commit: ff747a73 | 2026-04-29T02:20:05.641984+00:00</p>
 <h2>markdown</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Render (Large)</td><td>zerodep</td><td>mistune</td><td>6.34 ms</td><td>10.47 ms</td><td>157.8</td><td>95.5</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Render (Medium)</td><td>zerodep</td><td>mistune</td><td>387.7 µs</td><td>698.4 µs</td><td>2.6K</td><td>1.4K</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Render (Small)</td><td>zerodep</td><td>mistune</td><td>55.1 µs</td><td>70.7 µs</td><td>18.2K</td><td>14.2K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Render GFMLarge</td><td>zerodep</td><td>mistune</td><td>7.02 ms</td><td>12.03 ms</td><td>142.4</td><td>83.2</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Render GFMMedium</td><td>zerodep</td><td>mistune</td><td>360.2 µs</td><td>677.7 µs</td><td>2.8K</td><td>1.5K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Render (Large)</td><td>zerodep</td><td>mistune</td><td>5.37 ms</td><td>8.34 ms</td><td>186.2</td><td>119.9</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Render (Medium)</td><td>zerodep</td><td>mistune</td><td>332.9 µs</td><td>602.1 µs</td><td>3.0K</td><td>1.7K</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Render (Small)</td><td>zerodep</td><td>mistune</td><td>49.8 µs</td><td>54.6 µs</td><td>20.1K</td><td>18.3K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Render GFMLarge</td><td>zerodep</td><td>mistune</td><td>6.07 ms</td><td>11.42 ms</td><td>164.6</td><td>87.6</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Render GFMMedium</td><td>zerodep</td><td>mistune</td><td>308.2 µs</td><td>604.8 µs</td><td>3.2K</td><td>1.7K</td><td class="ratio-cell faster">2.0x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -192,13 +192,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [157.81902117159194, 2579.568575948591, 18154.658138669012, 142.422950441861, 2776.549308961583],
+        data: [186.19176813844112, 3003.5549108207724, 20061.67017442711, 164.62910380467736, 3245.126040055804],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "mistune" + ' (ops/s)',
-        data: [95.52113734358787, 1431.9398508368952, 14150.476163277375, 83.1575222506303, 1475.5226701033012],
+        data: [119.88351045484231, 1660.8170168631152, 18318.214378327393, 87.57180777553648, 1653.4817297464149],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -179,9 +179,22 @@ $ zerodep new mymodule --category network --tier subsystem
 
 # 带依赖
 $ zerodep new mymodule --deps httpclient yaml
+
+# 从已有 Python 文件创建模块
+$ zerodep new mymodule --from ~/projects/other/mymodule.py
+
+# 从已有文件创建，同时覆盖分类和层级
+$ zerodep new mymodule --from ./mymodule.py --category text --tier medium
 ```
 
-将创建以下结构：
+使用 `--from` 时，命令会：
+
+- 将源文件复制到新模块目录中
+- 如果源文件没有 zerodep frontmatter，自动注入（保留 shebang/encoding 声明）
+- 如果已有 frontmatter 则复用；`--category`、`--tier`、`--deps` 可以覆盖
+- 检测到第三方 import 时输出警告（zerodep 模块必须仅使用标准库）
+
+不使用 `--from` 时，创建空的脚手架：
 
 ```
 mymodule/

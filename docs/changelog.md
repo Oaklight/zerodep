@@ -15,6 +15,11 @@
 
 - 在 benchmark CI 工作流中添加 `ua-generator`，用于 useragent 性能跟踪。
 - 新增自动 PyPI 发布工作流（`.github/workflows/pypi.yml`），在 GitHub Release 发布时触发，带变更检测以跳过仅版本号变更。
+- 新增 `AGENTS.md`（统一的 AI 编程助手指令文件），附 `CLAUDE.md` 软链接，兼容 Claude Code、Codex、Cursor、Copilot、Gemini CLI 等工具。
+
+### 功能增强
+
+- **CLI**：为 `zerodep new` 新增 `--from FILE` 参数，支持从已有 Python 源文件创建模块。自动注入 frontmatter（保留 shebang/encoding 声明），复用已有 frontmatter 并支持 CLI 参数覆盖，检测到第三方 import 时输出警告。
 
 ## [2026.4.27] - 2026-04-27
 

@@ -645,7 +645,9 @@ new Chart(document.getElementById('{cid}'), {{
     commit_short = commit[:8] if commit else "N/A"
     meta_line = (
         f"Version: {version} &nbsp;|&nbsp; "
-        f"Commit: {commit_short} &nbsp;|&nbsp; {timestamp}"
+        f"Commit: {commit_short} &nbsp;|&nbsp; {timestamp} "
+        f'<span class="time-ago" id="time-ago" '
+        f'data-timestamp="{timestamp}"></span>'
     )
 
     def _card(css: str, val: str | int, label: str) -> str:
@@ -687,9 +689,11 @@ new Chart(document.getElementById('{cid}'), {{
         f'<div class="summary-grid">\n{cards}\n</div>\n'
         f"{nav}\n"
         f"{''.join(sections)}\n"
+        '<button class="back-to-top" id="back-to-top"'
+        ' title="Back to top">\u2191</button>\n'
         f"<script>\n{_HISTORY_JS}\n{''.join(charts_js)}\n"
         f"{sparkline_init}\n"
-        f"{_THEME_JS}\n</script>\n"
+        f"{_THEME_JS}\n{_UI_JS}\n</script>\n"
         "</body>\n</html>"
     )
     return html
@@ -714,6 +718,38 @@ _THEME_JS = """\
     }
     setTheme(cur === 'dark' ? 'light' : 'dark');
   });
+})();"""
+
+_UI_JS = """\
+(function() {
+  // Back-to-top button
+  var btt = document.getElementById('back-to-top');
+  if (btt) {
+    window.addEventListener('scroll', function() {
+      btt.classList.toggle('visible', window.scrollY > 300);
+    });
+    btt.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  // Time-ago display
+  var ta = document.getElementById('time-ago');
+  if (ta) {
+    var ts = ta.getAttribute('data-timestamp');
+    if (ts) {
+      var d = new Date(ts), now = new Date(), diff = now - d;
+      if (!isNaN(d.getTime())) {
+        var s = Math.floor(diff / 1000), m = Math.floor(s / 60);
+        var h = Math.floor(m / 60), dd = Math.floor(h / 24);
+        var txt;
+        if (dd > 0) txt = dd + (dd === 1 ? ' day' : ' days') + ' ago';
+        else if (h > 0) txt = h + (h === 1 ? ' hour' : ' hours') + ' ago';
+        else if (m > 0) txt = m + (m === 1 ? ' minute' : ' minutes') + ' ago';
+        else txt = 'just now';
+        ta.textContent = '(' + txt + ')';
+      }
+    }
+  }
 })();"""
 
 _CHARTJS_URL = "https://cdn.jsdelivr.net/npm/chart.js@4"
@@ -750,6 +786,18 @@ _TREND_CSS = """\
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 1rem; height: 400px;
 }
+.back-to-top {
+  position: fixed; bottom: 2rem; right: 2rem; width: 40px; height: 40px;
+  border-radius: 50%; border: 1px solid var(--border);
+  background: var(--card-bg); color: var(--fg); font-size: 1.2rem;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transition: opacity .3s, border-color .2s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); z-index: 100;
+}
+.back-to-top.visible { opacity: 1; pointer-events: auto; }
+.back-to-top:hover { border-color: var(--accent); }
+.time-ago { font-style: italic; }
 """
 
 # Shared JS for loading and processing data.js history
@@ -1005,7 +1053,11 @@ new Chart(document.getElementById('{cid}'), {{
             body += "</tr>\n"
         body += "</tbody></table>\n"
 
-    meta_line = f"Version: {version} | Commit: {commit_short} | {timestamp}"
+    meta_line = (
+        f"Version: {version} | Commit: {commit_short} | {timestamp} "
+        f'<span class="time-ago" id="time-ago" '
+        f'data-timestamp="{timestamp}"></span>'
+    )
 
     # Trend section (initially hidden, revealed by JS if data available)
     trend_html = (
@@ -1038,9 +1090,11 @@ new Chart(document.getElementById('{cid}'), {{
         f'<p class="meta">{meta_line}</p>\n'
         f"{body}\n"
         f"{trend_html}\n"
+        '<button class="back-to-top" id="back-to-top"'
+        ' title="Back to top">\u2191</button>\n'
         f"<script>\n{_HISTORY_JS}\n{''.join(charts_js)}\n"
         f"{trend_init}\n"
-        f"{_THEME_JS}\n</script>\n"
+        f"{_THEME_JS}\n{_UI_JS}\n</script>\n"
         "</body>\n</html>"
     )
 
@@ -1053,7 +1107,9 @@ def _generate_history_page(module_names: list[str], meta: dict) -> str:
     timestamp = meta.get("datetime", "")
     meta_line = (
         f"Version: {version} &nbsp;|&nbsp; "
-        f"Commit: {commit_short} &nbsp;|&nbsp; {timestamp}"
+        f"Commit: {commit_short} &nbsp;|&nbsp; {timestamp} "
+        f'<span class="time-ago" id="time-ago" '
+        f'data-timestamp="{timestamp}"></span>'
     )
 
     # Build nav links to each module section
@@ -1190,8 +1246,10 @@ def _generate_history_page(module_names: list[str], meta: dict) -> str:
         f'<p class="meta">{meta_line}</p>\n'
         f"{nav}\n"
         f"{''.join(sections)}\n"
+        '<button class="back-to-top" id="back-to-top"'
+        ' title="Back to top">\u2191</button>\n'
         f"<script>\n{_HISTORY_JS}\n{init_js}\n"
-        f"{_THEME_JS}\n</script>\n"
+        f"{_THEME_JS}\n{_UI_JS}\n</script>\n"
         "</body>\n</html>"
     )
 

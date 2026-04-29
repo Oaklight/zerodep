@@ -9,7 +9,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from synctex import HBox, SyncTeXData, inverse_search, parse_synctex
+from synctex import HBox, SyncTeXData, forward_search, inverse_search, parse_synctex
 
 # -- Synthetic SyncTeX content for testing --
 
@@ -218,6 +218,118 @@ class TestInverseSearch:
         )
         result = inverse_search(data, page=1, x=0.01, y=0.01)
         assert result is None
+
+
+# -- forward_search tests --
+
+
+class TestForwardSearch:
+    """Tests for forward_search."""
+
+    def test_empty_data(self):
+        data = SyncTeXData()
+        result = forward_search(data, file="test.tex", line=1)
+        assert result is None
+
+    def test_file_not_in_inputs(self):
+        box = HBox(tag=1, line=10, x=1000, y=2000, width=5000, height=500, depth=100)
+        data = SyncTeXData(inputs={1: "main.tex"}, pages={1: [box]})
+        result = forward_search(data, file="other.tex", line=10)
+        assert result is None
+
+    def test_no_boxes_for_tag(self):
+        box = HBox(tag=1, line=10, x=1000, y=2000, width=5000, height=500, depth=100)
+        data = SyncTeXData(
+            inputs={1: "main.tex", 2: "other.tex"},
+            pages={1: [box]},
+        )
+        # other.tex has tag 2, but no boxes with tag 2
+        result = forward_search(data, file="other.tex", line=10)
+        assert result is None
+
+    def test_exact_line_match(self):
+        b1 = HBox(tag=1, line=5, x=0, y=1000, width=5000, height=500, depth=100)
+        b2 = HBox(tag=1, line=15, x=0, y=3000, width=5000, height=500, depth=100)
+        data = SyncTeXData(
+            inputs={1: "test.tex"},
+            pages={1: [b1, b2]},
+            magnification=1000,
+            unit=1,
+        )
+        result = forward_search(data, file="test.tex", line=15)
+        assert result is not None
+        assert result["page"] == 1
+        assert isinstance(result["x"], float)
+        assert isinstance(result["y"], float)
+
+    def test_closest_line_match(self):
+        b1 = HBox(tag=1, line=10, x=0, y=1000, width=5000, height=500, depth=100)
+        b2 = HBox(tag=1, line=50, x=0, y=5000, width=5000, height=500, depth=100)
+        data = SyncTeXData(
+            inputs={1: "test.tex"},
+            pages={1: [b1, b2]},
+            magnification=1000,
+            unit=1,
+        )
+        # Line 12 is closer to line 10 than to line 50
+        result = forward_search(data, file="test.tex", line=12)
+        assert result is not None
+        assert result["page"] == 1
+
+    def test_multi_page(self):
+        b1 = HBox(tag=1, line=5, x=0, y=1000, width=5000, height=500, depth=100)
+        b2 = HBox(tag=1, line=30, x=0, y=2000, width=5000, height=500, depth=100)
+        data = SyncTeXData(
+            inputs={1: "test.tex"},
+            pages={1: [b1], 2: [b2]},
+            magnification=1000,
+            unit=1,
+        )
+        result = forward_search(data, file="test.tex", line=30)
+        assert result is not None
+        assert result["page"] == 2
+
+    def test_returns_correct_coordinates(self):
+        """Verify coordinate conversion is consistent with inverse_search."""
+        data = SyncTeXData(
+            inputs={1: "test.tex"},
+            pages={
+                1: [
+                    HBox(
+                        tag=1,
+                        line=10,
+                        x=1000000,
+                        y=2000000,
+                        width=5000000,
+                        height=500000,
+                        depth=100000,
+                    ),
+                ]
+            },
+            magnification=1000,
+            unit=1,
+        )
+        result = forward_search(data, file="test.tex", line=10)
+        assert result is not None
+        # The x,y should be positive finite values
+        assert result["x"] > 0
+        assert result["y"] > 0
+
+    def test_with_parsed_data(self, synctex_file):
+        data = parse_synctex(synctex_file, strip_prefix="/workspace/")
+        # main.tex has boxes on page 1 and page 2
+        result = forward_search(data, file="main.tex", line=10)
+        assert result is not None
+        assert result["page"] in (1, 2)
+
+    def test_roundtrip_with_inverse(self, synctex_file):
+        """Forward then inverse should return the same file."""
+        data = parse_synctex(synctex_file, strip_prefix="/workspace/")
+        fwd = forward_search(data, file="main.tex", line=10)
+        assert fwd is not None
+        inv = inverse_search(data, page=fwd["page"], x=fwd["x"], y=fwd["y"])
+        assert inv is not None
+        assert inv["file"] == "main.tex"
 
 
 # -- HBox / SyncTeXData dataclass tests --

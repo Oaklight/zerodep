@@ -20,7 +20,7 @@ The `sparse_search` module provides a single-file inverted-index search engine s
 - **Persistence** -- save/load in JSON or SQLite format
 - **Pluggable tokenizer** -- default Unicode word splitter; plug in `jieba.lcut`, NLTK, etc.
 - **Bayesian BM25 calibration** -- convert raw BM25 scores to calibrated [0,1] probabilities via sigmoid likelihood, composite prior, and Bayesian posterior
-- **Inverted index** -- O(matched_docs) search, 34-132x faster than rank-bm25 at query time
+- **Inverted index** -- O(matched_docs) search, significantly faster than rank-bm25 for selective queries; see [benchmark](../benchmarks/sparse_search.md) for details across different query types and corpus sizes
 - **RRF (Reciprocal Rank Fusion)** -- merge multiple ranked result lists (e.g. BM25 + dense vector) into a single fused ranking
 - **MMR (Maximal Marginal Relevance)** -- re-rank results for diversity with user-provided similarity function
 
@@ -281,7 +281,13 @@ Only the `tokenize` function affects indexing. All other parameters (`variant`, 
 
 ### Indexing vs Search Performance
 
-The index uses a 3-level inverted index (`term -> doc_id -> field -> tf`) to support both single-field and multi-field (BM25F) modes uniformly. This adds overhead during indexing (~6.7x slower than rank-bm25) but enables 34-132x faster search thanks to O(matched_docs) query traversal. Since indexing is typically a one-time cost and search is the frequent operation, this trade-off favors real-world usage patterns.
+The index uses a 3-level inverted index (`term -> doc_id -> field -> tf`) to support both single-field and multi-field (BM25F) modes uniformly. This adds overhead during indexing compared to numpy-backed libraries, but search performance depends on query selectivity:
+
+- **Selective queries** (few matching documents): the inverted index traverses only matching postings O(matched_docs), significantly faster than O(N) full corpus scan used by rank-bm25 and bm25s.
+- **Broad queries** (common words matching most documents): numpy-backed libraries (bm25s, rank-bm25) can be faster due to vectorized array operations vs Python dict iteration.
+- **Small corpora** (< 1K docs): all implementations perform comparably in the sub-millisecond range.
+
+See [benchmark](../benchmarks/sparse_search.md) for detailed numbers.
 
 Insert time is **O(tokens_in_doc)** per document and does not degrade as the index grows -- the 1st document and the 100,000th document with the same token count take the same time, since all underlying operations (dict lookup, set add) are O(1) amortized.
 
@@ -386,24 +392,36 @@ Maximal Marginal Relevance -- re-rank results for diversity.
 
 Jaccard similarity coefficient: `|A ∩ B| / |A ∪ B|`. Returns 0.0 when both sets are empty.
 
-## Comparison with rank-bm25
+## Comparison with rank-bm25 and bm25s
 
-| Feature | zerodep sparse_search | rank-bm25 |
-|---------|----------------------|-----------|
-| Dependencies | None (stdlib only) | numpy |
-| BM25 variants | BM25/BM25+/BM25L/BM25F/TF-IDF | BM25Okapi/BM25Plus/BM25L |
-| Multi-field (BM25F) | Yes | No |
-| Search complexity | O(matched_docs) | O(N) full corpus scan |
-| Dynamic add/remove | Yes | No (rebuild required) |
-| Metadata filtering | Yes | No |
-| Persistence | JSON + SQLite | No |
-| Custom tokenizer | Yes | Yes |
-| Search speed (1000 docs) | **132x faster** | baseline |
-| Indexing speed (1000 docs) | 6.7x slower | baseline |
+| Feature | zerodep sparse_search | rank-bm25 | bm25s |
+|---------|----------------------|-----------|-------|
+| Dependencies | None (stdlib only) | numpy | numpy, scipy |
+| BM25 variants | BM25/BM25+/BM25L/BM25F/TF-IDF | BM25Okapi/BM25Plus/BM25L | BM25 (Lucene default) |
+| Multi-field (BM25F) | Yes | No | No |
+| Search complexity | O(matched_docs) | O(N) full corpus scan | O(N) sparse matrix |
+| Dynamic add/remove | Yes | No (rebuild required) | No (rebuild required) |
+| Metadata filtering | Yes | No | No |
+| Persistence | JSON + SQLite | No | Yes |
+| Custom tokenizer | Yes | Yes | Yes |
+| RRF / MMR | Built-in | No | No |
+| Bayesian calibration | Yes | No | No |
 
-**When to use zerodep:** You need dynamic document management, multi-field search, metadata filtering, or zero-dependency deployment.
+### Performance Profile
 
-**When to use rank-bm25:** You only need static BM25 scoring with numpy already in your stack.
+Search performance depends on **query selectivity** — how many documents match the query terms:
+
+- **Selective queries** (rare terms, few matches): zerodep is fastest (inverted index advantage)
+- **Broad queries** (common terms, most docs match): bm25s is fastest (numpy vectorization)
+- **Small corpora** (< 1K docs): all three are sub-millisecond, negligible difference
+
+See [benchmark](../benchmarks/sparse_search.md) for detailed numbers.
+
+**When to use zerodep:** Small-to-medium corpora, dynamic document management, multi-field search (BM25F), metadata filtering, RRF/MMR fusion, zero-dependency deployment, or selective queries on larger corpora.
+
+**When to use rank-bm25:** Simple static BM25 scoring with numpy already in your stack.
+
+**When to use bm25s:** Large static corpora with broad queries where numpy vectorization provides better throughput.
 
 ## Benchmark
 

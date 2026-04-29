@@ -103,6 +103,18 @@ td { white-space: nowrap; }
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 1rem; height: 400px;
 }
+.back-to-top {
+  position: fixed; bottom: 2rem; right: 2rem; width: 40px; height: 40px;
+  border-radius: 50%; border: 1px solid var(--border);
+  background: var(--card-bg); color: var(--fg); font-size: 1.2rem;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transition: opacity .3s, border-color .2s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); z-index: 100;
+}
+.back-to-top.visible { opacity: 1; pointer-events: auto; }
+.back-to-top:hover { border-color: var(--accent); }
+.time-ago { font-style: italic; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
@@ -112,22 +124,22 @@ td { white-space: nowrap; }
 <h1>httpclient</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ff747a7 | Commit: ff747a73 | 2026-04-29T02:20:05.641984+00:00</p>
+<p class="meta">Version: 3b7e074 | Commit: 3b7e0741 | 2026-04-29T02:56:10.773663+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T02:56:10.773663+00:00"></span></p>
 <h2>httpclient</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Async Client Get</td><td>zerodep</td><td>httpx</td><td>1.04 ms</td><td>24.84 ms</td><td>962.2</td><td>40.3</td><td class="ratio-cell faster">23.9x faster</td></tr>
-<tr><td>Async File Upload</td><td>zerodep</td><td>httpx</td><td>1.43 ms</td><td>25.53 ms</td><td>699.7</td><td>39.2</td><td class="ratio-cell faster">17.9x faster</td></tr>
-<tr><td>Async Get</td><td>zerodep</td><td>httpx</td><td>1.03 ms</td><td>25.66 ms</td><td>975.1</td><td>39.0</td><td class="ratio-cell faster">25.0x faster</td></tr>
-<tr><td>Async Post JSON</td><td>zerodep</td><td>httpx</td><td>1.15 ms</td><td>25.72 ms</td><td>869.4</td><td>38.9</td><td class="ratio-cell faster">22.4x faster</td></tr>
-<tr><td>Async Streaming</td><td>zerodep</td><td>httpx</td><td>1.08 ms</td><td>25.75 ms</td><td>929.4</td><td>38.8</td><td class="ratio-cell faster">23.9x faster</td></tr>
-<tr><td>Sync Client Get</td><td>zerodep</td><td>httpx</td><td>593.4 µs</td><td>968.1 µs</td><td>1.7K</td><td>1.0K</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Sync File Upload</td><td>zerodep</td><td>httpx</td><td>908.6 µs</td><td>18.63 ms</td><td>1.1K</td><td>53.7</td><td class="ratio-cell faster">20.5x faster</td></tr>
-<tr><td>Sync Get</td><td>zerodep</td><td>httpx</td><td>575.5 µs</td><td>18.46 ms</td><td>1.7K</td><td>54.2</td><td class="ratio-cell faster">32.1x faster</td></tr>
-<tr><td>Sync Gzip Decompression</td><td>zerodep</td><td>httpx</td><td>598.7 µs</td><td>18.16 ms</td><td>1.7K</td><td>55.1</td><td class="ratio-cell faster">30.3x faster</td></tr>
-<tr><td>Sync Post JSON</td><td>zerodep</td><td>httpx</td><td>646.7 µs</td><td>18.40 ms</td><td>1.5K</td><td>54.3</td><td class="ratio-cell faster">28.5x faster</td></tr>
-<tr><td>Sync Streaming</td><td>zerodep</td><td>httpx</td><td>585.9 µs</td><td>18.05 ms</td><td>1.7K</td><td>55.4</td><td class="ratio-cell faster">30.8x faster</td></tr>
+<tr><td>Async Client Get</td><td>zerodep</td><td>httpx</td><td>1.17 ms</td><td>26.53 ms</td><td>855.7</td><td>37.7</td><td class="ratio-cell faster">22.7x faster</td></tr>
+<tr><td>Async File Upload</td><td>zerodep</td><td>httpx</td><td>1.52 ms</td><td>26.19 ms</td><td>659.2</td><td>38.2</td><td class="ratio-cell faster">17.3x faster</td></tr>
+<tr><td>Async Get</td><td>zerodep</td><td>httpx</td><td>1.11 ms</td><td>25.17 ms</td><td>902.0</td><td>39.7</td><td class="ratio-cell faster">22.7x faster</td></tr>
+<tr><td>Async Post JSON</td><td>zerodep</td><td>httpx</td><td>1.24 ms</td><td>26.07 ms</td><td>803.7</td><td>38.4</td><td class="ratio-cell faster">21.0x faster</td></tr>
+<tr><td>Async Streaming</td><td>zerodep</td><td>httpx</td><td>1.17 ms</td><td>25.30 ms</td><td>852.5</td><td>39.5</td><td class="ratio-cell faster">21.6x faster</td></tr>
+<tr><td>Sync Client Get</td><td>zerodep</td><td>httpx</td><td>621.5 µs</td><td>1.02 ms</td><td>1.6K</td><td>980.1</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Sync File Upload</td><td>zerodep</td><td>httpx</td><td>980.6 µs</td><td>19.17 ms</td><td>1.0K</td><td>52.2</td><td class="ratio-cell faster">19.5x faster</td></tr>
+<tr><td>Sync Get</td><td>zerodep</td><td>httpx</td><td>617.4 µs</td><td>19.07 ms</td><td>1.6K</td><td>52.4</td><td class="ratio-cell faster">30.9x faster</td></tr>
+<tr><td>Sync Gzip Decompression</td><td>zerodep</td><td>httpx</td><td>643.8 µs</td><td>18.96 ms</td><td>1.6K</td><td>52.7</td><td class="ratio-cell faster">29.5x faster</td></tr>
+<tr><td>Sync Post JSON</td><td>zerodep</td><td>httpx</td><td>694.5 µs</td><td>18.78 ms</td><td>1.4K</td><td>53.2</td><td class="ratio-cell faster">27.0x faster</td></tr>
+<tr><td>Sync Streaming</td><td>zerodep</td><td>httpx</td><td>636.6 µs</td><td>18.73 ms</td><td>1.6K</td><td>53.4</td><td class="ratio-cell faster">29.4x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -136,6 +148,7 @@ td { white-space: nowrap; }
 <div class="trend-chart-container"><canvas id="trend-chart"></canvas></div>
 </div>
 
+<button class="back-to-top" id="back-to-top" title="Back to top">↑</button>
 <script>
 async function loadHistory(dataJsPath) {
   try {
@@ -198,13 +211,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [962.2361042932391, 699.7186417522034, 975.1063460547344, 869.3564533232459, 929.4261804457593, 1685.0715296946732, 1100.5480373847909, 1737.687729989837, 1670.4136032040258, 1546.3238680044599, 1706.6429804660013],
+        data: [855.6674636214801, 659.2392372346511, 902.0031645078317, 803.7495011588538, 852.4757512598833, 1609.083308271454, 1019.8158509373623, 1619.7550951775017, 1553.3110232757736, 1439.8801052431716, 1570.9557880279929],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "httpx" + ' (ops/s)',
-        data: [40.25086874523856, 39.1718009537916, 38.96639732726351, 38.87467219989718, 38.84109551426263, 1032.932989129639, 53.662776991825986, 54.161315206320786, 55.052016119568776, 54.34653541043922, 55.399361828524185],
+        data: [37.69384912503977, 38.17814869039359, 39.72871335691205, 38.351728402006046, 39.52999101580225, 980.136227164878, 52.16672066591337, 52.42912735422398, 52.72927185694536, 53.24685733424421, 53.399029803709944],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -324,6 +337,36 @@ new Chart(document.getElementById('chart_0'), {
     }
     setTheme(cur === 'dark' ? 'light' : 'dark');
   });
+})();
+(function() {
+  // Back-to-top button
+  var btt = document.getElementById('back-to-top');
+  if (btt) {
+    window.addEventListener('scroll', function() {
+      btt.classList.toggle('visible', window.scrollY > 300);
+    });
+    btt.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  // Time-ago display
+  var ta = document.getElementById('time-ago');
+  if (ta) {
+    var ts = ta.getAttribute('data-timestamp');
+    if (ts) {
+      var d = new Date(ts), now = new Date(), diff = now - d;
+      if (!isNaN(d.getTime())) {
+        var s = Math.floor(diff / 1000), m = Math.floor(s / 60);
+        var h = Math.floor(m / 60), dd = Math.floor(h / 24);
+        var txt;
+        if (dd > 0) txt = dd + (dd === 1 ? ' day' : ' days') + ' ago';
+        else if (h > 0) txt = h + (h === 1 ? ' hour' : ' hours') + ' ago';
+        else if (m > 0) txt = m + (m === 1 ? ' minute' : ' minutes') + ' ago';
+        else txt = 'just now';
+        ta.textContent = '(' + txt + ')';
+      }
+    }
+  }
 })();
 </script>
 </body>

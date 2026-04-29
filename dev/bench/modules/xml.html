@@ -103,6 +103,18 @@ td { white-space: nowrap; }
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 1rem; height: 400px;
 }
+.back-to-top {
+  position: fixed; bottom: 2rem; right: 2rem; width: 40px; height: 40px;
+  border-radius: 50%; border: 1px solid var(--border);
+  background: var(--card-bg); color: var(--fg); font-size: 1.2rem;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transition: opacity .3s, border-color .2s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); z-index: 100;
+}
+.back-to-top.visible { opacity: 1; pointer-events: auto; }
+.back-to-top:hover { border-color: var(--accent); }
+.time-ago { font-style: italic; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
@@ -112,26 +124,26 @@ td { white-space: nowrap; }
 <h1>xml</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ff747a7 | Commit: ff747a73 | 2026-04-29T02:20:05.641984+00:00</p>
+<p class="meta">Version: 3b7e074 | Commit: 3b7e0741 | 2026-04-29T02:56:10.773663+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T02:56:10.773663+00:00"></span></p>
 <h2>xml</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>xmltodict</td><td>5.11 ms</td><td>5.70 ms</td><td>195.6</td><td>175.4</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>375.9 µs</td><td>432.5 µs</td><td>2.7K</td><td>2.3K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>xmltodict</td><td>14.7 µs</td><td>16.6 µs</td><td>67.9K</td><td>60.1K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Unparse (Large)</td><td>zerodep</td><td>xmltodict</td><td>3.92 ms</td><td>6.48 ms</td><td>255.0</td><td>154.3</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Unparse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>266.9 µs</td><td>455.3 µs</td><td>3.7K</td><td>2.2K</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Unparse (Small)</td><td>zerodep</td><td>xmltodict</td><td>14.9 µs</td><td>19.3 µs</td><td>67.1K</td><td>51.8K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>xmltodict</td><td>5.52 ms</td><td>5.92 ms</td><td>181.2</td><td>168.9</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>409.6 µs</td><td>450.1 µs</td><td>2.4K</td><td>2.2K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>xmltodict</td><td>15.4 µs</td><td>18.0 µs</td><td>64.9K</td><td>55.6K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Unparse (Large)</td><td>zerodep</td><td>xmltodict</td><td>4.19 ms</td><td>6.67 ms</td><td>238.9</td><td>150.0</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Unparse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>294.8 µs</td><td>466.3 µs</td><td>3.4K</td><td>2.1K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Unparse (Small)</td><td>zerodep</td><td>xmltodict</td><td>15.0 µs</td><td>20.2 µs</td><td>66.9K</td><td>49.5K</td><td class="ratio-cell faster">1.4x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Extract Tags</td><td>extract_all</td><td>713.4 µs</td><td>1.4K</td></tr>
-<tr><td>Extract Tags</td><td>extract_filtered</td><td>423.9 µs</td><td>2.4K</td></tr>
-<tr><td>Extract Tags</td><td>extract_first_only</td><td>9.3 µs</td><td>107.9K</td></tr>
+<tr><td>Extract Tags</td><td>extract_all</td><td>764.3 µs</td><td>1.3K</td></tr>
+<tr><td>Extract Tags</td><td>extract_filtered</td><td>462.7 µs</td><td>2.2K</td></tr>
+<tr><td>Extract Tags</td><td>extract_first_only</td><td>9.9 µs</td><td>100.5K</td></tr>
 </tbody></table>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -139,6 +151,7 @@ td { white-space: nowrap; }
 <div class="trend-chart-container"><canvas id="trend-chart"></canvas></div>
 </div>
 
+<button class="back-to-top" id="back-to-top" title="Back to top">↑</button>
 <script>
 async function loadHistory(dataJsPath) {
   try {
@@ -201,13 +214,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [195.58033549612045, 2660.352710009782, 67875.35578687984, 254.9719018479847, 3746.6579036536414, 67090.99678864273],
+        data: [181.15937106165993, 2441.676177207262, 64881.73304798158, 238.8934851219029, 3391.6043187297364, 66861.75756943607],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "xmltodict" + ' (ops/s)',
-        data: [175.44311675699436, 2312.2127242816587, 60098.587946591564, 154.2614962108873, 2196.2649466969374, 51751.05662258236],
+        data: [168.87254784753804, 2221.705538233345, 55613.43550755865, 150.036165452231, 2144.4548759809895, 49463.01437697522],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -327,6 +340,36 @@ new Chart(document.getElementById('chart_0'), {
     }
     setTheme(cur === 'dark' ? 'light' : 'dark');
   });
+})();
+(function() {
+  // Back-to-top button
+  var btt = document.getElementById('back-to-top');
+  if (btt) {
+    window.addEventListener('scroll', function() {
+      btt.classList.toggle('visible', window.scrollY > 300);
+    });
+    btt.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  // Time-ago display
+  var ta = document.getElementById('time-ago');
+  if (ta) {
+    var ts = ta.getAttribute('data-timestamp');
+    if (ts) {
+      var d = new Date(ts), now = new Date(), diff = now - d;
+      if (!isNaN(d.getTime())) {
+        var s = Math.floor(diff / 1000), m = Math.floor(s / 60);
+        var h = Math.floor(m / 60), dd = Math.floor(h / 24);
+        var txt;
+        if (dd > 0) txt = dd + (dd === 1 ? ' day' : ' days') + ' ago';
+        else if (h > 0) txt = h + (h === 1 ? ' hour' : ' hours') + ' ago';
+        else if (m > 0) txt = m + (m === 1 ? ' minute' : ' minutes') + ' ago';
+        else txt = 'just now';
+        ta.textContent = '(' + txt + ')';
+      }
+    }
+  }
 })();
 </script>
 </body>

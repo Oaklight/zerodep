@@ -103,6 +103,18 @@ td { white-space: nowrap; }
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 1rem; height: 400px;
 }
+.back-to-top {
+  position: fixed; bottom: 2rem; right: 2rem; width: 40px; height: 40px;
+  border-radius: 50%; border: 1px solid var(--border);
+  background: var(--card-bg); color: var(--fg); font-size: 1.2rem;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transition: opacity .3s, border-color .2s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); z-index: 100;
+}
+.back-to-top.visible { opacity: 1; pointer-events: auto; }
+.back-to-top:hover { border-color: var(--accent); }
+.time-ago { font-style: italic; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
@@ -112,17 +124,17 @@ td { white-space: nowrap; }
 <h1>yaml</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ff747a7 | Commit: ff747a73 | 2026-04-29T02:20:05.641984+00:00</p>
+<p class="meta">Version: 3b7e074 | Commit: 3b7e0741 | 2026-04-29T02:56:10.773663+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T02:56:10.773663+00:00"></span></p>
 <h2>yaml</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Dump (Large)</td><td>zerodep</td><td>PyYAML</td><td>2.49 ms</td><td>17.17 ms</td><td>402.4</td><td>58.2</td><td class="ratio-cell faster">6.9x faster</td></tr>
-<tr><td>Dump (Medium)</td><td>zerodep</td><td>PyYAML</td><td>115.5 µs</td><td>828.1 µs</td><td>8.7K</td><td>1.2K</td><td class="ratio-cell faster">7.2x faster</td></tr>
-<tr><td>Dump (Small)</td><td>zerodep</td><td>PyYAML</td><td>18.5 µs</td><td>135.9 µs</td><td>54.1K</td><td>7.4K</td><td class="ratio-cell faster">7.4x faster</td></tr>
-<tr><td>Load (Large)</td><td>zerodep</td><td>PyYAML</td><td>5.87 ms</td><td>39.45 ms</td><td>170.3</td><td>25.3</td><td class="ratio-cell faster">6.7x faster</td></tr>
-<tr><td>Load (Medium)</td><td>zerodep</td><td>PyYAML</td><td>279.7 µs</td><td>1.63 ms</td><td>3.6K</td><td>613.7</td><td class="ratio-cell faster">5.8x faster</td></tr>
-<tr><td>Load (Small)</td><td>zerodep</td><td>PyYAML</td><td>42.5 µs</td><td>241.0 µs</td><td>23.5K</td><td>4.1K</td><td class="ratio-cell faster">5.7x faster</td></tr>
+<tr><td>Dump (Large)</td><td>zerodep</td><td>PyYAML</td><td>2.79 ms</td><td>22.31 ms</td><td>358.3</td><td>44.8</td><td class="ratio-cell faster">8.0x faster</td></tr>
+<tr><td>Dump (Medium)</td><td>zerodep</td><td>PyYAML</td><td>148.5 µs</td><td>1.02 ms</td><td>6.7K</td><td>980.4</td><td class="ratio-cell faster">6.9x faster</td></tr>
+<tr><td>Dump (Small)</td><td>zerodep</td><td>PyYAML</td><td>20.6 µs</td><td>180.1 µs</td><td>48.5K</td><td>5.6K</td><td class="ratio-cell faster">8.7x faster</td></tr>
+<tr><td>Load (Large)</td><td>zerodep</td><td>PyYAML</td><td>5.61 ms</td><td>44.25 ms</td><td>178.3</td><td>22.6</td><td class="ratio-cell faster">7.9x faster</td></tr>
+<tr><td>Load (Medium)</td><td>zerodep</td><td>PyYAML</td><td>295.3 µs</td><td>1.98 ms</td><td>3.4K</td><td>504.7</td><td class="ratio-cell faster">6.7x faster</td></tr>
+<tr><td>Load (Small)</td><td>zerodep</td><td>PyYAML</td><td>44.4 µs</td><td>304.7 µs</td><td>22.5K</td><td>3.3K</td><td class="ratio-cell faster">6.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -131,6 +143,7 @@ td { white-space: nowrap; }
 <div class="trend-chart-container"><canvas id="trend-chart"></canvas></div>
 </div>
 
+<button class="back-to-top" id="back-to-top" title="Back to top">↑</button>
 <script>
 async function loadHistory(dataJsPath) {
   try {
@@ -193,13 +206,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [402.40650291748864, 8657.555911687405, 54139.64208168801, 170.31213282791785, 3575.7953286633665, 23513.638827248786],
+        data: [358.25929876998794, 6733.364881470588, 48532.903077004754, 178.2587896179711, 3386.110509582238, 22503.31174168445],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "PyYAML" + ' (ops/s)',
-        data: [58.2303018900136, 1207.5307926954883, 7356.2698463542565, 25.348576743415247, 613.6790991777583, 4149.375771513147],
+        data: [44.81623106400532, 980.439479649477, 5552.645319057463, 22.60048398975815, 504.73708043192676, 3281.964933367026],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -319,6 +332,36 @@ new Chart(document.getElementById('chart_0'), {
     }
     setTheme(cur === 'dark' ? 'light' : 'dark');
   });
+})();
+(function() {
+  // Back-to-top button
+  var btt = document.getElementById('back-to-top');
+  if (btt) {
+    window.addEventListener('scroll', function() {
+      btt.classList.toggle('visible', window.scrollY > 300);
+    });
+    btt.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  // Time-ago display
+  var ta = document.getElementById('time-ago');
+  if (ta) {
+    var ts = ta.getAttribute('data-timestamp');
+    if (ts) {
+      var d = new Date(ts), now = new Date(), diff = now - d;
+      if (!isNaN(d.getTime())) {
+        var s = Math.floor(diff / 1000), m = Math.floor(s / 60);
+        var h = Math.floor(m / 60), dd = Math.floor(h / 24);
+        var txt;
+        if (dd > 0) txt = dd + (dd === 1 ? ' day' : ' days') + ' ago';
+        else if (h > 0) txt = h + (h === 1 ? ' hour' : ' hours') + ' ago';
+        else if (m > 0) txt = m + (m === 1 ? ' minute' : ' minutes') + ' ago';
+        else txt = 'just now';
+        ta.textContent = '(' + txt + ')';
+      }
+    }
+  }
 })();
 </script>
 </body>

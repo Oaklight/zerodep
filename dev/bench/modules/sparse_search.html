@@ -103,6 +103,18 @@ td { white-space: nowrap; }
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 1rem; height: 400px;
 }
+.back-to-top {
+  position: fixed; bottom: 2rem; right: 2rem; width: 40px; height: 40px;
+  border-radius: 50%; border: 1px solid var(--border);
+  background: var(--card-bg); color: var(--fg); font-size: 1.2rem;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transition: opacity .3s, border-color .2s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); z-index: 100;
+}
+.back-to-top.visible { opacity: 1; pointer-events: auto; }
+.back-to-top:hover { border-color: var(--accent); }
+.time-ago { font-style: italic; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
@@ -112,28 +124,28 @@ td { white-space: nowrap; }
 <h1>sparse_search</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ff747a7 | Commit: ff747a73 | 2026-04-29T02:20:05.641984+00:00</p>
+<p class="meta">Version: 3b7e074 | Commit: 3b7e0741 | 2026-04-29T02:56:10.773663+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T02:56:10.773663+00:00"></span></p>
 <h2>sparse_search</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>126.09 ms</td><td>14.31 ms</td><td>7.9</td><td>69.9</td><td class="ratio-cell slower">8.8x slower</td></tr>
-<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>3.1 µs</td><td>379.3 µs</td><td>325.9K</td><td>2.6K</td><td class="ratio-cell faster">123.6x faster</td></tr>
-<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>3.0 µs</td><td>100.8 µs</td><td>337.3K</td><td>9.9K</td><td class="ratio-cell faster">34.0x faster</td></tr>
+<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>124.79 ms</td><td>13.68 ms</td><td>8.0</td><td>73.1</td><td class="ratio-cell slower">9.1x slower</td></tr>
+<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>3.2 µs</td><td>386.3 µs</td><td>309.4K</td><td>2.6K</td><td class="ratio-cell faster">119.5x faster</td></tr>
+<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>3.2 µs</td><td>115.3 µs</td><td>314.8K</td><td>8.7K</td><td class="ratio-cell faster">36.3x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>1.13 ms</td><td>886.2</td></tr>
-<tr><td>Calibration Performance</td><td>search_raw</td><td>39.2 µs</td><td>25.5K</td></tr>
-<tr><td>Calibration Performance</td><td>search_calibrated</td><td>74.7 µs</td><td>13.4K</td></tr>
-<tr><td>MMRPerformance</td><td>mmr_100_candidates</td><td>3.94 ms</td><td>253.6</td></tr>
+<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>1.13 ms</td><td>888.1</td></tr>
+<tr><td>Calibration Performance</td><td>search_raw</td><td>42.7 µs</td><td>23.4K</td></tr>
+<tr><td>Calibration Performance</td><td>search_calibrated</td><td>80.6 µs</td><td>12.4K</td></tr>
+<tr><td>MMRPerformance</td><td>mmr_100_candidates</td><td>4.15 ms</td><td>241.1</td></tr>
 <tr><td>MMRPerformance</td><td>mmr_500_candidates</td><td>24.51 ms</td><td>40.8</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_2_lists_1000_results</td><td>919.8 µs</td><td>1.1K</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_10_lists_100_results</td><td>452.3 µs</td><td>2.2K</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_overlapping_docs</td><td>859.4 µs</td><td>1.2K</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_2_lists_1000_results</td><td>873.5 µs</td><td>1.1K</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_10_lists_100_results</td><td>431.1 µs</td><td>2.3K</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_overlapping_docs</td><td>818.7 µs</td><td>1.2K</td></tr>
 </tbody></table>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -141,6 +153,7 @@ td { white-space: nowrap; }
 <div class="trend-chart-container"><canvas id="trend-chart"></canvas></div>
 </div>
 
+<button class="back-to-top" id="back-to-top" title="Back to top">↑</button>
 <script>
 async function loadHistory(dataJsPath) {
   try {
@@ -203,13 +216,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [7.930683038641316, 325889.11654218985, 337306.5328924842],
+        data: [8.013461745699725, 309397.29843916255, 314777.60438787984],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "rank-bm25" + ' (ops/s)',
-        data: [69.87179676659383, 2636.7719629945504, 9918.391479563303],
+        data: [73.11350008149597, 2588.3500313253753, 8675.03157515341],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -329,6 +342,36 @@ new Chart(document.getElementById('chart_0'), {
     }
     setTheme(cur === 'dark' ? 'light' : 'dark');
   });
+})();
+(function() {
+  // Back-to-top button
+  var btt = document.getElementById('back-to-top');
+  if (btt) {
+    window.addEventListener('scroll', function() {
+      btt.classList.toggle('visible', window.scrollY > 300);
+    });
+    btt.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  // Time-ago display
+  var ta = document.getElementById('time-ago');
+  if (ta) {
+    var ts = ta.getAttribute('data-timestamp');
+    if (ts) {
+      var d = new Date(ts), now = new Date(), diff = now - d;
+      if (!isNaN(d.getTime())) {
+        var s = Math.floor(diff / 1000), m = Math.floor(s / 60);
+        var h = Math.floor(m / 60), dd = Math.floor(h / 24);
+        var txt;
+        if (dd > 0) txt = dd + (dd === 1 ? ' day' : ' days') + ' ago';
+        else if (h > 0) txt = h + (h === 1 ? ' hour' : ' hours') + ' ago';
+        else if (m > 0) txt = m + (m === 1 ? ' minute' : ' minutes') + ' ago';
+        else txt = 'just now';
+        ta.textContent = '(' + txt + ')';
+      }
+    }
+  }
 })();
 </script>
 </body>

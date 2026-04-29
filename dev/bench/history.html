@@ -103,6 +103,18 @@ td { white-space: nowrap; }
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 1rem; height: 400px;
 }
+.back-to-top {
+  position: fixed; bottom: 2rem; right: 2rem; width: 40px; height: 40px;
+  border-radius: 50%; border: 1px solid var(--border);
+  background: var(--card-bg); color: var(--fg); font-size: 1.2rem;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transition: opacity .3s, border-color .2s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); z-index: 100;
+}
+.back-to-top.visible { opacity: 1; pointer-events: auto; }
+.back-to-top:hover { border-color: var(--accent); }
+.time-ago { font-style: italic; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
@@ -112,7 +124,7 @@ td { white-space: nowrap; }
 <h1>📈 Performance History</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ff747a7 &nbsp;|&nbsp; Commit: ff747a73 &nbsp;|&nbsp; 2026-04-29T02:20:05.641984+00:00</p>
+<p class="meta">Version: 3b7e074 &nbsp;|&nbsp; Commit: 3b7e0741 &nbsp;|&nbsp; 2026-04-29T02:56:10.773663+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T02:56:10.773663+00:00"></span></p>
 <div style="margin-bottom:1.5rem;font-size:.9rem"><a href="index.html" style="margin-right:1rem">← Back to Report</a><a href="#hist-a2a" style="margin-right:1rem">a2a</a> <a href="#hist-acp" style="margin-right:1rem">acp</a> <a href="#hist-aes" style="margin-right:1rem">aes</a> <a href="#hist-cache" style="margin-right:1rem">cache</a> <a href="#hist-config" style="margin-right:1rem">config</a> <a href="#hist-diff" style="margin-right:1rem">diff</a> <a href="#hist-dotenv" style="margin-right:1rem">dotenv</a> <a href="#hist-frontmatter" style="margin-right:1rem">frontmatter</a> <a href="#hist-httpclient" style="margin-right:1rem">httpclient</a> <a href="#hist-jsonc" style="margin-right:1rem">jsonc</a> <a href="#hist-jsonrpc" style="margin-right:1rem">jsonrpc</a> <a href="#hist-jsonschema" style="margin-right:1rem">jsonschema</a> <a href="#hist-llmstxt" style="margin-right:1rem">llmstxt</a> <a href="#hist-markdown" style="margin-right:1rem">markdown</a> <a href="#hist-persistdict" style="margin-right:1rem">persistdict</a> <a href="#hist-png" style="margin-right:1rem">png</a> <a href="#hist-protobuf" style="margin-right:1rem">protobuf</a> <a href="#hist-qr" style="margin-right:1rem">qr</a> <a href="#hist-readability" style="margin-right:1rem">readability</a> <a href="#hist-retry" style="margin-right:1rem">retry</a> <a href="#hist-runner" style="margin-right:1rem">runner</a> <a href="#hist-scheduler" style="margin-right:1rem">scheduler</a> <a href="#hist-semver" style="margin-right:1rem">semver</a> <a href="#hist-soup" style="margin-right:1rem">soup</a> <a href="#hist-sparse_search" style="margin-right:1rem">sparse_search</a> <a href="#hist-sse" style="margin-right:1rem">sse</a> <a href="#hist-structlog" style="margin-right:1rem">structlog</a> <a href="#hist-tabulate" style="margin-right:1rem">tabulate</a> <a href="#hist-toon" style="margin-right:1rem">toon</a> <a href="#hist-useragent" style="margin-right:1rem">useragent</a> <a href="#hist-validate" style="margin-right:1rem">validate</a> <a href="#hist-xml" style="margin-right:1rem">xml</a> <a href="#hist-yaml" style="margin-right:1rem">yaml</a></div>
 <div class="history-module-section" id="hist-a2a">
 <h2>a2a</h2>
@@ -247,6 +259,7 @@ td { white-space: nowrap; }
 <div class="history-chart-container"><canvas id="hist-chart-yaml"></canvas></div>
 </div>
 
+<button class="back-to-top" id="back-to-top" title="Back to top">↑</button>
 <script>
 async function loadHistory(dataJsPath) {
   try {
@@ -410,6 +423,36 @@ var TREND_COLORS = [
     }
     setTheme(cur === 'dark' ? 'light' : 'dark');
   });
+})();
+(function() {
+  // Back-to-top button
+  var btt = document.getElementById('back-to-top');
+  if (btt) {
+    window.addEventListener('scroll', function() {
+      btt.classList.toggle('visible', window.scrollY > 300);
+    });
+    btt.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  // Time-ago display
+  var ta = document.getElementById('time-ago');
+  if (ta) {
+    var ts = ta.getAttribute('data-timestamp');
+    if (ts) {
+      var d = new Date(ts), now = new Date(), diff = now - d;
+      if (!isNaN(d.getTime())) {
+        var s = Math.floor(diff / 1000), m = Math.floor(s / 60);
+        var h = Math.floor(m / 60), dd = Math.floor(h / 24);
+        var txt;
+        if (dd > 0) txt = dd + (dd === 1 ? ' day' : ' days') + ' ago';
+        else if (h > 0) txt = h + (h === 1 ? ' hour' : ' hours') + ' ago';
+        else if (m > 0) txt = m + (m === 1 ? ' minute' : ' minutes') + ' ago';
+        else txt = 'just now';
+        ta.textContent = '(' + txt + ')';
+      }
+    }
+  }
 })();
 </script>
 </body>

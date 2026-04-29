@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>zerodep Benchmark — ff747a7</title>
+<title>zerodep Benchmark — 3b7e074</title>
 <style>:root, [data-theme="light"] {
   --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
   --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
@@ -103,6 +103,18 @@ td { white-space: nowrap; }
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 1rem; height: 400px;
 }
+.back-to-top {
+  position: fixed; bottom: 2rem; right: 2rem; width: 40px; height: 40px;
+  border-radius: 50%; border: 1px solid var(--border);
+  background: var(--card-bg); color: var(--fg); font-size: 1.2rem;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transition: opacity .3s, border-color .2s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); z-index: 100;
+}
+.back-to-top.visible { opacity: 1; pointer-events: auto; }
+.back-to-top:hover { border-color: var(--accent); }
+.time-ago { font-style: italic; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
@@ -112,13 +124,13 @@ td { white-space: nowrap; }
 <h1>zerodep Benchmark Report</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ff747a7 &nbsp;|&nbsp; Commit: ff747a73 &nbsp;|&nbsp; 2026-04-29T02:20:05.641984+00:00</p>
+<p class="meta">Version: 3b7e074 &nbsp;|&nbsp; Commit: 3b7e0741 &nbsp;|&nbsp; 2026-04-29T02:56:10.773663+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T02:56:10.773663+00:00"></span></p>
 <div class="summary-grid">
 <div class="summary-card"><div class="num ">33</div><div class="label">Modules</div></div>
 <div class="summary-card"><div class="num ">257</div><div class="label">Comparisons</div></div>
-<div class="summary-card"><div class="num faster">156</div><div class="label">Faster than ref</div></div>
-<div class="summary-card"><div class="num similar">24</div><div class="label">Similar</div></div>
-<div class="summary-card"><div class="num slower">77</div><div class="label">Slower than ref</div></div>
+<div class="summary-card"><div class="num faster">153</div><div class="label">Faster than ref</div></div>
+<div class="summary-card"><div class="num similar">23</div><div class="label">Similar</div></div>
+<div class="summary-card"><div class="num slower">81</div><div class="label">Slower than ref</div></div>
 </div>
 <div style="margin-bottom:1.5rem;font-size:.9rem"><a href="#mod-a2a" style="margin-right:1rem">a2a (9)</a> <a href="#mod-acp" style="margin-right:1rem">acp (9)</a> <a href="#mod-aes" style="margin-right:1rem">aes (42)</a> <a href="#mod-cache" style="margin-right:1rem">cache (9)</a> <a href="#mod-config" style="margin-right:1rem">config (5)</a> <a href="#mod-diff" style="margin-right:1rem">diff (3)</a> <a href="#mod-dotenv" style="margin-right:1rem">dotenv (3)</a> <a href="#mod-frontmatter" style="margin-right:1rem">frontmatter (6)</a> <a href="#mod-httpclient" style="margin-right:1rem">httpclient (11)</a> <a href="#mod-jsonc" style="margin-right:1rem">jsonc (3)</a> <a href="#mod-jsonrpc" style="margin-right:1rem">jsonrpc (4)</a> <a href="#mod-jsonschema" style="margin-right:1rem">jsonschema (5)</a> <a href="#mod-llmstxt" style="margin-right:1rem">llmstxt (0)</a> <a href="#mod-markdown" style="margin-right:1rem">markdown (5)</a> <a href="#mod-persistdict" style="margin-right:1rem">persistdict (20)</a> <a href="#mod-png" style="margin-right:1rem">png (14)</a> <a href="#mod-protobuf" style="margin-right:1rem">protobuf (9)</a> <a href="#mod-qr" style="margin-right:1rem">qr (7)</a> <a href="#mod-readability" style="margin-right:1rem">readability (12)</a> <a href="#mod-retry" style="margin-right:1rem">retry (3)</a> <a href="#mod-runner" style="margin-right:1rem">runner (10)</a> <a href="#mod-scheduler" style="margin-right:1rem">scheduler (7)</a> <a href="#mod-semver" style="margin-right:1rem">semver (6)</a> <a href="#mod-soup" style="margin-right:1rem">soup (15)</a> <a href="#mod-sparse_search" style="margin-right:1rem">sparse_search (3)</a> <a href="#mod-sse" style="margin-right:1rem">sse (3)</a> <a href="#mod-structlog" style="margin-right:1rem">structlog (4)</a> <a href="#mod-tabulate" style="margin-right:1rem">tabulate (3)</a> <a href="#mod-toon" style="margin-right:1rem">toon (6)</a> <a href="#mod-useragent" style="margin-right:1rem">useragent (4)</a> <a href="#mod-validate" style="margin-right:1rem">validate (5)</a> <a href="#mod-xml" style="margin-right:1rem">xml (6)</a> <a href="#mod-yaml" style="margin-right:1rem">yaml (6)</a><a href="history.html" class="history-link">📈 History</a></div>
 <div class="module-section" id="mod-a2a">
@@ -126,15 +138,15 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Deserialize (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>1.04 ms</td><td>687.0 µs</td><td>963.3</td><td>1.5K</td><td class="ratio-cell slower">1.5x slower</td></tr>
-<tr><td>Deserialize (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>37.8 µs</td><td>34.1 µs</td><td>26.5K</td><td>29.3K</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Deserialize (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>1.9 µs</td><td>1.1 µs</td><td>526.6K</td><td>914.8K</td><td class="ratio-cell slower">1.7x slower</td></tr>
-<tr><td>Json Round Trip (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>3.69 ms</td><td>3.53 ms</td><td>270.7</td><td>283.3</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Json Round Trip (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>167.8 µs</td><td>167.3 µs</td><td>6.0K</td><td>6.0K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Json Round Trip (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>11.2 µs</td><td>11.9 µs</td><td>89.4K</td><td>84.3K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Serialize (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>1.52 ms</td><td>1.88 ms</td><td>657.0</td><td>532.9</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Serialize (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>84.4 µs</td><td>101.9 µs</td><td>11.8K</td><td>9.8K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Serialize (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>4.0 µs</td><td>5.0 µs</td><td>249.1K</td><td>198.4K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Deserialize (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>727.6 µs</td><td>692.1 µs</td><td>1.4K</td><td>1.4K</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Deserialize (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>41.7 µs</td><td>37.2 µs</td><td>24.0K</td><td>26.9K</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Deserialize (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>2.0 µs</td><td>1.2 µs</td><td>506.2K</td><td>853.7K</td><td class="ratio-cell slower">1.7x slower</td></tr>
+<tr><td>Json Round Trip (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>4.11 ms</td><td>3.09 ms</td><td>243.6</td><td>323.3</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Json Round Trip (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>176.7 µs</td><td>174.6 µs</td><td>5.7K</td><td>5.7K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Json Round Trip (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>11.6 µs</td><td>12.6 µs</td><td>86.2K</td><td>79.6K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>1.65 ms</td><td>2.26 ms</td><td>605.4</td><td>443.4</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>88.4 µs</td><td>105.7 µs</td><td>11.3K</td><td>9.5K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>4.2 µs</td><td>5.2 µs</td><td>239.5K</td><td>192.7K</td><td class="ratio-cell faster">1.2x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 </div>
@@ -143,15 +155,15 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Deserialize (Large)</td><td>zerodep</td><td>acp (ref)</td><td>144.8 µs</td><td>77.4 µs</td><td>6.9K</td><td>12.9K</td><td class="ratio-cell slower">1.9x slower</td></tr>
-<tr><td>Deserialize (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>5.7 µs</td><td>53.3 µs</td><td>175.2K</td><td>18.8K</td><td class="ratio-cell faster">9.3x faster</td></tr>
-<tr><td>Deserialize (Small)</td><td>zerodep</td><td>acp (ref)</td><td>1.6 µs</td><td>1.7 µs</td><td>618.3K</td><td>579.9K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Json Round Trip (Large)</td><td>zerodep</td><td>acp (ref)</td><td>906.5 µs</td><td>389.1 µs</td><td>1.1K</td><td>2.6K</td><td class="ratio-cell slower">2.3x slower</td></tr>
-<tr><td>Json Round Trip (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>86.0 µs</td><td>76.0 µs</td><td>11.6K</td><td>13.2K</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Json Round Trip (Small)</td><td>zerodep</td><td>acp (ref)</td><td>9.9 µs</td><td>6.7 µs</td><td>101.1K</td><td>149.8K</td><td class="ratio-cell slower">1.5x slower</td></tr>
-<tr><td>Serialize (Large)</td><td>zerodep</td><td>acp (ref)</td><td>515.0 µs</td><td>77.2 µs</td><td>1.9K</td><td>13.0K</td><td class="ratio-cell slower">6.7x slower</td></tr>
-<tr><td>Serialize (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>61.4 µs</td><td>13.0 µs</td><td>16.3K</td><td>77.1K</td><td class="ratio-cell slower">4.7x slower</td></tr>
-<tr><td>Serialize (Small)</td><td>zerodep</td><td>acp (ref)</td><td>4.0 µs</td><td>1.3 µs</td><td>249.5K</td><td>782.7K</td><td class="ratio-cell slower">3.1x slower</td></tr>
+<tr><td>Deserialize (Large)</td><td>zerodep</td><td>acp (ref)</td><td>149.2 µs</td><td>76.7 µs</td><td>6.7K</td><td>13.0K</td><td class="ratio-cell slower">1.9x slower</td></tr>
+<tr><td>Deserialize (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>5.8 µs</td><td>58.2 µs</td><td>171.3K</td><td>17.2K</td><td class="ratio-cell faster">10.0x faster</td></tr>
+<tr><td>Deserialize (Small)</td><td>zerodep</td><td>acp (ref)</td><td>1.7 µs</td><td>1.7 µs</td><td>580.2K</td><td>575.1K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Json Round Trip (Large)</td><td>zerodep</td><td>acp (ref)</td><td>956.5 µs</td><td>393.7 µs</td><td>1.0K</td><td>2.5K</td><td class="ratio-cell slower">2.4x slower</td></tr>
+<tr><td>Json Round Trip (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>91.1 µs</td><td>84.6 µs</td><td>11.0K</td><td>11.8K</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Json Round Trip (Small)</td><td>zerodep</td><td>acp (ref)</td><td>10.6 µs</td><td>6.9 µs</td><td>94.5K</td><td>145.2K</td><td class="ratio-cell slower">1.5x slower</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>acp (ref)</td><td>544.5 µs</td><td>73.8 µs</td><td>1.8K</td><td>13.5K</td><td class="ratio-cell slower">7.4x slower</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>acp (ref)</td><td>63.6 µs</td><td>12.7 µs</td><td>15.7K</td><td>78.5K</td><td class="ratio-cell slower">5.0x slower</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>acp (ref)</td><td>4.1 µs</td><td>1.3 µs</td><td>241.0K</td><td>774.6K</td><td class="ratio-cell slower">3.2x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_1"></canvas></div>
 </div>
@@ -160,48 +172,48 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Cbc Decrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>354.71 ms</td><td>138.2 µs</td><td>2.8</td><td>7.2K</td><td class="ratio-cell slower">2566.1x slower</td></tr>
-<tr><td>Cbc Decrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>23.4 µs</td><td>138.2 µs</td><td>42.7K</td><td>7.2K</td><td class="ratio-cell faster">5.9x faster</td></tr>
-<tr><td>Cbc Decrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>5.88 ms</td><td>12.7 µs</td><td>170.0</td><td>78.6K</td><td class="ratio-cell slower">462.6x slower</td></tr>
-<tr><td>Cbc Decrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>7.3 µs</td><td>12.7 µs</td><td>137.2K</td><td>78.6K</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Cbc Decrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>109.5 µs</td><td>10.3 µs</td><td>9.1K</td><td>97.1K</td><td class="ratio-cell slower">10.6x slower</td></tr>
-<tr><td>Cbc Decrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>6.7 µs</td><td>10.3 µs</td><td>150.2K</td><td>97.1K</td><td class="ratio-cell faster">1.5x faster</td></tr>
-<tr><td>Cbc Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>265.30 ms</td><td>208.4 µs</td><td>3.8</td><td>4.8K</td><td class="ratio-cell slower">1273.3x slower</td></tr>
-<tr><td>Cbc Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>72.0 µs</td><td>208.4 µs</td><td>13.9K</td><td>4.8K</td><td class="ratio-cell faster">2.9x faster</td></tr>
-<tr><td>Cbc Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.20 ms</td><td>13.0 µs</td><td>238.0</td><td>77.1K</td><td class="ratio-cell slower">323.9x slower</td></tr>
-<tr><td>Cbc Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>8.2 µs</td><td>13.0 µs</td><td>122.7K</td><td>77.1K</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Cbc Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>83.3 µs</td><td>9.7 µs</td><td>12.0K</td><td>103.5K</td><td class="ratio-cell slower">8.6x slower</td></tr>
-<tr><td>Cbc Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>6.6 µs</td><td>9.7 µs</td><td>150.6K</td><td>103.5K</td><td class="ratio-cell faster">1.5x faster</td></tr>
-<tr><td>Ctr Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>266.79 ms</td><td>104.6 µs</td><td>3.7</td><td>9.6K</td><td class="ratio-cell slower">2550.7x slower</td></tr>
-<tr><td>Ctr Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>20.5 µs</td><td>104.6 µs</td><td>48.8K</td><td>9.6K</td><td class="ratio-cell faster">5.1x faster</td></tr>
-<tr><td>Ctr Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.20 ms</td><td>13.0 µs</td><td>238.2</td><td>76.9K</td><td class="ratio-cell slower">323.1x slower</td></tr>
-<tr><td>Ctr Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>7.9 µs</td><td>13.0 µs</td><td>127.2K</td><td>76.9K</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Ctr Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>84.2 µs</td><td>11.4 µs</td><td>11.9K</td><td>87.4K</td><td class="ratio-cell slower">7.4x slower</td></tr>
-<tr><td>Ctr Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>7.3 µs</td><td>11.4 µs</td><td>137.6K</td><td>87.4K</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Ecb Decrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>353.16 ms</td><td>20.6 µs</td><td>2.8</td><td>48.5K</td><td class="ratio-cell slower">17138.5x slower</td></tr>
-<tr><td>Ecb Decrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>22.3 µs</td><td>20.6 µs</td><td>44.8K</td><td>48.5K</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Ecb Decrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>5.68 ms</td><td>9.5 µs</td><td>176.1</td><td>105.7K</td><td class="ratio-cell slower">599.9x slower</td></tr>
-<tr><td>Ecb Decrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>7.2 µs</td><td>9.5 µs</td><td>139.7K</td><td>105.7K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Ecb Decrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>106.7 µs</td><td>8.8 µs</td><td>9.4K</td><td>113.1K</td><td class="ratio-cell slower">12.1x slower</td></tr>
-<tr><td>Ecb Decrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>6.5 µs</td><td>8.8 µs</td><td>153.9K</td><td>113.1K</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Ecb Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>259.93 ms</td><td>20.0 µs</td><td>3.8</td><td>49.9K</td><td class="ratio-cell slower">12978.0x slower</td></tr>
-<tr><td>Ecb Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>20.1 µs</td><td>20.0 µs</td><td>49.9K</td><td>49.9K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Ecb Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.13 ms</td><td>8.8 µs</td><td>242.3</td><td>114.1K</td><td class="ratio-cell slower">470.8x slower</td></tr>
-<tr><td>Ecb Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>7.2 µs</td><td>8.8 µs</td><td>138.9K</td><td>114.1K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Ecb Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>81.8 µs</td><td>8.3 µs</td><td>12.2K</td><td>121.0K</td><td class="ratio-cell slower">9.9x slower</td></tr>
-<tr><td>Ecb Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>6.5 µs</td><td>8.3 µs</td><td>153.7K</td><td>121.0K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Gcm Decrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>381.54 ms</td><td>164.7 µs</td><td>2.6</td><td>6.1K</td><td class="ratio-cell slower">2316.8x slower</td></tr>
-<tr><td>Gcm Decrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>30.5 µs</td><td>164.7 µs</td><td>32.8K</td><td>6.1K</td><td class="ratio-cell faster">5.4x faster</td></tr>
-<tr><td>Gcm Decrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>6.08 ms</td><td>58.4 µs</td><td>164.5</td><td>17.1K</td><td class="ratio-cell slower">104.2x slower</td></tr>
-<tr><td>Gcm Decrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>9.6 µs</td><td>58.4 µs</td><td>104.2K</td><td>17.1K</td><td class="ratio-cell faster">6.1x faster</td></tr>
-<tr><td>Gcm Decrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>266.2 µs</td><td>57.0 µs</td><td>3.8K</td><td>17.5K</td><td class="ratio-cell slower">4.7x slower</td></tr>
-<tr><td>Gcm Decrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>9.0 µs</td><td>57.0 µs</td><td>111.0K</td><td>17.5K</td><td class="ratio-cell faster">6.3x faster</td></tr>
-<tr><td>Gcm Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>379.27 ms</td><td>145.6 µs</td><td>2.6</td><td>6.9K</td><td class="ratio-cell slower">2605.1x slower</td></tr>
-<tr><td>Gcm Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>30.8 µs</td><td>145.6 µs</td><td>32.5K</td><td>6.9K</td><td class="ratio-cell faster">4.7x faster</td></tr>
-<tr><td>Gcm Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>6.22 ms</td><td>45.6 µs</td><td>160.8</td><td>21.9K</td><td class="ratio-cell slower">136.4x slower</td></tr>
-<tr><td>Gcm Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>10.0 µs</td><td>45.6 µs</td><td>100.1K</td><td>21.9K</td><td class="ratio-cell faster">4.6x faster</td></tr>
-<tr><td>Gcm Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>267.7 µs</td><td>44.6 µs</td><td>3.7K</td><td>22.4K</td><td class="ratio-cell slower">6.0x slower</td></tr>
-<tr><td>Gcm Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>9.1 µs</td><td>44.6 µs</td><td>109.8K</td><td>22.4K</td><td class="ratio-cell faster">4.9x faster</td></tr>
+<tr><td>Cbc Decrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>347.78 ms</td><td>134.7 µs</td><td>2.9</td><td>7.4K</td><td class="ratio-cell slower">2582.4x slower</td></tr>
+<tr><td>Cbc Decrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>20.5 µs</td><td>134.7 µs</td><td>48.8K</td><td>7.4K</td><td class="ratio-cell faster">6.6x faster</td></tr>
+<tr><td>Cbc Decrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>5.62 ms</td><td>13.4 µs</td><td>177.8</td><td>74.6K</td><td class="ratio-cell slower">419.3x slower</td></tr>
+<tr><td>Cbc Decrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>7.7 µs</td><td>13.4 µs</td><td>130.0K</td><td>74.6K</td><td class="ratio-cell faster">1.7x faster</td></tr>
+<tr><td>Cbc Decrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>107.2 µs</td><td>10.8 µs</td><td>9.3K</td><td>92.6K</td><td class="ratio-cell slower">9.9x slower</td></tr>
+<tr><td>Cbc Decrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>7.1 µs</td><td>10.8 µs</td><td>141.3K</td><td>92.6K</td><td class="ratio-cell faster">1.5x faster</td></tr>
+<tr><td>Cbc Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>258.57 ms</td><td>133.3 µs</td><td>3.9</td><td>7.5K</td><td class="ratio-cell slower">1939.1x slower</td></tr>
+<tr><td>Cbc Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>68.8 µs</td><td>133.3 µs</td><td>14.5K</td><td>7.5K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Cbc Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.16 ms</td><td>12.7 µs</td><td>240.3</td><td>78.7K</td><td class="ratio-cell slower">327.4x slower</td></tr>
+<tr><td>Cbc Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>8.4 µs</td><td>12.7 µs</td><td>118.5K</td><td>78.7K</td><td class="ratio-cell faster">1.5x faster</td></tr>
+<tr><td>Cbc Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>82.9 µs</td><td>10.2 µs</td><td>12.1K</td><td>98.2K</td><td class="ratio-cell slower">8.1x slower</td></tr>
+<tr><td>Cbc Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>7.0 µs</td><td>10.2 µs</td><td>142.3K</td><td>98.2K</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Ctr Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>258.35 ms</td><td>91.0 µs</td><td>3.9</td><td>11.0K</td><td class="ratio-cell slower">2840.4x slower</td></tr>
+<tr><td>Ctr Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>20.9 µs</td><td>91.0 µs</td><td>47.9K</td><td>11.0K</td><td class="ratio-cell faster">4.4x faster</td></tr>
+<tr><td>Ctr Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.08 ms</td><td>13.7 µs</td><td>244.9</td><td>73.1K</td><td class="ratio-cell slower">298.4x slower</td></tr>
+<tr><td>Ctr Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>8.2 µs</td><td>13.7 µs</td><td>121.6K</td><td>73.1K</td><td class="ratio-cell faster">1.7x faster</td></tr>
+<tr><td>Ctr Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>82.9 µs</td><td>12.0 µs</td><td>12.1K</td><td>83.2K</td><td class="ratio-cell slower">6.9x slower</td></tr>
+<tr><td>Ctr Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>7.6 µs</td><td>12.0 µs</td><td>131.7K</td><td>83.2K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Ecb Decrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>340.16 ms</td><td>21.9 µs</td><td>2.9</td><td>45.7K</td><td class="ratio-cell slower">15555.7x slower</td></tr>
+<tr><td>Ecb Decrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>21.3 µs</td><td>21.9 µs</td><td>46.9K</td><td>45.7K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Ecb Decrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>5.45 ms</td><td>10.1 µs</td><td>183.6</td><td>99.0K</td><td class="ratio-cell slower">539.2x slower</td></tr>
+<tr><td>Ecb Decrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>7.6 µs</td><td>10.1 µs</td><td>132.1K</td><td>99.0K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Ecb Decrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>105.0 µs</td><td>9.3 µs</td><td>9.5K</td><td>107.6K</td><td class="ratio-cell slower">11.3x slower</td></tr>
+<tr><td>Ecb Decrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>6.8 µs</td><td>9.3 µs</td><td>146.0K</td><td>107.6K</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Ecb Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>247.59 ms</td><td>20.9 µs</td><td>4.0</td><td>47.8K</td><td class="ratio-cell slower">11826.3x slower</td></tr>
+<tr><td>Ecb Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>20.2 µs</td><td>20.9 µs</td><td>49.4K</td><td>47.8K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Ecb Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>4.00 ms</td><td>9.2 µs</td><td>250.0</td><td>108.9K</td><td class="ratio-cell slower">435.6x slower</td></tr>
+<tr><td>Ecb Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>7.5 µs</td><td>9.2 µs</td><td>133.5K</td><td>108.9K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Ecb Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>84.6 µs</td><td>8.5 µs</td><td>11.8K</td><td>117.1K</td><td class="ratio-cell slower">9.9x slower</td></tr>
+<tr><td>Ecb Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>6.9 µs</td><td>8.5 µs</td><td>145.1K</td><td>117.1K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Gcm Decrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>371.33 ms</td><td>168.7 µs</td><td>2.7</td><td>5.9K</td><td class="ratio-cell slower">2201.3x slower</td></tr>
+<tr><td>Gcm Decrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>30.5 µs</td><td>168.7 µs</td><td>32.8K</td><td>5.9K</td><td class="ratio-cell faster">5.5x faster</td></tr>
+<tr><td>Gcm Decrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>6.01 ms</td><td>74.5 µs</td><td>166.4</td><td>13.4K</td><td class="ratio-cell slower">80.7x slower</td></tr>
+<tr><td>Gcm Decrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>10.4 µs</td><td>74.5 µs</td><td>95.9K</td><td>13.4K</td><td class="ratio-cell faster">7.1x faster</td></tr>
+<tr><td>Gcm Decrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>272.4 µs</td><td>72.5 µs</td><td>3.7K</td><td>13.8K</td><td class="ratio-cell slower">3.8x slower</td></tr>
+<tr><td>Gcm Decrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>9.6 µs</td><td>72.5 µs</td><td>103.9K</td><td>13.8K</td><td class="ratio-cell faster">7.5x faster</td></tr>
+<tr><td>Gcm Encrypt (Large)</td><td>pure_python</td><td>PyCryptodome</td><td>372.09 ms</td><td>152.8 µs</td><td>2.7</td><td>6.5K</td><td class="ratio-cell slower">2435.2x slower</td></tr>
+<tr><td>Gcm Encrypt (Large)</td><td>openssl</td><td>PyCryptodome</td><td>30.6 µs</td><td>152.8 µs</td><td>32.7K</td><td>6.5K</td><td class="ratio-cell faster">5.0x faster</td></tr>
+<tr><td>Gcm Encrypt (Medium)</td><td>pure_python</td><td>PyCryptodome</td><td>6.09 ms</td><td>58.1 µs</td><td>164.2</td><td>17.2K</td><td class="ratio-cell slower">104.8x slower</td></tr>
+<tr><td>Gcm Encrypt (Medium)</td><td>openssl</td><td>PyCryptodome</td><td>10.6 µs</td><td>58.1 µs</td><td>94.3K</td><td>17.2K</td><td class="ratio-cell faster">5.5x faster</td></tr>
+<tr><td>Gcm Encrypt (Small)</td><td>pure_python</td><td>PyCryptodome</td><td>269.5 µs</td><td>56.3 µs</td><td>3.7K</td><td>17.8K</td><td class="ratio-cell slower">4.8x slower</td></tr>
+<tr><td>Gcm Encrypt (Small)</td><td>openssl</td><td>PyCryptodome</td><td>9.7 µs</td><td>56.3 µs</td><td>103.2K</td><td>17.8K</td><td class="ratio-cell faster">5.8x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_2"></canvas></div>
 </div>
@@ -210,15 +222,15 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Decorator Overhead</td><td>zerodep_lru</td><td>cachetools</td><td>217.2 µs</td><td>248.3 µs</td><td>4.6K</td><td>4.0K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Decorator Overhead</td><td>zerodep_ttl</td><td>cachetools</td><td>293.9 µs</td><td>286.7 µs</td><td>3.4K</td><td>3.5K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Eviction Pressure</td><td>zerodep_lfu</td><td>cachetools</td><td>1.88 ms</td><td>1.91 ms</td><td>532.0</td><td>524.6</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Eviction Pressure</td><td>zerodep_lru</td><td>cachetools</td><td>1.71 ms</td><td>1.81 ms</td><td>586.2</td><td>553.7</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Key Function</td><td>zerodep_hashkey</td><td>cachetools</td><td>613.5 µs</td><td>625.1 µs</td><td>1.6K</td><td>1.6K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Key Function</td><td>zerodep_typedkey</td><td>cachetools</td><td>1.28 ms</td><td>1.65 ms</td><td>781.3</td><td>604.9</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>LRUGet Set</td><td>zerodep</td><td>cachetools</td><td>954.0 µs</td><td>1.08 ms</td><td>1.0K</td><td>923.3</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Mixed Workload</td><td>zerodep</td><td>cachetools</td><td>795.9 µs</td><td>847.0 µs</td><td>1.3K</td><td>1.2K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>TTLExpiry</td><td>zerodep</td><td>cachetools</td><td>3.30 ms</td><td>3.29 ms</td><td>303.1</td><td>304.4</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Decorator Overhead</td><td>zerodep_lru</td><td>cachetools</td><td>238.0 µs</td><td>271.5 µs</td><td>4.2K</td><td>3.7K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Decorator Overhead</td><td>zerodep_ttl</td><td>cachetools</td><td>309.5 µs</td><td>307.4 µs</td><td>3.2K</td><td>3.3K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Eviction Pressure</td><td>zerodep_lfu</td><td>cachetools</td><td>1.95 ms</td><td>2.05 ms</td><td>513.0</td><td>486.8</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Eviction Pressure</td><td>zerodep_lru</td><td>cachetools</td><td>1.78 ms</td><td>1.91 ms</td><td>561.1</td><td>522.8</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Key Function</td><td>zerodep_hashkey</td><td>cachetools</td><td>648.3 µs</td><td>656.8 µs</td><td>1.5K</td><td>1.5K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Key Function</td><td>zerodep_typedkey</td><td>cachetools</td><td>1.31 ms</td><td>1.69 ms</td><td>763.6</td><td>593.1</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>LRUGet Set</td><td>zerodep</td><td>cachetools</td><td>1.01 ms</td><td>1.12 ms</td><td>994.6</td><td>893.3</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Mixed Workload</td><td>zerodep</td><td>cachetools</td><td>846.5 µs</td><td>922.9 µs</td><td>1.2K</td><td>1.1K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>TTLExpiry</td><td>zerodep</td><td>cachetools</td><td>3.58 ms</td><td>3.57 ms</td><td>279.7</td><td>280.0</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_3"></canvas></div>
 </div>
@@ -227,21 +239,21 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Cast Bool</td><td>zerodep</td><td>python-decouple</td><td>1.3 µs</td><td>2.5 µs</td><td>781.6K</td><td>400.0K</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Cast Int</td><td>zerodep</td><td>python-decouple</td><td>1.2 µs</td><td>2.3 µs</td><td>831.0K</td><td>439.2K</td><td class="ratio-cell faster">1.9x faster</td></tr>
-<tr><td>Csv Cast</td><td>zerodep</td><td>python-decouple</td><td>2.7 µs</td><td>12.5 µs</td><td>376.7K</td><td>79.7K</td><td class="ratio-cell faster">4.7x faster</td></tr>
-<tr><td>Dotenv Lookup</td><td>zerodep</td><td>python-decouple</td><td>668.7 ns</td><td>1.6 µs</td><td>1.50M</td><td>612.4K</td><td class="ratio-cell faster">2.4x faster</td></tr>
-<tr><td>Env Lookup</td><td>zerodep</td><td>python-decouple</td><td>835.3 ns</td><td>1.6 µs</td><td>1.20M</td><td>606.7K</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Cast Bool</td><td>zerodep</td><td>python-decouple</td><td>1.3 µs</td><td>2.5 µs</td><td>762.5K</td><td>399.1K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Cast Int</td><td>zerodep</td><td>python-decouple</td><td>1.3 µs</td><td>2.3 µs</td><td>797.4K</td><td>439.5K</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Csv Cast</td><td>zerodep</td><td>python-decouple</td><td>2.8 µs</td><td>12.8 µs</td><td>361.6K</td><td>78.1K</td><td class="ratio-cell faster">4.6x faster</td></tr>
+<tr><td>Dotenv Lookup</td><td>zerodep</td><td>python-decouple</td><td>750.4 ns</td><td>1.7 µs</td><td>1.33M</td><td>602.7K</td><td class="ratio-cell faster">2.2x faster</td></tr>
+<tr><td>Env Lookup</td><td>zerodep</td><td>python-decouple</td><td>922.6 ns</td><td>1.7 µs</td><td>1.08M</td><td>595.6K</td><td class="ratio-cell faster">1.8x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_4"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Config Init</td><td>zerodep_env_only</td><td>533.3 ns</td><td>1.88M</td></tr>
-<tr><td>Config Init</td><td>zerodep_with_dotenv</td><td>898.5 µs</td><td>1.1K</td></tr>
-<tr><td>Config Init</td><td>zerodep_with_json</td><td>44.7 µs</td><td>22.3K</td></tr>
-<tr><td>Nested Json Lookup</td><td>zerodep</td><td>2.1 µs</td><td>479.3K</td></tr>
+<tr><td>Config Init</td><td>zerodep_env_only</td><td>567.2 ns</td><td>1.76M</td></tr>
+<tr><td>Config Init</td><td>zerodep_with_dotenv</td><td>954.2 µs</td><td>1.0K</td></tr>
+<tr><td>Config Init</td><td>zerodep_with_json</td><td>52.9 µs</td><td>18.9K</td></tr>
+<tr><td>Nested Json Lookup</td><td>zerodep</td><td>2.2 µs</td><td>462.1K</td></tr>
 </tbody></table>
 </div>
 <div class="module-section" id="mod-diff">
@@ -249,18 +261,18 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>unidiff</td><td>94.6 µs</td><td>186.7 µs</td><td>10.6K</td><td>5.4K</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>unidiff</td><td>31.2 µs</td><td>61.2 µs</td><td>32.1K</td><td>16.3K</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>unidiff</td><td>10.3 µs</td><td>21.1 µs</td><td>96.9K</td><td>47.5K</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>unidiff</td><td>97.1 µs</td><td>196.7 µs</td><td>10.3K</td><td>5.1K</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>unidiff</td><td>31.8 µs</td><td>63.1 µs</td><td>31.5K</td><td>15.8K</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>unidiff</td><td>10.5 µs</td><td>22.3 µs</td><td>95.2K</td><td>44.8K</td><td class="ratio-cell faster">2.1x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_5"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Apply (Large)</td><td>zerodep</td><td>60.5 µs</td><td>16.5K</td></tr>
-<tr><td>Apply (Medium)</td><td>zerodep</td><td>7.5 µs</td><td>133.3K</td></tr>
-<tr><td>Apply (Small)</td><td>zerodep</td><td>2.6 µs</td><td>390.1K</td></tr>
+<tr><td>Apply (Large)</td><td>zerodep</td><td>59.0 µs</td><td>16.9K</td></tr>
+<tr><td>Apply (Medium)</td><td>zerodep</td><td>7.6 µs</td><td>131.2K</td></tr>
+<tr><td>Apply (Small)</td><td>zerodep</td><td>2.6 µs</td><td>388.8K</td></tr>
 </tbody></table>
 </div>
 <div class="module-section" id="mod-dotenv">
@@ -268,9 +280,9 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>python-dotenv</td><td>1.34 ms</td><td>1.34 ms</td><td>746.6</td><td>745.1</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-dotenv</td><td>187.8 µs</td><td>187.3 µs</td><td>5.3K</td><td>5.3K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>python-dotenv</td><td>26.9 µs</td><td>26.5 µs</td><td>37.2K</td><td>37.8K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>python-dotenv</td><td>1.38 ms</td><td>1.39 ms</td><td>723.1</td><td>720.6</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-dotenv</td><td>196.6 µs</td><td>196.4 µs</td><td>5.1K</td><td>5.1K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>python-dotenv</td><td>27.9 µs</td><td>27.6 µs</td><td>35.9K</td><td>36.2K</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_6"></canvas></div>
 </div>
@@ -279,12 +291,12 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>python-frontmatter</td><td>443.6 µs</td><td>440.5 µs</td><td>2.3K</td><td>2.3K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-frontmatter</td><td>94.7 µs</td><td>86.2 µs</td><td>10.6K</td><td>11.6K</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>python-frontmatter</td><td>14.3 µs</td><td>14.5 µs</td><td>69.7K</td><td>68.8K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Serialize (Large)</td><td>zerodep</td><td>python-frontmatter</td><td>632.6 µs</td><td>636.7 µs</td><td>1.6K</td><td>1.6K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Serialize (Medium)</td><td>zerodep</td><td>python-frontmatter</td><td>127.4 µs</td><td>124.3 µs</td><td>7.8K</td><td>8.0K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Serialize (Small)</td><td>zerodep</td><td>python-frontmatter</td><td>21.1 µs</td><td>21.3 µs</td><td>47.4K</td><td>47.0K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>python-frontmatter</td><td>460.5 µs</td><td>458.0 µs</td><td>2.2K</td><td>2.2K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-frontmatter</td><td>96.5 µs</td><td>89.2 µs</td><td>10.4K</td><td>11.2K</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>python-frontmatter</td><td>14.6 µs</td><td>14.7 µs</td><td>68.3K</td><td>67.9K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>python-frontmatter</td><td>714.5 µs</td><td>712.7 µs</td><td>1.4K</td><td>1.4K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>python-frontmatter</td><td>153.7 µs</td><td>141.5 µs</td><td>6.5K</td><td>7.1K</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>python-frontmatter</td><td>24.7 µs</td><td>23.3 µs</td><td>40.6K</td><td>42.9K</td><td class="ratio-cell slower">1.1x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_7"></canvas></div>
 </div>
@@ -293,17 +305,17 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Async Client Get</td><td>zerodep</td><td>httpx</td><td>1.04 ms</td><td>24.84 ms</td><td>962.2</td><td>40.3</td><td class="ratio-cell faster">23.9x faster</td></tr>
-<tr><td>Async File Upload</td><td>zerodep</td><td>httpx</td><td>1.43 ms</td><td>25.53 ms</td><td>699.7</td><td>39.2</td><td class="ratio-cell faster">17.9x faster</td></tr>
-<tr><td>Async Get</td><td>zerodep</td><td>httpx</td><td>1.03 ms</td><td>25.66 ms</td><td>975.1</td><td>39.0</td><td class="ratio-cell faster">25.0x faster</td></tr>
-<tr><td>Async Post JSON</td><td>zerodep</td><td>httpx</td><td>1.15 ms</td><td>25.72 ms</td><td>869.4</td><td>38.9</td><td class="ratio-cell faster">22.4x faster</td></tr>
-<tr><td>Async Streaming</td><td>zerodep</td><td>httpx</td><td>1.08 ms</td><td>25.75 ms</td><td>929.4</td><td>38.8</td><td class="ratio-cell faster">23.9x faster</td></tr>
-<tr><td>Sync Client Get</td><td>zerodep</td><td>httpx</td><td>593.4 µs</td><td>968.1 µs</td><td>1.7K</td><td>1.0K</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Sync File Upload</td><td>zerodep</td><td>httpx</td><td>908.6 µs</td><td>18.63 ms</td><td>1.1K</td><td>53.7</td><td class="ratio-cell faster">20.5x faster</td></tr>
-<tr><td>Sync Get</td><td>zerodep</td><td>httpx</td><td>575.5 µs</td><td>18.46 ms</td><td>1.7K</td><td>54.2</td><td class="ratio-cell faster">32.1x faster</td></tr>
-<tr><td>Sync Gzip Decompression</td><td>zerodep</td><td>httpx</td><td>598.7 µs</td><td>18.16 ms</td><td>1.7K</td><td>55.1</td><td class="ratio-cell faster">30.3x faster</td></tr>
-<tr><td>Sync Post JSON</td><td>zerodep</td><td>httpx</td><td>646.7 µs</td><td>18.40 ms</td><td>1.5K</td><td>54.3</td><td class="ratio-cell faster">28.5x faster</td></tr>
-<tr><td>Sync Streaming</td><td>zerodep</td><td>httpx</td><td>585.9 µs</td><td>18.05 ms</td><td>1.7K</td><td>55.4</td><td class="ratio-cell faster">30.8x faster</td></tr>
+<tr><td>Async Client Get</td><td>zerodep</td><td>httpx</td><td>1.17 ms</td><td>26.53 ms</td><td>855.7</td><td>37.7</td><td class="ratio-cell faster">22.7x faster</td></tr>
+<tr><td>Async File Upload</td><td>zerodep</td><td>httpx</td><td>1.52 ms</td><td>26.19 ms</td><td>659.2</td><td>38.2</td><td class="ratio-cell faster">17.3x faster</td></tr>
+<tr><td>Async Get</td><td>zerodep</td><td>httpx</td><td>1.11 ms</td><td>25.17 ms</td><td>902.0</td><td>39.7</td><td class="ratio-cell faster">22.7x faster</td></tr>
+<tr><td>Async Post JSON</td><td>zerodep</td><td>httpx</td><td>1.24 ms</td><td>26.07 ms</td><td>803.7</td><td>38.4</td><td class="ratio-cell faster">21.0x faster</td></tr>
+<tr><td>Async Streaming</td><td>zerodep</td><td>httpx</td><td>1.17 ms</td><td>25.30 ms</td><td>852.5</td><td>39.5</td><td class="ratio-cell faster">21.6x faster</td></tr>
+<tr><td>Sync Client Get</td><td>zerodep</td><td>httpx</td><td>621.5 µs</td><td>1.02 ms</td><td>1.6K</td><td>980.1</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Sync File Upload</td><td>zerodep</td><td>httpx</td><td>980.6 µs</td><td>19.17 ms</td><td>1.0K</td><td>52.2</td><td class="ratio-cell faster">19.5x faster</td></tr>
+<tr><td>Sync Get</td><td>zerodep</td><td>httpx</td><td>617.4 µs</td><td>19.07 ms</td><td>1.6K</td><td>52.4</td><td class="ratio-cell faster">30.9x faster</td></tr>
+<tr><td>Sync Gzip Decompression</td><td>zerodep</td><td>httpx</td><td>643.8 µs</td><td>18.96 ms</td><td>1.6K</td><td>52.7</td><td class="ratio-cell faster">29.5x faster</td></tr>
+<tr><td>Sync Post JSON</td><td>zerodep</td><td>httpx</td><td>694.5 µs</td><td>18.78 ms</td><td>1.4K</td><td>53.2</td><td class="ratio-cell faster">27.0x faster</td></tr>
+<tr><td>Sync Streaming</td><td>zerodep</td><td>httpx</td><td>636.6 µs</td><td>18.73 ms</td><td>1.6K</td><td>53.4</td><td class="ratio-cell faster">29.4x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_8"></canvas></div>
 </div>
@@ -312,9 +324,9 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Load (Large)</td><td>zerodep</td><td>commentjson</td><td>1.71 ms</td><td>190.08 ms</td><td>585.5</td><td>5.3</td><td class="ratio-cell faster">111.3x faster</td></tr>
-<tr><td>Load (Medium)</td><td>zerodep</td><td>commentjson</td><td>88.8 µs</td><td>7.93 ms</td><td>11.3K</td><td>126.1</td><td class="ratio-cell faster">89.3x faster</td></tr>
-<tr><td>Load (Small)</td><td>zerodep</td><td>commentjson</td><td>14.3 µs</td><td>1.05 ms</td><td>70.0K</td><td>949.2</td><td class="ratio-cell faster">73.8x faster</td></tr>
+<tr><td>Load (Large)</td><td>zerodep</td><td>commentjson</td><td>2.00 ms</td><td>211.38 ms</td><td>500.2</td><td>4.7</td><td class="ratio-cell faster">105.7x faster</td></tr>
+<tr><td>Load (Medium)</td><td>zerodep</td><td>commentjson</td><td>99.5 µs</td><td>9.49 ms</td><td>10.0K</td><td>105.4</td><td class="ratio-cell faster">95.3x faster</td></tr>
+<tr><td>Load (Small)</td><td>zerodep</td><td>commentjson</td><td>16.5 µs</td><td>1.30 ms</td><td>60.7K</td><td>768.0</td><td class="ratio-cell faster">79.0x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_9"></canvas></div>
 </div>
@@ -323,22 +335,22 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>137.3 µs</td><td>1.92 ms</td><td>7.3K</td><td>519.5</td><td class="ratio-cell faster">14.0x faster</td></tr>
-<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>9.2 µs</td><td>91.1 µs</td><td>109.2K</td><td>11.0K</td><td class="ratio-cell faster">9.9x faster</td></tr>
-<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>7.7 µs</td><td>71.9 µs</td><td>130.1K</td><td>13.9K</td><td class="ratio-cell faster">9.4x faster</td></tr>
-<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>7.2 µs</td><td>97.6 µs</td><td>138.1K</td><td>10.2K</td><td class="ratio-cell faster">13.5x faster</td></tr>
+<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>141.6 µs</td><td>2.81 ms</td><td>7.1K</td><td>355.5</td><td class="ratio-cell faster">19.9x faster</td></tr>
+<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>9.7 µs</td><td>139.0 µs</td><td>102.9K</td><td>7.2K</td><td class="ratio-cell faster">14.3x faster</td></tr>
+<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>7.7 µs</td><td>107.8 µs</td><td>129.2K</td><td>9.3K</td><td class="ratio-cell faster">13.9x faster</td></tr>
+<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>7.4 µs</td><td>142.8 µs</td><td>135.8K</td><td>7.0K</td><td class="ratio-cell faster">19.4x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_10"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>918.3 ns</td><td>1.09M</td></tr>
-<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>944.2 ns</td><td>1.06M</td></tr>
-<tr><td>Id Generation</td><td>next_id</td><td>197.4 ns</td><td>5.06M</td></tr>
-<tr><td>Json Round Trip</td><td>json_round_trip</td><td>6.5 µs</td><td>155.0K</td></tr>
-<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>376.6 ns</td><td>2.66M</td></tr>
-<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>304.8 ns</td><td>3.28M</td></tr>
+<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>775.1 ns</td><td>1.29M</td></tr>
+<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>923.1 ns</td><td>1.08M</td></tr>
+<tr><td>Id Generation</td><td>next_id</td><td>101.8 ns</td><td>9.82M</td></tr>
+<tr><td>Json Round Trip</td><td>json_round_trip</td><td>6.5 µs</td><td>154.8K</td></tr>
+<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>362.0 ns</td><td>2.76M</td></tr>
+<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>293.1 ns</td><td>3.41M</td></tr>
 </tbody></table>
 </div>
 <div class="module-section" id="mod-jsonschema">
@@ -346,11 +358,11 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Perf (Large)</td><td>zerodep</td><td>allof-merge (JS)</td><td>230.6 µs</td><td>733.7 µs</td><td>4.3K</td><td>1.4K</td><td class="ratio-cell faster">3.2x faster</td></tr>
-<tr><td>Perf (Medium)</td><td>zerodep</td><td>allof-merge (JS)</td><td>76.8 µs</td><td>358.1 µs</td><td>13.0K</td><td>2.8K</td><td class="ratio-cell faster">4.7x faster</td></tr>
-<tr><td>Perf (Small)</td><td>zerodep</td><td>allof-merge (JS)</td><td>29.6 µs</td><td>168.0 µs</td><td>33.8K</td><td>6.0K</td><td class="ratio-cell faster">5.7x faster</td></tr>
-<tr><td>Perf Tiny</td><td>zerodep</td><td>allof-merge (JS)</td><td>17.5 µs</td><td>159.1 µs</td><td>57.3K</td><td>6.3K</td><td class="ratio-cell faster">9.1x faster</td></tr>
-<tr><td>Perf Xlarge</td><td>zerodep</td><td>allof-merge (JS)</td><td>1.57 ms</td><td>2.97 ms</td><td>638.3</td><td>336.4</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Perf (Large)</td><td>zerodep</td><td>allof-merge (JS)</td><td>250.1 µs</td><td>796.8 µs</td><td>4.0K</td><td>1.3K</td><td class="ratio-cell faster">3.2x faster</td></tr>
+<tr><td>Perf (Medium)</td><td>zerodep</td><td>allof-merge (JS)</td><td>85.9 µs</td><td>380.0 µs</td><td>11.6K</td><td>2.6K</td><td class="ratio-cell faster">4.4x faster</td></tr>
+<tr><td>Perf (Small)</td><td>zerodep</td><td>allof-merge (JS)</td><td>31.8 µs</td><td>215.9 µs</td><td>31.4K</td><td>4.6K</td><td class="ratio-cell faster">6.8x faster</td></tr>
+<tr><td>Perf Tiny</td><td>zerodep</td><td>allof-merge (JS)</td><td>18.1 µs</td><td>197.8 µs</td><td>55.2K</td><td>5.1K</td><td class="ratio-cell faster">10.9x faster</td></tr>
+<tr><td>Perf Xlarge</td><td>zerodep</td><td>allof-merge (JS)</td><td>1.67 ms</td><td>3.18 ms</td><td>600.3</td><td>314.2</td><td class="ratio-cell faster">1.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_11"></canvas></div>
 </div>
@@ -360,10 +372,10 @@ td { white-space: nowrap; }
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Candidate Urls</td><td>zerodep</td><td>12.7 µs</td><td>79.0K</td></tr>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>1.24 ms</td><td>806.2</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>49.1 µs</td><td>20.4K</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>11.9 µs</td><td>84.3K</td></tr>
+<tr><td>Candidate Urls</td><td>zerodep</td><td>13.4 µs</td><td>74.4K</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>1.25 ms</td><td>798.8</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>49.8 µs</td><td>20.1K</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>12.4 µs</td><td>80.7K</td></tr>
 </tbody></table>
 </div>
 <div class="module-section" id="mod-markdown">
@@ -371,11 +383,11 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Render (Large)</td><td>zerodep</td><td>mistune</td><td>5.37 ms</td><td>8.34 ms</td><td>186.2</td><td>119.9</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Render (Medium)</td><td>zerodep</td><td>mistune</td><td>332.9 µs</td><td>602.1 µs</td><td>3.0K</td><td>1.7K</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Render (Small)</td><td>zerodep</td><td>mistune</td><td>49.8 µs</td><td>54.6 µs</td><td>20.1K</td><td>18.3K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Render GFMLarge</td><td>zerodep</td><td>mistune</td><td>6.07 ms</td><td>11.42 ms</td><td>164.6</td><td>87.6</td><td class="ratio-cell faster">1.9x faster</td></tr>
-<tr><td>Render GFMMedium</td><td>zerodep</td><td>mistune</td><td>308.2 µs</td><td>604.8 µs</td><td>3.2K</td><td>1.7K</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Render (Large)</td><td>zerodep</td><td>mistune</td><td>6.30 ms</td><td>9.96 ms</td><td>158.6</td><td>100.4</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Render (Medium)</td><td>zerodep</td><td>mistune</td><td>397.9 µs</td><td>704.8 µs</td><td>2.5K</td><td>1.4K</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Render (Small)</td><td>zerodep</td><td>mistune</td><td>56.1 µs</td><td>71.4 µs</td><td>17.8K</td><td>14.0K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Render GFMLarge</td><td>zerodep</td><td>mistune</td><td>7.10 ms</td><td>13.49 ms</td><td>140.9</td><td>74.1</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Render GFMMedium</td><td>zerodep</td><td>mistune</td><td>357.3 µs</td><td>687.1 µs</td><td>2.8K</td><td>1.5K</td><td class="ratio-cell faster">1.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_12"></canvas></div>
 </div>
@@ -384,26 +396,26 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>shelve</td><td>407.5 µs</td><td>188.0 µs</td><td>2.5K</td><td>5.3K</td><td class="ratio-cell slower">2.2x slower</td></tr>
-<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>407.5 µs</td><td>1.24 ms</td><td>2.5K</td><td>806.7</td><td class="ratio-cell faster">3.0x faster</td></tr>
-<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>891.9 µs</td><td>188.0 µs</td><td>1.1K</td><td>5.3K</td><td class="ratio-cell slower">4.7x slower</td></tr>
-<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>891.9 µs</td><td>1.24 ms</td><td>1.1K</td><td>806.7</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_json</td><td>shelve</td><td>388.6 µs</td><td>172.1 µs</td><td>2.6K</td><td>5.8K</td><td class="ratio-cell slower">2.3x slower</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>388.6 µs</td><td>9.00 ms</td><td>2.6K</td><td>111.1</td><td class="ratio-cell faster">23.2x faster</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>864.9 µs</td><td>172.1 µs</td><td>1.2K</td><td>5.8K</td><td class="ratio-cell slower">5.0x slower</td></tr>
-<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>864.9 µs</td><td>9.00 ms</td><td>1.2K</td><td>111.1</td><td class="ratio-cell faster">10.4x faster</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_json</td><td>shelve</td><td>16.67 ms</td><td>13.61 ms</td><td>60.0</td><td>73.5</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_json</td><td>sqlitedict</td><td>16.67 ms</td><td>733.13 ms</td><td>60.0</td><td>1.4</td><td class="ratio-cell faster">44.0x faster</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>shelve</td><td>68.17 ms</td><td>13.61 ms</td><td>14.7</td><td>73.5</td><td class="ratio-cell slower">5.0x slower</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>68.17 ms</td><td>733.13 ms</td><td>14.7</td><td>1.4</td><td class="ratio-cell faster">10.8x faster</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_sqlite_batched</td><td>shelve</td><td>23.36 ms</td><td>13.61 ms</td><td>42.8</td><td>73.5</td><td class="ratio-cell slower">1.7x slower</td></tr>
-<tr><td>Write (Large)</td><td>zerodep_sqlite_batched</td><td>sqlitedict</td><td>23.36 ms</td><td>733.13 ms</td><td>42.8</td><td>1.4</td><td class="ratio-cell faster">31.4x faster</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_json</td><td>shelve</td><td>395.0 µs</td><td>503.5 µs</td><td>2.5K</td><td>2.0K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>395.0 µs</td><td>17.67 ms</td><td>2.5K</td><td>56.6</td><td class="ratio-cell faster">44.7x faster</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>3.91 ms</td><td>503.5 µs</td><td>255.7</td><td>2.0K</td><td class="ratio-cell slower">7.8x slower</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>3.91 ms</td><td>17.67 ms</td><td>255.7</td><td>56.6</td><td class="ratio-cell faster">4.5x faster</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_sqlite_batched</td><td>shelve</td><td>2.66 ms</td><td>503.5 µs</td><td>375.9</td><td>2.0K</td><td class="ratio-cell slower">5.3x slower</td></tr>
-<tr><td>Write (Small)</td><td>zerodep_sqlite_batched</td><td>sqlitedict</td><td>2.66 ms</td><td>17.67 ms</td><td>375.9</td><td>56.6</td><td class="ratio-cell faster">6.6x faster</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>shelve</td><td>424.4 µs</td><td>210.1 µs</td><td>2.4K</td><td>4.8K</td><td class="ratio-cell slower">2.0x slower</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>424.4 µs</td><td>1.34 ms</td><td>2.4K</td><td>744.8</td><td class="ratio-cell faster">3.2x faster</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>883.5 µs</td><td>210.1 µs</td><td>1.1K</td><td>4.8K</td><td class="ratio-cell slower">4.2x slower</td></tr>
+<tr><td>Iterate (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>883.5 µs</td><td>1.34 ms</td><td>1.1K</td><td>744.8</td><td class="ratio-cell faster">1.5x faster</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_json</td><td>shelve</td><td>418.8 µs</td><td>190.2 µs</td><td>2.4K</td><td>5.3K</td><td class="ratio-cell slower">2.2x slower</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>418.8 µs</td><td>10.23 ms</td><td>2.4K</td><td>97.8</td><td class="ratio-cell faster">24.4x faster</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>840.4 µs</td><td>190.2 µs</td><td>1.2K</td><td>5.3K</td><td class="ratio-cell slower">4.4x slower</td></tr>
+<tr><td>Read (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>840.4 µs</td><td>10.23 ms</td><td>1.2K</td><td>97.8</td><td class="ratio-cell faster">12.2x faster</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_json</td><td>shelve</td><td>16.15 ms</td><td>12.70 ms</td><td>61.9</td><td>78.8</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_json</td><td>sqlitedict</td><td>16.15 ms</td><td>797.04 ms</td><td>61.9</td><td>1.3</td><td class="ratio-cell faster">49.4x faster</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>shelve</td><td>75.22 ms</td><td>12.70 ms</td><td>13.3</td><td>78.8</td><td class="ratio-cell slower">5.9x slower</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>75.22 ms</td><td>797.04 ms</td><td>13.3</td><td>1.3</td><td class="ratio-cell faster">10.6x faster</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_sqlite_batched</td><td>shelve</td><td>25.06 ms</td><td>12.70 ms</td><td>39.9</td><td>78.8</td><td class="ratio-cell slower">2.0x slower</td></tr>
+<tr><td>Write (Large)</td><td>zerodep_sqlite_batched</td><td>sqlitedict</td><td>25.06 ms</td><td>797.04 ms</td><td>39.9</td><td>1.3</td><td class="ratio-cell faster">31.8x faster</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_json</td><td>shelve</td><td>428.1 µs</td><td>423.4 µs</td><td>2.3K</td><td>2.4K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_json</td><td>sqlitedict</td><td>428.1 µs</td><td>19.17 ms</td><td>2.3K</td><td>52.2</td><td class="ratio-cell faster">44.8x faster</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>shelve</td><td>4.73 ms</td><td>423.4 µs</td><td>211.4</td><td>2.4K</td><td class="ratio-cell slower">11.2x slower</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_sqlite</td><td>sqlitedict</td><td>4.73 ms</td><td>19.17 ms</td><td>211.4</td><td>52.2</td><td class="ratio-cell faster">4.1x faster</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_sqlite_batched</td><td>shelve</td><td>3.13 ms</td><td>423.4 µs</td><td>319.1</td><td>2.4K</td><td class="ratio-cell slower">7.4x slower</td></tr>
+<tr><td>Write (Small)</td><td>zerodep_sqlite_batched</td><td>sqlitedict</td><td>3.13 ms</td><td>19.17 ms</td><td>319.1</td><td>52.2</td><td class="ratio-cell faster">6.1x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_13"></canvas></div>
 </div>
@@ -412,20 +424,20 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Decode Bmp Medium RGB</td><td>zerodep</td><td>pillow</td><td>601.5 µs</td><td>88.0 µs</td><td>1.7K</td><td>11.4K</td><td class="ratio-cell slower">6.8x slower</td></tr>
-<tr><td>Decode Large RGBA</td><td>zerodep</td><td>pillow</td><td>522.09 ms</td><td>23.33 ms</td><td>1.9</td><td>42.9</td><td class="ratio-cell slower">22.4x slower</td></tr>
-<tr><td>Decode Medium Gray</td><td>zerodep</td><td>pillow</td><td>6.38 ms</td><td>285.6 µs</td><td>156.8</td><td>3.5K</td><td class="ratio-cell slower">22.3x slower</td></tr>
-<tr><td>Decode Medium RGB</td><td>zerodep</td><td>pillow</td><td>24.44 ms</td><td>1.02 ms</td><td>40.9</td><td>975.8</td><td class="ratio-cell slower">23.9x slower</td></tr>
-<tr><td>Decode Medium RGBA</td><td>zerodep</td><td>pillow</td><td>28.38 ms</td><td>1.27 ms</td><td>35.2</td><td>789.8</td><td class="ratio-cell slower">22.4x slower</td></tr>
-<tr><td>Decode Small RGBA</td><td>zerodep</td><td>pillow</td><td>1.59 ms</td><td>48.2 µs</td><td>628.0</td><td>20.8K</td><td class="ratio-cell slower">33.1x slower</td></tr>
-<tr><td>Encode Bmp Medium RGB</td><td>zerodep</td><td>pillow</td><td>572.3 µs</td><td>80.9 µs</td><td>1.7K</td><td>12.4K</td><td class="ratio-cell slower">7.1x slower</td></tr>
-<tr><td>Encode Large RGBA</td><td>zerodep</td><td>pillow</td><td>4.001 s</td><td>192.24 ms</td><td>0.2</td><td>5.2</td><td class="ratio-cell slower">20.8x slower</td></tr>
-<tr><td>Encode Medium RGBA</td><td>zerodep</td><td>pillow</td><td>253.48 ms</td><td>11.82 ms</td><td>3.9</td><td>84.6</td><td class="ratio-cell slower">21.4x slower</td></tr>
-<tr><td>Encode Small RGBA</td><td>zerodep</td><td>pillow</td><td>14.98 ms</td><td>316.1 µs</td><td>66.8</td><td>3.2K</td><td class="ratio-cell slower">47.4x slower</td></tr>
-<tr><td>Matrix Round Trip</td><td>zerodep_encode</td><td>pillow_encode</td><td>91.20 ms</td><td>2.75 ms</td><td>11.0</td><td>363.9</td><td class="ratio-cell slower">33.2x slower</td></tr>
-<tr><td>Matrix Round Trip</td><td>zerodep_encode</td><td>pillow_decode</td><td>91.20 ms</td><td>232.5 µs</td><td>11.0</td><td>4.3K</td><td class="ratio-cell slower">392.3x slower</td></tr>
-<tr><td>Matrix Round Trip</td><td>zerodep_decode</td><td>pillow_encode</td><td>17.84 ms</td><td>2.75 ms</td><td>56.1</td><td>363.9</td><td class="ratio-cell slower">6.5x slower</td></tr>
-<tr><td>Matrix Round Trip</td><td>zerodep_decode</td><td>pillow_decode</td><td>17.84 ms</td><td>232.5 µs</td><td>56.1</td><td>4.3K</td><td class="ratio-cell slower">76.7x slower</td></tr>
+<tr><td>Decode Bmp Medium RGB</td><td>zerodep</td><td>pillow</td><td>622.9 µs</td><td>100.2 µs</td><td>1.6K</td><td>10.0K</td><td class="ratio-cell slower">6.2x slower</td></tr>
+<tr><td>Decode Large RGBA</td><td>zerodep</td><td>pillow</td><td>548.64 ms</td><td>21.28 ms</td><td>1.8</td><td>47.0</td><td class="ratio-cell slower">25.8x slower</td></tr>
+<tr><td>Decode Medium Gray</td><td>zerodep</td><td>pillow</td><td>6.75 ms</td><td>293.0 µs</td><td>148.2</td><td>3.4K</td><td class="ratio-cell slower">23.0x slower</td></tr>
+<tr><td>Decode Medium RGB</td><td>zerodep</td><td>pillow</td><td>25.71 ms</td><td>1.02 ms</td><td>38.9</td><td>979.1</td><td class="ratio-cell slower">25.2x slower</td></tr>
+<tr><td>Decode Medium RGBA</td><td>zerodep</td><td>pillow</td><td>30.75 ms</td><td>1.25 ms</td><td>32.5</td><td>799.3</td><td class="ratio-cell slower">24.6x slower</td></tr>
+<tr><td>Decode Small RGBA</td><td>zerodep</td><td>pillow</td><td>1.80 ms</td><td>66.4 µs</td><td>556.5</td><td>15.1K</td><td class="ratio-cell slower">27.1x slower</td></tr>
+<tr><td>Encode Bmp Medium RGB</td><td>zerodep</td><td>pillow</td><td>599.0 µs</td><td>89.5 µs</td><td>1.7K</td><td>11.2K</td><td class="ratio-cell slower">6.7x slower</td></tr>
+<tr><td>Encode Large RGBA</td><td>zerodep</td><td>pillow</td><td>3.794 s</td><td>176.23 ms</td><td>0.3</td><td>5.7</td><td class="ratio-cell slower">21.5x slower</td></tr>
+<tr><td>Encode Medium RGBA</td><td>zerodep</td><td>pillow</td><td>236.53 ms</td><td>10.74 ms</td><td>4.2</td><td>93.1</td><td class="ratio-cell slower">22.0x slower</td></tr>
+<tr><td>Encode Small RGBA</td><td>zerodep</td><td>pillow</td><td>13.83 ms</td><td>531.2 µs</td><td>72.3</td><td>1.9K</td><td class="ratio-cell slower">26.0x slower</td></tr>
+<tr><td>Matrix Round Trip</td><td>zerodep_encode</td><td>pillow_encode</td><td>88.32 ms</td><td>2.55 ms</td><td>11.3</td><td>392.0</td><td class="ratio-cell slower">34.6x slower</td></tr>
+<tr><td>Matrix Round Trip</td><td>zerodep_encode</td><td>pillow_decode</td><td>88.32 ms</td><td>262.6 µs</td><td>11.3</td><td>3.8K</td><td class="ratio-cell slower">336.4x slower</td></tr>
+<tr><td>Matrix Round Trip</td><td>zerodep_decode</td><td>pillow_encode</td><td>18.11 ms</td><td>2.55 ms</td><td>55.2</td><td>392.0</td><td class="ratio-cell slower">7.1x slower</td></tr>
+<tr><td>Matrix Round Trip</td><td>zerodep_decode</td><td>pillow_decode</td><td>18.11 ms</td><td>262.6 µs</td><td>55.2</td><td>3.8K</td><td class="ratio-cell slower">69.0x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_14"></canvas></div>
 </div>
@@ -434,32 +446,32 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Decode Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>323.1 µs</td><td>4.5 µs</td><td>3.1K</td><td>221.5K</td><td class="ratio-cell slower">71.6x slower</td></tr>
-<tr><td>Decode Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>44.8 µs</td><td>1.3 µs</td><td>22.3K</td><td>783.3K</td><td class="ratio-cell slower">35.1x slower</td></tr>
-<tr><td>Decode Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>4.7 µs</td><td>688.6 ns</td><td>211.8K</td><td>1.45M</td><td class="ratio-cell slower">6.9x slower</td></tr>
-<tr><td>Encode Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>117.0 µs</td><td>2.5 µs</td><td>8.5K</td><td>401.7K</td><td class="ratio-cell slower">47.0x slower</td></tr>
-<tr><td>Encode Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>19.7 µs</td><td>319.6 ns</td><td>50.9K</td><td>3.13M</td><td class="ratio-cell slower">61.5x slower</td></tr>
-<tr><td>Encode Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>2.0 µs</td><td>290.6 ns</td><td>500.3K</td><td>3.44M</td><td class="ratio-cell slower">6.9x slower</td></tr>
-<tr><td>Roundtrip Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>437.9 µs</td><td>6.8 µs</td><td>2.3K</td><td>146.2K</td><td class="ratio-cell slower">64.0x slower</td></tr>
-<tr><td>Roundtrip Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>64.9 µs</td><td>1.8 µs</td><td>15.4K</td><td>561.3K</td><td class="ratio-cell slower">36.4x slower</td></tr>
-<tr><td>Roundtrip Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>6.9 µs</td><td>1.0 µs</td><td>145.0K</td><td>986.1K</td><td class="ratio-cell slower">6.8x slower</td></tr>
+<tr><td>Decode Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>333.9 µs</td><td>4.5 µs</td><td>3.0K</td><td>221.5K</td><td class="ratio-cell slower">74.0x slower</td></tr>
+<tr><td>Decode Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>43.7 µs</td><td>1.3 µs</td><td>22.9K</td><td>741.4K</td><td class="ratio-cell slower">32.4x slower</td></tr>
+<tr><td>Decode Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>4.7 µs</td><td>745.5 ns</td><td>214.1K</td><td>1.34M</td><td class="ratio-cell slower">6.3x slower</td></tr>
+<tr><td>Encode Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>129.1 µs</td><td>2.5 µs</td><td>7.7K</td><td>406.0K</td><td class="ratio-cell slower">52.4x slower</td></tr>
+<tr><td>Encode Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>19.3 µs</td><td>397.9 ns</td><td>51.8K</td><td>2.51M</td><td class="ratio-cell slower">48.5x slower</td></tr>
+<tr><td>Encode Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>2.1 µs</td><td>196.1 ns</td><td>482.8K</td><td>5.10M</td><td class="ratio-cell slower">10.6x slower</td></tr>
+<tr><td>Roundtrip Comparison</td><td>zerodep_large</td><td>google (protobuf)</td><td>469.0 µs</td><td>6.9 µs</td><td>2.1K</td><td>144.8K</td><td class="ratio-cell slower">67.9x slower</td></tr>
+<tr><td>Roundtrip Comparison</td><td>zerodep_medium</td><td>google (protobuf)</td><td>65.6 µs</td><td>1.8 µs</td><td>15.2K</td><td>556.7K</td><td class="ratio-cell slower">36.5x slower</td></tr>
+<tr><td>Roundtrip Comparison</td><td>zerodep_small</td><td>google (protobuf)</td><td>7.0 µs</td><td>1.1 µs</td><td>143.5K</td><td>941.8K</td><td class="ratio-cell slower">6.6x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_15"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>test_decode_large</td><td>decode_large</td><td>319.3 µs</td><td>3.1K</td></tr>
-<tr><td>test_decode_medium</td><td>decode_medium</td><td>44.4 µs</td><td>22.5K</td></tr>
-<tr><td>test_decode_small</td><td>decode_small</td><td>4.7 µs</td><td>212.2K</td></tr>
-<tr><td>test_encode_large</td><td>encode_large</td><td>116.0 µs</td><td>8.6K</td></tr>
-<tr><td>test_encode_medium</td><td>encode_medium</td><td>19.1 µs</td><td>52.5K</td></tr>
-<tr><td>test_encode_small</td><td>encode_small</td><td>1.9 µs</td><td>517.2K</td></tr>
-<tr><td>test_from_dict_large</td><td>from_dict_large</td><td>170.0 µs</td><td>5.9K</td></tr>
-<tr><td>test_roundtrip_large</td><td>roundtrip_large</td><td>438.2 µs</td><td>2.3K</td></tr>
-<tr><td>test_roundtrip_medium</td><td>roundtrip_medium</td><td>63.7 µs</td><td>15.7K</td></tr>
-<tr><td>test_roundtrip_small</td><td>roundtrip_small</td><td>6.8 µs</td><td>146.1K</td></tr>
-<tr><td>test_to_dict_large</td><td>to_dict_large</td><td>101.0 µs</td><td>9.9K</td></tr>
+<tr><td>test_decode_large</td><td>decode_large</td><td>333.4 µs</td><td>3.0K</td></tr>
+<tr><td>test_decode_medium</td><td>decode_medium</td><td>44.6 µs</td><td>22.4K</td></tr>
+<tr><td>test_decode_small</td><td>decode_small</td><td>4.8 µs</td><td>207.9K</td></tr>
+<tr><td>test_encode_large</td><td>encode_large</td><td>127.5 µs</td><td>7.8K</td></tr>
+<tr><td>test_encode_medium</td><td>encode_medium</td><td>19.1 µs</td><td>52.4K</td></tr>
+<tr><td>test_encode_small</td><td>encode_small</td><td>2.1 µs</td><td>477.8K</td></tr>
+<tr><td>test_from_dict_large</td><td>from_dict_large</td><td>175.0 µs</td><td>5.7K</td></tr>
+<tr><td>test_roundtrip_large</td><td>roundtrip_large</td><td>469.5 µs</td><td>2.1K</td></tr>
+<tr><td>test_roundtrip_medium</td><td>roundtrip_medium</td><td>65.7 µs</td><td>15.2K</td></tr>
+<tr><td>test_roundtrip_small</td><td>roundtrip_small</td><td>7.0 µs</td><td>143.1K</td></tr>
+<tr><td>test_to_dict_large</td><td>to_dict_large</td><td>106.6 µs</td><td>9.4K</td></tr>
 </tbody></table>
 </div>
 <div class="module-section" id="mod-qr">
@@ -467,13 +479,13 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Encode Binary</td><td>zerodep</td><td>qrcode</td><td>35.07 ms</td><td>44.50 ms</td><td>28.5</td><td>22.5</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode High Ecc</td><td>zerodep</td><td>qrcode</td><td>6.58 ms</td><td>6.52 ms</td><td>151.9</td><td>153.4</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Encode Large Data</td><td>zerodep</td><td>qrcode</td><td>35.46 ms</td><td>47.28 ms</td><td>28.2</td><td>21.1</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>11.18 ms</td><td>12.53 ms</td><td>89.4</td><td>79.8</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Encode Numeric</td><td>zerodep</td><td>qrcode</td><td>4.39 ms</td><td>4.22 ms</td><td>228.0</td><td>237.2</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>2.35 ms</td><td>1.83 ms</td><td>425.8</td><td>545.9</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>5.50 ms</td><td>5.45 ms</td><td>181.8</td><td>183.4</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Encode Binary</td><td>zerodep</td><td>qrcode</td><td>34.40 ms</td><td>42.11 ms</td><td>29.1</td><td>23.7</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Encode High Ecc</td><td>zerodep</td><td>qrcode</td><td>6.43 ms</td><td>6.23 ms</td><td>155.4</td><td>160.6</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Encode Large Data</td><td>zerodep</td><td>qrcode</td><td>36.08 ms</td><td>45.41 ms</td><td>27.7</td><td>22.0</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>10.94 ms</td><td>11.92 ms</td><td>91.4</td><td>83.9</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Encode Numeric</td><td>zerodep</td><td>qrcode</td><td>4.29 ms</td><td>4.05 ms</td><td>232.9</td><td>246.7</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>2.35 ms</td><td>1.81 ms</td><td>424.6</td><td>551.2</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>5.33 ms</td><td>5.16 ms</td><td>187.5</td><td>193.8</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_16"></canvas></div>
 </div>
@@ -482,25 +494,25 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>37.55 ms</td><td>24.45 ms</td><td>26.6</td><td>40.9</td><td class="ratio-cell slower">1.5x slower</td></tr>
-<tr><td>Large</td><td>zerodep</td><td>Mozilla Readability.js</td><td>37.55 ms</td><td>673.33 ms</td><td>26.6</td><td>1.5</td><td class="ratio-cell faster">17.9x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>2.36 ms</td><td>3.23 ms</td><td>423.2</td><td>309.6</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>Mozilla Readability.js</td><td>2.36 ms</td><td>25.47 ms</td><td>423.2</td><td>39.3</td><td class="ratio-cell faster">10.8x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>232.1 µs</td><td>603.7 µs</td><td>4.3K</td><td>1.7K</td><td class="ratio-cell faster">2.6x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>Mozilla Readability.js</td><td>232.1 µs</td><td>15.47 ms</td><td>4.3K</td><td>64.7</td><td class="ratio-cell faster">66.6x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>5.69 ms</td><td>12.60 ms</td><td>175.7</td><td>79.3</td><td class="ratio-cell faster">2.2x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>5.69 ms</td><td>45.29 ms</td><td>175.7</td><td>22.1</td><td class="ratio-cell faster">8.0x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>1.10 ms</td><td>2.24 ms</td><td>909.9</td><td>446.6</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>1.10 ms</td><td>13.24 ms</td><td>909.9</td><td>75.5</td><td class="ratio-cell faster">12.0x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>398.4 µs</td><td>684.4 µs</td><td>2.5K</td><td>1.5K</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>398.4 µs</td><td>8.72 ms</td><td>2.5K</td><td>114.7</td><td class="ratio-cell faster">21.9x faster</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>33.97 ms</td><td>24.72 ms</td><td>29.4</td><td>40.5</td><td class="ratio-cell slower">1.4x slower</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>Mozilla Readability.js</td><td>33.97 ms</td><td>660.47 ms</td><td>29.4</td><td>1.5</td><td class="ratio-cell faster">19.4x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>2.61 ms</td><td>3.21 ms</td><td>382.7</td><td>311.8</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>Mozilla Readability.js</td><td>2.61 ms</td><td>27.22 ms</td><td>382.7</td><td>36.7</td><td class="ratio-cell faster">10.4x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>285.0 µs</td><td>701.1 µs</td><td>3.5K</td><td>1.4K</td><td class="ratio-cell faster">2.5x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>Mozilla Readability.js</td><td>285.0 µs</td><td>16.02 ms</td><td>3.5K</td><td>62.4</td><td class="ratio-cell faster">56.2x faster</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>5.78 ms</td><td>13.28 ms</td><td>173.1</td><td>75.3</td><td class="ratio-cell faster">2.3x faster</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>5.78 ms</td><td>41.90 ms</td><td>173.1</td><td>23.9</td><td class="ratio-cell faster">7.3x faster</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>1.19 ms</td><td>2.42 ms</td><td>839.7</td><td>413.9</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>1.19 ms</td><td>11.97 ms</td><td>839.7</td><td>83.6</td><td class="ratio-cell faster">10.1x faster</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>465.4 µs</td><td>763.4 µs</td><td>2.1K</td><td>1.3K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>465.4 µs</td><td>8.66 ms</td><td>2.1K</td><td>115.5</td><td class="ratio-cell faster">18.6x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_17"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.43 ms</td><td>697.2</td></tr>
+<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.66 ms</td><td>601.3</td></tr>
 </tbody></table>
 </div>
 <div class="module-section" id="mod-retry">
@@ -508,9 +520,9 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Backoff Calculation</td><td>zerodep</td><td>tenacity</td><td>5.4 µs</td><td>14.9 µs</td><td>184.9K</td><td>67.2K</td><td class="ratio-cell faster">2.8x faster</td></tr>
-<tr><td>Decorator Overhead</td><td>zerodep</td><td>tenacity</td><td>491.5 ns</td><td>18.4 µs</td><td>2.03M</td><td>54.4K</td><td class="ratio-cell faster">37.4x faster</td></tr>
-<tr><td>Retry With Failures</td><td>zerodep</td><td>tenacity</td><td>129.3 µs</td><td>176.7 µs</td><td>7.7K</td><td>5.7K</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Backoff Calculation</td><td>zerodep</td><td>tenacity</td><td>5.8 µs</td><td>15.0 µs</td><td>172.4K</td><td>66.8K</td><td class="ratio-cell faster">2.6x faster</td></tr>
+<tr><td>Decorator Overhead</td><td>zerodep</td><td>tenacity</td><td>529.1 ns</td><td>19.8 µs</td><td>1.89M</td><td>50.5K</td><td class="ratio-cell faster">37.4x faster</td></tr>
+<tr><td>Retry With Failures</td><td>zerodep</td><td>tenacity</td><td>248.6 µs</td><td>323.9 µs</td><td>4.0K</td><td>3.1K</td><td class="ratio-cell faster">1.3x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_18"></canvas></div>
 </div>
@@ -519,16 +531,16 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Env Passing</td><td>zerodep</td><td>sh</td><td>12.76 ms</td><td>23.02 ms</td><td>78.3</td><td>43.4</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Env Passing</td><td>zerodep</td><td>subprocess</td><td>12.76 ms</td><td>12.65 ms</td><td>78.3</td><td>79.0</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Output Capture</td><td>zerodep</td><td>sh</td><td>12.85 ms</td><td>21.48 ms</td><td>77.8</td><td>46.5</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Output Capture</td><td>zerodep</td><td>subprocess</td><td>12.85 ms</td><td>12.43 ms</td><td>77.8</td><td>80.4</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Simple Command</td><td>zerodep</td><td>sh</td><td>2.04 ms</td><td>9.75 ms</td><td>491.4</td><td>102.5</td><td class="ratio-cell faster">4.8x faster</td></tr>
-<tr><td>Simple Command</td><td>zerodep</td><td>subprocess</td><td>2.04 ms</td><td>960.2 µs</td><td>491.4</td><td>1.0K</td><td class="ratio-cell slower">2.1x slower</td></tr>
-<tr><td>Stdin Input</td><td>zerodep</td><td>sh</td><td>12.51 ms</td><td>21.56 ms</td><td>79.9</td><td>46.4</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Stdin Input</td><td>zerodep</td><td>subprocess</td><td>12.51 ms</td><td>12.52 ms</td><td>79.9</td><td>79.9</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Streaming Lines</td><td>zerodep</td><td>sh</td><td>12.70 ms</td><td>21.60 ms</td><td>78.8</td><td>46.3</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Streaming Lines</td><td>zerodep</td><td>subprocess</td><td>12.70 ms</td><td>12.55 ms</td><td>78.8</td><td>79.7</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Env Passing</td><td>zerodep</td><td>sh</td><td>11.31 ms</td><td>20.22 ms</td><td>88.4</td><td>49.5</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Env Passing</td><td>zerodep</td><td>subprocess</td><td>11.31 ms</td><td>11.17 ms</td><td>88.4</td><td>89.5</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Output Capture</td><td>zerodep</td><td>sh</td><td>11.09 ms</td><td>19.53 ms</td><td>90.1</td><td>51.2</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Output Capture</td><td>zerodep</td><td>subprocess</td><td>11.09 ms</td><td>11.08 ms</td><td>90.1</td><td>90.3</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Simple Command</td><td>zerodep</td><td>sh</td><td>2.00 ms</td><td>9.39 ms</td><td>500.6</td><td>106.5</td><td class="ratio-cell faster">4.7x faster</td></tr>
+<tr><td>Simple Command</td><td>zerodep</td><td>subprocess</td><td>2.00 ms</td><td>899.3 µs</td><td>500.6</td><td>1.1K</td><td class="ratio-cell slower">2.2x slower</td></tr>
+<tr><td>Stdin Input</td><td>zerodep</td><td>sh</td><td>11.08 ms</td><td>19.75 ms</td><td>90.2</td><td>50.6</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Stdin Input</td><td>zerodep</td><td>subprocess</td><td>11.08 ms</td><td>11.05 ms</td><td>90.2</td><td>90.5</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Streaming Lines</td><td>zerodep</td><td>sh</td><td>11.09 ms</td><td>19.84 ms</td><td>90.2</td><td>50.4</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Streaming Lines</td><td>zerodep</td><td>subprocess</td><td>11.09 ms</td><td>11.02 ms</td><td>90.2</td><td>90.8</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_19"></canvas></div>
 </div>
@@ -537,13 +549,13 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Batch Next Fire Time</td><td>zerodep</td><td>croniter</td><td>701.7 µs</td><td>3.91 ms</td><td>1.4K</td><td>255.4</td><td class="ratio-cell faster">5.6x faster</td></tr>
-<tr><td>Batch Next Fire Time</td><td>zerodep</td><td>APScheduler</td><td>701.7 µs</td><td>940.5 µs</td><td>1.4K</td><td>1.1K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Cron Parsing</td><td>zerodep</td><td>croniter</td><td>42.5 µs</td><td>316.0 µs</td><td>23.5K</td><td>3.2K</td><td class="ratio-cell faster">7.4x faster</td></tr>
-<tr><td>Cron Parsing</td><td>zerodep</td><td>APScheduler</td><td>42.5 µs</td><td>172.4 µs</td><td>23.5K</td><td>5.8K</td><td class="ratio-cell faster">4.1x faster</td></tr>
-<tr><td>Job Add Overhead</td><td>zerodep</td><td>schedule</td><td>517.6 µs</td><td>590.1 µs</td><td>1.9K</td><td>1.7K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Next Fire Time</td><td>zerodep</td><td>croniter</td><td>53.8 µs</td><td>529.3 µs</td><td>18.6K</td><td>1.9K</td><td class="ratio-cell faster">9.8x faster</td></tr>
-<tr><td>Next Fire Time</td><td>zerodep</td><td>APScheduler</td><td>53.8 µs</td><td>125.3 µs</td><td>18.6K</td><td>8.0K</td><td class="ratio-cell faster">2.3x faster</td></tr>
+<tr><td>Batch Next Fire Time</td><td>zerodep</td><td>croniter</td><td>685.6 µs</td><td>4.48 ms</td><td>1.5K</td><td>223.3</td><td class="ratio-cell faster">6.5x faster</td></tr>
+<tr><td>Batch Next Fire Time</td><td>zerodep</td><td>APScheduler</td><td>685.6 µs</td><td>974.5 µs</td><td>1.5K</td><td>1.0K</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Cron Parsing</td><td>zerodep</td><td>croniter</td><td>45.5 µs</td><td>375.8 µs</td><td>22.0K</td><td>2.7K</td><td class="ratio-cell faster">8.3x faster</td></tr>
+<tr><td>Cron Parsing</td><td>zerodep</td><td>APScheduler</td><td>45.5 µs</td><td>183.2 µs</td><td>22.0K</td><td>5.5K</td><td class="ratio-cell faster">4.0x faster</td></tr>
+<tr><td>Job Add Overhead</td><td>zerodep</td><td>schedule</td><td>548.2 µs</td><td>535.3 µs</td><td>1.8K</td><td>1.9K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Next Fire Time</td><td>zerodep</td><td>croniter</td><td>54.4 µs</td><td>707.2 µs</td><td>18.4K</td><td>1.4K</td><td class="ratio-cell faster">13.0x faster</td></tr>
+<tr><td>Next Fire Time</td><td>zerodep</td><td>APScheduler</td><td>54.4 µs</td><td>132.8 µs</td><td>18.4K</td><td>7.5K</td><td class="ratio-cell faster">2.4x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_20"></canvas></div>
 </div>
@@ -552,12 +564,12 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Compare</td><td>zerodep</td><td>packaging</td><td>3.5 µs</td><td>3.7 µs</td><td>286.5K</td><td>269.1K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Parse Complex</td><td>zerodep</td><td>packaging</td><td>22.6 µs</td><td>21.8 µs</td><td>44.3K</td><td>46.0K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse Prerelease</td><td>zerodep</td><td>packaging</td><td>19.4 µs</td><td>20.4 µs</td><td>51.5K</td><td>49.0K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse Simple</td><td>zerodep</td><td>packaging</td><td>13.7 µs</td><td>5.7 µs</td><td>73.0K</td><td>176.7K</td><td class="ratio-cell slower">2.4x slower</td></tr>
-<tr><td>Property Access</td><td>zerodep</td><td>packaging</td><td>1.2 µs</td><td>8.8 µs</td><td>860.5K</td><td>113.4K</td><td class="ratio-cell faster">7.6x faster</td></tr>
-<tr><td>Sort</td><td>zerodep</td><td>packaging</td><td>1.8 µs</td><td>1.9 µs</td><td>571.4K</td><td>534.6K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Compare</td><td>zerodep</td><td>packaging</td><td>3.3 µs</td><td>3.8 µs</td><td>301.3K</td><td>264.8K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse Complex</td><td>zerodep</td><td>packaging</td><td>23.0 µs</td><td>22.8 µs</td><td>43.5K</td><td>43.8K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse Prerelease</td><td>zerodep</td><td>packaging</td><td>19.8 µs</td><td>21.2 µs</td><td>50.5K</td><td>47.2K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse Simple</td><td>zerodep</td><td>packaging</td><td>13.7 µs</td><td>6.1 µs</td><td>73.0K</td><td>164.9K</td><td class="ratio-cell slower">2.3x slower</td></tr>
+<tr><td>Property Access</td><td>zerodep</td><td>packaging</td><td>1.2 µs</td><td>9.5 µs</td><td>809.0K</td><td>105.3K</td><td class="ratio-cell faster">7.7x faster</td></tr>
+<tr><td>Sort</td><td>zerodep</td><td>packaging</td><td>1.7 µs</td><td>1.9 µs</td><td>579.7K</td><td>521.9K</td><td class="ratio-cell faster">1.1x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_21"></canvas></div>
 </div>
@@ -566,21 +578,21 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large</td><td>zerodep</td><td>beautifulsoup4</td><td>24.35 ms</td><td>52.63 ms</td><td>41.1</td><td>19.0</td><td class="ratio-cell faster">2.2x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>beautifulsoup4</td><td>2.03 ms</td><td>4.78 ms</td><td>492.2</td><td>209.0</td><td class="ratio-cell faster">2.4x faster</td></tr>
-<tr><td>Pseudo Select (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>98.37 ms</td><td>104.00 ms</td><td>10.2</td><td>9.6</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Pseudo Select (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>3.74 ms</td><td>9.45 ms</td><td>267.1</td><td>105.8</td><td class="ratio-cell faster">2.5x faster</td></tr>
-<tr><td>Pseudo Select (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>371.6 µs</td><td>1.28 ms</td><td>2.7K</td><td>779.2</td><td class="ratio-cell faster">3.5x faster</td></tr>
-<tr><td>Select (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>29.07 ms</td><td>85.78 ms</td><td>34.4</td><td>11.7</td><td class="ratio-cell faster">3.0x faster</td></tr>
-<tr><td>Select (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.46 ms</td><td>8.22 ms</td><td>405.8</td><td>121.7</td><td class="ratio-cell faster">3.3x faster</td></tr>
-<tr><td>Select (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>343.5 µs</td><td>1.00 ms</td><td>2.9K</td><td>999.2</td><td class="ratio-cell faster">2.9x faster</td></tr>
-<tr><td>Serialize (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>24.47 ms</td><td>69.17 ms</td><td>40.9</td><td>14.5</td><td class="ratio-cell faster">2.8x faster</td></tr>
-<tr><td>Serialize (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.07 ms</td><td>6.80 ms</td><td>482.8</td><td>147.1</td><td class="ratio-cell faster">3.3x faster</td></tr>
-<tr><td>Serialize (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>262.8 µs</td><td>796.9 µs</td><td>3.8K</td><td>1.3K</td><td class="ratio-cell faster">3.0x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>beautifulsoup4</td><td>237.1 µs</td><td>572.4 µs</td><td>4.2K</td><td>1.7K</td><td class="ratio-cell faster">2.4x faster</td></tr>
-<tr><td>Tree Ops (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>25.76 ms</td><td>58.83 ms</td><td>38.8</td><td>17.0</td><td class="ratio-cell faster">2.3x faster</td></tr>
-<tr><td>Tree Ops (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.16 ms</td><td>5.41 ms</td><td>462.9</td><td>185.0</td><td class="ratio-cell faster">2.5x faster</td></tr>
-<tr><td>Tree Ops (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>286.6 µs</td><td>706.5 µs</td><td>3.5K</td><td>1.4K</td><td class="ratio-cell faster">2.5x faster</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>beautifulsoup4</td><td>24.95 ms</td><td>67.31 ms</td><td>40.1</td><td>14.9</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>beautifulsoup4</td><td>2.38 ms</td><td>6.39 ms</td><td>420.7</td><td>156.6</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Pseudo Select (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>93.97 ms</td><td>121.57 ms</td><td>10.6</td><td>8.2</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Pseudo Select (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>3.77 ms</td><td>11.37 ms</td><td>265.3</td><td>88.0</td><td class="ratio-cell faster">3.0x faster</td></tr>
+<tr><td>Pseudo Select (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>443.7 µs</td><td>1.59 ms</td><td>2.3K</td><td>629.3</td><td class="ratio-cell faster">3.6x faster</td></tr>
+<tr><td>Select (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>30.77 ms</td><td>99.68 ms</td><td>32.5</td><td>10.0</td><td class="ratio-cell faster">3.2x faster</td></tr>
+<tr><td>Select (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.76 ms</td><td>9.92 ms</td><td>361.9</td><td>100.8</td><td class="ratio-cell faster">3.6x faster</td></tr>
+<tr><td>Select (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>375.8 µs</td><td>1.26 ms</td><td>2.7K</td><td>796.2</td><td class="ratio-cell faster">3.3x faster</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>26.42 ms</td><td>85.12 ms</td><td>37.9</td><td>11.7</td><td class="ratio-cell faster">3.2x faster</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.30 ms</td><td>8.48 ms</td><td>434.3</td><td>118.0</td><td class="ratio-cell faster">3.7x faster</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>315.7 µs</td><td>1.01 ms</td><td>3.2K</td><td>991.8</td><td class="ratio-cell faster">3.2x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>beautifulsoup4</td><td>291.1 µs</td><td>783.4 µs</td><td>3.4K</td><td>1.3K</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Tree Ops (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>22.82 ms</td><td>70.02 ms</td><td>43.8</td><td>14.3</td><td class="ratio-cell faster">3.1x faster</td></tr>
+<tr><td>Tree Ops (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.43 ms</td><td>6.46 ms</td><td>411.0</td><td>154.7</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Tree Ops (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>341.3 µs</td><td>917.5 µs</td><td>2.9K</td><td>1.1K</td><td class="ratio-cell faster">2.7x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_22"></canvas></div>
 </div>
@@ -589,23 +601,23 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>126.09 ms</td><td>14.31 ms</td><td>7.9</td><td>69.9</td><td class="ratio-cell slower">8.8x slower</td></tr>
-<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>3.1 µs</td><td>379.3 µs</td><td>325.9K</td><td>2.6K</td><td class="ratio-cell faster">123.6x faster</td></tr>
-<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>3.0 µs</td><td>100.8 µs</td><td>337.3K</td><td>9.9K</td><td class="ratio-cell faster">34.0x faster</td></tr>
+<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>124.79 ms</td><td>13.68 ms</td><td>8.0</td><td>73.1</td><td class="ratio-cell slower">9.1x slower</td></tr>
+<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>3.2 µs</td><td>386.3 µs</td><td>309.4K</td><td>2.6K</td><td class="ratio-cell faster">119.5x faster</td></tr>
+<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>3.2 µs</td><td>115.3 µs</td><td>314.8K</td><td>8.7K</td><td class="ratio-cell faster">36.3x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_23"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>1.13 ms</td><td>886.2</td></tr>
-<tr><td>Calibration Performance</td><td>search_raw</td><td>39.2 µs</td><td>25.5K</td></tr>
-<tr><td>Calibration Performance</td><td>search_calibrated</td><td>74.7 µs</td><td>13.4K</td></tr>
-<tr><td>MMRPerformance</td><td>mmr_100_candidates</td><td>3.94 ms</td><td>253.6</td></tr>
+<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>1.13 ms</td><td>888.1</td></tr>
+<tr><td>Calibration Performance</td><td>search_raw</td><td>42.7 µs</td><td>23.4K</td></tr>
+<tr><td>Calibration Performance</td><td>search_calibrated</td><td>80.6 µs</td><td>12.4K</td></tr>
+<tr><td>MMRPerformance</td><td>mmr_100_candidates</td><td>4.15 ms</td><td>241.1</td></tr>
 <tr><td>MMRPerformance</td><td>mmr_500_candidates</td><td>24.51 ms</td><td>40.8</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_2_lists_1000_results</td><td>919.8 µs</td><td>1.1K</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_10_lists_100_results</td><td>452.3 µs</td><td>2.2K</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_overlapping_docs</td><td>859.4 µs</td><td>1.2K</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_2_lists_1000_results</td><td>873.5 µs</td><td>1.1K</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_10_lists_100_results</td><td>431.1 µs</td><td>2.3K</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_overlapping_docs</td><td>818.7 µs</td><td>1.2K</td></tr>
 </tbody></table>
 </div>
 <div class="module-section" id="mod-sse">
@@ -613,9 +625,9 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large Stream</td><td>zerodep</td><td>httpx</td><td>3.07 ms</td><td>2.24 ms</td><td>325.9</td><td>446.7</td><td class="ratio-cell slower">1.4x slower</td></tr>
-<tr><td>Medium Stream</td><td>zerodep</td><td>httpx</td><td>386.1 µs</td><td>302.5 µs</td><td>2.6K</td><td>3.3K</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Small Stream</td><td>zerodep</td><td>httpx</td><td>30.2 µs</td><td>21.5 µs</td><td>33.1K</td><td>46.6K</td><td class="ratio-cell slower">1.4x slower</td></tr>
+<tr><td>Large Stream</td><td>zerodep</td><td>httpx</td><td>3.03 ms</td><td>2.49 ms</td><td>330.4</td><td>401.5</td><td class="ratio-cell slower">1.2x slower</td></tr>
+<tr><td>Medium Stream</td><td>zerodep</td><td>httpx</td><td>404.6 µs</td><td>336.4 µs</td><td>2.5K</td><td>3.0K</td><td class="ratio-cell slower">1.2x slower</td></tr>
+<tr><td>Small Stream</td><td>zerodep</td><td>httpx</td><td>30.9 µs</td><td>23.8 µs</td><td>32.4K</td><td>42.1K</td><td class="ratio-cell slower">1.3x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_24"></canvas></div>
 </div>
@@ -624,10 +636,10 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Bind And Log</td><td>zerodep</td><td>structlog</td><td>10.5 µs</td><td>19.1 µs</td><td>94.9K</td><td>52.4K</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Bound Log</td><td>zerodep</td><td>structlog</td><td>11.0 µs</td><td>17.6 µs</td><td>90.8K</td><td>56.8K</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>JSONRendering</td><td>zerodep</td><td>structlog</td><td>9.2 µs</td><td>10.8 µs</td><td>108.2K</td><td>92.4K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Simple Log</td><td>zerodep</td><td>structlog</td><td>9.6 µs</td><td>12.3 µs</td><td>104.2K</td><td>81.1K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Bind And Log</td><td>zerodep</td><td>structlog</td><td>11.8 µs</td><td>25.2 µs</td><td>84.9K</td><td>39.8K</td><td class="ratio-cell faster">2.1x faster</td></tr>
+<tr><td>Bound Log</td><td>zerodep</td><td>structlog</td><td>12.4 µs</td><td>21.3 µs</td><td>80.9K</td><td>46.9K</td><td class="ratio-cell faster">1.7x faster</td></tr>
+<tr><td>JSONRendering</td><td>zerodep</td><td>structlog</td><td>9.8 µs</td><td>12.0 µs</td><td>101.5K</td><td>83.6K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Simple Log</td><td>zerodep</td><td>structlog</td><td>10.4 µs</td><td>14.0 µs</td><td>96.5K</td><td>71.7K</td><td class="ratio-cell faster">1.3x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_25"></canvas></div>
 </div>
@@ -636,9 +648,9 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large Table</td><td>zerodep</td><td>reference</td><td>6.44 ms</td><td>26.65 ms</td><td>155.3</td><td>37.5</td><td class="ratio-cell faster">4.1x faster</td></tr>
-<tr><td>Medium Table</td><td>zerodep</td><td>reference</td><td>387.7 µs</td><td>1.70 ms</td><td>2.6K</td><td>587.6</td><td class="ratio-cell faster">4.4x faster</td></tr>
-<tr><td>Small Table</td><td>zerodep</td><td>reference</td><td>45.7 µs</td><td>141.6 µs</td><td>21.9K</td><td>7.1K</td><td class="ratio-cell faster">3.1x faster</td></tr>
+<tr><td>Large Table</td><td>zerodep</td><td>reference</td><td>6.29 ms</td><td>28.00 ms</td><td>159.0</td><td>35.7</td><td class="ratio-cell faster">4.5x faster</td></tr>
+<tr><td>Medium Table</td><td>zerodep</td><td>reference</td><td>415.8 µs</td><td>1.84 ms</td><td>2.4K</td><td>543.7</td><td class="ratio-cell faster">4.4x faster</td></tr>
+<tr><td>Small Table</td><td>zerodep</td><td>reference</td><td>54.9 µs</td><td>176.9 µs</td><td>18.2K</td><td>5.7K</td><td class="ratio-cell faster">3.2x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_26"></canvas></div>
 </div>
@@ -647,12 +659,12 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_large_ref</td><td>2.14 ms</td><td>2.26 ms</td><td>467.0</td><td>441.9</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_medium_ref</td><td>310.1 µs</td><td>331.3 µs</td><td>3.2K</td><td>3.0K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_small_ref</td><td>20.6 µs</td><td>22.5 µs</td><td>48.6K</td><td>44.4K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_large_ref</td><td>1.18 ms</td><td>1.51 ms</td><td>847.9</td><td>662.8</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_medium_ref</td><td>203.2 µs</td><td>253.3 µs</td><td>4.9K</td><td>3.9K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_small_ref</td><td>9.2 µs</td><td>12.1 µs</td><td>108.6K</td><td>82.9K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_large_ref</td><td>2.26 ms</td><td>2.37 ms</td><td>443.1</td><td>421.4</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_medium_ref</td><td>337.0 µs</td><td>355.4 µs</td><td>3.0K</td><td>2.8K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_small_ref</td><td>20.9 µs</td><td>23.1 µs</td><td>47.9K</td><td>43.4K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_large_ref</td><td>1.27 ms</td><td>1.67 ms</td><td>786.4</td><td>599.4</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_medium_ref</td><td>206.9 µs</td><td>271.8 µs</td><td>4.8K</td><td>3.7K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_small_ref</td><td>9.6 µs</td><td>12.3 µs</td><td>104.1K</td><td>81.1K</td><td class="ratio-cell faster">1.3x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_27"></canvas></div>
 </div>
@@ -661,10 +673,10 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Generate Chrome Desktop</td><td>zerodep</td><td>ua_generator</td><td>5.0 µs</td><td>11.6 µs</td><td>198.7K</td><td>86.3K</td><td class="ratio-cell faster">2.3x faster</td></tr>
-<tr><td>Generate Default</td><td>zerodep</td><td>ua_generator</td><td>5.5 µs</td><td>12.0 µs</td><td>181.2K</td><td>83.5K</td><td class="ratio-cell faster">2.2x faster</td></tr>
-<tr><td>Generate Edge Mobile</td><td>zerodep</td><td>ua_generator</td><td>5.2 µs</td><td>13.4 µs</td><td>192.7K</td><td>74.5K</td><td class="ratio-cell faster">2.6x faster</td></tr>
-<tr><td>Headers Get</td><td>zerodep</td><td>ua_generator</td><td>7.8 µs</td><td>15.0 µs</td><td>128.4K</td><td>66.9K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Generate Chrome Desktop</td><td>zerodep</td><td>ua_generator</td><td>5.2 µs</td><td>11.9 µs</td><td>191.4K</td><td>83.8K</td><td class="ratio-cell faster">2.3x faster</td></tr>
+<tr><td>Generate Default</td><td>zerodep</td><td>ua_generator</td><td>14.2 µs</td><td>13.1 µs</td><td>70.6K</td><td>76.4K</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Generate Edge Mobile</td><td>zerodep</td><td>ua_generator</td><td>5.5 µs</td><td>14.6 µs</td><td>182.0K</td><td>68.4K</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Headers Get</td><td>zerodep</td><td>ua_generator</td><td>8.2 µs</td><td>16.1 µs</td><td>122.7K</td><td>62.2K</td><td class="ratio-cell faster">2.0x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_28"></canvas></div>
 </div>
@@ -673,11 +685,11 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Benchmark Constrained</td><td>ours</td><td>pydantic</td><td>10.0 µs</td><td>1.6 µs</td><td>100.1K</td><td>623.9K</td><td class="ratio-cell slower">6.2x slower</td></tr>
-<tr><td>Benchmark Json Schema</td><td>ours</td><td>pydantic</td><td>9.8 µs</td><td>164.0 µs</td><td>101.7K</td><td>6.1K</td><td class="ratio-cell faster">16.7x faster</td></tr>
-<tr><td>Benchmark List Of Dicts</td><td>ours</td><td>pydantic</td><td>229.0 µs</td><td>30.8 µs</td><td>4.4K</td><td>32.5K</td><td class="ratio-cell slower">7.4x slower</td></tr>
-<tr><td>Benchmark Nested</td><td>ours</td><td>pydantic</td><td>10.4 µs</td><td>2.2 µs</td><td>96.0K</td><td>449.5K</td><td class="ratio-cell slower">4.7x slower</td></tr>
-<tr><td>Benchmark Simple</td><td>ours</td><td>pydantic</td><td>5.7 µs</td><td>1.5 µs</td><td>174.3K</td><td>660.7K</td><td class="ratio-cell slower">3.8x slower</td></tr>
+<tr><td>Benchmark Constrained</td><td>ours</td><td>pydantic</td><td>10.0 µs</td><td>1.6 µs</td><td>100.4K</td><td>622.8K</td><td class="ratio-cell slower">6.2x slower</td></tr>
+<tr><td>Benchmark Json Schema</td><td>ours</td><td>pydantic</td><td>9.8 µs</td><td>198.2 µs</td><td>101.8K</td><td>5.0K</td><td class="ratio-cell faster">20.2x faster</td></tr>
+<tr><td>Benchmark List Of Dicts</td><td>ours</td><td>pydantic</td><td>233.8 µs</td><td>31.7 µs</td><td>4.3K</td><td>31.5K</td><td class="ratio-cell slower">7.4x slower</td></tr>
+<tr><td>Benchmark Nested</td><td>ours</td><td>pydantic</td><td>10.4 µs</td><td>2.2 µs</td><td>96.5K</td><td>455.7K</td><td class="ratio-cell slower">4.7x slower</td></tr>
+<tr><td>Benchmark Simple</td><td>ours</td><td>pydantic</td><td>5.7 µs</td><td>1.5 µs</td><td>175.0K</td><td>659.8K</td><td class="ratio-cell slower">3.8x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_29"></canvas></div>
 </div>
@@ -686,21 +698,21 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>xmltodict</td><td>5.11 ms</td><td>5.70 ms</td><td>195.6</td><td>175.4</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>375.9 µs</td><td>432.5 µs</td><td>2.7K</td><td>2.3K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>xmltodict</td><td>14.7 µs</td><td>16.6 µs</td><td>67.9K</td><td>60.1K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Unparse (Large)</td><td>zerodep</td><td>xmltodict</td><td>3.92 ms</td><td>6.48 ms</td><td>255.0</td><td>154.3</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Unparse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>266.9 µs</td><td>455.3 µs</td><td>3.7K</td><td>2.2K</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Unparse (Small)</td><td>zerodep</td><td>xmltodict</td><td>14.9 µs</td><td>19.3 µs</td><td>67.1K</td><td>51.8K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>xmltodict</td><td>5.52 ms</td><td>5.92 ms</td><td>181.2</td><td>168.9</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>409.6 µs</td><td>450.1 µs</td><td>2.4K</td><td>2.2K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>xmltodict</td><td>15.4 µs</td><td>18.0 µs</td><td>64.9K</td><td>55.6K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Unparse (Large)</td><td>zerodep</td><td>xmltodict</td><td>4.19 ms</td><td>6.67 ms</td><td>238.9</td><td>150.0</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Unparse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>294.8 µs</td><td>466.3 µs</td><td>3.4K</td><td>2.1K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Unparse (Small)</td><td>zerodep</td><td>xmltodict</td><td>15.0 µs</td><td>20.2 µs</td><td>66.9K</td><td>49.5K</td><td class="ratio-cell faster">1.4x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_30"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Extract Tags</td><td>extract_all</td><td>713.4 µs</td><td>1.4K</td></tr>
-<tr><td>Extract Tags</td><td>extract_filtered</td><td>423.9 µs</td><td>2.4K</td></tr>
-<tr><td>Extract Tags</td><td>extract_first_only</td><td>9.3 µs</td><td>107.9K</td></tr>
+<tr><td>Extract Tags</td><td>extract_all</td><td>764.3 µs</td><td>1.3K</td></tr>
+<tr><td>Extract Tags</td><td>extract_filtered</td><td>462.7 µs</td><td>2.2K</td></tr>
+<tr><td>Extract Tags</td><td>extract_first_only</td><td>9.9 µs</td><td>100.5K</td></tr>
 </tbody></table>
 </div>
 <div class="module-section" id="mod-yaml">
@@ -708,16 +720,17 @@ td { white-space: nowrap; }
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Dump (Large)</td><td>zerodep</td><td>PyYAML</td><td>2.49 ms</td><td>17.17 ms</td><td>402.4</td><td>58.2</td><td class="ratio-cell faster">6.9x faster</td></tr>
-<tr><td>Dump (Medium)</td><td>zerodep</td><td>PyYAML</td><td>115.5 µs</td><td>828.1 µs</td><td>8.7K</td><td>1.2K</td><td class="ratio-cell faster">7.2x faster</td></tr>
-<tr><td>Dump (Small)</td><td>zerodep</td><td>PyYAML</td><td>18.5 µs</td><td>135.9 µs</td><td>54.1K</td><td>7.4K</td><td class="ratio-cell faster">7.4x faster</td></tr>
-<tr><td>Load (Large)</td><td>zerodep</td><td>PyYAML</td><td>5.87 ms</td><td>39.45 ms</td><td>170.3</td><td>25.3</td><td class="ratio-cell faster">6.7x faster</td></tr>
-<tr><td>Load (Medium)</td><td>zerodep</td><td>PyYAML</td><td>279.7 µs</td><td>1.63 ms</td><td>3.6K</td><td>613.7</td><td class="ratio-cell faster">5.8x faster</td></tr>
-<tr><td>Load (Small)</td><td>zerodep</td><td>PyYAML</td><td>42.5 µs</td><td>241.0 µs</td><td>23.5K</td><td>4.1K</td><td class="ratio-cell faster">5.7x faster</td></tr>
+<tr><td>Dump (Large)</td><td>zerodep</td><td>PyYAML</td><td>2.79 ms</td><td>22.31 ms</td><td>358.3</td><td>44.8</td><td class="ratio-cell faster">8.0x faster</td></tr>
+<tr><td>Dump (Medium)</td><td>zerodep</td><td>PyYAML</td><td>148.5 µs</td><td>1.02 ms</td><td>6.7K</td><td>980.4</td><td class="ratio-cell faster">6.9x faster</td></tr>
+<tr><td>Dump (Small)</td><td>zerodep</td><td>PyYAML</td><td>20.6 µs</td><td>180.1 µs</td><td>48.5K</td><td>5.6K</td><td class="ratio-cell faster">8.7x faster</td></tr>
+<tr><td>Load (Large)</td><td>zerodep</td><td>PyYAML</td><td>5.61 ms</td><td>44.25 ms</td><td>178.3</td><td>22.6</td><td class="ratio-cell faster">7.9x faster</td></tr>
+<tr><td>Load (Medium)</td><td>zerodep</td><td>PyYAML</td><td>295.3 µs</td><td>1.98 ms</td><td>3.4K</td><td>504.7</td><td class="ratio-cell faster">6.7x faster</td></tr>
+<tr><td>Load (Small)</td><td>zerodep</td><td>PyYAML</td><td>44.4 µs</td><td>304.7 µs</td><td>22.5K</td><td>3.3K</td><td class="ratio-cell faster">6.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_31"></canvas></div>
 </div>
 
+<button class="back-to-top" id="back-to-top" title="Back to top">↑</button>
 <script>
 async function loadHistory(dataJsPath) {
   try {
@@ -780,13 +793,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [963.2629344083299, 26463.82533772279, 526560.8586069576, 270.695576980313, 5957.869628436422, 89442.83973463858, 656.9618211148244, 11843.523422199376, 249127.52211204276],
+        data: [1374.2994246496737, 23981.041620140426, 506159.5088971431, 243.56835287878536, 5658.020060120417, 86184.46834689782, 605.441567897173, 11311.023600672203, 239526.31817070598],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "a2a-protocol" + ' (ops/s)',
-        data: [1455.5124606615016, 29284.60904402173, 914824.0391097086, 283.2896028464066, 5975.582257652715, 84295.5100588012, 532.8773526379118, 9812.836301066529, 198425.341069986],
+        data: [1444.8813902202937, 26868.75367461312, 853661.2318579628, 323.32130316759884, 5727.660713760225, 79608.91221003221, 443.3525860470081, 9464.288357731499, 192709.13853571776],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -814,13 +827,13 @@ new Chart(document.getElementById('chart_1'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [6907.430881740095, 175192.34859421907, 618289.5453731404, 1103.1081064689433, 11634.254178069732, 101074.09688890981, 1941.7144571813776, 16281.221423446787, 249511.58228409378],
+        data: [6704.355212425292, 171285.91176560684, 580190.0111801714, 1045.529845855997, 10978.375009395419, 94485.69695927615, 1836.5536365395228, 15710.934275383388, 240996.63620024975],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "acp (ref)" + ' (ops/s)',
-        data: [12923.715175136698, 18765.628926962985, 579925.9392281066, 2569.971781179117, 13166.138810494998, 149832.67931981527, 12956.283332821718, 77101.95056966977, 782702.027302344],
+        data: [13037.386101297865, 17194.2748435021, 575093.4366502429, 2540.3154131911742, 11817.244870685521, 145185.3649720095, 13548.60139956211, 78457.507419141, 774560.4959365147],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -848,13 +861,13 @@ new Chart(document.getElementById('chart_2'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [2.819230877775538, 170.0134297485888, 9136.212542219953, 3.7692535639365987, 237.99488476597452, 12007.313195006178, 3.748300148693873, 238.15082049652867, 11874.520353241676, 2.831548795010126, 176.12012867008906, 9373.57161429897, 3.8471382459694854, 242.31618667153154, 12218.651788727166, 2.620975373518283, 164.4614384321481, 3756.3678450451407, 2.6366443004859197, 160.770833877205, 3735.5199103707473],
+        data: [2.8754020809874024, 177.83491465113386, 9331.68281428711, 3.8674074754783803, 240.28261964212484, 12064.550703353081, 3.8706900221739042, 244.88857418556213, 12062.020981964391, 2.9397663424910805, 183.6280569437218, 9526.657313081374, 4.03901164050663, 249.9525294387357, 11827.177196394297, 2.6929982897607907, 166.4451332381461, 3670.915320392767, 2.6875543332109118, 164.1543313361325, 3710.725446465346],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "PyCryptodome" + ' (ops/s)',
-        data: [7234.324019025583, 78640.10295766155, 97143.7620560406, 4799.544837433177, 77095.15980734021, 103487.686922285, 9560.830324588433, 76940.6432279753, 87431.52832641629, 48528.47056130038, 105651.62185001721, 113057.18676827918, 49928.01684221154, 114086.78633003723, 121006.51719729675, 6072.3287327891, 17134.332757768963, 17538.278443739502, 6868.830880569757, 21925.57610087779, 22419.675818207525],
+        data: [7425.445229296204, 74571.42825061873, 92570.85932109493, 7499.439694807883, 78669.56276919505, 98164.35391825893, 10994.324587062763, 73074.00449425896, 83183.9463200769, 45730.0306661214, 99008.82173197651, 107646.07854479383, 47766.544004644, 108871.72464448422, 117077.42668513134, 5928.213556914553, 13429.360308947724, 13795.185180049333, 6544.640315491163, 17198.56439271203, 17764.960346557677],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -882,13 +895,13 @@ new Chart(document.getElementById('chart_3'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [4605.082309296866, 586.2154972283552, 1629.931073328433, 1048.166059620861, 1256.5100019531951, 303.11791981325683],
+        data: [4202.104857320517, 561.1436134604023, 1542.3796923680175, 994.6108523036996, 1181.3157046499166, 279.68880303084427],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "cachetools" + ' (ops/s)',
-        data: [4027.035909652091, 553.7306908306076, 1599.8564774184408, 923.3239967776344, 1180.6815680506681, 304.3866605403193],
+        data: [3683.0176457165467, 522.7743461352352, 1522.5251700699846, 893.2599763421971, 1083.5181420406332, 279.96932377069993],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -916,13 +929,13 @@ new Chart(document.getElementById('chart_4'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [781599.8869420213, 831024.1527309247, 376746.71403095656, 1495461.089908595, 1197225.440125861],
+        data: [762504.3738109791, 797385.8693331241, 361580.18344493944, 1332674.0986164415, 1083851.9385343436],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-decouple" + ' (ops/s)',
-        data: [399964.08829361404, 439195.8758036447, 79714.02944455013, 612390.3796301739, 606723.4485859165],
+        data: [399100.7189058207, 439543.6663555058, 78099.4188595058, 602722.3504550433, 595599.2712944736],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -950,13 +963,13 @@ new Chart(document.getElementById('chart_5'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [10575.431003579619, 32084.305902882392, 96942.48513789612],
+        data: [10294.81816372614, 31466.19194067787, 95175.93553685152],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "unidiff" + ' (ops/s)',
-        data: [5356.371211584772, 16330.553641044055, 47501.194696814186],
+        data: [5082.601526128056, 15845.642535150024, 44818.71886150987],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -984,13 +997,13 @@ new Chart(document.getElementById('chart_6'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [746.5811028638088, 5324.509049304895, 37213.941074817456],
+        data: [723.0918803062375, 5086.13587955984, 35898.06040068051],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-dotenv" + ' (ops/s)',
-        data: [745.0677203836755, 5338.713531192167, 37779.71996433033],
+        data: [720.6443883134847, 5090.782543494809, 36228.867806810034],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1018,13 +1031,13 @@ new Chart(document.getElementById('chart_7'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [2254.148637986642, 10555.130292454178, 69722.52607226721, 1580.6995697321504, 7849.687450325619, 47449.18270607536],
+        data: [2171.567630005529, 10367.404601230366, 68272.52663827119, 1399.5636772892396, 6505.221370136091, 40554.93195670409],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-frontmatter" + ' (ops/s)',
-        data: [2270.334037984207, 11598.185397103009, 68785.4549194463, 1570.5646780803602, 8047.376634369048, 47007.03651018681],
+        data: [2183.18851480317, 11211.702902933264, 67866.87773352138, 1403.0198187616031, 7065.299226217991, 42858.669187236876],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1052,13 +1065,13 @@ new Chart(document.getElementById('chart_8'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [962.2361042932391, 699.7186417522034, 975.1063460547344, 869.3564533232459, 929.4261804457593, 1685.0715296946732, 1100.5480373847909, 1737.687729989837, 1670.4136032040258, 1546.3238680044599, 1706.6429804660013],
+        data: [855.6674636214801, 659.2392372346511, 902.0031645078317, 803.7495011588538, 852.4757512598833, 1609.083308271454, 1019.8158509373623, 1619.7550951775017, 1553.3110232757736, 1439.8801052431716, 1570.9557880279929],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "httpx" + ' (ops/s)',
-        data: [40.25086874523856, 39.1718009537916, 38.96639732726351, 38.87467219989718, 38.84109551426263, 1032.932989129639, 53.662776991825986, 54.161315206320786, 55.052016119568776, 54.34653541043922, 55.399361828524185],
+        data: [37.69384912503977, 38.17814869039359, 39.72871335691205, 38.351728402006046, 39.52999101580225, 980.136227164878, 52.16672066591337, 52.42912735422398, 52.72927185694536, 53.24685733424421, 53.399029803709944],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1086,13 +1099,13 @@ new Chart(document.getElementById('chart_9'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [585.5478069684697, 11266.453861941705, 70045.02644594407],
+        data: [500.1655522090011, 10049.78609613918, 60666.933388166384],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "commentjson" + ' (ops/s)',
-        data: [5.2610755665663795, 126.1426258591919, 949.2150258611226],
+        data: [4.730757401110001, 105.40677674278025, 768.0186594889925],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1120,13 +1133,13 @@ new Chart(document.getElementById('chart_10'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [7285.313473279184, 109229.23456755275, 130078.96898398803, 138059.32906708008],
+        data: [7060.585781144992, 102916.0253678128, 129227.69544422836, 135789.36713889553],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "jsonrpcserver" + ' (ops/s)',
-        data: [519.5342621765898, 10978.548851508725, 13902.726217740721, 10247.374735654295],
+        data: [355.5078354019829, 7193.940813948433, 9273.692812411882, 7004.159229940766],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1154,13 +1167,13 @@ new Chart(document.getElementById('chart_11'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [4336.997408565773, 13019.880024423272, 33752.72313022035, 57283.09244475668, 638.2641783510525],
+        data: [3998.302787057005, 11639.585011382214, 31448.77556773363, 55226.60135357214, 600.2997891900305],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "allof-merge (JS)" + ' (ops/s)',
-        data: [1362.91479891443, 2792.875328633472, 5953.782291120097, 6285.425583354415, 336.39572928712283],
+        data: [1254.9792968379527, 2631.6520300457364, 4632.284770451563, 5056.148766961603, 314.15434143278037],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1188,13 +1201,13 @@ new Chart(document.getElementById('chart_12'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [186.19176813844112, 3003.5549108207724, 20061.67017442711, 164.62910380467736, 3245.126040055804],
+        data: [158.6456262571293, 2513.185215424317, 17822.45630294166, 140.8926300021822, 2798.869524273407],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "mistune" + ' (ops/s)',
-        data: [119.88351045484231, 1660.8170168631152, 18318.214378327393, 87.57180777553648, 1653.4817297464149],
+        data: [100.38171108063261, 1418.8400076013454, 14014.463913802623, 74.14419491663382, 1455.3289947066862],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1222,13 +1235,13 @@ new Chart(document.getElementById('chart_13'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [2453.830263830154, 2573.471133741732, 59.99274894409683, 2531.8667036474612],
+        data: [2356.4213366878303, 2387.841961882186, 61.91865716176188, 2335.8790693562987],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "shelve" + ' (ops/s)',
-        data: [5319.394534667764, 5809.62977692235, 73.45659008142144, 1986.2062938910756],
+        data: [4760.00377008967, 5257.382237021117, 78.76861770670779, 2362.029897068093],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1256,13 +1269,13 @@ new Chart(document.getElementById('chart_14'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [1662.411614857251, 1.9153855582906587, 156.82097079836845, 40.91004902969401, 35.233730491233025, 627.9776301879207, 1747.406561403002, 0.24996235203283299, 3.9450243311983964, 66.76890410291128, 10.964464324628466],
+        data: [1605.4342059016267, 1.8226732814960438, 148.15638106666785, 38.89763771563591, 32.520022833924564, 556.4874204839055, 1669.4009280490736, 0.26355890350642436, 4.227783247627353, 72.28703453753945, 11.322027836286548],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "Reference" + ' (ops/s)',
-        data: [11359.165862019365, 42.86587825101292, 3500.8097872647804, 975.774641377144, 789.786748420882, 20767.64382650711, 12363.40935557114, 5.201950025875015, 84.61171792636614, 3163.437603721483, 4301.54882580927],
+        data: [9975.193109781803, 46.98860410340484, 3412.590981572334, 979.0936713581118, 799.3159928102315, 15063.82704759006, 11167.382590753277, 5.674307462123088, 93.13768469417678, 1882.641234668296, 3808.5179559526186],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1290,13 +1303,13 @@ new Chart(document.getElementById('chart_15'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [211840.63210763506, 500336.45474873896, 145044.37253151232],
+        data: [214080.1169798979, 482769.9138398702, 143540.49086568956],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "google (protobuf)" + ' (ops/s)',
-        data: [1452257.900313692, 3440870.477456527, 986066.0736671307],
+        data: [1341406.4445067425, 5098397.087355016, 941819.6332098851],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1324,13 +1337,13 @@ new Chart(document.getElementById('chart_16'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [28.514618882182937, 151.88108693675497, 28.198247894616074, 89.42328632993127, 228.04889181998658, 425.7988741631158, 181.75795145467404],
+        data: [29.07198902635359, 155.44246559661735, 27.717465714001737, 91.36881819387862, 232.90031532887065, 424.6491713929545, 187.5072440042118],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "qrcode" + ' (ops/s)',
-        data: [22.473287017828156, 153.4033106338865, 21.148690489474653, 79.82180914986506, 237.1879674439355, 545.9370378364521, 183.3512953218781],
+        data: [23.74786444502014, 160.6033017900187, 22.02208866143436, 83.91311049754056, 246.6799880027069, 551.1912290091275, 193.82271433127255],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1358,13 +1371,13 @@ new Chart(document.getElementById('chart_17'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [26.62882889896314, 423.16483841113455, 4308.0724512266415, 175.66014804564537, 909.9158600803635, 2509.9223700189777],
+        data: [29.440346086571296, 382.70720055452784, 3509.0626297326417, 173.10773719635623, 839.7313721277991, 2148.5300065899783],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "readability-lxml" + ' (ops/s)',
-        data: [40.89445872104118, 309.59480894492344, 1656.3614931693992, 79.33837545931549, 446.57716534697687, 1461.0272674110195],
+        data: [40.45507608039434, 311.80073283839135, 1426.262786524104, 75.32373218109277, 413.87883458548015, 1310.0027817024625],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1392,13 +1405,13 @@ new Chart(document.getElementById('chart_18'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [184889.73662665114, 2034743.9944728788, 7736.780745463728],
+        data: [172420.26462411668, 1890079.5622671589, 4021.7635747296786],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "tenacity" + ' (ops/s)',
-        data: [67208.55378486733, 54422.7835443926, 5658.09397884332],
+        data: [66849.17360477934, 50541.937632255685, 3087.07908851426],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1426,13 +1439,13 @@ new Chart(document.getElementById('chart_19'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [78.34247893951365, 77.80157420694692, 491.3703432282173, 79.9252760212037, 78.75921146052585],
+        data: [88.41277528799291, 90.14726208563306, 500.6336681833764, 90.21891784634464, 90.19642811596208],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "subprocess" + ' (ops/s)',
-        data: [79.04592301835268, 80.42646641442252, 1041.489023899293, 79.90242501957997, 79.66725584383796],
+        data: [89.48918232392164, 90.25423082502611, 1112.0225992175288, 90.47081902665303, 90.75799312706481],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1460,13 +1473,13 @@ new Chart(document.getElementById('chart_20'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [1425.0309091094596, 23505.89686676395, 1932.064803404847, 18586.739200052587],
+        data: [1458.6355616818212, 21960.328200899654, 1824.198564597437, 18396.170746101026],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "Reference" + ' (ops/s)',
-        data: [1063.2269748659162, 5801.228242105772, 1694.5083257131148, 7978.457826116486],
+        data: [1026.1408904208583, 5459.329609935819, 1868.0527590924216, 7530.287396671514],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1494,13 +1507,13 @@ new Chart(document.getElementById('chart_21'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [286498.3332612881, 44319.53677658118, 51467.44011614731, 72972.14426099675, 860506.2642421745, 571426.2754552321],
+        data: [301316.9822673116, 43466.33121609827, 50531.39203987557, 72974.21747119374, 809032.4923642931, 579714.4912952028],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "packaging" + ' (ops/s)',
-        data: [269091.9593425728, 45951.256087896734, 48964.24285296168, 176711.40904606704, 113414.08662624202, 534564.4173694708],
+        data: [264793.0795078054, 43813.55557736389, 47168.652884842486, 164871.6773781639, 105269.18780396768, 521946.7092173738],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1528,13 +1541,13 @@ new Chart(document.getElementById('chart_22'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [41.070213154828025, 492.1723117220109, 10.165414263910149, 267.11044283109914, 2690.757792482609, 34.40195727670348, 405.75318378957303, 2910.948491229448, 40.872649381930515, 482.8037378665652, 3804.975180591106, 4218.26128412042, 38.82075047401224, 462.8919287172113, 3489.534167610855],
+        data: [40.08173689516637, 420.7060204923875, 10.642156705422918, 265.3356319917309, 2253.874507396028, 32.497202741274926, 361.9196025414751, 2660.8193682825927, 37.85292799283626, 434.26533920378864, 3167.1684895842245, 3435.827005673043, 43.82846891565609, 410.9611890934815, 2930.368119608277],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "beautifulsoup4" + ' (ops/s)',
-        data: [18.998917686179066, 208.99367983592867, 9.615759175401712, 105.81595942596161, 779.2473185209963, 11.658358327888363, 121.72759976634704, 999.1982235858859, 14.456155185844159, 147.07312151600325, 1254.9182788466928, 1746.9361256860604, 16.99684089839227, 184.96454511483358, 1415.333469831632],
+        data: [14.856843259230406, 156.5768538912504, 8.225565761343313, 87.97256153400207, 629.2653858635921, 10.031904272881121, 100.82378693371594, 796.2329142462189, 11.74775396223414, 117.97414628552488, 991.7994519301363, 1276.4765303891668, 14.282185820699048, 154.73606178972537, 1089.9146438327166],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1562,13 +1575,13 @@ new Chart(document.getElementById('chart_23'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [7.930683038641316, 325889.11654218985, 337306.5328924842],
+        data: [8.013461745699725, 309397.29843916255, 314777.60438787984],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "rank-bm25" + ' (ops/s)',
-        data: [69.87179676659383, 2636.7719629945504, 9918.391479563303],
+        data: [73.11350008149597, 2588.3500313253753, 8675.03157515341],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1596,13 +1609,13 @@ new Chart(document.getElementById('chart_24'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [325.90883000652576, 2589.93158809981, 33091.31870336094],
+        data: [330.36224965307326, 2471.408469087516, 32411.481624260156],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "httpx" + ' (ops/s)',
-        data: [446.72507888741427, 3305.377181521336, 46563.20423699575],
+        data: [401.5079627876734, 2972.9212159984095, 42057.72627113366],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1630,13 +1643,13 @@ new Chart(document.getElementById('chart_25'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [94895.05421015824, 90842.63055662892, 108244.04765157204, 104181.69470595576],
+        data: [84857.37679143317, 80883.03013727233, 101547.33601949335, 96466.80151820951],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "structlog" + ' (ops/s)',
-        data: [52394.470976497076, 56785.3563381467, 92419.56393336697, 81097.15653517103],
+        data: [39757.49122341171, 46940.67280310215, 83619.93155536911, 71661.22505432049],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1664,13 +1677,13 @@ new Chart(document.getElementById('chart_26'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [155.31532074296075, 2579.369136276337, 21862.017729121413],
+        data: [159.0031292451687, 2405.141701427855, 18207.321785085],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "reference" + ' (ops/s)',
-        data: [37.51772602716424, 587.6492556475506, 7064.4348324251905],
+        data: [35.71309361263844, 543.6554929445741, 5654.138915351774],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1698,13 +1711,13 @@ new Chart(document.getElementById('chart_27'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [48572.812367779334, 108586.87653928695],
+        data: [47898.9992204696, 104073.83722174248],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "Reference" + ' (ops/s)',
-        data: [44392.479984029946, 82927.17758275823],
+        data: [43373.23856951033, 81055.44994286569],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1732,13 +1745,13 @@ new Chart(document.getElementById('chart_28'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [198723.35700948292, 181161.04816180497, 192678.57568136154, 128386.19419652261],
+        data: [191423.66739124566, 70568.2691690982, 182039.46060536237, 122686.37473446249],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "ua_generator" + ' (ops/s)',
-        data: [86274.55960597286, 83508.42094683972, 74519.44353659099, 66886.11195260394],
+        data: [83825.32833211144, 76423.72630691029, 68360.36798493603, 62157.20310315122],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1766,13 +1779,13 @@ new Chart(document.getElementById('chart_29'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [100085.4816755689, 101704.82340033213, 4366.285767012519, 96031.168709547, 174341.6559669114],
+        data: [100407.32719434258, 101806.09410669966, 4276.35504149555, 96498.31135270368, 174968.36332780428],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "pydantic" + ' (ops/s)',
-        data: [623885.4796347265, 6098.255364448731, 32489.46906372574, 449502.7013522303, 660737.0018725956],
+        data: [622826.3737081649, 5045.512298956376, 31503.139578721217, 455734.8526813279, 659788.4931223745],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1800,13 +1813,13 @@ new Chart(document.getElementById('chart_30'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [195.58033549612045, 2660.352710009782, 67875.35578687984, 254.9719018479847, 3746.6579036536414, 67090.99678864273],
+        data: [181.15937106165993, 2441.676177207262, 64881.73304798158, 238.8934851219029, 3391.6043187297364, 66861.75756943607],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "xmltodict" + ' (ops/s)',
-        data: [175.44311675699436, 2312.2127242816587, 60098.587946591564, 154.2614962108873, 2196.2649466969374, 51751.05662258236],
+        data: [168.87254784753804, 2221.705538233345, 55613.43550755865, 150.036165452231, 2144.4548759809895, 49463.01437697522],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1834,13 +1847,13 @@ new Chart(document.getElementById('chart_31'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [402.40650291748864, 8657.555911687405, 54139.64208168801, 170.31213282791785, 3575.7953286633665, 23513.638827248786],
+        data: [358.25929876998794, 6733.364881470588, 48532.903077004754, 178.2587896179711, 3386.110509582238, 22503.31174168445],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "PyYAML" + ' (ops/s)',
-        data: [58.2303018900136, 1207.5307926954883, 7356.2698463542565, 25.348576743415247, 613.6790991777583, 4149.375771513147],
+        data: [44.81623106400532, 980.439479649477, 5552.645319057463, 22.60048398975815, 504.73708043192676, 3281.964933367026],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -1917,6 +1930,36 @@ new Chart(document.getElementById('chart_31'), {
     }
     setTheme(cur === 'dark' ? 'light' : 'dark');
   });
+})();
+(function() {
+  // Back-to-top button
+  var btt = document.getElementById('back-to-top');
+  if (btt) {
+    window.addEventListener('scroll', function() {
+      btt.classList.toggle('visible', window.scrollY > 300);
+    });
+    btt.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  // Time-ago display
+  var ta = document.getElementById('time-ago');
+  if (ta) {
+    var ts = ta.getAttribute('data-timestamp');
+    if (ts) {
+      var d = new Date(ts), now = new Date(), diff = now - d;
+      if (!isNaN(d.getTime())) {
+        var s = Math.floor(diff / 1000), m = Math.floor(s / 60);
+        var h = Math.floor(m / 60), dd = Math.floor(h / 24);
+        var txt;
+        if (dd > 0) txt = dd + (dd === 1 ? ' day' : ' days') + ' ago';
+        else if (h > 0) txt = h + (h === 1 ? ' hour' : ' hours') + ' ago';
+        else if (m > 0) txt = m + (m === 1 ? ' minute' : ' minutes') + ' ago';
+        else txt = 'just now';
+        ta.textContent = '(' + txt + ')';
+      }
+    }
+  }
 })();
 </script>
 </body>

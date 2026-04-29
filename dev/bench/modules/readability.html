@@ -103,6 +103,18 @@ td { white-space: nowrap; }
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 1rem; height: 400px;
 }
+.back-to-top {
+  position: fixed; bottom: 2rem; right: 2rem; width: 40px; height: 40px;
+  border-radius: 50%; border: 1px solid var(--border);
+  background: var(--card-bg); color: var(--fg); font-size: 1.2rem;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transition: opacity .3s, border-color .2s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); z-index: 100;
+}
+.back-to-top.visible { opacity: 1; pointer-events: auto; }
+.back-to-top:hover { border-color: var(--accent); }
+.time-ago { font-style: italic; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
@@ -112,30 +124,30 @@ td { white-space: nowrap; }
 <h1>readability</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ff747a7 | Commit: ff747a73 | 2026-04-29T02:20:05.641984+00:00</p>
+<p class="meta">Version: 3b7e074 | Commit: 3b7e0741 | 2026-04-29T02:56:10.773663+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T02:56:10.773663+00:00"></span></p>
 <h2>readability</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>37.55 ms</td><td>24.45 ms</td><td>26.6</td><td>40.9</td><td class="ratio-cell slower">1.5x slower</td></tr>
-<tr><td>Large</td><td>zerodep</td><td>Mozilla Readability.js</td><td>37.55 ms</td><td>673.33 ms</td><td>26.6</td><td>1.5</td><td class="ratio-cell faster">17.9x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>2.36 ms</td><td>3.23 ms</td><td>423.2</td><td>309.6</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>Mozilla Readability.js</td><td>2.36 ms</td><td>25.47 ms</td><td>423.2</td><td>39.3</td><td class="ratio-cell faster">10.8x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>232.1 µs</td><td>603.7 µs</td><td>4.3K</td><td>1.7K</td><td class="ratio-cell faster">2.6x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>Mozilla Readability.js</td><td>232.1 µs</td><td>15.47 ms</td><td>4.3K</td><td>64.7</td><td class="ratio-cell faster">66.6x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>5.69 ms</td><td>12.60 ms</td><td>175.7</td><td>79.3</td><td class="ratio-cell faster">2.2x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>5.69 ms</td><td>45.29 ms</td><td>175.7</td><td>22.1</td><td class="ratio-cell faster">8.0x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>1.10 ms</td><td>2.24 ms</td><td>909.9</td><td>446.6</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>1.10 ms</td><td>13.24 ms</td><td>909.9</td><td>75.5</td><td class="ratio-cell faster">12.0x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>398.4 µs</td><td>684.4 µs</td><td>2.5K</td><td>1.5K</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>398.4 µs</td><td>8.72 ms</td><td>2.5K</td><td>114.7</td><td class="ratio-cell faster">21.9x faster</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>33.97 ms</td><td>24.72 ms</td><td>29.4</td><td>40.5</td><td class="ratio-cell slower">1.4x slower</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>Mozilla Readability.js</td><td>33.97 ms</td><td>660.47 ms</td><td>29.4</td><td>1.5</td><td class="ratio-cell faster">19.4x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>2.61 ms</td><td>3.21 ms</td><td>382.7</td><td>311.8</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>Mozilla Readability.js</td><td>2.61 ms</td><td>27.22 ms</td><td>382.7</td><td>36.7</td><td class="ratio-cell faster">10.4x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>285.0 µs</td><td>701.1 µs</td><td>3.5K</td><td>1.4K</td><td class="ratio-cell faster">2.5x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>Mozilla Readability.js</td><td>285.0 µs</td><td>16.02 ms</td><td>3.5K</td><td>62.4</td><td class="ratio-cell faster">56.2x faster</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>5.78 ms</td><td>13.28 ms</td><td>173.1</td><td>75.3</td><td class="ratio-cell faster">2.3x faster</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>5.78 ms</td><td>41.90 ms</td><td>173.1</td><td>23.9</td><td class="ratio-cell faster">7.3x faster</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>1.19 ms</td><td>2.42 ms</td><td>839.7</td><td>413.9</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>1.19 ms</td><td>11.97 ms</td><td>839.7</td><td>83.6</td><td class="ratio-cell faster">10.1x faster</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>465.4 µs</td><td>763.4 µs</td><td>2.1K</td><td>1.3K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>465.4 µs</td><td>8.66 ms</td><td>2.1K</td><td>115.5</td><td class="ratio-cell faster">18.6x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.43 ms</td><td>697.2</td></tr>
+<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.66 ms</td><td>601.3</td></tr>
 </tbody></table>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -143,6 +155,7 @@ td { white-space: nowrap; }
 <div class="trend-chart-container"><canvas id="trend-chart"></canvas></div>
 </div>
 
+<button class="back-to-top" id="back-to-top" title="Back to top">↑</button>
 <script>
 async function loadHistory(dataJsPath) {
   try {
@@ -205,13 +218,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [26.62882889896314, 423.16483841113455, 4308.0724512266415, 175.66014804564537, 909.9158600803635, 2509.9223700189777],
+        data: [29.440346086571296, 382.70720055452784, 3509.0626297326417, 173.10773719635623, 839.7313721277991, 2148.5300065899783],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "readability-lxml" + ' (ops/s)',
-        data: [40.89445872104118, 309.59480894492344, 1656.3614931693992, 79.33837545931549, 446.57716534697687, 1461.0272674110195],
+        data: [40.45507608039434, 311.80073283839135, 1426.262786524104, 75.32373218109277, 413.87883458548015, 1310.0027817024625],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -331,6 +344,36 @@ new Chart(document.getElementById('chart_0'), {
     }
     setTheme(cur === 'dark' ? 'light' : 'dark');
   });
+})();
+(function() {
+  // Back-to-top button
+  var btt = document.getElementById('back-to-top');
+  if (btt) {
+    window.addEventListener('scroll', function() {
+      btt.classList.toggle('visible', window.scrollY > 300);
+    });
+    btt.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  // Time-ago display
+  var ta = document.getElementById('time-ago');
+  if (ta) {
+    var ts = ta.getAttribute('data-timestamp');
+    if (ts) {
+      var d = new Date(ts), now = new Date(), diff = now - d;
+      if (!isNaN(d.getTime())) {
+        var s = Math.floor(diff / 1000), m = Math.floor(s / 60);
+        var h = Math.floor(m / 60), dd = Math.floor(h / 24);
+        var txt;
+        if (dd > 0) txt = dd + (dd === 1 ? ' day' : ' days') + ' ago';
+        else if (h > 0) txt = h + (h === 1 ? ' hour' : ' hours') + ' ago';
+        else if (m > 0) txt = m + (m === 1 ? ' minute' : ' minutes') + ' ago';
+        else txt = 'just now';
+        ta.textContent = '(' + txt + ')';
+      }
+    }
+  }
 })();
 </script>
 </body>

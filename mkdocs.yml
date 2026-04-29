@@ -81,6 +81,7 @@ plugins:
             - ../png
             - ../llmstxt
             - ../synctex
+            - ../useragent
             - aes
             - qr
             - httpclient
@@ -120,6 +121,7 @@ plugins:
             - png
             - llmstxt
             - synctex
+            - useragent
           options:
             docstring_style: google
             show_source: true

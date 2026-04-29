@@ -1,10 +1,15 @@
 # SyncTeX Parser
 
-SyncTeX inverse-search parser -- zero dependencies, stdlib only, Python 3.10+.
+SyncTeX bidirectional search parser -- zero dependencies, stdlib only, Python 3.10+.
 
 ## Overview
 
-The SyncTeX module parses `.synctex` and `.synctex.gz` files produced by TeX engines (with `-synctex=1`) and provides spatial queries to map PDF coordinates back to source file and line number (inverse search). Pure Python, no external dependencies.
+The SyncTeX module parses `.synctex` and `.synctex.gz` files produced by TeX engines (with `-synctex=1`) and provides spatial queries for both directions:
+
+- **Inverse search** -- PDF position → source file and line number
+- **Forward search** -- source file and line number → PDF position
+
+Pure Python, no external dependencies.
 
 | File | Description | Dependencies |
 |------|-------------|--------------|
@@ -14,6 +19,7 @@ The SyncTeX module parses `.synctex` and `.synctex.gz` files produced by TeX eng
 
 - **SyncTeX parsing** -- reads both plain `.synctex` and gzip-compressed `.synctex.gz` files
 - **Inverse search** -- maps PDF page coordinates (in PDF points) to source file and line number
+- **Forward search** -- maps source file and line number to PDF page coordinates
 - **Path normalization** -- strips configurable prefixes (e.g. `/workspace/` for Docker builds) and `./` from input paths
 - **Spatial matching** -- multi-phase closest-box algorithm: vertical containment, horizontal containment, then nearest fallback
 
@@ -28,7 +34,7 @@ cp synctex/synctex.py your_project/
 Then import directly:
 
 ```python
-from synctex import parse_synctex, inverse_search, SyncTeXData
+from synctex import parse_synctex, inverse_search, forward_search, SyncTeXData
 ```
 
 ## Usage Examples
@@ -60,6 +66,20 @@ result = inverse_search(data, page=2, x=100.0, y=200.0)
 # result["file"] will be "chapter1.tex" instead of "/workspace/chapter1.tex"
 ```
 
+### Forward Search (Source → PDF)
+
+```python
+from synctex import parse_synctex, forward_search
+
+data = parse_synctex("main.synctex.gz", strip_prefix="/workspace/")
+
+# Jump from source line to PDF position
+result = forward_search(data, file="main.tex", line=42)
+if result:
+    print(f"Page {result['page']}, x={result['x']}, y={result['y']}")
+    # e.g. "Page 1, x=150.0, y=300.0"
+```
+
 ### Inspecting Parsed Data
 
 ```python
@@ -88,6 +108,7 @@ print(f"Unit: {data.unit}")
 |----------|-------------|
 | `parse_synctex(path, *, strip_prefix="")` | Parse a `.synctex` or `.synctex.gz` file |
 | `inverse_search(data, page, x, y)` | Find source location for a PDF coordinate |
+| `forward_search(data, file, line)` | Find PDF position for a source location |
 
 ### Classes
 
@@ -127,6 +148,22 @@ Find the source file and line for a point on a PDF page.
 | `y` | `float` | Vertical position in PDF points (72 DPI) |
 
 **Returns:** `{"file": str, "line": int}` or `None` if no match found.
+
+---
+
+### `forward_search(data, file, line)`
+
+Find the PDF page and position for a source file and line number.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `data` | `SyncTeXData` | Parsed data from `parse_synctex()` |
+| `file` | `str` | Source file path (relative, as stored in `data.inputs`) |
+| `line` | `int` | 1-based line number in the source file |
+
+**Returns:** `{"page": int, "x": float, "y": float}` or `None` if no match found.
 
 ---
 

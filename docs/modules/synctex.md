@@ -1,10 +1,15 @@
 # SyncTeX 解析器
 
-SyncTeX 反向搜索解析器 -- 零依赖，仅标准库，Python 3.10+。
+SyncTeX 双向搜索解析器 -- 零依赖，仅标准库，Python 3.10+。
 
 ## 概述
 
-SyncTeX 模块解析 TeX 引擎（使用 `-synctex=1`）生成的 `.synctex` 和 `.synctex.gz` 文件，提供空间查询将 PDF 坐标映射回源文件和行号（反向搜索）。纯 Python 实现，无外部依赖。
+SyncTeX 模块解析 TeX 引擎（使用 `-synctex=1`）生成的 `.synctex` 和 `.synctex.gz` 文件，提供双向空间查询：
+
+- **反向搜索** -- PDF 位置 → 源文件和行号
+- **正向搜索** -- 源文件和行号 → PDF 位置
+
+纯 Python 实现，无外部依赖。
 
 | 文件 | 说明 | 依赖 |
 |------|------|------|
@@ -14,6 +19,7 @@ SyncTeX 模块解析 TeX 引擎（使用 `-synctex=1`）生成的 `.synctex` 和
 
 - **SyncTeX 解析** -- 读取纯文本 `.synctex` 和 gzip 压缩的 `.synctex.gz` 文件
 - **反向搜索** -- 将 PDF 页面坐标（PDF points）映射到源文件和行号
+- **正向搜索** -- 将源文件和行号映射到 PDF 页面坐标
 - **路径规范化** -- 去除可配置前缀（如 Docker 构建中的 `/workspace/`）和 `./` 前缀
 - **空间匹配** -- 多阶段最近盒子算法：垂直包含、水平包含、最近距离回退
 
@@ -28,7 +34,7 @@ cp synctex/synctex.py your_project/
 然后直接导入：
 
 ```python
-from synctex import parse_synctex, inverse_search, SyncTeXData
+from synctex import parse_synctex, inverse_search, forward_search, SyncTeXData
 ```
 
 ## 使用示例
@@ -60,6 +66,20 @@ result = inverse_search(data, page=2, x=100.0, y=200.0)
 # result["file"] 将是 "chapter1.tex" 而非 "/workspace/chapter1.tex"
 ```
 
+### 正向搜索（源代码 → PDF）
+
+```python
+from synctex import parse_synctex, forward_search
+
+data = parse_synctex("main.synctex.gz", strip_prefix="/workspace/")
+
+# 从源代码行号跳转到 PDF 位置
+result = forward_search(data, file="main.tex", line=42)
+if result:
+    print(f"第 {result['page']} 页, x={result['x']}, y={result['y']}")
+    # 例如 "第 1 页, x=150.0, y=300.0"
+```
+
 ### 检查解析数据
 
 ```python
@@ -88,6 +108,7 @@ print(f"Unit: {data.unit}")
 |------|------|
 | `parse_synctex(path, *, strip_prefix="")` | 解析 `.synctex` 或 `.synctex.gz` 文件 |
 | `inverse_search(data, page, x, y)` | 根据 PDF 坐标查找源位置 |
+| `forward_search(data, file, line)` | 根据源位置查找 PDF 坐标 |
 
 ### 类
 
@@ -127,6 +148,22 @@ print(f"Unit: {data.unit}")
 | `y` | `float` | 垂直位置，PDF points（72 DPI） |
 
 **返回：** `{"file": str, "line": int}` 或 `None`（无匹配时）。
+
+---
+
+### `forward_search(data, file, line)`
+
+根据源文件和行号查找 PDF 页面和位置。
+
+**参数：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `data` | `SyncTeXData` | `parse_synctex()` 返回的解析数据 |
+| `file` | `str` | 源文件路径（相对路径，与 `data.inputs` 中存储的一致） |
+| `line` | `int` | 从 1 开始的源代码行号 |
+
+**返回：** `{"page": int, "x": float, "y": float}` 或 `None`（无匹配时）。
 
 ---
 

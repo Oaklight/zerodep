@@ -93,6 +93,7 @@ bench-scheduler = [
 ]
 bench-search = [
     "rank-bm25==0.2.2",
+    "bm25s>=0.3.0",
 ]
 bench-frontmatter = [
     "python-frontmatter==1.1.0",

@@ -1,6 +1,6 @@
-"""Benchmarks comparing sparse_search against rank-bm25.
+"""Benchmarks comparing sparse_search against rank-bm25 and bm25s.
 
-Requires: pip install rank-bm25
+Requires: pip install rank-bm25 bm25s
 Run: pytest sparse_search/test_sparse_search_benchmark.py -v
 """
 
@@ -24,6 +24,8 @@ rank_bm25 = pytest.importorskip("rank_bm25")
 from rank_bm25 import BM25L as RefBM25L
 from rank_bm25 import BM25Okapi as RefBM25Okapi
 from rank_bm25 import BM25Plus as RefBM25Plus
+
+bm25s = pytest.importorskip("bm25s")
 
 # ---------------------------------------------------------------------------
 # Shared test data
@@ -193,6 +195,17 @@ class TestIndexingPerformance:
 
         benchmark(build)
 
+    def test_index_1k_bm25s(self, benchmark):
+        """bm25s BM25: index 1000 documents."""
+
+        def build():
+            retriever = bm25s.BM25()
+            tokens = bm25s.tokenize(LARGE_CORPUS, stopwords="en")
+            retriever.index(tokens)
+            return retriever
+
+        benchmark(build)
+
 
 # ---------------------------------------------------------------------------
 # Performance: search speed
@@ -200,7 +213,7 @@ class TestIndexingPerformance:
 
 
 class TestSearchPerformance:
-    """Compare search (scoring) performance."""
+    """Compare search (scoring) performance on selective queries."""
 
     @pytest.fixture(autouse=True)
     def _setup(self):
@@ -210,6 +223,9 @@ class TestSearchPerformance:
             self.our_idx.add(f"d{i}", doc)
 
         self.ref_bm25 = RefBM25Okapi(MEDIUM_TOKENIZED)
+
+        self.bm25s_retriever = bm25s.BM25()
+        self.bm25s_retriever.index(bm25s.tokenize(MEDIUM_CORPUS, stopwords="en"))
 
         # Fixed query tokens for consistent benchmarking
         self.query = "quick brown fox search"
@@ -223,6 +239,17 @@ class TestSearchPerformance:
         """rank-bm25 BM25Okapi: search 200-doc index."""
         benchmark(self.ref_bm25.get_scores, self.query_tokens)
 
+    def test_search_bm25s(self, benchmark):
+        """bm25s BM25: search 200-doc index."""
+        query_tokens = bm25s.tokenize(self.query, stopwords="en")
+        benchmark(
+            self.bm25s_retriever.retrieve,
+            query_tokens,
+            k=10,
+            return_as="documents",
+            show_progress=False,
+        )
+
 
 # ---------------------------------------------------------------------------
 # Performance: larger corpus search
@@ -230,7 +257,7 @@ class TestSearchPerformance:
 
 
 class TestLargeSearchPerformance:
-    """Compare search on larger corpus."""
+    """Compare search on larger corpus with selective queries."""
 
     @pytest.fixture(autouse=True)
     def _setup(self):
@@ -239,6 +266,9 @@ class TestLargeSearchPerformance:
             self.our_idx.add(f"d{i}", doc)
 
         self.ref_bm25 = RefBM25Okapi(LARGE_TOKENIZED)
+
+        self.bm25s_retriever = bm25s.BM25()
+        self.bm25s_retriever.index(bm25s.tokenize(LARGE_CORPUS, stopwords="en"))
 
         self.query = "quick brown fox search"
         self.query_tokens = _default_tokenize(self.query)
@@ -250,6 +280,17 @@ class TestLargeSearchPerformance:
     def test_search_1k_rank_bm25(self, benchmark):
         """rank-bm25 BM25Okapi: search 1000-doc index."""
         benchmark(self.ref_bm25.get_scores, self.query_tokens)
+
+    def test_search_1k_bm25s(self, benchmark):
+        """bm25s BM25: search 1000-doc index."""
+        query_tokens = bm25s.tokenize(self.query, stopwords="en")
+        benchmark(
+            self.bm25s_retriever.retrieve,
+            query_tokens,
+            k=10,
+            return_as="documents",
+            show_progress=False,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -345,3 +386,159 @@ class TestMMRPerformance:
         rng = random.Random(42)
         results = _make_result_list(500, "d", rng)
         benchmark(mmr, results, self._jaccard_sim, lambda_=0.5, top_k=10)
+
+
+# ---------------------------------------------------------------------------
+# Performance: scale tests with Zipf-distributed vocabulary
+# ---------------------------------------------------------------------------
+
+# Zipf distribution: common words match many documents, rare words match few.
+# This tests the realistic case where O(matched_docs) may approach O(N).
+
+_ZIPF_VOCAB_SIZE = 10_000
+_ZIPF_WORDS_PER_DOC = 80
+
+
+def _generate_zipf_corpus(
+    n_docs: int,
+    vocab_size: int = _ZIPF_VOCAB_SIZE,
+    words_per_doc: int = _ZIPF_WORDS_PER_DOC,
+) -> tuple[list[str], list[list[str]]]:
+    """Generate a corpus with Zipf-like word frequency distribution."""
+    rng = random.Random(42)
+    vocab = [
+        "".join(rng.choices(string.ascii_lowercase, k=rng.randint(3, 10)))
+        for _ in range(vocab_size)
+    ]
+    weights = [1.0 / (i + 1) ** 0.8 for i in range(vocab_size)]
+    docs: list[str] = []
+    tokenized: list[list[str]] = []
+    for _ in range(n_docs):
+        tokens = rng.choices(vocab, weights=weights, k=words_per_doc)
+        docs.append(" ".join(tokens))
+        tokenized.append(tokens)
+    return docs, tokenized
+
+
+ZIPF_1K_CORPUS, ZIPF_1K_TOKENIZED = _generate_zipf_corpus(1000)
+ZIPF_10K_CORPUS, ZIPF_10K_TOKENIZED = _generate_zipf_corpus(10_000)
+
+# Queries using common words (high df) — broad matches, many docs hit
+_ZIPF_VOCAB = _generate_zipf_corpus(1)[0][0].split()  # just to get the vocab
+_zipf_rng = random.Random(42)
+_zipf_vocab = [
+    "".join(_zipf_rng.choices(string.ascii_lowercase, k=_zipf_rng.randint(3, 10)))
+    for _ in range(_ZIPF_VOCAB_SIZE)
+]
+BROAD_QUERY = f"{_zipf_vocab[0]} {_zipf_vocab[1]} {_zipf_vocab[2]}"
+SELECTIVE_QUERY = f"{_zipf_vocab[5000]} {_zipf_vocab[7000]} {_zipf_vocab[9000]}"
+
+
+class TestScaleSearch1K:
+    """Compare search at 1K docs with Zipf vocabulary distribution."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self):
+        self.our_idx = SparseIndex()
+        for i, doc in enumerate(ZIPF_1K_CORPUS):
+            self.our_idx.add(f"d{i}", doc)
+
+        self.ref_bm25 = RefBM25Okapi(ZIPF_1K_TOKENIZED)
+
+        self.bm25s_retriever = bm25s.BM25()
+        self.bm25s_retriever.index(bm25s.tokenize(ZIPF_1K_CORPUS, stopwords="en"))
+
+    def test_broad_query_ours(self, benchmark):
+        """Our SparseIndex: broad query on 1K Zipf corpus."""
+        benchmark(self.our_idx.search, BROAD_QUERY, top_k=10)
+
+    def test_broad_query_rank_bm25(self, benchmark):
+        """rank-bm25: broad query on 1K Zipf corpus."""
+        tokens = _default_tokenize(BROAD_QUERY)
+        benchmark(self.ref_bm25.get_scores, tokens)
+
+    def test_broad_query_bm25s(self, benchmark):
+        """bm25s: broad query on 1K Zipf corpus."""
+        query_tokens = bm25s.tokenize(BROAD_QUERY, stopwords="en")
+        benchmark(
+            self.bm25s_retriever.retrieve,
+            query_tokens,
+            k=10,
+            return_as="documents",
+            show_progress=False,
+        )
+
+    def test_selective_query_ours(self, benchmark):
+        """Our SparseIndex: selective query on 1K Zipf corpus."""
+        benchmark(self.our_idx.search, SELECTIVE_QUERY, top_k=10)
+
+    def test_selective_query_rank_bm25(self, benchmark):
+        """rank-bm25: selective query on 1K Zipf corpus."""
+        tokens = _default_tokenize(SELECTIVE_QUERY)
+        benchmark(self.ref_bm25.get_scores, tokens)
+
+    def test_selective_query_bm25s(self, benchmark):
+        """bm25s: selective query on 1K Zipf corpus."""
+        query_tokens = bm25s.tokenize(SELECTIVE_QUERY, stopwords="en")
+        benchmark(
+            self.bm25s_retriever.retrieve,
+            query_tokens,
+            k=10,
+            return_as="documents",
+            show_progress=False,
+        )
+
+
+class TestScaleSearch10K:
+    """Compare search at 10K docs with Zipf vocabulary distribution."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self):
+        self.our_idx = SparseIndex()
+        for i, doc in enumerate(ZIPF_10K_CORPUS):
+            self.our_idx.add(f"d{i}", doc)
+
+        self.ref_bm25 = RefBM25Okapi(ZIPF_10K_TOKENIZED)
+
+        self.bm25s_retriever = bm25s.BM25()
+        self.bm25s_retriever.index(bm25s.tokenize(ZIPF_10K_CORPUS, stopwords="en"))
+
+    def test_broad_query_ours(self, benchmark):
+        """Our SparseIndex: broad query on 10K Zipf corpus."""
+        benchmark(self.our_idx.search, BROAD_QUERY, top_k=10)
+
+    def test_broad_query_rank_bm25(self, benchmark):
+        """rank-bm25: broad query on 10K Zipf corpus."""
+        tokens = _default_tokenize(BROAD_QUERY)
+        benchmark(self.ref_bm25.get_scores, tokens)
+
+    def test_broad_query_bm25s(self, benchmark):
+        """bm25s: broad query on 10K Zipf corpus."""
+        query_tokens = bm25s.tokenize(BROAD_QUERY, stopwords="en")
+        benchmark(
+            self.bm25s_retriever.retrieve,
+            query_tokens,
+            k=10,
+            return_as="documents",
+            show_progress=False,
+        )
+
+    def test_selective_query_ours(self, benchmark):
+        """Our SparseIndex: selective query on 10K Zipf corpus."""
+        benchmark(self.our_idx.search, SELECTIVE_QUERY, top_k=10)
+
+    def test_selective_query_rank_bm25(self, benchmark):
+        """rank-bm25: selective query on 10K Zipf corpus."""
+        tokens = _default_tokenize(SELECTIVE_QUERY)
+        benchmark(self.ref_bm25.get_scores, tokens)
+
+    def test_selective_query_bm25s(self, benchmark):
+        """bm25s: selective query on 10K Zipf corpus."""
+        query_tokens = bm25s.tokenize(SELECTIVE_QUERY, stopwords="en")
+        benchmark(
+            self.bm25s_retriever.retrieve,
+            query_tokens,
+            k=10,
+            return_as="documents",
+            show_progress=False,
+        )

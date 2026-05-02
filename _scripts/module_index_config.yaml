@@ -227,6 +227,6 @@ modules:
     desc_en: "SyncTeX inverse-search parser (PDF position → source location)"
     desc_zh: "SyncTeX 反向搜索解析器（PDF 位置 → 源代码位置）"
   httpserver:
-    benchmark: microdot / bottle
+    benchmark: flask / microdot / bottle
     desc_en: "Async HTTP server with decorator-based routing, streaming, and static files"
     desc_zh: "异步 HTTP 服务器（装饰器路由、流式响应、静态文件）"

@@ -1,4 +1,4 @@
-"""Benchmark: zerodep httpserver vs microdot vs bottle."""
+"""Benchmark: zerodep httpserver vs flask vs microdot vs bottle."""
 
 import asyncio
 import json
@@ -18,6 +18,7 @@ from httpserver import App, JSONResponse
 
 microdot = pytest.importorskip("microdot", reason="microdot not installed")
 bottle = pytest.importorskip("bottle", reason="bottle not installed")
+flask = pytest.importorskip("flask", reason="flask not installed")
 
 # ── Payloads ──
 
@@ -173,6 +174,37 @@ def _start_bottle(app):
     return f"http://127.0.0.1:{port}"
 
 
+# ── flask setup ──
+
+
+def _make_flask_app():
+    app = flask.Flask(__name__)
+
+    @app.get("/ping")
+    def ping():
+        return flask.jsonify({"pong": True})
+
+    @app.post("/echo")
+    def echo():
+        return flask.jsonify(flask.request.get_json())
+
+    @app.get("/text")
+    def text():
+        return "Hello, World!"
+
+    return app
+
+
+def _start_flask(app):
+    from werkzeug.serving import make_server as werkzeug_make_server
+
+    server = werkzeug_make_server("127.0.0.1", 0, app)
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return f"http://127.0.0.1:{port}"
+
+
 # ── fixtures ──
 
 
@@ -194,12 +226,21 @@ def bottle_url():
     return _start_bottle(app)
 
 
+@pytest.fixture(scope="module")
+def flask_url():
+    app = _make_flask_app()
+    return _start_flask(app)
+
+
 # ── Serial Benchmarks ──
 
 
 class TestGetJSON:
     def test_zerodep(self, benchmark, zerodep_url):
         benchmark(get, f"{zerodep_url}/ping")
+
+    def test_flask(self, benchmark, flask_url):
+        benchmark(get, f"{flask_url}/ping")
 
     def test_microdot(self, benchmark, microdot_url):
         benchmark(get, f"{microdot_url}/ping")
@@ -212,6 +253,9 @@ class TestPostJSON:
     def test_zerodep(self, benchmark, zerodep_url):
         benchmark(post, f"{zerodep_url}/echo", json=PAYLOAD)
 
+    def test_flask(self, benchmark, flask_url):
+        benchmark(post, f"{flask_url}/echo", json=PAYLOAD)
+
     def test_microdot(self, benchmark, microdot_url):
         benchmark(post, f"{microdot_url}/echo", json=PAYLOAD)
 
@@ -222,6 +266,9 @@ class TestPostJSON:
 class TestGetText:
     def test_zerodep(self, benchmark, zerodep_url):
         benchmark(get, f"{zerodep_url}/text")
+
+    def test_flask(self, benchmark, flask_url):
+        benchmark(get, f"{flask_url}/text")
 
     def test_microdot(self, benchmark, microdot_url):
         benchmark(get, f"{microdot_url}/text")
@@ -248,6 +295,9 @@ class TestConcurrentGet:
     def test_zerodep(self, benchmark, zerodep_url):
         benchmark(_run_concurrent_get, f"{zerodep_url}/ping")
 
+    def test_flask(self, benchmark, flask_url):
+        benchmark(_run_concurrent_get, f"{flask_url}/ping")
+
     def test_microdot(self, benchmark, microdot_url):
         benchmark(_run_concurrent_get, f"{microdot_url}/ping")
 
@@ -258,6 +308,9 @@ class TestConcurrentGet:
 class TestConcurrentPost:
     def test_zerodep(self, benchmark, zerodep_url):
         benchmark(_run_concurrent_post, f"{zerodep_url}/echo", PAYLOAD)
+
+    def test_flask(self, benchmark, flask_url):
+        benchmark(_run_concurrent_post, f"{flask_url}/echo", PAYLOAD)
 
     def test_microdot(self, benchmark, microdot_url):
         benchmark(_run_concurrent_post, f"{microdot_url}/echo", PAYLOAD)
@@ -272,6 +325,9 @@ class TestConcurrentPost:
 class TestLargePayload:
     def test_zerodep(self, benchmark, zerodep_url):
         benchmark(post, f"{zerodep_url}/echo", json=LARGE_PAYLOAD)
+
+    def test_flask(self, benchmark, flask_url):
+        benchmark(post, f"{flask_url}/echo", json=LARGE_PAYLOAD)
 
     def test_microdot(self, benchmark, microdot_url):
         benchmark(post, f"{microdot_url}/echo", json=LARGE_PAYLOAD)

@@ -82,6 +82,7 @@ plugins:
             - ../llmstxt
             - ../synctex
             - ../useragent
+            - ../httpserver
             - aes
             - qr
             - httpclient
@@ -122,6 +123,7 @@ plugins:
             - llmstxt
             - synctex
             - useragent
+            - httpserver
           options:
             docstring_style: google
             show_source: true
@@ -146,6 +148,7 @@ plugins:
           - modules/index.md
           - modules/httpclient.md
           - modules/sse.md
+          - modules/httpserver.md
           - modules/jsonrpc.md
           - modules/a2a.md
           - modules/acp.md
@@ -186,6 +189,7 @@ plugins:
         API Reference:
           - api/httpclient.md
           - api/sse.md
+          - api/httpserver.md
           - api/jsonrpc.md
           - api/a2a.md
           - api/acp.md
@@ -226,6 +230,7 @@ plugins:
         Benchmarks:
           - benchmarks/httpclient.md
           - benchmarks/sse.md
+          - benchmarks/httpserver.md
           - benchmarks/jsonrpc.md
           - benchmarks/a2a.md
           - benchmarks/acp.md
@@ -310,6 +315,7 @@ nav:
       - Web & Networking:
           - httpclient / HTTP Client: modules/httpclient.md
           - sse / SSE Client: modules/sse.md
+          - httpserver / HTTP Server: modules/httpserver.md
           - useragent / User-Agent Generator: modules/useragent.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: modules/jsonrpc.md
@@ -363,6 +369,7 @@ nav:
       - Web & Networking:
           - httpclient / HTTP Client: api/httpclient.md
           - sse / SSE Client: api/sse.md
+          - httpserver / HTTP Server: api/httpserver.md
           - useragent / User-Agent Generator: api/useragent.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: api/jsonrpc.md
@@ -416,6 +423,7 @@ nav:
       - Web & Networking:
           - httpclient / HTTP Client: benchmarks/httpclient.md
           - sse / SSE Client: benchmarks/sse.md
+          - httpserver / HTTP Server: benchmarks/httpserver.md
           - useragent / User-Agent Generator: benchmarks/useragent.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md

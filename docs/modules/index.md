@@ -17,6 +17,7 @@ title: 模块概览
 | [aes](aes.md) | 0.5.0 | 2026-04-20 |
 | [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
 | [cache](cache.md) | 0.2.4 | 2026-04-27 |
+| [cdp](cdp.md) | 0.1.0 | 2026-05-02 |
 | [config](config.md) | 0.3.0 | 2026-04-27 |
 | [depdetect](depdetect.md) | 0.4.3 | 2026-04-15 |
 | [diff](diff.md) | 0.3.1 | 2026-04-15 |
@@ -24,7 +25,7 @@ title: 模块概览
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
 | [httpclient](httpclient.md) | 0.3.1 | 2026-04-15 |
-| [httpserver](httpserver.md) | 0.1.0 | — |
+| [httpserver](httpserver.md) | 0.1.0 | 2026-05-02 |
 | [jsonc](jsonc.md) | 0.3.0 | 2026-04-27 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
 | [jsonschema](jsonschema.md) | 0.1.0 | 2026-04-27 |
@@ -51,6 +52,7 @@ title: 模块概览
 | [useragent](useragent.md) | 0.1.0 | 2026-04-29 |
 | [validate](validate.md) | 0.4.3 | 2026-04-27 |
 | [vcs](vcs.md) | 0.3.0 | 2026-04-11 |
+| [websocket](websocket.md) | 0.1.0 | 2026-05-02 |
 | [xml](xml.md) | 0.3.1 | 2026-04-27 |
 | [yaml](yaml.md) | 0.3.1 | 2026-04-27 |
 
@@ -62,8 +64,9 @@ title: 模块概览
 |--------|-------------|-------------------|
 | [httpclient](httpclient.md) | 同步 + 异步 REST 客户端（连接池、代理、认证） | `httpx` |
 | [sse](sse.md) | Server-Sent Events 客户端（自动重连） | `httpx-sse` |
-| [httpserver](httpserver.md) | 异步 HTTP 服务器（装饰器路由、流式响应、静态文件） | `microdot / bottle` |
+| [httpserver](httpserver.md) | 异步 HTTP 服务器（装饰器路由、流式响应、静态文件） | `flask / microdot / bottle` |
 | [useragent](useragent.md) | 轻量级 Chrome/Edge User-Agent 生成器（含 Client Hints） | `ua-generator` |
+| [websocket](websocket.md) | RFC 6455 WebSocket 客户端（同步 + 异步） | `websockets` |
 
 ### 智能体协议
 
@@ -74,6 +77,7 @@ title: 模块概览
 | [acp](acp.md) | Anthropic ACP 协议：JSON-RPC 2.0 over stdio、异步客户端/代理 | `acp-python` |
 | [skills](skills.md) | Agent Skills 运行时：解析、发现、管理、选择技能 | -- |
 | [llmstxt](llmstxt.md) | llms.txt 解析器与 Markdown URL 候选发现 | -- |
+| [cdp](cdp.md) | Chrome DevTools Protocol 客户端（无头浏览器自动化） | `websockets` |
 
 ### 序列化
 
@@ -165,6 +169,7 @@ title: 模块概览
 graph LR
     a2a --> jsonrpc
     acp --> jsonrpc
+    cdp --> websocket
     config --> dotenv
     config --> jsonc
     config --> yaml

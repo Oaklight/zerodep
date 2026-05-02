@@ -17,6 +17,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [aes](aes.md) | 0.5.0 | 2026-04-20 |
 | [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
 | [cache](cache.md) | 0.2.4 | 2026-04-27 |
+| [cdp](cdp.md) | 0.1.0 | 2026-05-02 |
 | [config](config.md) | 0.3.0 | 2026-04-27 |
 | [depdetect](depdetect.md) | 0.4.3 | 2026-04-15 |
 | [diff](diff.md) | 0.3.1 | 2026-04-15 |
@@ -24,7 +25,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
 | [httpclient](httpclient.md) | 0.3.1 | 2026-04-15 |
-| [httpserver](httpserver.md) | 0.1.0 | — |
+| [httpserver](httpserver.md) | 0.1.0 | 2026-05-02 |
 | [jsonc](jsonc.md) | 0.3.0 | 2026-04-27 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
 | [jsonschema](jsonschema.md) | 0.1.0 | 2026-04-27 |
@@ -51,6 +52,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [useragent](useragent.md) | 0.1.0 | 2026-04-29 |
 | [validate](validate.md) | 0.4.3 | 2026-04-27 |
 | [vcs](vcs.md) | 0.3.0 | 2026-04-11 |
+| [websocket](websocket.md) | 0.1.0 | 2026-05-02 |
 | [xml](xml.md) | 0.3.1 | 2026-04-27 |
 | [yaml](yaml.md) | 0.3.1 | 2026-04-27 |
 
@@ -62,8 +64,9 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 |--------|-------------|-------------------|
 | [httpclient](httpclient.md) | Sync + async REST client with connection pooling, proxy, and auth | `httpx` |
 | [sse](sse.md) | Server-Sent Events client with auto-reconnect | `httpx-sse` |
-| [httpserver](httpserver.md) | Async HTTP server with decorator-based routing, streaming, and static files | `microdot / bottle` |
+| [httpserver](httpserver.md) | Async HTTP server with decorator-based routing, streaming, and static files | `flask / microdot / bottle` |
 | [useragent](useragent.md) | Lightweight Chrome/Edge User-Agent generator with Client Hints | `ua-generator` |
+| [websocket](websocket.md) | RFC 6455 WebSocket client with sync + async support | `websockets` |
 
 ### Agent Protocols
 
@@ -74,6 +77,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [acp](acp.md) | Anthropic ACP protocol: JSON-RPC 2.0 over stdio, async client/agent | `acp-python` |
 | [skills](skills.md) | Agent Skills runtime: parse, discover, manage, select skills | -- |
 | [llmstxt](llmstxt.md) | llms.txt parser and markdown URL candidate finder | -- |
+| [cdp](cdp.md) | Chrome DevTools Protocol client for headless browser automation | `websockets` |
 
 ### Serialization
 
@@ -165,6 +169,7 @@ Most zerodep modules are fully standalone. The following modules depend on other
 graph LR
     a2a --> jsonrpc
     acp --> jsonrpc
+    cdp --> websocket
     config --> dotenv
     config --> jsonc
     config --> yaml

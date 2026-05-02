@@ -296,6 +296,7 @@ class TestReferenceComparison:
 
     def test_sync_vs_websockets_echo(self, ws_echo_url):
         """Both clients should get identical echo responses."""
+        pytest.importorskip("websockets", reason="websockets not installed")
         import websockets.sync.client
 
         msg = "reference test 日本語"
@@ -315,6 +316,7 @@ class TestReferenceComparison:
     @pytest.mark.asyncio
     async def test_async_vs_websockets_echo(self, ws_echo_url):
         """Both async clients should get identical echo responses."""
+        pytest.importorskip("websockets", reason="websockets not installed")
         import websockets
 
         msg = "async reference test 中文"

@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from websocket import WebSocketClient
 
 # ── Test data (pre-built at module level) ──────────────────────────────────
@@ -58,6 +60,7 @@ class TestJsonRpcRoundtrip:
         ws.close()
 
     def test_websockets(self, ws_echo_url, benchmark):
+        pytest.importorskip("websockets", reason="websockets not installed")
         import websockets.sync.client
 
         ws = websockets.sync.client.connect(ws_echo_url)
@@ -87,6 +90,7 @@ class TestLargePayload:
         ws.close()
 
     def test_websockets(self, ws_echo_url, benchmark):
+        pytest.importorskip("websockets", reason="websockets not installed")
         import websockets.sync.client
 
         ws = websockets.sync.client.connect(ws_echo_url)
@@ -120,6 +124,7 @@ class TestBurstMessages:
         ws.close()
 
     def test_websockets(self, ws_echo_url, benchmark):
+        pytest.importorskip("websockets", reason="websockets not installed")
         import websockets.sync.client
 
         ws = websockets.sync.client.connect(ws_echo_url)
@@ -149,6 +154,7 @@ class TestConnectionSetup:
         benchmark(connect_close)
 
     def test_websockets(self, ws_echo_url, benchmark):
+        pytest.importorskip("websockets", reason="websockets not installed")
         import websockets.sync.client
 
         def connect_close():

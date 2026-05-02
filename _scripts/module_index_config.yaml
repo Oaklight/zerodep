@@ -13,7 +13,7 @@ categories:
   - id: network
     name_en: "Web & Networking"
     name_zh: "网络与通信"
-    modules: [httpclient, sse, useragent]
+    modules: [httpclient, sse, httpserver, useragent]
 
   - id: protocol
     name_en: "Agent Protocols"
@@ -226,3 +226,7 @@ modules:
   synctex:
     desc_en: "SyncTeX inverse-search parser (PDF position → source location)"
     desc_zh: "SyncTeX 反向搜索解析器（PDF 位置 → 源代码位置）"
+  httpserver:
+    benchmark: microdot / bottle
+    desc_en: "Async HTTP server with decorator-based routing, streaming, and static files"
+    desc_zh: "异步 HTTP 服务器（装饰器路由、流式响应、静态文件）"

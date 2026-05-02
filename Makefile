@@ -1,4 +1,4 @@
-.PHONY: all test benchmark lint fmt clean help manifest version-check dep-graph dep-check docs-index docs-index-check test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi test-frontmatter benchmark-frontmatter test-cache benchmark-cache test-readability benchmark-readability benchmark-readability-compare test-jsonschema benchmark-jsonschema test-png benchmark-png
+.PHONY: all test benchmark lint fmt clean help manifest version-check dep-graph dep-check docs-index docs-index-check test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi test-frontmatter benchmark-frontmatter test-cache benchmark-cache test-readability benchmark-readability benchmark-readability-compare test-jsonschema benchmark-jsonschema test-png benchmark-png test-httpserver benchmark-httpserver
 
 help:
 	@echo "Available targets:"
@@ -44,6 +44,8 @@ help:
 	@echo "  benchmark-jsonschema - Run jsonschema benchmarks (vs allof-merge JS)"
 	@echo "  test-png         - Run PNG correctness tests"
 	@echo "  benchmark-png    - Run PNG benchmarks (vs Pillow)"
+	@echo "  test-httpserver  - Run httpserver correctness tests"
+	@echo "  benchmark-httpserver - Run httpserver benchmarks (vs microdot, bottle)"
 	@echo "  docs-index       - Generate modules/index.md for EN and ZH docs"
 	@echo "  docs-index-check - Check that modules/index.md is up-to-date"
 	@echo "  manifest         - Regenerate manifest.json"
@@ -180,6 +182,12 @@ test-png:
 
 benchmark-png:
 	pytest png/test_png_benchmark.py -v
+
+test-httpserver:
+	pytest httpserver/test_httpserver_correctness.py -v
+
+benchmark-httpserver:
+	pytest httpserver/test_httpserver_benchmark.py -v
 
 manifest:
 	python zerodep.py manifest

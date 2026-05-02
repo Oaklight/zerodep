@@ -138,17 +138,21 @@ bench-png = [
 bench-useragent = [
     "ua-generator>=2.0.0",
 ]
+bench-httpserver = [
+    "microdot==2.6.1",
+    "bottle==0.13.4",
+]
 dev = [
     "ruff>=0.1.0",
     "ty>=0.0.24",
     "complexipy>=5.2.0",
     "build>=1.2.2.post1",
     "twine>=6.1.0",
-    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-persistdict,bench-runner,bench-readability,bench-png,bench-useragent]",
+    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-persistdict,bench-runner,bench-readability,bench-png,bench-useragent,bench-httpserver]",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema", "png", "llmstxt", "useragent", "synctex"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema", "png", "llmstxt", "useragent", "synctex", "httpserver"]
 
 [tool.ruff]
 target-version = "py310"
@@ -172,6 +176,7 @@ max-complexity = 20
 "acp/acp.py" = ["E501"]
 "jsonschema/jsonschema.py" = ["E501"]
 "png/png.py" = ["E501", "C901"]
+"httpserver/httpserver.py" = ["E501"]
 "**/test_*.py" = ["E402"]
 "**/test_*_benchmark.py" = ["E501"]
 "**/conftest.py" = ["C901"]
@@ -222,4 +227,5 @@ extra-paths = [
     "./llmstxt",
     "./useragent",
     "./synctex",
+    "./httpserver",
 ]

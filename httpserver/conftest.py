@@ -96,9 +96,7 @@ def _build_test_app(static_dir=None):
             for i in range(3):
                 yield f"data: event-{i}\n\n"
 
-        return StreamingResponse(
-            generate(), content_type="text/event-stream"
-        )
+        return StreamingResponse(generate(), content_type="text/event-stream")
 
     @app.get("/stream-chunked")
     async def stream_chunked(request):
@@ -142,9 +140,7 @@ def server_url(static_dir):
 
         async def _start():
             app._shutdown_event = asyncio.Event()
-            server = await asyncio.start_server(
-                app._handle_connection, "127.0.0.1", 0
-            )
+            server = await asyncio.start_server(app._handle_connection, "127.0.0.1", 0)
             app._server = server
             addrs = server.sockets[0].getsockname()
             app.host = addrs[0]

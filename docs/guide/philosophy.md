@@ -26,7 +26,7 @@ Each module is one `.py` file (occasionally two for a variant like `aes_python.p
 
 ### Correctness First, Performance Matched or Better
 
-Every module is tested apple-to-apple against the reference library it reimplements (`PyYAML`, `httpx`, `pydantic`, etc.). Correctness tests run first; benchmark comparisons come second. In practice, most zerodep modules achieve **performance parity or better** — for example, sparse_search is 34-132x faster at query time than rank-bm25, the scheduler parses cron expressions 3.6-11.5x faster than alternatives, and the AES module offers an OpenSSL ctypes backend that matches pycryptodome speeds.
+Every module is tested apple-to-apple against the reference library it reimplements (`PyYAML`, `httpx`, `pydantic`, etc.). Correctness tests run first; benchmark comparisons come second. In practice, most zerodep modules achieve **performance parity or better** — for example, sparse_search is 34-132x faster at query time than rank-bm25, the scheduler parses cron expressions 3.6-11.5x faster than alternatives, and the AES module offers an OpenSSL ctypes backend that matches pycryptodome speeds. See the [live benchmark dashboard](https://oaklight.github.io/zerodep/dev/bench) for up-to-date results.
 
 ### Explicit Dependencies Between Modules
 

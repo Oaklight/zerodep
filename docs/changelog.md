@@ -4,6 +4,13 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [2026.5.2.1] - 2026-05-02
+
+### 问题修复
+
+- **CLI**：`version-check` 和 `bump` 不再对没有历史 release tag 的全新模块执行错误的自动版本递增。新模块现在显示 `"new (initial release)"` 而非 `"new (needs version bump)"`，并从自动 bump 目标中排除。
+- **模块版本**：回退 5 个新模块的错误版本递增 — httpserver (0.1.0)、websocket (0.1.0)、cdp (0.1.0)、useragent (0.1.0)、synctex (0.2.0)。
+
 ## [2026.5.2] - 2026-05-02
 
 ### 新增模块

@@ -1,5 +1,6 @@
 """Benchmark: zerodep httpserver vs microdot vs bottle."""
 
+import asyncio
 import json
 import os
 import sys
@@ -10,7 +11,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "httpclient"))
 
-from httpclient import get, post
+from httpclient import async_get, async_post, get, post
 
 # ── zerodep httpserver setup ──
 from httpserver import App, JSONResponse
@@ -18,12 +19,45 @@ from httpserver import App, JSONResponse
 microdot = pytest.importorskip("microdot", reason="microdot not installed")
 bottle = pytest.importorskip("bottle", reason="bottle not installed")
 
+# ── Payloads ──
+
+PAYLOAD = {"key": "value", "nested": {"a": 1, "b": [1, 2, 3]}}
+LARGE_PAYLOAD = {
+    "items": [{"id": i, "name": f"item_{i}", "data": "x" * 100} for i in range(100)]
+}
+
+CONCURRENCY = 10
+
+
+# ── Helpers ──
+
+
+def _run_concurrent_get(url, n=CONCURRENCY):
+    async def _gather():
+        await asyncio.gather(*[async_get(url) for _ in range(n)])
+
+    asyncio.run(_gather())
+
+
+def _run_concurrent_post(url, payload, n=CONCURRENCY):
+    async def _gather():
+        await asyncio.gather(*[async_post(url, json=payload) for _ in range(n)])
+
+    asyncio.run(_gather())
+
+
+# ── zerodep httpserver setup ──
+
 
 def _make_zerodep_app():
     app = App()
 
     @app.get("/ping")
     async def ping(request):
+        return JSONResponse({"pong": True})
+
+    @app.get("/sync-ping")
+    def sync_ping(request):
         return JSONResponse({"pong": True})
 
     @app.post("/echo")
@@ -38,8 +72,6 @@ def _make_zerodep_app():
 
 
 def _start_zerodep(app):
-    import asyncio
-
     ready = threading.Event()
 
     def _run():
@@ -84,8 +116,6 @@ def _make_microdot_app():
 
 
 def _start_microdot(app):
-    import asyncio
-
     ready = threading.Event()
 
     def _run():
@@ -164,9 +194,7 @@ def bottle_url():
     return _start_bottle(app)
 
 
-# ── Benchmarks ──
-
-PAYLOAD = {"key": "value", "nested": {"a": 1, "b": [1, 2, 3]}}
+# ── Serial Benchmarks ──
 
 
 class TestGetJSON:
@@ -200,3 +228,53 @@ class TestGetText:
 
     def test_bottle(self, benchmark, bottle_url):
         benchmark(get, f"{bottle_url}/text")
+
+
+# ── Sync vs Async Handler (zerodep only) ──
+
+
+class TestSyncVsAsyncHandler:
+    def test_async_handler(self, benchmark, zerodep_url):
+        benchmark(get, f"{zerodep_url}/ping")
+
+    def test_sync_handler(self, benchmark, zerodep_url):
+        benchmark(get, f"{zerodep_url}/sync-ping")
+
+
+# ── Concurrent Benchmarks ──
+
+
+class TestConcurrentGet:
+    def test_zerodep(self, benchmark, zerodep_url):
+        benchmark(_run_concurrent_get, f"{zerodep_url}/ping")
+
+    def test_microdot(self, benchmark, microdot_url):
+        benchmark(_run_concurrent_get, f"{microdot_url}/ping")
+
+    def test_bottle(self, benchmark, bottle_url):
+        benchmark(_run_concurrent_get, f"{bottle_url}/ping")
+
+
+class TestConcurrentPost:
+    def test_zerodep(self, benchmark, zerodep_url):
+        benchmark(_run_concurrent_post, f"{zerodep_url}/echo", PAYLOAD)
+
+    def test_microdot(self, benchmark, microdot_url):
+        benchmark(_run_concurrent_post, f"{microdot_url}/echo", PAYLOAD)
+
+    def test_bottle(self, benchmark, bottle_url):
+        benchmark(_run_concurrent_post, f"{bottle_url}/echo", PAYLOAD)
+
+
+# ── Large Payload ──
+
+
+class TestLargePayload:
+    def test_zerodep(self, benchmark, zerodep_url):
+        benchmark(post, f"{zerodep_url}/echo", json=LARGE_PAYLOAD)
+
+    def test_microdot(self, benchmark, microdot_url):
+        benchmark(post, f"{microdot_url}/echo", json=LARGE_PAYLOAD)
+
+    def test_bottle(self, benchmark, bottle_url):
+        benchmark(post, f"{bottle_url}/echo", json=LARGE_PAYLOAD)

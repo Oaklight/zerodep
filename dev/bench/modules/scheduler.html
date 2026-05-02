@@ -124,18 +124,18 @@ td { white-space: nowrap; }
 <h1>scheduler</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: a4bf288 | Commit: a4bf2887 | 2026-05-02T08:49:31.944706+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T08:49:31.944706+00:00"></span></p>
+<p class="meta">Version: 70d3570 | Commit: 70d35706 | 2026-05-02T09:10:00.755707+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T09:10:00.755707+00:00"></span></p>
 <h2>scheduler</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Batch Next Fire Time</td><td>zerodep</td><td>croniter</td><td>680.0 µs</td><td>4.47 ms</td><td>1.5K</td><td>223.9</td><td class="ratio-cell faster">6.6x faster</td></tr>
-<tr><td>Batch Next Fire Time</td><td>zerodep</td><td>APScheduler</td><td>680.0 µs</td><td>992.4 µs</td><td>1.5K</td><td>1.0K</td><td class="ratio-cell faster">1.5x faster</td></tr>
-<tr><td>Cron Parsing</td><td>zerodep</td><td>croniter</td><td>44.9 µs</td><td>375.2 µs</td><td>22.3K</td><td>2.7K</td><td class="ratio-cell faster">8.4x faster</td></tr>
-<tr><td>Cron Parsing</td><td>zerodep</td><td>APScheduler</td><td>44.9 µs</td><td>187.6 µs</td><td>22.3K</td><td>5.3K</td><td class="ratio-cell faster">4.2x faster</td></tr>
-<tr><td>Job Add Overhead</td><td>zerodep</td><td>schedule</td><td>547.9 µs</td><td>538.8 µs</td><td>1.8K</td><td>1.9K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Next Fire Time</td><td>zerodep</td><td>croniter</td><td>54.1 µs</td><td>721.5 µs</td><td>18.5K</td><td>1.4K</td><td class="ratio-cell faster">13.3x faster</td></tr>
-<tr><td>Next Fire Time</td><td>zerodep</td><td>APScheduler</td><td>54.1 µs</td><td>137.1 µs</td><td>18.5K</td><td>7.3K</td><td class="ratio-cell faster">2.5x faster</td></tr>
+<tr><td>Batch Next Fire Time</td><td>zerodep</td><td>croniter</td><td>660.2 µs</td><td>4.45 ms</td><td>1.5K</td><td>224.7</td><td class="ratio-cell faster">6.7x faster</td></tr>
+<tr><td>Batch Next Fire Time</td><td>zerodep</td><td>APScheduler</td><td>660.2 µs</td><td>982.1 µs</td><td>1.5K</td><td>1.0K</td><td class="ratio-cell faster">1.5x faster</td></tr>
+<tr><td>Cron Parsing</td><td>zerodep</td><td>croniter</td><td>44.1 µs</td><td>368.4 µs</td><td>22.7K</td><td>2.7K</td><td class="ratio-cell faster">8.3x faster</td></tr>
+<tr><td>Cron Parsing</td><td>zerodep</td><td>APScheduler</td><td>44.1 µs</td><td>184.0 µs</td><td>22.7K</td><td>5.4K</td><td class="ratio-cell faster">4.2x faster</td></tr>
+<tr><td>Job Add Overhead</td><td>zerodep</td><td>schedule</td><td>536.2 µs</td><td>617.4 µs</td><td>1.9K</td><td>1.6K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Next Fire Time</td><td>zerodep</td><td>croniter</td><td>53.3 µs</td><td>691.4 µs</td><td>18.8K</td><td>1.4K</td><td class="ratio-cell faster">13.0x faster</td></tr>
+<tr><td>Next Fire Time</td><td>zerodep</td><td>APScheduler</td><td>53.3 µs</td><td>133.2 µs</td><td>18.8K</td><td>7.5K</td><td class="ratio-cell faster">2.5x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -207,13 +207,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [1470.5940048998336, 22274.37572377155, 1825.1759138825755, 18496.32805003643],
+        data: [1514.6885788920774, 22656.985060218183, 1864.8333914506236, 18755.694727868166],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "Reference" + ' (ops/s)',
-        data: [1007.6173861307973, 5330.066002998809, 1855.908686474382, 7294.43702920471],
+        data: [1018.1964704803999, 5436.218479604194, 1619.810338261859, 7508.545120875752],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

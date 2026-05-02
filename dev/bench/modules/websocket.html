@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>qr Benchmark — zerodep</title>
+<title>websocket Benchmark — zerodep</title>
 <style>:root, [data-theme="light"] {
   --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
   --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
@@ -121,21 +121,18 @@ td { white-space: nowrap; }
 </head>
 <body>
 <div class="header-row">
-<h1>qr</h1>
+<h1>websocket</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
 <p class="meta">Version: 70d3570 | Commit: 70d35706 | 2026-05-02T09:10:00.755707+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T09:10:00.755707+00:00"></span></p>
-<h2>qr</h2>
+<h2>websocket</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Encode Binary</td><td>zerodep</td><td>qrcode</td><td>34.27 ms</td><td>41.98 ms</td><td>29.2</td><td>23.8</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Encode High Ecc</td><td>zerodep</td><td>qrcode</td><td>6.51 ms</td><td>6.20 ms</td><td>153.7</td><td>161.2</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Encode Large Data</td><td>zerodep</td><td>qrcode</td><td>34.45 ms</td><td>45.18 ms</td><td>29.0</td><td>22.1</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>11.00 ms</td><td>11.82 ms</td><td>90.9</td><td>84.6</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Encode Numeric</td><td>zerodep</td><td>qrcode</td><td>4.28 ms</td><td>4.05 ms</td><td>233.9</td><td>247.0</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>2.34 ms</td><td>1.83 ms</td><td>426.8</td><td>546.6</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>5.36 ms</td><td>5.05 ms</td><td>186.5</td><td>197.9</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Burst Messages</td><td>zerodep</td><td>websockets</td><td>6.25 ms</td><td>10.93 ms</td><td>160.1</td><td>91.5</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Connection Setup</td><td>zerodep</td><td>websockets</td><td>448.3 µs</td><td>1.20 ms</td><td>2.2K</td><td>832.5</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Json Rpc Roundtrip</td><td>zerodep</td><td>websockets</td><td>106.7 µs</td><td>148.2 µs</td><td>9.4K</td><td>6.7K</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Large Payload</td><td>zerodep</td><td>websockets</td><td>6.05 ms</td><td>3.11 ms</td><td>165.4</td><td>321.9</td><td class="ratio-cell slower">1.9x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -203,17 +200,17 @@ var TREND_COLORS = [
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
   data: {
-    labels: ["Encode Binary", "Encode High Ecc", "Encode Large Data", "Encode Long", "Encode Numeric", "Encode Short", "Encode URL"],
+    labels: ["Burst Messages", "Connection Setup", "Json Rpc Roundtrip", "Large Payload"],
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [29.17797361774596, 153.66217317900555, 29.0267147078517, 90.8949132095705, 233.90751898849672, 426.76411512032877, 186.54245407309836],
+        data: [160.1258572340105, 2230.7480352627726, 9372.520378497255, 165.38540186001546],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
-        label: "qrcode" + ' (ops/s)',
-        data: [23.82008426293915, 161.22516167721338, 22.133755848614115, 84.58901527272367, 247.02321744988555, 546.5633283302006, 197.90431354381946],
+        label: "websockets" + ' (ops/s)',
+        data: [91.45983478815245, 832.5408181373009, 6748.328084086889, 321.9311573088502],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -224,7 +221,7 @@ new Chart(document.getElementById('chart_0'), {
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'top' },
-      title: { display: true, text: 'qr — ops/s (higher is better)' }
+      title: { display: true, text: 'websocket — ops/s (higher is better)' }
     },
     scales: {
       y: {
@@ -241,7 +238,7 @@ new Chart(document.getElementById('chart_0'), {
   if (!data || !data.entries || !data.entries.Benchmark) {
     section.style.display = 'none'; return;
   }
-  var filtered = filterBenchesForModule(data.entries.Benchmark, 'qr');
+  var filtered = filterBenchesForModule(data.entries.Benchmark, 'websocket');
   if (!filtered.length) { section.style.display = 'none'; return; }
 
   // Collect unique zerodep bench names
@@ -283,7 +280,7 @@ new Chart(document.getElementById('chart_0'), {
         },
         title: {
           display: true,
-          text: 'qr — zerodep ops/s over time'
+          text: 'websocket — zerodep ops/s over time'
         },
         tooltip: {
           callbacks: {

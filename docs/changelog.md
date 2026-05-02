@@ -8,6 +8,7 @@
 
 ### 新增模块
 
+- **httpserver 模块**：零依赖的异步 HTTP 服务器，兼容 Flask/microdot 的装饰器路由 API。基于 `asyncio.start_server()` 构建，原生 HTTP/1.1 解析。`@app.route(path, methods=)`、`@app.get()`、`@app.post()` 等路由注册方式。支持带类型转换的路径参数（`<name>`、`<int:id>`、`<float:price>`、`<path:filepath>`）。返回值自动转换（dict → JSON、str → 文本、bytes → 二进制、tuple → 状态码/头部、None → 204）。`StreamingResponse` 支持 chunked 编码用于 SSE。`FileResponse` 提供静态文件服务，内置目录遍历防护。`before_request`/`after_request`/`errorhandler` 中间件钩子。同步处理器通过 `asyncio.to_thread()` 自动包装。SIGINT/SIGTERM 优雅关闭。单文件，约 1000 行，仅标准库。58 个正确性测试 + 26 个性能测试（对标 Flask、microdot、bottle — 串行、并发、同步/异步、大负载）。
 - **SyncTeX 模块**：零依赖的 SyncTeX 双向搜索解析器（PDF 位置与源代码位置互转）。解析 TeX 引擎生成的 `.synctex` 和 `.synctex.gz` 文件。`parse_synctex()` 提取输入文件映射、页面 hbox 记录和前导元数据。`inverse_search()` 通过多阶段空间匹配算法将 PDF 页面坐标映射回源文件和行号。`forward_search()` 将源文件和行号映射到 PDF 页面坐标。支持可配置的路径前缀去除，适用于 Docker/远程构建场景。29 个正确性测试。
 - **useragent 模块**：轻量级 Chrome/Edge User-Agent 字符串生成器，附带 Client Hints 头部。`generate()` 为 Windows、macOS、Linux（桌面）和 Android（移动端）生成逼真的 UA 字符串及对应的 `Sec-CH-UA-*` 头部。支持低熵 hints（始终包含）和通过 `accept_ch()` 获取的高熵 hints（平台版本、架构、位数、型号、完整版本列表）。通过 `random.seed()` 实现确定性输出。单文件，约 470 行，仅标准库 `random`。47 个正确性测试 + 8 个性能测试（比 ua-generator 快 2-3 倍）。灵感来自 [ua-generator](https://github.com/iamdual/ua-generator)（Apache-2.0）。
 

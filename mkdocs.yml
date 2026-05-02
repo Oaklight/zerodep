@@ -82,6 +82,7 @@ plugins:
             - ../llmstxt
             - ../synctex
             - ../useragent
+            - ../httpserver
             - aes
             - qr
             - httpclient
@@ -122,6 +123,7 @@ plugins:
             - llmstxt
             - synctex
             - useragent
+            - httpserver
           options:
             docstring_style: google
             show_source: true
@@ -146,6 +148,7 @@ plugins:
           - modules/index.md
           - modules/httpclient.md
           - modules/sse.md
+          - modules/httpserver.md
           - modules/jsonrpc.md
           - modules/a2a.md
           - modules/acp.md
@@ -186,6 +189,7 @@ plugins:
         API 参考:
           - api/httpclient.md
           - api/sse.md
+          - api/httpserver.md
           - api/jsonrpc.md
           - api/a2a.md
           - api/acp.md
@@ -226,6 +230,7 @@ plugins:
         性能测试:
           - benchmarks/httpclient.md
           - benchmarks/sse.md
+          - benchmarks/httpserver.md
           - benchmarks/jsonrpc.md
           - benchmarks/a2a.md
           - benchmarks/acp.md
@@ -310,6 +315,7 @@ nav:
       - 网络与通信:
           - httpclient / HTTP 客户端: modules/httpclient.md
           - sse / SSE 客户端: modules/sse.md
+          - httpserver / HTTP 服务器: modules/httpserver.md
           - useragent / User-Agent 生成器: modules/useragent.md
       - 智能体协议:
           - jsonrpc / JSON-RPC: modules/jsonrpc.md
@@ -363,6 +369,7 @@ nav:
       - 网络与通信:
           - httpclient / HTTP 客户端: api/httpclient.md
           - sse / SSE 客户端: api/sse.md
+          - httpserver / HTTP 服务器: api/httpserver.md
           - useragent / User-Agent 生成器: api/useragent.md
       - 智能体协议:
           - jsonrpc / JSON-RPC: api/jsonrpc.md
@@ -416,6 +423,7 @@ nav:
       - 网络与通信:
           - httpclient / HTTP 客户端: benchmarks/httpclient.md
           - sse / SSE 客户端: benchmarks/sse.md
+          - httpserver / HTTP 服务器: benchmarks/httpserver.md
           - useragent / User-Agent 生成器: benchmarks/useragent.md
       - 智能体协议:
           - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md

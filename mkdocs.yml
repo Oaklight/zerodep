@@ -83,6 +83,8 @@ plugins:
             - ../synctex
             - ../useragent
             - ../httpserver
+            - ../websocket
+            - ../cdp
             - aes
             - qr
             - httpclient
@@ -124,6 +126,8 @@ plugins:
             - synctex
             - useragent
             - httpserver
+            - websocket
+            - cdp
           options:
             docstring_style: google
             show_source: true
@@ -149,6 +153,8 @@ plugins:
           - modules/httpclient.md
           - modules/sse.md
           - modules/httpserver.md
+          - modules/websocket.md
+          - modules/cdp.md
           - modules/jsonrpc.md
           - modules/a2a.md
           - modules/acp.md
@@ -190,6 +196,8 @@ plugins:
           - api/httpclient.md
           - api/sse.md
           - api/httpserver.md
+          - api/websocket.md
+          - api/cdp.md
           - api/jsonrpc.md
           - api/a2a.md
           - api/acp.md
@@ -231,6 +239,8 @@ plugins:
           - benchmarks/httpclient.md
           - benchmarks/sse.md
           - benchmarks/httpserver.md
+          - benchmarks/websocket.md
+          - benchmarks/cdp.md
           - benchmarks/jsonrpc.md
           - benchmarks/a2a.md
           - benchmarks/acp.md
@@ -316,6 +326,7 @@ nav:
           - httpclient / HTTP Client: modules/httpclient.md
           - sse / SSE Client: modules/sse.md
           - httpserver / HTTP Server: modules/httpserver.md
+          - websocket / WebSocket Client: modules/websocket.md
           - useragent / User-Agent Generator: modules/useragent.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: modules/jsonrpc.md
@@ -323,6 +334,7 @@ nav:
           - acp / ACP Protocol: modules/acp.md
           - skills / Agent Skills: modules/skills.md
           - llmstxt / llms.txt Parser: modules/llmstxt.md
+          - cdp / CDP Client: modules/cdp.md
       - Serialization:
           - xml / XML Converter: modules/xml.md
           - yaml / YAML Parser: modules/yaml.md
@@ -370,6 +382,7 @@ nav:
           - httpclient / HTTP Client: api/httpclient.md
           - sse / SSE Client: api/sse.md
           - httpserver / HTTP Server: api/httpserver.md
+          - websocket / WebSocket Client: api/websocket.md
           - useragent / User-Agent Generator: api/useragent.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: api/jsonrpc.md
@@ -377,6 +390,7 @@ nav:
           - acp / ACP Protocol: api/acp.md
           - skills / Agent Skills: api/skills.md
           - llmstxt / llms.txt Parser: api/llmstxt.md
+          - cdp / CDP Client: api/cdp.md
       - Serialization:
           - xml / XML Converter: api/xml.md
           - yaml / YAML Parser: api/yaml.md
@@ -424,6 +438,7 @@ nav:
           - httpclient / HTTP Client: benchmarks/httpclient.md
           - sse / SSE Client: benchmarks/sse.md
           - httpserver / HTTP Server: benchmarks/httpserver.md
+          - websocket / WebSocket Client: benchmarks/websocket.md
           - useragent / User-Agent Generator: benchmarks/useragent.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md
@@ -431,6 +446,7 @@ nav:
           - acp / ACP Protocol: benchmarks/acp.md
           - skills / Agent Skills: benchmarks/skills.md
           - llmstxt / llms.txt Parser: benchmarks/llmstxt.md
+          - cdp / CDP Client: benchmarks/cdp.md
       - Serialization:
           - xml / XML Converter: benchmarks/xml.md
           - yaml / YAML Parser: benchmarks/yaml.md

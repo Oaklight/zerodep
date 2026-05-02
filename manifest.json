@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-05-02T08:23:10.831667+00:00",
+  "generated": "2026-05-02T09:28:07.017779+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -71,13 +71,13 @@
       "files": [
         "cdp/cdp.py"
       ],
-      "version": "0.1.0",
+      "version": "0.1.1",
       "deps": [
         "websocket"
       ],
       "tier": "medium",
       "category": "protocol",
-      "last_updated": null,
+      "last_updated": "2026-05-02T16:25:04+08:00",
       "content_hash": "e5bd722ec32c6c15a210ec2f18cc960acbd4cbabb9b8c7c55a98063e2e05d989"
     },
     "config": {
@@ -175,7 +175,7 @@
       "files": [
         "httpserver/httpserver.py"
       ],
-      "version": "0.1.0",
+      "version": "0.1.1",
       "deps": [],
       "tier": "subsystem",
       "category": "network",
@@ -437,7 +437,7 @@
       "files": [
         "synctex/synctex.py"
       ],
-      "version": "0.2.0",
+      "version": "0.2.1",
       "deps": [],
       "tier": "simple",
       "category": "text",
@@ -473,7 +473,7 @@
       "files": [
         "useragent/useragent.py"
       ],
-      "version": "0.1.0",
+      "version": "0.1.1",
       "deps": [],
       "tier": "simple",
       "category": "network",
@@ -511,11 +511,11 @@
       "files": [
         "websocket/websocket.py"
       ],
-      "version": "0.1.0",
+      "version": "0.1.1",
       "deps": [],
       "tier": "medium",
       "category": "network",
-      "last_updated": null,
+      "last_updated": "2026-05-02T16:24:53+08:00",
       "content_hash": "4c95286e6bb0fcbbfa7bef5660be9b5e47a3c9c25a6a7247098cb48b2668c765"
     },
     "xml": {

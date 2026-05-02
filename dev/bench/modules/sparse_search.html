@@ -124,39 +124,39 @@ td { white-space: nowrap; }
 <h1>sparse_search</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.5.2 | Commit: 5d50cc3d | 2026-05-02T09:37:46.917821+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T09:37:46.917821+00:00"></span></p>
+<p class="meta">Version: v2026.5.2.1 | Commit: 32293d98 | 2026-05-02T10:06:03.065183+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T10:06:03.065183+00:00"></span></p>
 <h2>sparse_search</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>139.63 ms</td><td>12.71 ms</td><td>7.2</td><td>78.7</td><td class="ratio-cell slower">11.0x slower</td></tr>
-<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>3.1 µs</td><td>401.3 µs</td><td>320.7K</td><td>2.5K</td><td class="ratio-cell faster">128.7x faster</td></tr>
-<tr><td>Scale Search10K</td><td>broad_query_ours</td><td>rank-bm25</td><td>64.98 ms</td><td>3.36 ms</td><td>15.4</td><td>298.1</td><td class="ratio-cell slower">19.4x slower</td></tr>
-<tr><td>Scale Search10K</td><td>selective_query_ours</td><td>rank-bm25</td><td>173.4 µs</td><td>2.97 ms</td><td>5.8K</td><td>336.8</td><td class="ratio-cell faster">17.1x faster</td></tr>
-<tr><td>Scale Search1K</td><td>broad_query_ours</td><td>rank-bm25</td><td>4.81 ms</td><td>354.8 µs</td><td>207.9</td><td>2.8K</td><td class="ratio-cell slower">13.6x slower</td></tr>
-<tr><td>Scale Search1K</td><td>selective_query_ours</td><td>rank-bm25</td><td>18.8 µs</td><td>327.3 µs</td><td>53.1K</td><td>3.1K</td><td class="ratio-cell faster">17.4x faster</td></tr>
-<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>3.2 µs</td><td>113.4 µs</td><td>313.7K</td><td>8.8K</td><td class="ratio-cell faster">35.6x faster</td></tr>
+<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>136.71 ms</td><td>11.78 ms</td><td>7.3</td><td>84.9</td><td class="ratio-cell slower">11.6x slower</td></tr>
+<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>2.6 µs</td><td>293.5 µs</td><td>389.1K</td><td>3.4K</td><td class="ratio-cell faster">114.2x faster</td></tr>
+<tr><td>Scale Search10K</td><td>broad_query_ours</td><td>rank-bm25</td><td>50.97 ms</td><td>2.68 ms</td><td>19.6</td><td>373.7</td><td class="ratio-cell slower">19.0x slower</td></tr>
+<tr><td>Scale Search10K</td><td>selective_query_ours</td><td>rank-bm25</td><td>137.2 µs</td><td>2.42 ms</td><td>7.3K</td><td>413.0</td><td class="ratio-cell faster">17.6x faster</td></tr>
+<tr><td>Scale Search1K</td><td>broad_query_ours</td><td>rank-bm25</td><td>3.84 ms</td><td>249.1 µs</td><td>260.6</td><td>4.0K</td><td class="ratio-cell slower">15.4x slower</td></tr>
+<tr><td>Scale Search1K</td><td>selective_query_ours</td><td>rank-bm25</td><td>15.3 µs</td><td>236.6 µs</td><td>65.6K</td><td>4.2K</td><td class="ratio-cell faster">15.5x faster</td></tr>
+<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>2.6 µs</td><td>79.4 µs</td><td>381.4K</td><td>12.6K</td><td class="ratio-cell faster">30.3x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>1.21 ms</td><td>823.2</td></tr>
-<tr><td>Calibration Performance</td><td>search_raw</td><td>42.2 µs</td><td>23.7K</td></tr>
-<tr><td>Calibration Performance</td><td>search_calibrated</td><td>81.5 µs</td><td>12.3K</td></tr>
-<tr><td>Indexing Performance</td><td>index_1k_bm25s</td><td>49.77 ms</td><td>20.1</td></tr>
-<tr><td>Large Search Performance</td><td>search_1k_bm25s</td><td>36.5 µs</td><td>27.4K</td></tr>
-<tr><td>MMRPerformance</td><td>mmr_100_candidates</td><td>4.13 ms</td><td>241.9</td></tr>
-<tr><td>MMRPerformance</td><td>mmr_500_candidates</td><td>24.99 ms</td><td>40.0</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_2_lists_1000_results</td><td>958.0 µs</td><td>1.0K</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_10_lists_100_results</td><td>435.7 µs</td><td>2.3K</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_overlapping_docs</td><td>875.4 µs</td><td>1.1K</td></tr>
-<tr><td>Scale Search10K</td><td>broad_query_bm25s</td><td>113.9 µs</td><td>8.8K</td></tr>
-<tr><td>Scale Search10K</td><td>selective_query_bm25s</td><td>329.4 µs</td><td>3.0K</td></tr>
-<tr><td>Scale Search1K</td><td>broad_query_bm25s</td><td>58.9 µs</td><td>17.0K</td></tr>
-<tr><td>Scale Search1K</td><td>selective_query_bm25s</td><td>68.3 µs</td><td>14.6K</td></tr>
-<tr><td>Search Performance</td><td>search_bm25s</td><td>39.4 µs</td><td>25.4K</td></tr>
+<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>846.2 µs</td><td>1.2K</td></tr>
+<tr><td>Calibration Performance</td><td>search_raw</td><td>33.7 µs</td><td>29.7K</td></tr>
+<tr><td>Calibration Performance</td><td>search_calibrated</td><td>63.5 µs</td><td>15.8K</td></tr>
+<tr><td>Indexing Performance</td><td>index_1k_bm25s</td><td>38.68 ms</td><td>25.8</td></tr>
+<tr><td>Large Search Performance</td><td>search_1k_bm25s</td><td>24.4 µs</td><td>40.9K</td></tr>
+<tr><td>MMRPerformance</td><td>mmr_100_candidates</td><td>3.34 ms</td><td>299.4</td></tr>
+<tr><td>MMRPerformance</td><td>mmr_500_candidates</td><td>19.96 ms</td><td>50.1</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_2_lists_1000_results</td><td>710.5 µs</td><td>1.4K</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_10_lists_100_results</td><td>344.6 µs</td><td>2.9K</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_overlapping_docs</td><td>660.8 µs</td><td>1.5K</td></tr>
+<tr><td>Scale Search10K</td><td>broad_query_bm25s</td><td>138.1 µs</td><td>7.2K</td></tr>
+<tr><td>Scale Search10K</td><td>selective_query_bm25s</td><td>1.10 ms</td><td>913.1</td></tr>
+<tr><td>Scale Search1K</td><td>broad_query_bm25s</td><td>39.1 µs</td><td>25.6K</td></tr>
+<tr><td>Scale Search1K</td><td>selective_query_bm25s</td><td>100.8 µs</td><td>9.9K</td></tr>
+<tr><td>Search Performance</td><td>search_bm25s</td><td>21.1 µs</td><td>47.4K</td></tr>
 </tbody></table>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -227,13 +227,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [7.161567838648042, 320722.39409595256, 5766.151296495595, 53127.00919191109, 313735.7847217642],
+        data: [7.314804644640635, 389077.1699725844, 7287.663401591318, 65557.63095970471, 381390.0918638521],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "rank-bm25" + ' (ops/s)',
-        data: [78.70552353259232, 2491.765628417119, 336.8250535415712, 3054.8968183190473, 8815.487513863074],
+        data: [84.91205213515886, 3406.811204685836, 413.02073312175287, 4225.6659605876885, 12590.452458519718],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -124,26 +124,26 @@ td { white-space: nowrap; }
 <h1>config</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.5.2 | Commit: 5d50cc3d | 2026-05-02T09:37:46.917821+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T09:37:46.917821+00:00"></span></p>
+<p class="meta">Version: v2026.5.2.1 | Commit: 32293d98 | 2026-05-02T10:06:03.065183+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T10:06:03.065183+00:00"></span></p>
 <h2>config</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Cast Bool</td><td>zerodep</td><td>python-decouple</td><td>1.3 µs</td><td>2.5 µs</td><td>765.7K</td><td>397.7K</td><td class="ratio-cell faster">1.9x faster</td></tr>
-<tr><td>Cast Int</td><td>zerodep</td><td>python-decouple</td><td>1.2 µs</td><td>2.3 µs</td><td>800.6K</td><td>435.8K</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Csv Cast</td><td>zerodep</td><td>python-decouple</td><td>2.8 µs</td><td>12.3 µs</td><td>360.4K</td><td>81.1K</td><td class="ratio-cell faster">4.4x faster</td></tr>
-<tr><td>Dotenv Lookup</td><td>zerodep</td><td>python-decouple</td><td>732.2 ns</td><td>1.7 µs</td><td>1.37M</td><td>597.7K</td><td class="ratio-cell faster">2.3x faster</td></tr>
-<tr><td>Env Lookup</td><td>zerodep</td><td>python-decouple</td><td>910.7 ns</td><td>1.7 µs</td><td>1.10M</td><td>588.7K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Cast Bool</td><td>zerodep</td><td>python-decouple</td><td>1.1 µs</td><td>2.1 µs</td><td>904.1K</td><td>484.5K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Cast Int</td><td>zerodep</td><td>python-decouple</td><td>1.0 µs</td><td>1.9 µs</td><td>984.6K</td><td>530.5K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Csv Cast</td><td>zerodep</td><td>python-decouple</td><td>2.2 µs</td><td>9.8 µs</td><td>463.4K</td><td>101.8K</td><td class="ratio-cell faster">4.6x faster</td></tr>
+<tr><td>Dotenv Lookup</td><td>zerodep</td><td>python-decouple</td><td>542.4 ns</td><td>1.3 µs</td><td>1.84M</td><td>760.7K</td><td class="ratio-cell faster">2.4x faster</td></tr>
+<tr><td>Env Lookup</td><td>zerodep</td><td>python-decouple</td><td>683.0 ns</td><td>1.3 µs</td><td>1.46M</td><td>760.7K</td><td class="ratio-cell faster">1.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Config Init</td><td>zerodep_env_only</td><td>567.3 ns</td><td>1.76M</td></tr>
-<tr><td>Config Init</td><td>zerodep_with_dotenv</td><td>1.02 ms</td><td>979.8</td></tr>
-<tr><td>Config Init</td><td>zerodep_with_json</td><td>51.8 µs</td><td>19.3K</td></tr>
-<tr><td>Nested Json Lookup</td><td>zerodep</td><td>2.1 µs</td><td>468.3K</td></tr>
+<tr><td>Config Init</td><td>zerodep_env_only</td><td>446.8 ns</td><td>2.24M</td></tr>
+<tr><td>Config Init</td><td>zerodep_with_dotenv</td><td>762.3 µs</td><td>1.3K</td></tr>
+<tr><td>Config Init</td><td>zerodep_with_json</td><td>34.5 µs</td><td>29.0K</td></tr>
+<tr><td>Nested Json Lookup</td><td>zerodep</td><td>1.7 µs</td><td>579.2K</td></tr>
 </tbody></table>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -214,13 +214,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [765706.7355886163, 800649.470496581, 360369.5798209395, 1365824.6975601534, 1098061.0410339125],
+        data: [904080.9625366859, 984640.0197457088, 463366.7520624864, 1843554.7567394907, 1464098.7812804831],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-decouple" + ' (ops/s)',
-        data: [397660.1820117204, 435816.79487169936, 81081.86666444528, 597701.0599111525, 588731.8330895408],
+        data: [484518.7699004626, 530537.1263702046, 101820.23343296238, 760749.8351793346, 760702.6717827132],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

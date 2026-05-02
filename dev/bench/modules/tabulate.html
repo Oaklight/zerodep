@@ -124,14 +124,14 @@ td { white-space: nowrap; }
 <h1>tabulate</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.5.2 | Commit: 5d50cc3d | 2026-05-02T09:37:46.917821+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T09:37:46.917821+00:00"></span></p>
+<p class="meta">Version: v2026.5.2.1 | Commit: 32293d98 | 2026-05-02T10:06:03.065183+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T10:06:03.065183+00:00"></span></p>
 <h2>tabulate</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large Table</td><td>zerodep</td><td>reference</td><td>6.24 ms</td><td>28.21 ms</td><td>160.3</td><td>35.5</td><td class="ratio-cell faster">4.5x faster</td></tr>
-<tr><td>Medium Table</td><td>zerodep</td><td>reference</td><td>406.1 µs</td><td>1.83 ms</td><td>2.5K</td><td>546.1</td><td class="ratio-cell faster">4.5x faster</td></tr>
-<tr><td>Small Table</td><td>zerodep</td><td>reference</td><td>53.3 µs</td><td>172.4 µs</td><td>18.8K</td><td>5.8K</td><td class="ratio-cell faster">3.2x faster</td></tr>
+<tr><td>Large Table</td><td>zerodep</td><td>reference</td><td>4.73 ms</td><td>21.16 ms</td><td>211.5</td><td>47.3</td><td class="ratio-cell faster">4.5x faster</td></tr>
+<tr><td>Medium Table</td><td>zerodep</td><td>reference</td><td>305.1 µs</td><td>1.37 ms</td><td>3.3K</td><td>732.5</td><td class="ratio-cell faster">4.5x faster</td></tr>
+<tr><td>Small Table</td><td>zerodep</td><td>reference</td><td>35.9 µs</td><td>114.3 µs</td><td>27.9K</td><td>8.7K</td><td class="ratio-cell faster">3.2x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -203,13 +203,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [160.29724957711298, 2462.518986352005, 18772.79303892396],
+        data: [211.45758272595026, 3277.886081625047, 27891.0762911688],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "reference" + ' (ops/s)',
-        data: [35.45396892197792, 546.0585948882396, 5800.99089412246],
+        data: [47.26952573060399, 732.5405214689788, 8746.24806616543],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

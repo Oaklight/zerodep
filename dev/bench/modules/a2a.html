@@ -124,20 +124,20 @@ td { white-space: nowrap; }
 <h1>a2a</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: d992137 | Commit: d9921377 | 2026-05-02T08:14:14.410821+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T08:14:14.410821+00:00"></span></p>
+<p class="meta">Version: a4bf288 | Commit: a4bf2887 | 2026-05-02T08:49:31.944706+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T08:49:31.944706+00:00"></span></p>
 <h2>a2a</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Deserialize (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>632.8 µs</td><td>540.5 µs</td><td>1.6K</td><td>1.9K</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Deserialize (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>36.6 µs</td><td>33.2 µs</td><td>27.4K</td><td>30.1K</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Deserialize (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>1.8 µs</td><td>1.1 µs</td><td>542.8K</td><td>943.2K</td><td class="ratio-cell slower">1.7x slower</td></tr>
-<tr><td>Json Round Trip (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>2.90 ms</td><td>2.80 ms</td><td>344.9</td><td>356.8</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Json Round Trip (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>163.7 µs</td><td>158.2 µs</td><td>6.1K</td><td>6.3K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Json Round Trip (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>10.4 µs</td><td>10.9 µs</td><td>96.0K</td><td>91.5K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Serialize (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>7.64 ms</td><td>1.72 ms</td><td>130.9</td><td>580.9</td><td class="ratio-cell slower">4.4x slower</td></tr>
-<tr><td>Serialize (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>81.1 µs</td><td>93.3 µs</td><td>12.3K</td><td>10.7K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Serialize (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>3.9 µs</td><td>4.7 µs</td><td>259.7K</td><td>214.0K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Deserialize (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>7.04 ms</td><td>589.5 µs</td><td>142.1</td><td>1.7K</td><td class="ratio-cell slower">11.9x slower</td></tr>
+<tr><td>Deserialize (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>41.7 µs</td><td>37.3 µs</td><td>24.0K</td><td>26.8K</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Deserialize (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>2.0 µs</td><td>1.2 µs</td><td>500.1K</td><td>850.5K</td><td class="ratio-cell slower">1.7x slower</td></tr>
+<tr><td>Json Round Trip (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>3.07 ms</td><td>3.10 ms</td><td>325.6</td><td>322.5</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Json Round Trip (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>179.8 µs</td><td>179.1 µs</td><td>5.6K</td><td>5.6K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Json Round Trip (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>11.6 µs</td><td>12.6 µs</td><td>86.2K</td><td>79.4K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>1.62 ms</td><td>1.98 ms</td><td>617.1</td><td>503.9</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>86.4 µs</td><td>108.1 µs</td><td>11.6K</td><td>9.2K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>4.1 µs</td><td>5.2 µs</td><td>245.2K</td><td>191.0K</td><td class="ratio-cell faster">1.3x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -209,13 +209,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [1580.1889592035611, 27353.288855080187, 542790.2871903825, 344.91230488658005, 6110.541388534885, 96011.9301776173, 130.8620064953317, 12330.734620956042, 259740.02495994634],
+        data: [142.05550732673206, 23969.565083761867, 500058.460488475, 325.649294488938, 5561.874890902226, 86194.53485337121, 617.0975908300808, 11567.61699914543, 245152.01350953119],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "a2a-protocol" + ' (ops/s)',
-        data: [1850.2547320571744, 30138.315842535936, 943214.286755067, 356.83863006368966, 6322.305216375108, 91505.2400794041, 580.8654486605082, 10723.466497567359, 213975.1619655085],
+        data: [1696.3093699192812, 26834.1281144745, 850503.9192216264, 322.4881998368631, 5584.512127339071, 79365.50016688637, 503.91846354317033, 9249.397909040572, 191043.8040602367],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

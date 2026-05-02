@@ -124,14 +124,14 @@ td { white-space: nowrap; }
 <h1>sse</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: d992137 | Commit: d9921377 | 2026-05-02T08:14:14.410821+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T08:14:14.410821+00:00"></span></p>
+<p class="meta">Version: a4bf288 | Commit: a4bf2887 | 2026-05-02T08:49:31.944706+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T08:49:31.944706+00:00"></span></p>
 <h2>sse</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large Stream</td><td>zerodep</td><td>httpx</td><td>2.76 ms</td><td>2.27 ms</td><td>362.2</td><td>440.7</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Medium Stream</td><td>zerodep</td><td>httpx</td><td>369.5 µs</td><td>310.4 µs</td><td>2.7K</td><td>3.2K</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Small Stream</td><td>zerodep</td><td>httpx</td><td>28.3 µs</td><td>22.0 µs</td><td>35.3K</td><td>45.5K</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Large Stream</td><td>zerodep</td><td>httpx</td><td>3.01 ms</td><td>2.42 ms</td><td>332.0</td><td>413.4</td><td class="ratio-cell slower">1.2x slower</td></tr>
+<tr><td>Medium Stream</td><td>zerodep</td><td>httpx</td><td>400.0 µs</td><td>323.5 µs</td><td>2.5K</td><td>3.1K</td><td class="ratio-cell slower">1.2x slower</td></tr>
+<tr><td>Small Stream</td><td>zerodep</td><td>httpx</td><td>30.9 µs</td><td>23.0 µs</td><td>32.3K</td><td>43.5K</td><td class="ratio-cell slower">1.3x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -203,13 +203,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [362.1530675244842, 2706.46860311724, 35279.014118785744],
+        data: [332.0458461969798, 2500.124853400432, 32340.933470232307],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "httpx" + ' (ops/s)',
-        data: [440.7028776291445, 3221.3165408275945, 45536.34792288609],
+        data: [413.426682061941, 3091.3640208729626, 43526.312011278314],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

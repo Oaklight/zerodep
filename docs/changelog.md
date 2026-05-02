@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2026.5.2.1] - 2026-05-02
+
+### Bug Fixes
+
+- **CLI**: `version-check` and `bump` no longer incorrectly auto-bump brand-new modules that have no prior release tag. New modules now display `"new (initial release)"` instead of `"new (needs version bump)"` and are excluded from auto-bump targets.
+- **Module versions**: Reverted incorrect version bump on 5 new modules — httpserver (0.1.0), websocket (0.1.0), cdp (0.1.0), useragent (0.1.0), synctex (0.2.0).
+
 ## [2026.5.2] - 2026-05-02
 
 ### New Modules

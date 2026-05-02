@@ -124,18 +124,18 @@ td { white-space: nowrap; }
 <h1>qr</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 70d3570 | Commit: 70d35706 | 2026-05-02T09:10:00.755707+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T09:10:00.755707+00:00"></span></p>
+<p class="meta">Version: v2026.5.2 | Commit: 5d50cc3d | 2026-05-02T09:37:46.917821+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T09:37:46.917821+00:00"></span></p>
 <h2>qr</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Encode Binary</td><td>zerodep</td><td>qrcode</td><td>34.27 ms</td><td>41.98 ms</td><td>29.2</td><td>23.8</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Encode High Ecc</td><td>zerodep</td><td>qrcode</td><td>6.51 ms</td><td>6.20 ms</td><td>153.7</td><td>161.2</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Encode Large Data</td><td>zerodep</td><td>qrcode</td><td>34.45 ms</td><td>45.18 ms</td><td>29.0</td><td>22.1</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>11.00 ms</td><td>11.82 ms</td><td>90.9</td><td>84.6</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Encode Numeric</td><td>zerodep</td><td>qrcode</td><td>4.28 ms</td><td>4.05 ms</td><td>233.9</td><td>247.0</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>2.34 ms</td><td>1.83 ms</td><td>426.8</td><td>546.6</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>5.36 ms</td><td>5.05 ms</td><td>186.5</td><td>197.9</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Encode Binary</td><td>zerodep</td><td>qrcode</td><td>34.90 ms</td><td>41.82 ms</td><td>28.7</td><td>23.9</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Encode High Ecc</td><td>zerodep</td><td>qrcode</td><td>6.52 ms</td><td>6.31 ms</td><td>153.5</td><td>158.5</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Encode Large Data</td><td>zerodep</td><td>qrcode</td><td>35.08 ms</td><td>45.42 ms</td><td>28.5</td><td>22.0</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>11.05 ms</td><td>11.81 ms</td><td>90.5</td><td>84.7</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Encode Numeric</td><td>zerodep</td><td>qrcode</td><td>4.30 ms</td><td>4.01 ms</td><td>232.7</td><td>249.4</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>2.37 ms</td><td>1.81 ms</td><td>422.1</td><td>551.6</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>5.40 ms</td><td>5.06 ms</td><td>185.2</td><td>197.4</td><td class="ratio-cell slower">1.1x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -207,13 +207,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [29.17797361774596, 153.66217317900555, 29.0267147078517, 90.8949132095705, 233.90751898849672, 426.76411512032877, 186.54245407309836],
+        data: [28.654662914164266, 153.48574008558043, 28.5099593148467, 90.49764008856295, 232.67998127121686, 422.08657934090155, 185.1741368426989],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "qrcode" + ' (ops/s)',
-        data: [23.82008426293915, 161.22516167721338, 22.133755848614115, 84.58901527272367, 247.02321744988555, 546.5633283302006, 197.90431354381946],
+        data: [23.912493310209555, 158.4985797575241, 22.01732351112055, 84.69089331739924, 249.44094196659145, 551.5644970683138, 197.4403977569239],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

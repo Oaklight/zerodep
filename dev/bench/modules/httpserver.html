@@ -124,37 +124,37 @@ td { white-space: nowrap; }
 <h1>httpserver</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 70d3570 | Commit: 70d35706 | 2026-05-02T09:10:00.755707+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T09:10:00.755707+00:00"></span></p>
+<p class="meta">Version: v2026.5.2 | Commit: 5d50cc3d | 2026-05-02T09:37:46.917821+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T09:37:46.917821+00:00"></span></p>
 <h2>httpserver</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Concurrent Get</td><td>zerodep</td><td>flask</td><td>8.26 ms</td><td>9.41 ms</td><td>121.0</td><td>106.3</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Concurrent Get</td><td>zerodep</td><td>microdot</td><td>8.26 ms</td><td>9.78 ms</td><td>121.0</td><td>102.2</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Concurrent Get</td><td>zerodep</td><td>bottle</td><td>8.26 ms</td><td>1.024 s</td><td>121.0</td><td>1.0</td><td class="ratio-cell faster">123.9x faster</td></tr>
-<tr><td>Concurrent Post</td><td>zerodep</td><td>flask</td><td>7.87 ms</td><td>9.94 ms</td><td>127.0</td><td>100.6</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Concurrent Post</td><td>zerodep</td><td>microdot</td><td>7.87 ms</td><td>11.15 ms</td><td>127.0</td><td>89.7</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Concurrent Post</td><td>zerodep</td><td>bottle</td><td>7.87 ms</td><td>1.024 s</td><td>127.0</td><td>1.0</td><td class="ratio-cell faster">130.0x faster</td></tr>
-<tr><td>Get JSON</td><td>zerodep</td><td>flask</td><td>625.8 µs</td><td>785.5 µs</td><td>1.6K</td><td>1.3K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Get JSON</td><td>zerodep</td><td>microdot</td><td>625.8 µs</td><td>737.8 µs</td><td>1.6K</td><td>1.4K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Get JSON</td><td>zerodep</td><td>bottle</td><td>625.8 µs</td><td>620.3 µs</td><td>1.6K</td><td>1.6K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Get Text</td><td>zerodep</td><td>flask</td><td>609.2 µs</td><td>718.7 µs</td><td>1.6K</td><td>1.4K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Get Text</td><td>zerodep</td><td>microdot</td><td>609.2 µs</td><td>680.2 µs</td><td>1.6K</td><td>1.5K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Get Text</td><td>zerodep</td><td>bottle</td><td>609.2 µs</td><td>611.1 µs</td><td>1.6K</td><td>1.6K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Large Payload</td><td>zerodep</td><td>flask</td><td>981.9 µs</td><td>1.15 ms</td><td>1.0K</td><td>869.8</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Large Payload</td><td>zerodep</td><td>microdot</td><td>981.9 µs</td><td>1.03 ms</td><td>1.0K</td><td>971.8</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Large Payload</td><td>zerodep</td><td>bottle</td><td>981.9 µs</td><td>947.6 µs</td><td>1.0K</td><td>1.1K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Post JSON</td><td>zerodep</td><td>flask</td><td>698.1 µs</td><td>858.7 µs</td><td>1.4K</td><td>1.2K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Post JSON</td><td>zerodep</td><td>microdot</td><td>698.1 µs</td><td>758.8 µs</td><td>1.4K</td><td>1.3K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Post JSON</td><td>zerodep</td><td>bottle</td><td>698.1 µs</td><td>773.4 µs</td><td>1.4K</td><td>1.3K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Concurrent Get</td><td>zerodep</td><td>flask</td><td>7.64 ms</td><td>9.12 ms</td><td>130.8</td><td>109.7</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Concurrent Get</td><td>zerodep</td><td>microdot</td><td>7.64 ms</td><td>10.68 ms</td><td>130.8</td><td>93.7</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Concurrent Get</td><td>zerodep</td><td>bottle</td><td>7.64 ms</td><td>1.024 s</td><td>130.8</td><td>1.0</td><td class="ratio-cell faster">134.0x faster</td></tr>
+<tr><td>Concurrent Post</td><td>zerodep</td><td>flask</td><td>7.73 ms</td><td>9.86 ms</td><td>129.4</td><td>101.4</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Concurrent Post</td><td>zerodep</td><td>microdot</td><td>7.73 ms</td><td>10.16 ms</td><td>129.4</td><td>98.5</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Concurrent Post</td><td>zerodep</td><td>bottle</td><td>7.73 ms</td><td>1.024 s</td><td>129.4</td><td>1.0</td><td class="ratio-cell faster">132.5x faster</td></tr>
+<tr><td>Get JSON</td><td>zerodep</td><td>flask</td><td>621.3 µs</td><td>761.0 µs</td><td>1.6K</td><td>1.3K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Get JSON</td><td>zerodep</td><td>microdot</td><td>621.3 µs</td><td>683.3 µs</td><td>1.6K</td><td>1.5K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Get JSON</td><td>zerodep</td><td>bottle</td><td>621.3 µs</td><td>643.7 µs</td><td>1.6K</td><td>1.6K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Get Text</td><td>zerodep</td><td>flask</td><td>613.5 µs</td><td>757.9 µs</td><td>1.6K</td><td>1.3K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Get Text</td><td>zerodep</td><td>microdot</td><td>613.5 µs</td><td>834.6 µs</td><td>1.6K</td><td>1.2K</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>Get Text</td><td>zerodep</td><td>bottle</td><td>613.5 µs</td><td>628.9 µs</td><td>1.6K</td><td>1.6K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Large Payload</td><td>zerodep</td><td>flask</td><td>939.4 µs</td><td>1.14 ms</td><td>1.1K</td><td>879.0</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Large Payload</td><td>zerodep</td><td>microdot</td><td>939.4 µs</td><td>1.08 ms</td><td>1.1K</td><td>921.7</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Large Payload</td><td>zerodep</td><td>bottle</td><td>939.4 µs</td><td>1.02 ms</td><td>1.1K</td><td>983.4</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Post JSON</td><td>zerodep</td><td>flask</td><td>684.4 µs</td><td>865.1 µs</td><td>1.5K</td><td>1.2K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Post JSON</td><td>zerodep</td><td>microdot</td><td>684.4 µs</td><td>786.5 µs</td><td>1.5K</td><td>1.3K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Post JSON</td><td>zerodep</td><td>bottle</td><td>684.4 µs</td><td>714.0 µs</td><td>1.5K</td><td>1.4K</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Sync Vs Async Handler</td><td>async_handler</td><td>592.1 µs</td><td>1.7K</td></tr>
-<tr><td>Sync Vs Async Handler</td><td>sync_handler</td><td>744.8 µs</td><td>1.3K</td></tr>
+<tr><td>Sync Vs Async Handler</td><td>async_handler</td><td>731.0 µs</td><td>1.4K</td></tr>
+<tr><td>Sync Vs Async Handler</td><td>sync_handler</td><td>723.8 µs</td><td>1.4K</td></tr>
 </tbody></table>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -225,13 +225,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [120.99737154130769, 126.98509129102747, 1598.0808750901776, 1641.3626337320165, 1018.467202622176, 1432.546609459262],
+        data: [130.81956936953188, 129.41777233372352, 1609.4092467936503, 1630.0423005439407, 1064.5529999427868, 1461.0974166860071],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "Reference" + ' (ops/s)',
-        data: [106.27752160889709, 100.5959613874793, 1612.1955956051866, 1636.5100911231432, 1055.2873405901696, 1317.9317005723021],
+        data: [109.6813587000579, 101.379952569343, 1553.5418768611146, 1590.1267774225855, 983.3605872263212, 1400.6543408334678],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

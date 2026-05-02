@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-05-02T09:28:07.017779+00:00",
+  "generated": "2026-05-02T09:34:44.670876+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -71,13 +71,13 @@
       "files": [
         "cdp/cdp.py"
       ],
-      "version": "0.1.1",
+      "version": "0.1.0",
       "deps": [
         "websocket"
       ],
       "tier": "medium",
       "category": "protocol",
-      "last_updated": "2026-05-02T16:25:04+08:00",
+      "last_updated": "2026-05-02T17:28:44+08:00",
       "content_hash": "e5bd722ec32c6c15a210ec2f18cc960acbd4cbabb9b8c7c55a98063e2e05d989"
     },
     "config": {
@@ -175,11 +175,11 @@
       "files": [
         "httpserver/httpserver.py"
       ],
-      "version": "0.1.1",
+      "version": "0.1.0",
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-05-02T16:02:07+08:00",
+      "last_updated": "2026-05-02T17:28:44+08:00",
       "content_hash": "b477e97b7f4f4149ebf7911719eef117061a0efc72599ff6dc0b76b215f0492b"
     },
     "jsonc": {
@@ -437,11 +437,11 @@
       "files": [
         "synctex/synctex.py"
       ],
-      "version": "0.2.1",
+      "version": "0.2.0",
       "deps": [],
       "tier": "simple",
       "category": "text",
-      "last_updated": "2026-04-29T10:59:26+08:00",
+      "last_updated": "2026-05-02T17:28:44+08:00",
       "content_hash": "2373a0036723d65ddb14deb3aec0d0fa1c9038264e25e3b8c5fd015e7b2e2ff2"
     },
     "tabulate": {
@@ -473,11 +473,11 @@
       "files": [
         "useragent/useragent.py"
       ],
-      "version": "0.1.1",
+      "version": "0.1.0",
       "deps": [],
       "tier": "simple",
       "category": "network",
-      "last_updated": "2026-04-29T01:59:51+08:00",
+      "last_updated": "2026-05-02T17:28:44+08:00",
       "content_hash": "a2cfc9d3b07bcf670a94477df013f4cc4006d422539b3e7750c479435e6759bd"
     },
     "validate": {
@@ -511,11 +511,11 @@
       "files": [
         "websocket/websocket.py"
       ],
-      "version": "0.1.1",
+      "version": "0.1.0",
       "deps": [],
       "tier": "medium",
       "category": "network",
-      "last_updated": "2026-05-02T16:24:53+08:00",
+      "last_updated": "2026-05-02T17:28:44+08:00",
       "content_hash": "4c95286e6bb0fcbbfa7bef5660be9b5e47a3c9c25a6a7247098cb48b2668c765"
     },
     "xml": {

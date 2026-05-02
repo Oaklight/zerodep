@@ -124,20 +124,20 @@ td { white-space: nowrap; }
 <h1>cache</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: b4c1e3b | Commit: b4c1e3b6 | 2026-04-29T11:32:17.741764+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T11:32:17.741764+00:00"></span></p>
+<p class="meta">Version: d992137 | Commit: d9921377 | 2026-05-02T08:14:14.410821+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T08:14:14.410821+00:00"></span></p>
 <h2>cache</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Decorator Overhead</td><td>zerodep_lru</td><td>cachetools</td><td>220.1 µs</td><td>255.1 µs</td><td>4.5K</td><td>3.9K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Decorator Overhead</td><td>zerodep_ttl</td><td>cachetools</td><td>295.8 µs</td><td>296.8 µs</td><td>3.4K</td><td>3.4K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Eviction Pressure</td><td>zerodep_lfu</td><td>cachetools</td><td>1.85 ms</td><td>1.96 ms</td><td>539.2</td><td>509.9</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Eviction Pressure</td><td>zerodep_lru</td><td>cachetools</td><td>1.63 ms</td><td>1.84 ms</td><td>614.0</td><td>544.7</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Key Function</td><td>zerodep_hashkey</td><td>cachetools</td><td>627.4 µs</td><td>643.7 µs</td><td>1.6K</td><td>1.6K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Key Function</td><td>zerodep_typedkey</td><td>cachetools</td><td>1.33 ms</td><td>1.68 ms</td><td>750.9</td><td>594.4</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>LRUGet Set</td><td>zerodep</td><td>cachetools</td><td>924.7 µs</td><td>1.05 ms</td><td>1.1K</td><td>956.0</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Mixed Workload</td><td>zerodep</td><td>cachetools</td><td>780.7 µs</td><td>866.7 µs</td><td>1.3K</td><td>1.2K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>TTLExpiry</td><td>zerodep</td><td>cachetools</td><td>3.32 ms</td><td>3.30 ms</td><td>301.4</td><td>303.0</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Decorator Overhead</td><td>zerodep_lru</td><td>cachetools</td><td>214.5 µs</td><td>252.9 µs</td><td>4.7K</td><td>4.0K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Decorator Overhead</td><td>zerodep_ttl</td><td>cachetools</td><td>292.8 µs</td><td>291.5 µs</td><td>3.4K</td><td>3.4K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Eviction Pressure</td><td>zerodep_lfu</td><td>cachetools</td><td>1.56 ms</td><td>1.76 ms</td><td>640.5</td><td>569.0</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Eviction Pressure</td><td>zerodep_lru</td><td>cachetools</td><td>1.51 ms</td><td>1.72 ms</td><td>662.3</td><td>582.1</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Key Function</td><td>zerodep_hashkey</td><td>cachetools</td><td>588.5 µs</td><td>605.5 µs</td><td>1.7K</td><td>1.7K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Key Function</td><td>zerodep_typedkey</td><td>cachetools</td><td>1.21 ms</td><td>1.50 ms</td><td>826.4</td><td>664.9</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>LRUGet Set</td><td>zerodep</td><td>cachetools</td><td>874.7 µs</td><td>1.00 ms</td><td>1.1K</td><td>997.1</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Mixed Workload</td><td>zerodep</td><td>cachetools</td><td>731.3 µs</td><td>837.3 µs</td><td>1.4K</td><td>1.2K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>TTLExpiry</td><td>zerodep</td><td>cachetools</td><td>3.34 ms</td><td>3.36 ms</td><td>299.2</td><td>297.3</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -209,13 +209,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [4544.070338694551, 614.0017908483846, 1593.9750465724853, 1081.4887177354158, 1280.8554850141495, 301.4364334326867],
+        data: [4662.9580054882645, 662.3449477158458, 1699.1685278489665, 1143.2138776974948, 1367.4586709045805, 299.2231697300158],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "cachetools" + ' (ops/s)',
-        data: [3919.4233980340973, 544.6852128967269, 1553.4674103189684, 956.0150652621325, 1153.7845358252634, 302.9537216991779],
+        data: [3953.936498102671, 582.0903663956955, 1651.6391972071783, 997.0801303388365, 1194.2801200529625, 297.28372516530385],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

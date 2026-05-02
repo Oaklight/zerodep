@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>validate Benchmark — zerodep</title>
+<title>httpserver Benchmark — zerodep</title>
 <style>:root, [data-theme="light"] {
   --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
   --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
@@ -121,19 +121,20 @@ td { white-space: nowrap; }
 </head>
 <body>
 <div class="header-row">
-<h1>validate</h1>
+<h1>httpserver</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
 <p class="meta">Version: d992137 | Commit: d9921377 | 2026-05-02T08:14:14.410821+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T08:14:14.410821+00:00"></span></p>
-<h2>validate</h2>
+<h2>httpserver</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Benchmark Constrained</td><td>ours</td><td>pydantic</td><td>9.1 µs</td><td>1.4 µs</td><td>110.4K</td><td>689.8K</td><td class="ratio-cell slower">6.2x slower</td></tr>
-<tr><td>Benchmark Json Schema</td><td>ours</td><td>pydantic</td><td>9.0 µs</td><td>164.0 µs</td><td>110.9K</td><td>6.1K</td><td class="ratio-cell faster">18.2x faster</td></tr>
-<tr><td>Benchmark List Of Dicts</td><td>ours</td><td>pydantic</td><td>215.1 µs</td><td>30.5 µs</td><td>4.7K</td><td>32.8K</td><td class="ratio-cell slower">7.0x slower</td></tr>
-<tr><td>Benchmark Nested</td><td>ours</td><td>pydantic</td><td>9.5 µs</td><td>2.1 µs</td><td>105.2K</td><td>474.2K</td><td class="ratio-cell slower">4.5x slower</td></tr>
-<tr><td>Benchmark Simple</td><td>ours</td><td>pydantic</td><td>5.4 µs</td><td>1.4 µs</td><td>186.1K</td><td>713.6K</td><td class="ratio-cell slower">3.8x slower</td></tr>
+<tr><td>Get JSON</td><td>zerodep</td><td>microdot</td><td>531.2 µs</td><td>528.0 µs</td><td>1.9K</td><td>1.9K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Get JSON</td><td>zerodep</td><td>bottle</td><td>531.2 µs</td><td>459.6 µs</td><td>1.9K</td><td>2.2K</td><td class="ratio-cell slower">1.2x slower</td></tr>
+<tr><td>Get Text</td><td>zerodep</td><td>microdot</td><td>461.9 µs</td><td>519.8 µs</td><td>2.2K</td><td>1.9K</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Get Text</td><td>zerodep</td><td>bottle</td><td>461.9 µs</td><td>437.3 µs</td><td>2.2K</td><td>2.3K</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Post JSON</td><td>zerodep</td><td>microdot</td><td>526.6 µs</td><td>609.4 µs</td><td>1.9K</td><td>1.6K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Post JSON</td><td>zerodep</td><td>bottle</td><td>526.6 µs</td><td>533.1 µs</td><td>1.9K</td><td>1.9K</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -201,17 +202,17 @@ var TREND_COLORS = [
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
   data: {
-    labels: ["Benchmark Constrained", "Benchmark Json Schema", "Benchmark List Of Dicts", "Benchmark Nested", "Benchmark Simple"],
+    labels: ["Get JSON", "Get Text", "Post JSON"],
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [110399.87762816582, 110919.0192092103, 4650.035346148535, 105175.43627606015, 186098.83974849034],
+        data: [1882.6824752799519, 2164.774037025241, 1898.8464577211414],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
-        label: "pydantic" + ' (ops/s)',
-        data: [689839.0021833543, 6097.406790825155, 32760.12252322374, 474169.48672919755, 713599.269309035],
+        label: "bottle" + ' (ops/s)',
+        data: [2176.007012696137, 2286.6765933988395, 1875.650788714128],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -222,7 +223,7 @@ new Chart(document.getElementById('chart_0'), {
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'top' },
-      title: { display: true, text: 'validate — ops/s (higher is better)' }
+      title: { display: true, text: 'httpserver — ops/s (higher is better)' }
     },
     scales: {
       y: {
@@ -239,7 +240,7 @@ new Chart(document.getElementById('chart_0'), {
   if (!data || !data.entries || !data.entries.Benchmark) {
     section.style.display = 'none'; return;
   }
-  var filtered = filterBenchesForModule(data.entries.Benchmark, 'validate');
+  var filtered = filterBenchesForModule(data.entries.Benchmark, 'httpserver');
   if (!filtered.length) { section.style.display = 'none'; return; }
 
   // Collect unique zerodep bench names
@@ -281,7 +282,7 @@ new Chart(document.getElementById('chart_0'), {
         },
         title: {
           display: true,
-          text: 'validate — zerodep ops/s over time'
+          text: 'httpserver — zerodep ops/s over time'
         },
         tooltip: {
           callbacks: {

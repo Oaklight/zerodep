@@ -124,17 +124,17 @@ td { white-space: nowrap; }
 <h1>frontmatter</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: b4c1e3b | Commit: b4c1e3b6 | 2026-04-29T11:32:17.741764+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-04-29T11:32:17.741764+00:00"></span></p>
+<p class="meta">Version: d992137 | Commit: d9921377 | 2026-05-02T08:14:14.410821+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T08:14:14.410821+00:00"></span></p>
 <h2>frontmatter</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>python-frontmatter</td><td>451.3 µs</td><td>453.3 µs</td><td>2.2K</td><td>2.2K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-frontmatter</td><td>88.5 µs</td><td>87.7 µs</td><td>11.3K</td><td>11.4K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>python-frontmatter</td><td>13.7 µs</td><td>13.7 µs</td><td>73.0K</td><td>72.9K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Serialize (Large)</td><td>zerodep</td><td>python-frontmatter</td><td>683.6 µs</td><td>681.0 µs</td><td>1.5K</td><td>1.5K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Serialize (Medium)</td><td>zerodep</td><td>python-frontmatter</td><td>144.7 µs</td><td>142.4 µs</td><td>6.9K</td><td>7.0K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Serialize (Small)</td><td>zerodep</td><td>python-frontmatter</td><td>22.9 µs</td><td>23.0 µs</td><td>43.6K</td><td>43.4K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>python-frontmatter</td><td>439.5 µs</td><td>438.5 µs</td><td>2.3K</td><td>2.3K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-frontmatter</td><td>83.6 µs</td><td>83.5 µs</td><td>12.0K</td><td>12.0K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>python-frontmatter</td><td>12.8 µs</td><td>12.8 µs</td><td>78.1K</td><td>77.9K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>python-frontmatter</td><td>681.4 µs</td><td>684.3 µs</td><td>1.5K</td><td>1.5K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>python-frontmatter</td><td>154.7 µs</td><td>162.7 µs</td><td>6.5K</td><td>6.1K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>python-frontmatter</td><td>23.3 µs</td><td>23.4 µs</td><td>42.9K</td><td>42.8K</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -206,13 +206,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [2215.648725163989, 11293.46381712382, 72965.01352125316, 1462.801300630886, 6908.685264842145, 43581.497207212735],
+        data: [2275.088290749562, 11955.020040158624, 78091.79442785519, 1467.550634033773, 6463.191092996198, 42899.581993463595],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-frontmatter" + ' (ops/s)',
-        data: [2205.9227158351628, 11400.40732216937, 72890.36683134052, 1468.4377970761657, 7020.531545978113, 43388.27219261312],
+        data: [2280.3717697905613, 11970.30519647019, 77891.70379942762, 1461.3222800879694, 6145.106619296926, 42826.37305294102],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

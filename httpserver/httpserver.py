@@ -21,11 +21,11 @@ Usage::
 
     app = App()
 
-    @app.route("GET", "/status")
+    @app.route("/status")
     async def status(request):
         return JSONResponse({"state": "idle"})
 
-    @app.route("POST", "/echo")
+    @app.route("/echo", methods=["POST"])
     def echo(request):
         return JSONResponse(request.json())
 
@@ -405,7 +405,7 @@ class FileResponse(Response):
 class _Route:
     """Internal route entry."""
 
-    method: str  # uppercase or "*"
+    methods: list[str]  # uppercase, e.g. ["GET", "POST"], or ["*"]
     pattern: re.Pattern[str]
     handler: Callable[..., Any]
     is_async: bool
@@ -650,26 +650,31 @@ class App:
 
     # ── Route Registration ───────────────────────────────────────────────
 
-    def route(self, method: str, path: str) -> Callable[..., Any]:
+    def route(
+        self, url_pattern: str, methods: list[str] | None = None
+    ) -> Callable[..., Any]:
         """Register a route handler.
 
         Args:
-            method: HTTP method (GET, POST, etc.) or ``"*"`` for any.
-            path: URL pattern with optional parameters.
+            url_pattern: URL pattern with optional parameters.
+            methods: HTTP methods to handle (e.g. ``["GET", "POST"]``).
+                Defaults to ``["GET"]``.
 
         Example::
 
-            @app.route("GET", "/users/<int:id>")
-            async def get_user(request, id):
+            @app.route("/users/<int:id>", methods=["GET", "POST"])
+            async def user(request, id):
                 return {"id": id}
         """
+        if methods is None:
+            methods = ["GET"]
 
         def decorator(handler: Callable[..., Any]) -> Callable[..., Any]:
-            pattern, param_names, converters = _compile_route(path)
+            pattern, param_names, converters = _compile_route(url_pattern)
             is_async = inspect.iscoroutinefunction(handler)
             self._routes.append(
                 _Route(
-                    method=method.upper(),
+                    methods=[m.upper() for m in methods],
                     pattern=pattern,
                     handler=handler,
                     is_async=is_async,
@@ -682,24 +687,24 @@ class App:
         return decorator
 
     def get(self, path: str) -> Callable[..., Any]:
-        """Shorthand for ``@app.route("GET", path)``."""
-        return self.route("GET", path)
+        """Shorthand for ``@app.route(path, methods=["GET"])``."""
+        return self.route(path, methods=["GET"])
 
     def post(self, path: str) -> Callable[..., Any]:
-        """Shorthand for ``@app.route("POST", path)``."""
-        return self.route("POST", path)
+        """Shorthand for ``@app.route(path, methods=["POST"])``."""
+        return self.route(path, methods=["POST"])
 
     def put(self, path: str) -> Callable[..., Any]:
-        """Shorthand for ``@app.route("PUT", path)``."""
-        return self.route("PUT", path)
+        """Shorthand for ``@app.route(path, methods=["PUT"])``."""
+        return self.route(path, methods=["PUT"])
 
     def delete(self, path: str) -> Callable[..., Any]:
-        """Shorthand for ``@app.route("DELETE", path)``."""
-        return self.route("DELETE", path)
+        """Shorthand for ``@app.route(path, methods=["DELETE"])``."""
+        return self.route(path, methods=["DELETE"])
 
     def patch(self, path: str) -> Callable[..., Any]:
-        """Shorthand for ``@app.route("PATCH", path)``."""
-        return self.route("PATCH", path)
+        """Shorthand for ``@app.route(path, methods=["PATCH"])``."""
+        return self.route(path, methods=["PATCH"])
 
     def static(self, url_prefix: str, directory: str) -> None:
         """Register a directory for static file serving.
@@ -769,7 +774,7 @@ class App:
             if m is None:
                 continue
             path_existed = True
-            if route.method != "*" and route.method != request.method:
+            if "*" not in route.methods and request.method not in route.methods:
                 continue
             return route, m, True
         return None, None, path_existed
@@ -830,9 +835,11 @@ class App:
         if path_existed:
             allowed = sorted(
                 {
-                    r.method
+                    m
                     for r in self._routes
-                    if r.pattern.match(request.path) and r.method != "*"
+                    if r.pattern.match(request.path)
+                    for m in r.methods
+                    if m != "*"
                 }
             )
             exc = HTTPException(405, "Method Not Allowed")

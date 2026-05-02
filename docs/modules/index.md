@@ -24,6 +24,7 @@ title: 模块概览
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
 | [httpclient](httpclient.md) | 0.3.1 | 2026-04-15 |
+| [httpserver](httpserver.md) | 0.1.0 | — |
 | [jsonc](jsonc.md) | 0.3.0 | 2026-04-27 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
 | [jsonschema](jsonschema.md) | 0.1.0 | 2026-04-27 |
@@ -44,7 +45,7 @@ title: 模块概览
 | [sparse_search](sparse_search.md) | 0.4.0 | 2026-04-27 |
 | [sse](sse.md) | 0.3.1 | 2026-04-15 |
 | [structlog](structlog.md) | 0.3.0 | 2026-04-27 |
-| [synctex](synctex.md) | 0.1.0 | — |
+| [synctex](synctex.md) | 0.2.0 | 2026-04-29 |
 | [tabulate](tabulate.md) | 0.1.1 | 2026-04-15 |
 | [toon](toon.md) | 0.3.3 | 2026-04-27 |
 | [useragent](useragent.md) | 0.1.0 | 2026-04-29 |
@@ -61,6 +62,7 @@ title: 模块概览
 |--------|-------------|-------------------|
 | [httpclient](httpclient.md) | 同步 + 异步 REST 客户端（连接池、代理、认证） | `httpx` |
 | [sse](sse.md) | Server-Sent Events 客户端（自动重连） | `httpx-sse` |
+| [httpserver](httpserver.md) | 异步 HTTP 服务器（装饰器路由、流式响应、静态文件） | `microdot / bottle` |
 | [useragent](useragent.md) | 轻量级 Chrome/Edge User-Agent 生成器（含 Client Hints） | `ua-generator` |
 
 ### 智能体协议

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-05-02T07:15:41.269429+00:00",
+  "generated": "2026-05-02T08:23:10.831667+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -65,6 +65,20 @@
       "category": "storage",
       "last_updated": "2026-04-27T23:17:36+08:00",
       "content_hash": "0daa535d12e0d214a579242ad73d725b9f18145f6c67b319fa4185e7851685ae"
+    },
+    "cdp": {
+      "description": "Zero-dependency Chrome DevTools Protocol (CDP) client",
+      "files": [
+        "cdp/cdp.py"
+      ],
+      "version": "0.1.0",
+      "deps": [
+        "websocket"
+      ],
+      "tier": "medium",
+      "category": "protocol",
+      "last_updated": null,
+      "content_hash": "e5bd722ec32c6c15a210ec2f18cc960acbd4cbabb9b8c7c55a98063e2e05d989"
     },
     "config": {
       "description": "Unified configuration loader — zero dependencies, stdlib only, Python 3.10+",
@@ -165,8 +179,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": null,
-      "content_hash": "d00439706b5168d5235eb700e559a8dac95d4ff173e39725b7a11826632f6456"
+      "last_updated": "2026-05-02T16:02:07+08:00",
+      "content_hash": "b477e97b7f4f4149ebf7911719eef117061a0efc72599ff6dc0b76b215f0492b"
     },
     "jsonc": {
       "description": "JSONC (JSON with Comments) parser — zero dependencies, stdlib only, Python 3.10+",
@@ -491,6 +505,18 @@
       "category": "devtools",
       "last_updated": "2026-04-11T01:00:28+08:00",
       "content_hash": "bc7cf7b24daf282ae4311e432a62c192d1570bce95985c211948c7a25837e225"
+    },
+    "websocket": {
+      "description": "Zero-dependency WebSocket client (RFC 6455)",
+      "files": [
+        "websocket/websocket.py"
+      ],
+      "version": "0.1.0",
+      "deps": [],
+      "tier": "medium",
+      "category": "network",
+      "last_updated": null,
+      "content_hash": "4c95286e6bb0fcbbfa7bef5660be9b5e47a3c9c25a6a7247098cb48b2668c765"
     },
     "xml": {
       "description": "XML ↔ dict converter with fault-tolerant LLM tag extraction — zero-dep, stdlib only, Python 3.10+",

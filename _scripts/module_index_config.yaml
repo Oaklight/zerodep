@@ -13,12 +13,12 @@ categories:
   - id: network
     name_en: "Web & Networking"
     name_zh: "网络与通信"
-    modules: [httpclient, sse, httpserver, useragent]
+    modules: [httpclient, sse, httpserver, useragent, websocket]
 
   - id: protocol
     name_en: "Agent Protocols"
     name_zh: "智能体协议"
-    modules: [jsonrpc, a2a, acp, skills, llmstxt]
+    modules: [jsonrpc, a2a, acp, skills, llmstxt, cdp]
 
   - id: serialization
     name_en: "Serialization"
@@ -230,3 +230,11 @@ modules:
     benchmark: flask / microdot / bottle
     desc_en: "Async HTTP server with decorator-based routing, streaming, and static files"
     desc_zh: "异步 HTTP 服务器（装饰器路由、流式响应、静态文件）"
+  websocket:
+    benchmark: websockets
+    desc_en: "RFC 6455 WebSocket client with sync + async support"
+    desc_zh: "RFC 6455 WebSocket 客户端（同步 + 异步）"
+  cdp:
+    benchmark: websockets
+    desc_en: "Chrome DevTools Protocol client for headless browser automation"
+    desc_zh: "Chrome DevTools Protocol 客户端（无头浏览器自动化）"

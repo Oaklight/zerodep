@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/pypi/pyversions/zerodep?color=green)](https://pypi.org/project/zerodep/)
 [![CI](https://img.shields.io/github/actions/workflow/status/Oaklight/zerodep/ci.yml?label=CI)](https://github.com/Oaklight/zerodep/actions/workflows/ci.yml)
+[![Benchmarks](https://img.shields.io/badge/benchmarks-live-blue)](https://oaklight.github.io/zerodep/dev/bench)
 [![Docs](https://img.shields.io/readthedocs/zerodep)](https://zerodep.readthedocs.io)
 
 Zero-dependency, single-file Python implementations of popular libraries — stdlib only, benchmarked for performance parity, Python 3.10+.
@@ -46,6 +47,7 @@ Releases are automated via the [Release workflow](https://github.com/Oaklight/ze
 
 - **English**: [zerodep.readthedocs.io/en/](https://zerodep.readthedocs.io/en/)
 - **中文**: [zerodep.readthedocs.io/zh-cn/](https://zerodep.readthedocs.io/zh-cn/)
+- **Benchmarks**: [Live benchmark dashboard](https://oaklight.github.io/zerodep/dev/bench)
 
 ## License
 

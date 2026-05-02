@@ -1,80 +1,158 @@
-"""Performance benchmarks for the websocket module.
+"""Benchmark: zerodep websocket vs websockets library.
 
-Compares zerodep WebSocket client against the ``websockets`` reference library.
-
-Note: ``websocket-client`` benchmarks are excluded because its import name
-(``websocket``) collides with this module.
+Simulates realistic workloads: JSON-RPC messaging (typical CDP command size),
+large HTML payload transfer (SPA outerHTML extraction), and burst messaging
+(batch CDP commands).
 """
 
 from __future__ import annotations
 
+import json
+
 from websocket import WebSocketClient
 
+# ── Test data (pre-built at module level) ──────────────────────────────────
 
-class TestSyncBenchmarks:
-    """Benchmark sync WebSocket operations."""
+# ~200 bytes — typical CDP JSON-RPC command
+JSONRPC_MSG = json.dumps(
+    {
+        "id": 1,
+        "method": "Page.navigate",
+        "params": {"url": "https://example.com", "transitionType": "typed"},
+    }
+)
 
-    def test_echo_roundtrip(self, ws_echo_url, benchmark):
-        """Measure echo round-trip latency."""
+# ~50 KB — simulates document.documentElement.outerHTML extraction
+LARGE_HTML = (
+    "<html><body>"
+    + "<div class='item'><p>content</p></div>\n" * 1000
+    + "</body></html>"
+)
+
+# 100 JSON-RPC messages — simulates batch CDP commands
+BURST_MESSAGES = [
+    json.dumps(
+        {
+            "id": i,
+            "method": "Runtime.evaluate",
+            "params": {"expression": f"document.querySelectorAll('div')[{i}]"},
+        }
+    )
+    for i in range(100)
+]
+
+
+class TestJsonRpcRoundtrip:
+    """Benchmark JSON-RPC message round-trip (~200B, typical CDP command)."""
+
+    def test_zerodep(self, ws_echo_url, benchmark):
         ws = WebSocketClient(ws_echo_url)
         ws.connect()
 
         def roundtrip():
-            ws.send("benchmark")
+            ws.send(JSONRPC_MSG)
             return ws.recv()
 
         result = benchmark(roundtrip)
-        assert result == "benchmark"
+        assert json.loads(result)["method"] == "Page.navigate"
         ws.close()
 
-    def test_echo_roundtrip_long(self, ws_echo_url, benchmark):
-        """Measure echo round-trip latency for large messages."""
-        ws = WebSocketClient(ws_echo_url)
-        ws.connect()
-        msg = "x" * 10_000
-
-        def roundtrip():
-            ws.send(msg)
-            return ws.recv()
-
-        result = benchmark(roundtrip)
-        assert len(result) == 10_000
-        ws.close()
-
-
-class TestReferenceBenchmarks:
-    """Benchmark against websockets reference library."""
-
-    def test_websockets_echo_roundtrip(self, ws_echo_url, benchmark):
-        """Measure websockets library echo round-trip latency."""
+    def test_websockets(self, ws_echo_url, benchmark):
         import websockets.sync.client
 
         ws = websockets.sync.client.connect(ws_echo_url)
 
         def roundtrip():
-            ws.send("benchmark")
+            ws.send(JSONRPC_MSG)
             return ws.recv()
 
         result = benchmark(roundtrip)
-        assert result == "benchmark"
+        assert json.loads(result)["method"] == "Page.navigate"
         ws.close()
 
-    def test_connection_setup(self, ws_echo_url, benchmark):
-        """Benchmark connection establishment time (zerodep)."""
 
-        def connect_disconnect():
+class TestLargePayload:
+    """Benchmark large HTML payload transfer (~50KB, outerHTML extraction)."""
+
+    def test_zerodep(self, ws_echo_url, benchmark):
+        ws = WebSocketClient(ws_echo_url)
+        ws.connect()
+
+        def roundtrip():
+            ws.send(LARGE_HTML)
+            return ws.recv()
+
+        result = benchmark(roundtrip)
+        assert len(result) == len(LARGE_HTML)
+        ws.close()
+
+    def test_websockets(self, ws_echo_url, benchmark):
+        import websockets.sync.client
+
+        ws = websockets.sync.client.connect(ws_echo_url)
+
+        def roundtrip():
+            ws.send(LARGE_HTML)
+            return ws.recv()
+
+        result = benchmark(roundtrip)
+        assert len(result) == len(LARGE_HTML)
+        ws.close()
+
+
+class TestBurstMessages:
+    """Benchmark burst messaging (100 JSON-RPC commands, batch CDP scenario)."""
+
+    def test_zerodep(self, ws_echo_url, benchmark):
+        ws = WebSocketClient(ws_echo_url)
+        ws.connect()
+
+        def burst():
+            for msg in BURST_MESSAGES:
+                ws.send(msg)
+            results = []
+            for _ in BURST_MESSAGES:
+                results.append(ws.recv())
+            return results
+
+        results = benchmark(burst)
+        assert len(results) == 100
+        ws.close()
+
+    def test_websockets(self, ws_echo_url, benchmark):
+        import websockets.sync.client
+
+        ws = websockets.sync.client.connect(ws_echo_url)
+
+        def burst():
+            for msg in BURST_MESSAGES:
+                ws.send(msg)
+            results = []
+            for _ in BURST_MESSAGES:
+                results.append(ws.recv())
+            return results
+
+        results = benchmark(burst)
+        assert len(results) == 100
+        ws.close()
+
+
+class TestConnectionSetup:
+    """Benchmark connection establishment + close (handshake overhead)."""
+
+    def test_zerodep(self, ws_echo_url, benchmark):
+        def connect_close():
             ws = WebSocketClient(ws_echo_url)
             ws.connect()
             ws.close()
 
-        benchmark(connect_disconnect)
+        benchmark(connect_close)
 
-    def test_connection_setup_websockets(self, ws_echo_url, benchmark):
-        """Benchmark connection establishment time (websockets)."""
+    def test_websockets(self, ws_echo_url, benchmark):
         import websockets.sync.client
 
-        def connect_disconnect():
+        def connect_close():
             ws = websockets.sync.client.connect(ws_echo_url)
             ws.close()
 
-        benchmark(connect_disconnect)
+        benchmark(connect_close)

@@ -362,8 +362,9 @@ class StreamingResponse:
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             logger.debug("Client disconnected during streaming")
         finally:
-            if hasattr(self._generator, "aclose"):
-                await self._generator.aclose()
+            aclose = getattr(self._generator, "aclose", None)
+            if aclose is not None:
+                await aclose()
 
 
 class FileResponse(Response):
@@ -753,6 +754,57 @@ class App:
 
     # ── Request Dispatch ─────────────────────────────────────────────────
 
+    def _match_route(
+        self, request: Request
+    ) -> tuple[_Route | None, re.Match[str] | None, bool]:
+        """Find the first route matching the request path and method.
+
+        Returns:
+            (matched_route, regex_match, path_existed).  *path_existed* is
+            True when a route matched the path but not the HTTP method.
+        """
+        path_existed = False
+        for route in self._routes:
+            m = route.pattern.match(request.path)
+            if m is None:
+                continue
+            path_existed = True
+            if route.method != "*" and route.method != request.method:
+                continue
+            return route, m, True
+        return None, None, path_existed
+
+    async def _invoke_route(
+        self, route: _Route, match: re.Match[str], request: Request
+    ) -> Response | StreamingResponse:
+        """Extract path params, call the handler, return a response."""
+        for name, converter, value in zip(
+            route.param_names, route.param_converters, match.groups()
+        ):
+            request.path_params[name] = converter(value)
+
+        try:
+            result = await _invoke(route.handler, request, **request.path_params)
+            return _coerce_response(result)
+        except HTTPException as exc:
+            return await self._handle_error(request, exc)
+        except Exception as exc:
+            logger.exception(
+                "Unhandled exception in handler %s",
+                getattr(route.handler, "__name__", repr(route.handler)),
+            )
+            return await self._handle_error(request, exc)
+
+    async def _run_after_hooks(
+        self, request: Request, response: Response | StreamingResponse
+    ) -> Response | StreamingResponse:
+        """Run after-request hooks, allowing them to replace the response."""
+        for hook in self._after_request_handlers:
+            hook_result = await _invoke(hook, request, response)
+            if hook_result is not None:
+                response = _coerce_response(hook_result)
+        return response
+
     async def _dispatch(self, request: Request) -> Response | StreamingResponse:
         """Match a request to a route and invoke the handler."""
         # -- before_request hooks --
@@ -768,44 +820,14 @@ class App:
                 return file_resp
 
         # -- Route matching --
-        matched_path = False
-        for route in self._routes:
-            m = route.pattern.match(request.path)
-            if m is None:
-                continue
-            matched_path = True
-            if route.method != "*" and route.method != request.method:
-                continue
+        route, match, path_existed = self._match_route(request)
 
-            # Extract path params
-            groups = m.groups()
-            for name, converter, value in zip(
-                route.param_names, route.param_converters, groups
-            ):
-                request.path_params[name] = converter(value)
-
-            # Invoke handler
-            try:
-                result = await _invoke(route.handler, request, **request.path_params)
-                response = _coerce_response(result)
-            except HTTPException as exc:
-                response = await self._handle_error(request, exc)
-            except Exception as exc:
-                logger.exception(
-                    "Unhandled exception in handler %s", route.handler.__name__
-                )
-                response = await self._handle_error(request, exc)
-
-            # -- after_request hooks --
-            for hook in self._after_request_handlers:
-                hook_result = await _invoke(hook, request, response)
-                if hook_result is not None:
-                    response = _coerce_response(hook_result)
-
-            return response
+        if route is not None and match is not None:
+            response = await self._invoke_route(route, match, request)
+            return await self._run_after_hooks(request, response)
 
         # -- No route matched --
-        if matched_path:
+        if path_existed:
             allowed = sorted(
                 {
                     r.method

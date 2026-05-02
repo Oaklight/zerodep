@@ -236,9 +236,11 @@ def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
             # No tag has this version — check if it was already bumped.
             # Search tags for the latest tagged version of this module.
             already_bumped = False
+            found_in_any_tag = False
             for tag in all_tags:
                 candidate = _git_show_at_tag(repo_root, tag, primary_file)
                 if candidate is not None:
+                    found_in_any_tag = True
                     tag_meta = _extract_frontmatter(candidate)
                     tag_ver = tag_meta.get("version")
                     if tag_ver:
@@ -248,7 +250,12 @@ def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
                         except (ValueError, TypeError):
                             pass
                     break  # only check the latest tag
-            status_map[mod_name] = "up-to-date" if already_bumped else "new"
+            if already_bumped:
+                status_map[mod_name] = "up-to-date"
+            elif found_in_any_tag:
+                status_map[mod_name] = "modified"
+            else:
+                status_map[mod_name] = "new"
             continue
 
         tag_hash = _normalized_hash(tag_content)
@@ -780,7 +787,7 @@ def cmd_bump(args: argparse.Namespace) -> None:
                 _die(f"unknown module: {t}")
     else:
         status_map = _find_changed_modules(repo_root, modules)
-        targets = [m for m, s in status_map.items() if s in ("modified", "new")]
+        targets = [m for m, s in status_map.items() if s == "modified"]
         if not targets:
             _ok("all modules up-to-date, nothing to bump")
             return
@@ -1092,7 +1099,7 @@ def cmd_version_check(args: argparse.Namespace) -> None:
     display = {
         "up-to-date": "up-to-date",
         "modified": "modified (needs version bump)",
-        "new": "new (needs version bump)",
+        "new": "new (initial release)",
         "error": "error",
     }
 
@@ -1111,7 +1118,7 @@ def cmd_version_check(args: argparse.Namespace) -> None:
     modified = 0
     for row in rows:
         print(fmt.format(*row))
-        if "needs version bump" in row[2]:
+        if status_map[row[0]] == "modified":
             modified += 1
 
     if modified:

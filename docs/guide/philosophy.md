@@ -26,7 +26,7 @@
 
 ### 正确性优先，性能对等甚至更优
 
-每个模块都与其对标的参考库进行逐一对比测试（`PyYAML`、`httpx`、`pydantic` 等）。先跑正确性测试，再跑基准测试。在实践中，大多数 zerodep 模块实现了**性能对等甚至更优**——例如 sparse_search 查询速度比 rank-bm25 快 34-132 倍，scheduler 的 cron 解析比同类快 3.6-11.5 倍，AES 模块提供 OpenSSL ctypes 后端，性能与 pycryptodome 对等。
+每个模块都与其对标的参考库进行逐一对比测试（`PyYAML`、`httpx`、`pydantic` 等）。先跑正确性测试，再跑基准测试。在实践中，大多数 zerodep 模块实现了**性能对等甚至更优**——例如 sparse_search 查询速度比 rank-bm25 快 34-132 倍，scheduler 的 cron 解析比同类快 3.6-11.5 倍，AES 模块提供 OpenSSL ctypes 后端，性能与 pycryptodome 对等。查看[在线基准测试面板](https://oaklight.github.io/zerodep/dev/bench)获取最新结果。
 
 ### 模块间显式依赖
 

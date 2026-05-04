@@ -12,7 +12,7 @@
 - **线程安全**设计：每个请求创建独立连接。会话类内部使用锁机制。
 - **连接池** — `Client` 和 `AsyncClient` 自动池化复用 TCP 连接（无状态函数仍为每次请求创建独立连接）。
 - **自动解压缩** — 透明解码 gzip/deflate 压缩的响应。
-- **代理支持** — HTTP 和 HTTPS 代理，支持 CONNECT 隧道。
+- **代理支持** — HTTP 代理、HTTPS 代理（CONNECT 隧道）和 SOCKS5 代理（RFC 1928），支持用户名/密码认证。
 - **内置认证** — 开箱即用的 Basic 和 Digest 认证。
 
 ## 两种使用模式
@@ -247,20 +247,26 @@ with get("https://example.com/large.json.gz", stream=True) as r:
 
 ### 代理支持
 
-通过 HTTP 代理转发请求。HTTPS 目标使用 CONNECT 隧道。
+通过 HTTP 或 SOCKS5 代理转发请求。HTTPS 目标使用 CONNECT 隧道（HTTP 代理）或透明 TCP 隧道（SOCKS5）。
 
 ```python
 from httpclient import get, Client
 
-# 单次请求代理
+# HTTP 代理
 r = get("https://api.example.com/data", proxy="http://proxy.corp:8080")
 
-# 会话级代理
-with Client(proxy="http://proxy.corp:8080") as client:
-    r = client.get("https://api.example.com/data")
-
-# 带认证的代理
+# HTTP 代理带认证
 r = get("https://api.example.com/data", proxy="http://user:pass@proxy.corp:8080")
+
+# SOCKS5 代理
+r = get("https://api.example.com/data", proxy="socks5://proxy.corp:1080")
+
+# SOCKS5 代理带认证
+r = get("https://api.example.com/data", proxy="socks5://user:pass@proxy.corp:1080")
+
+# 会话级代理（适用于任何代理类型）
+with Client(proxy="socks5://proxy.corp:1080") as client:
+    r = client.get("https://api.example.com/data")
 ```
 
 ### 认证
@@ -455,7 +461,7 @@ from httpclient import get, post, Client, AsyncClient
 | HTTP/2 | 不支持 | 支持 |
 | 连接池 | 支持（Client/AsyncClient） | 支持 |
 | 自动解压缩 | 支持（gzip、deflate） | 支持（gzip、deflate、brotli） |
-| 代理支持 | 支持（HTTP、HTTPS 隧道） | 支持（HTTP、HTTPS、SOCKS） |
+| 代理支持 | 支持（HTTP、HTTPS 隧道、SOCKS5） | 支持（HTTP、HTTPS、SOCKS） |
 | 认证 | Basic + Digest | Basic + Digest + 更多 |
 | 流式传输 | 支持 | 支持 |
 | 同步 + 异步 | 支持 | 支持 |

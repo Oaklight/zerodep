@@ -4,6 +4,12 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [未发布]
+
+### 新特性
+
+- **httpclient**：新增 SOCKS5 代理支持（RFC 1928），支持用户名/密码认证（RFC 1929）。`Client` 和 `AsyncClient` 现在接受 `proxy="socks5://[user:pass@]host:port"`。在模块内直接实现，零外部依赖。性能对比 `httpx[socks]` 快约 6-15 倍。
+
 ## [2026.5.2.1] - 2026-05-02
 
 ### 问题修复

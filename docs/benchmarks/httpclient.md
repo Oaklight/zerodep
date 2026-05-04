@@ -49,19 +49,31 @@ zerodep HTTP 客户端与 [`httpx`](https://pypi.org/project/httpx/)（带连接
 |--------|---------|-------|------|
 | 同步 Gzip GET | 646.2 μs | 20,710.0 μs | **快 32.1x** |
 
+### SOCKS5 代理
+
+与 `httpx[socks]`（使用 `socksio`）对比。均通过本地 SOCKS5 代理转发。
+
+| 测试项 | zerodep | httpx[socks] | 倍数 |
+|--------|---------|--------------|------|
+| 同步 SOCKS5 GET | 1,600.0 μs | 23,490.0 μs | **快 ~15x** |
+| 同步 SOCKS5 POST JSON | 1,920.0 μs | 23,740.0 μs | **快 ~12x** |
+| 异步 SOCKS5 GET | 4,220.0 μs | 23,560.0 μs | **快 ~6x** |
+| 同步 SOCKS5 流式传输 | 43,390.0 μs | 57,170.0 μs | **快 ~1.3x** |
+
 ## 要点总结
 
 - **一次性请求快 19--34 倍**——不使用连接池时，zerodep 大幅快于 httpx，因为避免了 httpx 的重量级客户端初始化和中间件栈开销。
 - **连接池场景快约 1.6 倍**——即使两者复用连接，zerodep 更轻量的抽象层仍有可测量的优势。
 - **流式传输快 23--33 倍**——zerodep 精简的流式抽象直接转化为吞吐量提升。
 - **文件上传快 19--22 倍**——zerodep 简洁的 multipart 编码器优于 httpx 的功能更丰富的实现。
+- **SOCKS5 代理快 6--15 倍**——zerodep 纯标准库的 SOCKS5 实现避免了 httpx 所需的 `socksio` + `httpcore` 代理栈开销。
 - **测试使用本地服务器**——所有请求访问 `localhost`，数据反映的是纯库开销，不含网络延迟。
 - zerodep **无需任何 pip 依赖**——同步模式使用标准库 `http.client`，异步模式使用 `asyncio` 流。
 
 ## 自行运行
 
 ```bash
-pip install pytest pytest-benchmark httpx
+pip install pytest pytest-benchmark httpx[socks]
 pytest httpclient/test_http_benchmark.py --benchmark-only -v
 ```
 

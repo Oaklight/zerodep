@@ -245,9 +245,11 @@ def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
                     break
 
         if tag_content is None:
-            # No tag has this version — check if it was already bumped.
-            # Search tags for the latest tagged version of this module.
-            already_bumped = False
+            # No tag has this version — check if it was already bumped
+            # (or reverted).  Search tags for the latest tagged version
+            # of this module.  Any version difference (up *or* down)
+            # means the version was intentionally changed.
+            version_changed = False
             found_in_any_tag = False
             for tag in all_tags:
                 candidate = _git_show_at_tag(repo_root, tag, primary_file)
@@ -257,12 +259,12 @@ def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
                     tag_ver = tag_meta.get("version")
                     if tag_ver:
                         try:
-                            if _parse_semver(version) > _parse_semver(tag_ver):
-                                already_bumped = True
+                            if _parse_semver(version) != _parse_semver(tag_ver):
+                                version_changed = True
                         except (ValueError, TypeError):
                             pass
                     break  # only check the latest tag
-            if already_bumped:
+            if version_changed:
                 status_map[mod_name] = "up-to-date"
             elif found_in_any_tag:
                 status_map[mod_name] = "modified"

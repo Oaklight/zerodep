@@ -12,7 +12,7 @@ Zero-dependency synchronous and asynchronous HTTP/1.1 REST client built entirely
 - **Thread-safe** by design: each request creates its own connection. Session classes use locks internally.
 - **Connection pooling** — `Client` and `AsyncClient` automatically pool and reuse TCP connections (stateless functions still create one-off connections).
 - **Auto decompression** — transparently decodes gzip/deflate responses.
-- **Proxy support** — HTTP and HTTPS proxy with CONNECT tunneling.
+- **Proxy support** — HTTP proxy, HTTPS proxy with CONNECT tunneling, and SOCKS5 proxy (RFC 1928) with username/password auth.
 - **Built-in auth** — Basic and Digest authentication out of the box.
 
 ## Two Modes of Operation
@@ -247,20 +247,26 @@ with get("https://example.com/large.json.gz", stream=True) as r:
 
 ### Proxy Support
 
-Route requests through an HTTP proxy. HTTPS targets use CONNECT tunneling.
+Route requests through an HTTP or SOCKS5 proxy. HTTPS targets use CONNECT tunneling (HTTP proxy) or a transparent TCP tunnel (SOCKS5).
 
 ```python
 from httpclient import get, Client
 
-# Per-request proxy
+# HTTP proxy
 r = get("https://api.example.com/data", proxy="http://proxy.corp:8080")
 
-# Session-level proxy
-with Client(proxy="http://proxy.corp:8080") as client:
-    r = client.get("https://api.example.com/data")
-
-# Proxy with authentication
+# HTTP proxy with authentication
 r = get("https://api.example.com/data", proxy="http://user:pass@proxy.corp:8080")
+
+# SOCKS5 proxy
+r = get("https://api.example.com/data", proxy="socks5://proxy.corp:1080")
+
+# SOCKS5 proxy with authentication
+r = get("https://api.example.com/data", proxy="socks5://user:pass@proxy.corp:1080")
+
+# Session-level proxy (works with any proxy type)
+with Client(proxy="socks5://proxy.corp:1080") as client:
+    r = client.get("https://api.example.com/data")
 ```
 
 ### Authentication
@@ -455,7 +461,7 @@ from httpclient import get, post, Client, AsyncClient
 | HTTP/2 | No | Yes |
 | Connection pooling | Yes (Client/AsyncClient) | Yes |
 | Auto decompression | Yes (gzip, deflate) | Yes (gzip, deflate, brotli) |
-| Proxy support | Yes (HTTP, HTTPS tunnel) | Yes (HTTP, HTTPS, SOCKS) |
+| Proxy support | Yes (HTTP, HTTPS tunnel, SOCKS5) | Yes (HTTP, HTTPS, SOCKS) |
 | Authentication | Basic + Digest | Basic + Digest + more |
 | Streaming | Yes | Yes |
 | Sync + Async | Yes | Yes |

@@ -49,19 +49,31 @@ Apple-to-apple performance comparison between zerodep HTTP client and [`httpx`](
 |------|---------|-------|---------|
 | Sync Gzip GET | 646.2 us | 20,710.0 us | **32.1x faster** |
 
+### SOCKS5 Proxy
+
+Benchmarked against `httpx[socks]` (using `socksio`). Both route through a local SOCKS5 proxy.
+
+| Test | zerodep | httpx[socks] | Speedup |
+|------|---------|--------------|---------|
+| Sync SOCKS5 GET | 1,600.0 us | 23,490.0 us | **~15x faster** |
+| Sync SOCKS5 POST JSON | 1,920.0 us | 23,740.0 us | **~12x faster** |
+| Async SOCKS5 GET | 4,220.0 us | 23,560.0 us | **~6x faster** |
+| Sync SOCKS5 Streaming | 43,390.0 us | 57,170.0 us | **~1.3x faster** |
+
 ## Key Takeaways
 
 - **19--34x faster on one-off requests** -- without connection pooling, zerodep is dramatically faster than httpx because it avoids httpx's heavy client initialization and middleware stack overhead.
 - **~1.6x faster with connection pooling** -- even when both libraries reuse connections, zerodep's lighter abstraction layer still provides a measurable advantage.
 - **Streaming is 23--33x faster** -- zerodep's minimal stream abstraction translates directly into throughput gains.
 - **File upload is 19--22x faster** -- zerodep's simple multipart encoder outperforms httpx's more featureful implementation.
+- **SOCKS5 proxy is 6--15x faster** -- zerodep's pure-stdlib SOCKS5 implementation avoids the `socksio` + `httpcore` proxy stack overhead that httpx requires.
 - **Benchmarks use a local server** -- all tests hit `localhost`, so the numbers reflect pure library overhead without network latency.
 - zerodep has **zero pip dependencies** -- it uses only `http.client` (sync) and `asyncio` streams (async) from the standard library.
 
 ## Run It Yourself
 
 ```bash
-pip install pytest pytest-benchmark httpx
+pip install pytest pytest-benchmark httpx[socks]
 pytest httpclient/test_http_benchmark.py --benchmark-only -v
 ```
 

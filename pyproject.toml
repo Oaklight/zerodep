@@ -7,7 +7,7 @@ py-modules = ["zerodep"]
 
 [project]
 name = "zerodep"
-version = "2026.5.4"
+version = "2026.5.5"
 description = "Zero-dependency, single-file Python implementations of popular libraries — benchmarked for performance parity"
 authors = [{ name = "Peng Ding" }]
 readme = "README.md"

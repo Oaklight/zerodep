@@ -204,3 +204,63 @@ class TestAsyncClientGet:
                 return await c.get(f"{httpbin_url}/get")
 
         benchmark(_run_async, _get)
+
+
+# ── Sync SOCKS5 GET ──
+
+
+class TestSyncSocks5Get:
+    def test_zerodep(self, benchmark, httpbin_url, socks5_url):
+        benchmark(get, f"{httpbin_url}/get", proxy=socks5_url)
+
+    def test_httpx(self, benchmark, httpbin_url, socks5_url):
+        benchmark(httpx.get, f"{httpbin_url}/get", proxy=socks5_url)
+
+
+# ── Sync SOCKS5 POST JSON ──
+
+
+class TestSyncSocks5PostJSON:
+    def test_zerodep(self, benchmark, httpbin_url, socks5_url):
+        benchmark(post, f"{httpbin_url}/post", json=PAYLOAD, proxy=socks5_url)
+
+    def test_httpx(self, benchmark, httpbin_url, socks5_url):
+        benchmark(httpx.post, f"{httpbin_url}/post", json=PAYLOAD, proxy=socks5_url)
+
+
+# ── Async SOCKS5 GET ──
+
+
+class TestAsyncSocks5Get:
+    def test_zerodep(self, benchmark, httpbin_url, socks5_url):
+        benchmark(_run_async, zd_async_get, f"{httpbin_url}/get", proxy=socks5_url)
+
+    def test_httpx(self, benchmark, httpbin_url, socks5_url):
+        async def _get():
+            async with httpx.AsyncClient(proxy=socks5_url) as c:
+                return await c.get(f"{httpbin_url}/get")
+
+        benchmark(_run_async, _get)
+
+
+# ── Sync SOCKS5 Streaming ──
+
+
+class TestSyncSocks5Streaming:
+    def test_zerodep(self, benchmark, httpbin_url, socks5_url):
+        def _stream():
+            with get(
+                f"{httpbin_url}/stream-bytes/4096", stream=True, proxy=socks5_url
+            ) as r:
+                return r.read()  # type: ignore
+
+        benchmark(_stream)
+
+    def test_httpx(self, benchmark, httpbin_url, socks5_url):
+        def _stream():
+            with httpx.stream(
+                "GET", f"{httpbin_url}/stream-bytes/4096", proxy=socks5_url
+            ) as r:
+                return r.read()
+
+        benchmark(_stream)

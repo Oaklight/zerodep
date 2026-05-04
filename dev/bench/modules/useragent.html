@@ -124,15 +124,15 @@ td { white-space: nowrap; }
 <h1>useragent</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.5.2.1 | Commit: 32293d98 | 2026-05-02T10:06:03.065183+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-02T10:06:03.065183+00:00"></span></p>
+<p class="meta">Version: cffe5c4 | Commit: cffe5c4e | 2026-05-04T18:43:33.771759+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-04T18:43:33.771759+00:00"></span></p>
 <h2>useragent</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Generate Chrome Desktop</td><td>zerodep</td><td>ua_generator</td><td>4.0 µs</td><td>9.1 µs</td><td>253.1K</td><td>110.2K</td><td class="ratio-cell faster">2.3x faster</td></tr>
-<tr><td>Generate Default</td><td>zerodep</td><td>ua_generator</td><td>4.3 µs</td><td>9.5 µs</td><td>233.3K</td><td>105.5K</td><td class="ratio-cell faster">2.2x faster</td></tr>
-<tr><td>Generate Edge Mobile</td><td>zerodep</td><td>ua_generator</td><td>4.2 µs</td><td>10.6 µs</td><td>240.9K</td><td>94.1K</td><td class="ratio-cell faster">2.6x faster</td></tr>
-<tr><td>Headers Get</td><td>zerodep</td><td>ua_generator</td><td>6.2 µs</td><td>12.0 µs</td><td>160.3K</td><td>83.5K</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Generate Chrome Desktop</td><td>zerodep</td><td>ua_generator</td><td>5.0 µs</td><td>11.5 µs</td><td>201.0K</td><td>87.1K</td><td class="ratio-cell faster">2.3x faster</td></tr>
+<tr><td>Generate Default</td><td>zerodep</td><td>ua_generator</td><td>5.4 µs</td><td>11.8 µs</td><td>183.5K</td><td>84.8K</td><td class="ratio-cell faster">2.2x faster</td></tr>
+<tr><td>Generate Edge Mobile</td><td>zerodep</td><td>ua_generator</td><td>5.2 µs</td><td>13.4 µs</td><td>191.3K</td><td>74.7K</td><td class="ratio-cell faster">2.6x faster</td></tr>
+<tr><td>Headers Get</td><td>zerodep</td><td>ua_generator</td><td>7.9 µs</td><td>15.0 µs</td><td>126.6K</td><td>66.7K</td><td class="ratio-cell faster">1.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -204,13 +204,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [253146.45097856416, 233323.67026184205, 240859.47428399677, 160264.39776631337],
+        data: [200962.88354055156, 183498.69646047679, 191280.99193427447, 126645.84176636806],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "ua_generator" + ' (ops/s)',
-        data: [110224.69188058967, 105463.92087884492, 94085.22608594087, 83539.51269661517],
+        data: [87062.19476658145, 84781.13865796369, 74702.97018485665, 66742.03185716145],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

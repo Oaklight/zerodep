@@ -13,6 +13,8 @@ import json
 import os
 import select
 import socket
+import socketserver
+import struct
 import threading
 import zlib
 from http.client import HTTPConnection
@@ -402,6 +404,136 @@ class _ProxyHandler(BaseHTTPRequestHandler):
             target.close()
 
 
+# ── SOCKS5 proxy handler ──
+
+
+class _Socks5Server(socketserver.ThreadingTCPServer):
+    """Minimal SOCKS5 server that optionally requires username/password auth."""
+
+    allow_reuse_address = True
+
+    def __init__(self, addr, handler_class, auth=None):
+        super().__init__(addr, handler_class)
+        self.socks5_auth = auth  # (username, password) or None
+
+
+class _Socks5Handler(socketserver.StreamRequestHandler):
+    """Minimal SOCKS5 proxy handler (RFC 1928 / 1929) for testing."""
+
+    def handle(self):
+        try:
+            self._do_handshake()
+        except Exception:
+            return
+
+    def _do_handshake(self):
+        # Phase 1: method negotiation
+        header = self.rfile.read(2)
+        if len(header) < 2:
+            return
+        ver, nmethods = struct.unpack("BB", header)
+        if ver != 0x05:
+            return
+        methods = self.rfile.read(nmethods)
+        if len(methods) < nmethods:
+            return
+
+        require_auth = self.server.socks5_auth is not None
+
+        if require_auth:
+            if 0x02 not in methods:
+                self.wfile.write(struct.pack("BB", 0x05, 0xFF))
+                return
+            self.wfile.write(struct.pack("BB", 0x05, 0x02))
+            # Phase 2: username/password auth (RFC 1929)
+            auth_header = self.rfile.read(2)
+            if len(auth_header) < 2:
+                return
+            _auth_ver, ulen = struct.unpack("BB", auth_header)
+            uname = self.rfile.read(ulen)
+            plen_byte = self.rfile.read(1)
+            if not plen_byte:
+                return
+            plen = struct.unpack("B", plen_byte)[0]
+            passwd = self.rfile.read(plen)
+
+            expected_user, expected_pass = self.server.socks5_auth
+            if uname.decode() != expected_user or passwd.decode() != expected_pass:
+                self.wfile.write(struct.pack("BB", 0x01, 0x01))  # auth failure
+                return
+            self.wfile.write(struct.pack("BB", 0x01, 0x00))  # auth success
+        else:
+            self.wfile.write(struct.pack("BB", 0x05, 0x00))  # no auth
+
+        # Phase 3: connect request
+        req_header = self.rfile.read(4)
+        if len(req_header) < 4:
+            return
+        ver, cmd, _rsv, atype = struct.unpack("BBBB", req_header)
+        if cmd != 0x01:  # only CONNECT supported
+            self._send_reply(0x07)  # command not supported
+            return
+
+        # Parse target address
+        if atype == 0x01:  # IPv4
+            addr_bytes = self.rfile.read(4)
+            target_host = socket.inet_ntoa(addr_bytes)
+        elif atype == 0x03:  # domain
+            addr_len = struct.unpack("B", self.rfile.read(1))[0]
+            target_host = self.rfile.read(addr_len).decode()
+        elif atype == 0x04:  # IPv6
+            addr_bytes = self.rfile.read(16)
+            target_host = socket.inet_ntop(socket.AF_INET6, addr_bytes)
+        else:
+            self._send_reply(0x08)  # address type not supported
+            return
+
+        target_port = struct.unpack("!H", self.rfile.read(2))[0]
+
+        # Connect to target
+        try:
+            target = socket.create_connection((target_host, target_port), timeout=10)
+        except Exception:
+            self._send_reply(0x05)  # connection refused
+            return
+
+        # Success reply
+        self._send_reply(0x00)
+
+        # Bidirectional relay
+        client_sock = self.connection
+        client_sock.setblocking(False)
+        target.setblocking(False)
+        try:
+            while True:
+                readable, _, _ = select.select([client_sock, target], [], [], 1.0)
+                if not readable:
+                    continue
+                for sock in readable:
+                    try:
+                        data = sock.recv(8192)
+                    except (BlockingIOError, ConnectionResetError):
+                        data = b""
+                    if not data:
+                        return
+                    if sock is client_sock:
+                        target.sendall(data)
+                    else:
+                        client_sock.sendall(data)
+        except Exception:
+            pass
+        finally:
+            target.close()
+
+    def _send_reply(self, reply_code):
+        """Send a SOCKS5 reply with the given status code."""
+        self.wfile.write(
+            struct.pack("BBBB", 0x05, reply_code, 0x00, 0x01)
+            + b"\x00\x00\x00\x00"  # bind addr (0.0.0.0)
+            + struct.pack("!H", 0)  # bind port
+        )
+
+
 # ── pytest fixtures ──
 
 
@@ -424,4 +556,28 @@ def proxy_url():
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     yield f"http://127.0.0.1:{port}"
+    server.shutdown()
+
+
+@pytest.fixture(scope="session")
+def socks5_url():
+    """Start a local SOCKS5 proxy (no auth) and yield its URL."""
+    server = _Socks5Server(("127.0.0.1", 0), _Socks5Handler, auth=None)
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f"socks5://127.0.0.1:{port}"
+    server.shutdown()
+
+
+@pytest.fixture(scope="session")
+def socks5_auth_url():
+    """Start a local SOCKS5 proxy with username/password auth and yield its URL."""
+    server = _Socks5Server(
+        ("127.0.0.1", 0), _Socks5Handler, auth=("testuser", "testpass")
+    )
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f"socks5://testuser:testpass@127.0.0.1:{port}"
     server.shutdown()

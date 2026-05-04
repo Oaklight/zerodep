@@ -12,7 +12,9 @@ from httpclient import (
     BasicAuth,
     Client,
     DigestAuth,
+    HttpConnectionError,
     HTTPError,
+    Socks5Error,
     StreamingResponse,
     async_delete,
     async_get,
@@ -695,3 +697,86 @@ class TestAsyncProxy:
         )
         assert r.status_code == 200
         assert r.json()["json"] == {"key": "val"}  # type: ignore
+
+
+# ── Sync: SOCKS5 proxy ──
+
+
+class TestSyncSocks5:
+    def test_http_through_socks5(self, httpbin_url, socks5_url):
+        r = get(f"{httpbin_url}/get", proxy=socks5_url)
+        assert r.status_code == 200
+        assert "url" in r.json()
+
+    def test_http_through_socks5_auth(self, httpbin_url, socks5_auth_url):
+        r = get(f"{httpbin_url}/get", proxy=socks5_auth_url)
+        assert r.status_code == 200
+
+    def test_socks5_post(self, httpbin_url, socks5_url):
+        r = post(f"{httpbin_url}/post", json={"key": "val"}, proxy=socks5_url)
+        assert r.status_code == 200
+        assert r.json()["json"] == {"key": "val"}
+
+    def test_socks5_client_session(self, httpbin_url, socks5_url):
+        with Client(proxy=socks5_url) as c:
+            r = c.get(f"{httpbin_url}/get")
+            assert r.status_code == 200
+
+    def test_socks5_streaming(self, httpbin_url, socks5_url):
+        r = get(f"{httpbin_url}/stream-bytes/1024", proxy=socks5_url, stream=True)
+        assert r.status_code == 200
+        data = b"".join(r.iter_bytes())
+        assert len(data) == 1024
+
+    def test_socks5_auth_required_but_missing(self, httpbin_url, socks5_auth_url):
+        # Strip credentials from URL
+        no_auth_url = socks5_auth_url.split("@")[-1]
+        no_auth_url = f"socks5://{no_auth_url}"
+        with pytest.raises((Socks5Error, HttpConnectionError)):
+            get(f"{httpbin_url}/get", proxy=no_auth_url)
+
+    def test_socks5_wrong_credentials(self, httpbin_url, socks5_auth_url):
+        parts = socks5_auth_url.split("@")
+        wrong_url = f"socks5://wrong:creds@{parts[-1]}"
+        with pytest.raises((Socks5Error, HttpConnectionError)):
+            get(f"{httpbin_url}/get", proxy=wrong_url)
+
+
+# ── Async: SOCKS5 proxy ──
+
+
+class TestAsyncSocks5:
+    @pytest.mark.asyncio
+    async def test_http_through_socks5(self, httpbin_url, socks5_url):
+        r = await async_get(f"{httpbin_url}/get", proxy=socks5_url)
+        assert r.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_http_through_socks5_auth(self, httpbin_url, socks5_auth_url):
+        r = await async_get(f"{httpbin_url}/get", proxy=socks5_auth_url)
+        assert r.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_socks5_post(self, httpbin_url, socks5_url):
+        r = await async_post(
+            f"{httpbin_url}/post", json={"key": "val"}, proxy=socks5_url
+        )
+        assert r.status_code == 200
+        assert r.json()["json"] == {"key": "val"}
+
+    @pytest.mark.asyncio
+    async def test_socks5_streaming(self, httpbin_url, socks5_url):
+        r = await async_get(
+            f"{httpbin_url}/stream-bytes/1024", proxy=socks5_url, stream=True
+        )
+        assert r.status_code == 200
+        data = b""
+        async for chunk in r.aiter_bytes():
+            data += chunk
+        assert len(data) == 1024
+
+    @pytest.mark.asyncio
+    async def test_socks5_client_session(self, httpbin_url, socks5_url):
+        async with AsyncClient(proxy=socks5_url) as c:
+            r = await c.get(f"{httpbin_url}/get")
+            assert r.status_code == 200

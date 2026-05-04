@@ -163,8 +163,18 @@ def _transitive_dependents(
     return visited
 
 
+def _is_calver_tag(tag: str) -> bool:
+    """Return True if *tag* looks like a CalVer release (vYYYY.*)."""
+    return bool(re.match(r"^v20\d{2}\.", tag))
+
+
 def _list_release_tags(repo_root: Path) -> list[str]:
-    """Return all git tags sorted by version descending."""
+    """Return CalVer release tags sorted by version descending.
+
+    Excludes legacy project-level SemVer tags (v0.x.y) whose version
+    numbers overlap with per-module SemVer and cause false positives in
+    change detection.
+    """
     try:
         result = subprocess.run(
             ["git", "tag", "--sort=-version:refname"],
@@ -174,7 +184,9 @@ def _list_release_tags(repo_root: Path) -> list[str]:
             timeout=5,
         )
         if result.returncode == 0:
-            return [t for t in result.stdout.strip().splitlines() if t]
+            return [
+                t for t in result.stdout.strip().splitlines() if t and _is_calver_tag(t)
+            ]
     except subprocess.SubprocessError:
         pass
     return []

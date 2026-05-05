@@ -24,7 +24,7 @@ title: 模块概览
 | [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
-| [httpclient](httpclient.md) | 0.3.1 | 2026-04-15 |
+| [httpclient](httpclient.md) | 0.4.0 | 2026-05-05 |
 | [httpserver](httpserver.md) | 0.1.0 | 2026-05-02 |
 | [jsonc](jsonc.md) | 0.3.0 | 2026-04-27 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
@@ -46,11 +46,11 @@ title: 模块概览
 | [sparse_search](sparse_search.md) | 0.4.0 | 2026-04-27 |
 | [sse](sse.md) | 0.3.1 | 2026-04-15 |
 | [structlog](structlog.md) | 0.3.0 | 2026-04-27 |
-| [synctex](synctex.md) | 0.2.0 | 2026-04-29 |
+| [synctex](synctex.md) | 0.2.0 | 2026-05-02 |
 | [tabulate](tabulate.md) | 0.1.1 | 2026-04-15 |
 | [toon](toon.md) | 0.3.3 | 2026-04-27 |
-| [useragent](useragent.md) | 0.1.0 | 2026-04-29 |
-| [validate](validate.md) | 0.4.3 | 2026-04-27 |
+| [useragent](useragent.md) | 0.1.0 | 2026-05-02 |
+| [validate](validate.md) | 0.5.0 | 2026-05-05 |
 | [vcs](vcs.md) | 0.3.0 | 2026-04-11 |
 | [websocket](websocket.md) | 0.1.0 | 2026-05-02 |
 | [xml](xml.md) | 0.3.1 | 2026-04-27 |

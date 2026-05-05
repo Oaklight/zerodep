@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.3"
+# version = "0.5.0"
 # deps = []
 # tier = "medium"
 # category = "validation"

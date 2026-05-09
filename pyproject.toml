@@ -81,7 +81,7 @@ bench-sse = [
     "httpx==0.28.1",
 ]
 bench-markdown = [
-    "mistune==3.2.0",
+    "mistune==3.2.1",
 ]
 bench-diff = [
     "unidiff==0.7.5",

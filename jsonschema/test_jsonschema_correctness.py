@@ -170,6 +170,165 @@ class TestResolveRefs:
         resolve_refs(schema)
         assert schema == original
 
+    def test_generic_json_pointer(self):
+        """OpenAPI-style #/components/schemas/XXX reference."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "error": {"$ref": "#/components/schemas/Error"},
+            },
+            "components": {
+                "schemas": {
+                    "Error": {
+                        "type": "object",
+                        "properties": {
+                            "code": {"type": "integer"},
+                            "message": {"type": "string"},
+                        },
+                    }
+                }
+            },
+        }
+        result = resolve_refs(schema)
+        assert result["properties"]["error"] == {
+            "type": "object",
+            "properties": {
+                "code": {"type": "integer"},
+                "message": {"type": "string"},
+            },
+        }
+        # components should NOT be stripped (only $defs/definitions are)
+        assert "components" in result
+
+    def test_deeply_nested_pointer(self):
+        """Multi-segment JSON Pointer resolution."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "item": {"$ref": "#/a/b/c/Item"},
+            },
+            "a": {"b": {"c": {"Item": {"type": "string"}}}},
+        }
+        result = resolve_refs(schema)
+        assert result["properties"]["item"] == {"type": "string"}
+
+    def test_rfc6901_escapes(self):
+        """RFC 6901: ~0 → ~, ~1 → /."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "x": {"$ref": "#/$defs/a~1b"},
+            },
+            "$defs": {
+                "a/b": {"type": "integer"},
+            },
+        }
+        result = resolve_refs(schema)
+        assert result["properties"]["x"] == {"type": "integer"}
+
+    def test_circular_ref_protection(self):
+        """Circular $ref should not cause infinite recursion."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "node": {"$ref": "#/$defs/Node"},
+            },
+            "$defs": {
+                "Node": {
+                    "type": "object",
+                    "properties": {
+                        "child": {"$ref": "#/$defs/Node"},
+                    },
+                }
+            },
+        }
+        result = resolve_refs(schema)
+        # First level resolved
+        node = result["properties"]["node"]
+        assert node["type"] == "object"
+        # Second level: circular ref dropped, child has no $ref
+        child = node["properties"]["child"]
+        assert "$ref" not in child
+
+    def test_openapi_style_spec(self):
+        """Full OpenAPI-like spec with components/schemas references."""
+        schema = {
+            "openapi": "3.0.0",
+            "paths": {
+                "/users": {
+                    "get": {
+                        "responses": {
+                            "200": {
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/User"
+                                            },
+                                        }
+                                    }
+                                }
+                            },
+                            "422": {
+                                "content": {
+                                    "application/json": {
+                                        "schema": {"$ref": "#/components/schemas/Error"}
+                                    }
+                                }
+                            },
+                        }
+                    }
+                }
+            },
+            "components": {
+                "schemas": {
+                    "User": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "integer"},
+                            "name": {"type": "string"},
+                        },
+                    },
+                    "Error": {
+                        "type": "object",
+                        "properties": {
+                            "detail": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                },
+                            }
+                        },
+                    },
+                    "ValidationError": {
+                        "type": "object",
+                        "properties": {
+                            "loc": {"type": "array", "items": {"type": "string"}},
+                            "msg": {"type": "string"},
+                        },
+                    },
+                }
+            },
+        }
+        result = resolve_refs(schema)
+
+        # User inlined in items
+        items = result["paths"]["/users"]["get"]["responses"]["200"]["content"][
+            "application/json"
+        ]["schema"]["items"]
+        assert items["type"] == "object"
+        assert "id" in items["properties"]
+
+        # Error inlined, with nested ValidationError also resolved
+        error = result["paths"]["/users"]["get"]["responses"]["422"]["content"][
+            "application/json"
+        ]["schema"]
+        assert error["type"] == "object"
+        detail_items = error["properties"]["detail"]["items"]
+        assert detail_items["type"] == "object"
+        assert "msg" in detail_items["properties"]
+
 
 # ---------------------------------------------------------------------------
 # Phase 2 — merge_allof

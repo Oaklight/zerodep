@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.1.0"
+# version = "0.2.0"
 # deps = []
 # tier = "medium"
 # category = "validation"
@@ -112,32 +112,53 @@ def _collect_defs(schema: dict[str, Any]) -> dict[str, Any]:
     return defs
 
 
-def _resolve_ref(ref: str, defs: dict[str, Any]) -> dict[str, Any]:
-    """Resolve a single ``$ref`` pointer against collected definitions.
+def _resolve_ref(ref: str, root: dict[str, Any]) -> dict[str, Any]:
+    """Resolve a ``$ref`` JSON Pointer against the document *root*.
 
-    Only local references (``#/$defs/Name``, ``#/definitions/Name``) are
-    supported.  Returns ``{}`` for unresolvable refs.
+    Supports any local JSON Pointer (RFC 6901) fragment, e.g.
+    ``#/$defs/Name``, ``#/definitions/Name``, ``#/components/schemas/Foo``.
+    Returns ``{}`` for unresolvable or non-dict targets.
     """
-    for prefix in ("#/$defs/", "#/definitions/"):
-        if ref.startswith(prefix):
-            name = ref[len(prefix) :]
-            return defs.get(name, {})
-    return {}
+    if not ref.startswith("#/"):
+        return {}
+    pointer = ref[2:]  # strip "#/"
+    segments = [s.replace("~1", "/").replace("~0", "~") for s in pointer.split("/")]
+    node: Any = root
+    for seg in segments:
+        if isinstance(node, dict) and seg in node:
+            node = node[seg]
+        else:
+            return {}
+    return node if isinstance(node, dict) else {}
 
 
-def _inline_refs(schema: dict[str, Any], defs: dict[str, Any]) -> dict[str, Any]:
-    """Recursively inline all ``$ref`` pointers in *schema*."""
+def _inline_refs(
+    schema: dict[str, Any],
+    root: dict[str, Any],
+    _seen: set[str] | None = None,
+) -> dict[str, Any]:
+    """Recursively inline all ``$ref`` pointers in *schema*.
+
+    *root* is the top-level document used for JSON Pointer resolution.
+    *_seen* tracks ``$ref`` strings on the current resolution stack to
+    prevent infinite recursion from circular references.
+    """
+    if _seen is None:
+        _seen = set()
+
     ref = schema.get("$ref")
     if isinstance(ref, str):
-        resolved = _resolve_ref(ref, defs)
+        if ref in _seen:
+            # Circular reference — drop the $ref and keep sibling keys.
+            return {k: v for k, v in schema.items() if k != "$ref"}
+        resolved = _resolve_ref(ref, root)
         if resolved:
-            # Sibling keys (e.g. description) override the definition.
+            _seen = _seen | {ref}  # new set — don't mutate caller's copy
             merged = {**copy.deepcopy(resolved)}
             for k, v in schema.items():
                 if k != "$ref":
                     merged[k] = v
-            # Recurse — the resolved schema may contain further $ref.
-            return _inline_refs(merged, defs)
+            return _inline_refs(merged, root, _seen)
         else:
             warnings.warn(
                 f"Unresolvable $ref: {ref!r} — dropped",
@@ -149,10 +170,10 @@ def _inline_refs(schema: dict[str, Any], defs: dict[str, Any]) -> dict[str, Any]
     result: dict[str, Any] = {}
     for key, value in schema.items():
         if isinstance(value, dict):
-            result[key] = _inline_refs(value, defs)
+            result[key] = _inline_refs(value, root, _seen)
         elif isinstance(value, list):
             result[key] = [
-                _inline_refs(item, defs) if isinstance(item, dict) else item
+                _inline_refs(item, root, _seen) if isinstance(item, dict) else item
                 for item in value
             ]
         else:
@@ -161,8 +182,11 @@ def _inline_refs(schema: dict[str, Any], defs: dict[str, Any]) -> dict[str, Any]
 
 
 def resolve_refs(schema: dict[str, Any]) -> dict[str, Any]:
-    """Resolve all local ``$ref`` pointers, inline definitions, and remove
-    ``$defs``/``definitions`` maps.
+    """Resolve all local ``$ref`` pointers and inline their targets.
+
+    Supports any JSON Pointer fragment (RFC 6901), including
+    ``#/$defs/``, ``#/definitions/``, ``#/components/schemas/``, etc.
+    After resolution, ``$defs`` and ``definitions`` maps are removed.
 
     Args:
         schema: A JSON Schema dict.
@@ -171,8 +195,7 @@ def resolve_refs(schema: dict[str, Any]) -> dict[str, Any]:
         A new dict with all ``$ref`` inlined and definition maps removed.
     """
     schema = copy.deepcopy(schema)
-    defs = _collect_defs(schema)
-    result = _inline_refs(schema, defs)
+    result = _inline_refs(schema, schema)
     # Strip consumed definition maps.
     for key in _DEFS_KEYS:
         result.pop(key, None)

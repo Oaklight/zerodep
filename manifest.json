@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-05-05T06:07:38.478184+00:00",
+  "generated": "2026-05-10T17:05:36.344883+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -211,12 +211,12 @@
       "files": [
         "jsonschema/jsonschema.py"
       ],
-      "version": "0.1.0",
+      "version": "0.2.0",
       "deps": [],
       "tier": "medium",
       "category": "validation",
       "last_updated": "2026-04-27T23:17:36+08:00",
-      "content_hash": "032d65945452db2276c7867f38b7233a376905258f6df085101046fe48606043"
+      "content_hash": "f4d24792ad360b1f95d17d62c1981675d92eca61c008122aff3f06ae530c943e"
     },
     "llmstxt": {
       "description": "llms.txt parser — zero dependencies, stdlib only, Python 3.10+",
@@ -489,7 +489,7 @@
       "deps": [],
       "tier": "medium",
       "category": "validation",
-      "last_updated": "2026-04-27T19:31:53Z",
+      "last_updated": "2026-05-05T14:08:58+08:00",
       "content_hash": "3e465a6cc3f234c0a2d0e44ba1339edff95f63c3d1bed70e344d6642a38104ff"
     },
     "vcs": {

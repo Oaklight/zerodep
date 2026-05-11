@@ -61,7 +61,7 @@ TEXT: dict[str, dict[str, str | tuple[str, ...]]] = {
         "status_heading": "Module Status",
         "status_cols": ("Module", "Version", "Last Updated"),
         "all_heading": "All Modules",
-        "module_cols": ("Module", "Description", "Benchmark Against"),
+        "module_cols": ("Module", "Description", "Replaces", "Benchmark Against"),
         "deps_heading": "Inter-Module Dependencies",
         "deps_intro": (
             "Most zerodep modules are fully standalone. "
@@ -83,7 +83,7 @@ TEXT: dict[str, dict[str, str | tuple[str, ...]]] = {
         "status_heading": "模块状态",
         "status_cols": ("模块", "版本", "最后更新"),
         "all_heading": "全部模块",
-        "module_cols": ("模块", "描述", "性能对标"),
+        "module_cols": ("模块", "描述", "可替代", "性能对标"),
         "deps_heading": "模块间依赖关系",
         "deps_intro": (
             "大部分 zerodep 模块是完全独立的。以下模块依赖其他 zerodep 模块："
@@ -108,6 +108,8 @@ class ModuleInfo:
     deps: list[str] = field(default_factory=list)
     doc_page: str = ""
     benchmark: str | None = None
+    replaces: str | None = None
+    replaces_zh: str | None = None
     desc_en: str = ""
     desc_zh: str = ""
 
@@ -246,6 +248,8 @@ def build_modules(
             deps=m.get("deps", []),
             doc_page=meta.get("doc_page", f"{name}.md"),
             benchmark=meta.get("benchmark"),
+            replaces=meta.get("replaces"),
+            replaces_zh=meta.get("replaces_zh"),
             desc_en=meta.get("desc_en", ""),
             desc_zh=meta.get("desc_zh", ""),
         )
@@ -259,6 +263,13 @@ def _fmt_benchmark(benchmark: str | None) -> str:
     """Format a benchmark value for the table."""
     if benchmark:
         return f"`{benchmark}`"
+    return "--"
+
+
+def _fmt_replaces(replaces: str | None) -> str:
+    """Format a replaces value for the table."""
+    if replaces:
+        return replaces
     return "--"
 
 
@@ -308,14 +319,16 @@ def render_index(
         cat_name = cat.name_en if lang == "en" else cat.name_zh
         lines.append(f"### {cat_name}")
         lines.append("")
-        lines.append(f"| {mcols[0]} | {mcols[1]} | {mcols[2]} |")
-        lines.append("|--------|-------------|-------------------|")
+        lines.append(f"| {mcols[0]} | {mcols[1]} | {mcols[2]} | {mcols[3]} |")
+        lines.append("|--------|-------------|----------|-------------------|")
         for mod_name in cat.modules:
             mod = modules[mod_name]
             link = f"[{mod_name}]({mod.doc_page})"
             desc = mod.desc_en if lang == "en" else mod.desc_zh
+            replaces_val = mod.replaces if lang == "en" else mod.replaces_zh
+            replaces = _fmt_replaces(replaces_val)
             bench = _fmt_benchmark(mod.benchmark)
-            lines.append(f"| {link} | {desc} | {bench} |")
+            lines.append(f"| {link} | {desc} | {replaces} | {bench} |")
         lines.append("")
 
     # Inter-Module Dependencies

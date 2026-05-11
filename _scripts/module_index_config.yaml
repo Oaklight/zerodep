@@ -77,22 +77,32 @@ categories:
 modules:
   httpclient:
     benchmark: httpx
+    replaces: "requests, httpx, urllib3, aiohttp (client)"
+    replaces_zh: "requests、httpx、urllib3、aiohttp（客户端部分）"
     desc_en: "Sync + async REST client with connection pooling, proxy, and auth"
     desc_zh: "同步 + 异步 REST 客户端（连接池、代理、认证）"
   sse:
     benchmark: httpx-sse
+    replaces: "sseclient-py, aiohttp-sse-client, httpx-sse"
+    replaces_zh: "sseclient-py、aiohttp-sse-client、httpx-sse"
     desc_en: "Server-Sent Events client with auto-reconnect"
     desc_zh: "Server-Sent Events 客户端（自动重连）"
   jsonrpc:
     benchmark: jsonrpcserver
+    replaces: "jsonrpclib, jsonrpcserver, python-jsonrpc"
+    replaces_zh: "jsonrpclib、jsonrpcserver、python-jsonrpc"
     desc_en: "JSON-RPC 2.0 protocol: data types, dispatcher, async transport"
     desc_zh: "JSON-RPC 2.0 协议：数据类型、分发器、异步传输"
   a2a:
     benchmark: a2a-python
+    replaces: "a2a-sdk, a2a-python"
+    replaces_zh: "a2a-sdk、a2a-python"
     desc_en: "Google A2A protocol: JSON-RPC 2.0, SSE streaming, task management"
     desc_zh: "Google A2A 协议：JSON-RPC 2.0、SSE 流式传输、任务管理"
   acp:
     benchmark: acp-python
+    replaces: "acp-python"
+    replaces_zh: "acp-python"
     desc_en: "Anthropic ACP protocol: JSON-RPC 2.0 over stdio, async client/agent"
     desc_zh: "Anthropic ACP 协议：JSON-RPC 2.0 over stdio、异步客户端/代理"
   skills:
@@ -103,124 +113,188 @@ modules:
     desc_zh: "llms.txt 解析器与 Markdown URL 候选发现"
   png:
     benchmark: Pillow
+    replaces: "pypng, Pillow (PNG/BMP subset)"
+    replaces_zh: "pypng、Pillow（PNG/BMP 子集）"
     desc_en: "PNG/BMP image codec with matrix compression API"
     desc_zh: "PNG/BMP 图像编解码器（矩阵压缩 API）"
   xml:
     benchmark: xmltodict
+    replaces: "xmltodict"
+    replaces_zh: "xmltodict"
     desc_en: "XML ↔ dict converter with fault-tolerant parsing and LLM tag extraction"
     desc_zh: "XML ↔ 字典转换器（容错解析、LLM 标签提取）"
   yaml:
     benchmark: PyYAML
+    replaces: "PyYAML, ruamel.yaml (common subset)"
+    replaces_zh: "PyYAML、ruamel.yaml（常用子集）"
     desc_en: "YAML parser and serializer (common subset)"
     desc_zh: "YAML 解析与序列化（常用子集）"
   jsonc:
     benchmark: commentjson
+    replaces: "commentjson, json5 (partial)"
+    replaces_zh: "commentjson、json5（部分）"
     desc_en: "JSONC parser (JSON with comments and trailing commas)"
     desc_zh: "JSONC 解析（JSON + 注释 + 尾逗号）"
   toon:
     benchmark: toon_format
+    replaces: "toon-format"
+    replaces_zh: "toon-format"
     desc_en: "TOON (Token-Oriented Object Notation) encoder/decoder"
     desc_zh: "TOON（面向 Token 的对象表示法）编码器/解码器"
   frontmatter:
     benchmark: python-frontmatter
+    replaces: "python-frontmatter"
+    replaces_zh: "python-frontmatter"
     desc_en: "Frontmatter parser and serializer (YAML/TOML/JSON)"
     desc_zh: "Frontmatter 解析与序列化（YAML/TOML/JSON）"
   protobuf:
     benchmark: protobuf
+    replaces: "protobuf (google), betterproto"
+    replaces_zh: "protobuf（google）、betterproto"
     desc_en: "Proto3 encoder/decoder using Python dataclass schemas"
     desc_zh: "Proto3 编解码器（Python dataclass schema）"
   validate:
     benchmark: pydantic
+    replaces: "pydantic (validation), cattrs, typeguard, marshmallow"
+    replaces_zh: "pydantic（验证子集）、cattrs、typeguard、marshmallow"
     desc_en: "Runtime TypedDict/dataclass validator with JSON Schema generation"
     desc_zh: "TypedDict/dataclass 运行时验证器 + JSON Schema 生成"
   jsonschema:
     benchmark: allof-merge
+    replaces: "jsonschema (LLM-specific), allof-merge"
+    replaces_zh: "jsonschema（LLM 场景）、allof-merge"
     desc_en: "JSON Schema flattening & sanitization (`$ref`, `allOf`, `anyOf`)"
     desc_zh: "JSON Schema 展平与清理（`$ref`、`allOf`、`anyOf`）"
   semver:
     benchmark: packaging
+    replaces: "packaging (Version), semver"
+    replaces_zh: "packaging（Version 部分）、semver"
     desc_en: "PEP 440 version parser and comparator"
     desc_zh: "PEP 440 版本解析与比较器"
   markdown:
     benchmark: mistune
+    replaces: "mistune, markdown, markdown-it-py"
+    replaces_zh: "mistune、markdown、markdown-it-py"
     desc_en: "Markdown to HTML renderer (CommonMark subset + GFM tables)"
     desc_zh: "Markdown → HTML 渲染器（CommonMark 子集 + GFM 表格）"
   soup:
     benchmark: beautifulsoup4
+    replaces: "beautifulsoup4 (common subset)"
+    replaces_zh: "beautifulsoup4（常用子集）"
     desc_en: "HTML parser with BeautifulSoup-like API (find, select, CSS selectors)"
     desc_zh: "类 BeautifulSoup API 的 HTML 解析器（find、select、CSS 选择器）"
   readability:
     benchmark: readability-lxml
+    replaces: "readability-lxml, newspaper3k, trafilatura"
+    replaces_zh: "readability-lxml、newspaper3k、trafilatura"
     desc_en: "Article content extractor ported from Mozilla Readability.js"
     desc_zh: "文章正文提取器（移植自 Mozilla Readability.js）"
   diff:
     benchmark: unidiff
+    replaces: "unidiff, patch"
+    replaces_zh: "unidiff、patch"
     desc_en: "Unified diff parser, patch apply/reverse, three-way merge"
     desc_zh: "Unified diff 解析、补丁应用/反转、三方合并"
   sparse_search:
     benchmark: rank-bm25
+    replaces: "rank-bm25, bm25s, whoosh"
+    replaces_zh: "rank-bm25、bm25s、whoosh"
     desc_en: "BM25/BM25+/BM25L/BM25F + TF-IDF full-text search with Bayesian calibration, RRF fusion, MMR diversity"
     desc_zh: "BM25/BM25+/BM25L/BM25F + TF-IDF 全文搜索（贝叶斯校准、RRF 融合、MMR 多样性）"
   dotenv:
     benchmark: python-dotenv
+    replaces: "python-dotenv"
+    replaces_zh: "python-dotenv"
     desc_en: ".env file parser (load_dotenv, dotenv_values)"
     desc_zh: ".env 文件解析（load_dotenv, dotenv_values）"
   config:
     benchmark: python-decouple
+    replaces: "python-decouple, dynaconf, environs, pydantic-settings"
+    replaces_zh: "python-decouple、dynaconf、environs、pydantic-settings"
     desc_en: "Unified config loader (env vars, .env, JSON/YAML/TOML/INI)"
     desc_zh: "统一配置加载器（环境变量、.env、JSON/YAML/TOML/INI）"
   ansi:
+    replaces: "colorama, termcolor"
+    replaces_zh: "colorama、termcolor"
     desc_en: "ANSI terminal styling: colors, attributes, detection, strip/visible_len"
     desc_zh: "ANSI 终端样式：颜色、属性、检测、strip/visible_len"
   tabulate:
     benchmark: tabulate
+    replaces: "tabulate, prettytable"
+    replaces_zh: "tabulate、prettytable"
     desc_en: "Table formatting with multiple output styles"
     desc_zh: "多种输出样式的表格格式化"
   prompt:
     benchmark: questionary
+    replaces: "inquirer, questionary"
+    replaces_zh: "inquirer、questionary"
     desc_en: "Interactive CLI prompts (confirm, select, text)"
     desc_zh: "交互式 CLI 提示（confirm、select、text）"
   aes:
     benchmark: pycryptodome
+    replaces: "pycryptodome (AES), cryptography (AES)"
+    replaces_zh: "pycryptodome（AES 部分）、cryptography（AES 部分）"
     desc_en: "AES encryption: ECB, CBC, CTR, GCM modes (pure Python + OpenSSL via ctypes)"
     desc_zh: "AES 加密：ECB、CBC、CTR、GCM 模式（纯 Python + OpenSSL ctypes）"
   qr:
     benchmark: qrcode
+    replaces: "qrcode, segno"
+    replaces_zh: "qrcode、segno"
     desc_en: "QR Code generation with terminal rendering"
     desc_zh: "QR Code 生成与终端渲染"
   cache:
     benchmark: cachetools
+    replaces: "cachetools, diskcache (in-memory)"
+    replaces_zh: "cachetools、diskcache（内存部分）"
     desc_en: "In-memory cache with TTL, LRU/LFU eviction, and async support"
     desc_zh: "内存缓存（TTL、LRU/LFU 淘汰、异步支持）"
   retry:
     benchmark: tenacity
+    replaces: "tenacity, retrying, backoff"
+    replaces_zh: "tenacity、retrying、backoff"
     desc_en: "Decorator-based retry with configurable backoff strategies"
     desc_zh: "装饰器式自动重试（退避、抖动、过滤）"
   scheduler:
     benchmark: APScheduler
+    replaces: "APScheduler, schedule, croniter"
+    replaces_zh: "APScheduler、schedule、croniter"
     desc_en: "In-process task scheduler with cron, interval, one-shot triggers"
     desc_zh: "进程内任务调度器（cron、间隔、一次性触发）"
   runner:
+    replaces: "sh, plumbum (partial)"
+    replaces_zh: "sh、plumbum（部分）"
     desc_en: "Structured subprocess execution with timeout escalation"
     desc_zh: "结构化子进程执行（超时升级）"
   filelock:
+    replaces: "filelock"
+    replaces_zh: "filelock"
     desc_en: "Cross-platform advisory file lock (fcntl/msvcrt)"
     desc_zh: "跨平台咨询式文件锁（fcntl/msvcrt）"
   structlog:
     benchmark: structlog
+    replaces: "structlog, python-json-logger, loguru"
+    replaces_zh: "structlog、python-json-logger、loguru"
     desc_en: "Structured logging with pretty console output"
     desc_zh: "结构化日志与彩色控制台输出"
   vcs:
+    replaces: "GitPython, pygit2 (high-level)"
+    replaces_zh: "GitPython、pygit2（高层接口）"
     desc_en: "Git/Hg/Jujutsu CLI wrapper (diff, status, log, blame)"
     desc_zh: "Git/Hg/Jujutsu CLI 包装器（diff、status、log、blame）"
   persistdict:
+    replaces: "sqlitedict, diskcache (dict)"
+    replaces_zh: "sqlitedict、diskcache（字典接口）"
     desc_en: "Persistent dict with pluggable backends (JSON, SQLite)"
     desc_zh: "持久化字典（JSON / SQLite 后端）"
   depdetect:
+    replaces: "pipreqs (partial)"
+    replaces_zh: "pipreqs（部分）"
     desc_en: "Dependency detection and verification"
     desc_zh: "依赖检测与验证"
   useragent:
     benchmark: ua-generator
+    replaces: "fake-useragent, ua-generator, user-agents"
+    replaces_zh: "fake-useragent、ua-generator、user-agents"
     desc_en: "Lightweight Chrome/Edge User-Agent generator with Client Hints"
     desc_zh: "轻量级 Chrome/Edge User-Agent 生成器（含 Client Hints）"
   synctex:
@@ -228,13 +302,19 @@ modules:
     desc_zh: "SyncTeX 反向搜索解析器（PDF 位置 → 源代码位置）"
   httpserver:
     benchmark: flask / microdot / bottle
+    replaces: "flask (lightweight), microdot, bottle, starlette (basic), aiohttp (server)"
+    replaces_zh: "flask（轻量场景）、microdot、bottle、starlette（基础场景）、aiohttp（服务端部分）"
     desc_en: "Async HTTP server with decorator-based routing, streaming, and static files"
     desc_zh: "异步 HTTP 服务器（装饰器路由、流式响应、静态文件）"
   websocket:
     benchmark: websockets
+    replaces: "websocket-client, websockets"
+    replaces_zh: "websocket-client、websockets"
     desc_en: "RFC 6455 WebSocket client with sync + async support"
     desc_zh: "RFC 6455 WebSocket 客户端（同步 + 异步）"
   cdp:
     benchmark: websockets
+    replaces: "pychrome, pycdp"
+    replaces_zh: "pychrome、pycdp"
     desc_en: "Chrome DevTools Protocol client for headless browser automation"
     desc_zh: "Chrome DevTools Protocol 客户端（无头浏览器自动化）"

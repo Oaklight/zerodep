@@ -2,6 +2,8 @@
 
 Markdown 转 HTML 渲染器 —— 零依赖，仅使用标准库，支持 Python 3.10+。
 
+> **可替代:** `mistune`、`markdown`、`markdown-it-py`
+
 ## 概述
 
 Markdown 模块提供了 `mistune.html()` 的直接替代品，可将常见 Markdown 渲染为 HTML。支持 CommonMark 子集和 GFM 扩展（表格、删除线、任务列表、扩展自动链接）—— 无需任何第三方依赖。

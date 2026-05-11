@@ -2,6 +2,8 @@
 
 零依赖的 JSON Schema 展平与清理模块 —— 仅使用标准库，支持 Python 3.10+。
 
+> **可替代:** `jsonschema`（LLM 场景）、`allof-merge`
+
 ## 概述
 
 `jsonschema` 模块将包含 `$ref`、`allOf`、`anyOf`、`oneOf` 的复杂 JSON Schema 展平为简单的、LLM provider 兼容的 schema。专为 Anthropic、OpenAI 和 Google GenAI API 的工具 schema 设计。

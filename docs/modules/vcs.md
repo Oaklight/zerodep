@@ -2,6 +2,8 @@
 
 Git/Mercurial/Jujutsu CLI 封装 —— 零依赖，仅使用标准库，支持 Python 3.10+。
 
+> **可替代:** `GitPython`、`pygit2`（高层接口）
+
 ## 概述
 
 VCS 模块通过调用 CLI 二进制文件，提供版本控制系统的统一 Python 接口。每个后端都实现了 `VCSBackend` 协议，支持编写与 VCS 无关的工具代码。跨平台二进制发现机制兼容 Linux、macOS 和 Windows。

@@ -2,6 +2,8 @@
 
 QR Code 生成与终端、SVG、PNG 渲染 -- 零依赖（PNG 需要 sibling `png` 模块），仅标准库，Python 3.10+。
 
+> **可替代:** `qrcode`、`segno`
+
 ## 概述
 
 QR 模块提供完整的 QR Code 编码器，符合 **QR Code Model 2** 规范（ISO/IEC 18004）。支持所有版本（尺寸）从 1 到 40，全部 4 种纠错等级，以及 4 种字符编码模式。模块包含终端输出（Unicode 半块字符）、SVG 导出（字符串模板）和 PNG 导出（通过 sibling `png` 模块）的渲染函数。

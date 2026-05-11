@@ -2,6 +2,8 @@
 
 零依赖 proto3 编解码器，使用 Python dataclass 定义消息 schema——仅标准库，Python 3.10+。
 
+> **可替代:** `protobuf`（google）、`betterproto`
+
 ## 概述
 
 `protobuf` 模块使用 Python dataclass 作为消息 schema，对 Protocol Buffers（proto3）线格式进行编码和解码。无需 `protoc` 编译器、`.proto` 文件或 C 扩展。

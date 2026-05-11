@@ -2,6 +2,8 @@
 
 零依赖的 TOON（Token-Oriented Object Notation，面向 Token 的对象表示法）编码器和解码器。TOON 是一种紧凑、人类可读的序列化格式，专为 LLM 上下文设计，相比 JSON 可减少 30-60% 的 Token 使用量。
 
+> **可替代:** `toon-format`
+
 ## 特性
 
 - **紧凑编码**：比 JSON 减少 30-60% 的 Token

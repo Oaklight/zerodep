@@ -2,6 +2,8 @@
 
 零依赖的同步与异步 HTTP/1.1 REST 客户端，完全基于 Python 标准库构建。
 
+> **可替代:** `requests`、`httpx`、`urllib3`、`aiohttp`（客户端部分）
+
 ## 概述
 
 `httpclient.py` 是一个单文件 HTTP 客户端，支持同步和异步两种工作模式。要求 **Python 3.10+**，**无需任何 pip 依赖**。API 设计沿袭 `requests` / `httpx` 风格——如果你用过其中任何一个，就已经知道怎么使用本模块。

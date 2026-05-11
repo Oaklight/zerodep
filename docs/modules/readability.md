@@ -2,6 +2,8 @@
 
 零依赖的网页正文提取模块，移植自 Mozilla Readability.js —— 仅使用标准库，支持 Python 3.10+。
 
+> **可替代:** `readability-lxml`、`newspaper3k`、`trafilatura`
+
 ## 概述
 
 `readability` 模块从网页中提取主要文章内容，移除导航栏、广告、侧边栏等无关元素。其核心算法移植自 [Mozilla Readability.js](https://github.com/mozilla/readability)，基于 zerodep 的 [`soup`](soup.md) 模块进行 HTML 解析和操作。

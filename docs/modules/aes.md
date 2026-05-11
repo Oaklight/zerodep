@@ -2,6 +2,8 @@
 
 AES 加密，支持 ECB、CBC、CTR 和 GCM 模式，适用于 128/192/256 位密钥——零依赖，仅标准库，Python 3.10+。
 
+> **可替代:** `pycryptodome`（AES 部分）、`cryptography`（AES 部分）
+
 ## 概述
 
 AES 模块提供多种模式和密钥长度的 AES 加解密功能。提供两个可互换的实现：

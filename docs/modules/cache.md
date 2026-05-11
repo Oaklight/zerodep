@@ -2,6 +2,8 @@
 
 零依赖的内存缓存模块，支持 TTL 过期、多种淘汰策略，兼容同步与异步装饰器。
 
+> **可替代:** `cachetools`、`diskcache`（内存部分）
+
 ## 概述
 
 `cache.py` 是一个单文件缓存模块，提供四种淘汰策略（LRU、FIFO、LFU、TTL）的 `MutableMapping` 缓存类和自动检测同步/异步的 `cached()` 装饰器。要求 **Python 3.10+**，**无需任何 pip 依赖**。

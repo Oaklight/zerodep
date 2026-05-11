@@ -2,6 +2,8 @@
 
 零依赖的全文搜索引擎，支持 BM25 系列和 TF-IDF 排名。仅依赖标准库，要求 Python 3.10+。
 
+> **可替代:** `rank-bm25`、`bm25s`、`whoosh`
+
 ## 概述
 
 `sparse_search` 模块提供单文件倒排索引搜索引擎，支持 BM25/BM25+/BM25L/BM25F 和 TF-IDF+Cosine 相似度排名。专为 LLM/Agent/RAG 管道设计，无需引入重量级依赖即可实现快速关键词检索。

@@ -2,6 +2,8 @@
 
 零依赖的 Chrome DevTools Protocol 客户端，用于无头浏览器自动化 -- 同步 + 异步，仅标准库，Python 3.10+。
 
+> **可替代:** `pychrome`、`pycdp`
+
 ## 概览
 
 cdp 模块提供同步和异步 CDP 客户端，通过 WebSocket 与 Chrome/Chromium 内核浏览器通信。支持标签页管理、页面导航、JavaScript 执行和高级渲染内容提取。基于兄弟模块 `websocket` 构建。

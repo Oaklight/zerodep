@@ -2,6 +2,8 @@
 
 零依赖的 PNG 和 BMP 图像编解码器，附带矩阵压缩 API——仅使用标准库，Python 3.10+。
 
+> **可替代:** `pypng`、`Pillow`（PNG/BMP 子集）
+
 ## 概述
 
 `png` 模块仅使用 Python 标准库（`zlib`、`struct`）对 PNG 和 BMP 图像进行编码和解码。提供共享的 `Image` 数据类用于格式转换，以及 `matrix_to_png` / `png_to_matrix` API，利用 PNG 行滤波器实现高效的二维数值数据压缩。

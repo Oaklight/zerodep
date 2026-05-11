@@ -2,6 +2,8 @@
 
 Frontmatter 解析器与序列化器（YAML、TOML、JSON）-- 零依赖，仅标准库，Python 3.10+。
 
+> **可替代:** `python-frontmatter`
+
 ## 概述
 
 Frontmatter 模块用于解析和序列化文件头部元数据（frontmatter），支持 YAML、TOML 和 JSON 格式。YAML `---` frontmatter 是 Jekyll、Hugo、Astro、MkDocs、Obsidian 等众多工具使用的事实标准。本模块提供了 [`python-frontmatter`](https://pypi.org/project/python-frontmatter/) 的零依赖替代方案。

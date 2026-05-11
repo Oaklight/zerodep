@@ -2,6 +2,8 @@
 
 PEP 440 版本解析与比较器 -- 零依赖，仅标准库，Python 3.10+。
 
+> **可替代:** `packaging`（Version 部分）、`semver`
+
 ## 概述
 
 `semver.py` 是一个单文件版本解析模块，实现完整的 PEP 440 版本解析、规范化和比较功能。可作为 `packaging.version` 核心功能的 drop-in 替代。**无需任何 pip 依赖**。

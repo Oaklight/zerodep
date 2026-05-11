@@ -2,6 +2,8 @@
 
 结构化日志与彩色控制台输出 -- 零依赖，仅标准库，Python 3.10+。
 
+> **可替代:** `structlog`、`python-json-logger`、`loguru`
+
 ## 概述
 
 Structlog 模块提供了 `structlog` 核心功能的直接替代方案。它支持绑定日志器（Bound Logger）的上下文传播、处理器管线（Processor Pipeline）、以及多种输出渲染器（控制台、JSON、键值对）——全部无需任何第三方依赖。

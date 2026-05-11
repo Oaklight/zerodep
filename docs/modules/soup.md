@@ -2,6 +2,8 @@
 
 零依赖的 HTML 解析器，提供类 BeautifulSoup 的 API —— 仅使用标准库，支持 Python 3.10+。
 
+> **可替代:** `beautifulsoup4`（常用子集）
+
 ## 概述
 
 Soup 模块基于 `html.parser.HTMLParser` 构建轻量级 DOM 树。支持 `find`、`find_all`、`select`、`select_one`、`get_text`、`decompose` 和 `find_parent` —— 涵盖了绝大多数实际网页抓取脚本所使用的 BeautifulSoup 子集。

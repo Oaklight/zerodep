@@ -2,6 +2,8 @@
 
 零依赖的 Chrome/Edge User-Agent 字符串生成器，附带 Client Hints 头部，仅标准库，Python 3.10+。
 
+> **可替代:** `fake-useragent`、`ua-generator`、`user-agents`
+
 ## 概述
 
 useragent 模块生成逼真的浏览器 User-Agent 字符串和对应的 `Sec-CH-UA-*` Client Hints 头部，覆盖 Chrome 和 Edge 浏览器在 Windows、macOS、Linux 和 Android 平台上的组合。

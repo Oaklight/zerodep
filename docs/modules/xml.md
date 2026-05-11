@@ -2,6 +2,8 @@
 
 XML 与 dict 双向转换器，支持容错 LLM 标签提取 -- 零依赖，仅标准库，Python 3.10+。
 
+> **可替代:** `xmltodict`
+
 ## 概述
 
 XML 模块提供了一个与 xmltodict 兼容的双向 XML ↔ dict 转换器，以及一个专为 LLM 输出解析设计的容错标签提取器。它可以在绝大多数场景下直接替换 [`xmltodict`](https://pypi.org/project/xmltodict/) -- 包括解析 sitemap、RSS/Atom 订阅源、企业 API 响应和 LLM 结构化输出。

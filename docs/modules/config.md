@@ -2,6 +2,8 @@
 
 统一配置加载器 -- 零依赖，仅标准库，Python 3.10+。
 
+> **可替代:** `python-decouple`、`dynaconf`、`environs`、`pydantic-settings`
+
 ## 概述
 
 Config 模块提供了 `python-decouple` 和 `dynaconf`（子集）核心功能的直接替代方案。它从多种来源加载配置——环境变量、`.env` 文件和配置文件（JSON、JSONC、YAML、TOML、INI）——支持类型转换、前缀命名空间和嵌套键访问，遵循 [12-factor app](https://12factor.net/config) 模式。

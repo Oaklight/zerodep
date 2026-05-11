@@ -2,6 +2,8 @@
 
 零依赖的 TypedDict/dataclass 运行时验证器，支持 Annotated 约束注解和 JSON Schema 生成。仅使用标准库，Python 3.10+。
 
+> **可替代:** `pydantic`（验证子集）、`cattrs`、`typeguard`、`marshmallow`
+
 ## 概述
 
 `validate.py` 是一个单文件验证模块，可对任意数据进行 TypedDict/dataclass 类型注解的运行时验证，并从同一类型定义生成 JSON Schema。**无需任何 pip 依赖**。

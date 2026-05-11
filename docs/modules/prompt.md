@@ -2,6 +2,8 @@
 
 零依赖的交互式 CLI 提示（confirm、select、text）—— 仅使用标准库，支持 Python 3.10+。
 
+> **可替代:** `inquirer`、`questionary`
+
 ## 概述
 
 Prompt 模块提供类似 *questionary* 的交互式命令行提示，仅使用 Python 标准库。支持 Linux 和 macOS（通过 `termios`/`tty`）以及 Windows（通过 `msvcrt`），在无 TTY 环境下自动回退到纯 `input()` 模式。

@@ -2,6 +2,8 @@
 
 零依赖的异步 HTTP 服务器，Flask 风格的装饰器路由、流式响应（SSE）、静态文件服务和优雅关闭 -- 仅标准库，Python 3.10+。
 
+> **可替代:** `flask`（轻量场景）、`microdot`、`bottle`、`starlette`（基础场景）、`aiohttp`（服务端部分）
+
 ## 概览
 
 httpserver 模块基于 `asyncio.start_server()` 构建轻量级异步 HTTP/1.1 服务器。作为 Flask/microdot 的无依赖替代方案，适用于不想引入第三方依赖的 HTTP 服务场景。

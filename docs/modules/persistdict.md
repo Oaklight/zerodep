@@ -2,6 +2,8 @@
 
 持久化字典，支持可插拔后端——零依赖，仅标准库，Python 3.10+。
 
+> **可替代:** `sqlitedict`、`diskcache`（字典接口）
+
 ## 概述
 
 `persistdict` 模块提供一个将键值对持久化到磁盘的 `MutableMapping`。支持多种存储后端、可插拔序列化器，默认线程安全。

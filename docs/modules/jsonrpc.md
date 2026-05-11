@@ -2,6 +2,8 @@
 
 JSON-RPC 2.0 协议实现 -- 零依赖，仅标准库，Python 3.10+。
 
+> **可替代:** `jsonrpclib`、`jsonrpcserver`、`python-jsonrpc`
+
 ## 概述
 
 JSON-RPC 模块提供完整的 [JSON-RPC 2.0](https://www.jsonrpc.org/specification) 实现，包括核心数据类型、异常层次结构、支持流式的方法分发器，以及基于换行分隔 JSON 流的异步传输层。它是 [A2A](a2a.md) 和 [ACP](acp.md) 智能体协议模块的共享协议基础。

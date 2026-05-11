@@ -28,7 +28,7 @@ title: 模块概览
 | [httpserver](httpserver.md) | 0.1.0 | 2026-05-02 |
 | [jsonc](jsonc.md) | 0.3.0 | 2026-04-27 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
-| [jsonschema](jsonschema.md) | 0.1.0 | 2026-04-27 |
+| [jsonschema](jsonschema.md) | 0.2.0 | 2026-04-27 |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
 | [persistdict](persistdict.md) | 0.4.1 | 2026-04-27 |
@@ -60,106 +60,106 @@ title: 模块概览
 
 ### 网络与通信
 
-| 模块 | 描述 | 性能对标 |
-|--------|-------------|-------------------|
-| [httpclient](httpclient.md) | 同步 + 异步 REST 客户端（连接池、代理、认证） | `httpx` |
-| [sse](sse.md) | Server-Sent Events 客户端（自动重连） | `httpx-sse` |
-| [httpserver](httpserver.md) | 异步 HTTP 服务器（装饰器路由、流式响应、静态文件） | `flask / microdot / bottle` |
-| [useragent](useragent.md) | 轻量级 Chrome/Edge User-Agent 生成器（含 Client Hints） | `ua-generator` |
-| [websocket](websocket.md) | RFC 6455 WebSocket 客户端（同步 + 异步） | `websockets` |
+| 模块 | 描述 | 可替代 | 性能对标 |
+|--------|-------------|----------|-------------------|
+| [httpclient](httpclient.md) | 同步 + 异步 REST 客户端（连接池、代理、认证） | requests、httpx、urllib3、aiohttp（客户端部分） | `httpx` |
+| [sse](sse.md) | Server-Sent Events 客户端（自动重连） | sseclient-py、aiohttp-sse-client、httpx-sse | `httpx-sse` |
+| [httpserver](httpserver.md) | 异步 HTTP 服务器（装饰器路由、流式响应、静态文件） | flask（轻量场景）、microdot、bottle、starlette（基础场景）、aiohttp（服务端部分） | `flask / microdot / bottle` |
+| [useragent](useragent.md) | 轻量级 Chrome/Edge User-Agent 生成器（含 Client Hints） | fake-useragent、ua-generator、user-agents | `ua-generator` |
+| [websocket](websocket.md) | RFC 6455 WebSocket 客户端（同步 + 异步） | websocket-client、websockets | `websockets` |
 
 ### 智能体协议
 
-| 模块 | 描述 | 性能对标 |
-|--------|-------------|-------------------|
-| [jsonrpc](jsonrpc.md) | JSON-RPC 2.0 协议：数据类型、分发器、异步传输 | `jsonrpcserver` |
-| [a2a](a2a.md) | Google A2A 协议：JSON-RPC 2.0、SSE 流式传输、任务管理 | `a2a-python` |
-| [acp](acp.md) | Anthropic ACP 协议：JSON-RPC 2.0 over stdio、异步客户端/代理 | `acp-python` |
-| [skills](skills.md) | Agent Skills 运行时：解析、发现、管理、选择技能 | -- |
-| [llmstxt](llmstxt.md) | llms.txt 解析器与 Markdown URL 候选发现 | -- |
-| [cdp](cdp.md) | Chrome DevTools Protocol 客户端（无头浏览器自动化） | `websockets` |
+| 模块 | 描述 | 可替代 | 性能对标 |
+|--------|-------------|----------|-------------------|
+| [jsonrpc](jsonrpc.md) | JSON-RPC 2.0 协议：数据类型、分发器、异步传输 | jsonrpclib、jsonrpcserver、python-jsonrpc | `jsonrpcserver` |
+| [a2a](a2a.md) | Google A2A 协议：JSON-RPC 2.0、SSE 流式传输、任务管理 | a2a-sdk、a2a-python | `a2a-python` |
+| [acp](acp.md) | Anthropic ACP 协议：JSON-RPC 2.0 over stdio、异步客户端/代理 | acp-python | `acp-python` |
+| [skills](skills.md) | Agent Skills 运行时：解析、发现、管理、选择技能 | -- | -- |
+| [llmstxt](llmstxt.md) | llms.txt 解析器与 Markdown URL 候选发现 | -- | -- |
+| [cdp](cdp.md) | Chrome DevTools Protocol 客户端（无头浏览器自动化） | pychrome、pycdp | `websockets` |
 
 ### 序列化
 
-| 模块 | 描述 | 性能对标 |
-|--------|-------------|-------------------|
-| [xml](xml.md) | XML ↔ 字典转换器（容错解析、LLM 标签提取） | `xmltodict` |
-| [yaml](yaml.md) | YAML 解析与序列化（常用子集） | `PyYAML` |
-| [jsonc](jsonc.md) | JSONC 解析（JSON + 注释 + 尾逗号） | `commentjson` |
-| [toon](toon.md) | TOON（面向 Token 的对象表示法）编码器/解码器 | `toon_format` |
-| [frontmatter](frontmatter.md) | Frontmatter 解析与序列化（YAML/TOML/JSON） | `python-frontmatter` |
-| [protobuf](protobuf.md) | Proto3 编解码器（Python dataclass schema） | `protobuf` |
+| 模块 | 描述 | 可替代 | 性能对标 |
+|--------|-------------|----------|-------------------|
+| [xml](xml.md) | XML ↔ 字典转换器（容错解析、LLM 标签提取） | xmltodict | `xmltodict` |
+| [yaml](yaml.md) | YAML 解析与序列化（常用子集） | PyYAML、ruamel.yaml（常用子集） | `PyYAML` |
+| [jsonc](jsonc.md) | JSONC 解析（JSON + 注释 + 尾逗号） | commentjson、json5（部分） | `commentjson` |
+| [toon](toon.md) | TOON（面向 Token 的对象表示法）编码器/解码器 | toon-format | `toon_format` |
+| [frontmatter](frontmatter.md) | Frontmatter 解析与序列化（YAML/TOML/JSON） | python-frontmatter | `python-frontmatter` |
+| [protobuf](protobuf.md) | Proto3 编解码器（Python dataclass schema） | protobuf（google）、betterproto | `protobuf` |
 
 ### 数据验证
 
-| 模块 | 描述 | 性能对标 |
-|--------|-------------|-------------------|
-| [validate](validate.md) | TypedDict/dataclass 运行时验证器 + JSON Schema 生成 | `pydantic` |
-| [jsonschema](jsonschema.md) | JSON Schema 展平与清理（`$ref`、`allOf`、`anyOf`） | `allof-merge` |
-| [semver](semver.md) | PEP 440 版本解析与比较器 | `packaging` |
+| 模块 | 描述 | 可替代 | 性能对标 |
+|--------|-------------|----------|-------------------|
+| [validate](validate.md) | TypedDict/dataclass 运行时验证器 + JSON Schema 生成 | pydantic（验证子集）、cattrs、typeguard、marshmallow | `pydantic` |
+| [jsonschema](jsonschema.md) | JSON Schema 展平与清理（`$ref`、`allOf`、`anyOf`） | jsonschema（LLM 场景）、allof-merge | `allof-merge` |
+| [semver](semver.md) | PEP 440 版本解析与比较器 | packaging（Version 部分）、semver | `packaging` |
 
 ### 文本与搜索
 
-| 模块 | 描述 | 性能对标 |
-|--------|-------------|-------------------|
-| [markdown](markdown.md) | Markdown → HTML 渲染器（CommonMark 子集 + GFM 表格） | `mistune` |
-| [soup](soup.md) | 类 BeautifulSoup API 的 HTML 解析器（find、select、CSS 选择器） | `beautifulsoup4` |
-| [readability](readability.md) | 文章正文提取器（移植自 Mozilla Readability.js） | `readability-lxml` |
-| [diff](diff.md) | Unified diff 解析、补丁应用/反转、三方合并 | `unidiff` |
-| [sparse_search](sparse_search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF 全文搜索（贝叶斯校准、RRF 融合、MMR 多样性） | `rank-bm25` |
-| [synctex](synctex.md) | SyncTeX 反向搜索解析器（PDF 位置 → 源代码位置） | -- |
+| 模块 | 描述 | 可替代 | 性能对标 |
+|--------|-------------|----------|-------------------|
+| [markdown](markdown.md) | Markdown → HTML 渲染器（CommonMark 子集 + GFM 表格） | mistune、markdown、markdown-it-py | `mistune` |
+| [soup](soup.md) | 类 BeautifulSoup API 的 HTML 解析器（find、select、CSS 选择器） | beautifulsoup4（常用子集） | `beautifulsoup4` |
+| [readability](readability.md) | 文章正文提取器（移植自 Mozilla Readability.js） | readability-lxml、newspaper3k、trafilatura | `readability-lxml` |
+| [diff](diff.md) | Unified diff 解析、补丁应用/反转、三方合并 | unidiff、patch | `unidiff` |
+| [sparse_search](sparse_search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF 全文搜索（贝叶斯校准、RRF 融合、MMR 多样性） | rank-bm25、bm25s、whoosh | `rank-bm25` |
+| [synctex](synctex.md) | SyncTeX 反向搜索解析器（PDF 位置 → 源代码位置） | -- | -- |
 
 ### 配置
 
-| 模块 | 描述 | 性能对标 |
-|--------|-------------|-------------------|
-| [dotenv](dotenv.md) | .env 文件解析（load_dotenv, dotenv_values） | `python-dotenv` |
-| [config](config.md) | 统一配置加载器（环境变量、.env、JSON/YAML/TOML/INI） | `python-decouple` |
+| 模块 | 描述 | 可替代 | 性能对标 |
+|--------|-------------|----------|-------------------|
+| [dotenv](dotenv.md) | .env 文件解析（load_dotenv, dotenv_values） | python-dotenv | `python-dotenv` |
+| [config](config.md) | 统一配置加载器（环境变量、.env、JSON/YAML/TOML/INI） | python-decouple、dynaconf、environs、pydantic-settings | `python-decouple` |
 
 ### 命令行与终端
 
-| 模块 | 描述 | 性能对标 |
-|--------|-------------|-------------------|
-| [ansi](ansi.md) | ANSI 终端样式：颜色、属性、检测、strip/visible_len | -- |
-| [tabulate](tabulate.md) | 多种输出样式的表格格式化 | `tabulate` |
-| [prompt](prompt.md) | 交互式 CLI 提示（confirm、select、text） | `questionary` |
+| 模块 | 描述 | 可替代 | 性能对标 |
+|--------|-------------|----------|-------------------|
+| [ansi](ansi.md) | ANSI 终端样式：颜色、属性、检测、strip/visible_len | colorama、termcolor | -- |
+| [tabulate](tabulate.md) | 多种输出样式的表格格式化 | tabulate、prettytable | `tabulate` |
+| [prompt](prompt.md) | 交互式 CLI 提示（confirm、select、text） | inquirer、questionary | `questionary` |
 
 ### 安全
 
-| 模块 | 描述 | 性能对标 |
-|--------|-------------|-------------------|
-| [aes](aes.md) | AES 加密：ECB、CBC、CTR、GCM 模式（纯 Python + OpenSSL ctypes） | `pycryptodome` |
+| 模块 | 描述 | 可替代 | 性能对标 |
+|--------|-------------|----------|-------------------|
+| [aes](aes.md) | AES 加密：ECB、CBC、CTR、GCM 模式（纯 Python + OpenSSL ctypes） | pycryptodome（AES 部分）、cryptography（AES 部分） | `pycryptodome` |
 
 ### 图像
 
-| 模块 | 描述 | 性能对标 |
-|--------|-------------|-------------------|
-| [png](png.md) | PNG/BMP 图像编解码器（矩阵压缩 API） | `Pillow` |
-| [qr](qr.md) | QR Code 生成与终端渲染 | `qrcode` |
+| 模块 | 描述 | 可替代 | 性能对标 |
+|--------|-------------|----------|-------------------|
+| [png](png.md) | PNG/BMP 图像编解码器（矩阵压缩 API） | pypng、Pillow（PNG/BMP 子集） | `Pillow` |
+| [qr](qr.md) | QR Code 生成与终端渲染 | qrcode、segno | `qrcode` |
 
 ### 进程与执行
 
-| 模块 | 描述 | 性能对标 |
-|--------|-------------|-------------------|
-| [retry](retry.md) | 装饰器式自动重试（退避、抖动、过滤） | `tenacity` |
-| [scheduler](scheduler.md) | 进程内任务调度器（cron、间隔、一次性触发） | `APScheduler` |
-| [runner](runner.md) | 结构化子进程执行（超时升级） | -- |
-| [filelock](filelock.md) | 跨平台咨询式文件锁（fcntl/msvcrt） | -- |
+| 模块 | 描述 | 可替代 | 性能对标 |
+|--------|-------------|----------|-------------------|
+| [retry](retry.md) | 装饰器式自动重试（退避、抖动、过滤） | tenacity、retrying、backoff | `tenacity` |
+| [scheduler](scheduler.md) | 进程内任务调度器（cron、间隔、一次性触发） | APScheduler、schedule、croniter | `APScheduler` |
+| [runner](runner.md) | 结构化子进程执行（超时升级） | sh、plumbum（部分） | -- |
+| [filelock](filelock.md) | 跨平台咨询式文件锁（fcntl/msvcrt） | filelock | -- |
 
 ### 存储
 
-| 模块 | 描述 | 性能对标 |
-|--------|-------------|-------------------|
-| [cache](cache.md) | 内存缓存（TTL、LRU/LFU 淘汰、异步支持） | `cachetools` |
-| [persistdict](persistdict.md) | 持久化字典（JSON / SQLite 后端） | -- |
+| 模块 | 描述 | 可替代 | 性能对标 |
+|--------|-------------|----------|-------------------|
+| [cache](cache.md) | 内存缓存（TTL、LRU/LFU 淘汰、异步支持） | cachetools、diskcache（内存部分） | `cachetools` |
+| [persistdict](persistdict.md) | 持久化字典（JSON / SQLite 后端） | sqlitedict、diskcache（字典接口） | -- |
 
 ### 开发工具
 
-| 模块 | 描述 | 性能对标 |
-|--------|-------------|-------------------|
-| [structlog](structlog.md) | 结构化日志与彩色控制台输出 | `structlog` |
-| [vcs](vcs.md) | Git/Hg/Jujutsu CLI 包装器（diff、status、log、blame） | -- |
-| [depdetect](depdetect.md) | 依赖检测与验证 | -- |
+| 模块 | 描述 | 可替代 | 性能对标 |
+|--------|-------------|----------|-------------------|
+| [structlog](structlog.md) | 结构化日志与彩色控制台输出 | structlog、python-json-logger、loguru | `structlog` |
+| [vcs](vcs.md) | Git/Hg/Jujutsu CLI 包装器（diff、status、log、blame） | GitPython、pygit2（高层接口） | -- |
+| [depdetect](depdetect.md) | 依赖检测与验证 | pipreqs（部分） | -- |
 
 ## 模块间依赖关系
 

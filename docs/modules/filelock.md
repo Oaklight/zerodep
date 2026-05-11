@@ -2,6 +2,8 @@
 
 跨平台的咨询式文件锁，仅依赖 Python 标准库。要求 Python 3.10+。
 
+> **可替代:** `filelock`
+
 ## 概述
 
 `filelock` 模块提供单文件、零依赖的咨询式文件锁。在 Unix/macOS 上使用 `fcntl.flock`；在 Windows 上使用 `msvcrt.locking` 配合指数退避轮询实现阻塞语义。

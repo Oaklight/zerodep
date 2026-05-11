@@ -2,6 +2,8 @@
 
 Google A2A（Agent-to-Agent）协议实现 -- 零依赖，仅标准库，Python 3.10+。
 
+> **可替代:** `a2a-sdk`、`a2a-python`
+
 ## 概述
 
 A2A 模块提供了 Google [Agent-to-Agent 协议](https://github.com/a2aproject/A2A)（v1.0）的纯标准库实现，用于智能体之间的通信。涵盖基于 SSE 流的 JSON-RPC 2.0、HTTP 客户端、HTTP 服务端和内存任务存储。可作为 [`a2a-protocol`](https://pypi.org/project/a2a-protocol/) 的替代方案。

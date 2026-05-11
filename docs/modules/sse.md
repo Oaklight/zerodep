@@ -2,6 +2,8 @@
 
 零依赖的 Server-Sent Events (SSE) 客户端，W3C 标准解析、自动重连、同步 + 异步双模式，仅标准库，Python 3.10+。
 
+> **可替代:** `sseclient-py`、`aiohttp-sse-client`、`httpx-sse`
+
 ## 概述
 
 SSE 模块提供完整的 [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) 流消费客户端。采用三层架构设计，你可以只使用解析器，也可以使用完整的自动重连客户端。

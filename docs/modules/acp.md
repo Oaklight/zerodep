@@ -2,6 +2,8 @@
 
 Anthropic ACP（Agent Client Protocol）协议实现 -- 零依赖，仅标准库，Python 3.10+。
 
+> **可替代:** `acp-python`
+
 ## 概述
 
 ACP 模块提供了 Anthropic [Agent Client Protocol](https://github.com/anthropics/acp) 的纯标准库实现，用于代码编辑器（Client）和 AI 编程智能体（Agent）之间的通信。使用基于 stdio 的 JSON-RPC 2.0（换行分隔 JSON），类似于 LSP 标准化语言服务器集成的方式。可作为 [`agent-client-protocol`](https://pypi.org/project/agent-client-protocol/) 的替代方案。

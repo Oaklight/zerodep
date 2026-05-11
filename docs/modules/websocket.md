@@ -2,6 +2,8 @@
 
 零依赖的 RFC 6455 WebSocket 客户端，同步 + 异步支持 -- 仅标准库，Python 3.10+。
 
+> **可替代:** `websocket-client`、`websockets`
+
 ## 概览
 
 websocket 模块提供同步和异步 WebSocket 客户端，支持 `ws://` 和 `wss://` 连接。实现了核心 WebSocket 协议，包括文本帧、ping/pong、关闭握手和客户端侧掩码。作为 `websockets` 库的无依赖替代方案，适用于不需要第三方依赖的 WebSocket 通信场景。

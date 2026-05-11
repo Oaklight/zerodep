@@ -2,6 +2,8 @@
 
 Persistent dictionary with pluggable backends -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `sqlitedict`, `diskcache` (dict)
+
 ## Overview
 
 The `persistdict` module provides a `MutableMapping` that persists key-value pairs to disk. It supports multiple storage backends with pluggable serialization and is thread-safe by default.

@@ -2,6 +2,8 @@
 
 A zero-dependency TOON (Token-Oriented Object Notation) encoder and decoder. TOON is a compact, human-readable serialization format designed for LLM contexts, achieving 30-60% token reduction compared to JSON.
 
+> **Replaces:** `toon-format`
+
 ## Features
 
 - **Compact encoding**: 30-60% fewer tokens than JSON

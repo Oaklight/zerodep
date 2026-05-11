@@ -2,6 +2,8 @@
 
 Zero-dependency in-memory caching with TTL, eviction policies, and sync+async decorator support.
 
+> **Replaces:** `cachetools`, `diskcache` (in-memory)
+
 ## Overview
 
 The Cache module provides `MutableMapping`-based cache classes with four eviction policies (LRU, FIFO, LFU, TTL) and a `cached()` decorator that auto-detects sync/async functions. Requires **Python 3.10+**, **no pip dependencies**.

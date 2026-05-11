@@ -2,6 +2,8 @@
 
 Zero-dependency article content extractor inspired by Mozilla Readability.js -- stdlib only, Python 3.10+.
 
+> **Replaces:** `readability-lxml`, `newspaper3k`, `trafilatura`
+
 ## Overview
 
 The `readability` module extracts the main article content from web pages, removing navigation, ads, sidebars, and other clutter. It ports the core algorithm from [Mozilla Readability.js](https://github.com/mozilla/readability) and builds on the zerodep [`soup`](soup.md) module for HTML parsing and manipulation.

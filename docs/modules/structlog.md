@@ -2,6 +2,8 @@
 
 Zero-dependency structured logging with pretty console output -- stdlib only, Python 3.10+.
 
+> **Replaces:** `structlog`, `python-json-logger`, `loguru`
+
 ## Overview
 
 The Structured Logging module provides a drop-in replacement for `structlog` core functionality. It offers bound loggers with context propagation, a processor pipeline, and multiple output renderers (console, JSON, key-value) -- all without any third-party dependencies.

@@ -2,6 +2,8 @@
 
 Google A2A (Agent-to-Agent) protocol implementation -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `a2a-sdk`, `a2a-python`
+
 ## Overview
 
 The A2A module provides a pure-stdlib implementation of Google's [Agent-to-Agent Protocol](https://github.com/a2aproject/A2A) (v1.0) for agent-to-agent communication. It covers JSON-RPC 2.0 with SSE streaming, an HTTP client, an HTTP server, and an in-memory task store. It can serve as a drop-in alternative to [`a2a-protocol`](https://pypi.org/project/a2a-protocol/).

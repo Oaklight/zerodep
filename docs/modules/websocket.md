@@ -2,6 +2,8 @@
 
 Zero-dependency RFC 6455 WebSocket client with sync + async support -- stdlib only, Python 3.10+.
 
+> **Replaces:** `websocket-client`, `websockets`
+
 ## Overview
 
 The websocket module provides synchronous and asynchronous WebSocket clients for `ws://` and `wss://` connections. It implements the core WebSocket protocol including text frames, ping/pong, close handshake, and client-side masking. Designed as a drop-in alternative to the `websockets` library for projects that need WebSocket communication without third-party dependencies.

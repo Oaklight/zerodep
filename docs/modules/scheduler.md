@@ -2,6 +2,8 @@
 
 Zero-dependency in-process task scheduler with cron expressions, interval scheduling, one-shot tasks, and async support -- stdlib only, Python 3.10+.
 
+> **Replaces:** `APScheduler`, `schedule`, `croniter`
+
 ## Overview
 
 The Scheduler module provides a lightweight, background-thread task scheduler with 5-field cron expression parsing, fixed-interval triggers, one-shot triggers, per-job callbacks, global event listeners, and sync+async job support -- all without any third-party dependencies.

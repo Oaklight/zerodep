@@ -2,6 +2,8 @@
 
 PEP 440 version parser and comparator -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `packaging` (Version), `semver`
+
 ## Overview
 
 The Semver module provides PEP 440 version parsing, normalisation, and comparison using only the Python standard library. It is a drop-in replacement for the core functionality of `packaging.version`.

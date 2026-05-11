@@ -2,6 +2,8 @@
 
 .env file parser and loader -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `python-dotenv`
+
 ## Overview
 
 The Dotenv module provides a drop-in replacement for `python-dotenv` core functionality. It can parse `.env` files, load variables into `os.environ`, and manipulate key-value pairs in `.env` files -- all without any third-party dependencies.

@@ -2,6 +2,8 @@
 
 Frontmatter parser and serializer (YAML, TOML, JSON) -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `python-frontmatter`
+
 ## Overview
 
 The frontmatter module parses and serializes file-header metadata (frontmatter) in YAML, TOML, or JSON format. YAML `---` frontmatter is the de facto standard used by Jekyll, Hugo, Astro, MkDocs, Obsidian, and many other tools. This module provides a drop-in alternative to [`python-frontmatter`](https://pypi.org/project/python-frontmatter/) with zero external dependencies.

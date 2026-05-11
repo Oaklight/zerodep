@@ -2,6 +2,8 @@
 
 Zero-dependency HTML parser with BeautifulSoup-like API -- stdlib only, Python 3.10+.
 
+> **Replaces:** `beautifulsoup4` (common subset)
+
 ## Overview
 
 The Soup module provides a lightweight DOM tree built on top of `html.parser.HTMLParser`. It supports `find`, `find_all`, `select`, `select_one`, `get_text`, `decompose`, and `find_parent` -- the subset of BeautifulSoup used by the vast majority of real-world scraping scripts.

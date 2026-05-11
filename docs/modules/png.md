@@ -2,6 +2,8 @@
 
 Zero-dependency PNG and BMP image codec with matrix compression API -- stdlib only, Python 3.10+.
 
+> **Replaces:** `pypng`, `Pillow` (PNG/BMP subset)
+
 ## Overview
 
 The `png` module encodes and decodes PNG and BMP images using only the Python standard library (`zlib`, `struct`). It provides a shared `Image` dataclass for format conversion and a `matrix_to_png` / `png_to_matrix` API that exploits PNG row filters for efficient 2D numeric data compression.

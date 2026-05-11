@@ -2,6 +2,8 @@
 
 QR Code generation with terminal, SVG, and PNG rendering -- zero dependencies (PNG requires sibling `png` module), stdlib only, Python 3.10+.
 
+> **Replaces:** `qrcode`, `segno`
+
 ## Overview
 
 The QR module provides a complete QR Code encoder conforming to the **QR Code Model 2** specification (ISO/IEC 18004). It supports all versions (sizes) from 1 to 40, all 4 error correction levels, and 4 character encoding modes. The module includes rendering functions for terminal output (Unicode block characters), SVG export (string templating), and PNG export (via sibling `png` module).

@@ -28,7 +28,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [httpserver](httpserver.md) | 0.1.0 | 2026-05-02 |
 | [jsonc](jsonc.md) | 0.3.0 | 2026-04-27 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
-| [jsonschema](jsonschema.md) | 0.1.0 | 2026-04-27 |
+| [jsonschema](jsonschema.md) | 0.2.0 | 2026-04-27 |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
 | [persistdict](persistdict.md) | 0.4.1 | 2026-04-27 |
@@ -60,106 +60,106 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 
 ### Web & Networking
 
-| Module | Description | Benchmark Against |
-|--------|-------------|-------------------|
-| [httpclient](httpclient.md) | Sync + async REST client with connection pooling, proxy, and auth | `httpx` |
-| [sse](sse.md) | Server-Sent Events client with auto-reconnect | `httpx-sse` |
-| [httpserver](httpserver.md) | Async HTTP server with decorator-based routing, streaming, and static files | `flask / microdot / bottle` |
-| [useragent](useragent.md) | Lightweight Chrome/Edge User-Agent generator with Client Hints | `ua-generator` |
-| [websocket](websocket.md) | RFC 6455 WebSocket client with sync + async support | `websockets` |
+| Module | Description | Replaces | Benchmark Against |
+|--------|-------------|----------|-------------------|
+| [httpclient](httpclient.md) | Sync + async REST client with connection pooling, proxy, and auth | requests, httpx, urllib3, aiohttp (client) | `httpx` |
+| [sse](sse.md) | Server-Sent Events client with auto-reconnect | sseclient-py, aiohttp-sse-client, httpx-sse | `httpx-sse` |
+| [httpserver](httpserver.md) | Async HTTP server with decorator-based routing, streaming, and static files | flask (lightweight), microdot, bottle, starlette (basic), aiohttp (server) | `flask / microdot / bottle` |
+| [useragent](useragent.md) | Lightweight Chrome/Edge User-Agent generator with Client Hints | fake-useragent, ua-generator, user-agents | `ua-generator` |
+| [websocket](websocket.md) | RFC 6455 WebSocket client with sync + async support | websocket-client, websockets | `websockets` |
 
 ### Agent Protocols
 
-| Module | Description | Benchmark Against |
-|--------|-------------|-------------------|
-| [jsonrpc](jsonrpc.md) | JSON-RPC 2.0 protocol: data types, dispatcher, async transport | `jsonrpcserver` |
-| [a2a](a2a.md) | Google A2A protocol: JSON-RPC 2.0, SSE streaming, task management | `a2a-python` |
-| [acp](acp.md) | Anthropic ACP protocol: JSON-RPC 2.0 over stdio, async client/agent | `acp-python` |
-| [skills](skills.md) | Agent Skills runtime: parse, discover, manage, select skills | -- |
-| [llmstxt](llmstxt.md) | llms.txt parser and markdown URL candidate finder | -- |
-| [cdp](cdp.md) | Chrome DevTools Protocol client for headless browser automation | `websockets` |
+| Module | Description | Replaces | Benchmark Against |
+|--------|-------------|----------|-------------------|
+| [jsonrpc](jsonrpc.md) | JSON-RPC 2.0 protocol: data types, dispatcher, async transport | jsonrpclib, jsonrpcserver, python-jsonrpc | `jsonrpcserver` |
+| [a2a](a2a.md) | Google A2A protocol: JSON-RPC 2.0, SSE streaming, task management | a2a-sdk, a2a-python | `a2a-python` |
+| [acp](acp.md) | Anthropic ACP protocol: JSON-RPC 2.0 over stdio, async client/agent | acp-python | `acp-python` |
+| [skills](skills.md) | Agent Skills runtime: parse, discover, manage, select skills | -- | -- |
+| [llmstxt](llmstxt.md) | llms.txt parser and markdown URL candidate finder | -- | -- |
+| [cdp](cdp.md) | Chrome DevTools Protocol client for headless browser automation | pychrome, pycdp | `websockets` |
 
 ### Serialization
 
-| Module | Description | Benchmark Against |
-|--------|-------------|-------------------|
-| [xml](xml.md) | XML ↔ dict converter with fault-tolerant parsing and LLM tag extraction | `xmltodict` |
-| [yaml](yaml.md) | YAML parser and serializer (common subset) | `PyYAML` |
-| [jsonc](jsonc.md) | JSONC parser (JSON with comments and trailing commas) | `commentjson` |
-| [toon](toon.md) | TOON (Token-Oriented Object Notation) encoder/decoder | `toon_format` |
-| [frontmatter](frontmatter.md) | Frontmatter parser and serializer (YAML/TOML/JSON) | `python-frontmatter` |
-| [protobuf](protobuf.md) | Proto3 encoder/decoder using Python dataclass schemas | `protobuf` |
+| Module | Description | Replaces | Benchmark Against |
+|--------|-------------|----------|-------------------|
+| [xml](xml.md) | XML ↔ dict converter with fault-tolerant parsing and LLM tag extraction | xmltodict | `xmltodict` |
+| [yaml](yaml.md) | YAML parser and serializer (common subset) | PyYAML, ruamel.yaml (common subset) | `PyYAML` |
+| [jsonc](jsonc.md) | JSONC parser (JSON with comments and trailing commas) | commentjson, json5 (partial) | `commentjson` |
+| [toon](toon.md) | TOON (Token-Oriented Object Notation) encoder/decoder | toon-format | `toon_format` |
+| [frontmatter](frontmatter.md) | Frontmatter parser and serializer (YAML/TOML/JSON) | python-frontmatter | `python-frontmatter` |
+| [protobuf](protobuf.md) | Proto3 encoder/decoder using Python dataclass schemas | protobuf (google), betterproto | `protobuf` |
 
 ### Validation
 
-| Module | Description | Benchmark Against |
-|--------|-------------|-------------------|
-| [validate](validate.md) | Runtime TypedDict/dataclass validator with JSON Schema generation | `pydantic` |
-| [jsonschema](jsonschema.md) | JSON Schema flattening & sanitization (`$ref`, `allOf`, `anyOf`) | `allof-merge` |
-| [semver](semver.md) | PEP 440 version parser and comparator | `packaging` |
+| Module | Description | Replaces | Benchmark Against |
+|--------|-------------|----------|-------------------|
+| [validate](validate.md) | Runtime TypedDict/dataclass validator with JSON Schema generation | pydantic (validation), cattrs, typeguard, marshmallow | `pydantic` |
+| [jsonschema](jsonschema.md) | JSON Schema flattening & sanitization (`$ref`, `allOf`, `anyOf`) | jsonschema (LLM-specific), allof-merge | `allof-merge` |
+| [semver](semver.md) | PEP 440 version parser and comparator | packaging (Version), semver | `packaging` |
 
 ### Text & Search
 
-| Module | Description | Benchmark Against |
-|--------|-------------|-------------------|
-| [markdown](markdown.md) | Markdown to HTML renderer (CommonMark subset + GFM tables) | `mistune` |
-| [soup](soup.md) | HTML parser with BeautifulSoup-like API (find, select, CSS selectors) | `beautifulsoup4` |
-| [readability](readability.md) | Article content extractor ported from Mozilla Readability.js | `readability-lxml` |
-| [diff](diff.md) | Unified diff parser, patch apply/reverse, three-way merge | `unidiff` |
-| [sparse_search](sparse_search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF full-text search with Bayesian calibration, RRF fusion, MMR diversity | `rank-bm25` |
-| [synctex](synctex.md) | SyncTeX inverse-search parser (PDF position → source location) | -- |
+| Module | Description | Replaces | Benchmark Against |
+|--------|-------------|----------|-------------------|
+| [markdown](markdown.md) | Markdown to HTML renderer (CommonMark subset + GFM tables) | mistune, markdown, markdown-it-py | `mistune` |
+| [soup](soup.md) | HTML parser with BeautifulSoup-like API (find, select, CSS selectors) | beautifulsoup4 (common subset) | `beautifulsoup4` |
+| [readability](readability.md) | Article content extractor ported from Mozilla Readability.js | readability-lxml, newspaper3k, trafilatura | `readability-lxml` |
+| [diff](diff.md) | Unified diff parser, patch apply/reverse, three-way merge | unidiff, patch | `unidiff` |
+| [sparse_search](sparse_search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF full-text search with Bayesian calibration, RRF fusion, MMR diversity | rank-bm25, bm25s, whoosh | `rank-bm25` |
+| [synctex](synctex.md) | SyncTeX inverse-search parser (PDF position → source location) | -- | -- |
 
 ### Configuration
 
-| Module | Description | Benchmark Against |
-|--------|-------------|-------------------|
-| [dotenv](dotenv.md) | .env file parser (load_dotenv, dotenv_values) | `python-dotenv` |
-| [config](config.md) | Unified config loader (env vars, .env, JSON/YAML/TOML/INI) | `python-decouple` |
+| Module | Description | Replaces | Benchmark Against |
+|--------|-------------|----------|-------------------|
+| [dotenv](dotenv.md) | .env file parser (load_dotenv, dotenv_values) | python-dotenv | `python-dotenv` |
+| [config](config.md) | Unified config loader (env vars, .env, JSON/YAML/TOML/INI) | python-decouple, dynaconf, environs, pydantic-settings | `python-decouple` |
 
 ### CLI & Terminal
 
-| Module | Description | Benchmark Against |
-|--------|-------------|-------------------|
-| [ansi](ansi.md) | ANSI terminal styling: colors, attributes, detection, strip/visible_len | -- |
-| [tabulate](tabulate.md) | Table formatting with multiple output styles | `tabulate` |
-| [prompt](prompt.md) | Interactive CLI prompts (confirm, select, text) | `questionary` |
+| Module | Description | Replaces | Benchmark Against |
+|--------|-------------|----------|-------------------|
+| [ansi](ansi.md) | ANSI terminal styling: colors, attributes, detection, strip/visible_len | colorama, termcolor | -- |
+| [tabulate](tabulate.md) | Table formatting with multiple output styles | tabulate, prettytable | `tabulate` |
+| [prompt](prompt.md) | Interactive CLI prompts (confirm, select, text) | inquirer, questionary | `questionary` |
 
 ### Security
 
-| Module | Description | Benchmark Against |
-|--------|-------------|-------------------|
-| [aes](aes.md) | AES encryption: ECB, CBC, CTR, GCM modes (pure Python + OpenSSL via ctypes) | `pycryptodome` |
+| Module | Description | Replaces | Benchmark Against |
+|--------|-------------|----------|-------------------|
+| [aes](aes.md) | AES encryption: ECB, CBC, CTR, GCM modes (pure Python + OpenSSL via ctypes) | pycryptodome (AES), cryptography (AES) | `pycryptodome` |
 
 ### Image
 
-| Module | Description | Benchmark Against |
-|--------|-------------|-------------------|
-| [png](png.md) | PNG/BMP image codec with matrix compression API | `Pillow` |
-| [qr](qr.md) | QR Code generation with terminal rendering | `qrcode` |
+| Module | Description | Replaces | Benchmark Against |
+|--------|-------------|----------|-------------------|
+| [png](png.md) | PNG/BMP image codec with matrix compression API | pypng, Pillow (PNG/BMP subset) | `Pillow` |
+| [qr](qr.md) | QR Code generation with terminal rendering | qrcode, segno | `qrcode` |
 
 ### Process & Execution
 
-| Module | Description | Benchmark Against |
-|--------|-------------|-------------------|
-| [retry](retry.md) | Decorator-based retry with configurable backoff strategies | `tenacity` |
-| [scheduler](scheduler.md) | In-process task scheduler with cron, interval, one-shot triggers | `APScheduler` |
-| [runner](runner.md) | Structured subprocess execution with timeout escalation | -- |
-| [filelock](filelock.md) | Cross-platform advisory file lock (fcntl/msvcrt) | -- |
+| Module | Description | Replaces | Benchmark Against |
+|--------|-------------|----------|-------------------|
+| [retry](retry.md) | Decorator-based retry with configurable backoff strategies | tenacity, retrying, backoff | `tenacity` |
+| [scheduler](scheduler.md) | In-process task scheduler with cron, interval, one-shot triggers | APScheduler, schedule, croniter | `APScheduler` |
+| [runner](runner.md) | Structured subprocess execution with timeout escalation | sh, plumbum (partial) | -- |
+| [filelock](filelock.md) | Cross-platform advisory file lock (fcntl/msvcrt) | filelock | -- |
 
 ### Storage
 
-| Module | Description | Benchmark Against |
-|--------|-------------|-------------------|
-| [cache](cache.md) | In-memory cache with TTL, LRU/LFU eviction, and async support | `cachetools` |
-| [persistdict](persistdict.md) | Persistent dict with pluggable backends (JSON, SQLite) | -- |
+| Module | Description | Replaces | Benchmark Against |
+|--------|-------------|----------|-------------------|
+| [cache](cache.md) | In-memory cache with TTL, LRU/LFU eviction, and async support | cachetools, diskcache (in-memory) | `cachetools` |
+| [persistdict](persistdict.md) | Persistent dict with pluggable backends (JSON, SQLite) | sqlitedict, diskcache (dict) | -- |
 
 ### Dev Tools
 
-| Module | Description | Benchmark Against |
-|--------|-------------|-------------------|
-| [structlog](structlog.md) | Structured logging with pretty console output | `structlog` |
-| [vcs](vcs.md) | Git/Hg/Jujutsu CLI wrapper (diff, status, log, blame) | -- |
-| [depdetect](depdetect.md) | Dependency detection and verification | -- |
+| Module | Description | Replaces | Benchmark Against |
+|--------|-------------|----------|-------------------|
+| [structlog](structlog.md) | Structured logging with pretty console output | structlog, python-json-logger, loguru | `structlog` |
+| [vcs](vcs.md) | Git/Hg/Jujutsu CLI wrapper (diff, status, log, blame) | GitPython, pygit2 (high-level) | -- |
+| [depdetect](depdetect.md) | Dependency detection and verification | pipreqs (partial) | -- |
 
 ## Inter-Module Dependencies
 

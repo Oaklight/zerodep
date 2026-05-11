@@ -2,6 +2,8 @@
 
 A zero-dependency JSONC (JSON with Comments) parser that supports single-line comments (`//`, `#`), block comments (`/* */`), and trailing commas.
 
+> **Replaces:** `commentjson`, `json5` (partial)
+
 ## Features
 
 - **Single-line comments**: `//` and `#` styles

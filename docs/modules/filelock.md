@@ -2,6 +2,8 @@
 
 Cross-platform advisory file lock using only the Python standard library -- Python 3.10+.
 
+> **Replaces:** `filelock`
+
 ## Overview
 
 The `filelock` module provides a single-file, zero-dependency advisory file lock. On Unix/macOS it delegates to `fcntl.flock`; on Windows it uses `msvcrt.locking` with exponential-backoff polling for blocking semantics.

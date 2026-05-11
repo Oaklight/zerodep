@@ -2,6 +2,8 @@
 
 Git/Mercurial/Jujutsu CLI wrapper -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `GitPython`, `pygit2` (high-level)
+
 ## Overview
 
 The VCS module provides a uniform Python interface to version-control systems by shelling out to their CLI binaries. Each backend implements the `VCSBackend` protocol, enabling VCS-agnostic tooling. Cross-platform binary discovery handles Linux, macOS, and Windows.

@@ -2,6 +2,8 @@
 
 AES encryption with ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `pycryptodome` (AES), `cryptography` (AES)
+
 ## Overview
 
 The AES module provides AES encryption and decryption across multiple modes and key sizes. Two interchangeable implementations are available:

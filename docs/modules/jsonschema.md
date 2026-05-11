@@ -2,6 +2,8 @@
 
 Zero-dependency JSON Schema flattening & sanitization -- stdlib only, Python 3.10+.
 
+> **Replaces:** `jsonschema` (LLM-specific), `allof-merge`
+
 ## Overview
 
 The `jsonschema` module flattens complex JSON Schemas containing `$ref`, `allOf`, `anyOf`, and `oneOf` into simple, LLM-provider-compatible schemas. Designed for tool schemas consumed by Anthropic, OpenAI, and Google GenAI APIs.

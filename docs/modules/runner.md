@@ -2,6 +2,8 @@
 
 Zero-dependency structured subprocess execution -- stdlib only, Python 3.10+.
 
+> **Replaces:** `sh`, `plumbum` (partial)
+
 ## Overview
 
 The Runner module provides a structured way to execute external commands with timeout escalation, streaming output, environment isolation, and cross-platform support -- all without any third-party dependencies.

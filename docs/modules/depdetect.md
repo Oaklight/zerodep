@@ -2,6 +2,8 @@
 
 Dependency detection and verification — zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `pipreqs` (partial)
+
 ## Overview
 
 Parse dependency information from Python source code, requirements files, and free-text compatibility strings. Verify that binaries, Python packages, and environment variables are present on the current system.

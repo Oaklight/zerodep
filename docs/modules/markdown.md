@@ -2,6 +2,8 @@
 
 Markdown to HTML renderer -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `mistune`, `markdown`, `markdown-it-py`
+
 ## Overview
 
 The Markdown module provides a drop-in replacement for `mistune.html()` to render common Markdown to HTML. It supports a CommonMark subset plus GFM extensions (tables, strikethrough, task lists, extended autolinks) -- all without any third-party dependencies.

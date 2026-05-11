@@ -2,6 +2,8 @@
 
 JSON-RPC 2.0 protocol implementation -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `jsonrpclib`, `jsonrpcserver`, `python-jsonrpc`
+
 ## Overview
 
 The JSON-RPC module provides a complete [JSON-RPC 2.0](https://www.jsonrpc.org/specification) implementation including core data types, an exception hierarchy, a method dispatcher with streaming support, and an async transport layer for newline-delimited JSON streams. It serves as the shared protocol foundation for the [A2A](a2a.md) and [ACP](acp.md) agent protocol modules.

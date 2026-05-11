@@ -2,6 +2,8 @@
 
 YAML parser and serializer (common subset) -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `PyYAML`, `ruamel.yaml` (common subset)
+
 ## Overview
 
 The YAML module provides a safe YAML parser and serializer covering the most commonly used subset of the YAML specification. It is designed as a drop-in replacement for `PyYAML`'s `safe_load` / `safe_dump` for typical configuration files and data exchange, without requiring any external dependency.

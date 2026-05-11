@@ -2,6 +2,8 @@
 
 Zero-dependency Chrome/Edge User-Agent string generator with Client Hints headers -- stdlib only, Python 3.10+.
 
+> **Replaces:** `fake-useragent`, `ua-generator`, `user-agents`
+
 ## Overview
 
 The useragent module generates realistic browser User-Agent strings and matching `Sec-CH-UA-*` Client Hints headers for Chrome and Edge browsers across Windows, macOS, Linux, and Android platforms.

@@ -2,6 +2,8 @@
 
 Zero-dependency proto3 encoder/decoder using Python dataclass schemas -- stdlib only, Python 3.10+.
 
+> **Replaces:** `protobuf` (google), `betterproto`
+
 ## Overview
 
 The `protobuf` module encodes and decodes Protocol Buffers (proto3) wire format using plain Python dataclasses as message schemas. No `protoc` compiler, no `.proto` files, no C extensions.

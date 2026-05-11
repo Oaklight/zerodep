@@ -2,6 +2,8 @@
 
 Unified diff parser, patch applicator, and three-way merge -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `unidiff`, `patch`
+
 ## Overview
 
 The Diff module provides structured parsing of unified diffs, patch application/reversal, and three-way merge with conflict detection. Built entirely on the standard library `difflib` module -- no third-party dependencies required.

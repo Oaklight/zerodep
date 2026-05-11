@@ -2,6 +2,8 @@
 
 Zero-dependency async HTTP server with Flask-style decorator routing, streaming responses (SSE), static file serving, and graceful shutdown -- stdlib only, Python 3.10+.
 
+> **Replaces:** `flask` (lightweight), `microdot`, `bottle`, `starlette` (basic), `aiohttp` (server)
+
 ## Overview
 
 The httpserver module provides a lightweight async HTTP/1.1 server built on `asyncio.start_server()`. It is designed as a drop-in alternative to Flask/microdot for projects that need HTTP serving without third-party dependencies.

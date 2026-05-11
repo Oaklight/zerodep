@@ -2,6 +2,8 @@
 
 Zero-dependency table formatting with multiple output styles -- stdlib only, Python 3.10+.
 
+> **Replaces:** `tabulate`, `prettytable`
+
 ## Overview
 
 The Tabulate module pretty-prints tabular data as formatted text tables. It supports 7 output formats, flexible header modes, column alignment, number formatting, and CJK-aware column widths -- all without any third-party dependencies.

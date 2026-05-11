@@ -2,6 +2,8 @@
 
 Zero-dependency runtime validator for TypedDict and dataclass types with JSON Schema generation -- stdlib only, Python 3.10+.
 
+> **Replaces:** `pydantic` (validation), `cattrs`, `typeguard`, `marshmallow`
+
 ## Overview
 
 The Validate module provides runtime validation of arbitrary data against stdlib type annotations (`TypedDict`, `dataclass`, `Annotated` constraints) and generates JSON Schema from the same type definitions -- all without any third-party dependencies.

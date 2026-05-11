@@ -2,6 +2,8 @@
 
 Zero-dependency full-text search engine with BM25 family and TF-IDF ranking -- stdlib only, Python 3.10+.
 
+> **Replaces:** `rank-bm25`, `bm25s`, `whoosh`
+
 ## Overview
 
 The `sparse_search` module provides a single-file inverted-index search engine supporting BM25/BM25+/BM25L/BM25F and TF-IDF+Cosine similarity. Designed for LLM/Agent/RAG pipelines where you need fast keyword retrieval without pulling in heavy dependencies.

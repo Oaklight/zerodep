@@ -2,6 +2,8 @@
 
 Zero-dependency Chrome DevTools Protocol client for headless browser automation -- sync + async, stdlib only, Python 3.10+.
 
+> **Replaces:** `pychrome`, `pycdp`
+
 ## Overview
 
 The cdp module provides synchronous and asynchronous CDP clients for communicating with Chrome/Chromium-based browsers over WebSocket. It supports tab management, page navigation, JavaScript evaluation, and high-level rendered content extraction. Built on top of the sibling `websocket` module.

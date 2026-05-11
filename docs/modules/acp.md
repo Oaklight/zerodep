@@ -2,6 +2,8 @@
 
 Anthropic ACP (Agent Client Protocol) implementation -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `acp-python`
+
 ## Overview
 
 The ACP module provides a pure-stdlib implementation of Anthropic's [Agent Client Protocol](https://github.com/anthropics/acp) for communication between code editors (Clients) and AI coding agents (Agents). It uses JSON-RPC 2.0 over stdio, similar to how LSP standardized language-server integration. It can serve as a drop-in alternative to [`agent-client-protocol`](https://pypi.org/project/agent-client-protocol/).

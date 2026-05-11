@@ -2,6 +2,8 @@
 
 ANSI escape code primitives for terminal styling -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `colorama`, `termcolor`
+
 ## Overview
 
 A lightweight module providing named colors (standard 8 + bright 8), text attributes (bold, dim, italic, underline, strikethrough, reverse), 256-color and 24-bit true-color support, terminal capability detection, and utility helpers.

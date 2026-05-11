@@ -2,6 +2,8 @@
 
 XML ↔ dict converter with fault-tolerant LLM tag extraction -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `xmltodict`
+
 ## Overview
 
 The XML module provides an xmltodict-compatible bidirectional XML ↔ dict converter, plus a fault-tolerant tag extractor designed for LLM output parsing. It is a drop-in replacement for [`xmltodict`](https://pypi.org/project/xmltodict/) for the vast majority of use cases -- parsing sitemaps, RSS/Atom feeds, enterprise API responses, and LLM-structured output.

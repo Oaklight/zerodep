@@ -2,6 +2,8 @@
 
 Zero-dependency interactive CLI prompts (confirm, select, text) -- stdlib only, Python 3.10+.
 
+> **Replaces:** `inquirer`, `questionary`
+
 ## Overview
 
 The Prompt module provides interactive command-line prompts similar to *questionary*, using only the Python standard library. Works on Linux and macOS (via `termios`/`tty`) and Windows (via `msvcrt`) with an automatic fallback to plain `input()` when a TTY is unavailable.

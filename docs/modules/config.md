@@ -2,6 +2,8 @@
 
 Unified configuration loader -- zero dependencies, stdlib only, Python 3.10+.
 
+> **Replaces:** `python-decouple`, `dynaconf`, `environs`, `pydantic-settings`
+
 ## Overview
 
 The Config module provides a drop-in replacement for `python-decouple` and `dynaconf` (subset) core functionality. It loads settings from multiple sources -- environment variables, `.env` files, and config files (JSON, JSONC, YAML, TOML, INI) -- with type coercion, prefix support, and nested key access, following the [12-factor app](https://12factor.net/config) pattern.

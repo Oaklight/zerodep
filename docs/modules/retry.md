@@ -2,6 +2,8 @@
 
 Zero-dependency decorator-based retry with configurable backoff strategies -- stdlib only, Python 3.10+.
 
+> **Replaces:** `tenacity`, `retrying`, `backoff`
+
 ## Overview
 
 The Retry module provides a decorator and imperative API for retrying failed function calls with configurable backoff, jitter, exception/result filtering, and sync+async support -- all without any third-party dependencies.

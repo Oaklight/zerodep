@@ -2,6 +2,8 @@
 
 Zero-dependency Server-Sent Events (SSE) client with W3C-compliant parsing, auto-reconnection, and sync+async support -- stdlib only, Python 3.10+.
 
+> **Replaces:** `sseclient-py`, `aiohttp-sse-client`, `httpx-sse`
+
 ## Overview
 
 The SSE module provides a complete client for consuming [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) streams. It is designed in three layers so you can use just the parser or the full auto-reconnecting client.

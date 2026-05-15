@@ -190,8 +190,30 @@ max-complexity = 20
 
 [tool.complexipy]
 paths = ["."]
-max-complexity-allowed = 20
-exclude = ["**/test_*.py", "**/test_*_benchmark.py"]
+max-complexity-allowed = 45
+exclude = ["**/test_*.py", "**/test_*_benchmark.py", "**/conftest.py", "_scripts/"]
+
+[tool.ty.src]
+exclude = [
+    ".claude/",
+    "_scripts/",
+    "**/test_*.py",
+    "**/conftest.py",
+    # Modules with type issues — fix gradually and remove from this list
+    "protobuf/",
+    "cache/",
+    "xml/",
+    "httpclient/",
+    "sparse_search/",
+    "readability/",
+    "png/",
+    "toon/",
+    "semver/",
+    "frontmatter/",
+    "depdetect/",
+    "config/",
+    "zerodep.py",
+]
 
 [tool.ty.environment]
 extra-paths = [

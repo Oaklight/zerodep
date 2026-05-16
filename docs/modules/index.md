@@ -31,6 +31,7 @@ title: 模块概览
 | [jsonschema](jsonschema.md) | 0.2.0 | 2026-05-11 |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
+| [multipart](multipart.md) | 0.1.0 | 2026-05-16 |
 | [persistdict](persistdict.md) | 0.4.1 | 2026-04-27 |
 | [png](png.md) | 0.1.1 | 2026-04-27 |
 | [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
@@ -89,6 +90,7 @@ title: 模块概览
 | [toon](toon.md) | TOON（面向 Token 的对象表示法）编码器/解码器 | toon-format | `toon_format` |
 | [frontmatter](frontmatter.md) | Frontmatter 解析与序列化（YAML/TOML/JSON） | python-frontmatter | `python-frontmatter` |
 | [protobuf](protobuf.md) | Proto3 编解码器（Python dataclass schema） | protobuf（google）、betterproto | `protobuf` |
+| [multipart](multipart.md) | multipart/form-data 解析与编码器（RFC 7578） | python-multipart | `python-multipart` |
 
 ### 数据验证
 

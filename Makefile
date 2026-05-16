@@ -1,4 +1,4 @@
-.PHONY: all test benchmark lint fmt clean help manifest version-check dep-graph dep-check docs-index docs-index-check test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi test-frontmatter benchmark-frontmatter test-cache benchmark-cache test-readability benchmark-readability benchmark-readability-compare test-jsonschema benchmark-jsonschema test-png benchmark-png test-httpserver benchmark-httpserver test-websocket benchmark-websocket test-cdp benchmark-cdp
+.PHONY: all test benchmark lint fmt clean help manifest version-check dep-graph dep-check docs-index docs-index-check test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi test-frontmatter benchmark-frontmatter test-cache benchmark-cache test-readability benchmark-readability benchmark-readability-compare test-jsonschema benchmark-jsonschema test-png benchmark-png test-httpserver benchmark-httpserver test-websocket benchmark-websocket test-cdp benchmark-cdp test-multipart benchmark-multipart
 
 help:
 	@echo "Available targets:"
@@ -50,6 +50,8 @@ help:
 	@echo "  benchmark-websocket - Run websocket benchmarks (vs websockets)"
 	@echo "  test-cdp         - Run CDP correctness tests"
 	@echo "  benchmark-cdp    - Run CDP benchmarks"
+	@echo "  test-multipart   - Run multipart correctness tests"
+	@echo "  benchmark-multipart - Run multipart benchmarks (vs python-multipart)"
 	@echo "  docs-index       - Generate modules/index.md for EN and ZH docs"
 	@echo "  docs-index-check - Check that modules/index.md is up-to-date"
 	@echo "  manifest         - Regenerate manifest.json"
@@ -61,7 +63,7 @@ help:
 	@echo "  clean            - Clean generated files"
 
 test:
-	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_httpclient_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py toon/test_toon_correctness.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py ansi/test_ansi_correctness.py frontmatter/test_frontmatter_correctness.py cache/test_cache_correctness.py readability/test_readability_correctness.py jsonschema/test_jsonschema_correctness.py png/test_png_correctness.py websocket/test_websocket_correctness.py cdp/test_cdp_correctness.py -v
+	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_httpclient_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py toon/test_toon_correctness.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py ansi/test_ansi_correctness.py frontmatter/test_frontmatter_correctness.py cache/test_cache_correctness.py readability/test_readability_correctness.py jsonschema/test_jsonschema_correctness.py png/test_png_correctness.py websocket/test_websocket_correctness.py cdp/test_cdp_correctness.py multipart/test_multipart_correctness.py -v
 
 test-aes:
 	pytest aes/test_aes_correctness.py -v
@@ -103,7 +105,7 @@ test-markdown:
 	pytest markdown/test_markdown_correctness.py -v
 
 benchmark:
-	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_httpclient_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonc/test_jsonc_benchmark.py retry/test_retry_benchmark.py toon/test_toon_benchmark.py tabulate/test_tabulate_benchmark.py soup/test_soup_benchmark.py validate/test_validate_benchmark.py markdown/test_markdown_benchmark.py diff/test_diff_benchmark.py frontmatter/test_frontmatter_benchmark.py cache/test_cache_benchmark.py readability/test_readability_benchmark.py jsonschema/test_jsonschema_benchmark.py png/test_png_benchmark.py websocket/test_websocket_benchmark.py cdp/test_cdp_benchmark.py -v
+	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_httpclient_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonc/test_jsonc_benchmark.py retry/test_retry_benchmark.py toon/test_toon_benchmark.py tabulate/test_tabulate_benchmark.py soup/test_soup_benchmark.py validate/test_validate_benchmark.py markdown/test_markdown_benchmark.py diff/test_diff_benchmark.py frontmatter/test_frontmatter_benchmark.py cache/test_cache_benchmark.py readability/test_readability_benchmark.py jsonschema/test_jsonschema_benchmark.py png/test_png_benchmark.py websocket/test_websocket_benchmark.py cdp/test_cdp_benchmark.py multipart/test_multipart_benchmark.py -v
 
 benchmark-aes:
 	pytest aes/test_aes_benchmark.py -v
@@ -204,6 +206,12 @@ test-cdp:
 
 benchmark-cdp:
 	pytest cdp/test_cdp_benchmark.py -v
+
+test-multipart:
+	pytest multipart/test_multipart_correctness.py -v
+
+benchmark-multipart:
+	pytest multipart/test_multipart_benchmark.py -v
 
 manifest:
 	python zerodep.py manifest

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-05-16T16:03:53.219088+00:00",
+  "generated": "2026-05-16T17:42:55.129994+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -167,7 +167,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-05-16T10:37:08-05:00",
+      "last_updated": "2026-05-16T11:04:23-05:00",
       "content_hash": "2cad662d7af2f0e799d4924d2cb0868ca3a16a54d9a23424bb8449b53e8723a0"
     },
     "httpserver": {
@@ -241,6 +241,18 @@
       "category": "text",
       "last_updated": "2026-04-27T19:31:53Z",
       "content_hash": "994c0166db9726b626d6f0b2c20979ac28e20fddb7eacd28793aaa01500eb1da"
+    },
+    "multipart": {
+      "description": "Zero-dependency multipart/form-data parser and encoder",
+      "files": [
+        "multipart/multipart.py"
+      ],
+      "version": "0.1.0",
+      "deps": [],
+      "tier": "medium",
+      "category": "serialization",
+      "last_updated": null,
+      "content_hash": "a1e3112a90c16b78c18917c58a96620eefd3c7f1085d89347d5f846b2b567cd0"
     },
     "persistdict": {
       "description": "Persistent dictionary with pluggable backends",

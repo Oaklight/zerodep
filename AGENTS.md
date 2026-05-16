@@ -143,7 +143,7 @@ User-facing docs are bilingual, living on **orphan branches** mounted as
 **persistent worktrees**:
 
 ```
-docs_en/   ← docs_en branch (English, MkDocs + mkdocs-material)
+docs_en/   ← docs_en branch (English, zensical)
 docs_zh/   ← docs_zh branch (Chinese)
 ```
 

@@ -16,6 +16,7 @@ import socket
 import socketserver
 import struct
 import threading
+import time
 import zlib
 from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -288,6 +289,10 @@ class _HttpBinHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
+        elif path.startswith("/delay/"):
+            seconds = float(path.rsplit("/", 1)[1])
+            time.sleep(seconds)
+            self._send_json({"delay": seconds})
         else:
             self.send_response(404)
             self.send_header("Content-Length", "0")

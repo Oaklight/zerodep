@@ -1,7 +1,10 @@
 """Correctness tests: zerodep HTTP client vs httpx."""
 
+import asyncio
 import os
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -780,3 +783,56 @@ class TestAsyncSocks5:
         async with AsyncClient(proxy=socks5_url) as c:
             r = await c.get(f"{httpbin_url}/get")
             assert r.status_code == 200
+
+
+# ── Concurrency ──
+
+
+class TestAsyncConcurrency:
+    @pytest.mark.asyncio
+    async def test_concurrent_requests_not_serialized(self, httpbin_url):
+        """Multiple async requests via the same client run concurrently."""
+        async with AsyncClient() as c:
+            start = time.monotonic()
+            results = await asyncio.gather(
+                *[c.get(f"{httpbin_url}/delay/0.3") for _ in range(5)]
+            )
+            elapsed = time.monotonic() - start
+
+        assert all(r.status_code == 200 for r in results)
+        # Concurrent: ~0.3s.  Serialized (old behavior): >= 1.5s.
+        assert elapsed < 1.0, f"Requests appear serialized: {elapsed:.2f}s"
+
+    @pytest.mark.asyncio
+    async def test_no_deadlock_on_concurrent_use(self, httpbin_url):
+        """Concurrent requests must not deadlock (regression for #76)."""
+        async with AsyncClient() as c:
+            results = await asyncio.wait_for(
+                asyncio.gather(
+                    c.get(f"{httpbin_url}/get"),
+                    c.get(f"{httpbin_url}/json"),
+                    c.get(f"{httpbin_url}/get"),
+                ),
+                timeout=5.0,
+            )
+        assert all(r.status_code == 200 for r in results)
+
+
+class TestSyncConcurrency:
+    def test_concurrent_requests_from_threads(self, httpbin_url):
+        """Sync Client handles concurrent requests from multiple threads."""
+        client = Client()
+        errors = []
+
+        def do_request(i):
+            try:
+                r = client.get(f"{httpbin_url}/get")
+                assert r.status_code == 200
+            except Exception as exc:
+                errors.append((i, exc))
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            list(pool.map(do_request, range(10)))
+
+        client.close()
+        assert not errors, f"Thread errors: {errors}"

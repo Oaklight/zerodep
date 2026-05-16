@@ -143,13 +143,33 @@ User-facing docs are bilingual, living on **orphan branches** mounted as
 **persistent worktrees**:
 
 ```
-docs_en/   ← docs-en branch (English, MkDocs + mkdocs-material)
-docs_zh/   ← docs-zh branch (Chinese)
+docs_en/   ← docs_en branch (English, MkDocs + mkdocs-material)
+docs_zh/   ← docs_zh branch (Chinese)
 ```
 
 Edit docs files under `docs_en/docs/` or `docs_zh/docs/`, commit and push
 inside the respective worktree. After adding or renaming modules, run
 `make docs-index` to regenerate the module index pages.
+
+### When to update docs worktrees
+
+Update `docs_en/` and `docs_zh/` whenever any of the following happens:
+
+- **New module added**: add the module to `_scripts/module_index_config.yaml`
+  (both the `categories` list and the `modules` metadata section), then run
+  `make docs-index` to regenerate `docs/modules/index.md` in both worktrees.
+- **Module removed or renamed**: update `module_index_config.yaml` accordingly,
+  then `make docs-index`.
+- **Changelog-worthy change merged to master**: update
+  `docs_en/docs/changelog.md` and `docs_zh/docs/changelog.md` under the
+  `[Unreleased]` section. Follow the [Keep a Changelog](https://keepachangelog.com/)
+  format. Changelog entries should cover: new modules, features, enhancements,
+  bug fixes, performance optimizations, breaking changes, and infrastructure.
+- **Release published**: move `[Unreleased]` entries into a new versioned
+  section (CalVer `[YYYY.M.D]`) in both changelogs.
+
+Commits in doc worktrees use `PRE_COMMIT_ALLOW_NO_CONFIG=1 git commit` since
+those branches have no `.pre-commit-config.yaml`.
 
 ## Escalation
 

@@ -86,6 +86,7 @@ plugins:
             - ../httpserver
             - ../websocket
             - ../cdp
+            - ../multipart
             - aes
             - qr
             - httpclient
@@ -129,6 +130,7 @@ plugins:
             - httpserver
             - websocket
             - cdp
+            - multipart
           options:
             docstring_style: google
             show_source: true
@@ -193,6 +195,7 @@ plugins:
           - modules/qr.md
           - modules/depdetect.md
           - modules/synctex.md
+          - modules/multipart.md
         API 参考:
           - api/httpclient.md
           - api/sse.md
@@ -236,6 +239,7 @@ plugins:
           - api/qr.md
           - api/depdetect.md
           - api/synctex.md
+          - api/multipart.md
         性能测试:
           - benchmarks/httpclient.md
           - benchmarks/sse.md
@@ -278,6 +282,7 @@ plugins:
           - benchmarks/persistdict.md
           - benchmarks/qr.md
           - benchmarks/depdetect.md
+          - benchmarks/multipart.md
         更新日志:
           - changelog.md
 
@@ -343,6 +348,7 @@ nav:
           - toon / TOON 序列化: modules/toon.md
           - frontmatter / Frontmatter 解析器: modules/frontmatter.md
           - protobuf / Protobuf 编解码器: modules/protobuf.md
+          - multipart / Multipart 编解码器: modules/multipart.md
       - 数据验证:
           - validate / 验证器: modules/validate.md
           - jsonschema / Schema 展平器: modules/jsonschema.md
@@ -399,6 +405,7 @@ nav:
           - toon / TOON 序列化: api/toon.md
           - frontmatter / Frontmatter 解析器: api/frontmatter.md
           - protobuf / Protobuf 编解码器: api/protobuf.md
+          - multipart / Multipart 编解码器: api/multipart.md
       - 数据验证:
           - validate / 验证器: api/validate.md
           - jsonschema / Schema 展平器: api/jsonschema.md
@@ -455,6 +462,7 @@ nav:
           - toon / TOON 序列化: benchmarks/toon.md
           - frontmatter / Frontmatter 解析器: benchmarks/frontmatter.md
           - protobuf / Protobuf 编解码器: benchmarks/protobuf.md
+          - multipart / Multipart 编解码器: benchmarks/multipart.md
       - 数据验证:
           - validate / 验证器: benchmarks/validate.md
           - jsonschema / Schema 展平器: benchmarks/jsonschema.md

@@ -124,30 +124,30 @@ td { white-space: nowrap; }
 <h1>readability</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: cffe5c4 | Commit: cffe5c4e | 2026-05-04T18:43:33.771759+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-04T18:43:33.771759+00:00"></span></p>
+<p class="meta">Version: v2026.5.16 | Commit: 12cc562d | 2026-05-16T16:13:34.809020+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T16:13:34.809020+00:00"></span></p>
 <h2>readability</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>31.12 ms</td><td>25.49 ms</td><td>32.1</td><td>39.2</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Large</td><td>zerodep</td><td>Mozilla Readability.js</td><td>31.12 ms</td><td>715.42 ms</td><td>32.1</td><td>1.4</td><td class="ratio-cell faster">23.0x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>2.44 ms</td><td>3.40 ms</td><td>410.1</td><td>294.2</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>Mozilla Readability.js</td><td>2.44 ms</td><td>24.36 ms</td><td>410.1</td><td>41.1</td><td class="ratio-cell faster">10.0x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>236.9 µs</td><td>604.2 µs</td><td>4.2K</td><td>1.7K</td><td class="ratio-cell faster">2.6x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>Mozilla Readability.js</td><td>236.9 µs</td><td>15.41 ms</td><td>4.2K</td><td>64.9</td><td class="ratio-cell faster">65.0x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>5.66 ms</td><td>12.41 ms</td><td>176.8</td><td>80.6</td><td class="ratio-cell faster">2.2x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>5.66 ms</td><td>44.56 ms</td><td>176.8</td><td>22.4</td><td class="ratio-cell faster">7.9x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>1.10 ms</td><td>2.23 ms</td><td>910.9</td><td>448.1</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>1.10 ms</td><td>12.57 ms</td><td>910.9</td><td>79.6</td><td class="ratio-cell faster">11.4x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>406.2 µs</td><td>680.7 µs</td><td>2.5K</td><td>1.5K</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>406.2 µs</td><td>9.84 ms</td><td>2.5K</td><td>101.7</td><td class="ratio-cell faster">24.2x faster</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>39.85 ms</td><td>28.92 ms</td><td>25.1</td><td>34.6</td><td class="ratio-cell slower">1.4x slower</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>Mozilla Readability.js</td><td>39.85 ms</td><td>691.65 ms</td><td>25.1</td><td>1.4</td><td class="ratio-cell faster">17.4x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>2.94 ms</td><td>3.58 ms</td><td>339.8</td><td>279.3</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>Mozilla Readability.js</td><td>2.94 ms</td><td>29.70 ms</td><td>339.8</td><td>33.7</td><td class="ratio-cell faster">10.1x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>309.3 µs</td><td>741.5 µs</td><td>3.2K</td><td>1.3K</td><td class="ratio-cell faster">2.4x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>Mozilla Readability.js</td><td>309.3 µs</td><td>17.96 ms</td><td>3.2K</td><td>55.7</td><td class="ratio-cell faster">58.1x faster</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>6.45 ms</td><td>14.00 ms</td><td>154.9</td><td>71.4</td><td class="ratio-cell faster">2.2x faster</td></tr>
+<tr><td>Synthetic (Large)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>6.45 ms</td><td>47.59 ms</td><td>154.9</td><td>21.0</td><td class="ratio-cell faster">7.4x faster</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>1.30 ms</td><td>2.58 ms</td><td>770.5</td><td>387.5</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>1.30 ms</td><td>15.22 ms</td><td>770.5</td><td>65.7</td><td class="ratio-cell faster">11.7x faster</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>520.6 µs</td><td>837.1 µs</td><td>1.9K</td><td>1.2K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Synthetic (Small)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>520.6 µs</td><td>9.99 ms</td><td>1.9K</td><td>100.1</td><td class="ratio-cell faster">19.2x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
 <tbody>
-<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.47 ms</td><td>679.4</td></tr>
+<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.97 ms</td><td>507.3</td></tr>
 </tbody></table>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -218,13 +218,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [32.138216377235594, 410.100513174605, 4221.552517582543, 176.7694879150852, 910.8835165832195, 2461.82218314377],
+        data: [25.094215454004242, 339.7762853355696, 3233.5271918147896, 154.9251827559253, 770.5065936581228, 1920.831915331563],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "readability-lxml" + ' (ops/s)',
-        data: [39.230495929571426, 294.1989703987666, 1654.9645880719954, 80.61069155187154, 448.0673636537409, 1469.1661905134954],
+        data: [34.58121947616315, 279.2631820910692, 1348.530060762606, 71.41162151382032, 387.4714562067476, 1194.5873664521391],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

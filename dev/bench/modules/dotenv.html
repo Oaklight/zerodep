@@ -124,14 +124,14 @@ td { white-space: nowrap; }
 <h1>dotenv</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: cffe5c4 | Commit: cffe5c4e | 2026-05-04T18:43:33.771759+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-04T18:43:33.771759+00:00"></span></p>
+<p class="meta">Version: v2026.5.16 | Commit: 12cc562d | 2026-05-16T16:13:34.809020+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T16:13:34.809020+00:00"></span></p>
 <h2>dotenv</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>python-dotenv</td><td>1.39 ms</td><td>1.39 ms</td><td>718.5</td><td>721.1</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-dotenv</td><td>191.6 µs</td><td>191.4 µs</td><td>5.2K</td><td>5.2K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>python-dotenv</td><td>27.9 µs</td><td>27.8 µs</td><td>35.9K</td><td>35.9K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>python-dotenv</td><td>1.52 ms</td><td>1.53 ms</td><td>658.0</td><td>652.0</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-dotenv</td><td>207.5 µs</td><td>207.8 µs</td><td>4.8K</td><td>4.8K</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>python-dotenv</td><td>30.7 µs</td><td>30.6 µs</td><td>32.6K</td><td>32.7K</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -203,13 +203,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [718.539802374585, 5219.170647167629, 35883.46934049369],
+        data: [658.0435428156931, 4820.436204909404, 32597.41933320358],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-dotenv" + ' (ops/s)',
-        data: [721.0563813037809, 5225.326897391741, 35933.026826519876],
+        data: [651.9932270214027, 4812.345719215731, 32708.3644713079],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

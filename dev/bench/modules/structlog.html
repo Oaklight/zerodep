@@ -124,15 +124,15 @@ td { white-space: nowrap; }
 <h1>structlog</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: cffe5c4 | Commit: cffe5c4e | 2026-05-04T18:43:33.771759+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-04T18:43:33.771759+00:00"></span></p>
+<p class="meta">Version: v2026.5.16 | Commit: 12cc562d | 2026-05-16T16:13:34.809020+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T16:13:34.809020+00:00"></span></p>
 <h2>structlog</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Bind And Log</td><td>zerodep</td><td>structlog</td><td>11.1 µs</td><td>19.2 µs</td><td>90.4K</td><td>52.0K</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Bound Log</td><td>zerodep</td><td>structlog</td><td>11.5 µs</td><td>17.8 µs</td><td>86.9K</td><td>56.0K</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>JSONRendering</td><td>zerodep</td><td>structlog</td><td>9.4 µs</td><td>10.9 µs</td><td>106.1K</td><td>91.4K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Simple Log</td><td>zerodep</td><td>structlog</td><td>10.0 µs</td><td>12.5 µs</td><td>100.1K</td><td>79.8K</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Bind And Log</td><td>zerodep</td><td>structlog</td><td>13.0 µs</td><td>27.8 µs</td><td>76.7K</td><td>35.9K</td><td class="ratio-cell faster">2.1x faster</td></tr>
+<tr><td>Bound Log</td><td>zerodep</td><td>structlog</td><td>13.2 µs</td><td>21.0 µs</td><td>75.6K</td><td>47.7K</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>JSONRendering</td><td>zerodep</td><td>structlog</td><td>10.4 µs</td><td>12.4 µs</td><td>96.2K</td><td>80.6K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Simple Log</td><td>zerodep</td><td>structlog</td><td>10.9 µs</td><td>14.6 µs</td><td>91.4K</td><td>68.5K</td><td class="ratio-cell faster">1.3x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -204,13 +204,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [90376.39436058105, 86927.8393260085, 106058.54074108688, 100138.91905595156],
+        data: [76715.40874238676, 75634.39793501222, 96192.70201338711, 91418.05882352435],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "structlog" + ' (ops/s)',
-        data: [51980.02652840018, 56026.6877301615, 91352.30503517776, 79818.88057956862],
+        data: [35929.26813657557, 47703.93067091753, 80630.87490930097, 68480.64832405717],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

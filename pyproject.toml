@@ -163,9 +163,10 @@ testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", 
 
 [tool.ruff]
 target-version = "py310"
+exclude = [".claude/"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "W", "C901"]
+select = ["E", "F", "I", "W", "C901", "ASYNC"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 20

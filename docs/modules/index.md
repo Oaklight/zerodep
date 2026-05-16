@@ -24,11 +24,11 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
-| [httpclient](httpclient.md) | 0.4.0 | 2026-05-05 |
+| [httpclient](httpclient.md) | 0.4.1 | 2026-05-16 |
 | [httpserver](httpserver.md) | 0.1.0 | 2026-05-02 |
 | [jsonc](jsonc.md) | 0.3.0 | 2026-04-27 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
-| [jsonschema](jsonschema.md) | 0.2.0 | 2026-04-27 |
+| [jsonschema](jsonschema.md) | 0.2.0 | 2026-05-11 |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
 | [persistdict](persistdict.md) | 0.4.1 | 2026-04-27 |

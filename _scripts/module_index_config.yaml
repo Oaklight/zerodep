@@ -23,7 +23,7 @@ categories:
   - id: serialization
     name_en: "Serialization"
     name_zh: "序列化"
-    modules: [xml, yaml, jsonc, toon, frontmatter, protobuf]
+    modules: [xml, yaml, jsonc, toon, frontmatter, protobuf, multipart]
 
   - id: validation
     name_en: "Validation"
@@ -153,6 +153,12 @@ modules:
     replaces_zh: "protobuf（google）、betterproto"
     desc_en: "Proto3 encoder/decoder using Python dataclass schemas"
     desc_zh: "Proto3 编解码器（Python dataclass schema）"
+  multipart:
+    benchmark: python-multipart
+    replaces: "python-multipart"
+    replaces_zh: "python-multipart"
+    desc_en: "Multipart/form-data parser and encoder (RFC 7578)"
+    desc_zh: "multipart/form-data 解析与编码器（RFC 7578）"
   validate:
     benchmark: pydantic
     replaces: "pydantic (validation), cattrs, typeguard, marshmallow"

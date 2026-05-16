@@ -124,16 +124,16 @@ td { white-space: nowrap; }
 <h1>jsonschema</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.5.16 | Commit: 12cc562d | 2026-05-16T16:13:34.809020+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T16:13:34.809020+00:00"></span></p>
+<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
 <h2>jsonschema</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Perf (Large)</td><td>zerodep</td><td>allof-merge (JS)</td><td>251.6 µs</td><td>896.6 µs</td><td>4.0K</td><td>1.1K</td><td class="ratio-cell faster">3.6x faster</td></tr>
-<tr><td>Perf (Medium)</td><td>zerodep</td><td>allof-merge (JS)</td><td>86.7 µs</td><td>412.1 µs</td><td>11.5K</td><td>2.4K</td><td class="ratio-cell faster">4.8x faster</td></tr>
-<tr><td>Perf (Small)</td><td>zerodep</td><td>allof-merge (JS)</td><td>31.6 µs</td><td>216.9 µs</td><td>31.6K</td><td>4.6K</td><td class="ratio-cell faster">6.9x faster</td></tr>
-<tr><td>Perf Tiny</td><td>zerodep</td><td>allof-merge (JS)</td><td>17.7 µs</td><td>210.1 µs</td><td>56.5K</td><td>4.8K</td><td class="ratio-cell faster">11.9x faster</td></tr>
-<tr><td>Perf Xlarge</td><td>zerodep</td><td>allof-merge (JS)</td><td>1.66 ms</td><td>3.29 ms</td><td>601.6</td><td>303.7</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Perf (Large)</td><td>zerodep</td><td>allof-merge (JS)</td><td>233.9 µs</td><td>748.3 µs</td><td>4.3K</td><td>1.3K</td><td class="ratio-cell faster">3.2x faster</td></tr>
+<tr><td>Perf (Medium)</td><td>zerodep</td><td>allof-merge (JS)</td><td>77.7 µs</td><td>374.4 µs</td><td>12.9K</td><td>2.7K</td><td class="ratio-cell faster">4.8x faster</td></tr>
+<tr><td>Perf (Small)</td><td>zerodep</td><td>allof-merge (JS)</td><td>29.5 µs</td><td>161.6 µs</td><td>33.9K</td><td>6.2K</td><td class="ratio-cell faster">5.5x faster</td></tr>
+<tr><td>Perf Tiny</td><td>zerodep</td><td>allof-merge (JS)</td><td>18.9 µs</td><td>182.5 µs</td><td>52.9K</td><td>5.5K</td><td class="ratio-cell faster">9.7x faster</td></tr>
+<tr><td>Perf Xlarge</td><td>zerodep</td><td>allof-merge (JS)</td><td>1.59 ms</td><td>3.08 ms</td><td>628.8</td><td>325.1</td><td class="ratio-cell faster">1.9x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -205,13 +205,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [3975.1752476381603, 11529.654503968033, 31649.28740719964, 56488.88547493389, 601.600700259338],
+        data: [4275.377515822623, 12867.716895445974, 33889.78929308384, 52929.4646217959, 628.7557491465054],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "allof-merge (JS)" + ' (ops/s)',
-        data: [1115.3083929048812, 2426.717621380051, 4609.547195547631, 4758.506824483104, 303.6827260391256],
+        data: [1336.4410415947464, 2670.648943919885, 6187.906035024719, 5478.709996260698, 325.0845876627786],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -124,16 +124,16 @@ td { white-space: nowrap; }
 <h1>validate</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.5.16 | Commit: 12cc562d | 2026-05-16T16:13:34.809020+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T16:13:34.809020+00:00"></span></p>
+<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
 <h2>validate</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Benchmark Constrained</td><td>ours</td><td>pydantic</td><td>10.2 µs</td><td>1.6 µs</td><td>97.6K</td><td>627.4K</td><td class="ratio-cell slower">6.4x slower</td></tr>
-<tr><td>Benchmark Json Schema</td><td>ours</td><td>pydantic</td><td>10.0 µs</td><td>545.5 µs</td><td>100.2K</td><td>1.8K</td><td class="ratio-cell faster">54.7x faster</td></tr>
-<tr><td>Benchmark List Of Dicts</td><td>ours</td><td>pydantic</td><td>231.6 µs</td><td>32.5 µs</td><td>4.3K</td><td>30.8K</td><td class="ratio-cell slower">7.1x slower</td></tr>
-<tr><td>Benchmark Nested</td><td>ours</td><td>pydantic</td><td>10.2 µs</td><td>2.2 µs</td><td>97.7K</td><td>453.5K</td><td class="ratio-cell slower">4.6x slower</td></tr>
-<tr><td>Benchmark Simple</td><td>ours</td><td>pydantic</td><td>5.7 µs</td><td>1.5 µs</td><td>176.0K</td><td>661.5K</td><td class="ratio-cell slower">3.8x slower</td></tr>
+<tr><td>Benchmark Constrained</td><td>ours</td><td>pydantic</td><td>10.0 µs</td><td>1.6 µs</td><td>100.0K</td><td>624.2K</td><td class="ratio-cell slower">6.2x slower</td></tr>
+<tr><td>Benchmark Json Schema</td><td>ours</td><td>pydantic</td><td>9.8 µs</td><td>162.1 µs</td><td>102.2K</td><td>6.2K</td><td class="ratio-cell faster">16.6x faster</td></tr>
+<tr><td>Benchmark List Of Dicts</td><td>ours</td><td>pydantic</td><td>241.7 µs</td><td>32.5 µs</td><td>4.1K</td><td>30.8K</td><td class="ratio-cell slower">7.4x slower</td></tr>
+<tr><td>Benchmark Nested</td><td>ours</td><td>pydantic</td><td>10.2 µs</td><td>2.2 µs</td><td>97.7K</td><td>444.7K</td><td class="ratio-cell slower">4.6x slower</td></tr>
+<tr><td>Benchmark Simple</td><td>ours</td><td>pydantic</td><td>5.6 µs</td><td>1.5 µs</td><td>177.0K</td><td>660.9K</td><td class="ratio-cell slower">3.7x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -205,13 +205,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [97648.76181730867, 100238.25114354034, 4317.449776114493, 97676.61920971064, 176037.29211634037],
+        data: [99987.35492037433, 102175.50539454502, 4136.59472519152, 97687.80309426083, 177023.20378706921],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "pydantic" + ' (ops/s)',
-        data: [627400.5399757711, 1833.114542057097, 30773.98073142004, 453455.5925709609, 661477.9275642051],
+        data: [624158.0040748083, 6168.241908796081, 30804.786763251002, 444663.85154791817, 660901.1797182702],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

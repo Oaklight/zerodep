@@ -124,26 +124,26 @@ td { white-space: nowrap; }
 <h1>soup</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.5.16 | Commit: 12cc562d | 2026-05-16T16:13:34.809020+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T16:13:34.809020+00:00"></span></p>
+<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
 <h2>soup</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Large</td><td>zerodep</td><td>beautifulsoup4</td><td>30.69 ms</td><td>75.01 ms</td><td>32.6</td><td>13.3</td><td class="ratio-cell faster">2.4x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>beautifulsoup4</td><td>2.55 ms</td><td>7.36 ms</td><td>392.1</td><td>135.9</td><td class="ratio-cell faster">2.9x faster</td></tr>
-<tr><td>Pseudo Select (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>108.93 ms</td><td>126.99 ms</td><td>9.2</td><td>7.9</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Pseudo Select (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>4.15 ms</td><td>12.14 ms</td><td>241.0</td><td>82.4</td><td class="ratio-cell faster">2.9x faster</td></tr>
-<tr><td>Pseudo Select (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>453.7 µs</td><td>1.63 ms</td><td>2.2K</td><td>613.5</td><td class="ratio-cell faster">3.6x faster</td></tr>
-<tr><td>Select (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>36.61 ms</td><td>106.18 ms</td><td>27.3</td><td>9.4</td><td class="ratio-cell faster">2.9x faster</td></tr>
-<tr><td>Select (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>3.41 ms</td><td>10.17 ms</td><td>293.2</td><td>98.3</td><td class="ratio-cell faster">3.0x faster</td></tr>
-<tr><td>Select (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>403.9 µs</td><td>1.34 ms</td><td>2.5K</td><td>747.7</td><td class="ratio-cell faster">3.3x faster</td></tr>
-<tr><td>Serialize (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>31.64 ms</td><td>102.55 ms</td><td>31.6</td><td>9.8</td><td class="ratio-cell faster">3.2x faster</td></tr>
-<tr><td>Serialize (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.54 ms</td><td>8.76 ms</td><td>394.4</td><td>114.1</td><td class="ratio-cell faster">3.5x faster</td></tr>
-<tr><td>Serialize (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>372.6 µs</td><td>1.11 ms</td><td>2.7K</td><td>900.8</td><td class="ratio-cell faster">3.0x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>beautifulsoup4</td><td>301.1 µs</td><td>823.0 µs</td><td>3.3K</td><td>1.2K</td><td class="ratio-cell faster">2.7x faster</td></tr>
-<tr><td>Tree Ops (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>33.63 ms</td><td>84.54 ms</td><td>29.7</td><td>11.8</td><td class="ratio-cell faster">2.5x faster</td></tr>
-<tr><td>Tree Ops (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.72 ms</td><td>7.29 ms</td><td>367.1</td><td>137.2</td><td class="ratio-cell faster">2.7x faster</td></tr>
-<tr><td>Tree Ops (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>390.5 µs</td><td>983.5 µs</td><td>2.6K</td><td>1.0K</td><td class="ratio-cell faster">2.5x faster</td></tr>
+<tr><td>Large</td><td>zerodep</td><td>beautifulsoup4</td><td>26.20 ms</td><td>55.01 ms</td><td>38.2</td><td>18.2</td><td class="ratio-cell faster">2.1x faster</td></tr>
+<tr><td>Medium</td><td>zerodep</td><td>beautifulsoup4</td><td>2.03 ms</td><td>4.99 ms</td><td>492.1</td><td>200.2</td><td class="ratio-cell faster">2.5x faster</td></tr>
+<tr><td>Pseudo Select (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>103.00 ms</td><td>106.76 ms</td><td>9.7</td><td>9.4</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Pseudo Select (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>3.51 ms</td><td>9.53 ms</td><td>284.7</td><td>105.0</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Pseudo Select (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>430.6 µs</td><td>1.29 ms</td><td>2.3K</td><td>777.0</td><td class="ratio-cell faster">3.0x faster</td></tr>
+<tr><td>Select (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>29.24 ms</td><td>86.32 ms</td><td>34.2</td><td>11.6</td><td class="ratio-cell faster">3.0x faster</td></tr>
+<tr><td>Select (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.75 ms</td><td>7.74 ms</td><td>363.5</td><td>129.3</td><td class="ratio-cell faster">2.8x faster</td></tr>
+<tr><td>Select (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>309.3 µs</td><td>1.02 ms</td><td>3.2K</td><td>985.0</td><td class="ratio-cell faster">3.3x faster</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>27.74 ms</td><td>71.01 ms</td><td>36.1</td><td>14.1</td><td class="ratio-cell faster">2.6x faster</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.27 ms</td><td>6.42 ms</td><td>440.4</td><td>155.7</td><td class="ratio-cell faster">2.8x faster</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>241.8 µs</td><td>784.4 µs</td><td>4.1K</td><td>1.3K</td><td class="ratio-cell faster">3.2x faster</td></tr>
+<tr><td>Small</td><td>zerodep</td><td>beautifulsoup4</td><td>270.7 µs</td><td>582.4 µs</td><td>3.7K</td><td>1.7K</td><td class="ratio-cell faster">2.2x faster</td></tr>
+<tr><td>Tree Ops (Large)</td><td>zerodep</td><td>beautifulsoup4</td><td>27.03 ms</td><td>59.81 ms</td><td>37.0</td><td>16.7</td><td class="ratio-cell faster">2.2x faster</td></tr>
+<tr><td>Tree Ops (Medium)</td><td>zerodep</td><td>beautifulsoup4</td><td>2.20 ms</td><td>5.51 ms</td><td>455.3</td><td>181.4</td><td class="ratio-cell faster">2.5x faster</td></tr>
+<tr><td>Tree Ops (Small)</td><td>zerodep</td><td>beautifulsoup4</td><td>292.4 µs</td><td>709.9 µs</td><td>3.4K</td><td>1.4K</td><td class="ratio-cell faster">2.4x faster</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -215,13 +215,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [32.58002367860702, 392.13197632360715, 9.17984727344946, 241.02217184479863, 2204.015350627478, 27.317284972232642, 293.1633383770368, 2475.964495755637, 31.609692029877188, 394.3632136709661, 2684.030478288778, 3320.899526146761, 29.73933662277274, 367.1431156769316, 2560.5948423966834],
+        data: [38.16440939230218, 492.1193561047539, 9.708793700353343, 284.65511524495747, 2322.105938194692, 34.194245009148126, 363.51276110271493, 3233.59276202169, 36.05248909828574, 440.39613886427907, 4135.022770431642, 3693.509649581134, 36.99230075230471, 455.34886081705775, 3420.4555461826412],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "beautifulsoup4" + ' (ops/s)',
-        data: [13.330898100412611, 135.9313226977843, 7.874533896496317, 82.36154009485, 613.4809385966362, 9.418316517979655, 98.34308977973177, 747.6645043909117, 9.750898231415366, 114.11806769404019, 900.8300258667093, 1215.0577818587788, 11.828271309234665, 137.2202489282264, 1016.7798114923525],
+        data: [18.177499840117285, 200.2123156670847, 9.366854466271391, 104.97192137160009, 777.041852053333, 11.58417741897166, 129.26161429594936, 985.0472448454077, 14.082429446386508, 155.69318842764696, 1274.888335463094, 1717.044097004356, 16.719521570889547, 181.41243383832804, 1408.6403550297398],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

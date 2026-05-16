@@ -124,15 +124,15 @@ td { white-space: nowrap; }
 <h1>websocket</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.5.16 | Commit: 12cc562d | 2026-05-16T16:13:34.809020+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T16:13:34.809020+00:00"></span></p>
+<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
 <h2>websocket</h2>
 <table>
 <thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Burst Messages</td><td>zerodep</td><td>websockets</td><td>4.53 ms</td><td>9.94 ms</td><td>220.7</td><td>100.6</td><td class="ratio-cell faster">2.2x faster</td></tr>
-<tr><td>Connection Setup</td><td>zerodep</td><td>websockets</td><td>476.3 µs</td><td>1.24 ms</td><td>2.1K</td><td>809.5</td><td class="ratio-cell faster">2.6x faster</td></tr>
-<tr><td>Json Rpc Roundtrip</td><td>zerodep</td><td>websockets</td><td>117.9 µs</td><td>151.3 µs</td><td>8.5K</td><td>6.6K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Large Payload</td><td>zerodep</td><td>websockets</td><td>5.93 ms</td><td>3.05 ms</td><td>168.7</td><td>328.4</td><td class="ratio-cell slower">1.9x slower</td></tr>
+<tr><td>Burst Messages</td><td>zerodep</td><td>websockets</td><td>4.62 ms</td><td>6.94 ms</td><td>216.6</td><td>144.1</td><td class="ratio-cell faster">1.5x faster</td></tr>
+<tr><td>Connection Setup</td><td>zerodep</td><td>websockets</td><td>403.4 µs</td><td>1.14 ms</td><td>2.5K</td><td>873.4</td><td class="ratio-cell faster">2.8x faster</td></tr>
+<tr><td>Json Rpc Roundtrip</td><td>zerodep</td><td>websockets</td><td>87.3 µs</td><td>107.6 µs</td><td>11.4K</td><td>9.3K</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Large Payload</td><td>zerodep</td><td>websockets</td><td>6.33 ms</td><td>3.28 ms</td><td>158.0</td><td>304.9</td><td class="ratio-cell slower">1.9x slower</td></tr>
 </tbody></table>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -204,13 +204,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [220.65873857038423, 2099.5479643378244, 8482.225491822863, 168.65895823085316],
+        data: [216.6065670087878, 2479.003290696774, 11448.492649777134, 158.01306213414006],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "websockets" + ' (ops/s)',
-        data: [100.61346695037575, 809.5248490473045, 6611.500905647916, 328.3686911812572],
+        data: [144.135253440656, 873.4149648421219, 9294.73963786751, 304.87850746505165],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

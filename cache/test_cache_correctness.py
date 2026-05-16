@@ -765,7 +765,7 @@ class TestConvenienceDecorators:
             return x
 
         assert await f(1) == 1
-        time.sleep(0.06)
+        await asyncio.sleep(0.06)
         assert await f(1) == 1  # recomputed after expiry
 
     @pytest.mark.asyncio

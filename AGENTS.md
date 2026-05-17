@@ -19,7 +19,7 @@ manifest.json           Auto-generated module registry (DO NOT EDIT)
 pyproject.toml          Project metadata, tool configs (ruff, ty, complexipy)
 Makefile                40+ test/benchmark/lint/docs targets
 .pre-commit-config.yaml Hooks: ruff, ty, complexipy
-.github/workflows/      CI (lint + test 3.10-3.13), benchmark, release, PyPI
+.github/workflows/      lint-test (reusable), CI, release, benchmark, PyPI
 _scripts/               Doc generation utilities
 docs_en/                ← git worktree (docs-en branch); English MkDocs site
 docs_zh/                ← git worktree (docs-zh branch); Chinese MkDocs site
@@ -190,6 +190,22 @@ GitHub Actions:
 6. The **PyPI workflow** runs automatically on release publish, but only
    publishes if `zerodep.py` or `pyproject.toml` have substantive changes
    (not just version bumps).
+
+### CI architecture
+
+Lint and test logic lives in a single **reusable workflow**
+(`lint-test.yml`, triggered via `workflow_call`). Both `ci.yml` and
+`release.yml` call it — no duplicated job definitions.
+
+- **Lint job**: runs `pre-commit run --all-files` (ruff, ruff-format, ty,
+  complexipy) — same hooks as local development.
+- **Test job**: matrix across Python versions, dynamically installs
+  `bench-*` reference libraries from `pyproject.toml`.
+- `ci.yml` calls `lint-test.yml` with the default 4-version matrix.
+- `release.yml` calls `lint-test.yml` with `["3.12"]` only as a quality
+  gate, then runs release-specific steps.
+- Benchmark and PyPI workflows are cascade-triggered on `release: published`
+  and are independent.
 
 ### Reference library management
 

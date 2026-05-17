@@ -171,6 +171,40 @@ Update `docs_en/` and `docs_zh/` whenever any of the following happens:
 Commits in doc worktrees use `PRE_COMMIT_ALLOW_NO_CONFIG=1 git commit` since
 those branches have no `.pre-commit-config.yaml`.
 
+## Release process
+
+Releases use **CalVer** (`YYYY.M.D`). The process is mostly automated via
+GitHub Actions:
+
+1. **Ensure all changes are merged to master** and CI is green.
+2. **Update changelogs** in `docs_en/docs/changelog.md` and
+   `docs_zh/docs/changelog.md` — move `[Unreleased]` entries into a new
+   versioned section `[YYYY.M.D]`.  Commit and push in both doc worktrees.
+3. **Trigger the Release workflow** (`Actions → Release → Run workflow`).
+   It auto-detects the CalVer version, bumps module versions, tags, and
+   creates a GitHub Release with auto-generated notes.
+4. **Rewrite the release notes** on GitHub if the auto-generated notes are
+   insufficient — add structured sections (New Modules, Features, Bug Fixes,
+   etc.).
+5. The **Benchmark workflow** runs automatically on release publish.
+6. The **PyPI workflow** runs automatically on release publish, but only
+   publishes if `zerodep.py` or `pyproject.toml` have substantive changes
+   (not just version bumps).
+
+### Reference library management
+
+CI, release, and benchmark workflows all install reference libraries from
+`pyproject.toml` `bench-*` extras dynamically. When adding a new module
+with a reference library:
+
+1. Add a `bench-<module>` extra in `pyproject.toml`.
+2. Add it to the `dev` extra's dependency list.
+3. No workflow YAML changes needed — the dynamic extraction picks it up
+   automatically.
+
+Exception: `bench-toon` is installed from git (not PyPI) and is handled
+separately in each workflow.
+
 ## Escalation
 
 - **Test failure**: check correct conda env is activated (`conda activate zerodep`)

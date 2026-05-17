@@ -29,17 +29,18 @@ jobs:
       - name: Install reference libraries
         continue-on-error: true
         run: |
-          pip install pycryptodome "qrcode>=7.0" "Pillow>=10.0.0" \
-            httpx python-dotenv PyYAML commentjson "structlog>=24.0.0" \
-            "tenacity>=8.0.0" "tabulate>=0.9.0" "beautifulsoup4>=4.12.0" \
-            "pydantic>=2.0.0" "httpx-sse>=0.4.0" "mistune>=3.0.0" \
-            "unidiff>=0.7.0" "APScheduler>=3.10.0" "schedule>=1.2.0" \
-            "croniter>=1.3.0" "rank-bm25>=0.2.2" "python-frontmatter>=1.1.0" \
-            "python-decouple>=3.8" "cachetools>=5.0.0" "xmltodict>=0.13.0" \
-            "jsonrpcserver>=5.0.0" "protobuf>=4.0.0" "packaging>=24.0"
+          # Dynamically extract all bench-* extras from pyproject.toml
+          # (bench-toon excluded — only available from git, installed separately)
+          BENCH_EXTRAS=$(python -c "
+          import tomllib, pathlib
+          data = tomllib.loads(pathlib.Path('pyproject.toml').read_text())
+          extras = [k for k in data['project']['optional-dependencies']
+                    if k.startswith('bench-') and k != 'bench-toon']
+          print(','.join(extras))
+          ")
+          echo "Installing extras: $BENCH_EXTRAS"
+          pip install ".[$BENCH_EXTRAS]"
           pip install "toon_format @ git+https://github.com/toon-format/toon-python.git" || true
-          pip install "a2a-protocol>=0.1.0" || true
-          pip install "agent-client-protocol>=0.9.0" || true
 
       - name: Lint
         run: |

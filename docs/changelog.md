@@ -6,17 +6,23 @@
 
 ## [未发布]
 
-### 新增模块
-
-- **multipart 模块**：零依赖的 multipart/form-data 解析与编码器，遵循 RFC 7578 / RFC 2046。`parse_multipart()` 使用 boundary-split 算法配合 `bytes.find()` 在 C 层解析请求体。`encode_multipart()` 编码表单字段和文件上传。`extract_boundary()` 从 Content-Type 头提取 boundary。`Part` 冻结数据类，包含 name、data、filename、content_type、headers、`.text` 和 `.is_file` 属性。健壮的 boundary 检测（验证前后字节避免误匹配）。支持 Content-Transfer-Encoding（base64、quoted-printable）。RFC 5987 `filename*` 参数解码。安全限制：max_part_size（10 MB）、max_parts（1000）、max_header_size（16 KB）。单文件，约 590 行，仅标准库。57 个正确性测试 + 11 个性能测试（比 python-multipart 快 3-7 倍）。
-
 ### 新特性
 
 - **httpclient**：新增 SOCKS5 代理支持（RFC 1928），支持用户名/密码认证（RFC 1929）。`Client` 和 `AsyncClient` 现在接受 `proxy="socks5://[user:pass@]host:port"`。在模块内直接实现，零外部依赖。性能对比 `httpx[socks]` 快约 6-15 倍。
 
+## [2026.5.17] - 2026-05-17
+
+### 新增模块
+
+- **multipart 模块**：零依赖的 multipart/form-data 解析与编码器，遵循 RFC 7578 / RFC 2046。`parse_multipart()` 使用 boundary-split 算法配合 `bytes.find()` 在 C 层解析请求体。`encode_multipart()` 编码表单字段和文件上传。`extract_boundary()` 从 Content-Type 头提取 boundary。`Part` 冻结数据类，包含 name、data、filename、content_type、headers、`.text` 和 `.is_file` 属性。健壮的 boundary 检测（验证前后字节避免误匹配）。支持 Content-Transfer-Encoding（base64、quoted-printable）。RFC 5987 `filename*` 参数解码。安全限制：max_part_size（10 MB）、max_parts（1000）、max_header_size（16 KB）。单文件，约 590 行，仅标准库。57 个正确性测试 + 11 个性能测试（比 python-multipart 快 3-7 倍）。
+
 ### 问题修复
 
 - **httpclient**：移除 `AsyncClient` / `Client` 中多余的全局 `asyncio.Lock()` / `threading.Lock()`，该锁会序列化并发请求并可能导致死锁。连接池内部已有细粒度锁机制。
+
+### 基础设施
+
+- 在 AGENTS.md 中新增文档/更新日志更新工作流指引。
 
 ## [2026.5.2.1] - 2026-05-02
 

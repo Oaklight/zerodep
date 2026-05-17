@@ -6,17 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### New Modules
-
-- **multipart module**: zero-dependency multipart/form-data parser and encoder per RFC 7578 / RFC 2046. `parse_multipart()` parses request bodies using a boundary-split algorithm with `bytes.find()` for C-level performance. `encode_multipart()` encodes form fields and file uploads. `extract_boundary()` extracts boundary from Content-Type headers. `Part` frozen dataclass with name, data, filename, content_type, headers, `.text` and `.is_file` properties. Robust boundary detection (validates preceding/following bytes to avoid false matches). Content-Transfer-Encoding support (base64, quoted-printable). RFC 5987 `filename*` parameter decoding. Security limits: max_part_size (10 MB), max_parts (1000), max_header_size (16 KB). Single file, ~590 lines, stdlib only. 57 correctness tests + 11 benchmarks (3-7x faster than python-multipart).
-
 ### Features
 
 - **httpclient**: Add SOCKS5 proxy support (RFC 1928) with username/password authentication (RFC 1929). Both `Client` and `AsyncClient` now accept `proxy="socks5://[user:pass@]host:port"`. Implemented directly in the module with zero external dependencies. Benchmarked ~6-15x faster than `httpx[socks]`.
 
+## [2026.5.17] - 2026-05-17
+
+### New Modules
+
+- **multipart module**: zero-dependency multipart/form-data parser and encoder per RFC 7578 / RFC 2046. `parse_multipart()` parses request bodies using a boundary-split algorithm with `bytes.find()` for C-level performance. `encode_multipart()` encodes form fields and file uploads. `extract_boundary()` extracts boundary from Content-Type headers. `Part` frozen dataclass with name, data, filename, content_type, headers, `.text` and `.is_file` properties. Robust boundary detection (validates preceding/following bytes to avoid false matches). Content-Transfer-Encoding support (base64, quoted-printable). RFC 5987 `filename*` parameter decoding. Security limits: max_part_size (10 MB), max_parts (1000), max_header_size (16 KB). Single file, ~590 lines, stdlib only. 57 correctness tests + 11 benchmarks (3-7x faster than python-multipart).
+
 ### Bug Fixes
 
 - **httpclient**: Remove redundant global `asyncio.Lock()` / `threading.Lock()` from `AsyncClient` / `Client` that serialized concurrent requests and could cause deadlocks. Connection pools already provide internal fine-grained locking.
+
+### Infrastructure
+
+- Added docs/changelog update workflow guidance to AGENTS.md.
 
 ## [2026.5.2.1] - 2026-05-02
 

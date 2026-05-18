@@ -150,3 +150,114 @@ class TestDumpLarge:
 
     def test_pyyaml(self, benchmark):
         benchmark(_pyyaml_dump, LARGE_DATA, default_flow_style=False)
+
+
+# ── Fixture data: real-world config files ──
+
+_FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
+_FIXTURE_CACHE: dict[str, str] = {}
+
+_FIXTURE_FILES = {
+    "github-actions": "github-actions.yml",
+    "docker-compose": "docker-compose.yml",
+    "k8s-deployment": "k8s-deployment.yml",
+}
+
+
+def _fixture_available(name: str) -> bool:
+    return os.path.isfile(os.path.join(_FIXTURES_DIR, _FIXTURE_FILES.get(name, "")))
+
+
+def _get_fixture(name: str) -> str:
+    if name not in _FIXTURE_CACHE:
+        path = os.path.join(_FIXTURES_DIR, _FIXTURE_FILES[name])
+        with open(path, encoding="utf-8") as f:
+            _FIXTURE_CACHE[name] = f.read()
+    return _FIXTURE_CACHE[name]
+
+
+# Pre-parse fixture data for dump benchmarks (lazy).
+_FIXTURE_DATA_CACHE: dict[str, object] = {}
+
+
+def _get_fixture_data(name: str) -> object:
+    if name not in _FIXTURE_DATA_CACHE:
+        _FIXTURE_DATA_CACHE[name] = zd_load(_get_fixture(name))
+    return _FIXTURE_DATA_CACHE[name]
+
+
+# ── Fixture load benchmarks ──
+
+
+@pytest.mark.skipif(not _fixture_available("github-actions"), reason="fixture missing")
+class TestFixtureLoadGithubActions:
+    def test_zerodep(self, benchmark):
+        benchmark(zd_load, _get_fixture("github-actions"))
+
+    def test_pyyaml(self, benchmark):
+        benchmark(_pyyaml_safe_load, _get_fixture("github-actions"))
+
+
+@pytest.mark.skipif(not _fixture_available("docker-compose"), reason="fixture missing")
+class TestFixtureLoadDockerCompose:
+    def test_zerodep(self, benchmark):
+        benchmark(zd_load, _get_fixture("docker-compose"))
+
+    def test_pyyaml(self, benchmark):
+        benchmark(_pyyaml_safe_load, _get_fixture("docker-compose"))
+
+
+# k8s-deployment.yml is a multi-document YAML stream (Deployment + Service + HPA).
+# Use load_all / safe_load_all to consume all documents.
+_pyyaml_safe_load_all = _pyyaml.safe_load_all
+
+
+@pytest.mark.skipif(not _fixture_available("k8s-deployment"), reason="fixture missing")
+class TestFixtureLoadK8sDeployment:
+    def test_zerodep(self, benchmark):
+        src = _get_fixture("k8s-deployment")
+        benchmark(lambda s=src: list(__import__("yaml").load_all(s)))
+
+    def test_pyyaml(self, benchmark):
+        src = _get_fixture("k8s-deployment")
+        benchmark(lambda s=src: list(_pyyaml_safe_load_all(s)))
+
+
+# ── Fixture dump benchmarks ──
+
+
+@pytest.mark.skipif(not _fixture_available("github-actions"), reason="fixture missing")
+class TestFixtureDumpGithubActions:
+    def test_zerodep(self, benchmark):
+        benchmark(zd_dump, _get_fixture_data("github-actions"))
+
+    def test_pyyaml(self, benchmark):
+        benchmark(
+            _pyyaml_dump, _get_fixture_data("github-actions"), default_flow_style=False
+        )
+
+
+@pytest.mark.skipif(not _fixture_available("docker-compose"), reason="fixture missing")
+class TestFixtureDumpDockerCompose:
+    def test_zerodep(self, benchmark):
+        benchmark(zd_dump, _get_fixture_data("docker-compose"))
+
+    def test_pyyaml(self, benchmark):
+        benchmark(
+            _pyyaml_dump,
+            _get_fixture_data("docker-compose"),
+            default_flow_style=False,
+        )
+
+
+@pytest.mark.skipif(not _fixture_available("k8s-deployment"), reason="fixture missing")
+class TestFixtureDumpK8sDeployment:
+    def test_zerodep(self, benchmark):
+        benchmark(zd_dump, _get_fixture_data("k8s-deployment"))
+
+    def test_pyyaml(self, benchmark):
+        benchmark(
+            _pyyaml_dump,
+            _get_fixture_data("k8s-deployment"),
+            default_flow_style=False,
+        )

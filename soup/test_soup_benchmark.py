@@ -274,3 +274,126 @@ class TestPseudoSelectLarge:
 
     def test_beautifulsoup4(self, benchmark):
         benchmark(_bs4_select, LARGE, _PSEUDO_QUERIES)
+
+
+# ── Fixture data: real-world HTML pages ──
+
+_FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
+_FIXTURE_CACHE: dict[str, str] = {}
+
+_FIXTURE_FILES = {
+    "blog-post": "blog-post.html",
+    "docs-page": "docs-page.html",
+    "ecommerce": "ecommerce.html",
+}
+
+
+def _fixture_available(name: str) -> bool:
+    return os.path.isfile(os.path.join(_FIXTURES_DIR, _FIXTURE_FILES.get(name, "")))
+
+
+def _get_fixture(name: str) -> str:
+    if name not in _FIXTURE_CACHE:
+        path = os.path.join(_FIXTURES_DIR, _FIXTURE_FILES[name])
+        with open(path, encoding="utf-8") as f:
+            _FIXTURE_CACHE[name] = f.read()
+    return _FIXTURE_CACHE[name]
+
+
+# ── Fixture parse + find benchmarks ──
+
+
+@pytest.mark.skipif(not _fixture_available("blog-post"), reason="fixture missing")
+class TestFixtureParseBlogPost:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_parse_and_find, _get_fixture("blog-post"))
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_parse_and_find, _get_fixture("blog-post"))
+
+
+@pytest.mark.skipif(not _fixture_available("docs-page"), reason="fixture missing")
+class TestFixtureParseDocsPage:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_parse_and_find, _get_fixture("docs-page"))
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_parse_and_find, _get_fixture("docs-page"))
+
+
+@pytest.mark.skipif(not _fixture_available("ecommerce"), reason="fixture missing")
+class TestFixtureParseEcommerce:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_parse_and_find, _get_fixture("ecommerce"))
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_parse_and_find, _get_fixture("ecommerce"))
+
+
+# ── Fixture serialize benchmarks ──
+
+
+@pytest.mark.skipif(not _fixture_available("blog-post"), reason="fixture missing")
+class TestFixtureSerializeBlogPost:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_parse_and_serialize, _get_fixture("blog-post"))
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_parse_and_serialize, _get_fixture("blog-post"))
+
+
+@pytest.mark.skipif(not _fixture_available("ecommerce"), reason="fixture missing")
+class TestFixtureSerializeEcommerce:
+    def test_zerodep(self, benchmark):
+        benchmark(_zd_parse_and_serialize, _get_fixture("ecommerce"))
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(_bs4_parse_and_serialize, _get_fixture("ecommerce"))
+
+
+# ── Fixture CSS select benchmarks ──
+
+_FIXTURE_SELECT_QUERIES = [
+    "a",
+    "nav a",
+    "article h2",
+    ".product-card",
+    "h1, h2, h3",
+    "[data-product-id]",
+]
+
+
+def _zd_select_fixture(html: str, queries: list[str]) -> list:
+    soup = Soup(html)
+    return [soup.select(q) for q in queries]
+
+
+def _bs4_select_fixture(html: str, queries: list[str]) -> list:
+    soup = BeautifulSoup(html, "html.parser")
+    return [soup.select(q) for q in queries]
+
+
+@pytest.mark.skipif(not _fixture_available("ecommerce"), reason="fixture missing")
+class TestFixtureSelectEcommerce:
+    def test_zerodep(self, benchmark):
+        benchmark(
+            _zd_select_fixture, _get_fixture("ecommerce"), _FIXTURE_SELECT_QUERIES
+        )
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(
+            _bs4_select_fixture, _get_fixture("ecommerce"), _FIXTURE_SELECT_QUERIES
+        )
+
+
+@pytest.mark.skipif(not _fixture_available("docs-page"), reason="fixture missing")
+class TestFixtureSelectDocsPage:
+    def test_zerodep(self, benchmark):
+        benchmark(
+            _zd_select_fixture, _get_fixture("docs-page"), _FIXTURE_SELECT_QUERIES
+        )
+
+    def test_beautifulsoup4(self, benchmark):
+        benchmark(
+            _bs4_select_fixture, _get_fixture("docs-page"), _FIXTURE_SELECT_QUERIES
+        )

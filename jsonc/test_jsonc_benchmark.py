@@ -99,3 +99,57 @@ class TestLoadLarge:
 
     def test_commentjson(self, benchmark):
         benchmark(_cj.loads, LARGE)
+
+
+# ── Fixture data: real-world config files ──
+
+_FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
+_FIXTURE_CACHE: dict[str, str] = {}
+
+_FIXTURE_FILES = {
+    "vscode-settings": "vscode-settings.jsonc",
+    "tsconfig": "tsconfig.jsonc",
+    "eslint-config": "eslint-config.jsonc",
+}
+
+
+def _fixture_available(name: str) -> bool:
+    return os.path.isfile(os.path.join(_FIXTURES_DIR, _FIXTURE_FILES.get(name, "")))
+
+
+def _get_fixture(name: str) -> str:
+    if name not in _FIXTURE_CACHE:
+        path = os.path.join(_FIXTURES_DIR, _FIXTURE_FILES[name])
+        with open(path, encoding="utf-8") as f:
+            _FIXTURE_CACHE[name] = f.read()
+    return _FIXTURE_CACHE[name]
+
+
+# ── Fixture load benchmarks ──
+
+
+@pytest.mark.skipif(not _fixture_available("vscode-settings"), reason="fixture missing")
+class TestFixtureLoadVscodeSettings:
+    def test_zerodep(self, benchmark):
+        benchmark(zd_loads, _get_fixture("vscode-settings"))
+
+    def test_commentjson(self, benchmark):
+        benchmark(_cj.loads, _get_fixture("vscode-settings"))
+
+
+@pytest.mark.skipif(not _fixture_available("tsconfig"), reason="fixture missing")
+class TestFixtureLoadTsconfig:
+    def test_zerodep(self, benchmark):
+        benchmark(zd_loads, _get_fixture("tsconfig"))
+
+    def test_commentjson(self, benchmark):
+        benchmark(_cj.loads, _get_fixture("tsconfig"))
+
+
+@pytest.mark.skipif(not _fixture_available("eslint-config"), reason="fixture missing")
+class TestFixtureLoadEslintConfig:
+    def test_zerodep(self, benchmark):
+        benchmark(zd_loads, _get_fixture("eslint-config"))
+
+    def test_commentjson(self, benchmark):
+        benchmark(_cj.loads, _get_fixture("eslint-config"))

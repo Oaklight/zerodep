@@ -1,0 +1,32 @@
+------FormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="username"
+
+alice_wonder
+------FormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="email"
+
+alice@example.com
+------FormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+This is a sample form submission.
+It spans multiple lines.
+------FormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="category"
+
+documents
+------FormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="priority"
+
+high
+------FormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="attachment"; filename="report.html"
+Content-Type: text/html; charset=utf-8
+
+<!DOCTYPE html><html><head><title>Q1 Report</title></head><body><h1>Q1 2024 Report</h1></body></html>
+------FormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="metadata"; filename="meta.json"
+Content-Type: application/json
+
+{"version": "1.0", "created": "2024-03-15", "author": "Alice"}
+------FormBoundary7MA4YWxkTrZu0gW--

@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,15 +125,17 @@ td { white-space: nowrap; }
 <h1>tabulate</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>tabulate</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Large Table</td><td>zerodep</td><td>reference</td><td>6.12 ms</td><td>26.54 ms</td><td>163.5</td><td>37.7</td><td class="ratio-cell faster">4.3x faster</td></tr>
-<tr><td>Medium Table</td><td>zerodep</td><td>reference</td><td>386.6 µs</td><td>1.73 ms</td><td>2.6K</td><td>579.4</td><td class="ratio-cell faster">4.5x faster</td></tr>
-<tr><td>Small Table</td><td>zerodep</td><td>reference</td><td>46.9 µs</td><td>140.2 µs</td><td>21.3K</td><td>7.1K</td><td class="ratio-cell faster">3.0x faster</td></tr>
-</tbody></table>
+<tr><td>Large Table</td><td>zerodep</td><td>reference</td><td>6.78 ms</td><td>27.58 ms</td><td>147.5</td><td>36.3</td><td title="CV=99.1% | rounds=149">6.13 ms</td><td title="CV=99.1% | rounds=149">88.22 ms</td><td title="CV=99.1% | rounds=149">6.72 ms</td><td title="CV=99.1% | rounds=149">6.31 ms</td><td title="CV=1.5% | rounds=36">27.31 ms</td><td title="CV=1.5% | rounds=36">29.76 ms</td><td title="CV=1.5% | rounds=36">424.3 µs</td><td title="CV=1.5% | rounds=36">28.48 ms</td><td class="ratio-cell faster">4.1x faster</td></tr>
+<tr><td>Medium Table</td><td>zerodep</td><td>reference</td><td>407.8 µs</td><td>1.81 ms</td><td>2.5K</td><td>553.3</td><td title="CV=7.3% | rounds=1896">391.4 µs</td><td title="CV=7.3% | rounds=1896">923.0 µs</td><td title="CV=7.3% | rounds=1896">29.7 µs</td><td title="CV=7.3% | rounds=1896">420.0 µs</td><td title="CV=2.2% | rounds=442">1.78 ms</td><td title="CV=2.2% | rounds=442">2.16 ms</td><td title="CV=2.2% | rounds=442">39.4 µs</td><td title="CV=2.2% | rounds=442">1.85 ms</td><td class="ratio-cell faster">4.4x faster</td></tr>
+<tr><td>Small Table</td><td>zerodep</td><td>reference</td><td>53.4 µs</td><td>175.0 µs</td><td>18.7K</td><td>5.7K</td><td title="CV=6.6% | rounds=7218">50.6 µs</td><td title="CV=6.6% | rounds=7218">113.4 µs</td><td title="CV=6.6% | rounds=7218">3.5 µs</td><td title="CV=6.6% | rounds=7218">63.5 µs</td><td title="CV=7.2% | rounds=1006">165.3 µs</td><td title="CV=7.2% | rounds=1006">265.8 µs</td><td title="CV=7.2% | rounds=1006">12.6 µs</td><td title="CV=7.2% | rounds=1006">194.3 µs</td><td class="ratio-cell faster">3.3x faster</td></tr>
+</tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -203,13 +206,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [163.52879132372794, 2586.33005396999, 21317.340635153],
+        data: [147.50461692668082, 2452.287779365395, 18730.56402315456],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "reference" + ' (ops/s)',
-        data: [37.67623971210106, 579.3742890323216, 7133.11796275793],
+        data: [36.25714645099937, 553.3039721121456, 5714.658846942409],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

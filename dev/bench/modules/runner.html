@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,22 +125,24 @@ td { white-space: nowrap; }
 <h1>runner</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>runner</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Env Passing</td><td>zerodep</td><td>sh</td><td>12.92 ms</td><td>78.90 ms</td><td>77.4</td><td>12.7</td><td class="ratio-cell faster">6.1x faster</td></tr>
-<tr><td>Env Passing</td><td>zerodep</td><td>subprocess</td><td>12.92 ms</td><td>12.74 ms</td><td>77.4</td><td>78.5</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Output Capture</td><td>zerodep</td><td>sh</td><td>12.79 ms</td><td>79.91 ms</td><td>78.2</td><td>12.5</td><td class="ratio-cell faster">6.2x faster</td></tr>
-<tr><td>Output Capture</td><td>zerodep</td><td>subprocess</td><td>12.79 ms</td><td>12.70 ms</td><td>78.2</td><td>78.7</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Simple Command</td><td>zerodep</td><td>sh</td><td>2.08 ms</td><td>66.89 ms</td><td>481.9</td><td>15.0</td><td class="ratio-cell faster">32.2x faster</td></tr>
-<tr><td>Simple Command</td><td>zerodep</td><td>subprocess</td><td>2.08 ms</td><td>951.8 µs</td><td>481.9</td><td>1.1K</td><td class="ratio-cell slower">2.2x slower</td></tr>
-<tr><td>Stdin Input</td><td>zerodep</td><td>sh</td><td>12.67 ms</td><td>79.40 ms</td><td>78.9</td><td>12.6</td><td class="ratio-cell faster">6.3x faster</td></tr>
-<tr><td>Stdin Input</td><td>zerodep</td><td>subprocess</td><td>12.67 ms</td><td>12.61 ms</td><td>78.9</td><td>79.3</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Streaming Lines</td><td>zerodep</td><td>sh</td><td>12.57 ms</td><td>78.72 ms</td><td>79.5</td><td>12.7</td><td class="ratio-cell faster">6.3x faster</td></tr>
-<tr><td>Streaming Lines</td><td>zerodep</td><td>subprocess</td><td>12.57 ms</td><td>12.59 ms</td><td>79.5</td><td>79.4</td><td class="ratio-cell similar">~equal</td></tr>
-</tbody></table>
+<tr><td>Env Passing</td><td>zerodep</td><td>sh</td><td>11.64 ms</td><td>70.37 ms</td><td>85.9</td><td>14.2</td><td title="CV=8.2% | rounds=85">11.23 ms</td><td title="CV=8.2% | rounds=85">19.76 ms</td><td title="CV=8.2% | rounds=85">956.5 µs</td><td title="CV=8.2% | rounds=85">12.33 ms</td><td title="CV=1.1% | rounds=15">69.39 ms</td><td title="CV=1.1% | rounds=15">72.45 ms</td><td title="CV=1.1% | rounds=15">788.4 µs</td><td title="CV=1.1% | rounds=15">72.45 ms</td><td class="ratio-cell faster">6.0x faster</td></tr>
+<tr><td>Env Passing</td><td>zerodep</td><td>subprocess</td><td>11.64 ms</td><td>11.24 ms</td><td>85.9</td><td>88.9</td><td title="CV=8.2% | rounds=85">11.23 ms</td><td title="CV=8.2% | rounds=85">19.76 ms</td><td title="CV=8.2% | rounds=85">956.5 µs</td><td title="CV=8.2% | rounds=85">12.33 ms</td><td title="CV=0.8% | rounds=84">11.05 ms</td><td title="CV=0.8% | rounds=84">11.55 ms</td><td title="CV=0.8% | rounds=84">94.8 µs</td><td title="CV=0.8% | rounds=84">11.43 ms</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Output Capture</td><td>zerodep</td><td>sh</td><td>11.22 ms</td><td>70.44 ms</td><td>89.2</td><td>14.2</td><td title="CV=1.5% | rounds=82">11.00 ms</td><td title="CV=1.5% | rounds=82">11.95 ms</td><td title="CV=1.5% | rounds=82">168.2 µs</td><td title="CV=1.5% | rounds=82">11.57 ms</td><td title="CV=0.9% | rounds=14">69.86 ms</td><td title="CV=0.9% | rounds=14">71.81 ms</td><td title="CV=0.9% | rounds=14">627.8 µs</td><td title="CV=0.9% | rounds=14">71.81 ms</td><td class="ratio-cell faster">6.3x faster</td></tr>
+<tr><td>Output Capture</td><td>zerodep</td><td>subprocess</td><td>11.22 ms</td><td>11.09 ms</td><td>89.2</td><td>90.2</td><td title="CV=1.5% | rounds=82">11.00 ms</td><td title="CV=1.5% | rounds=82">11.95 ms</td><td title="CV=1.5% | rounds=82">168.2 µs</td><td title="CV=1.5% | rounds=82">11.57 ms</td><td title="CV=1.2% | rounds=87">10.91 ms</td><td title="CV=1.2% | rounds=87">11.57 ms</td><td title="CV=1.2% | rounds=87">134.2 µs</td><td title="CV=1.2% | rounds=87">11.36 ms</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Simple Command</td><td>zerodep</td><td>sh</td><td>2.01 ms</td><td>59.52 ms</td><td>496.4</td><td>16.8</td><td title="CV=8.1% | rounds=308">1.94 ms</td><td title="CV=8.1% | rounds=308">4.72 ms</td><td title="CV=8.1% | rounds=308">163.3 µs</td><td title="CV=8.1% | rounds=308">2.07 ms</td><td title="CV=1.4% | rounds=16">58.39 ms</td><td title="CV=1.4% | rounds=16">61.14 ms</td><td title="CV=1.4% | rounds=16">859.0 µs</td><td title="CV=1.4% | rounds=16">61.14 ms</td><td class="ratio-cell faster">29.5x faster</td></tr>
+<tr><td>Simple Command</td><td>zerodep</td><td>subprocess</td><td>2.01 ms</td><td>902.8 µs</td><td>496.4</td><td>1.1K</td><td title="CV=8.1% | rounds=308">1.94 ms</td><td title="CV=8.1% | rounds=308">4.72 ms</td><td title="CV=8.1% | rounds=308">163.3 µs</td><td title="CV=8.1% | rounds=308">2.07 ms</td><td title="CV=15.9% | rounds=604">846.6 µs</td><td title="CV=15.9% | rounds=604">4.29 ms</td><td title="CV=15.9% | rounds=604">143.8 µs</td><td title="CV=15.9% | rounds=604">988.4 µs</td><td class="ratio-cell slower">2.2x slower</td></tr>
+<tr><td>Stdin Input</td><td>zerodep</td><td>sh</td><td>11.31 ms</td><td>70.51 ms</td><td>88.4</td><td>14.2</td><td title="CV=2.3% | rounds=90">10.94 ms</td><td title="CV=2.3% | rounds=90">12.48 ms</td><td title="CV=2.3% | rounds=90">261.6 µs</td><td title="CV=2.3% | rounds=90">11.90 ms</td><td title="CV=1.2% | rounds=15">68.56 ms</td><td title="CV=1.2% | rounds=15">72.06 ms</td><td title="CV=1.2% | rounds=15">866.3 µs</td><td title="CV=1.2% | rounds=15">72.06 ms</td><td class="ratio-cell faster">6.2x faster</td></tr>
+<tr><td>Stdin Input</td><td>zerodep</td><td>subprocess</td><td>11.31 ms</td><td>11.26 ms</td><td>88.4</td><td>88.8</td><td title="CV=2.3% | rounds=90">10.94 ms</td><td title="CV=2.3% | rounds=90">12.48 ms</td><td title="CV=2.3% | rounds=90">261.6 µs</td><td title="CV=2.3% | rounds=90">11.90 ms</td><td title="CV=1.8% | rounds=87">10.98 ms</td><td title="CV=1.8% | rounds=87">12.11 ms</td><td title="CV=1.8% | rounds=87">204.3 µs</td><td title="CV=1.8% | rounds=87">11.59 ms</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Streaming Lines</td><td>zerodep</td><td>sh</td><td>11.34 ms</td><td>70.64 ms</td><td>88.2</td><td>14.2</td><td title="CV=2.3% | rounds=88">11.00 ms</td><td title="CV=2.3% | rounds=88">12.41 ms</td><td title="CV=2.3% | rounds=88">256.1 µs</td><td title="CV=2.3% | rounds=88">11.83 ms</td><td title="CV=0.5% | rounds=15">70.10 ms</td><td title="CV=0.5% | rounds=15">71.31 ms</td><td title="CV=0.5% | rounds=15">373.0 µs</td><td title="CV=0.5% | rounds=15">71.31 ms</td><td class="ratio-cell faster">6.2x faster</td></tr>
+<tr><td>Streaming Lines</td><td>zerodep</td><td>subprocess</td><td>11.34 ms</td><td>11.05 ms</td><td>88.2</td><td>90.5</td><td title="CV=2.3% | rounds=88">11.00 ms</td><td title="CV=2.3% | rounds=88">12.41 ms</td><td title="CV=2.3% | rounds=88">256.1 µs</td><td title="CV=2.3% | rounds=88">11.83 ms</td><td title="CV=1.3% | rounds=84">10.87 ms</td><td title="CV=1.3% | rounds=84">11.54 ms</td><td title="CV=1.3% | rounds=84">146.7 µs</td><td title="CV=1.3% | rounds=84">11.36 ms</td><td class="ratio-cell similar">~equal</td></tr>
+</tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -210,13 +213,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [77.42328762624717, 78.20599017958368, 481.8505446000215, 78.91691878915846, 79.53276596398048],
+        data: [85.91995040793627, 89.1647661251037, 496.432536666593, 88.41858306640174, 88.1837084460467],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "subprocess" + ' (ops/s)',
-        data: [78.49786532605522, 78.71687344995453, 1050.6176392782752, 79.2848430548749, 79.40501770083652],
+        data: [88.94147541858547, 90.19368515400161, 1107.6797795712262, 88.83758846048293, 90.48400956679681],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

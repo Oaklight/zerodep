@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,18 +125,20 @@ td { white-space: nowrap; }
 <h1>frontmatter</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>frontmatter</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>python-frontmatter</td><td>452.9 µs</td><td>452.6 µs</td><td>2.2K</td><td>2.2K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-frontmatter</td><td>88.3 µs</td><td>88.5 µs</td><td>11.3K</td><td>11.3K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>python-frontmatter</td><td>13.7 µs</td><td>13.7 µs</td><td>72.8K</td><td>73.0K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Serialize (Large)</td><td>zerodep</td><td>python-frontmatter</td><td>704.4 µs</td><td>685.8 µs</td><td>1.4K</td><td>1.5K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Serialize (Medium)</td><td>zerodep</td><td>python-frontmatter</td><td>143.3 µs</td><td>147.7 µs</td><td>7.0K</td><td>6.8K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Serialize (Small)</td><td>zerodep</td><td>python-frontmatter</td><td>21.6 µs</td><td>23.1 µs</td><td>46.2K</td><td>43.2K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-</tbody></table>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>python-frontmatter</td><td>447.7 µs</td><td>450.2 µs</td><td>2.2K</td><td>2.2K</td><td title="CV=2.4% | rounds=2056">433.7 µs</td><td title="CV=2.4% | rounds=2056">638.2 µs</td><td title="CV=2.4% | rounds=2056">10.9 µs</td><td title="CV=2.4% | rounds=2056">459.1 µs</td><td title="CV=2.8% | rounds=2136">435.8 µs</td><td title="CV=2.8% | rounds=2136">815.5 µs</td><td title="CV=2.8% | rounds=2136">12.5 µs</td><td title="CV=2.8% | rounds=2136">460.0 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-frontmatter</td><td>87.5 µs</td><td>87.5 µs</td><td>11.4K</td><td>11.4K</td><td title="CV=5.2% | rounds=8741">84.3 µs</td><td title="CV=5.2% | rounds=8741">193.8 µs</td><td title="CV=5.2% | rounds=8741">4.5 µs</td><td title="CV=5.2% | rounds=8741">97.3 µs</td><td title="CV=4.9% | rounds=8916">84.4 µs</td><td title="CV=4.9% | rounds=8916">177.9 µs</td><td title="CV=4.9% | rounds=8916">4.3 µs</td><td title="CV=4.9% | rounds=8916">97.2 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>python-frontmatter</td><td>13.7 µs</td><td>13.6 µs</td><td>73.2K</td><td>73.5K</td><td title="CV=11.1% | rounds=18897">13.0 µs</td><td title="CV=11.1% | rounds=18897">100.2 µs</td><td title="CV=11.1% | rounds=18897">1.5 µs</td><td title="CV=11.1% | rounds=18897">13.8 µs</td><td title="CV=11.3% | rounds=31211">13.0 µs</td><td title="CV=11.3% | rounds=31211">51.6 µs</td><td title="CV=11.3% | rounds=31211">1.5 µs</td><td title="CV=11.3% | rounds=31211">13.8 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>python-frontmatter</td><td>703.0 µs</td><td>702.0 µs</td><td>1.4K</td><td>1.4K</td><td title="CV=2.1% | rounds=1229">684.0 µs</td><td title="CV=2.1% | rounds=1229">1.01 ms</td><td title="CV=2.1% | rounds=1229">14.5 µs</td><td title="CV=2.1% | rounds=1229">713.7 µs</td><td title="CV=1.6% | rounds=1159">683.7 µs</td><td title="CV=1.6% | rounds=1159">799.6 µs</td><td title="CV=1.6% | rounds=1159">11.2 µs</td><td title="CV=1.6% | rounds=1159">713.3 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>python-frontmatter</td><td>157.0 µs</td><td>156.4 µs</td><td>6.4K</td><td>6.4K</td><td title="CV=4.7% | rounds=4141">149.7 µs</td><td title="CV=4.7% | rounds=4141">277.7 µs</td><td title="CV=4.7% | rounds=4141">7.4 µs</td><td title="CV=4.7% | rounds=4141">169.6 µs</td><td title="CV=5.0% | rounds=4582">148.4 µs</td><td title="CV=5.0% | rounds=4582">303.5 µs</td><td title="CV=5.0% | rounds=4582">7.9 µs</td><td title="CV=5.0% | rounds=4582">169.0 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>python-frontmatter</td><td>24.7 µs</td><td>24.8 µs</td><td>40.4K</td><td>40.4K</td><td title="CV=10.2% | rounds=15239">23.2 µs</td><td title="CV=10.2% | rounds=15239">97.9 µs</td><td title="CV=10.2% | rounds=15239">2.5 µs</td><td title="CV=10.2% | rounds=15239">26.2 µs</td><td title="CV=9.9% | rounds=21067">23.0 µs</td><td title="CV=9.9% | rounds=21067">132.3 µs</td><td title="CV=9.9% | rounds=21067">2.5 µs</td><td title="CV=9.9% | rounds=21067">26.3 µs</td><td class="ratio-cell similar">~equal</td></tr>
+</tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -206,13 +209,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [2208.1626689883747, 11322.547188403696, 72780.41311874625, 1419.651621680082, 6979.322731932455, 46211.42817839921],
+        data: [2233.7712760299455, 11423.504931270016, 73234.96383101313, 1422.573697137102, 6370.7147856716365, 40436.23874167166],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-frontmatter" + ' (ops/s)',
-        data: [2209.28092569928, 11297.918272082678, 73018.37580428236, 1458.1165437405357, 6769.75268684052, 43204.579268272486],
+        data: [2221.3303483866794, 11433.044157316339, 73537.94242970344, 1424.5047598245305, 6393.283564052594, 40364.28376154865],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

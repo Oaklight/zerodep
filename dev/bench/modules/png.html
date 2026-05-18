@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,26 +125,28 @@ td { white-space: nowrap; }
 <h1>png</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>png</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Decode Bmp Medium RGB</td><td>zerodep</td><td>pillow</td><td>664.1 µs</td><td>88.0 µs</td><td>1.5K</td><td>11.4K</td><td class="ratio-cell slower">7.5x slower</td></tr>
-<tr><td>Decode Large RGBA</td><td>zerodep</td><td>pillow</td><td>521.51 ms</td><td>23.30 ms</td><td>1.9</td><td>42.9</td><td class="ratio-cell slower">22.4x slower</td></tr>
-<tr><td>Decode Medium Gray</td><td>zerodep</td><td>pillow</td><td>6.33 ms</td><td>285.2 µs</td><td>158.0</td><td>3.5K</td><td class="ratio-cell slower">22.2x slower</td></tr>
-<tr><td>Decode Medium RGB</td><td>zerodep</td><td>pillow</td><td>24.28 ms</td><td>1.02 ms</td><td>41.2</td><td>983.1</td><td class="ratio-cell slower">23.9x slower</td></tr>
-<tr><td>Decode Medium RGBA</td><td>zerodep</td><td>pillow</td><td>28.29 ms</td><td>1.26 ms</td><td>35.3</td><td>794.1</td><td class="ratio-cell slower">22.5x slower</td></tr>
-<tr><td>Decode Small RGBA</td><td>zerodep</td><td>pillow</td><td>1.62 ms</td><td>49.2 µs</td><td>617.6</td><td>20.3K</td><td class="ratio-cell slower">32.9x slower</td></tr>
-<tr><td>Encode Bmp Medium RGB</td><td>zerodep</td><td>pillow</td><td>559.9 µs</td><td>79.8 µs</td><td>1.8K</td><td>12.5K</td><td class="ratio-cell slower">7.0x slower</td></tr>
-<tr><td>Encode Large RGBA</td><td>zerodep</td><td>pillow</td><td>3.989 s</td><td>192.62 ms</td><td>0.3</td><td>5.2</td><td class="ratio-cell slower">20.7x slower</td></tr>
-<tr><td>Encode Medium RGBA</td><td>zerodep</td><td>pillow</td><td>251.86 ms</td><td>11.78 ms</td><td>4.0</td><td>84.9</td><td class="ratio-cell slower">21.4x slower</td></tr>
-<tr><td>Encode Small RGBA</td><td>zerodep</td><td>pillow</td><td>14.91 ms</td><td>328.9 µs</td><td>67.1</td><td>3.0K</td><td class="ratio-cell slower">45.3x slower</td></tr>
-<tr><td>Matrix Round Trip</td><td>zerodep_encode</td><td>pillow_encode</td><td>91.21 ms</td><td>2.74 ms</td><td>11.0</td><td>364.6</td><td class="ratio-cell slower">33.3x slower</td></tr>
-<tr><td>Matrix Round Trip</td><td>zerodep_encode</td><td>pillow_decode</td><td>91.21 ms</td><td>232.1 µs</td><td>11.0</td><td>4.3K</td><td class="ratio-cell slower">393.1x slower</td></tr>
-<tr><td>Matrix Round Trip</td><td>zerodep_decode</td><td>pillow_encode</td><td>17.57 ms</td><td>2.74 ms</td><td>56.9</td><td>364.6</td><td class="ratio-cell slower">6.4x slower</td></tr>
-<tr><td>Matrix Round Trip</td><td>zerodep_decode</td><td>pillow_decode</td><td>17.57 ms</td><td>232.1 µs</td><td>56.9</td><td>4.3K</td><td class="ratio-cell slower">75.7x slower</td></tr>
-</tbody></table>
+<tr><td>Decode Bmp Medium RGB</td><td>zerodep</td><td>pillow</td><td>611.2 µs</td><td>98.2 µs</td><td>1.6K</td><td>10.2K</td><td title="CV=1.7% | rounds=1421">595.8 µs</td><td title="CV=1.7% | rounds=1421">834.9 µs</td><td title="CV=1.7% | rounds=1421">10.4 µs</td><td title="CV=1.7% | rounds=1421">621.1 µs</td><td title="CV=6.2% | rounds=4732">92.7 µs</td><td title="CV=6.2% | rounds=4732">162.8 µs</td><td title="CV=6.2% | rounds=4732">6.1 µs</td><td title="CV=6.2% | rounds=4732">112.6 µs</td><td class="ratio-cell slower">6.2x slower</td></tr>
+<tr><td>Decode Large RGBA</td><td>zerodep</td><td>pillow</td><td>482.48 ms</td><td>21.65 ms</td><td>2.1</td><td>46.2</td><td title="CV=0.5% | rounds=5">478.78 ms</td><td title="CV=0.5% | rounds=5">486.06 ms</td><td title="CV=0.5% | rounds=5">2.59 ms</td><td title="CV=0.5% | rounds=5">486.06 ms</td><td title="CV=0.4% | rounds=45">21.50 ms</td><td title="CV=0.4% | rounds=45">21.87 ms</td><td title="CV=0.4% | rounds=45">89.8 µs</td><td title="CV=0.4% | rounds=45">21.82 ms</td><td class="ratio-cell slower">22.3x slower</td></tr>
+<tr><td>Decode Medium Gray</td><td>zerodep</td><td>pillow</td><td>5.97 ms</td><td>291.7 µs</td><td>167.5</td><td>3.4K</td><td title="CV=1.0% | rounds=169">5.85 ms</td><td title="CV=1.0% | rounds=169">6.38 ms</td><td title="CV=1.0% | rounds=169">57.9 µs</td><td title="CV=1.0% | rounds=169">6.05 ms</td><td title="CV=3.6% | rounds=2467">280.9 µs</td><td title="CV=3.6% | rounds=2467">372.0 µs</td><td title="CV=3.6% | rounds=2467">10.5 µs</td><td title="CV=3.6% | rounds=2467">308.4 µs</td><td class="ratio-cell slower">20.5x slower</td></tr>
+<tr><td>Decode Medium RGB</td><td>zerodep</td><td>pillow</td><td>23.32 ms</td><td>1.03 ms</td><td>42.9</td><td>974.7</td><td title="CV=1.3% | rounds=43">22.57 ms</td><td title="CV=1.3% | rounds=43">24.32 ms</td><td title="CV=1.3% | rounds=43">303.3 µs</td><td title="CV=1.3% | rounds=43">24.00 ms</td><td title="CV=1.6% | rounds=847">1.01 ms</td><td title="CV=1.6% | rounds=847">1.31 ms</td><td title="CV=1.6% | rounds=847">16.6 µs</td><td title="CV=1.6% | rounds=847">1.05 ms</td><td class="ratio-cell slower">22.7x slower</td></tr>
+<tr><td>Decode Medium RGBA</td><td>zerodep</td><td>pillow</td><td>26.80 ms</td><td>1.26 ms</td><td>37.3</td><td>796.1</td><td title="CV=0.7% | rounds=38">26.55 ms</td><td title="CV=0.7% | rounds=38">27.23 ms</td><td title="CV=0.7% | rounds=38">174.5 µs</td><td title="CV=0.7% | rounds=38">27.09 ms</td><td title="CV=1.2% | rounds=720">1.24 ms</td><td title="CV=1.2% | rounds=720">1.49 ms</td><td title="CV=1.2% | rounds=720">15.3 µs</td><td title="CV=1.2% | rounds=720">1.28 ms</td><td class="ratio-cell slower">21.3x slower</td></tr>
+<tr><td>Decode Small RGBA</td><td>zerodep</td><td>pillow</td><td>1.55 ms</td><td>65.1 µs</td><td>645.3</td><td>15.4K</td><td title="CV=4.0% | rounds=594">1.51 ms</td><td title="CV=4.0% | rounds=594">2.58 ms</td><td title="CV=4.0% | rounds=594">61.6 µs</td><td title="CV=4.0% | rounds=594">1.59 ms</td><td title="CV=12.6% | rounds=3627">60.3 µs</td><td title="CV=12.6% | rounds=3627">230.1 µs</td><td title="CV=12.6% | rounds=3627">8.2 µs</td><td title="CV=12.6% | rounds=3627">82.1 µs</td><td class="ratio-cell slower">23.8x slower</td></tr>
+<tr><td>Encode Bmp Medium RGB</td><td>zerodep</td><td>pillow</td><td>572.5 µs</td><td>86.4 µs</td><td>1.7K</td><td>11.6K</td><td title="CV=1.8% | rounds=1574">553.6 µs</td><td title="CV=1.8% | rounds=1574">683.8 µs</td><td title="CV=1.8% | rounds=1574">10.1 µs</td><td title="CV=1.8% | rounds=1574">584.0 µs</td><td title="CV=6.2% | rounds=4822">82.5 µs</td><td title="CV=6.2% | rounds=4822">160.9 µs</td><td title="CV=6.2% | rounds=4822">5.4 µs</td><td title="CV=6.2% | rounds=4822">98.9 µs</td><td class="ratio-cell slower">6.6x slower</td></tr>
+<tr><td>Encode Large RGBA</td><td>zerodep</td><td>pillow</td><td>3.827 s</td><td>175.47 ms</td><td>0.3</td><td>5.7</td><td title="CV=0.3% | rounds=5">3.816 s</td><td title="CV=0.3% | rounds=5">3.838 s</td><td title="CV=0.3% | rounds=5">10.34 ms</td><td title="CV=0.3% | rounds=5">3.838 s</td><td title="CV=0.1% | rounds=6">175.28 ms</td><td title="CV=0.1% | rounds=6">175.99 ms</td><td title="CV=0.1% | rounds=6">261.5 µs</td><td title="CV=0.1% | rounds=6">175.99 ms</td><td class="ratio-cell slower">21.8x slower</td></tr>
+<tr><td>Encode Medium RGBA</td><td>zerodep</td><td>pillow</td><td>239.08 ms</td><td>10.71 ms</td><td>4.2</td><td>93.4</td><td title="CV=0.6% | rounds=5">237.55 ms</td><td title="CV=0.6% | rounds=5">241.26 ms</td><td title="CV=0.6% | rounds=5">1.49 ms</td><td title="CV=0.6% | rounds=5">241.26 ms</td><td title="CV=0.4% | rounds=93">10.66 ms</td><td title="CV=0.4% | rounds=93">10.91 ms</td><td title="CV=0.4% | rounds=93">39.3 µs</td><td title="CV=0.4% | rounds=93">10.78 ms</td><td class="ratio-cell slower">22.3x slower</td></tr>
+<tr><td>Encode Small RGBA</td><td>zerodep</td><td>pillow</td><td>13.76 ms</td><td>531.0 µs</td><td>72.7</td><td>1.9K</td><td title="CV=0.7% | rounds=72">13.53 ms</td><td title="CV=0.7% | rounds=72">13.99 ms</td><td title="CV=0.7% | rounds=72">99.1 µs</td><td title="CV=0.7% | rounds=72">13.90 ms</td><td title="CV=2.0% | rounds=1533">514.6 µs</td><td title="CV=2.0% | rounds=1533">681.4 µs</td><td title="CV=2.0% | rounds=1533">10.6 µs</td><td title="CV=2.0% | rounds=1533">547.3 µs</td><td class="ratio-cell slower">25.9x slower</td></tr>
+<tr><td>Matrix Round Trip</td><td>zerodep_encode</td><td>pillow_encode</td><td>87.11 ms</td><td>2.54 ms</td><td>11.5</td><td>393.5</td><td title="CV=0.2% | rounds=12">86.84 ms</td><td title="CV=0.2% | rounds=12">87.58 ms</td><td title="CV=0.2% | rounds=12">216.3 µs</td><td title="CV=0.2% | rounds=12">87.58 ms</td><td title="CV=1.3% | rounds=382">2.52 ms</td><td title="CV=1.3% | rounds=382">3.10 ms</td><td title="CV=1.3% | rounds=382">32.4 µs</td><td title="CV=1.3% | rounds=382">2.56 ms</td><td class="ratio-cell slower">34.3x slower</td></tr>
+<tr><td>Matrix Round Trip</td><td>zerodep_encode</td><td>pillow_decode</td><td>87.11 ms</td><td>275.9 µs</td><td>11.5</td><td>3.6K</td><td title="CV=0.2% | rounds=12">86.84 ms</td><td title="CV=0.2% | rounds=12">87.58 ms</td><td title="CV=0.2% | rounds=12">216.3 µs</td><td title="CV=0.2% | rounds=12">87.58 ms</td><td title="CV=3.8% | rounds=2225">265.0 µs</td><td title="CV=3.8% | rounds=2225">358.2 µs</td><td title="CV=3.8% | rounds=2225">10.4 µs</td><td title="CV=3.8% | rounds=2225">293.0 µs</td><td class="ratio-cell slower">315.8x slower</td></tr>
+<tr><td>Matrix Round Trip</td><td>zerodep_decode</td><td>pillow_encode</td><td>16.57 ms</td><td>2.54 ms</td><td>60.3</td><td>393.5</td><td title="CV=0.8% | rounds=49">16.36 ms</td><td title="CV=0.8% | rounds=49">17.11 ms</td><td title="CV=0.8% | rounds=49">139.3 µs</td><td title="CV=0.8% | rounds=49">16.89 ms</td><td title="CV=1.3% | rounds=382">2.52 ms</td><td title="CV=1.3% | rounds=382">3.10 ms</td><td title="CV=1.3% | rounds=382">32.4 µs</td><td title="CV=1.3% | rounds=382">2.56 ms</td><td class="ratio-cell slower">6.5x slower</td></tr>
+<tr><td>Matrix Round Trip</td><td>zerodep_decode</td><td>pillow_decode</td><td>16.57 ms</td><td>275.9 µs</td><td>60.3</td><td>3.6K</td><td title="CV=0.8% | rounds=49">16.36 ms</td><td title="CV=0.8% | rounds=49">17.11 ms</td><td title="CV=0.8% | rounds=49">139.3 µs</td><td title="CV=0.8% | rounds=49">16.89 ms</td><td title="CV=3.8% | rounds=2225">265.0 µs</td><td title="CV=3.8% | rounds=2225">358.2 µs</td><td title="CV=3.8% | rounds=2225">10.4 µs</td><td title="CV=3.8% | rounds=2225">293.0 µs</td><td class="ratio-cell slower">60.1x slower</td></tr>
+</tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -214,13 +217,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [1505.825478932762, 1.9175115890661458, 158.04870880167277, 41.18625885999865, 35.34714880212511, 617.5505116124438, 1786.1598008968376, 0.25066580735032307, 3.9703949375506604, 67.07893754340031, 10.963483290324708],
+        data: [1636.238124308595, 2.0726200440938527, 167.50963860357638, 42.874126024902566, 37.30743360705313, 645.31826870579, 1746.7260189799501, 0.26127600303239584, 4.182664570915133, 72.68309131905875, 11.479179545309973],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "Reference" + ' (ops/s)',
-        data: [11361.862404720085, 42.91204988656845, 3506.3825538721144, 983.1302566447304, 794.0907719953943, 20319.321251874542, 12529.754181834294, 5.1916334304133915, 84.91055225241548, 3040.7657759729004, 4309.265145109034],
+        data: [10179.366219584701, 46.19605499179211, 3427.593116611361, 974.6794818322335, 796.08043693591, 15364.430437857516, 11574.661863101996, 5.6988317850741685, 93.35564383326569, 1883.3501702143628, 3624.5907346273116],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,19 +125,19 @@ td { white-space: nowrap; }
 <h1>cdp</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>cdp</h2>
 <h3>Standalone benchmarks</h3>
-<table class="standalone-table">
-<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
+<div class="table-wrap"><table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>Command Throughput</td><td>send_command_burst</td><td>4.33 ms</td><td>230.8</td></tr>
-<tr><td>Full Render Pipeline</td><td>get_rendered_text</td><td>908.8 µs</td><td>1.1K</td></tr>
-<tr><td>Full Render Pipeline</td><td>get_rendered_text_fresh_client</td><td>1.22 ms</td><td>821.5</td></tr>
-<tr><td>Js Eval Throughput</td><td>evaluate_burst</td><td>1.30 ms</td><td>770.4</td></tr>
-<tr><td>Multi Target</td><td>multi_target_pipeline</td><td>5.15 ms</td><td>194.1</td></tr>
-<tr><td>Render Html</td><td>get_rendered_html</td><td>924.1 µs</td><td>1.1K</td></tr>
-</tbody></table>
+<tr><td>Command Throughput</td><td>send_command_burst</td><td>5.75 ms</td><td>173.9</td><td title="CV=10.8% | rounds=157">5.09 ms</td><td title="CV=10.8% | rounds=157">6.54 ms</td><td title="CV=10.8% | rounds=157">622.7 µs</td><td title="CV=10.8% | rounds=157">6.48 ms</td></tr>
+<tr><td>Full Render Pipeline</td><td>get_rendered_text</td><td>1.03 ms</td><td>974.2</td><td title="CV=10.5% | rounds=873">907.5 µs</td><td title="CV=10.5% | rounds=873">1.39 ms</td><td title="CV=10.5% | rounds=873">108.2 µs</td><td title="CV=10.5% | rounds=873">1.31 ms</td></tr>
+<tr><td>Full Render Pipeline</td><td>get_rendered_text_fresh_client</td><td>1.45 ms</td><td>687.5</td><td title="CV=7.2% | rounds=528">1.34 ms</td><td title="CV=7.2% | rounds=528">1.92 ms</td><td title="CV=7.2% | rounds=528">105.1 µs</td><td title="CV=7.2% | rounds=528">1.70 ms</td></tr>
+<tr><td>Js Eval Throughput</td><td>evaluate_burst</td><td>1.57 ms</td><td>635.0</td><td title="CV=11.5% | rounds=666">1.35 ms</td><td title="CV=11.5% | rounds=666">3.97 ms</td><td title="CV=11.5% | rounds=666">181.6 µs</td><td title="CV=11.5% | rounds=666">1.74 ms</td></tr>
+<tr><td>Multi Target</td><td>multi_target_pipeline</td><td>5.26 ms</td><td>190.1</td><td title="CV=13.0% | rounds=212">4.50 ms</td><td title="CV=13.0% | rounds=212">10.72 ms</td><td title="CV=13.0% | rounds=212">685.1 µs</td><td title="CV=13.0% | rounds=212">6.44 ms</td></tr>
+<tr><td>Render Html</td><td>get_rendered_html</td><td>1.05 ms</td><td>954.4</td><td title="CV=18.8% | rounds=975">891.8 µs</td><td title="CV=18.8% | rounds=975">6.18 ms</td><td title="CV=18.8% | rounds=975">197.1 µs</td><td title="CV=18.8% | rounds=975">1.31 ms</td></tr>
+</tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
 <h3>Performance Trend</h3>

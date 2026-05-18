@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,17 +125,19 @@ td { white-space: nowrap; }
 <h1>markdown</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>markdown</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Render (Large)</td><td>zerodep</td><td>mistune</td><td>5.38 ms</td><td>8.42 ms</td><td>185.8</td><td>118.8</td><td class="ratio-cell faster">1.6x faster</td></tr>
-<tr><td>Render (Medium)</td><td>zerodep</td><td>mistune</td><td>323.8 µs</td><td>606.9 µs</td><td>3.1K</td><td>1.6K</td><td class="ratio-cell faster">1.9x faster</td></tr>
-<tr><td>Render (Small)</td><td>zerodep</td><td>mistune</td><td>48.8 µs</td><td>55.1 µs</td><td>20.5K</td><td>18.2K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Render GFMLarge</td><td>zerodep</td><td>mistune</td><td>5.98 ms</td><td>11.57 ms</td><td>167.1</td><td>86.4</td><td class="ratio-cell faster">1.9x faster</td></tr>
-<tr><td>Render GFMMedium</td><td>zerodep</td><td>mistune</td><td>311.7 µs</td><td>611.1 µs</td><td>3.2K</td><td>1.6K</td><td class="ratio-cell faster">2.0x faster</td></tr>
-</tbody></table>
+<tr><td>Render (Large)</td><td>zerodep</td><td>mistune</td><td>6.28 ms</td><td>9.85 ms</td><td>159.2</td><td>101.5</td><td title="CV=1.1% | rounds=153">6.16 ms</td><td title="CV=1.1% | rounds=153">6.86 ms</td><td title="CV=1.1% | rounds=153">70.0 µs</td><td title="CV=1.1% | rounds=153">6.38 ms</td><td title="CV=0.9% | rounds=96">9.71 ms</td><td title="CV=0.9% | rounds=96">10.13 ms</td><td title="CV=0.9% | rounds=96">83.9 µs</td><td title="CV=0.9% | rounds=96">10.03 ms</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Render (Medium)</td><td>zerodep</td><td>mistune</td><td>396.8 µs</td><td>698.7 µs</td><td>2.5K</td><td>1.4K</td><td title="CV=3.1% | rounds=1499">383.5 µs</td><td title="CV=3.1% | rounds=1499">500.6 µs</td><td title="CV=3.1% | rounds=1499">12.1 µs</td><td title="CV=3.1% | rounds=1499">412.5 µs</td><td title="CV=2.8% | rounds=146">669.3 µs</td><td title="CV=2.8% | rounds=146">795.3 µs</td><td title="CV=2.8% | rounds=146">19.3 µs</td><td title="CV=2.8% | rounds=146">734.7 µs</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Render (Small)</td><td>zerodep</td><td>mistune</td><td>56.6 µs</td><td>71.8 µs</td><td>17.7K</td><td>13.9K</td><td title="CV=8.3% | rounds=3017">53.7 µs</td><td title="CV=8.3% | rounds=3017">111.5 µs</td><td title="CV=8.3% | rounds=3017">4.7 µs</td><td title="CV=8.3% | rounds=3017">68.2 µs</td><td title="CV=9.6% | rounds=275">67.6 µs</td><td title="CV=9.6% | rounds=275">127.3 µs</td><td title="CV=9.6% | rounds=275">6.9 µs</td><td title="CV=9.6% | rounds=275">86.5 µs</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Render GFMLarge</td><td>zerodep</td><td>mistune</td><td>7.14 ms</td><td>15.77 ms</td><td>140.0</td><td>63.4</td><td title="CV=1.1% | rounds=136">7.05 ms</td><td title="CV=1.1% | rounds=136">7.71 ms</td><td title="CV=1.1% | rounds=136">75.4 µs</td><td title="CV=1.1% | rounds=136">7.27 ms</td><td title="CV=198.8% | rounds=79">11.94 ms</td><td title="CV=198.8% | rounds=79">290.86 ms</td><td title="CV=198.8% | rounds=79">31.35 ms</td><td title="CV=198.8% | rounds=79">13.13 ms</td><td class="ratio-cell faster">2.2x faster</td></tr>
+<tr><td>Render GFMMedium</td><td>zerodep</td><td>mistune</td><td>349.2 µs</td><td>690.6 µs</td><td>2.9K</td><td>1.4K</td><td title="CV=4.3% | rounds=2204">337.2 µs</td><td title="CV=4.3% | rounds=2204">585.6 µs</td><td title="CV=4.3% | rounds=2204">14.8 µs</td><td title="CV=4.3% | rounds=2204">362.8 µs</td><td title="CV=2.5% | rounds=285">662.3 µs</td><td title="CV=2.5% | rounds=285">792.7 µs</td><td title="CV=2.5% | rounds=285">17.3 µs</td><td title="CV=2.5% | rounds=285">714.8 µs</td><td class="ratio-cell faster">2.0x faster</td></tr>
+</tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -205,13 +208,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [185.75665836998124, 3088.202868659958, 20471.771488210143, 167.14824333351402, 3208.6743185975097],
+        data: [159.20715005760277, 2520.036937254824, 17658.85192324523, 139.95821323194883, 2863.974725170364],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "mistune" + ' (ops/s)',
-        data: [118.82815224128127, 1647.5829910004993, 18159.52100580887, 86.44391734457284, 1636.4539037738627],
+        data: [101.5199701054057, 1431.1648056295462, 13934.767351248083, 63.429483354605495, 1448.0661663196443],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

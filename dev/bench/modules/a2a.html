@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,21 +125,23 @@ td { white-space: nowrap; }
 <h1>a2a</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>a2a</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Deserialize (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>757.2 µs</td><td>567.5 µs</td><td>1.3K</td><td>1.8K</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Deserialize (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>38.6 µs</td><td>34.1 µs</td><td>25.9K</td><td>29.4K</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Deserialize (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>1.9 µs</td><td>1.1 µs</td><td>520.6K</td><td>870.2K</td><td class="ratio-cell slower">1.7x slower</td></tr>
-<tr><td>Json Round Trip (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>21.33 ms</td><td>3.02 ms</td><td>46.9</td><td>331.6</td><td class="ratio-cell slower">7.1x slower</td></tr>
-<tr><td>Json Round Trip (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>168.6 µs</td><td>168.9 µs</td><td>5.9K</td><td>5.9K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Json Round Trip (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>11.4 µs</td><td>12.1 µs</td><td>87.8K</td><td>82.6K</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Serialize (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>1.57 ms</td><td>1.93 ms</td><td>636.8</td><td>517.6</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Serialize (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>87.0 µs</td><td>103.2 µs</td><td>11.5K</td><td>9.7K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Serialize (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>4.1 µs</td><td>5.1 µs</td><td>245.7K</td><td>197.7K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-</tbody></table>
+<tr><td>Deserialize (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>729.1 µs</td><td>581.7 µs</td><td>1.4K</td><td>1.7K</td><td title="CV=5.1% | rounds=562">702.0 µs</td><td title="CV=5.1% | rounds=562">1.52 ms</td><td title="CV=5.1% | rounds=562">37.2 µs</td><td title="CV=5.1% | rounds=562">748.1 µs</td><td title="CV=1.7% | rounds=1451">568.7 µs</td><td title="CV=1.7% | rounds=1451">685.0 µs</td><td title="CV=1.7% | rounds=1451">10.1 µs</td><td title="CV=1.7% | rounds=1451">596.4 µs</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Deserialize (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>41.7 µs</td><td>36.2 µs</td><td>24.0K</td><td>27.6K</td><td title="CV=6.5% | rounds=10872">40.7 µs</td><td title="CV=6.5% | rounds=10872">93.9 µs</td><td title="CV=6.5% | rounds=10872">2.7 µs</td><td title="CV=6.5% | rounds=10872">43.9 µs</td><td title="CV=6.8% | rounds=10432">35.3 µs</td><td title="CV=6.8% | rounds=10432">85.9 µs</td><td title="CV=6.8% | rounds=10432">2.5 µs</td><td title="CV=6.8% | rounds=10432">37.8 µs</td><td class="ratio-cell slower">1.2x slower</td></tr>
+<tr><td>Deserialize (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>2.0 µs</td><td>1.1 µs</td><td>506.7K</td><td>872.8K</td><td title="CV=23.6% | rounds=66676">1.9 µs</td><td title="CV=23.6% | rounds=66676">26.1 µs</td><td title="CV=23.6% | rounds=66676">466.2 ns</td><td title="CV=23.6% | rounds=66676">2.0 µs</td><td title="CV=32.5% | rounds=85020">1.1 µs</td><td title="CV=32.5% | rounds=85020">34.6 µs</td><td title="CV=32.5% | rounds=85020">372.8 ns</td><td title="CV=32.5% | rounds=85020">1.2 µs</td><td class="ratio-cell slower">1.7x slower</td></tr>
+<tr><td>Json Round Trip (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>3.06 ms</td><td>16.08 ms</td><td>326.8</td><td>62.2</td><td title="CV=1.4% | rounds=263">3.02 ms</td><td title="CV=1.4% | rounds=263">3.48 ms</td><td title="CV=1.4% | rounds=263">41.4 µs</td><td title="CV=1.4% | rounds=263">3.12 ms</td><td title="CV=1405.2% | rounds=305">2.98 ms</td><td title="CV=1405.2% | rounds=305">3.950 s</td><td title="CV=1405.2% | rounds=305">225.97 ms</td><td title="CV=1405.2% | rounds=305">3.20 ms</td><td class="ratio-cell faster">5.3x faster</td></tr>
+<tr><td>Json Round Trip (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>174.3 µs</td><td>170.3 µs</td><td>5.7K</td><td>5.9K</td><td title="CV=4.7% | rounds=3452">167.0 µs</td><td title="CV=4.7% | rounds=3452">297.9 µs</td><td title="CV=4.7% | rounds=3452">8.1 µs</td><td title="CV=4.7% | rounds=3452">187.3 µs</td><td title="CV=4.7% | rounds=3922">164.2 µs</td><td title="CV=4.7% | rounds=3922">255.3 µs</td><td title="CV=4.7% | rounds=3922">8.0 µs</td><td title="CV=4.7% | rounds=3922">183.9 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Json Round Trip (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>11.5 µs</td><td>12.5 µs</td><td>87.1K</td><td>80.2K</td><td title="CV=14.9% | rounds=17767">10.9 µs</td><td title="CV=14.9% | rounds=17767">59.4 µs</td><td title="CV=14.9% | rounds=17767">1.7 µs</td><td title="CV=14.9% | rounds=17767">11.6 µs</td><td title="CV=14.7% | rounds=18132">11.8 µs</td><td title="CV=14.7% | rounds=18132">59.3 µs</td><td title="CV=14.7% | rounds=18132">1.8 µs</td><td title="CV=14.7% | rounds=18132">12.7 µs</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Serialize (Large)</td><td>zerodep</td><td>a2a-protocol</td><td>1.57 ms</td><td>1.92 ms</td><td>636.2</td><td>521.6</td><td title="CV=0.9% | rounds=147">1.55 ms</td><td title="CV=0.9% | rounds=147">1.66 ms</td><td title="CV=0.9% | rounds=147">14.6 µs</td><td title="CV=0.9% | rounds=147">1.59 ms</td><td title="CV=1.1% | rounds=478">1.89 ms</td><td title="CV=1.1% | rounds=478">2.16 ms</td><td title="CV=1.1% | rounds=478">21.4 µs</td><td title="CV=1.1% | rounds=478">1.95 ms</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Serialize (Medium)</td><td>zerodep</td><td>a2a-protocol</td><td>84.8 µs</td><td>101.4 µs</td><td>11.8K</td><td>9.9K</td><td title="CV=4.6% | rounds=6403">82.8 µs</td><td title="CV=4.6% | rounds=6403">161.3 µs</td><td title="CV=4.6% | rounds=6403">3.9 µs</td><td title="CV=4.6% | rounds=6403">93.6 µs</td><td title="CV=5.1% | rounds=6584">98.7 µs</td><td title="CV=5.1% | rounds=6584">233.4 µs</td><td title="CV=5.1% | rounds=6584">5.2 µs</td><td title="CV=5.1% | rounds=6584">110.7 µs</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Serialize (Small)</td><td>zerodep</td><td>a2a-protocol</td><td>4.1 µs</td><td>5.0 µs</td><td>245.0K</td><td>199.0K</td><td title="CV=16.9% | rounds=26533">3.9 µs</td><td title="CV=16.9% | rounds=26533">30.9 µs</td><td title="CV=16.9% | rounds=26533">690.1 ns</td><td title="CV=16.9% | rounds=26533">4.1 µs</td><td title="CV=640.6% | rounds=21242">4.6 µs</td><td title="CV=640.6% | rounds=21242">4.69 ms</td><td title="CV=640.6% | rounds=21242">32.2 µs</td><td title="CV=640.6% | rounds=21242">4.8 µs</td><td class="ratio-cell faster">1.2x faster</td></tr>
+</tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -209,13 +212,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [1320.610224464821, 25928.33602873903, 520630.91991800774, 46.885924692314276, 5930.047964954977, 87822.98404768558, 636.8254764013365, 11488.217882988689, 245732.04589121378],
+        data: [1371.6231084447709, 23956.14491886161, 506694.5447174468, 326.8434823377634, 5737.134619797752, 87127.73593368127, 636.1995739922097, 11791.535131843513, 244951.14044048075],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "a2a-protocol" + ' (ops/s)',
-        data: [1762.2524026217666, 29365.13581175887, 870227.4678104793, 331.64230282026773, 5920.2764095146895, 82611.67547779442, 517.5779030493925, 9694.60342627784, 197745.9744349266],
+        data: [1719.1831869956088, 27612.82659345009, 872830.4693881387, 62.18612741115697, 5873.467561846276, 80242.2341836181, 521.581526848009, 9859.300622241153, 199034.2817706411],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

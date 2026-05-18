@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,33 +125,35 @@ td { white-space: nowrap; }
 <h1>httpclient</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>httpclient</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Async Client Get</td><td>zerodep</td><td>httpx</td><td>1.18 ms</td><td>26.92 ms</td><td>846.2</td><td>37.1</td><td class="ratio-cell faster">22.8x faster</td></tr>
-<tr><td>Async File Upload</td><td>zerodep</td><td>httpx</td><td>1.41 ms</td><td>27.74 ms</td><td>710.7</td><td>36.1</td><td class="ratio-cell faster">19.7x faster</td></tr>
-<tr><td>Async Get</td><td>zerodep</td><td>httpx</td><td>1.02 ms</td><td>26.28 ms</td><td>984.8</td><td>38.1</td><td class="ratio-cell faster">25.9x faster</td></tr>
-<tr><td>Async Post JSON</td><td>zerodep</td><td>httpx</td><td>1.15 ms</td><td>26.23 ms</td><td>868.3</td><td>38.1</td><td class="ratio-cell faster">22.8x faster</td></tr>
-<tr><td>Async Streaming</td><td>zerodep</td><td>httpx</td><td>1.10 ms</td><td>26.63 ms</td><td>906.5</td><td>37.6</td><td class="ratio-cell faster">24.1x faster</td></tr>
-<tr><td>Sync Client Get</td><td>zerodep</td><td>httpx</td><td>595.7 µs</td><td>1.05 ms</td><td>1.7K</td><td>951.4</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Sync File Upload</td><td>zerodep</td><td>httpx</td><td>927.3 µs</td><td>18.54 ms</td><td>1.1K</td><td>53.9</td><td class="ratio-cell faster">20.0x faster</td></tr>
-<tr><td>Sync Get</td><td>zerodep</td><td>httpx</td><td>583.2 µs</td><td>18.57 ms</td><td>1.7K</td><td>53.9</td><td class="ratio-cell faster">31.8x faster</td></tr>
-<tr><td>Sync Gzip Decompression</td><td>zerodep</td><td>httpx</td><td>609.2 µs</td><td>19.59 ms</td><td>1.6K</td><td>51.1</td><td class="ratio-cell faster">32.2x faster</td></tr>
-<tr><td>Sync Post JSON</td><td>zerodep</td><td>httpx</td><td>660.7 µs</td><td>18.32 ms</td><td>1.5K</td><td>54.6</td><td class="ratio-cell faster">27.7x faster</td></tr>
-<tr><td>Sync Streaming</td><td>zerodep</td><td>httpx</td><td>586.8 µs</td><td>18.34 ms</td><td>1.7K</td><td>54.5</td><td class="ratio-cell faster">31.3x faster</td></tr>
-</tbody></table>
+<tr><td>Async Client Get</td><td>zerodep</td><td>httpx</td><td>1.09 ms</td><td>26.22 ms</td><td>915.7</td><td>38.1</td><td title="CV=3.6% | rounds=746">1.01 ms</td><td title="CV=3.6% | rounds=746">1.26 ms</td><td title="CV=3.6% | rounds=746">39.0 µs</td><td title="CV=3.6% | rounds=746">1.17 ms</td><td title="CV=7.8% | rounds=39">24.98 ms</td><td title="CV=7.8% | rounds=39">32.28 ms</td><td title="CV=7.8% | rounds=39">2.03 ms</td><td title="CV=7.8% | rounds=39">31.97 ms</td><td class="ratio-cell faster">24.0x faster</td></tr>
+<tr><td>Async File Upload</td><td>zerodep</td><td>httpx</td><td>1.40 ms</td><td>27.11 ms</td><td>712.2</td><td>36.9</td><td title="CV=4.8% | rounds=589">1.25 ms</td><td title="CV=4.8% | rounds=589">1.66 ms</td><td title="CV=4.8% | rounds=589">66.7 µs</td><td title="CV=4.8% | rounds=589">1.53 ms</td><td title="CV=7.9% | rounds=37">25.75 ms</td><td title="CV=7.9% | rounds=37">33.80 ms</td><td title="CV=7.9% | rounds=37">2.14 ms</td><td title="CV=7.9% | rounds=37">33.30 ms</td><td class="ratio-cell faster">19.3x faster</td></tr>
+<tr><td>Async Get</td><td>zerodep</td><td>httpx</td><td>1.08 ms</td><td>26.27 ms</td><td>925.4</td><td>38.1</td><td title="CV=4.4% | rounds=655">979.9 µs</td><td title="CV=4.4% | rounds=655">1.38 ms</td><td title="CV=4.4% | rounds=655">47.7 µs</td><td title="CV=4.4% | rounds=655">1.17 ms</td><td title="CV=7.7% | rounds=38">25.08 ms</td><td title="CV=7.7% | rounds=38">32.21 ms</td><td title="CV=7.7% | rounds=38">2.01 ms</td><td title="CV=7.7% | rounds=38">31.82 ms</td><td class="ratio-cell faster">24.3x faster</td></tr>
+<tr><td>Async Post JSON</td><td>zerodep</td><td>httpx</td><td>1.16 ms</td><td>26.27 ms</td><td>863.4</td><td>38.1</td><td title="CV=7.2% | rounds=750">1.02 ms</td><td title="CV=7.2% | rounds=750">1.58 ms</td><td title="CV=7.2% | rounds=750">83.0 µs</td><td title="CV=7.2% | rounds=750">1.31 ms</td><td title="CV=7.3% | rounds=38">25.12 ms</td><td title="CV=7.3% | rounds=38">31.58 ms</td><td title="CV=7.3% | rounds=38">1.92 ms</td><td title="CV=7.3% | rounds=38">31.44 ms</td><td class="ratio-cell faster">22.7x faster</td></tr>
+<tr><td>Async Streaming</td><td>zerodep</td><td>httpx</td><td>1.11 ms</td><td>26.18 ms</td><td>900.3</td><td>38.2</td><td title="CV=4.8% | rounds=705">985.2 µs</td><td title="CV=4.8% | rounds=705">1.33 ms</td><td title="CV=4.8% | rounds=705">53.3 µs</td><td title="CV=4.8% | rounds=705">1.20 ms</td><td title="CV=7.6% | rounds=39">25.08 ms</td><td title="CV=7.6% | rounds=39">32.43 ms</td><td title="CV=7.6% | rounds=39">1.99 ms</td><td title="CV=7.6% | rounds=39">31.27 ms</td><td class="ratio-cell faster">23.6x faster</td></tr>
+<tr><td>Sync Client Get</td><td>zerodep</td><td>httpx</td><td>593.7 µs</td><td>957.0 µs</td><td>1.7K</td><td>1.0K</td><td title="CV=7.1% | rounds=1401">527.1 µs</td><td title="CV=7.1% | rounds=1401">832.8 µs</td><td title="CV=7.1% | rounds=1401">41.9 µs</td><td title="CV=7.1% | rounds=1401">671.1 µs</td><td title="CV=8.9% | rounds=869">850.7 µs</td><td title="CV=8.9% | rounds=869">2.79 ms</td><td title="CV=8.9% | rounds=869">85.5 µs</td><td title="CV=8.9% | rounds=869">1.10 ms</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Sync File Upload</td><td>zerodep</td><td>httpx</td><td>929.3 µs</td><td>19.12 ms</td><td>1.1K</td><td>52.3</td><td title="CV=13.0% | rounds=920">804.6 µs</td><td title="CV=13.0% | rounds=920">4.28 ms</td><td title="CV=13.0% | rounds=920">120.5 µs</td><td title="CV=13.0% | rounds=920">1.01 ms</td><td title="CV=12.4% | rounds=53">18.16 ms</td><td title="CV=12.4% | rounds=53">27.78 ms</td><td title="CV=12.4% | rounds=53">2.38 ms</td><td title="CV=12.4% | rounds=53">27.44 ms</td><td class="ratio-cell faster">20.6x faster</td></tr>
+<tr><td>Sync Get</td><td>zerodep</td><td>httpx</td><td>576.2 µs</td><td>19.17 ms</td><td>1.7K</td><td>52.2</td><td title="CV=7.1% | rounds=907">506.5 µs</td><td title="CV=7.1% | rounds=907">766.0 µs</td><td title="CV=7.1% | rounds=907">40.9 µs</td><td title="CV=7.1% | rounds=907">649.0 µs</td><td title="CV=11.6% | rounds=20">17.79 ms</td><td title="CV=11.6% | rounds=20">26.65 ms</td><td title="CV=11.6% | rounds=20">2.23 ms</td><td title="CV=11.6% | rounds=20">23.97 ms</td><td class="ratio-cell faster">33.3x faster</td></tr>
+<tr><td>Sync Gzip Decompression</td><td>zerodep</td><td>httpx</td><td>606.7 µs</td><td>18.66 ms</td><td>1.6K</td><td>53.6</td><td title="CV=7.5% | rounds=1250">535.4 µs</td><td title="CV=7.5% | rounds=1250">796.6 µs</td><td title="CV=7.5% | rounds=1250">45.7 µs</td><td title="CV=7.5% | rounds=1250">696.6 µs</td><td title="CV=13.6% | rounds=54">17.62 ms</td><td title="CV=13.6% | rounds=54">30.18 ms</td><td title="CV=13.6% | rounds=54">2.53 ms</td><td title="CV=13.6% | rounds=54">25.93 ms</td><td class="ratio-cell faster">30.8x faster</td></tr>
+<tr><td>Sync Post JSON</td><td>zerodep</td><td>httpx</td><td>671.5 µs</td><td>18.96 ms</td><td>1.5K</td><td>52.7</td><td title="CV=6.7% | rounds=1266">559.2 µs</td><td title="CV=6.7% | rounds=1266">909.9 µs</td><td title="CV=6.7% | rounds=1266">45.0 µs</td><td title="CV=6.7% | rounds=1266">750.2 µs</td><td title="CV=15.0% | rounds=55">17.85 ms</td><td title="CV=15.0% | rounds=55">29.52 ms</td><td title="CV=15.0% | rounds=55">2.85 ms</td><td title="CV=15.0% | rounds=55">29.02 ms</td><td class="ratio-cell faster">28.2x faster</td></tr>
+<tr><td>Sync Streaming</td><td>zerodep</td><td>httpx</td><td>597.6 µs</td><td>18.81 ms</td><td>1.7K</td><td>53.1</td><td title="CV=5.0% | rounds=1255">521.4 µs</td><td title="CV=5.0% | rounds=1255">794.6 µs</td><td title="CV=5.0% | rounds=1255">30.1 µs</td><td title="CV=5.0% | rounds=1255">651.5 µs</td><td title="CV=15.1% | rounds=55">17.64 ms</td><td title="CV=15.1% | rounds=55">29.18 ms</td><td title="CV=15.1% | rounds=55">2.83 ms</td><td title="CV=15.1% | rounds=55">27.94 ms</td><td class="ratio-cell faster">31.5x faster</td></tr>
+</tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
-<table class="standalone-table">
-<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
+<div class="table-wrap"><table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>Async Socks5Get</td><td>zerodep</td><td>1.80 ms</td><td>555.0</td></tr>
-<tr><td>Sync Socks5Get</td><td>zerodep</td><td>1.24 ms</td><td>808.0</td></tr>
-<tr><td>Sync Socks5Post JSON</td><td>zerodep</td><td>42.00 ms</td><td>23.8</td></tr>
-<tr><td>Sync Socks5Streaming</td><td>zerodep</td><td>1.23 ms</td><td>815.6</td></tr>
-</tbody></table>
+<tr><td>Async Socks5Get</td><td>zerodep</td><td>1.81 ms</td><td>551.9</td><td title="CV=4.4% | rounds=418">1.60 ms</td><td title="CV=4.4% | rounds=418">2.11 ms</td><td title="CV=4.4% | rounds=418">79.4 µs</td><td title="CV=4.4% | rounds=418">1.94 ms</td></tr>
+<tr><td>Sync Socks5Get</td><td>zerodep</td><td>1.17 ms</td><td>855.3</td><td title="CV=7.7% | rounds=764">980.0 µs</td><td title="CV=7.7% | rounds=764">1.42 ms</td><td title="CV=7.7% | rounds=764">89.5 µs</td><td title="CV=7.7% | rounds=764">1.33 ms</td></tr>
+<tr><td>Sync Socks5Post JSON</td><td>zerodep</td><td>41.99 ms</td><td>23.8</td><td title="CV=0.4% | rounds=24">41.69 ms</td><td title="CV=0.4% | rounds=24">42.22 ms</td><td title="CV=0.4% | rounds=24">153.9 µs</td><td title="CV=0.4% | rounds=24">42.21 ms</td></tr>
+<tr><td>Sync Socks5Streaming</td><td>zerodep</td><td>1.17 ms</td><td>856.1</td><td title="CV=8.7% | rounds=688">978.9 µs</td><td title="CV=8.7% | rounds=688">1.52 ms</td><td title="CV=8.7% | rounds=688">101.7 µs</td><td title="CV=8.7% | rounds=688">1.35 ms</td></tr>
+</tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
 <h3>Performance Trend</h3>
@@ -220,13 +223,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [846.1865224209893, 710.7045604097567, 984.7830667200228, 868.2642302678257, 906.4641998696385, 1678.7445002411803, 1078.3974667065697, 1714.6301871935505, 1641.5143083751275, 1513.6140481485668, 1704.2036055671615],
+        data: [915.7079243571515, 712.1699330704162, 925.3880235331443, 863.368675759974, 900.2568976917786, 1684.295295488117, 1076.0697408427047, 1735.392070336945, 1648.283464480469, 1489.2083703787523, 1673.3972704966518],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "httpx" + ' (ops/s)',
-        data: [37.14526939107729, 36.052239953745385, 38.05772099959371, 38.12500697210586, 37.55716355577133, 951.3728553953755, 53.94749304234666, 53.860468715806014, 51.05747293011117, 54.58221027673789, 54.511587699510336],
+        data: [38.1354108589953, 36.891353267623266, 38.06817053832582, 38.06190898907766, 38.19585259344788, 1044.919137808317, 52.296520076871985, 52.1526172704919, 53.59971108644167, 52.73018120727657, 53.149314866336304],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

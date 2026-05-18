@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,16 +125,18 @@ td { white-space: nowrap; }
 <h1>websocket</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>websocket</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Burst Messages</td><td>zerodep</td><td>websockets</td><td>4.62 ms</td><td>6.94 ms</td><td>216.6</td><td>144.1</td><td class="ratio-cell faster">1.5x faster</td></tr>
-<tr><td>Connection Setup</td><td>zerodep</td><td>websockets</td><td>403.4 µs</td><td>1.14 ms</td><td>2.5K</td><td>873.4</td><td class="ratio-cell faster">2.8x faster</td></tr>
-<tr><td>Json Rpc Roundtrip</td><td>zerodep</td><td>websockets</td><td>87.3 µs</td><td>107.6 µs</td><td>11.4K</td><td>9.3K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Large Payload</td><td>zerodep</td><td>websockets</td><td>6.33 ms</td><td>3.28 ms</td><td>158.0</td><td>304.9</td><td class="ratio-cell slower">1.9x slower</td></tr>
-</tbody></table>
+<tr><td>Burst Messages</td><td>zerodep</td><td>websockets</td><td>5.93 ms</td><td>9.27 ms</td><td>168.5</td><td>107.8</td><td title="CV=24.3% | rounds=158">3.68 ms</td><td title="CV=24.3% | rounds=158">7.62 ms</td><td title="CV=24.3% | rounds=158">1.44 ms</td><td title="CV=24.3% | rounds=158">7.24 ms</td><td title="CV=18.0% | rounds=133">6.94 ms</td><td title="CV=18.0% | rounds=133">12.10 ms</td><td title="CV=18.0% | rounds=133">1.67 ms</td><td title="CV=18.0% | rounds=133">11.92 ms</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Connection Setup</td><td>zerodep</td><td>websockets</td><td>432.2 µs</td><td>1.17 ms</td><td>2.3K</td><td>854.8</td><td title="CV=9.3% | rounds=1405">375.6 µs</td><td title="CV=9.3% | rounds=1405">1.39 ms</td><td title="CV=9.3% | rounds=1405">40.0 µs</td><td title="CV=9.3% | rounds=1405">477.5 µs</td><td title="CV=33.2% | rounds=693">1.05 ms</td><td title="CV=33.2% | rounds=693">10.97 ms</td><td title="CV=33.2% | rounds=693">389.0 µs</td><td title="CV=33.2% | rounds=693">1.31 ms</td><td class="ratio-cell faster">2.7x faster</td></tr>
+<tr><td>Json Rpc Roundtrip</td><td>zerodep</td><td>websockets</td><td>107.5 µs</td><td>144.3 µs</td><td>9.3K</td><td>6.9K</td><td title="CV=29.1% | rounds=5039">74.1 µs</td><td title="CV=29.1% | rounds=5039">2.03 ms</td><td title="CV=29.1% | rounds=5039">31.3 µs</td><td title="CV=29.1% | rounds=5039">126.3 µs</td><td title="CV=10.8% | rounds=4343">118.9 µs</td><td title="CV=10.8% | rounds=4343">473.7 µs</td><td title="CV=10.8% | rounds=4343">15.5 µs</td><td title="CV=10.8% | rounds=4343">169.0 µs</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Large Payload</td><td>zerodep</td><td>websockets</td><td>6.61 ms</td><td>3.02 ms</td><td>151.4</td><td>331.2</td><td title="CV=17.3% | rounds=157">5.77 ms</td><td title="CV=17.3% | rounds=157">11.08 ms</td><td title="CV=17.3% | rounds=157">1.15 ms</td><td title="CV=17.3% | rounds=157">9.04 ms</td><td title="CV=1.2% | rounds=314">2.96 ms</td><td title="CV=1.2% | rounds=314">3.26 ms</td><td title="CV=1.2% | rounds=314">37.1 µs</td><td title="CV=1.2% | rounds=314">3.08 ms</td><td class="ratio-cell slower">2.2x slower</td></tr>
+</tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -204,13 +207,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [216.6065670087878, 2479.003290696774, 11448.492649777134, 158.01306213414006],
+        data: [168.52838659812107, 2313.576851451165, 9300.280367010046, 151.38480294690623],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "websockets" + ' (ops/s)',
-        data: [144.135253440656, 873.4149648421219, 9294.73963786751, 304.87850746505165],
+        data: [107.81976750704706, 854.7636866471987, 6930.021968961367, 331.1986731514876],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,40 +125,42 @@ td { white-space: nowrap; }
 <h1>sparse_search</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>sparse_search</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>143.04 ms</td><td>13.17 ms</td><td>7.0</td><td>75.9</td><td class="ratio-cell slower">10.9x slower</td></tr>
-<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>3.3 µs</td><td>376.3 µs</td><td>306.2K</td><td>2.7K</td><td class="ratio-cell faster">115.2x faster</td></tr>
-<tr><td>Scale Search10K</td><td>broad_query_ours</td><td>rank-bm25</td><td>55.97 ms</td><td>3.50 ms</td><td>17.9</td><td>286.1</td><td class="ratio-cell slower">16.0x slower</td></tr>
-<tr><td>Scale Search10K</td><td>selective_query_ours</td><td>rank-bm25</td><td>159.4 µs</td><td>3.18 ms</td><td>6.3K</td><td>314.3</td><td class="ratio-cell faster">20.0x faster</td></tr>
-<tr><td>Scale Search1K</td><td>broad_query_ours</td><td>rank-bm25</td><td>4.52 ms</td><td>316.6 µs</td><td>221.2</td><td>3.2K</td><td class="ratio-cell slower">14.3x slower</td></tr>
-<tr><td>Scale Search1K</td><td>selective_query_ours</td><td>rank-bm25</td><td>17.7 µs</td><td>313.2 µs</td><td>56.4K</td><td>3.2K</td><td class="ratio-cell faster">17.7x faster</td></tr>
-<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>3.2 µs</td><td>101.5 µs</td><td>312.6K</td><td>9.9K</td><td class="ratio-cell faster">31.7x faster</td></tr>
-</tbody></table>
+<tr><td>Indexing Performance</td><td>index_1k_ours</td><td>rank-bm25</td><td>142.58 ms</td><td>13.83 ms</td><td>7.0</td><td>72.3</td><td title="CV=34.2% | rounds=6">78.14 ms</td><td title="CV=34.2% | rounds=6">178.59 ms</td><td title="CV=34.2% | rounds=6">48.83 ms</td><td title="CV=34.2% | rounds=6">178.59 ms</td><td title="CV=74.9% | rounds=72">12.51 ms</td><td title="CV=74.9% | rounds=72">100.55 ms</td><td title="CV=74.9% | rounds=72">10.36 ms</td><td title="CV=74.9% | rounds=72">12.85 ms</td><td class="ratio-cell slower">10.3x slower</td></tr>
+<tr><td>Large Search Performance</td><td>search_1k_ours</td><td>rank-bm25</td><td>3.1 µs</td><td>412.6 µs</td><td>324.7K</td><td>2.4K</td><td title="CV=21.6% | rounds=63052">2.9 µs</td><td title="CV=21.6% | rounds=63052">80.2 µs</td><td title="CV=21.6% | rounds=63052">664.4 ns</td><td title="CV=21.6% | rounds=63052">3.1 µs</td><td title="CV=4.1% | rounds=1656">394.2 µs</td><td title="CV=4.1% | rounds=1656">773.9 µs</td><td title="CV=4.1% | rounds=1656">16.9 µs</td><td title="CV=4.1% | rounds=1656">425.9 µs</td><td class="ratio-cell faster">134.0x faster</td></tr>
+<tr><td>Scale Search10K</td><td>broad_query_ours</td><td>rank-bm25</td><td>61.22 ms</td><td>3.31 ms</td><td>16.3</td><td>302.6</td><td title="CV=3.9% | rounds=16">57.57 ms</td><td title="CV=3.9% | rounds=16">66.26 ms</td><td title="CV=3.9% | rounds=16">2.38 ms</td><td title="CV=3.9% | rounds=16">66.26 ms</td><td title="CV=3.4% | rounds=141">3.25 ms</td><td title="CV=3.4% | rounds=141">4.58 ms</td><td title="CV=3.4% | rounds=141">113.7 µs</td><td title="CV=3.4% | rounds=141">3.36 ms</td><td class="ratio-cell slower">18.5x slower</td></tr>
+<tr><td>Scale Search10K</td><td>selective_query_ours</td><td>rank-bm25</td><td>168.0 µs</td><td>3.29 ms</td><td>6.0K</td><td>304.2</td><td title="CV=3.8% | rounds=3217">162.3 µs</td><td title="CV=3.8% | rounds=3217">242.2 µs</td><td title="CV=3.8% | rounds=3217">6.3 µs</td><td title="CV=3.8% | rounds=3217">179.7 µs</td><td title="CV=3.4% | rounds=152">3.21 ms</td><td title="CV=3.4% | rounds=152">4.58 ms</td><td title="CV=3.4% | rounds=152">112.3 µs</td><td title="CV=3.4% | rounds=152">3.33 ms</td><td class="ratio-cell faster">19.6x faster</td></tr>
+<tr><td>Scale Search1K</td><td>broad_query_ours</td><td>rank-bm25</td><td>4.71 ms</td><td>357.9 µs</td><td>212.2</td><td>2.8K</td><td title="CV=1.8% | rounds=161">4.63 ms</td><td title="CV=1.8% | rounds=161">5.34 ms</td><td title="CV=1.8% | rounds=161">86.2 µs</td><td title="CV=1.8% | rounds=161">4.86 ms</td><td title="CV=3.5% | rounds=1339">346.7 µs</td><td title="CV=3.5% | rounds=1339">482.3 µs</td><td title="CV=3.5% | rounds=1339">12.5 µs</td><td title="CV=3.5% | rounds=1339">373.8 µs</td><td class="ratio-cell slower">13.2x slower</td></tr>
+<tr><td>Scale Search1K</td><td>selective_query_ours</td><td>rank-bm25</td><td>18.4 µs</td><td>359.2 µs</td><td>54.3K</td><td>2.8K</td><td title="CV=10.6% | rounds=18717">17.6 µs</td><td title="CV=10.6% | rounds=18717">51.6 µs</td><td title="CV=10.6% | rounds=18717">1.9 µs</td><td title="CV=10.6% | rounds=18717">18.9 µs</td><td title="CV=3.0% | rounds=1376">344.4 µs</td><td title="CV=3.0% | rounds=1376">437.1 µs</td><td title="CV=3.0% | rounds=1376">10.6 µs</td><td title="CV=3.0% | rounds=1376">374.8 µs</td><td class="ratio-cell faster">19.5x faster</td></tr>
+<tr><td>Search Performance</td><td>search_ours</td><td>rank-bm25</td><td>3.1 µs</td><td>108.3 µs</td><td>325.2K</td><td>9.2K</td><td title="CV=19.3% | rounds=60274">2.9 µs</td><td title="CV=19.3% | rounds=60274">48.4 µs</td><td title="CV=19.3% | rounds=60274">593.8 ns</td><td title="CV=19.3% | rounds=60274">3.1 µs</td><td title="CV=6.3% | rounds=4882">103.9 µs</td><td title="CV=6.3% | rounds=4882">198.7 µs</td><td title="CV=6.3% | rounds=4882">6.8 µs</td><td title="CV=6.3% | rounds=4882">121.6 µs</td><td class="ratio-cell faster">35.2x faster</td></tr>
+</tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
-<table class="standalone-table">
-<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
+<div class="table-wrap"><table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>1.05 ms</td><td>948.7</td></tr>
-<tr><td>Calibration Performance</td><td>search_raw</td><td>39.0 µs</td><td>25.6K</td></tr>
-<tr><td>Calibration Performance</td><td>search_calibrated</td><td>75.4 µs</td><td>13.3K</td></tr>
-<tr><td>Indexing Performance</td><td>index_1k_bm25s</td><td>48.18 ms</td><td>20.8</td></tr>
-<tr><td>Large Search Performance</td><td>search_1k_bm25s</td><td>26.8 µs</td><td>37.3K</td></tr>
-<tr><td>MMRPerformance</td><td>mmr_100_candidates</td><td>3.98 ms</td><td>251.6</td></tr>
-<tr><td>MMRPerformance</td><td>mmr_500_candidates</td><td>24.45 ms</td><td>40.9</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_2_lists_1000_results</td><td>921.1 µs</td><td>1.1K</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_10_lists_100_results</td><td>450.8 µs</td><td>2.2K</td></tr>
-<tr><td>RRFPerformance</td><td>rrf_overlapping_docs</td><td>862.9 µs</td><td>1.2K</td></tr>
-<tr><td>Scale Search10K</td><td>broad_query_bm25s</td><td>103.5 µs</td><td>9.7K</td></tr>
-<tr><td>Scale Search10K</td><td>selective_query_bm25s</td><td>290.9 µs</td><td>3.4K</td></tr>
-<tr><td>Scale Search1K</td><td>broad_query_bm25s</td><td>44.5 µs</td><td>22.4K</td></tr>
-<tr><td>Scale Search1K</td><td>selective_query_bm25s</td><td>54.0 µs</td><td>18.5K</td></tr>
-<tr><td>Search Performance</td><td>search_bm25s</td><td>28.1 µs</td><td>35.6K</td></tr>
-</tbody></table>
+<tr><td>Calibration Performance</td><td>calibrate_corpus</td><td>1.15 ms</td><td>868.4</td><td title="CV=3.0% | rounds=1274">1.10 ms</td><td title="CV=3.0% | rounds=1274">1.42 ms</td><td title="CV=3.0% | rounds=1274">34.5 µs</td><td title="CV=3.0% | rounds=1274">1.19 ms</td></tr>
+<tr><td>Calibration Performance</td><td>search_raw</td><td>41.9 µs</td><td>23.9K</td><td title="CV=21.4% | rounds=6922">38.6 µs</td><td title="CV=21.4% | rounds=6922">162.0 µs</td><td title="CV=21.4% | rounds=6922">9.0 µs</td><td title="CV=21.4% | rounds=6922">54.0 µs</td></tr>
+<tr><td>Calibration Performance</td><td>search_calibrated</td><td>79.8 µs</td><td>12.5K</td><td title="CV=15.8% | rounds=9352">74.3 µs</td><td title="CV=15.8% | rounds=9352">219.2 µs</td><td title="CV=15.8% | rounds=9352">12.7 µs</td><td title="CV=15.8% | rounds=9352">100.5 µs</td></tr>
+<tr><td>Indexing Performance</td><td>index_1k_bm25s</td><td>48.91 ms</td><td>20.4</td><td title="CV=2.7% | rounds=17">47.96 ms</td><td title="CV=2.7% | rounds=17">53.70 ms</td><td title="CV=2.7% | rounds=17">1.31 ms</td><td title="CV=2.7% | rounds=17">53.70 ms</td></tr>
+<tr><td>Large Search Performance</td><td>search_1k_bm25s</td><td>36.4 µs</td><td>27.5K</td><td title="CV=15.0% | rounds=10444">33.4 µs</td><td title="CV=15.0% | rounds=10444">126.2 µs</td><td title="CV=15.0% | rounds=10444">5.4 µs</td><td title="CV=15.0% | rounds=10444">42.5 µs</td></tr>
+<tr><td>MMRPerformance</td><td>mmr_100_candidates</td><td>4.04 ms</td><td>247.6</td><td title="CV=0.8% | rounds=239">3.99 ms</td><td title="CV=0.8% | rounds=239">4.19 ms</td><td title="CV=0.8% | rounds=239">32.1 µs</td><td title="CV=0.8% | rounds=239">4.10 ms</td></tr>
+<tr><td>MMRPerformance</td><td>mmr_500_candidates</td><td>24.70 ms</td><td>40.5</td><td title="CV=0.6% | rounds=41">24.54 ms</td><td title="CV=0.6% | rounds=41">25.30 ms</td><td title="CV=0.6% | rounds=41">137.1 µs</td><td title="CV=0.6% | rounds=41">24.87 ms</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_2_lists_1000_results</td><td>897.9 µs</td><td>1.1K</td><td title="CV=1.6% | rounds=905">874.8 µs</td><td title="CV=1.6% | rounds=905">1.09 ms</td><td title="CV=1.6% | rounds=905">14.4 µs</td><td title="CV=1.6% | rounds=905">912.3 µs</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_10_lists_100_results</td><td>428.1 µs</td><td>2.3K</td><td title="CV=2.8% | rounds=1987">415.6 µs</td><td title="CV=2.8% | rounds=1987">703.8 µs</td><td title="CV=2.8% | rounds=1987">11.8 µs</td><td title="CV=2.8% | rounds=1987">439.9 µs</td></tr>
+<tr><td>RRFPerformance</td><td>rrf_overlapping_docs</td><td>828.8 µs</td><td>1.2K</td><td title="CV=2.0% | rounds=1094">806.0 µs</td><td title="CV=2.0% | rounds=1094">1.16 ms</td><td title="CV=2.0% | rounds=1094">16.4 µs</td><td title="CV=2.0% | rounds=1094">842.2 µs</td></tr>
+<tr><td>Scale Search10K</td><td>broad_query_bm25s</td><td>111.2 µs</td><td>9.0K</td><td title="CV=7.2% | rounds=4154">105.4 µs</td><td title="CV=7.2% | rounds=4154">230.0 µs</td><td title="CV=7.2% | rounds=4154">8.0 µs</td><td title="CV=7.2% | rounds=4154">129.4 µs</td></tr>
+<tr><td>Scale Search10K</td><td>selective_query_bm25s</td><td>330.9 µs</td><td>3.0K</td><td title="CV=3.6% | rounds=2274">316.9 µs</td><td title="CV=3.6% | rounds=2274">475.2 µs</td><td title="CV=3.6% | rounds=2274">12.0 µs</td><td title="CV=3.6% | rounds=2274">346.7 µs</td></tr>
+<tr><td>Scale Search1K</td><td>broad_query_bm25s</td><td>58.6 µs</td><td>17.1K</td><td title="CV=11.7% | rounds=5368">54.7 µs</td><td title="CV=11.7% | rounds=5368">168.4 µs</td><td title="CV=11.7% | rounds=5368">6.9 µs</td><td title="CV=11.7% | rounds=5368">76.8 µs</td></tr>
+<tr><td>Scale Search1K</td><td>selective_query_bm25s</td><td>68.0 µs</td><td>14.7K</td><td title="CV=10.0% | rounds=6009">63.6 µs</td><td title="CV=10.0% | rounds=6009">157.6 µs</td><td title="CV=10.0% | rounds=6009">6.8 µs</td><td title="CV=10.0% | rounds=6009">86.5 µs</td></tr>
+<tr><td>Search Performance</td><td>search_bm25s</td><td>39.7 µs</td><td>25.2K</td><td title="CV=14.0% | rounds=4890">36.3 µs</td><td title="CV=14.0% | rounds=4890">124.5 µs</td><td title="CV=14.0% | rounds=4890">5.6 µs</td><td title="CV=14.0% | rounds=4890">47.2 µs</td></tr>
+</tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
 <h3>Performance Trend</h3>
@@ -227,13 +230,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [6.99116168484286, 306212.5053692846, 6274.342393523755, 56410.39595273194, 312583.6824527587],
+        data: [7.0138279090127496, 324652.23625416524, 5953.859149925629, 212.21840787230053, 325191.5176534083],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "rank-bm25" + ' (ops/s)',
-        data: [75.90396328682293, 2657.652104338026, 314.29904219274187, 3192.9689387168237, 9850.423717906242],
+        data: [72.29563165847343, 2423.433027409528, 304.23134664303575, 2793.9421158613227, 9232.609933763255],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

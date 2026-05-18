@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,38 +125,40 @@ td { white-space: nowrap; }
 <h1>httpserver</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>httpserver</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Concurrent Get</td><td>zerodep</td><td>flask</td><td>6.12 ms</td><td>8.21 ms</td><td>163.4</td><td>121.8</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Concurrent Get</td><td>zerodep</td><td>microdot</td><td>6.12 ms</td><td>8.65 ms</td><td>163.4</td><td>115.6</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Concurrent Get</td><td>zerodep</td><td>bottle</td><td>6.12 ms</td><td>1.024 s</td><td>163.4</td><td>1.0</td><td class="ratio-cell faster">167.3x faster</td></tr>
-<tr><td>Concurrent Post</td><td>zerodep</td><td>flask</td><td>7.27 ms</td><td>9.07 ms</td><td>137.5</td><td>110.3</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Concurrent Post</td><td>zerodep</td><td>microdot</td><td>7.27 ms</td><td>8.23 ms</td><td>137.5</td><td>121.5</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Concurrent Post</td><td>zerodep</td><td>bottle</td><td>7.27 ms</td><td>1.024 s</td><td>137.5</td><td>1.0</td><td class="ratio-cell faster">140.8x faster</td></tr>
-<tr><td>Get JSON</td><td>zerodep</td><td>flask</td><td>620.3 µs</td><td>730.1 µs</td><td>1.6K</td><td>1.4K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Get JSON</td><td>zerodep</td><td>microdot</td><td>620.3 µs</td><td>640.9 µs</td><td>1.6K</td><td>1.6K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Get JSON</td><td>zerodep</td><td>bottle</td><td>620.3 µs</td><td>571.5 µs</td><td>1.6K</td><td>1.7K</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Get Text</td><td>zerodep</td><td>flask</td><td>535.6 µs</td><td>717.2 µs</td><td>1.9K</td><td>1.4K</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Get Text</td><td>zerodep</td><td>microdot</td><td>535.6 µs</td><td>732.1 µs</td><td>1.9K</td><td>1.4K</td><td class="ratio-cell faster">1.4x faster</td></tr>
-<tr><td>Get Text</td><td>zerodep</td><td>bottle</td><td>535.6 µs</td><td>620.3 µs</td><td>1.9K</td><td>1.6K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Large Payload</td><td>zerodep</td><td>flask</td><td>934.0 µs</td><td>1.13 ms</td><td>1.1K</td><td>883.7</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Large Payload</td><td>zerodep</td><td>microdot</td><td>934.0 µs</td><td>955.0 µs</td><td>1.1K</td><td>1.0K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Large Payload</td><td>zerodep</td><td>bottle</td><td>934.0 µs</td><td>895.6 µs</td><td>1.1K</td><td>1.1K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Post JSON</td><td>zerodep</td><td>flask</td><td>637.6 µs</td><td>789.4 µs</td><td>1.6K</td><td>1.3K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Post JSON</td><td>zerodep</td><td>microdot</td><td>637.6 µs</td><td>764.2 µs</td><td>1.6K</td><td>1.3K</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Post JSON</td><td>zerodep</td><td>bottle</td><td>637.6 µs</td><td>624.0 µs</td><td>1.6K</td><td>1.6K</td><td class="ratio-cell similar">~equal</td></tr>
-</tbody></table>
+<tr><td>Concurrent Get</td><td>zerodep</td><td>flask</td><td>7.25 ms</td><td>9.10 ms</td><td>138.0</td><td>109.8</td><td title="CV=9.1% | rounds=109">6.59 ms</td><td title="CV=9.1% | rounds=109">9.10 ms</td><td title="CV=9.1% | rounds=109">660.7 µs</td><td title="CV=9.1% | rounds=109">8.70 ms</td><td title="CV=8.6% | rounds=98">8.51 ms</td><td title="CV=8.6% | rounds=98">13.76 ms</td><td title="CV=8.6% | rounds=98">786.8 µs</td><td title="CV=8.6% | rounds=98">10.53 ms</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Concurrent Get</td><td>zerodep</td><td>microdot</td><td>7.25 ms</td><td>9.14 ms</td><td>138.0</td><td>109.4</td><td title="CV=9.1% | rounds=109">6.59 ms</td><td title="CV=9.1% | rounds=109">9.10 ms</td><td title="CV=9.1% | rounds=109">660.7 µs</td><td title="CV=9.1% | rounds=109">8.70 ms</td><td title="CV=12.3% | rounds=91">8.15 ms</td><td title="CV=12.3% | rounds=91">11.58 ms</td><td title="CV=12.3% | rounds=91">1.12 ms</td><td title="CV=12.3% | rounds=91">11.34 ms</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Concurrent Get</td><td>zerodep</td><td>bottle</td><td>7.25 ms</td><td>1.024 s</td><td>138.0</td><td>1.0</td><td title="CV=9.1% | rounds=109">6.59 ms</td><td title="CV=9.1% | rounds=109">9.10 ms</td><td title="CV=9.1% | rounds=109">660.7 µs</td><td title="CV=9.1% | rounds=109">8.70 ms</td><td title="CV=0.0% | rounds=5">1.024 s</td><td title="CV=0.0% | rounds=5">1.024 s</td><td title="CV=0.0% | rounds=5">112.2 µs</td><td title="CV=0.0% | rounds=5">1.024 s</td><td class="ratio-cell faster">141.3x faster</td></tr>
+<tr><td>Concurrent Post</td><td>zerodep</td><td>flask</td><td>7.52 ms</td><td>10.10 ms</td><td>133.0</td><td>99.0</td><td title="CV=4.8% | rounds=113">7.16 ms</td><td title="CV=4.8% | rounds=113">9.16 ms</td><td title="CV=4.8% | rounds=113">363.4 µs</td><td title="CV=4.8% | rounds=113">8.48 ms</td><td title="CV=5.1% | rounds=98">9.26 ms</td><td title="CV=5.1% | rounds=98">11.14 ms</td><td title="CV=5.1% | rounds=98">512.3 µs</td><td title="CV=5.1% | rounds=98">10.87 ms</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Concurrent Post</td><td>zerodep</td><td>microdot</td><td>7.52 ms</td><td>9.29 ms</td><td>133.0</td><td>107.6</td><td title="CV=4.8% | rounds=113">7.16 ms</td><td title="CV=4.8% | rounds=113">9.16 ms</td><td title="CV=4.8% | rounds=113">363.4 µs</td><td title="CV=4.8% | rounds=113">8.48 ms</td><td title="CV=9.9% | rounds=111">8.41 ms</td><td title="CV=9.9% | rounds=111">11.70 ms</td><td title="CV=9.9% | rounds=111">916.1 µs</td><td title="CV=9.9% | rounds=111">11.13 ms</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Concurrent Post</td><td>zerodep</td><td>bottle</td><td>7.52 ms</td><td>1.024 s</td><td>133.0</td><td>1.0</td><td title="CV=4.8% | rounds=113">7.16 ms</td><td title="CV=4.8% | rounds=113">9.16 ms</td><td title="CV=4.8% | rounds=113">363.4 µs</td><td title="CV=4.8% | rounds=113">8.48 ms</td><td title="CV=0.0% | rounds=5">1.023 s</td><td title="CV=0.0% | rounds=5">1.025 s</td><td title="CV=0.0% | rounds=5">398.7 µs</td><td title="CV=0.0% | rounds=5">1.025 s</td><td class="ratio-cell faster">136.2x faster</td></tr>
+<tr><td>Get JSON</td><td>zerodep</td><td>flask</td><td>613.3 µs</td><td>725.0 µs</td><td>1.6K</td><td>1.4K</td><td title="CV=11.4% | rounds=741">491.2 µs</td><td title="CV=11.4% | rounds=741">852.1 µs</td><td title="CV=11.4% | rounds=741">69.7 µs</td><td title="CV=11.4% | rounds=741">741.3 µs</td><td title="CV=8.9% | rounds=695">630.9 µs</td><td title="CV=8.9% | rounds=695">1.41 ms</td><td title="CV=8.9% | rounds=695">64.8 µs</td><td title="CV=8.9% | rounds=695">848.5 µs</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Get JSON</td><td>zerodep</td><td>microdot</td><td>613.3 µs</td><td>734.9 µs</td><td>1.6K</td><td>1.4K</td><td title="CV=11.4% | rounds=741">491.2 µs</td><td title="CV=11.4% | rounds=741">852.1 µs</td><td title="CV=11.4% | rounds=741">69.7 µs</td><td title="CV=11.4% | rounds=741">741.3 µs</td><td title="CV=14.5% | rounds=1151">541.7 µs</td><td title="CV=14.5% | rounds=1151">1.19 ms</td><td title="CV=14.5% | rounds=1151">106.3 µs</td><td title="CV=14.5% | rounds=1151">877.4 µs</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Get JSON</td><td>zerodep</td><td>bottle</td><td>613.3 µs</td><td>635.6 µs</td><td>1.6K</td><td>1.6K</td><td title="CV=11.4% | rounds=741">491.2 µs</td><td title="CV=11.4% | rounds=741">852.1 µs</td><td title="CV=11.4% | rounds=741">69.7 µs</td><td title="CV=11.4% | rounds=741">741.3 µs</td><td title="CV=10.5% | rounds=1153">508.3 µs</td><td title="CV=10.5% | rounds=1153">820.9 µs</td><td title="CV=10.5% | rounds=1153">66.7 µs</td><td title="CV=10.5% | rounds=1153">747.8 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Get Text</td><td>zerodep</td><td>flask</td><td>608.4 µs</td><td>686.5 µs</td><td>1.6K</td><td>1.5K</td><td title="CV=11.1% | rounds=1286">461.3 µs</td><td title="CV=11.1% | rounds=1286">858.0 µs</td><td title="CV=11.1% | rounds=1286">67.4 µs</td><td title="CV=11.1% | rounds=1286">738.7 µs</td><td title="CV=6.6% | rounds=1087">607.2 µs</td><td title="CV=6.6% | rounds=1087">1.34 ms</td><td title="CV=6.6% | rounds=1087">45.6 µs</td><td title="CV=6.6% | rounds=1087">776.8 µs</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Get Text</td><td>zerodep</td><td>microdot</td><td>608.4 µs</td><td>717.3 µs</td><td>1.6K</td><td>1.4K</td><td title="CV=11.1% | rounds=1286">461.3 µs</td><td title="CV=11.1% | rounds=1286">858.0 µs</td><td title="CV=11.1% | rounds=1286">67.4 µs</td><td title="CV=11.1% | rounds=1286">738.7 µs</td><td title="CV=13.9% | rounds=1026">524.0 µs</td><td title="CV=13.9% | rounds=1026">1.08 ms</td><td title="CV=13.9% | rounds=1026">99.6 µs</td><td title="CV=13.9% | rounds=1026">870.1 µs</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Get Text</td><td>zerodep</td><td>bottle</td><td>608.4 µs</td><td>639.1 µs</td><td>1.6K</td><td>1.6K</td><td title="CV=11.1% | rounds=1286">461.3 µs</td><td title="CV=11.1% | rounds=1286">858.0 µs</td><td title="CV=11.1% | rounds=1286">67.4 µs</td><td title="CV=11.1% | rounds=1286">738.7 µs</td><td title="CV=10.7% | rounds=1197">524.6 µs</td><td title="CV=10.7% | rounds=1197">935.5 µs</td><td title="CV=10.7% | rounds=1197">68.1 µs</td><td title="CV=10.7% | rounds=1197">740.1 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Large Payload</td><td>zerodep</td><td>flask</td><td>1.00 ms</td><td>1.19 ms</td><td>1000.0</td><td>837.9</td><td title="CV=14.2% | rounds=756">790.5 µs</td><td title="CV=14.2% | rounds=756">2.27 ms</td><td title="CV=14.2% | rounds=756">142.4 µs</td><td title="CV=14.2% | rounds=756">1.21 ms</td><td title="CV=7.1% | rounds=653">1.04 ms</td><td title="CV=7.1% | rounds=653">1.98 ms</td><td title="CV=7.1% | rounds=653">84.3 µs</td><td title="CV=7.1% | rounds=653">1.30 ms</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Large Payload</td><td>zerodep</td><td>microdot</td><td>1.00 ms</td><td>1.01 ms</td><td>1000.0</td><td>994.9</td><td title="CV=14.2% | rounds=756">790.5 µs</td><td title="CV=14.2% | rounds=756">2.27 ms</td><td title="CV=14.2% | rounds=756">142.4 µs</td><td title="CV=14.2% | rounds=756">1.21 ms</td><td title="CV=10.9% | rounds=797">822.2 µs</td><td title="CV=10.9% | rounds=797">1.60 ms</td><td title="CV=10.9% | rounds=797">109.5 µs</td><td title="CV=10.9% | rounds=797">1.24 ms</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Large Payload</td><td>zerodep</td><td>bottle</td><td>1.00 ms</td><td>1.06 ms</td><td>1000.0</td><td>946.7</td><td title="CV=14.2% | rounds=756">790.5 µs</td><td title="CV=14.2% | rounds=756">2.27 ms</td><td title="CV=14.2% | rounds=756">142.4 µs</td><td title="CV=14.2% | rounds=756">1.21 ms</td><td title="CV=7.0% | rounds=885">837.1 µs</td><td title="CV=7.0% | rounds=885">1.21 ms</td><td title="CV=7.0% | rounds=885">74.4 µs</td><td title="CV=7.0% | rounds=885">1.14 ms</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Post JSON</td><td>zerodep</td><td>flask</td><td>750.3 µs</td><td>897.2 µs</td><td>1.3K</td><td>1.1K</td><td title="CV=13.1% | rounds=1052">525.1 µs</td><td title="CV=13.1% | rounds=1052">1.03 ms</td><td title="CV=13.1% | rounds=1052">98.2 µs</td><td title="CV=13.1% | rounds=1052">896.6 µs</td><td title="CV=8.4% | rounds=850">709.1 µs</td><td title="CV=8.4% | rounds=850">1.43 ms</td><td title="CV=8.4% | rounds=850">75.5 µs</td><td title="CV=8.4% | rounds=850">986.0 µs</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Post JSON</td><td>zerodep</td><td>microdot</td><td>750.3 µs</td><td>774.9 µs</td><td>1.3K</td><td>1.3K</td><td title="CV=13.1% | rounds=1052">525.1 µs</td><td title="CV=13.1% | rounds=1052">1.03 ms</td><td title="CV=13.1% | rounds=1052">98.2 µs</td><td title="CV=13.1% | rounds=1052">896.6 µs</td><td title="CV=15.8% | rounds=931">588.6 µs</td><td title="CV=15.8% | rounds=931">1.23 ms</td><td title="CV=15.8% | rounds=931">122.6 µs</td><td title="CV=15.8% | rounds=931">971.7 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Post JSON</td><td>zerodep</td><td>bottle</td><td>750.3 µs</td><td>656.9 µs</td><td>1.3K</td><td>1.5K</td><td title="CV=13.1% | rounds=1052">525.1 µs</td><td title="CV=13.1% | rounds=1052">1.03 ms</td><td title="CV=13.1% | rounds=1052">98.2 µs</td><td title="CV=13.1% | rounds=1052">896.6 µs</td><td title="CV=8.9% | rounds=1224">569.1 µs</td><td title="CV=8.9% | rounds=1224">1.66 ms</td><td title="CV=8.9% | rounds=1224">58.6 µs</td><td title="CV=8.9% | rounds=1224">716.6 µs</td><td class="ratio-cell slower">1.1x slower</td></tr>
+</tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
-<table class="standalone-table">
-<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th></tr></thead>
+<div class="table-wrap"><table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>Sync Vs Async Handler</td><td>async_handler</td><td>522.3 µs</td><td>1.9K</td></tr>
-<tr><td>Sync Vs Async Handler</td><td>sync_handler</td><td>610.3 µs</td><td>1.6K</td></tr>
-</tbody></table>
+<tr><td>Sync Vs Async Handler</td><td>async_handler</td><td>587.1 µs</td><td>1.7K</td><td title="CV=8.7% | rounds=1326">497.8 µs</td><td title="CV=8.7% | rounds=1326">904.5 µs</td><td title="CV=8.7% | rounds=1326">51.0 µs</td><td title="CV=8.7% | rounds=1326">709.4 µs</td></tr>
+<tr><td>Sync Vs Async Handler</td><td>sync_handler</td><td>745.0 µs</td><td>1.3K</td><td title="CV=8.7% | rounds=990">584.6 µs</td><td title="CV=8.7% | rounds=990">939.5 µs</td><td title="CV=8.7% | rounds=990">64.6 µs</td><td title="CV=8.7% | rounds=990">867.9 µs</td></tr>
+</tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
 <h3>Performance Trend</h3>
@@ -225,13 +228,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [163.41401030645613, 137.50846258797247, 1612.1719730965121, 1867.2024461846163, 1070.6361122609128, 1568.434190186453],
+        data: [138.00343804541603, 132.9973038362368, 1630.5187481546777, 1643.647109832306, 999.9965211737018, 1332.8363998931638],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "Reference" + ' (ops/s)',
-        data: [121.82697393915173, 121.45046252876371, 1749.687710424711, 1612.134529655084, 1116.6296909766254, 1602.5393712330003],
+        data: [109.82995219016247, 107.62989425779489, 1573.2814574156878, 1564.6831238833129, 994.9207274570772, 1522.2553943882967],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,15 +125,17 @@ td { white-space: nowrap; }
 <h1>dotenv</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>dotenv</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>python-dotenv</td><td>1.37 ms</td><td>1.37 ms</td><td>729.3</td><td>728.6</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-dotenv</td><td>189.9 µs</td><td>188.9 µs</td><td>5.3K</td><td>5.3K</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>python-dotenv</td><td>27.6 µs</td><td>27.6 µs</td><td>36.2K</td><td>36.3K</td><td class="ratio-cell similar">~equal</td></tr>
-</tbody></table>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>python-dotenv</td><td>1.34 ms</td><td>1.35 ms</td><td>743.7</td><td>739.5</td><td title="CV=2.1% | rounds=698">1.33 ms</td><td title="CV=2.1% | rounds=698">1.81 ms</td><td title="CV=2.1% | rounds=698">28.1 µs</td><td title="CV=2.1% | rounds=698">1.37 ms</td><td title="CV=5.4% | rounds=708">1.31 ms</td><td title="CV=5.4% | rounds=708">2.19 ms</td><td title="CV=5.4% | rounds=708">73.6 µs</td><td title="CV=5.4% | rounds=708">1.42 ms</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-dotenv</td><td>191.1 µs</td><td>189.3 µs</td><td>5.2K</td><td>5.3K</td><td title="CV=4.3% | rounds=3126">186.0 µs</td><td title="CV=4.3% | rounds=3126">395.4 µs</td><td title="CV=4.3% | rounds=3126">8.2 µs</td><td title="CV=4.3% | rounds=3126">201.5 µs</td><td title="CV=3.9% | rounds=4525">184.2 µs</td><td title="CV=3.9% | rounds=4525">341.6 µs</td><td title="CV=3.9% | rounds=4525">7.5 µs</td><td title="CV=3.9% | rounds=4525">199.5 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>python-dotenv</td><td>27.2 µs</td><td>26.7 µs</td><td>36.7K</td><td>37.5K</td><td title="CV=8.3% | rounds=17714">26.3 µs</td><td title="CV=8.3% | rounds=17714">157.3 µs</td><td title="CV=8.3% | rounds=17714">2.3 µs</td><td title="CV=8.3% | rounds=17714">27.5 µs</td><td title="CV=8.3% | rounds=23403">25.9 µs</td><td title="CV=8.3% | rounds=23403">83.8 µs</td><td title="CV=8.3% | rounds=23403">2.2 µs</td><td title="CV=8.3% | rounds=23403">27.0 µs</td><td class="ratio-cell similar">~equal</td></tr>
+</tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -203,13 +206,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [729.3228015524561, 5265.817188000527, 36194.248613853786],
+        data: [743.6817253430219, 5232.203141803551, 36741.35470160624],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-dotenv" + ' (ops/s)',
-        data: [728.6056444058682, 5293.2582237642, 36290.50035035274],
+        data: [739.524652876751, 5283.962620984885, 37450.09915926268],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -54,8 +54,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -124,19 +125,21 @@ td { white-space: nowrap; }
 <h1>qr</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: ab60d2f | Commit: ab60d2f8 | 2026-05-16T19:28:49.520518+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-16T19:28:49.520518+00:00"></span></p>
+<p class="meta">Version: cfacff0 | Commit: cfacff0e | 2026-05-18T12:33:44.409639+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T12:33:44.409639+00:00"></span></p>
 <h2>qr</h2>
-<table>
-<thead><tr><th>Operation</th><th>zerodep</th><th>Reference</th><th>zerodep time</th><th>Ref time</th><th>zerodep ops/s</th><th>Ref ops/s</th><th>Ratio</th></tr></thead>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Encode Binary</td><td>zerodep</td><td>qrcode</td><td>35.41 ms</td><td>44.34 ms</td><td>28.2</td><td>22.6</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode High Ecc</td><td>zerodep</td><td>qrcode</td><td>6.59 ms</td><td>6.47 ms</td><td>151.8</td><td>154.4</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Encode Large Data</td><td>zerodep</td><td>qrcode</td><td>35.37 ms</td><td>47.42 ms</td><td>28.3</td><td>21.1</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>11.21 ms</td><td>12.39 ms</td><td>89.2</td><td>80.7</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Encode Numeric</td><td>zerodep</td><td>qrcode</td><td>4.37 ms</td><td>4.12 ms</td><td>228.6</td><td>242.7</td><td class="ratio-cell slower">1.1x slower</td></tr>
-<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>2.35 ms</td><td>1.82 ms</td><td>424.7</td><td>549.5</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>5.48 ms</td><td>5.23 ms</td><td>182.4</td><td>191.0</td><td class="ratio-cell similar">~equal</td></tr>
-</tbody></table>
+<tr><td>Encode Binary</td><td>zerodep</td><td>qrcode</td><td>34.48 ms</td><td>41.53 ms</td><td>29.0</td><td>24.1</td><td title="CV=0.5% | rounds=30">34.10 ms</td><td title="CV=0.5% | rounds=30">34.95 ms</td><td title="CV=0.5% | rounds=30">186.5 µs</td><td title="CV=0.5% | rounds=30">34.93 ms</td><td title="CV=0.4% | rounds=21">41.27 ms</td><td title="CV=0.4% | rounds=21">41.83 ms</td><td title="CV=0.4% | rounds=21">166.7 µs</td><td title="CV=0.4% | rounds=21">41.82 ms</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Encode High Ecc</td><td>zerodep</td><td>qrcode</td><td>6.50 ms</td><td>6.15 ms</td><td>153.9</td><td>162.6</td><td title="CV=0.8% | rounds=151">6.40 ms</td><td title="CV=0.8% | rounds=151">6.81 ms</td><td title="CV=0.8% | rounds=151">50.6 µs</td><td title="CV=0.8% | rounds=151">6.57 ms</td><td title="CV=1.8% | rounds=159">6.07 ms</td><td title="CV=1.8% | rounds=159">7.25 ms</td><td title="CV=1.8% | rounds=159">110.5 µs</td><td title="CV=1.8% | rounds=159">6.20 ms</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Encode Large Data</td><td>zerodep</td><td>qrcode</td><td>35.01 ms</td><td>44.65 ms</td><td>28.6</td><td>22.4</td><td title="CV=0.5% | rounds=29">34.71 ms</td><td title="CV=0.5% | rounds=29">35.52 ms</td><td title="CV=0.5% | rounds=29">186.9 µs</td><td title="CV=0.5% | rounds=29">35.32 ms</td><td title="CV=0.8% | rounds=21">44.33 ms</td><td title="CV=0.8% | rounds=21">45.99 ms</td><td title="CV=0.8% | rounds=21">341.3 µs</td><td title="CV=0.8% | rounds=21">44.86 ms</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Encode Long</td><td>zerodep</td><td>qrcode</td><td>11.00 ms</td><td>11.61 ms</td><td>90.9</td><td>86.2</td><td title="CV=1.6% | rounds=80">10.88 ms</td><td title="CV=1.6% | rounds=80">12.31 ms</td><td title="CV=1.6% | rounds=80">172.7 µs</td><td title="CV=1.6% | rounds=80">11.06 ms</td><td title="CV=4.2% | rounds=84">11.43 ms</td><td title="CV=4.2% | rounds=84">15.77 ms</td><td title="CV=4.2% | rounds=84">488.4 µs</td><td title="CV=4.2% | rounds=84">11.70 ms</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Encode Numeric</td><td>zerodep</td><td>qrcode</td><td>4.31 ms</td><td>3.94 ms</td><td>232.0</td><td>253.6</td><td title="CV=0.6% | rounds=225">4.26 ms</td><td title="CV=0.6% | rounds=225">4.52 ms</td><td title="CV=0.6% | rounds=225">26.5 µs</td><td title="CV=0.6% | rounds=225">4.35 ms</td><td title="CV=0.5% | rounds=213">3.88 ms</td><td title="CV=0.5% | rounds=213">4.12 ms</td><td title="CV=0.5% | rounds=213">21.0 µs</td><td title="CV=0.5% | rounds=213">3.97 ms</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Encode Short</td><td>zerodep</td><td>qrcode</td><td>2.38 ms</td><td>1.81 ms</td><td>420.9</td><td>552.1</td><td title="CV=1.0% | rounds=392">2.33 ms</td><td title="CV=1.0% | rounds=392">2.64 ms</td><td title="CV=1.0% | rounds=392">22.8 µs</td><td title="CV=1.0% | rounds=392">2.41 ms</td><td title="CV=1.0% | rounds=327">1.77 ms</td><td title="CV=1.0% | rounds=327">2.00 ms</td><td title="CV=1.0% | rounds=327">18.3 µs</td><td title="CV=1.0% | rounds=327">1.84 ms</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Encode URL</td><td>zerodep</td><td>qrcode</td><td>5.36 ms</td><td>5.05 ms</td><td>186.4</td><td>198.0</td><td title="CV=0.7% | rounds=182">5.30 ms</td><td title="CV=0.7% | rounds=182">5.56 ms</td><td title="CV=0.7% | rounds=182">38.6 µs</td><td title="CV=0.7% | rounds=182">5.43 ms</td><td title="CV=4.5% | rounds=186">4.98 ms</td><td title="CV=4.5% | rounds=186">7.19 ms</td><td title="CV=4.5% | rounds=186">228.9 µs</td><td title="CV=4.5% | rounds=186">5.09 ms</td><td class="ratio-cell slower">1.1x slower</td></tr>
+</tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -207,13 +210,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [28.240666935378897, 151.77037653770296, 28.275644555438586, 89.17633800623936, 228.61528656759592, 424.6696330668963, 182.35736957299508],
+        data: [29.00492796529955, 153.88598421110828, 28.56404784660234, 90.8933710038629, 232.01615100521354, 420.86984296906155, 186.4250214066935],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "qrcode" + ' (ops/s)',
-        data: [22.5545503395934, 154.44617620419368, 21.08866422560725, 80.70958120468286, 242.71276782779555, 549.5103787240022, 191.02905088797058],
+        data: [24.076288982256823, 162.59908023528413, 22.39435693258817, 86.16261662449246, 253.6407869466063, 552.1264087434239, 197.97304657639557],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

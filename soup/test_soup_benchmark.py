@@ -397,3 +397,65 @@ class TestFixtureSelectDocsPage:
         benchmark(
             _bs4_select_fixture, _get_fixture("docs-page"), _FIXTURE_SELECT_QUERIES
         )
+
+
+# ── Scale curve: vary HTML document size (number of nodes) geometrically ──
+
+# Each "item" div from _make_html() contains 4 child tags (h3, p, a, plus the
+# div itself), so n_tags items ≈ 4*n_tags total nodes.
+_SCALE_PARAMS = [
+    (5, "5nodes"),
+    (25, "25nodes"),
+    (50, "50nodes"),
+    (250, "250nodes"),
+    (500, "500nodes"),
+    (2_500, "2500nodes"),
+    (5_000, "5000nodes"),
+    (25_000, "25000nodes"),
+]
+
+_SCALE_HTMLS = {label: _make_html(n) for n, label in _SCALE_PARAMS}
+
+
+class TestScaleCurve:
+    """Scale curves: vary HTML document size to reveal parse/find complexity.
+
+    Each parametrized ID encodes the approximate node count so results can
+    be plotted against input scale.
+    """
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_parse_find_zerodep(self, benchmark, label):
+        """zerodep parse + find_all: scale with node count."""
+        html = _SCALE_HTMLS[label]
+        benchmark(_zd_parse_and_find, html)
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_parse_find_bs4(self, benchmark, label):
+        """BeautifulSoup4 parse + find_all: scale with node count."""
+        html = _SCALE_HTMLS[label]
+        benchmark(_bs4_parse_and_find, html)
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_serialize_zerodep(self, benchmark, label):
+        """zerodep parse + to_html serialize: scale with node count."""
+        html = _SCALE_HTMLS[label]
+        benchmark(_zd_parse_and_serialize, html)
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_serialize_bs4(self, benchmark, label):
+        """BeautifulSoup4 parse + str(): scale with node count."""
+        html = _SCALE_HTMLS[label]
+        benchmark(_bs4_parse_and_serialize, html)
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_css_select_zerodep(self, benchmark, label):
+        """zerodep CSS select: scale with node count."""
+        html = _SCALE_HTMLS[label]
+        benchmark(_zd_select, html, _SELECT_QUERIES)
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_css_select_bs4(self, benchmark, label):
+        """BeautifulSoup4 CSS select: scale with node count."""
+        html = _SCALE_HTMLS[label]
+        benchmark(_bs4_select, html, _SELECT_QUERIES)

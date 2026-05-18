@@ -514,3 +514,90 @@ class TestRoundtripComparison:
             return m
 
         benchmark(roundtrip)
+
+
+# ============================================================================
+# Scale curve: vary repeated-field count / message size geometrically
+# ============================================================================
+
+# Scale points: number of int32 entries in the repeated `values` field.
+# Each int32 takes 1-2 bytes in protobuf wire format, so payload ≈ n bytes.
+_SCALE_PARAMS = [
+    (10, "10items"),
+    (50, "50items"),
+    (100, "100items"),
+    (500, "500items"),
+    (1_000, "1Kitems"),
+    (5_000, "5Kitems"),
+    (10_000, "10Kitems"),
+    (50_000, "50Kitems"),
+]
+
+
+def _make_repeated_msg(n: int) -> MediumMessage:
+    """Build a MediumMessage with *n* repeated int32 values."""
+    return MediumMessage(
+        id=1,
+        title="scale",
+        score=1.0,
+        tags=["t"],
+        values=list(range(n)),
+    )
+
+
+# Pre-serialize payloads so encoding cost is excluded from decode benchmarks.
+_SCALE_OBJECTS = {label: _make_repeated_msg(n) for n, label in _SCALE_PARAMS}
+_SCALE_BYTES = {label: obj.serialize() for label, obj in _SCALE_OBJECTS.items()}
+
+
+class TestScaleCurve:
+    """Scale curves: vary repeated-field count to reveal encode/decode complexity.
+
+    Each parametrized ID encodes the number of repeated int32 items so
+    results can be plotted against message size.
+    """
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_encode_zerodep(self, benchmark, label):
+        """zerodep encode: scale with repeated-field count."""
+        obj = _SCALE_OBJECTS[label]
+        benchmark(obj.serialize)
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_decode_zerodep(self, benchmark, label):
+        """zerodep decode: scale with repeated-field count."""
+        data = _SCALE_BYTES[label]
+        benchmark(MediumMessage.parse, data)
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_roundtrip_zerodep(self, benchmark, label):
+        """zerodep roundtrip: scale with repeated-field count."""
+        obj = _SCALE_OBJECTS[label]
+        benchmark(lambda o=obj: MediumMessage.parse(o.serialize()))
+
+    @pytest.mark.skipif(not HAS_GOOGLE_PB, reason="google-protobuf not installed")
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_encode_google(self, benchmark, label):
+        """google-protobuf encode: scale with repeated-field count."""
+        n = next(n for n, lbl in _SCALE_PARAMS if lbl == label)
+        msg = GMedium(id=1, title="scale", score=1.0)
+        msg.tags.extend(["t"])
+        msg.values.extend(list(range(n)))
+        benchmark(msg.SerializeToString)
+
+    @pytest.mark.skipif(not HAS_GOOGLE_PB, reason="google-protobuf not installed")
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_decode_google(self, benchmark, label):
+        """google-protobuf decode: scale with repeated-field count."""
+        n = next(n for n, lbl in _SCALE_PARAMS if lbl == label)
+        msg = GMedium(id=1, title="scale", score=1.0)
+        msg.tags.extend(["t"])
+        msg.values.extend(list(range(n)))
+        data = msg.SerializeToString()
+
+        def parse():
+            m = GMedium()
+            m.ParseFromString(data)
+            return m
+
+        benchmark(parse)

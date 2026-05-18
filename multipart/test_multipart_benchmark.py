@@ -283,3 +283,93 @@ class TestFixtureParseLargeBinary:
     def test_python_multipart(self, benchmark):
         body, ct = _get_fixture("large-binary")
         benchmark(_ref_parse_multipart, body, ct)
+
+
+# ── Scale curve: vary number of parts / total payload size geometrically ──
+
+
+def _make_scale_body(n_parts: int, part_size: int) -> tuple[bytes, str]:
+    """Build a multipart body with *n_parts* binary parts of *part_size* bytes each."""
+    files = {
+        f"file_{i}": (f"data_{i}.bin", bytes(range(256)) * (part_size // 256 + 1))[
+            :part_size
+        ]
+        for i in range(n_parts)
+    }
+    return encode_multipart(fields={}, files=files, boundary="scalebench")
+
+
+# Scale by total payload size: (n_parts, part_size_bytes) → ~target payload.
+# Total ≈ n_parts * part_size (plus multipart framing overhead).
+_SCALE_PARAMS = [
+    (1, 100, "100B"),
+    (1, 500, "500B"),
+    (2, 512, "1KB"),
+    (5, 1_024, "5KB"),
+    (5, 2_048, "10KB"),
+    (10, 5_120, "50KB"),
+    (10, 10_240, "100KB"),
+    (20, 25_000, "500KB"),
+]
+
+# Pre-build all payloads so construction cost is excluded from benchmarks.
+_SCALE_BODIES: dict[str, tuple[bytes, str]] = {
+    label: _make_scale_body(n_parts, part_size)
+    for n_parts, part_size, label in _SCALE_PARAMS
+}
+
+
+class TestScaleCurve:
+    """Scale curves: vary total payload size to reveal parse/encode complexity.
+
+    Each parametrized ID encodes the approximate total payload size so
+    results can be plotted against input scale.
+    """
+
+    @pytest.mark.parametrize("label", [lbl for _, _, lbl in _SCALE_PARAMS])
+    def test_parse_zerodep(self, benchmark, label):
+        """zerodep parse_multipart: scale with payload size."""
+        body, ct = _SCALE_BODIES[label]
+        benchmark(parse_multipart, body, ct)
+
+    @pytest.mark.skipif(not _HAS_REF, reason="python-multipart not installed")
+    @pytest.mark.parametrize("label", [lbl for _, _, lbl in _SCALE_PARAMS])
+    def test_parse_python_multipart(self, benchmark, label):
+        """python-multipart parse: scale with payload size."""
+        body, ct = _SCALE_BODIES[label]
+        benchmark(_ref_parse_multipart, body, ct)
+
+    @pytest.mark.parametrize("label", [lbl for _, _, lbl in _SCALE_PARAMS])
+    def test_encode_zerodep(self, benchmark, label):
+        """zerodep encode_multipart: scale with payload size."""
+        n_parts, part_size, _lbl = next(
+            (n, p, lb) for n, p, lb in _SCALE_PARAMS if lb == label
+        )
+        files = {
+            f"file_{i}": (
+                f"data_{i}.bin",
+                (bytes(range(256)) * (part_size // 256 + 1))[:part_size],
+            )
+            for i in range(n_parts)
+        }
+        benchmark(encode_multipart, {}, files, boundary="scalebench")
+
+    @pytest.mark.parametrize("label", [lbl for _, _, lbl in _SCALE_PARAMS])
+    def test_roundtrip_zerodep(self, benchmark, label):
+        """zerodep encode + parse roundtrip: scale with payload size."""
+        n_parts, part_size, _lbl = next(
+            (n, p, lb) for n, p, lb in _SCALE_PARAMS if lb == label
+        )
+        files = {
+            f"file_{i}": (
+                f"data_{i}.bin",
+                (bytes(range(256)) * (part_size // 256 + 1))[:part_size],
+            )
+            for i in range(n_parts)
+        }
+
+        def roundtrip():
+            body, ct = encode_multipart({}, files, boundary="scalebench")
+            return parse_multipart(body, ct)
+
+        benchmark(roundtrip)

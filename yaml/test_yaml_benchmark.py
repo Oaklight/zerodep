@@ -261,3 +261,63 @@ class TestFixtureDumpK8sDeployment:
             _get_fixture_data("k8s-deployment"),
             default_flow_style=False,
         )
+
+
+# ── Scale curve: vary document size geometrically ──
+
+
+def _make_yaml_doc(n_keys: int) -> str:
+    """Generate a flat YAML document with *n_keys* string key-value pairs."""
+    lines = []
+    for i in range(n_keys):
+        lines.append(f"key_{i}: value_string_{i}")
+    return "\n".join(lines)
+
+
+# Geometric scale points: ~10 B … ~500 KB worth of keys.
+# Each key-value line is roughly 25 bytes, so n_keys ≈ target_bytes / 25.
+_SCALE_PARAMS = [
+    (4, "100B"),
+    (20, "500B"),
+    (40, "1KB"),
+    (200, "5KB"),
+    (400, "10KB"),
+    (2_000, "50KB"),
+    (4_000, "100KB"),
+    (20_000, "500KB"),
+]
+
+_SCALE_DOCS = {label: _make_yaml_doc(n) for n, label in _SCALE_PARAMS}
+_SCALE_DATA = {label: zd_load(doc) for label, doc in _SCALE_DOCS.items()}
+
+
+class TestScaleCurve:
+    """Scale curves: vary document size to reveal complexity behaviour.
+
+    Each parametrized ID encodes the approximate byte size of the YAML
+    document so results can be plotted against input size.
+    """
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_load_zerodep(self, benchmark, label):
+        """zerodep load: scale with document size."""
+        doc = _SCALE_DOCS[label]
+        benchmark(zd_load, doc)
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_load_pyyaml(self, benchmark, label):
+        """PyYAML safe_load: scale with document size."""
+        doc = _SCALE_DOCS[label]
+        benchmark(_pyyaml_safe_load, doc)
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_dump_zerodep(self, benchmark, label):
+        """zerodep dump: scale with data size."""
+        data = _SCALE_DATA[label]
+        benchmark(zd_dump, data)
+
+    @pytest.mark.parametrize("label", [lbl for _, lbl in _SCALE_PARAMS])
+    def test_dump_pyyaml(self, benchmark, label):
+        """PyYAML dump: scale with data size."""
+        data = _SCALE_DATA[label]
+        benchmark(_pyyaml_dump, data, default_flow_style=False)

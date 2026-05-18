@@ -1,2 +1,8 @@
 # Mark readability test pages as vendored so GitHub excludes them from language stats
 readability/test-pages/**/*.html linguist-vendored
+
+# Mark fixture files as vendored so GitHub excludes them from language stats
+yaml/fixtures/**           linguist-vendored
+jsonc/fixtures/**          linguist-vendored
+soup/fixtures/**           linguist-vendored
+multipart/fixtures/**      linguist-vendored

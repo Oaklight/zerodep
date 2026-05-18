@@ -1,0 +1,103 @@
+{
+  // TypeScript Compiler Configuration
+  // Base config for a Next.js 14+ project with strict mode
+  "compilerOptions": {
+    // ── Type Checking ──
+    "strict": true,                           // Enable all strict type-checking options
+    "noUncheckedIndexedAccess": true,          // Add undefined to index signatures
+    "noImplicitReturns": true,                 // Report error when not all paths return
+    "noFallthroughCasesInSwitch": true,        // Report fallthrough in switch
+    "noUnusedLocals": false,                   // Allow unused locals during dev
+    "noUnusedParameters": false,               // Allow unused params during dev
+    "exactOptionalPropertyTypes": false,       // Too strict for most projects
+    "noPropertyAccessFromIndexSignature": true, // Require bracket notation for index sigs
+
+    // ── Module Resolution ──
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+
+    // ── Emit ──
+    "noEmit": true,                           // Next.js handles compilation
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": true,
+    "removeComments": false,
+
+    // ── JavaScript Support ──
+    "allowJs": true,
+    "checkJs": false,
+
+    // ── Interop ──
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,                     // Skip .d.ts checking for speed
+
+    // ── JSX ──
+    "jsx": "preserve",                        // Let Next.js transform JSX
+
+    // ── Path Aliases ──
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/styles/*": ["./src/styles/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@/api/*": ["./src/api/*"],
+      "@/config/*": ["./src/config/*"],
+    },
+
+    // ── Decorators (experimental) ──
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    // ── Library ──
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022",
+    ],
+
+    // ── Plugins ──
+    "plugins": [
+      {
+        "name": "next",
+      },
+    ],
+
+    // ── Type Roots ──
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types",
+    ],
+  },
+
+  // ── Include / Exclude ──
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.mts",
+    ".next/types/**/*.ts",
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    ".next",
+    "out",
+    "coverage",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.e2e.ts",
+    "cypress",
+    "playwright-report",
+  ],
+}

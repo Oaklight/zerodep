@@ -1,0 +1,22 @@
+------PartBoundaryMixedCharsets
+Content-Disposition: form-data; name="title_en"
+
+International Conference on Software Engineering
+------PartBoundaryMixedCharsets
+Content-Disposition: form-data; name="title_zh"
+
+软件工程国际会议
+------PartBoundaryMixedCharsets
+Content-Disposition: form-data; name="abstract"
+
+This paper presents a novel approach to zero-dependency Python modules.
+------PartBoundaryMixedCharsets
+Content-Disposition: form-data; name="keywords"
+
+zero-dependency, Python, stdlib, performance
+------PartBoundaryMixedCharsets
+Content-Disposition: form-data; name="paper"; filename="paper.txt"
+Content-Type: text/plain; charset=utf-8
+
+This paper presents a novel approach to zero-dependency Python modules.
+------PartBoundaryMixedCharsets--

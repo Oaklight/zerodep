@@ -212,3 +212,74 @@ class TestRoundTrip:
             return parse_multipart(body, ct)
 
         benchmark(roundtrip)
+
+
+# ── Fixture data: real-world multipart payloads ──
+
+_FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
+_FIXTURE_CACHE: dict[str, tuple[bytes, str]] = {}
+
+_FIXTURE_FILES = {
+    "form-with-file": ("form-with-file.bin", "form-with-file.content-type"),
+    "mixed-charsets": ("mixed-charsets.bin", "mixed-charsets.content-type"),
+    "large-binary": ("large-binary.bin", "large-binary.content-type"),
+}
+
+
+def _fixture_available(name: str) -> bool:
+    if name not in _FIXTURE_FILES:
+        return False
+    bin_file, ct_file = _FIXTURE_FILES[name]
+    return os.path.isfile(os.path.join(_FIXTURES_DIR, bin_file)) and os.path.isfile(
+        os.path.join(_FIXTURES_DIR, ct_file)
+    )
+
+
+def _get_fixture(name: str) -> tuple[bytes, str]:
+    if name not in _FIXTURE_CACHE:
+        bin_file, ct_file = _FIXTURE_FILES[name]
+        with open(os.path.join(_FIXTURES_DIR, bin_file), "rb") as f:
+            body = f.read()
+        with open(os.path.join(_FIXTURES_DIR, ct_file), encoding="utf-8") as f:
+            ct = f.read().strip()
+        _FIXTURE_CACHE[name] = (body, ct)
+    return _FIXTURE_CACHE[name]
+
+
+# ── Fixture parse benchmarks ──
+
+
+@pytest.mark.skipif(not _fixture_available("form-with-file"), reason="fixture missing")
+class TestFixtureParseFormWithFile:
+    def test_zerodep(self, benchmark):
+        body, ct = _get_fixture("form-with-file")
+        benchmark(parse_multipart, body, ct)
+
+    @pytest.mark.skipif(not _HAS_REF, reason="python-multipart not installed")
+    def test_python_multipart(self, benchmark):
+        body, ct = _get_fixture("form-with-file")
+        benchmark(_ref_parse_multipart, body, ct)
+
+
+@pytest.mark.skipif(not _fixture_available("mixed-charsets"), reason="fixture missing")
+class TestFixtureParseMixedCharsets:
+    def test_zerodep(self, benchmark):
+        body, ct = _get_fixture("mixed-charsets")
+        benchmark(parse_multipart, body, ct)
+
+    @pytest.mark.skipif(not _HAS_REF, reason="python-multipart not installed")
+    def test_python_multipart(self, benchmark):
+        body, ct = _get_fixture("mixed-charsets")
+        benchmark(_ref_parse_multipart, body, ct)
+
+
+@pytest.mark.skipif(not _fixture_available("large-binary"), reason="fixture missing")
+class TestFixtureParseLargeBinary:
+    def test_zerodep(self, benchmark):
+        body, ct = _get_fixture("large-binary")
+        benchmark(parse_multipart, body, ct)
+
+    @pytest.mark.skipif(not _HAS_REF, reason="python-multipart not installed")
+    def test_python_multipart(self, benchmark):
+        body, ct = _get_fixture("large-binary")
+        benchmark(_ref_parse_multipart, body, ct)

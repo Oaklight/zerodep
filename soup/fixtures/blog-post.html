@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A deep dive into Python async patterns and best practices for modern web applications.">
+  <meta property="og:title" content="Mastering Async Python: Patterns and Pitfalls">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://blog.example.com/async-python-patterns">
+  <meta property="article:author" content="Jane Smith">
+  <meta property="article:published_time" content="2024-03-15T09:00:00Z">
+  <title>Mastering Async Python: Patterns and Pitfalls | TechBlog</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/prism.css">
+  <link rel="canonical" href="https://blog.example.com/async-python-patterns">
+  <script>
+    // Analytics snippet
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'GA-XXXXXXXXX');
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a class="logo" href="/">
+        <img src="/assets/img/logo.svg" alt="TechBlog" width="120" height="40">
+      </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <ul>
+          <li><a href="/articles">Articles</a></li>
+          <li><a href="/tutorials">Tutorials</a></li>
+          <li><a href="/newsletter">Newsletter</a></li>
+          <li><a href="/about">About</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <button class="search-toggle" aria-label="Open search">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </button>
+        <a class="btn btn-primary" href="/subscribe">Subscribe</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="site-main">
+    <article class="post" itemscope itemtype="https://schema.org/BlogPosting">
+      <header class="post-header">
+        <div class="container">
+          <div class="post-meta">
+            <span class="category"><a href="/category/python">Python</a></span>
+            <time class="published-date" datetime="2024-03-15" itemprop="datePublished">March 15, 2024</time>
+            <span class="reading-time">8 min read</span>
+          </div>
+          <h1 class="post-title" itemprop="headline">Mastering Async Python: Patterns and Pitfalls</h1>
+          <p class="post-excerpt" itemprop="description">
+            Async Python has matured significantly since its introduction. This guide covers
+            real-world patterns, common mistakes, and how to structure async code for
+            maintainability and performance.
+          </p>
+          <div class="author-info" itemprop="author" itemscope itemtype="https://schema.org/Person">
+            <img class="author-avatar" src="/authors/jane-smith.jpg" alt="Jane Smith" width="48" height="48">
+            <div>
+              <span class="author-name" itemprop="name">Jane Smith</span>
+              <span class="author-title">Senior Python Engineer at Acme Corp</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="post-hero">
+        <div class="container">
+          <img src="/images/async-python-hero.jpg" alt="Python async code on a dark background" width="1200" height="630" loading="eager">
+        </div>
+      </div>
+
+      <div class="post-body container" itemprop="articleBody">
+        <div class="toc">
+          <h2>Table of Contents</h2>
+          <ol>
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#event-loop">Understanding the Event Loop</a></li>
+            <li><a href="#patterns">Common Patterns</a></li>
+            <li><a href="#pitfalls">Pitfalls to Avoid</a></li>
+            <li><a href="#testing">Testing Async Code</a></li>
+            <li><a href="#conclusion">Conclusion</a></li>
+          </ol>
+        </div>
+
+        <section id="introduction">
+          <h2>Introduction</h2>
+          <p>
+            Python's <code>asyncio</code> library, introduced in Python 3.4 and significantly
+            improved through 3.10 and 3.11, provides a foundation for writing concurrent code
+            using coroutines. Unlike threading, asyncio uses cooperative multitasking — each
+            coroutine yields control explicitly, allowing other coroutines to run.
+          </p>
+          <p>
+            This guide assumes familiarity with Python basics and focuses on practical patterns
+            you'll encounter in production code. We'll look at real examples from web servers,
+            database access, and external API clients.
+          </p>
+          <blockquote class="callout callout-info">
+            <strong>Python version note:</strong> Examples in this article use Python 3.11+
+            syntax. For older versions, some features like <code>asyncio.TaskGroup</code>
+            require backport libraries.
+          </blockquote>
+        </section>
+
+        <section id="event-loop">
+          <h2>Understanding the Event Loop</h2>
+          <p>
+            The event loop is the core of any asyncio application. It runs asynchronous tasks,
+            handles I/O events, and schedules callbacks. Understanding its mechanics helps
+            avoid common mistakes.
+          </p>
+          <pre class="language-python"><code>import asyncio
+import time
+
+async def slow_operation(name: str, delay: float) -> str:
+    print(f"{name}: starting")
+    await asyncio.sleep(delay)
+    print(f"{name}: done after {delay}s")
+    return f"{name}: result"
+
+async def main() -> None:
+    start = time.monotonic()
+
+    # Sequential — total time ≈ sum of delays
+    r1 = await slow_operation("task-1", 1.0)
+    r2 = await slow_operation("task-2", 1.0)
+
+    elapsed = time.monotonic() - start
+    print(f"Sequential: {elapsed:.2f}s")  # ~2.0s
+
+asyncio.run(main())</code></pre>
+          <p>
+            The sequential example takes ~2 seconds. By gathering tasks, we can run them
+            concurrently:
+          </p>
+          <pre class="language-python"><code>async def main_concurrent() -> None:
+    start = time.monotonic()
+
+    # Concurrent — total time ≈ max of delays
+    results = await asyncio.gather(
+        slow_operation("task-1", 1.0),
+        slow_operation("task-2", 1.0),
+    )
+
+    elapsed = time.monotonic() - start
+    print(f"Concurrent: {elapsed:.2f}s")  # ~1.0s
+    print(results)</code></pre>
+        </section>
+
+        <section id="patterns">
+          <h2>Common Patterns</h2>
+
+          <h3>Pattern 1: Structured Concurrency with TaskGroup</h3>
+          <p>
+            Python 3.11 introduced <code>asyncio.TaskGroup</code>, which ensures all tasks
+            in a group are cancelled if any task raises an exception. This is safer than
+            <code>gather()</code> for error handling.
+          </p>
+          <pre class="language-python"><code>async def fetch_all(urls: list[str]) -> list[dict]:
+    async with asyncio.TaskGroup() as tg:
+        tasks = [
+            tg.create_task(fetch_url(url))
+            for url in urls
+        ]
+    return [t.result() for t in tasks]</code></pre>
+
+          <h3>Pattern 2: Semaphore for Rate Limiting</h3>
+          <p>
+            When making many concurrent requests, use a semaphore to limit concurrency
+            and avoid overwhelming downstream services.
+          </p>
+          <pre class="language-python"><code>async def fetch_with_limit(
+    urls: list[str],
+    max_concurrent: int = 10,
+) -> list[bytes]:
+    semaphore = asyncio.Semaphore(max_concurrent)
+
+    async def fetch_one(url: str) -> bytes:
+        async with semaphore:
+            return await fetch_url(url)
+
+    return await asyncio.gather(*[fetch_one(u) for u in urls])</code></pre>
+
+          <h3>Pattern 3: Producer-Consumer with Queue</h3>
+          <p>
+            For streaming data pipelines, use <code>asyncio.Queue</code> to decouple
+            producers from consumers.
+          </p>
+          <pre class="language-python"><code>async def pipeline(source: AsyncIterator[str]) -> None:
+    queue: asyncio.Queue[str | None] = asyncio.Queue(maxsize=100)
+
+    async def producer() -> None:
+        async for item in source:
+            await queue.put(item)
+        await queue.put(None)  # Sentinel
+
+    async def consumer() -> None:
+        while (item := await queue.get()) is not None:
+            await process(item)
+            queue.task_done()
+
+    await asyncio.gather(producer(), consumer())</code></pre>
+        </section>
+
+        <section id="pitfalls">
+          <h2>Pitfalls to Avoid</h2>
+          <ul>
+            <li>
+              <strong>Blocking the event loop:</strong> Never call blocking I/O or CPU-intensive
+              operations directly. Use <code>loop.run_in_executor()</code> or
+              <code>asyncio.to_thread()</code>.
+            </li>
+            <li>
+              <strong>Fire-and-forget tasks:</strong> Always keep a reference to tasks created
+              with <code>asyncio.create_task()</code>, or they may be garbage collected.
+            </li>
+            <li>
+              <strong>Ignoring cancellation:</strong> Catch <code>asyncio.CancelledError</code>
+              only to do cleanup — always re-raise it.
+            </li>
+            <li>
+              <strong>Shared mutable state:</strong> Even in async code, concurrent access to
+              shared state can cause bugs. Use locks or atomic operations.
+            </li>
+          </ul>
+        </section>
+
+        <section id="testing">
+          <h2>Testing Async Code</h2>
+          <p>
+            Use <code>pytest-asyncio</code> for testing async functions. Mark async tests
+            with <code>@pytest.mark.asyncio</code> or configure auto-mode:
+          </p>
+          <pre class="language-python"><code>import pytest
+
+@pytest.mark.asyncio
+async def test_slow_operation() -> None:
+    result = await slow_operation("test", 0.01)
+    assert result == "test: result"</code></pre>
+        </section>
+
+        <section id="conclusion">
+          <h2>Conclusion</h2>
+          <p>
+            Async Python is a powerful tool for I/O-bound workloads. Key takeaways:
+          </p>
+          <ol>
+            <li>Use <code>TaskGroup</code> for structured concurrency in Python 3.11+</li>
+            <li>Use semaphores to limit concurrency for external resources</li>
+            <li>Never block the event loop — use executors for blocking code</li>
+            <li>Handle <code>CancelledError</code> correctly in cleanup code</li>
+          </ol>
+          <p>
+            For further reading, check the <a href="https://docs.python.org/3/library/asyncio.html">official asyncio docs</a>
+            and the <a href="https://trio.readthedocs.io/">Trio library</a> for an alternative approach.
+          </p>
+        </section>
+      </div>
+
+      <footer class="post-footer container">
+        <div class="tags">
+          <span>Tags:</span>
+          <a class="tag" href="/tag/python">python</a>
+          <a class="tag" href="/tag/async">async</a>
+          <a class="tag" href="/tag/concurrency">concurrency</a>
+          <a class="tag" href="/tag/best-practices">best-practices</a>
+        </div>
+        <div class="share">
+          <span>Share:</span>
+          <a href="https://twitter.com/intent/tweet?url=..." class="share-link share-twitter">Twitter</a>
+          <a href="https://www.linkedin.com/sharing/share-offsite/?url=..." class="share-link share-linkedin">LinkedIn</a>
+          <a href="https://news.ycombinator.com/submitlink?u=..." class="share-link share-hn">Hacker News</a>
+        </div>
+      </footer>
+    </article>
+
+    <section class="comments container">
+      <h2>Comments (12)</h2>
+      <div class="comment-list">
+        <div class="comment" id="comment-1">
+          <div class="comment-header">
+            <img class="comment-avatar" src="/avatars/user1.jpg" alt="Alex" width="40" height="40">
+            <div>
+              <span class="comment-author">Alex K.</span>
+              <time class="comment-date" datetime="2024-03-15T14:23:00Z">March 15, 2024</time>
+            </div>
+          </div>
+          <div class="comment-body">
+            <p>Great article! One thing worth mentioning is that <code>asyncio.gather()</code>
+            propagates exceptions differently from <code>TaskGroup</code>. With gather,
+            if one task fails and return_exceptions=False, other tasks continue running
+            unless you cancel them explicitly.</p>
+          </div>
+          <div class="comment-actions">
+            <button class="btn-reply" data-comment-id="1">Reply</button>
+            <button class="btn-like" data-comment-id="1">👍 8</button>
+          </div>
+        </div>
+        <div class="comment comment-reply" id="comment-2">
+          <div class="comment-header">
+            <img class="comment-avatar" src="/avatars/jane-smith.jpg" alt="Jane Smith" width="40" height="40">
+            <div>
+              <span class="comment-author">Jane Smith <span class="badge badge-author">Author</span></span>
+              <time class="comment-date" datetime="2024-03-15T15:10:00Z">March 15, 2024</time>
+            </div>
+          </div>
+          <div class="comment-body">
+            <p>That's a great point, Alex! I should add a section comparing the cancellation
+            semantics of gather vs TaskGroup. Thanks for the feedback.</p>
+          </div>
+        </div>
+      </div>
+      <div class="load-more-comments">
+        <button class="btn btn-secondary" data-page="2">Load 10 more comments</button>
+      </div>
+    </section>
+
+    <aside class="related-posts container">
+      <h2>Related Articles</h2>
+      <div class="post-grid">
+        <article class="post-card">
+          <a href="/fastapi-best-practices"><img src="/images/fastapi.jpg" alt="FastAPI" width="400" height="225" loading="lazy"></a>
+          <div class="post-card-body">
+            <span class="category"><a href="/category/python">Python</a></span>
+            <h3><a href="/fastapi-best-practices">FastAPI Best Practices for Production</a></h3>
+            <p>Learn how to structure FastAPI applications for scalability and maintainability.</p>
+            <div class="post-card-meta">
+              <span>Feb 28, 2024</span>
+              <span>6 min read</span>
+            </div>
+          </div>
+        </article>
+        <article class="post-card">
+          <a href="/python-typing-guide"><img src="/images/typing.jpg" alt="Python typing" width="400" height="225" loading="lazy"></a>
+          <div class="post-card-body">
+            <span class="category"><a href="/category/python">Python</a></span>
+            <h3><a href="/python-typing-guide">The Complete Guide to Python Type Hints</a></h3>
+            <p>From basic annotations to Protocol, TypeVar, and ParamSpec.</p>
+            <div class="post-card-meta">
+              <span>Feb 10, 2024</span>
+              <span>12 min read</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/"><img src="/assets/img/logo-white.svg" alt="TechBlog" width="100" height="33"></a>
+          <p>In-depth technical articles for software engineers.</p>
+          <div class="social-links">
+            <a href="https://twitter.com/techblog" aria-label="Twitter">Twitter</a>
+            <a href="https://github.com/techblog" aria-label="GitHub">GitHub</a>
+            <a href="/rss.xml" aria-label="RSS">RSS</a>
+          </div>
+        </div>
+        <nav class="footer-nav" aria-label="Footer navigation">
+          <h4>Content</h4>
+          <ul>
+            <li><a href="/articles">All Articles</a></li>
+            <li><a href="/tutorials">Tutorials</a></li>
+            <li><a href="/newsletter">Newsletter</a></li>
+            <li><a href="/archive">Archive</a></li>
+          </ul>
+        </nav>
+        <nav class="footer-nav" aria-label="Company">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="/about">About</a></li>
+            <li><a href="/team">Team</a></li>
+            <li><a href="/write-for-us">Write for Us</a></li>
+            <li><a href="/advertise">Advertise</a></li>
+          </ul>
+        </nav>
+        <nav class="footer-nav" aria-label="Legal">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="/privacy">Privacy Policy</a></li>
+            <li><a href="/terms">Terms of Service</a></li>
+            <li><a href="/cookies">Cookie Policy</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 TechBlog. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/js/prism.js"></script>
+  <script src="/assets/js/main.js"></script>
+</body>
+</html>

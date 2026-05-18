@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTTP Client — zerodep 2024.5 documentation</title>
+  <meta name="description" content="API reference for the zerodep httpclient module.">
+  <link rel="stylesheet" href="/_static/css/theme.css">
+  <link rel="stylesheet" href="/_static/css/pygments.css">
+  <link rel="icon" type="image/png" href="/_static/img/favicon.png">
+  <script defer src="/_static/js/theme.js"></script>
+</head>
+<body>
+  <div class="page-wrapper">
+    <header class="page-header">
+      <div class="header-inner">
+        <a class="logo" href="/">
+          <span class="logo-text">zerodep</span>
+          <span class="logo-version">2024.5</span>
+        </a>
+        <div class="header-search">
+          <input type="search" id="search-input" placeholder="Search docs…" aria-label="Search documentation">
+          <kbd>Ctrl+K</kbd>
+        </div>
+        <div class="header-links">
+          <a href="https://github.com/example/zerodep" aria-label="GitHub">GitHub</a>
+          <button id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+      <nav class="sidebar" aria-label="Documentation navigation">
+        <div class="sidebar-inner">
+          <div class="nav-section">
+            <h4>Getting Started</h4>
+            <ul>
+              <li><a href="/docs/intro">Introduction</a></li>
+              <li><a href="/docs/installation">Installation</a></li>
+              <li><a href="/docs/quickstart">Quick Start</a></li>
+              <li><a href="/docs/changelog">Changelog</a></li>
+            </ul>
+          </div>
+          <div class="nav-section">
+            <h4>Modules</h4>
+            <ul>
+              <li class="nav-category">Network</li>
+              <li class="nav-active"><a href="/docs/httpclient" aria-current="page">httpclient</a></li>
+              <li><a href="/docs/httpserver">httpserver</a></li>
+              <li><a href="/docs/websocket">websocket</a></li>
+              <li class="nav-category">Parsing</li>
+              <li><a href="/docs/yaml">yaml</a></li>
+              <li><a href="/docs/jsonc">jsonc</a></li>
+              <li><a href="/docs/xml">xml</a></li>
+              <li><a href="/docs/soup">soup</a></li>
+              <li><a href="/docs/multipart">multipart</a></li>
+              <li class="nav-category">Text</li>
+              <li><a href="/docs/readability">readability</a></li>
+              <li><a href="/docs/toon">toon</a></li>
+            </ul>
+          </div>
+          <div class="nav-section">
+            <h4>Reference</h4>
+            <ul>
+              <li><a href="/docs/api">API Index</a></li>
+              <li><a href="/docs/cli">CLI Reference</a></li>
+              <li><a href="/docs/contributing">Contributing</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+
+      <main class="main-content" id="main-content">
+        <div class="breadcrumbs">
+          <a href="/">Home</a>
+          <span aria-hidden="true">›</span>
+          <a href="/docs">Docs</a>
+          <span aria-hidden="true">›</span>
+          <span aria-current="page">httpclient</span>
+        </div>
+
+        <article class="docs-article">
+          <div class="article-header">
+            <h1 id="httpclient">httpclient</h1>
+            <div class="module-meta">
+              <span class="badge badge-tier">tier: subsystem</span>
+              <span class="badge badge-category">network</span>
+              <span class="badge badge-version">v1.4.2</span>
+              <a class="source-link" href="https://github.com/example/zerodep/blob/main/httpclient/httpclient.py">View source</a>
+            </div>
+          </div>
+
+          <p class="module-intro">
+            A zero-dependency HTTP/1.1 client built on <code>http.client</code> from the standard
+            library. Supports connection pooling, automatic retries, streaming responses,
+            authentication, and both sync and async modes.
+          </p>
+
+          <div class="admonition admonition-note">
+            <div class="admonition-title">📝 Note</div>
+            <p>
+              This module shadows the stdlib <code>http.client</code> module. If you need both,
+              import httpclient as a package alias:
+              <code>import httpclient as hc</code>.
+            </p>
+          </div>
+
+          <nav class="page-toc" aria-label="Page contents">
+            <h2>On this page</h2>
+            <ul>
+              <li><a href="#installation">Installation</a></li>
+              <li><a href="#quick-start">Quick Start</a></li>
+              <li><a href="#api-reference">API Reference</a>
+                <ul>
+                  <li><a href="#httpclient-class">HttpClient</a></li>
+                  <li><a href="#response-class">Response</a></li>
+                  <li><a href="#exceptions">Exceptions</a></li>
+                </ul>
+              </li>
+              <li><a href="#advanced-usage">Advanced Usage</a></li>
+              <li><a href="#comparison">Comparison with httpx</a></li>
+            </ul>
+          </nav>
+
+          <section id="installation">
+            <h2>Installation</h2>
+            <p>Copy <code>httpclient.py</code> into your project:</p>
+            <div class="code-block-wrapper">
+              <div class="code-block-header">
+                <span class="code-lang">bash</span>
+                <button class="copy-button" data-target="install-cmd">Copy</button>
+              </div>
+              <pre id="install-cmd"><code class="language-bash">zerodep add httpclient</code></pre>
+            </div>
+            <p>Or manually copy the file from the repository.</p>
+          </section>
+
+          <section id="quick-start">
+            <h2>Quick Start</h2>
+            <div class="tabbed-content" data-tabs="sync,async">
+              <div class="tab-list" role="tablist">
+                <button role="tab" class="tab-btn tab-active" data-tab="sync" id="tab-sync">Sync</button>
+                <button role="tab" class="tab-btn" data-tab="async" id="tab-async">Async</button>
+              </div>
+              <div class="tab-panel" id="panel-sync" role="tabpanel">
+                <div class="code-block-wrapper">
+                  <div class="code-block-header">
+                    <span class="code-lang">python</span>
+                    <button class="copy-button">Copy</button>
+                  </div>
+                  <pre><code class="language-python">from httpclient import HttpClient
+
+client = HttpClient(base_url="https://api.example.com")
+
+# Simple GET
+resp = client.get("/users/1")
+print(resp.status_code)  # 200
+print(resp.json())        # {"id": 1, "name": "Alice"}
+
+# POST with JSON
+resp = client.post(
+    "/users",
+    json={"name": "Bob", "email": "bob@example.com"},
+)
+assert resp.status_code == 201
+
+# File upload
+with open("photo.jpg", "rb") as f:
+    resp = client.post("/upload", files={"file": f})
+
+client.close()</code></pre>
+                </div>
+              </div>
+              <div class="tab-panel hidden" id="panel-async" role="tabpanel">
+                <div class="code-block-wrapper">
+                  <div class="code-block-header">
+                    <span class="code-lang">python</span>
+                    <button class="copy-button">Copy</button>
+                  </div>
+                  <pre><code class="language-python">import asyncio
+from httpclient import AsyncHttpClient
+
+async def main():
+    async with AsyncHttpClient(
+        base_url="https://api.example.com"
+    ) as client:
+        resp = await client.get("/users/1")
+        print(resp.json())
+
+        # Concurrent requests
+        results = await asyncio.gather(
+            client.get("/users/1"),
+            client.get("/users/2"),
+            client.get("/users/3"),
+        )
+
+asyncio.run(main())</code></pre>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="api-reference">
+            <h2>API Reference</h2>
+
+            <section id="httpclient-class">
+              <h3>HttpClient</h3>
+              <div class="class-signature">
+                <code>class HttpClient(base_url=None, *, timeout=30.0, retries=3, headers=None, auth=None, verify_ssl=True, pool_size=10)</code>
+              </div>
+              <p>Synchronous HTTP client with connection pooling.</p>
+
+              <h4>Parameters</h4>
+              <table class="params-table">
+                <thead>
+                  <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>base_url</code></td>
+                    <td><code>str | None</code></td>
+                    <td><code>None</code></td>
+                    <td>Base URL prepended to all request paths.</td>
+                  </tr>
+                  <tr>
+                    <td><code>timeout</code></td>
+                    <td><code>float</code></td>
+                    <td><code>30.0</code></td>
+                    <td>Default request timeout in seconds.</td>
+                  </tr>
+                  <tr>
+                    <td><code>retries</code></td>
+                    <td><code>int</code></td>
+                    <td><code>3</code></td>
+                    <td>Number of retry attempts for transient errors (5xx, connection errors).</td>
+                  </tr>
+                  <tr>
+                    <td><code>headers</code></td>
+                    <td><code>dict[str, str] | None</code></td>
+                    <td><code>None</code></td>
+                    <td>Default headers merged into every request.</td>
+                  </tr>
+                  <tr>
+                    <td><code>auth</code></td>
+                    <td><code>tuple[str, str] | str | None</code></td>
+                    <td><code>None</code></td>
+                    <td>Basic auth tuple <code>(user, pass)</code> or Bearer token string.</td>
+                  </tr>
+                  <tr>
+                    <td><code>verify_ssl</code></td>
+                    <td><code>bool</code></td>
+                    <td><code>True</code></td>
+                    <td>Whether to verify SSL certificates.</td>
+                  </tr>
+                  <tr>
+                    <td><code>pool_size</code></td>
+                    <td><code>int</code></td>
+                    <td><code>10</code></td>
+                    <td>Maximum number of connections per host.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h4>Methods</h4>
+              <div class="method-list">
+                <div class="method" id="method-get">
+                  <div class="method-signature">
+                    <code>get(url, *, params=None, headers=None, timeout=None) → Response</code>
+                  </div>
+                  <p>Send a GET request.</p>
+                </div>
+                <div class="method" id="method-post">
+                  <div class="method-signature">
+                    <code>post(url, *, data=None, json=None, files=None, headers=None, timeout=None) → Response</code>
+                  </div>
+                  <p>Send a POST request. Provide one of <code>data</code>, <code>json</code>, or <code>files</code>.</p>
+                </div>
+                <div class="method" id="method-put">
+                  <div class="method-signature">
+                    <code>put(url, *, data=None, json=None, headers=None, timeout=None) → Response</code>
+                  </div>
+                  <p>Send a PUT request.</p>
+                </div>
+                <div class="method" id="method-patch">
+                  <div class="method-signature">
+                    <code>patch(url, *, data=None, json=None, headers=None, timeout=None) → Response</code>
+                  </div>
+                  <p>Send a PATCH request.</p>
+                </div>
+                <div class="method" id="method-delete">
+                  <div class="method-signature">
+                    <code>delete(url, *, headers=None, timeout=None) → Response</code>
+                  </div>
+                  <p>Send a DELETE request.</p>
+                </div>
+                <div class="method" id="method-stream">
+                  <div class="method-signature">
+                    <code>stream(method, url, *, chunk_size=8192, **kwargs) → Iterator[bytes]</code>
+                  </div>
+                  <p>Stream a response in chunks without loading the entire body into memory.</p>
+                </div>
+              </div>
+            </section>
+
+            <section id="response-class">
+              <h3>Response</h3>
+              <div class="class-signature">
+                <code>class Response</code>
+              </div>
+              <p>Represents an HTTP response. Not instantiated directly.</p>
+              <h4>Attributes</h4>
+              <table class="params-table">
+                <thead>
+                  <tr><th>Attribute</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>status_code</code></td>
+                    <td><code>int</code></td>
+                    <td>HTTP status code (200, 404, etc.)</td>
+                  </tr>
+                  <tr>
+                    <td><code>headers</code></td>
+                    <td><code>dict[str, str]</code></td>
+                    <td>Response headers (lowercase keys).</td>
+                  </tr>
+                  <tr>
+                    <td><code>content</code></td>
+                    <td><code>bytes</code></td>
+                    <td>Raw response body.</td>
+                  </tr>
+                  <tr>
+                    <td><code>text</code></td>
+                    <td><code>str</code></td>
+                    <td>Response body decoded as text.</td>
+                  </tr>
+                  <tr>
+                    <td><code>encoding</code></td>
+                    <td><code>str</code></td>
+                    <td>Detected or declared character encoding.</td>
+                  </tr>
+                  <tr>
+                    <td><code>ok</code></td>
+                    <td><code>bool</code></td>
+                    <td><code>True</code> if status code is 2xx.</td>
+                  </tr>
+                  <tr>
+                    <td><code>url</code></td>
+                    <td><code>str</code></td>
+                    <td>Final URL after redirects.</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h4>Methods</h4>
+              <div class="method-list">
+                <div class="method">
+                  <div class="method-signature"><code>json(**kwargs) → Any</code></div>
+                  <p>Parse response body as JSON.</p>
+                </div>
+                <div class="method">
+                  <div class="method-signature"><code>raise_for_status() → None</code></div>
+                  <p>Raise <code>HTTPStatusError</code> if the response is 4xx or 5xx.</p>
+                </div>
+              </div>
+            </section>
+
+            <section id="exceptions">
+              <h3>Exceptions</h3>
+              <table class="params-table">
+                <thead>
+                  <tr><th>Exception</th><th>When raised</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>HTTPError</code></td>
+                    <td>Base class for all httpclient exceptions.</td>
+                  </tr>
+                  <tr>
+                    <td><code>HTTPStatusError</code></td>
+                    <td>Response status is 4xx or 5xx (raised by <code>raise_for_status()</code>).</td>
+                  </tr>
+                  <tr>
+                    <td><code>ConnectError</code></td>
+                    <td>Failed to establish a connection.</td>
+                  </tr>
+                  <tr>
+                    <td><code>TimeoutError</code></td>
+                    <td>Request exceeded the configured timeout.</td>
+                  </tr>
+                  <tr>
+                    <td><code>TooManyRedirects</code></td>
+                    <td>Exceeded maximum redirect limit (default: 10).</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+          </section>
+
+          <section id="advanced-usage">
+            <h2>Advanced Usage</h2>
+
+            <h3>Custom retry logic</h3>
+            <div class="code-block-wrapper">
+              <pre><code class="language-python">from httpclient import HttpClient, RetryConfig
+
+client = HttpClient(
+    retries=RetryConfig(
+        total=5,
+        backoff_factor=0.5,
+        status_forcelist={429, 500, 502, 503, 504},
+        allowed_methods={"GET", "POST"},
+    )
+)</code></pre>
+            </div>
+
+            <h3>Session hooks</h3>
+            <div class="code-block-wrapper">
+              <pre><code class="language-python">def log_request(request):
+    print(f"→ {request.method} {request.url}")
+
+def log_response(response):
+    print(f"← {response.status_code} in {response.elapsed:.3f}s")
+
+client = HttpClient(
+    hooks={
+        "request": [log_request],
+        "response": [log_response],
+    }
+)</code></pre>
+            </div>
+          </section>
+
+          <section id="comparison">
+            <h2>Comparison with httpx</h2>
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>httpclient (zerodep)</th>
+                  <th>httpx</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Zero dependencies</td>
+                  <td class="yes">✓</td>
+                  <td class="no">✗ (httpcore, certifi, h2, ...)</td>
+                </tr>
+                <tr>
+                  <td>HTTP/2</td>
+                  <td class="no">✗</td>
+                  <td class="yes">✓ (optional)</td>
+                </tr>
+                <tr>
+                  <td>Sync + Async</td>
+                  <td class="yes">✓</td>
+                  <td class="yes">✓</td>
+                </tr>
+                <tr>
+                  <td>Connection pooling</td>
+                  <td class="yes">✓</td>
+                  <td class="yes">✓</td>
+                </tr>
+                <tr>
+                  <td>Streaming</td>
+                  <td class="yes">✓</td>
+                  <td class="yes">✓</td>
+                </tr>
+                <tr>
+                  <td>File size</td>
+                  <td>&lt;500 lines</td>
+                  <td>~15,000 lines</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <div class="article-footer">
+            <div class="edit-on-github">
+              <a href="https://github.com/example/zerodep/edit/main/docs_en/docs/httpclient.md">Edit this page on GitHub</a>
+            </div>
+            <div class="pagination">
+              <a class="prev-page" href="/docs/httpserver">
+                <span>← Previous</span>
+                <span class="page-title">httpserver</span>
+              </a>
+              <a class="next-page" href="/docs/websocket">
+                <span>Next →</span>
+                <span class="page-title">websocket</span>
+              </a>
+            </div>
+          </div>
+        </article>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Docs search initialization
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('input', function(e) {
+      // debounced search logic here
+    });
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+        document.getElementById(`panel-${tab}`).classList.remove('hidden');
+        btn.classList.add('tab-active');
+      });
+    });
+  </script>
+</body>
+</html>

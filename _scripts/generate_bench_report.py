@@ -10,6 +10,7 @@ tables and bar charts (via Chart.js).
 from __future__ import annotations
 
 import json
+import math
 import re
 import sys
 from collections import defaultdict
@@ -128,16 +129,31 @@ def _parse_benchmarks(data: dict) -> dict:
 
         is_zd = _is_zerodep(test_method)
 
+        # Calculate P95 from raw data if available
+        raw_data = b["stats"].get("data")
+        if raw_data and len(raw_data) > 0:
+            sorted_data = sorted(raw_data)
+            p95_idx = math.ceil(0.95 * len(sorted_data)) - 1
+            p95 = sorted_data[p95_idx]
+        else:
+            p95 = None
+
+        mean = b["stats"]["mean"]
+        stddev = b["stats"].get("stddev", 0)
+        cv = (stddev / mean * 100) if mean > 0 else 0.0
+
         entry = {
             "method": test_method,
             "is_zerodep": is_zd,
             "label": "zerodep" if is_zd else _ref_display_name(test_method),
-            "mean": b["stats"]["mean"],
+            "mean": mean,
             "ops": b["stats"]["ops"],
-            "stddev": b["stats"].get("stddev", 0),
-            "min": b["stats"].get("min", b["stats"]["mean"]),
-            "max": b["stats"].get("max", b["stats"]["mean"]),
+            "stddev": stddev,
+            "min": b["stats"].get("min", mean),
+            "max": b["stats"].get("max", mean),
             "rounds": b["stats"].get("rounds", 0),
+            "p95": p95,
+            "cv": cv,
         }
 
         modules[module][operation].append(entry)
@@ -224,6 +240,12 @@ def _build_comparisons(modules: dict) -> list[dict]:
                             "variant": e["method"].removeprefix("test_"),
                             "mean": e["mean"],
                             "ops": e["ops"],
+                            "stddev": e["stddev"],
+                            "min": e["min"],
+                            "max": e["max"],
+                            "rounds": e["rounds"],
+                            "p95": e["p95"],
+                            "cv": e["cv"],
                         }
                     )
                 continue
@@ -237,6 +259,12 @@ def _build_comparisons(modules: dict) -> list[dict]:
                             "variant": e["label"],
                             "mean": e["mean"],
                             "ops": e["ops"],
+                            "stddev": e["stddev"],
+                            "min": e["min"],
+                            "max": e["max"],
+                            "rounds": e["rounds"],
+                            "p95": e["p95"],
+                            "cv": e["cv"],
                         }
                     )
                 continue
@@ -276,9 +304,21 @@ def _build_comparisons(modules: dict) -> list[dict]:
                                     "zd_variant": zd_variant,
                                     "zd_mean": zd["mean"],
                                     "zd_ops": zd["ops"],
+                                    "zd_stddev": zd["stddev"],
+                                    "zd_min": zd["min"],
+                                    "zd_max": zd["max"],
+                                    "zd_rounds": zd["rounds"],
+                                    "zd_p95": zd["p95"],
+                                    "zd_cv": zd["cv"],
                                     "ref_label": ref["label"],
                                     "ref_mean": ref["mean"],
                                     "ref_ops": ref["ops"],
+                                    "ref_stddev": ref["stddev"],
+                                    "ref_min": ref["min"],
+                                    "ref_max": ref["max"],
+                                    "ref_rounds": ref["rounds"],
+                                    "ref_p95": ref["p95"],
+                                    "ref_cv": ref["cv"],
                                     "ratio": ratio,
                                 }
                             )
@@ -292,6 +332,12 @@ def _build_comparisons(modules: dict) -> list[dict]:
                                 "variant": e["method"].removeprefix("test_"),
                                 "mean": e["mean"],
                                 "ops": e["ops"],
+                                "stddev": e["stddev"],
+                                "min": e["min"],
+                                "max": e["max"],
+                                "rounds": e["rounds"],
+                                "p95": e["p95"],
+                                "cv": e["cv"],
                             }
                         )
 
@@ -304,6 +350,12 @@ def _build_comparisons(modules: dict) -> list[dict]:
                                 "variant": e["label"],
                                 "mean": e["mean"],
                                 "ops": e["ops"],
+                                "stddev": e["stddev"],
+                                "min": e["min"],
+                                "max": e["max"],
+                                "rounds": e["rounds"],
+                                "p95": e["p95"],
+                                "cv": e["cv"],
                             }
                         )
             else:
@@ -324,9 +376,21 @@ def _build_comparisons(modules: dict) -> list[dict]:
                                 "zd_variant": zd_variant,
                                 "zd_mean": zd["mean"],
                                 "zd_ops": zd["ops"],
+                                "zd_stddev": zd["stddev"],
+                                "zd_min": zd["min"],
+                                "zd_max": zd["max"],
+                                "zd_rounds": zd["rounds"],
+                                "zd_p95": zd["p95"],
+                                "zd_cv": zd["cv"],
                                 "ref_label": ref["label"],
                                 "ref_mean": ref["mean"],
                                 "ref_ops": ref["ops"],
+                                "ref_stddev": ref["stddev"],
+                                "ref_min": ref["min"],
+                                "ref_max": ref["max"],
+                                "ref_rounds": ref["rounds"],
+                                "ref_p95": ref["p95"],
+                                "ref_cv": ref["cv"],
                                 "ratio": ratio,
                             }
                         )
@@ -397,8 +461,9 @@ h3 { font-size: 1.1rem; margin: 1rem 0 .5rem; color: var(--accent); }
 }
 .summary-card .num { font-size: 2rem; font-weight: bold; }
 .summary-card .label { font-size: .85rem; color: var(--meta); }
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
 table {
-  width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+  width: 100%; border-collapse: collapse;
   font-size: .9rem;
 }
 th, td {
@@ -440,6 +505,43 @@ def _ratio_text(ratio: float) -> str:
     if ratio > 1.05:
         return f"{ratio:.1f}x slower"
     return "~equal"
+
+
+def _tail_cells(
+    cv: float,
+    p95: float | None,
+    stddev: float,
+    min_t: float,
+    max_t: float,
+    rounds: int,
+) -> str:
+    """Build four ``<td>`` cells exposing tail-latency statistics.
+
+    Renders min, max, stddev, and P95 as separate table cells so they are
+    visible without hovering.  A tooltip on each cell also shows the number
+    of rounds for context.
+
+    Args:
+        cv: Coefficient of variation (stddev/mean * 100) as a percentage.
+        p95: 95th-percentile latency in seconds, or None if unavailable.
+        stddev: Standard deviation in seconds.
+        min_t: Minimum time in seconds.
+        max_t: Maximum time in seconds.
+        rounds: Number of benchmark rounds.
+
+    Returns:
+        Four HTML ``<td>`` elements: min, max, stddev, P95.
+    """
+    p95_text = _human_time(p95) if p95 is not None else "\u2014"
+    rounds_tip = f"rounds={rounds}"
+    cv_tip = f"CV={cv:.1f}%"
+    shared_tip = f"{cv_tip} | {rounds_tip}"
+    return (
+        f'<td title="{shared_tip}">{_human_time(min_t)}</td>'
+        f'<td title="{shared_tip}">{_human_time(max_t)}</td>'
+        f'<td title="{shared_tip}">{_human_time(stddev)}</td>'
+        f'<td title="{shared_tip}">{p95_text}</td>'
+    )
 
 
 def _build_sparkline_init_js(module_names: list[str], data_js_path: str) -> str:
@@ -524,11 +626,22 @@ def _generate_html(comparisons: list[dict], meta: dict) -> str:
 
         if pairs:
             # --- Comparison table ---
-            s += "<table>\n<thead><tr>"
-            s += "<th>Operation</th><th>zerodep</th><th>Reference</th>"
-            s += "<th>zerodep time</th><th>Ref time</th>"
-            s += "<th>zerodep ops/s</th><th>Ref ops/s</th>"
-            s += "<th>Ratio</th></tr></thead>\n<tbody>\n"
+            s += '<div class="table-wrap"><table>\n<thead>'
+            s += "<tr>"
+            s += '<th rowspan="2">Operation</th>'
+            s += '<th rowspan="2">zerodep</th>'
+            s += '<th rowspan="2">Reference</th>'
+            s += '<th rowspan="2">zd mean</th>'
+            s += '<th rowspan="2">Ref mean</th>'
+            s += '<th rowspan="2">zd ops/s</th>'
+            s += '<th rowspan="2">Ref ops/s</th>'
+            s += '<th colspan="4" style="text-align:center">zerodep tail latency</th>'
+            s += '<th colspan="4" style="text-align:center">Ref tail latency</th>'
+            s += '<th rowspan="2">Ratio</th>'
+            s += "</tr>\n<tr>"
+            for _ in range(2):
+                s += "<th>Min</th><th>Max</th><th>StdDev</th><th>P95</th>"
+            s += "</tr>\n</thead>\n<tbody>\n"
 
             for p in pairs:
                 rc = _ratio_class(p["ratio"])
@@ -540,10 +653,26 @@ def _generate_html(comparisons: list[dict], meta: dict) -> str:
                 s += f"<td>{_human_time(p['ref_mean'])}</td>"
                 s += f"<td>{_human_ops(p['zd_ops'])}</td>"
                 s += f"<td>{_human_ops(p['ref_ops'])}</td>"
+                s += _tail_cells(
+                    p["zd_cv"],
+                    p["zd_p95"],
+                    p["zd_stddev"],
+                    p["zd_min"],
+                    p["zd_max"],
+                    p["zd_rounds"],
+                )
+                s += _tail_cells(
+                    p["ref_cv"],
+                    p["ref_p95"],
+                    p["ref_stddev"],
+                    p["ref_min"],
+                    p["ref_max"],
+                    p["ref_rounds"],
+                )
                 s += f'<td class="ratio-cell {rc}">{_ratio_text(p["ratio"])}</td>'
                 s += "</tr>\n"
 
-            s += "</tbody></table>\n"
+            s += "</tbody></table></div>\n"
 
             # --- Chart: group by operation, show zerodep vs best-reference ops/s ---
             # Deduplicate operations, pick best reference per operation
@@ -610,8 +739,10 @@ new Chart(document.getElementById('{cid}'), {{
 
         if standalone:
             s += "<h3>Standalone benchmarks</h3>\n"
-            s += '<table class="standalone-table">\n<thead><tr>'
-            s += "<th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th>"
+            s += '<div class="table-wrap"><table class="standalone-table">\n<thead><tr>'
+            s += "<th>Operation</th><th>Variant</th>"
+            s += "<th>Mean</th><th>ops/s</th>"
+            s += "<th>Min</th><th>Max</th><th>StdDev</th><th>P95</th>"
             s += "</tr></thead>\n<tbody>\n"
             for st in standalone:
                 s += "<tr>"
@@ -619,8 +750,16 @@ new Chart(document.getElementById('{cid}'), {{
                 s += f"<td>{st['variant']}</td>"
                 s += f"<td>{_human_time(st['mean'])}</td>"
                 s += f"<td>{_human_ops(st['ops'])}</td>"
+                s += _tail_cells(
+                    st["cv"],
+                    st["p95"],
+                    st["stddev"],
+                    st["min"],
+                    st["max"],
+                    st["rounds"],
+                )
                 s += "</tr>\n"
-            s += "</tbody></table>\n"
+            s += "</tbody></table></div>\n"
 
         s += "</div>\n"
         sections.append(s)
@@ -962,12 +1101,22 @@ def _generate_module_page(mod_data: dict, meta: dict) -> str | None:
     body = f"<h2>{module}</h2>\n"
 
     if pairs:
-        body += "<table>\n<thead><tr>"
-        body += "<th>Operation</th><th>zerodep</th>"
-        body += "<th>Reference</th>"
-        body += "<th>zerodep time</th><th>Ref time</th>"
-        body += "<th>zerodep ops/s</th><th>Ref ops/s</th>"
-        body += "<th>Ratio</th></tr></thead>\n<tbody>\n"
+        body += '<div class="table-wrap"><table>\n<thead>'
+        body += "<tr>"
+        body += '<th rowspan="2">Operation</th>'
+        body += '<th rowspan="2">zerodep</th>'
+        body += '<th rowspan="2">Reference</th>'
+        body += '<th rowspan="2">zd mean</th>'
+        body += '<th rowspan="2">Ref mean</th>'
+        body += '<th rowspan="2">zd ops/s</th>'
+        body += '<th rowspan="2">Ref ops/s</th>'
+        body += '<th colspan="4" style="text-align:center">zerodep tail latency</th>'
+        body += '<th colspan="4" style="text-align:center">Ref tail latency</th>'
+        body += '<th rowspan="2">Ratio</th>'
+        body += "</tr>\n<tr>"
+        for _ in range(2):
+            body += "<th>Min</th><th>Max</th><th>StdDev</th><th>P95</th>"
+        body += "</tr>\n</thead>\n<tbody>\n"
 
         for p in pairs:
             rc = _ratio_class(p["ratio"])
@@ -979,9 +1128,25 @@ def _generate_module_page(mod_data: dict, meta: dict) -> str | None:
             body += f"<td>{_human_time(p['ref_mean'])}</td>"
             body += f"<td>{_human_ops(p['zd_ops'])}</td>"
             body += f"<td>{_human_ops(p['ref_ops'])}</td>"
+            body += _tail_cells(
+                p["zd_cv"],
+                p["zd_p95"],
+                p["zd_stddev"],
+                p["zd_min"],
+                p["zd_max"],
+                p["zd_rounds"],
+            )
+            body += _tail_cells(
+                p["ref_cv"],
+                p["ref_p95"],
+                p["ref_stddev"],
+                p["ref_min"],
+                p["ref_max"],
+                p["ref_rounds"],
+            )
             body += f'<td class="ratio-cell {rc}">{_ratio_text(p["ratio"])}</td>'
             body += "</tr>\n"
-        body += "</tbody></table>\n"
+        body += "</tbody></table></div>\n"
 
         op_best: dict[str, dict] = {}
         for p in pairs:
@@ -1040,9 +1205,10 @@ new Chart(document.getElementById('{cid}'), {{
 
     if standalone:
         body += "<h3>Standalone benchmarks</h3>\n"
-        body += '<table class="standalone-table">\n<thead><tr>'
+        body += '<div class="table-wrap"><table class="standalone-table">\n<thead><tr>'
         body += "<th>Operation</th><th>Variant</th>"
         body += "<th>Mean</th><th>ops/s</th>"
+        body += "<th>Min</th><th>Max</th><th>StdDev</th><th>P95</th>"
         body += "</tr></thead>\n<tbody>\n"
         for st in standalone:
             body += "<tr>"
@@ -1050,8 +1216,16 @@ new Chart(document.getElementById('{cid}'), {{
             body += f"<td>{st['variant']}</td>"
             body += f"<td>{_human_time(st['mean'])}</td>"
             body += f"<td>{_human_ops(st['ops'])}</td>"
+            body += _tail_cells(
+                st["cv"],
+                st["p95"],
+                st["stddev"],
+                st["min"],
+                st["max"],
+                st["rounds"],
+            )
             body += "</tr>\n"
-        body += "</tbody></table>\n"
+        body += "</tbody></table></div>\n"
 
     meta_line = (
         f"Version: {version} | Commit: {commit_short} | {timestamp} "

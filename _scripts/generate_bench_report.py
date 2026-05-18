@@ -175,6 +175,25 @@ def _class_to_operation(cls_name: str) -> str:
 # Pairing: for each operation, pair zerodep with each reference
 # ---------------------------------------------------------------------------
 
+_PARAM_SUFFIX_RE = re.compile(r"(\[.*\])$")
+
+
+def _param_suffix(method: str) -> str:
+    """Extract the pytest parametrize suffix from a test method name.
+
+    For example, ``test_css_select_zerodep[50nodes]`` returns ``[50nodes]``,
+    and ``test_encode_small`` returns ``""`` (no parametrize suffix).
+
+    Args:
+        method: The test method name, possibly containing a ``[...]`` suffix.
+
+    Returns:
+        The ``[...]`` suffix string, or ``""`` if the method is not
+        parametrized.
+    """
+    m = _PARAM_SUFFIX_RE.search(method)
+    return m.group(1) if m else ""
+
 
 def _pairing_key(method: str) -> str:
     """Derive a canonical key by stripping zerodep/reference markers.
@@ -216,13 +235,147 @@ def _pairing_key(method: str) -> str:
     return m
 
 
+def _make_pair(op_name: str, zd: dict, ref: dict) -> dict:
+    """Build a single comparison pair dict from a zerodep and reference entry.
+
+    Args:
+        op_name: Human-readable operation name for the pair.
+        zd: Zerodep benchmark entry dict.
+        ref: Reference benchmark entry dict.
+
+    Returns:
+        A dict with all fields needed to render one table row.
+    """
+    ratio = zd["mean"] / ref["mean"] if ref["mean"] > 0 else float("inf")
+    return {
+        "operation": op_name,
+        "zd_variant": zd["method"].removeprefix("test_"),
+        "zd_mean": zd["mean"],
+        "zd_ops": zd["ops"],
+        "zd_stddev": zd["stddev"],
+        "zd_min": zd["min"],
+        "zd_max": zd["max"],
+        "zd_rounds": zd["rounds"],
+        "zd_p95": zd["p95"],
+        "zd_cv": zd["cv"],
+        "ref_label": ref["label"],
+        "ref_mean": ref["mean"],
+        "ref_ops": ref["ops"],
+        "ref_stddev": ref["stddev"],
+        "ref_min": ref["min"],
+        "ref_max": ref["max"],
+        "ref_rounds": ref["rounds"],
+        "ref_p95": ref["p95"],
+        "ref_cv": ref["cv"],
+        "ratio": ratio,
+    }
+
+
+def _pair_op_entries(
+    op_name: str,
+    zd_entries: list,
+    ref_entries: list,
+    pairs: list,
+    standalone: list,
+) -> None:
+    """Pair zerodep and reference entries for a single operation group.
+
+    Groups entries by their canonical pairing key and, within each key group,
+    only matches tests that share the same pytest parametrize suffix (the
+    ``[...]`` portion of the test name).  Falls back to suffix-aware
+    cross-product pairing when no canonical keys overlap.
+
+    Args:
+        op_name: Human-readable name of the benchmark operation.
+        zd_entries: List of zerodep benchmark entry dicts for this operation.
+        ref_entries: List of reference benchmark entry dicts for this operation.
+        pairs: Output list to which matched pair dicts are appended.
+        standalone: Output list to which unmatched entry dicts are appended.
+    """
+    # Group by canonical pairing key so that only same-size /
+    # same-operation variants are compared (e.g. encode_small_ours
+    # pairs with encode_small_ref, NOT encode_large_ref).
+    zd_by_key: dict[str, list] = defaultdict(list)
+    for e in zd_entries:
+        zd_by_key[_pairing_key(e["method"])].append(e)
+
+    ref_by_key: dict[str, list] = defaultdict(list)
+    for e in ref_entries:
+        ref_by_key[_pairing_key(e["method"])].append(e)
+
+    common_keys = set(zd_by_key) & set(ref_by_key)
+
+    if common_keys:
+        matched_zd_keys: set[str] = set()
+        matched_ref_keys: set[str] = set()
+
+        for key in sorted(common_keys):
+            matched_zd_keys.add(key)
+            matched_ref_keys.add(key)
+            for zd in zd_by_key[key]:
+                zd_suffix = _param_suffix(zd["method"])
+                for ref in ref_by_key[key]:
+                    # Only pair tests that share the same parametrize suffix
+                    # (e.g. [50nodes]).  Tests without a suffix have suffix ""
+                    # and are matched freely.
+                    if _param_suffix(ref["method"]) != zd_suffix:
+                        continue
+                    pairs.append(_make_pair(op_name, zd, ref))
+
+        for key in sorted(set(zd_by_key) - matched_zd_keys):
+            for e in zd_by_key[key]:
+                standalone.append(
+                    {
+                        "operation": op_name,
+                        "variant": e["method"].removeprefix("test_"),
+                        "mean": e["mean"],
+                        "ops": e["ops"],
+                        "stddev": e["stddev"],
+                        "min": e["min"],
+                        "max": e["max"],
+                        "rounds": e["rounds"],
+                        "p95": e["p95"],
+                        "cv": e["cv"],
+                    }
+                )
+
+        for key in sorted(set(ref_by_key) - matched_ref_keys):
+            for e in ref_by_key[key]:
+                standalone.append(
+                    {
+                        "operation": op_name,
+                        "variant": e["label"],
+                        "mean": e["mean"],
+                        "ops": e["ops"],
+                        "stddev": e["stddev"],
+                        "min": e["min"],
+                        "max": e["max"],
+                        "rounds": e["rounds"],
+                        "p95": e["p95"],
+                        "cv": e["cv"],
+                    }
+                )
+    else:
+        # No canonical keys overlap — fall back to cross-product pairing
+        # (e.g. persistdict where zerodep variants like _json/_sqlite have no
+        # 1:1 reference counterpart).  Still apply suffix-aware filtering so
+        # that scale-curve tests (e.g. [50nodes]) are never matched across
+        # different parameter values.
+        for zd in zd_entries:
+            zd_suffix = _param_suffix(zd["method"])
+            for ref in ref_entries:
+                if _param_suffix(ref["method"]) != zd_suffix:
+                    continue
+                pairs.append(_make_pair(op_name, zd, ref))
+
+
 def _build_comparisons(modules: dict) -> list[dict]:
     """Build a list of module summaries with paired comparisons."""
     result = []
     for module in sorted(modules):
         operations = modules[module]
-        pairs = []
-        standalone = []
+        pairs: list[dict] = []
+        standalone: list[dict] = []
 
         for op_name, entries in sorted(operations.items()):
             zd_entries = [e for e in entries if e["is_zerodep"]]
@@ -269,131 +422,7 @@ def _build_comparisons(modules: dict) -> list[dict]:
                     )
                 continue
 
-            # Group by canonical pairing key so that only same-size /
-            # same-operation variants are compared (e.g. encode_small_ours
-            # pairs with encode_small_ref, NOT encode_large_ref).
-            zd_by_key: dict[str, list] = defaultdict(list)
-            for e in zd_entries:
-                zd_by_key[_pairing_key(e["method"])].append(e)
-
-            ref_by_key: dict[str, list] = defaultdict(list)
-            for e in ref_entries:
-                ref_by_key[_pairing_key(e["method"])].append(e)
-
-            common_keys = set(zd_by_key) & set(ref_by_key)
-
-            if common_keys:
-                # Pair by matching canonical keys
-                matched_zd_keys: set[str] = set()
-                matched_ref_keys: set[str] = set()
-
-                for key in sorted(common_keys):
-                    matched_zd_keys.add(key)
-                    matched_ref_keys.add(key)
-                    for zd in zd_by_key[key]:
-                        for ref in ref_by_key[key]:
-                            ratio = (
-                                zd["mean"] / ref["mean"]
-                                if ref["mean"] > 0
-                                else float("inf")
-                            )
-                            zd_variant = zd["method"].removeprefix("test_")
-                            pairs.append(
-                                {
-                                    "operation": op_name,
-                                    "zd_variant": zd_variant,
-                                    "zd_mean": zd["mean"],
-                                    "zd_ops": zd["ops"],
-                                    "zd_stddev": zd["stddev"],
-                                    "zd_min": zd["min"],
-                                    "zd_max": zd["max"],
-                                    "zd_rounds": zd["rounds"],
-                                    "zd_p95": zd["p95"],
-                                    "zd_cv": zd["cv"],
-                                    "ref_label": ref["label"],
-                                    "ref_mean": ref["mean"],
-                                    "ref_ops": ref["ops"],
-                                    "ref_stddev": ref["stddev"],
-                                    "ref_min": ref["min"],
-                                    "ref_max": ref["max"],
-                                    "ref_rounds": ref["rounds"],
-                                    "ref_p95": ref["p95"],
-                                    "ref_cv": ref["cv"],
-                                    "ratio": ratio,
-                                }
-                            )
-
-                # Unmatched zerodep entries → standalone
-                for key in sorted(set(zd_by_key) - matched_zd_keys):
-                    for e in zd_by_key[key]:
-                        standalone.append(
-                            {
-                                "operation": op_name,
-                                "variant": e["method"].removeprefix("test_"),
-                                "mean": e["mean"],
-                                "ops": e["ops"],
-                                "stddev": e["stddev"],
-                                "min": e["min"],
-                                "max": e["max"],
-                                "rounds": e["rounds"],
-                                "p95": e["p95"],
-                                "cv": e["cv"],
-                            }
-                        )
-
-                # Unmatched reference entries → standalone
-                for key in sorted(set(ref_by_key) - matched_ref_keys):
-                    for e in ref_by_key[key]:
-                        standalone.append(
-                            {
-                                "operation": op_name,
-                                "variant": e["label"],
-                                "mean": e["mean"],
-                                "ops": e["ops"],
-                                "stddev": e["stddev"],
-                                "min": e["min"],
-                                "max": e["max"],
-                                "rounds": e["rounds"],
-                                "p95": e["p95"],
-                                "cv": e["cv"],
-                            }
-                        )
-            else:
-                # No canonical keys overlap — fall back to cross-product
-                # pairing (e.g. persistdict where zerodep variants like
-                # _json/_sqlite have no 1:1 reference counterpart).
-                for zd in zd_entries:
-                    for ref in ref_entries:
-                        ratio = (
-                            zd["mean"] / ref["mean"]
-                            if ref["mean"] > 0
-                            else float("inf")
-                        )
-                        zd_variant = zd["method"].removeprefix("test_")
-                        pairs.append(
-                            {
-                                "operation": op_name,
-                                "zd_variant": zd_variant,
-                                "zd_mean": zd["mean"],
-                                "zd_ops": zd["ops"],
-                                "zd_stddev": zd["stddev"],
-                                "zd_min": zd["min"],
-                                "zd_max": zd["max"],
-                                "zd_rounds": zd["rounds"],
-                                "zd_p95": zd["p95"],
-                                "zd_cv": zd["cv"],
-                                "ref_label": ref["label"],
-                                "ref_mean": ref["mean"],
-                                "ref_ops": ref["ops"],
-                                "ref_stddev": ref["stddev"],
-                                "ref_min": ref["min"],
-                                "ref_max": ref["max"],
-                                "ref_rounds": ref["rounds"],
-                                "ref_p95": ref["p95"],
-                                "ref_cv": ref["cv"],
-                                "ratio": ratio,
-                            }
-                        )
+            _pair_op_entries(op_name, zd_entries, ref_entries, pairs, standalone)
 
         result.append(
             {

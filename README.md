@@ -50,6 +50,19 @@ Releases are automated via the [Release workflow](https://github.com/Oaklight/ze
 - **中文**: [zerodep.readthedocs.io/zh-cn/](https://zerodep.readthedocs.io/zh-cn/)
 - **Benchmarks**: [Live benchmark dashboard](https://oaklight.github.io/zerodep/dev/bench)
 
+## Citation
+
+If you use zerodep in your research, please cite our paper:
+
+```bibtex
+@article{ding2026stdlib,
+  title={Stdlib or Third-Party? Empirical Performance and Correctness of LLM-Assisted Zero-Dependency Python Libraries},
+  author={Ding, Peng and Stevens, Rick},
+  journal={arXiv preprint arXiv:2605.21405},
+  year={2026}
+}
+```
+
 ## License
 
 [MIT](LICENSE)

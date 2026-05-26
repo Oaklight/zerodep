@@ -28,3 +28,17 @@ hide:
 - **Python 3.10+** —— 利用现代 Python 特性
 - **正确性优先** —— 与参考库进行 apple-to-apple 测试
 - **性能对等** —— 与流行替代方案进行基准测试（[在线面板](https://oaklight.github.io/zerodep/dev/bench)）
+
+## 引用
+
+如果您在研究中使用了 zerodep，请引用我们的论文：
+
+```bibtex
+@article{ding2026stdlib,
+  title={Stdlib or Third-Party? Empirical Performance and Correctness of LLM-Assisted Zero-Dependency Python Libraries},
+  author={Ding, Peng and Stevens, Rick},
+  journal={arXiv preprint arXiv:2605.21405},
+  year={2026}
+}
+```
+

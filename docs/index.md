@@ -28,3 +28,17 @@ Each module is a **self-contained single file** that you can copy directly into 
 - **Python 3.10+** — leverages modern Python features
 - **Correctness first** — apple-to-apple tests against reference libraries
 - **Performance parity** — benchmarked against popular alternatives ([live dashboard](https://oaklight.github.io/zerodep/dev/bench))
+
+## Citation
+
+If you use zerodep in your research, please cite our paper:
+
+```bibtex
+@article{ding2026stdlib,
+  title={Stdlib or Third-Party? Empirical Performance and Correctness of LLM-Assisted Zero-Dependency Python Libraries},
+  author={Ding, Peng and Stevens, Rick},
+  journal={arXiv preprint arXiv:2605.21405},
+  year={2026}
+}
+```
+

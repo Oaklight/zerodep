@@ -136,6 +136,8 @@ Each module file starts with a PEP 723-style metadata block:
 - Branch naming: `feature/xxx`, `fix/xxx`, `docs/xxx`, `refactor/xxx`, `test/xxx`.
 - PRs should describe *why* in the body, not just *what*.
 - Never force-push to `master`.
+- **No AI co-author tags in commits.** Do not add `Co-authored-by` lines for AI
+  tools in git commit messages. Disclose AI usage in PR descriptions instead.
 
 ## Documentation
 

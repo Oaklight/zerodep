@@ -264,3 +264,88 @@ class TestSyncSocks5Streaming:
                 return r.read()
 
         benchmark(_stream)
+
+
+# ── Concurrent Async GET ──
+
+
+class TestConcurrentAsyncGet:
+    """Benchmark concurrent async GET requests via asyncio.gather."""
+
+    @pytest.mark.parametrize("n", [10, 50], ids=["N=10", "N=50"])
+    def test_zerodep(self, benchmark, httpbin_url, n):
+        async def _gather():
+            async with AsyncClient() as c:
+                return await asyncio.gather(
+                    *[c.get(f"{httpbin_url}/get") for _ in range(n)]
+                )
+
+        benchmark(_run_async, _gather)
+
+    @pytest.mark.parametrize("n", [10, 50], ids=["N=10", "N=50"])
+    def test_httpx(self, benchmark, httpbin_url, n):
+        async def _gather():
+            async with httpx.AsyncClient() as c:
+                return await asyncio.gather(
+                    *[c.get(f"{httpbin_url}/get") for _ in range(n)]
+                )
+
+        benchmark(_run_async, _gather)
+
+
+# ── Connection Pool Reuse (100 sequential GETs) ──
+
+
+class TestConnectionPoolReuse:
+    """Benchmark throughput over 100 sequential requests with a shared client."""
+
+    N = 100
+
+    def test_zerodep(self, benchmark, httpbin_url):
+        def _sequential():
+            with Client() as c:
+                for _ in range(self.N):
+                    c.get(f"{httpbin_url}/get")
+
+        benchmark(_sequential)
+
+    def test_httpx(self, benchmark, httpbin_url):
+        def _sequential():
+            with httpx.Client() as c:
+                for _ in range(self.N):
+                    c.get(f"{httpbin_url}/get")
+
+        benchmark(_sequential)
+
+
+# ── Concurrent Async POST ──
+
+
+class TestConcurrentAsyncPost:
+    """Benchmark concurrent async POST requests via asyncio.gather."""
+
+    N = 10
+
+    def test_zerodep(self, benchmark, httpbin_url):
+        async def _gather():
+            async with AsyncClient() as c:
+                return await asyncio.gather(
+                    *[
+                        c.post(f"{httpbin_url}/post", json=PAYLOAD)
+                        for _ in range(self.N)
+                    ]
+                )
+
+        benchmark(_run_async, _gather)
+
+    def test_httpx(self, benchmark, httpbin_url):
+        async def _gather():
+            async with httpx.AsyncClient() as c:
+                return await asyncio.gather(
+                    *[
+                        c.post(f"{httpbin_url}/post", json=PAYLOAD)
+                        for _ in range(self.N)
+                    ]
+                )
+
+        benchmark(_run_async, _gather)

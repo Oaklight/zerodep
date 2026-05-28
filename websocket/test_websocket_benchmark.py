@@ -1,12 +1,13 @@
 """Benchmark: zerodep websocket vs websockets library.
 
 Simulates realistic workloads: JSON-RPC messaging (typical CDP command size),
-large HTML payload transfer (SPA outerHTML extraction), and burst messaging
-(batch CDP commands).
+large HTML payload transfer (SPA outerHTML extraction), burst messaging
+(batch CDP commands), and concurrent multi-connection messaging.
 """
 
 from __future__ import annotations
 
+import concurrent.futures
 import json
 
 import pytest
@@ -162,3 +163,50 @@ class TestConnectionSetup:
             ws.close()
 
         benchmark(connect_close)
+
+
+class TestConcurrentMessages:
+    """Benchmark concurrent send/receive across multiple WebSocket connections."""
+
+    CONNECTIONS = 4
+    MESSAGES_PER_CONN = 20
+
+    def test_zerodep(self, ws_echo_url, benchmark):
+        def run():
+            def worker(_):
+                ws = WebSocketClient(ws_echo_url)
+                ws.connect()
+                try:
+                    for _ in range(self.MESSAGES_PER_CONN):
+                        ws.send(JSONRPC_MSG)
+                        ws.recv()
+                finally:
+                    ws.close()
+
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.CONNECTIONS
+            ) as pool:
+                list(pool.map(worker, range(self.CONNECTIONS)))
+
+        benchmark(run)
+
+    def test_websockets(self, ws_echo_url, benchmark):
+        pytest.importorskip("websockets", reason="websockets not installed")
+        import websockets.sync.client
+
+        def run():
+            def worker(_):
+                ws = websockets.sync.client.connect(ws_echo_url)
+                try:
+                    for _ in range(self.MESSAGES_PER_CONN):
+                        ws.send(JSONRPC_MSG)
+                        ws.recv()
+                finally:
+                    ws.close()
+
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.CONNECTIONS
+            ) as pool:
+                list(pool.map(worker, range(self.CONNECTIONS)))
+
+        benchmark(run)

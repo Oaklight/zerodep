@@ -155,34 +155,55 @@ def _start_ws_server(handler):
     """Start an async WebSocket server in a background thread, return its URL."""
     loop = asyncio.new_event_loop()
     started = threading.Event()
-    port_holder: list[int] = []
+    server_holder = {}
 
-    async def run():
+    async def start():
         server = await asyncio.start_server(handler, "127.0.0.1", 0)
-        port_holder.append(server.sockets[0].getsockname()[1])
+        server_holder["server"] = server
+        server_holder["port"] = server.sockets[0].getsockname()[1]
         started.set()
-        async with server:
-            await server.serve_forever()
 
-    thread = threading.Thread(
-        target=loop.run_until_complete, args=(run(),), daemon=True
-    )
+    def run_loop():
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(start())
+        loop.run_forever()
+        loop.close()
+
+    thread = threading.Thread(target=run_loop, daemon=True)
     thread.start()
     started.wait(timeout=10)
-    return f"ws://127.0.0.1:{port_holder[0]}", loop
+    return (
+        f"ws://127.0.0.1:{server_holder['port']}",
+        loop,
+        server_holder["server"],
+        thread,
+    )
+
+
+def _stop_ws_server(loop, server, thread):
+    """Stop the background WebSocket server cleanly."""
+
+    async def shutdown():
+        server.close()
+        await server.wait_closed()
+
+    future = asyncio.run_coroutine_threadsafe(shutdown(), loop)
+    future.result(timeout=10)
+    loop.call_soon_threadsafe(loop.stop)
+    thread.join(timeout=10)
 
 
 @pytest.fixture(scope="session")
 def ws_echo_url():
     """Start a stdlib WebSocket echo server and yield its URL."""
-    url, loop = _start_ws_server(_echo_handler)
+    url, loop, server, thread = _start_ws_server(_echo_handler)
     yield url
-    loop.call_soon_threadsafe(loop.stop)
+    _stop_ws_server(loop, server, thread)
 
 
 @pytest.fixture(scope="session")
 def ws_custom_server_url():
     """Start a WebSocket server with custom behavior for testing."""
-    url, loop = _start_ws_server(_custom_handler)
+    url, loop, server, thread = _start_ws_server(_custom_handler)
     yield url
-    loop.call_soon_threadsafe(loop.stop)
+    _stop_ws_server(loop, server, thread)

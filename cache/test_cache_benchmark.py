@@ -1,7 +1,9 @@
 """Benchmark: zerodep cache vs cachetools."""
 
+import concurrent.futures
 import os
 import sys
+import threading
 import time
 
 import pytest
@@ -236,5 +238,55 @@ class TestMixedWorkload:
                 c.pop(i, None)
             for i in range(300, 450):
                 c[i] = i
+
+        benchmark(run)
+
+
+# ── Threaded contention (multi-threaded get/set) ──
+
+
+class TestThreadedContention:
+    """Benchmark multi-threaded cache access with 8 threads, 500 ops each."""
+
+    THREADS = 8
+    OPS_PER_THREAD = 500
+
+    def test_zerodep(self, benchmark):
+        def run():
+            c = LRUCache(maxsize=256)
+            lock = threading.Lock()
+
+            def worker(tid):
+                for i in range(self.OPS_PER_THREAD):
+                    key = tid * self.OPS_PER_THREAD + i
+                    with lock:
+                        c[key] = key
+                    with lock:
+                        c.get(key)
+
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.THREADS
+            ) as pool:
+                list(pool.map(worker, range(self.THREADS)))
+
+        benchmark(run)
+
+    def test_cachetools(self, benchmark):
+        def run():
+            c = cachetools.LRUCache(maxsize=256)
+            lock = threading.Lock()
+
+            def worker(tid):
+                for i in range(self.OPS_PER_THREAD):
+                    key = tid * self.OPS_PER_THREAD + i
+                    with lock:
+                        c[key] = key
+                    with lock:
+                        c.get(key)
+
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.THREADS
+            ) as pool:
+                list(pool.map(worker, range(self.THREADS)))
 
         benchmark(run)

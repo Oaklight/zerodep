@@ -13,6 +13,7 @@ from httpclient import (
     HTTPError,
     HttpTimeoutError,
     StreamingResponse,
+    _prepare_body,
     _SyncConnectionPool,
     get,
 )
@@ -164,3 +165,50 @@ class TestTimeoutBehavior:
         assert err.url == "http://example.com/missing"
         assert "404" in str(err)
         assert "http://example.com/missing" in str(err)
+
+
+# ── _prepare_body ───────────────────────────────────────────────────────────
+
+
+class TestPrepareBody:
+    """Tests for _prepare_body dict-data handling."""
+
+    def test_dict_data_urlencoded(self):
+        """Dict data without files should be URL-encoded."""
+        body, content_type = _prepare_body(data={"key": "value", "foo": "bar"})
+        assert content_type == "application/x-www-form-urlencoded"
+        assert body is not None
+        decoded = body.decode("utf-8")
+        assert "key=value" in decoded
+        assert "foo=bar" in decoded
+
+    def test_dict_data_special_chars(self):
+        """Dict data with special characters should be percent-encoded."""
+        body, content_type = _prepare_body(data={"q": "hello world", "x": "a&b=c"})
+        assert content_type == "application/x-www-form-urlencoded"
+        decoded = body.decode("utf-8")
+        assert "hello+world" in decoded or "hello%20world" in decoded
+        assert "a%26b%3Dc" in decoded
+
+    def test_dict_data_empty(self):
+        """Empty dict should produce empty URL-encoded body."""
+        body, content_type = _prepare_body(data={})
+        assert content_type == "application/x-www-form-urlencoded"
+        assert body == b""
+
+    def test_json_takes_priority_over_dict_data(self):
+        """json parameter should take priority over dict data."""
+        body, content_type = _prepare_body(data={"key": "value"}, json={"j": 1})
+        assert content_type == "application/json"
+
+    def test_str_data_still_works(self):
+        """String data should still work as before."""
+        body, content_type = _prepare_body(data="key=value")
+        assert content_type == "application/x-www-form-urlencoded"
+        assert body == b"key=value"
+
+    def test_none_data_returns_none(self):
+        """None data should return (None, None)."""
+        body, content_type = _prepare_body()
+        assert body is None
+        assert content_type is None

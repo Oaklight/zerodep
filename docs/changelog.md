@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.6.1] - 2026-06-01
+
+### Bug Fixes
+
+- **httpclient**: `_prepare_body(data={"key": "value"})` no longer silently drops dict data when `files` is not provided. Dict data is now URL-encoded as `application/x-www-form-urlencoded`, matching `httpx`/`requests` behavior. ([#93](https://github.com/Oaklight/zerodep/issues/93))
+
+### Testing
+
+- Added concurrency benchmarks for httpclient, websocket, and cache modules.
+- Added geometric scale curves for yaml/soup/protobuf/multipart benchmarks. ([#86](https://github.com/Oaklight/zerodep/issues/86))
+- Added tracemalloc memory benchmarks for parser modules. ([#84](https://github.com/Oaklight/zerodep/issues/84), [#85](https://github.com/Oaklight/zerodep/issues/85))
+- Added min/max/stddev/P95 metrics to benchmark reports. ([#81](https://github.com/Oaklight/zerodep/issues/81))
+- Added real-world fixture data for parser module benchmarks. ([#83](https://github.com/Oaklight/zerodep/issues/83))
+
+### Infrastructure
+
+- Refactored CI into a reusable `lint-test.yml` workflow called by both `ci.yml` and `release.yml`.
+- Switched lint job to `pre-commit run --all-files` instead of raw ruff commands.
+- Unified CI/release reference library installation via `pyproject.toml` extras.
+- Used official complexipy pre-commit hook.
+- Added `CONTRIBUTING.md` and no-AI-co-author policy to workflow docs.
+- Added arXiv badge and citation BibTeX.
+
 ## [2026.5.17] - 2026-05-17
 
 ### New Modules

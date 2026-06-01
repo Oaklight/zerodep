@@ -6,6 +6,29 @@
 
 ## [未发布]
 
+## [2026.6.1] - 2026-06-01
+
+### 问题修复
+
+- **httpclient**：`_prepare_body(data={"key": "value"})` 在未提供 `files` 时不再静默丢弃 dict 数据。Dict 数据现在会被 URL 编码为 `application/x-www-form-urlencoded`，与 `httpx`/`requests` 行为一致。([#93](https://github.com/Oaklight/zerodep/issues/93))
+
+### 测试
+
+- 新增 httpclient、websocket 和 cache 模块的并发性能测试。
+- 新增 yaml/soup/protobuf/multipart 的几何级数规模曲线测试。([#86](https://github.com/Oaklight/zerodep/issues/86))
+- 新增解析器模块的 tracemalloc 内存基准测试。([#84](https://github.com/Oaklight/zerodep/issues/84)、[#85](https://github.com/Oaklight/zerodep/issues/85))
+- 基准测试报告新增 min/max/stddev/P95 统计指标。([#81](https://github.com/Oaklight/zerodep/issues/81))
+- 新增解析器模块的真实场景 fixture 数据。([#83](https://github.com/Oaklight/zerodep/issues/83))
+
+### 基础设施
+
+- 重构 CI 为可复用的 `lint-test.yml` 工作流，由 `ci.yml` 和 `release.yml` 共同调用。
+- Lint 作业改用 `pre-commit run --all-files` 替代原始 ruff 命令。
+- 统一 CI/release 参考库安装方式，通过 `pyproject.toml` extras 动态提取。
+- 使用官方 complexipy pre-commit hook。
+- 新增 `CONTRIBUTING.md` 及工作流文档中的禁止 AI co-author 策略。
+- 新增 arXiv 徽章和引用 BibTeX。
+
 ## [2026.5.17] - 2026-05-17
 
 ### 新增模块

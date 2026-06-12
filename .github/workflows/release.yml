@@ -44,9 +44,9 @@ jobs:
           echo "version=${VER}" >> "$GITHUB_OUTPUT"
           echo "Release version: ${VER}"
 
-      - name: Bump module versions
+      - name: Check module versions
         run: |
-          python -m zerodep bump || echo "No modules to bump"
+          python -m zerodep version-check --strict
 
       - name: Bump project version
         run: |

@@ -1,4 +1,4 @@
-"""Correctness tests: zerodep JSONC vs commentjson."""
+"""Correctness tests: zerodep jsonx (JSONC + JSONL) vs commentjson."""
 
 import io
 import json
@@ -16,7 +16,17 @@ except ImportError:
 
 # Import our implementation
 sys.path.insert(0, os.path.dirname(__file__))
-from jsonc import JSONCDecodeError, dump, dumps, load, loads  # noqa: E402
+from jsonx import (  # noqa: E402
+    JSONCDecodeError,
+    dump,
+    dump_lines,
+    dumps,
+    dumps_lines,
+    load,
+    load_lines,
+    loads,
+    loads_lines,
+)
 
 # ── Helpers ──
 
@@ -327,3 +337,107 @@ class TestEdgeCases:
     def test_consecutive_block_comments(self) -> None:
         text = '{"a": /* c1 */ /* c2 */ 1}'
         assert loads(text) == {"a": 1}
+
+
+# ── Test: JSONL (JSON Lines) ──
+
+
+class TestLoadsLines:
+    def test_basic_multiline(self) -> None:
+        text = '{"a":1}\n{"b":2}\n{"c":3}'
+        assert loads_lines(text) == [{"a": 1}, {"b": 2}, {"c": 3}]
+
+    def test_empty_lines_skipped(self) -> None:
+        text = '{"a":1}\n\n\n{"b":2}'
+        assert loads_lines(text) == [{"a": 1}, {"b": 2}]
+
+    def test_comment_lines_skipped(self) -> None:
+        text = '// header\n{"a":1}\n# comment\n{"b":2}\n// footer'
+        assert loads_lines(text) == [{"a": 1}, {"b": 2}]
+
+    def test_inline_comments_stripped(self) -> None:
+        text = '{"a":1} // first\n{"b":2} # second'
+        assert loads_lines(text) == [{"a": 1}, {"b": 2}]
+
+    def test_mixed_types(self) -> None:
+        text = '42\n"hello"\n[1,2,3]\ntrue\nnull'
+        assert loads_lines(text) == [42, "hello", [1, 2, 3], True, None]
+
+    def test_trailing_commas_per_line(self) -> None:
+        text = '{"a":1,}\n{"b":[2,3,],}'
+        assert loads_lines(text) == [{"a": 1}, {"b": [2, 3]}]
+
+    def test_empty_input(self) -> None:
+        assert loads_lines("") == []
+
+    def test_only_comments(self) -> None:
+        assert loads_lines("// a\n# b\n") == []
+
+    def test_single_line(self) -> None:
+        assert loads_lines('{"x":99}') == [{"x": 99}]
+
+    def test_whitespace_only_lines(self) -> None:
+        text = '  \n{"a":1}\n   \n{"b":2}\n  '
+        assert loads_lines(text) == [{"a": 1}, {"b": 2}]
+
+    def test_error_on_bad_line(self) -> None:
+        text = '{"a":1}\n{bad}\n{"c":3}'
+        with pytest.raises(JSONCDecodeError):
+            loads_lines(text)
+
+
+class TestLoadLines:
+    def test_from_stream(self) -> None:
+        text = '{"a":1}\n{"b":2}'
+        fp = io.StringIO(text)
+        assert load_lines(fp) == [{"a": 1}, {"b": 2}]
+
+    def test_from_file(self, tmp_path: object) -> None:
+        import pathlib
+
+        p = pathlib.Path(str(tmp_path)) / "data.jsonl"
+        p.write_text('{"x":1}\n{"y":2}\n')
+        with open(p) as f:
+            assert load_lines(f) == [{"x": 1}, {"y": 2}]
+
+
+class TestDumpsLines:
+    def test_basic(self) -> None:
+        objs = [{"a": 1}, {"b": 2}]
+        result = dumps_lines(objs)
+        assert result == '{"a": 1}\n{"b": 2}'
+
+    def test_roundtrip(self) -> None:
+        original = [{"id": i, "val": i * 2} for i in range(5)]
+        text = dumps_lines(original)
+        recovered = loads_lines(text)
+        assert recovered == original
+
+    def test_empty_list(self) -> None:
+        assert dumps_lines([]) == ""
+
+    def test_single_item(self) -> None:
+        assert dumps_lines([42]) == "42"
+
+    def test_sort_keys(self) -> None:
+        result = dumps_lines([{"b": 2, "a": 1}], sort_keys=True)
+        assert result == '{"a": 1, "b": 2}'
+
+
+class TestDumpLines:
+    def test_to_stream(self) -> None:
+        objs = [{"a": 1}, {"b": 2}]
+        fp = io.StringIO()
+        dump_lines(objs, fp)
+        assert fp.getvalue() == '{"a": 1}\n{"b": 2}\n'
+
+    def test_roundtrip_file(self, tmp_path: object) -> None:
+        import pathlib
+
+        p = pathlib.Path(str(tmp_path)) / "out.jsonl"
+        original = [{"x": 1}, {"y": 2}, {"z": 3}]
+        with open(p, "w") as f:
+            dump_lines(original, f)
+        with open(p) as f:
+            recovered = load_lines(f)
+        assert recovered == original

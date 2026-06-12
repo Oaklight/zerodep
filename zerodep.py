@@ -512,6 +512,12 @@ def _ok(msg: str) -> None:
     print(msg)
 
 
+# Module rename/replacement map: old_name -> new_name
+_REPLACED_BY: dict[str, str] = {
+    "jsonc": "jsonx",
+}
+
+
 # ── Commands ──
 
 
@@ -632,6 +638,20 @@ def cmd_info(args: argparse.Namespace) -> None:
 def cmd_add(args: argparse.Namespace) -> None:
     """Copy module files to target directory."""
     manifest = _load_manifest(offline=args.offline, local=args.local)
+
+    # Handle replaced modules: rewrite old names to their replacements
+    rewritten: list[str] = []
+    for mod in args.modules:
+        replacement = _REPLACED_BY.get(mod)
+        if replacement and replacement in manifest.get("modules", {}):
+            _warn(
+                f"'{mod}' has been renamed to '{replacement}'. "
+                f"Installing '{replacement}' instead."
+            )
+            rewritten.append(replacement)
+        else:
+            rewritten.append(mod)
+    args.modules = rewritten
 
     # Resolve dependencies
     to_copy = _resolve_deps(args.modules, manifest, no_deps=args.no_deps)
@@ -860,6 +880,19 @@ def cmd_outdated(args: argparse.Namespace) -> None:
                 status = "outdated"
             rows.append((mod_name, local_ver, upstream_ver, status))
 
+    # Detect locally installed modules that have been replaced upstream
+    for old_name, new_name in sorted(_REPLACED_BY.items()):
+        # Check for old module files in scan_dir
+        old_mod = modules_data.get(old_name)
+        fallback = [f"{old_name}/{old_name}.py"]
+        old_files = old_mod.get("files", fallback) if old_mod else fallback
+        for rel_path in old_files:
+            filename = Path(rel_path).name
+            local_file = scan_dir / filename
+            if local_file.exists():
+                rows.append((old_name, "—", "—", f"renamed → {new_name}"))
+                break
+
     if not rows:
         _ok("No zerodep modules found in current directory.")
         return
@@ -872,6 +905,15 @@ def cmd_outdated(args: argparse.Namespace) -> None:
     print(fmt.format(*("-" * w for w in widths)))
     for row in rows:
         print(fmt.format(*row))
+
+    # Print migration hints for renamed modules
+    for row in rows:
+        if row[3].startswith("renamed"):
+            new_name = row[3].split("→ ")[1].strip()
+            _warn(
+                f"'{row[0]}' has been renamed to '{new_name}'. "
+                f"Run `zerodep add {new_name}` and remove the old file."
+            )
 
 
 def _normalized_hash(source: str) -> str:

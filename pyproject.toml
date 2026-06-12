@@ -55,8 +55,10 @@ bench-dotenv = [
 bench-yaml = [
     "PyYAML==6.0.3",
 ]
-bench-jsonc = [
+bench-jsonx = [
     "commentjson==0.9.0",
+    "jsonlines==4.0.0",
+    "ndjson==0.3.1",
 ]
 bench-structlog = [
     "structlog==25.5.0",
@@ -158,11 +160,11 @@ dev = [
     "complexipy>=5.2.0",
     "build>=1.2.2.post1",
     "twine>=6.1.0",
-    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonc,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-persistdict,bench-runner,bench-readability,bench-png,bench-useragent,bench-httpserver,bench-websocket,bench-cdp,bench-multipart]",
+    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonx,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-persistdict,bench-runner,bench-readability,bench-png,bench-useragent,bench-httpserver,bench-websocket,bench-cdp,bench-multipart]",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonc", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema", "png", "llmstxt", "useragent", "synctex", "httpserver", "websocket", "cdp", "multipart"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonx", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema", "png", "llmstxt", "useragent", "synctex", "httpserver", "websocket", "cdp", "multipart"]
 
 [tool.ruff]
 target-version = "py310"
@@ -226,7 +228,7 @@ extra-paths = [
     "./diff",
     "./dotenv",
     "./httpclient",
-    "./jsonc",
+    "./jsonx",
     "./markdown",
     "./prompt",
     "./qr",

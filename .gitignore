@@ -44,3 +44,4 @@ docs_zh/
 # Node.js (readability JS benchmark dependencies)
 node_modules/
 package-lock.json
+uv.lock

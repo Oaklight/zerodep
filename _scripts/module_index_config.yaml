@@ -23,7 +23,7 @@ categories:
   - id: serialization
     name_en: "Serialization"
     name_zh: "序列化"
-    modules: [xml, yaml, jsonc, toon, frontmatter, protobuf, multipart]
+    modules: [xml, yaml, jsonx, toon, frontmatter, protobuf, multipart]
 
   - id: validation
     name_en: "Validation"
@@ -129,12 +129,12 @@ modules:
     replaces_zh: "PyYAML、ruamel.yaml（常用子集）"
     desc_en: "YAML parser and serializer (common subset)"
     desc_zh: "YAML 解析与序列化（常用子集）"
-  jsonc:
+  jsonx:
     benchmark: commentjson
-    replaces: "commentjson, json5 (partial)"
-    replaces_zh: "commentjson、json5（部分）"
-    desc_en: "JSONC parser (JSON with comments and trailing commas)"
-    desc_zh: "JSONC 解析（JSON + 注释 + 尾逗号）"
+    replaces: "commentjson, jsonlines, ndjson"
+    replaces_zh: "commentjson、jsonlines、ndjson"
+    desc_en: "Extended JSON parser (JSONC + JSONL/NDJSON)"
+    desc_zh: "扩展 JSON 解析（JSONC + JSONL/NDJSON）"
   toon:
     benchmark: toon_format
     replaces: "toon-format"

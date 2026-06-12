@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-06-01T19:07:41.741652+00:00",
+  "generated": "2026-06-12T19:01:08.872115+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -85,16 +85,16 @@
       "files": [
         "config/config.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [
         "dotenv",
         "yaml",
-        "jsonc"
+        "jsonx"
       ],
       "tier": "subsystem",
       "category": "config",
-      "last_updated": "2026-04-27T23:17:36+08:00",
-      "content_hash": "c8f8c186275ea8b78da47a199347dbb33dba8abeb9dd5200944ebe4ea5afcf1f"
+      "last_updated": "2026-06-12T12:49:15-05:00",
+      "content_hash": "83e2fc106c73f02bf5d239538c0e5916dcd9b2cc147bf648ae16c49ff4e5f459"
     },
     "depdetect": {
       "description": "Dependency detection and verification — zero dependencies, stdlib only, Python 3.10+",
@@ -167,7 +167,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-05-16T11:04:23-05:00",
+      "last_updated": "2026-06-01T14:08:24-05:00",
       "content_hash": "4878a4c5f1659b2dfd91cdc22e9276671e249c6cbe250dc576898c32a9b82877"
     },
     "httpserver": {
@@ -181,18 +181,6 @@
       "category": "network",
       "last_updated": "2026-05-02T17:34:53+08:00",
       "content_hash": "b477e97b7f4f4149ebf7911719eef117061a0efc72599ff6dc0b76b215f0492b"
-    },
-    "jsonc": {
-      "description": "JSONC (JSON with Comments) parser — zero dependencies, stdlib only, Python 3.10+",
-      "files": [
-        "jsonc/jsonc.py"
-      ],
-      "version": "0.3.0",
-      "deps": [],
-      "tier": "simple",
-      "category": "serialization",
-      "last_updated": "2026-04-27T23:17:36+08:00",
-      "content_hash": "961c4038993865adfd4302ee3b2e7cc74f280ab9d8ef9a4de9295a72dcdcc416"
     },
     "jsonrpc": {
       "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",
@@ -217,6 +205,18 @@
       "category": "validation",
       "last_updated": "2026-05-11T02:24:16+09:00",
       "content_hash": "f4d24792ad360b1f95d17d62c1981675d92eca61c008122aff3f06ae530c943e"
+    },
+    "jsonx": {
+      "description": "Extended JSON parser — zero dependencies, stdlib only, Python 3.10+",
+      "files": [
+        "jsonx/jsonx.py"
+      ],
+      "version": "1.0.0",
+      "deps": [],
+      "tier": "simple",
+      "category": "serialization",
+      "last_updated": "2026-06-12T13:46:30-05:00",
+      "content_hash": "2bfc0d657c366c2e09cfcbbd433545172989f615d67debd2ca8f55284af37ddd"
     },
     "llmstxt": {
       "description": "llms.txt parser — zero dependencies, stdlib only, Python 3.10+",
@@ -328,8 +328,8 @@
       ],
       "tier": "medium",
       "category": "text",
-      "last_updated": "2026-04-27T23:17:36+08:00",
-      "content_hash": "78363bb1de017e4f5070f77ffd682eff43e5b2e0ff7c0b2995c2190d56169964"
+      "last_updated": "2026-06-11T20:19:15-05:00",
+      "content_hash": "7a3009ee5f5eb00b2f171b8c5bef011085805cc976137c27a93b1108bbe5f181"
     },
     "retry": {
       "description": "Zero-dependency retry with configurable backoff strategies",

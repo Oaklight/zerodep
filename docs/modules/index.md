@@ -18,17 +18,17 @@ title: 模块概览
 | [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
 | [cache](cache.md) | 0.2.4 | 2026-04-27 |
 | [cdp](cdp.md) | 0.1.0 | 2026-05-02 |
-| [config](config.md) | 0.3.0 | 2026-04-27 |
+| [config](config.md) | 0.3.1 | 2026-06-12 |
 | [depdetect](depdetect.md) | 0.4.3 | 2026-04-15 |
 | [diff](diff.md) | 0.3.1 | 2026-04-15 |
 | [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
-| [httpclient](httpclient.md) | 0.4.1 | 2026-05-16 |
+| [httpclient](httpclient.md) | 0.4.2 | 2026-06-01 |
 | [httpserver](httpserver.md) | 0.1.0 | 2026-05-02 |
-| [jsonc](jsonc.md) | 0.3.0 | 2026-04-27 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
 | [jsonschema](jsonschema.md) | 0.2.0 | 2026-05-11 |
+| [jsonx](jsonx.md) | 1.0.0 | 2026-06-12 |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
 | [multipart](multipart.md) | 0.1.0 | 2026-05-16 |
@@ -37,7 +37,7 @@ title: 模块概览
 | [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
 | [protobuf](protobuf.md) | 0.4.4 | 2026-04-27 |
 | [qr](qr.md) | 0.3.3 | 2026-04-27 |
-| [readability](readability.md) | 0.1.0 | 2026-04-27 |
+| [readability](readability.md) | 0.1.0 | 2026-06-11 |
 | [retry](retry.md) | 0.3.0 | 2026-04-27 |
 | [runner](runner.md) | 0.3.1 | 2026-04-15 |
 | [scheduler](scheduler.md) | 0.3.1 | 2026-04-15 |
@@ -86,7 +86,7 @@ title: 模块概览
 |--------|-------------|----------|-------------------|
 | [xml](xml.md) | XML ↔ 字典转换器（容错解析、LLM 标签提取） | xmltodict | `xmltodict` |
 | [yaml](yaml.md) | YAML 解析与序列化（常用子集） | PyYAML、ruamel.yaml（常用子集） | `PyYAML` |
-| [jsonc](jsonc.md) | JSONC 解析（JSON + 注释 + 尾逗号） | commentjson、json5（部分） | `commentjson` |
+| [jsonx](jsonx.md) | 扩展 JSON 解析（JSONC + JSONL/NDJSON） | commentjson、jsonlines、ndjson | `commentjson` |
 | [toon](toon.md) | TOON（面向 Token 的对象表示法）编码器/解码器 | toon-format | `toon_format` |
 | [frontmatter](frontmatter.md) | Frontmatter 解析与序列化（YAML/TOML/JSON） | python-frontmatter | `python-frontmatter` |
 | [protobuf](protobuf.md) | Proto3 编解码器（Python dataclass schema） | protobuf（google）、betterproto | `protobuf` |
@@ -173,7 +173,7 @@ graph LR
     acp --> jsonrpc
     cdp --> websocket
     config --> dotenv
-    config --> jsonc
+    config --> jsonx
     config --> yaml
     frontmatter --> yaml
     qr --> png

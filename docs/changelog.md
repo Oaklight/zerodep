@@ -6,9 +6,22 @@
 
 ## [未发布]
 
+### 新模块
+
+- **jsonx** (v1.0.0)：由 `jsonc` 改名而来，现为扩展 JSON 解析器，支持 JSONC（注释 + 尾逗号）和 JSONL/NDJSON。新增 API：`loads_lines`、`load_lines`、`dumps_lines`、`dump_lines`。干净 JSONL 场景下采用批量快速路径，性能与 `ndjson` 持平。([#95](https://github.com/Oaklight/zerodep/issues/95)、[#99](https://github.com/Oaklight/zerodep/pull/99))
+
 ### 新功能
 
 - **readability**：在 `ReadabilityResult` 中暴露 best-candidate 评分（[#97](https://github.com/Oaklight/zerodep/pull/97)）。新增 `score: float` 字段（默认 `0.0`），携带评分算法选出的最佳候选容器的 readability 分数。分数越高，表示提取内容为真实文章而非导航/样板内容的信心越强。未找到评分候选容器（body 回退）时为 `0.0`。使下游消费者能够做出更智能的内容质量决策（例如 SPA 空壳检测）。
+
+### 功能增强
+
+- **config**：内部依赖从 `jsonc` 更新为 `jsonx`，保留对旧版 `jsonc` 模块的向后兼容 fallback。
+- **CLI**：新增 `replaced_by` 机制——`zerodep add jsonc` 会自动安装 `jsonx` 并提示迁移；`zerodep outdated` 检测本地 `jsonc.py` 并建议升级。
+
+### 性能优化
+
+- **jsonx**：`loads_lines` 对干净 JSONL 使用批量解析（将所有行拼接为 JSON 数组，单次 `json.loads` 调用），达到 ndjson 级别性能。有注释时自动降级为逐行 JSONC 处理。
 
 ## [2026.6.1] - 2026-06-01
 

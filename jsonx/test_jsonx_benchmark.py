@@ -178,14 +178,23 @@ class TestFixtureLoadEslintConfig:
 
 # ── JSONL benchmarks ──────────────────────────────────────────────────────────────────────
 
-_JSONL_SMALL = "\n".join(f'{{"id":{i},"name":"item_{i}","value":{i*1.5}}}' for i in range(10))
-_JSONL_MEDIUM = "\n".join(f'{{"id":{i},"name":"item_{i}","value":{i*1.5},"active":{"true" if i%2==0 else "false"},"tags":["a","b"]}}' for i in range(100))
-_JSONL_LARGE = "\n".join(f'{{"id":{i},"name":"item_{i}","value":{i*1.5},"active":{"true" if i%2==0 else "false"},"tags":["a","b","c_{i}"],"meta":{{"k":{i}}}}}' for i in range(1000))
+_JSONL_SMALL = "\n".join(
+    f'{{"id":{i},"name":"item_{i}","value":{i * 1.5}}}' for i in range(10)
+)
+_JSONL_MEDIUM = "\n".join(
+    f'{{"id":{i},"name":"item_{i}","value":{i * 1.5},"active":{"true" if i % 2 == 0 else "false"},"tags":["a","b"]}}'
+    for i in range(100)
+)
+_JSONL_LARGE = "\n".join(
+    f'{{"id":{i},"name":"item_{i}","value":{i * 1.5},"active":{"true" if i % 2 == 0 else "false"},"tags":["a","b","c_{i}"],"meta":{{"k":{i}}}}}'
+    for i in range(1000)
+)
 
 
 def _jsonlines_loads(text: str) -> list:
     """Parse JSONL with the jsonlines library."""
     import io
+
     reader = _jl.Reader(io.StringIO(text))
     return list(reader)
 

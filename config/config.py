@@ -97,7 +97,10 @@ def _load_yaml_loader() -> Callable[[str], Any]:
 
 
 def _load_jsonx_loader() -> Callable[[str], Any] | None:
-    """Load the sibling ``jsonx`` (or legacy ``jsonc``) module's ``loads`` function if available."""
+    """Load the sibling ``jsonx`` (or legacy ``jsonc``) module's loader.
+
+    Returns the ``loads`` function if available, else ``None``.
+    """
     # Try jsonx first (renamed from jsonc)
     _ensure_sibling_path("jsonx")
     sys.modules.pop("jsonx", None)

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-06-12T19:01:08.872115+00:00",
+  "generated": "2026-06-12T20:41:21.760825+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -93,7 +93,7 @@
       ],
       "tier": "subsystem",
       "category": "config",
-      "last_updated": "2026-06-12T12:49:15-05:00",
+      "last_updated": "2026-06-12T14:01:49-05:00",
       "content_hash": "83e2fc106c73f02bf5d239538c0e5916dcd9b2cc147bf648ae16c49ff4e5f459"
     },
     "depdetect": {
@@ -175,12 +175,12 @@
       "files": [
         "httpserver/httpserver.py"
       ],
-      "version": "0.1.0",
+      "version": "0.1.1",
       "deps": [],
       "tier": "subsystem",
       "category": "network",
       "last_updated": "2026-05-02T17:34:53+08:00",
-      "content_hash": "b477e97b7f4f4149ebf7911719eef117061a0efc72599ff6dc0b76b215f0492b"
+      "content_hash": "f168c322d56180d14759db3160ac8bcaf5a72b07895205beb9fd16270fbb0eb6"
     },
     "jsonrpc": {
       "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",
@@ -215,7 +215,7 @@
       "deps": [],
       "tier": "simple",
       "category": "serialization",
-      "last_updated": "2026-06-12T13:46:30-05:00",
+      "last_updated": "2026-06-12T14:01:49-05:00",
       "content_hash": "2bfc0d657c366c2e09cfcbbd433545172989f615d67debd2ca8f55284af37ddd"
     },
     "llmstxt": {

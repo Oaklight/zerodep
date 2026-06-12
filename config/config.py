@@ -1,6 +1,6 @@
 # /// zerodep
 # version = "0.3.0"
-# deps = ["dotenv", "yaml", "jsonc"]
+# deps = ["dotenv", "yaml", "jsonx"]
 # tier = "subsystem"
 # category = "config"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
@@ -96,15 +96,22 @@ def _load_yaml_loader() -> Callable[[str], Any]:
     return yaml_load
 
 
-def _load_jsonc_loader() -> Callable[[str], Any] | None:
-    """Load the sibling ``jsonc`` module's ``loads`` function if available."""
-    _ensure_sibling_path("jsonc")
-    sys.modules.pop("jsonc", None)
+def _load_jsonx_loader() -> Callable[[str], Any] | None:
+    """Load the sibling ``jsonx`` (or legacy ``jsonc``) module's ``loads`` function if available."""
+    # Try jsonx first (renamed from jsonc)
+    _ensure_sibling_path("jsonx")
+    sys.modules.pop("jsonx", None)
     try:
-        from jsonc import loads as jsonc_loads
+        from jsonx import loads as jsonx_loads
     except ImportError:
-        return None
-    return jsonc_loads
+        # Fall back to legacy jsonc for backward compatibility
+        _ensure_sibling_path("jsonc")
+        sys.modules.pop("jsonc", None)
+        try:
+            from jsonc import loads as jsonx_loads
+        except ImportError:
+            return None
+    return jsonx_loads
 
 
 # ── Stdlib tomllib (Python 3.11+) ───────────────────────────────────────────
@@ -280,7 +287,7 @@ def _load_jsonc_file(path: str | os.PathLike[str]) -> dict[str, Any]:
     """Load a JSONC file, falling back to plain JSON if jsonc module is unavailable."""
     with open(path, encoding="utf-8") as f:
         text = f.read()
-    jsonc_loads = _load_jsonc_loader()
+    jsonc_loads = _load_jsonx_loader()
     if jsonc_loads is not None:
         data = jsonc_loads(text)
     else:

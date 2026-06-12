@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>cdp Benchmark — zerodep</title>
+<title>jsonx Benchmark — zerodep</title>
 <style>:root, [data-theme="light"] {
   --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
   --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
@@ -122,22 +122,30 @@ td { white-space: nowrap; }
 </head>
 <body>
 <div class="header-row">
-<h1>cdp</h1>
+<h1>jsonx</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
 <p class="meta">Version: c656938 | Commit: c656938d | 2026-06-12T19:17:17.580680+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-06-12T19:17:17.580680+00:00"></span></p>
-<h2>cdp</h2>
-<h3>Standalone benchmarks</h3>
-<div class="table-wrap"><table class="standalone-table">
-<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
+<h2>jsonx</h2>
+<div class="table-wrap"><table>
+<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
+<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
+</thead>
 <tbody>
-<tr><td>Command Throughput</td><td>send_command_burst</td><td>4.45 ms</td><td>224.8</td><td title="CV=13.0% | rounds=254">3.82 ms</td><td title="CV=13.0% | rounds=254">5.59 ms</td><td title="CV=13.0% | rounds=254">579.3 µs</td><td title="CV=13.0% | rounds=254">5.36 ms</td></tr>
-<tr><td>Full Render Pipeline</td><td>get_rendered_text</td><td>896.5 µs</td><td>1.1K</td><td title="CV=15.2% | rounds=965">726.5 µs</td><td title="CV=15.2% | rounds=965">1.43 ms</td><td title="CV=15.2% | rounds=965">135.9 µs</td><td title="CV=15.2% | rounds=965">1.15 ms</td></tr>
-<tr><td>Full Render Pipeline</td><td>get_rendered_text_fresh_client</td><td>1.37 ms</td><td>730.3</td><td title="CV=12.4% | rounds=680">1.11 ms</td><td title="CV=12.4% | rounds=680">1.65 ms</td><td title="CV=12.4% | rounds=680">170.2 µs</td><td title="CV=12.4% | rounds=680">1.54 ms</td></tr>
-<tr><td>Js Eval Throughput</td><td>evaluate_burst</td><td>1.15 ms</td><td>872.3</td><td title="CV=7.5% | rounds=855">1.05 ms</td><td title="CV=7.5% | rounds=855">1.57 ms</td><td title="CV=7.5% | rounds=855">85.7 µs</td><td title="CV=7.5% | rounds=855">1.43 ms</td></tr>
-<tr><td>Multi Target</td><td>multi_target_pipeline</td><td>4.63 ms</td><td>215.8</td><td title="CV=10.3% | rounds=268">3.63 ms</td><td title="CV=10.3% | rounds=268">6.17 ms</td><td title="CV=10.3% | rounds=268">475.3 µs</td><td title="CV=10.3% | rounds=268">5.42 ms</td></tr>
-<tr><td>Render Html</td><td>get_rendered_html</td><td>852.6 µs</td><td>1.2K</td><td title="CV=9.5% | rounds=942">739.2 µs</td><td title="CV=9.5% | rounds=942">1.39 ms</td><td title="CV=9.5% | rounds=942">80.6 µs</td><td title="CV=9.5% | rounds=942">1.02 ms</td></tr>
+<tr><td>Fixture Load Eslint Config</td><td>zerodep</td><td>commentjson</td><td>764.1 µs</td><td>50.90 ms</td><td>1.3K</td><td>19.6</td><td title="CV=1.9% | rounds=1154">737.5 µs</td><td title="CV=1.9% | rounds=1154">996.1 µs</td><td title="CV=1.9% | rounds=1154">14.5 µs</td><td title="CV=1.9% | rounds=1154">781.3 µs</td><td title="CV=32.9% | rounds=21">46.86 ms</td><td title="CV=32.9% | rounds=21">124.07 ms</td><td title="CV=32.9% | rounds=21">16.77 ms</td><td title="CV=32.9% | rounds=21">47.86 ms</td><td class="ratio-cell faster">66.6x faster</td></tr>
+<tr><td>Fixture Load Tsconfig</td><td>zerodep</td><td>commentjson</td><td>249.2 µs</td><td>15.52 ms</td><td>4.0K</td><td>64.4</td><td title="CV=7.0% | rounds=3404">240.1 µs</td><td title="CV=7.0% | rounds=3404">519.4 µs</td><td title="CV=7.0% | rounds=3404">17.5 µs</td><td title="CV=7.0% | rounds=3404">259.8 µs</td><td title="CV=56.7% | rounds=68">14.00 ms</td><td title="CV=56.7% | rounds=68">87.01 ms</td><td title="CV=56.7% | rounds=68">8.80 ms</td><td title="CV=56.7% | rounds=68">14.98 ms</td><td class="ratio-cell faster">62.3x faster</td></tr>
+<tr><td>Fixture Load Vscode Settings</td><td>zerodep</td><td>commentjson</td><td>535.4 µs</td><td>26.09 ms</td><td>1.9K</td><td>38.3</td><td title="CV=3.8% | rounds=1577">518.9 µs</td><td title="CV=3.8% | rounds=1577">946.9 µs</td><td title="CV=3.8% | rounds=1577">20.2 µs</td><td title="CV=3.8% | rounds=1577">553.0 µs</td><td title="CV=0.9% | rounds=38">25.55 ms</td><td title="CV=0.9% | rounds=38">26.56 ms</td><td title="CV=0.9% | rounds=38">246.6 µs</td><td title="CV=0.9% | rounds=38">26.55 ms</td><td class="ratio-cell faster">48.7x faster</td></tr>
+<tr><td>Jsonl (Large)</td><td>zerodep</td><td>jsonlines</td><td>1.80 ms</td><td>3.83 ms</td><td>557.0</td><td>260.9</td><td title="CV=304.9% | rounds=387">1.37 ms</td><td title="CV=304.9% | rounds=387">81.80 ms</td><td title="CV=304.9% | rounds=387">5.47 ms</td><td title="CV=304.9% | rounds=387">1.45 ms</td><td title="CV=118.6% | rounds=258">3.46 ms</td><td title="CV=118.6% | rounds=258">76.57 ms</td><td title="CV=118.6% | rounds=258">4.55 ms</td><td title="CV=118.6% | rounds=258">3.66 ms</td><td class="ratio-cell faster">2.1x faster</td></tr>
+<tr><td>Jsonl (Large)</td><td>zerodep</td><td>ndjson</td><td>1.80 ms</td><td>1.70 ms</td><td>557.0</td><td>587.3</td><td title="CV=304.9% | rounds=387">1.37 ms</td><td title="CV=304.9% | rounds=387">81.80 ms</td><td title="CV=304.9% | rounds=387">5.47 ms</td><td title="CV=304.9% | rounds=387">1.45 ms</td><td title="CV=287.8% | rounds=679">1.34 ms</td><td title="CV=287.8% | rounds=679">76.21 ms</td><td title="CV=287.8% | rounds=679">4.90 ms</td><td title="CV=287.8% | rounds=679">1.43 ms</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Jsonl (Medium)</td><td>zerodep</td><td>jsonlines</td><td>89.1 µs</td><td>290.6 µs</td><td>11.2K</td><td>3.4K</td><td title="CV=4.8% | rounds=5579">85.7 µs</td><td title="CV=4.8% | rounds=5579">218.1 µs</td><td title="CV=4.8% | rounds=5579">4.3 µs</td><td title="CV=4.8% | rounds=5579">97.7 µs</td><td title="CV=3.0% | rounds=2510">281.8 µs</td><td title="CV=3.0% | rounds=2510">404.4 µs</td><td title="CV=3.0% | rounds=2510">8.7 µs</td><td title="CV=3.0% | rounds=2510">302.8 µs</td><td class="ratio-cell faster">3.3x faster</td></tr>
+<tr><td>Jsonl (Medium)</td><td>zerodep</td><td>ndjson</td><td>89.1 µs</td><td>89.6 µs</td><td>11.2K</td><td>11.2K</td><td title="CV=4.8% | rounds=5579">85.7 µs</td><td title="CV=4.8% | rounds=5579">218.1 µs</td><td title="CV=4.8% | rounds=5579">4.3 µs</td><td title="CV=4.8% | rounds=5579">97.7 µs</td><td title="CV=4.5% | rounds=7585">86.2 µs</td><td title="CV=4.5% | rounds=7585">170.3 µs</td><td title="CV=4.5% | rounds=7585">4.1 µs</td><td title="CV=4.5% | rounds=7585">98.3 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Jsonl (Small)</td><td>zerodep</td><td>jsonlines</td><td>8.0 µs</td><td>31.1 µs</td><td>125.7K</td><td>32.2K</td><td title="CV=12.5% | rounds=43171">7.7 µs</td><td title="CV=12.5% | rounds=43171">70.1 µs</td><td title="CV=12.5% | rounds=43171">992.2 ns</td><td title="CV=12.5% | rounds=43171">8.1 µs</td><td title="CV=6.5% | rounds=4565">29.9 µs</td><td title="CV=6.5% | rounds=4565">73.8 µs</td><td title="CV=6.5% | rounds=4565">2.0 µs</td><td title="CV=6.5% | rounds=4565">32.4 µs</td><td class="ratio-cell faster">3.9x faster</td></tr>
+<tr><td>Jsonl (Small)</td><td>zerodep</td><td>ndjson</td><td>8.0 µs</td><td>10.2 µs</td><td>125.7K</td><td>98.2K</td><td title="CV=12.5% | rounds=43171">7.7 µs</td><td title="CV=12.5% | rounds=43171">70.1 µs</td><td title="CV=12.5% | rounds=43171">992.2 ns</td><td title="CV=12.5% | rounds=43171">8.1 µs</td><td title="CV=10.8% | rounds=21106">9.8 µs</td><td title="CV=10.8% | rounds=21106">45.5 µs</td><td title="CV=10.8% | rounds=21106">1.1 µs</td><td title="CV=10.8% | rounds=21106">10.4 µs</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Load (Large)</td><td>zerodep</td><td>commentjson</td><td>1.76 ms</td><td>195.74 ms</td><td>569.0</td><td>5.1</td><td title="CV=1.3% | rounds=522">1.73 ms</td><td title="CV=1.3% | rounds=522">1.98 ms</td><td title="CV=1.3% | rounds=522">23.1 µs</td><td title="CV=1.3% | rounds=522">1.79 ms</td><td title="CV=21.8% | rounds=6">167.21 ms</td><td title="CV=21.8% | rounds=6">255.70 ms</td><td title="CV=21.8% | rounds=6">42.59 ms</td><td title="CV=21.8% | rounds=6">255.70 ms</td><td class="ratio-cell faster">111.4x faster</td></tr>
+<tr><td>Load (Medium)</td><td>zerodep</td><td>commentjson</td><td>93.2 µs</td><td>7.73 ms</td><td>10.7K</td><td>129.4</td><td title="CV=4.2% | rounds=7812">89.9 µs</td><td title="CV=4.2% | rounds=7812">159.1 µs</td><td title="CV=4.2% | rounds=7812">3.9 µs</td><td title="CV=4.2% | rounds=7812">101.5 µs</td><td title="CV=1.3% | rounds=122">7.59 ms</td><td title="CV=1.3% | rounds=122">8.21 ms</td><td title="CV=1.3% | rounds=122">98.6 µs</td><td title="CV=1.3% | rounds=122">7.88 ms</td><td class="ratio-cell faster">82.9x faster</td></tr>
+<tr><td>Load (Small)</td><td>zerodep</td><td>commentjson</td><td>15.3 µs</td><td>1.03 ms</td><td>65.2K</td><td>972.8</td><td title="CV=10.3% | rounds=19975">14.6 µs</td><td title="CV=10.3% | rounds=19975">90.0 µs</td><td title="CV=10.3% | rounds=19975">1.6 µs</td><td title="CV=10.3% | rounds=19975">15.6 µs</td><td title="CV=7.7% | rounds=696">936.6 µs</td><td title="CV=7.7% | rounds=696">1.43 ms</td><td title="CV=7.7% | rounds=696">79.0 µs</td><td title="CV=7.7% | rounds=696">1.16 ms</td><td class="ratio-cell faster">67.0x faster</td></tr>
 </tbody></table></div>
+<div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
 <h3>Performance Trend</h3>
@@ -200,6 +208,40 @@ var TREND_COLORS = [
 ];
 
 
+new Chart(document.getElementById('chart_0'), {
+  type: 'bar',
+  data: {
+    labels: ["Fixture Load Eslint Config", "Fixture Load Tsconfig", "Fixture Load Vscode Settings", "Jsonl (Large)", "Jsonl (Medium)", "Jsonl (Small)", "Load (Large)", "Load (Medium)", "Load (Small)"],
+    datasets: [
+      {
+        label: 'zerodep (ops/s)',
+        data: [1308.6765827875236, 4013.2207564414252, 1867.8423174957793, 556.9773686192308, 11225.239318211117, 125733.26651457348, 569.0423969444267, 10730.791620936145, 65198.06845177152],
+        backgroundColor: 'rgba(111, 66, 193, 0.8)',
+        borderRadius: 4,
+      },
+      {
+        label: "Reference" + ' (ops/s)',
+        data: [19.647539440537898, 64.42221586623712, 38.33475970752829, 587.2961605960835, 11159.407421148979, 98244.30820909867, 5.108827363481703, 129.40244815383366, 972.8372055160081],
+        backgroundColor: 'rgba(13, 110, 253, 0.6)',
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      title: { display: true, text: 'jsonx — ops/s (higher is better)' }
+    },
+    scales: {
+      y: {
+        type: 'logarithmic',
+        title: { display: true, text: 'ops/s (log scale)' }
+      }
+    }
+  }
+});
 (async function() {
   var section = document.getElementById('trend-section');
   if (!section) return;
@@ -207,7 +249,7 @@ var TREND_COLORS = [
   if (!data || !data.entries || !data.entries.Benchmark) {
     section.style.display = 'none'; return;
   }
-  var filtered = filterBenchesForModule(data.entries.Benchmark, 'cdp');
+  var filtered = filterBenchesForModule(data.entries.Benchmark, 'jsonx');
   if (!filtered.length) { section.style.display = 'none'; return; }
 
   // Collect unique zerodep bench names
@@ -249,7 +291,7 @@ var TREND_COLORS = [
         },
         title: {
           display: true,
-          text: 'cdp — zerodep ops/s over time'
+          text: 'jsonx — zerodep ops/s over time'
         },
         tooltip: {
           callbacks: {

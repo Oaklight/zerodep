@@ -125,18 +125,18 @@ td { white-space: nowrap; }
 <h1>validate</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: cdaa3e0 | Commit: cdaa3e00 | 2026-05-18T13:04:39.511272+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-05-18T13:04:39.511272+00:00"></span></p>
+<p class="meta">Version: c656938 | Commit: c656938d | 2026-06-12T19:17:17.580680+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-06-12T19:17:17.580680+00:00"></span></p>
 <h2>validate</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Benchmark Constrained</td><td>ours</td><td>pydantic</td><td>10.0 µs</td><td>1.5 µs</td><td>99.9K</td><td>646.2K</td><td title="CV=13.0% | rounds=8549">9.6 µs</td><td title="CV=13.0% | rounds=8549">38.4 µs</td><td title="CV=13.0% | rounds=8549">1.3 µs</td><td title="CV=13.0% | rounds=8549">10.1 µs</td><td title="CV=29.2% | rounds=60603">1.5 µs</td><td title="CV=29.2% | rounds=60603">34.0 µs</td><td title="CV=29.2% | rounds=60603">452.0 ns</td><td title="CV=29.2% | rounds=60603">1.6 µs</td><td class="ratio-cell slower">6.5x slower</td></tr>
-<tr><td>Benchmark Json Schema</td><td>ours</td><td>pydantic</td><td>9.9 µs</td><td>194.7 µs</td><td>101.0K</td><td>5.1K</td><td title="CV=12.5% | rounds=18930">9.4 µs</td><td title="CV=12.5% | rounds=18930">40.6 µs</td><td title="CV=12.5% | rounds=18930">1.2 µs</td><td title="CV=12.5% | rounds=18930">10.0 µs</td><td title="CV=40.4% | rounds=459">171.2 µs</td><td title="CV=40.4% | rounds=459">1.75 ms</td><td title="CV=40.4% | rounds=459">78.6 µs</td><td title="CV=40.4% | rounds=459">262.9 µs</td><td class="ratio-cell faster">19.7x faster</td></tr>
-<tr><td>Benchmark List Of Dicts</td><td>ours</td><td>pydantic</td><td>232.4 µs</td><td>32.2 µs</td><td>4.3K</td><td>31.0K</td><td title="CV=3.1% | rounds=3073">226.3 µs</td><td title="CV=3.1% | rounds=3073">339.2 µs</td><td title="CV=3.1% | rounds=3073">7.2 µs</td><td title="CV=3.1% | rounds=3073">240.7 µs</td><td title="CV=8.5% | rounds=16812">31.0 µs</td><td title="CV=8.5% | rounds=16812">98.8 µs</td><td title="CV=8.5% | rounds=16812">2.7 µs</td><td title="CV=8.5% | rounds=16812">32.5 µs</td><td class="ratio-cell slower">7.2x slower</td></tr>
-<tr><td>Benchmark Nested</td><td>ours</td><td>pydantic</td><td>10.1 µs</td><td>2.1 µs</td><td>98.7K</td><td>466.2K</td><td title="CV=13.9% | rounds=11125">9.8 µs</td><td title="CV=13.9% | rounds=11125">82.2 µs</td><td title="CV=13.9% | rounds=11125">1.4 µs</td><td title="CV=13.9% | rounds=11125">10.3 µs</td><td title="CV=24.8% | rounds=24824">2.0 µs</td><td title="CV=24.8% | rounds=24824">26.7 µs</td><td title="CV=24.8% | rounds=24824">531.0 ns</td><td title="CV=24.8% | rounds=24824">2.2 µs</td><td class="ratio-cell slower">4.7x slower</td></tr>
-<tr><td>Benchmark Simple</td><td>ours</td><td>pydantic</td><td>5.7 µs</td><td>1.4 µs</td><td>176.4K</td><td>690.4K</td><td title="CV=16.3% | rounds=12395">5.4 µs</td><td title="CV=16.3% | rounds=12395">31.5 µs</td><td title="CV=16.3% | rounds=12395">924.0 ns</td><td title="CV=16.3% | rounds=12395">5.7 µs</td><td title="CV=29.9% | rounds=62074">1.4 µs</td><td title="CV=29.9% | rounds=62074">22.2 µs</td><td title="CV=29.9% | rounds=62074">433.5 ns</td><td title="CV=29.9% | rounds=62074">1.5 µs</td><td class="ratio-cell slower">3.9x slower</td></tr>
+<tr><td>Benchmark Constrained</td><td>ours</td><td>pydantic</td><td>9.8 µs</td><td>1.6 µs</td><td>102.5K</td><td>643.3K</td><td title="CV=10.5% | rounds=8113">9.4 µs</td><td title="CV=10.5% | rounds=8113">31.6 µs</td><td title="CV=10.5% | rounds=8113">1.0 µs</td><td title="CV=10.5% | rounds=8113">9.9 µs</td><td title="CV=24.1% | rounds=52527">1.4 µs</td><td title="CV=24.1% | rounds=52527">21.0 µs</td><td title="CV=24.1% | rounds=52527">374.5 ns</td><td title="CV=24.1% | rounds=52527">1.6 µs</td><td class="ratio-cell slower">6.3x slower</td></tr>
+<tr><td>Benchmark Json Schema</td><td>ours</td><td>pydantic</td><td>9.8 µs</td><td>159.5 µs</td><td>102.4K</td><td>6.3K</td><td title="CV=11.5% | rounds=20795">9.3 µs</td><td title="CV=11.5% | rounds=20795">52.8 µs</td><td title="CV=11.5% | rounds=20795">1.1 µs</td><td title="CV=11.5% | rounds=20795">9.9 µs</td><td title="CV=39.5% | rounds=840">137.6 µs</td><td title="CV=39.5% | rounds=840">1.74 ms</td><td title="CV=39.5% | rounds=840">63.0 µs</td><td title="CV=39.5% | rounds=840">230.7 µs</td><td class="ratio-cell faster">16.3x faster</td></tr>
+<tr><td>Benchmark List Of Dicts</td><td>ours</td><td>pydantic</td><td>226.4 µs</td><td>29.4 µs</td><td>4.4K</td><td>34.0K</td><td title="CV=3.2% | rounds=3238">220.4 µs</td><td title="CV=3.2% | rounds=3238">389.0 µs</td><td title="CV=3.2% | rounds=3238">7.2 µs</td><td title="CV=3.2% | rounds=3238">235.9 µs</td><td title="CV=5.7% | rounds=837">28.3 µs</td><td title="CV=5.7% | rounds=837">41.0 µs</td><td title="CV=5.7% | rounds=837">1.7 µs</td><td title="CV=5.7% | rounds=837">30.2 µs</td><td class="ratio-cell slower">7.7x slower</td></tr>
+<tr><td>Benchmark Nested</td><td>ours</td><td>pydantic</td><td>10.0 µs</td><td>2.2 µs</td><td>99.8K</td><td>460.9K</td><td title="CV=11.0% | rounds=10275">9.7 µs</td><td title="CV=11.0% | rounds=10275">44.5 µs</td><td title="CV=11.0% | rounds=10275">1.1 µs</td><td title="CV=11.0% | rounds=10275">10.1 µs</td><td title="CV=29.0% | rounds=50078">2.0 µs</td><td title="CV=29.0% | rounds=50078">95.3 µs</td><td title="CV=29.0% | rounds=50078">629.2 ns</td><td title="CV=29.0% | rounds=50078">2.2 µs</td><td class="ratio-cell slower">4.6x slower</td></tr>
+<tr><td>Benchmark Simple</td><td>ours</td><td>pydantic</td><td>5.7 µs</td><td>1.5 µs</td><td>175.7K</td><td>665.1K</td><td title="CV=13.0% | rounds=11333">5.4 µs</td><td title="CV=13.0% | rounds=11333">24.8 µs</td><td title="CV=13.0% | rounds=11333">738.1 ns</td><td title="CV=13.0% | rounds=11333">5.8 µs</td><td title="CV=25.3% | rounds=58566">1.4 µs</td><td title="CV=25.3% | rounds=58566">20.9 µs</td><td title="CV=25.3% | rounds=58566">380.3 ns</td><td title="CV=25.3% | rounds=58566">1.5 µs</td><td class="ratio-cell slower">3.8x slower</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -208,13 +208,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [99861.39252960945, 101008.56168425156, 4302.495014336458, 98666.79825630429, 176385.69893937843],
+        data: [102471.88897099449, 102367.12066424952, 4416.319367169841, 99804.9301724545, 175686.79537324654],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "pydantic" + ' (ops/s)',
-        data: [646168.7560074154, 5136.445994988112, 31041.15793703512, 466229.0542300917, 690377.3405577376],
+        data: [643313.1040347464, 6268.055684726127, 34048.75724735232, 460885.41299496073, 665102.6769740528],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

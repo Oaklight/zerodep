@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### New Features
+
+- **readability**: Expose best-candidate `score` in `ReadabilityResult` ([#97](https://github.com/Oaklight/zerodep/pull/97)). New `score: float` field (default `0.0`) carries the readability score of the best candidate container selected by the scoring algorithm. Higher values indicate stronger confidence that the extracted content is a real article rather than navigation/boilerplate. Zero when no scored candidate was found (body fallback). Enables downstream consumers to make smarter content quality decisions (e.g. SPA shell detection).
+
 ## [2026.6.1] - 2026-06-01
 
 ### Bug Fixes

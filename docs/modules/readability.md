@@ -64,6 +64,7 @@ print(result.title)    # "My Blog Post"
 print(result.text)     # Clean plain text of the article
 print(result.content)  # Clean HTML of the article
 print(result.length)   # Character count of extracted text
+print(result.score)    # Readability score (higher = more confident)
 ```
 
 ### Check if a Page is Readable
@@ -175,6 +176,7 @@ Quick heuristic check whether the HTML likely contains an article.
 | `lang` | `str \| None` | Language code (e.g. `"en"`) |
 | `dir` | `str \| None` | Text direction (`"ltr"` or `"rtl"`) |
 | `length` | `int` | Character count of the plain text |
+| `score` | `float` | Readability score of the best candidate container. Higher values indicate stronger confidence that the extracted content is a real article. `0.0` when no scored candidate was found (body fallback). |
 
 ## Comparison with Alternatives
 

@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feature/readability-module
+          ref: master
 
       - uses: actions/setup-python@v5
         with:
@@ -106,7 +106,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feature/readability-module
+          ref: master
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
@@ -138,15 +138,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           DATE=$(date +%Y%m%d)
-          BRANCH="chore/sync-readability-patterns-${DATE}"
+          BRANCH="feature/readability-module-update"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git checkout -b "$BRANCH"
+          git checkout -B "$BRANCH"
           git add readability/readability.py
-          git commit -m "chore: sync upstream readability patterns"
-          git push -u origin "$BRANCH"
+          git commit -m "chore: sync upstream readability patterns ($DATE)"
+          git push -u origin "$BRANCH" --force
 
           # Build PR body from apply report
           python -c "
@@ -182,5 +182,5 @@ jobs:
           gh pr create \
             --title "chore: sync upstream readability patterns ($DATE)" \
             --body-file pr_body.md \
-            --base feature/readability-module \
+            --base master \
             --draft

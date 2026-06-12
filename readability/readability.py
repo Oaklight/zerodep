@@ -695,11 +695,17 @@ class _Readability:
 
     # ── Scoring ──────────────────────────────────────────────────────────
 
+    # Maximum ancestor levels for score propagation.  The original
+    # algorithm only propagated to parent (1x) and grandparent (0.5x).
+    # Modern SPA-rendered pages nest content 3-5 levels deep in wrapper
+    # divs, so we extend propagation with diminishing weights.
+    _ANCESTOR_WEIGHTS = [1.0, 0.5, 0.333, 0.25]
+
     def _score_paragraphs(self) -> dict[int, dict[str, Any]]:
         """Score paragraph-like nodes and propagate to ancestors.
 
         Returns:
-            Dict mapping ``id(tag)`` → ``{"tag": tag, "score": float}``.
+            Dict mapping ``id(tag)`` -> ``{"tag": tag, "score": float}``.
         """
         candidates: dict[int, dict[str, Any]] = {}
 
@@ -708,21 +714,22 @@ class _Readability:
             if len(inner_text) < MIN_PARAGRAPH_LENGTH:
                 continue
 
-            parent = tag.parent
-            grandparent = parent.parent if parent is not None else None
+            # Collect ancestors up to the propagation depth.
+            ancestors: list[Any] = []
+            cur = tag.parent
+            for _ in range(len(self._ANCESTOR_WEIGHTS)):
+                if cur is None or cur.name in ("html", "body", "[document]"):
+                    break
+                ancestors.append(cur)
+                cur = cur.parent
 
-            # Ensure parent is initialised.
-            if parent is not None and id(parent) not in candidates:
-                candidates[id(parent)] = {
-                    "tag": parent,
-                    "score": self._init_score(parent),
-                }
-            # Ensure grandparent is initialised.
-            if grandparent is not None and id(grandparent) not in candidates:
-                candidates[id(grandparent)] = {
-                    "tag": grandparent,
-                    "score": self._init_score(grandparent),
-                }
+            # Ensure each ancestor is initialised in the candidate map.
+            for anc in ancestors:
+                if id(anc) not in candidates:
+                    candidates[id(anc)] = {
+                        "tag": anc,
+                        "score": self._init_score(anc),
+                    }
 
             # Content score for this paragraph.
             inner_len = len(inner_text)
@@ -730,11 +737,9 @@ class _Readability:
             content_score += len(COMMAS_RE.findall(inner_text))
             content_score += min(inner_len / 100.0, 3.0)
 
-            # Propagate to parent (full) and grandparent (half).
-            if parent is not None and id(parent) in candidates:
-                candidates[id(parent)]["score"] += content_score
-            if grandparent is not None and id(grandparent) in candidates:
-                candidates[id(grandparent)]["score"] += content_score / 2.0
+            # Propagate to ancestors with diminishing weights.
+            for i, anc in enumerate(ancestors):
+                candidates[id(anc)]["score"] += content_score * self._ANCESTOR_WEIGHTS[i]
 
         # Scale scores by link density.
         for entry in candidates.values():
@@ -804,7 +809,7 @@ class _Readability:
 
         # Create an article wrapper.
         article = self._Tag("div")
-        sibling_threshold = max(10.0, best["score"] * 0.2)
+        sibling_threshold = max(10.0, best["score"] * 0.1)
 
         # If there's no parent, use the candidate itself.
         if parent is None:

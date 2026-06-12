@@ -476,6 +476,30 @@ class TestExtract:
         result = _our_result(ARTICLE_HTML)
         assert result.length == len(result.text)
 
+    def test_score_is_positive_for_article(self):
+        """A real article should have a positive readability score."""
+        result = _our_result(ARTICLE_HTML)
+        assert isinstance(result.score, float)
+        assert result.score > 0
+
+    def test_score_is_positive_for_blog(self):
+        result = _our_result(BLOG_WITH_COMMENTS_HTML)
+        assert result.score > 0
+
+    def test_score_is_positive_for_news(self):
+        result = _our_result(NEWS_HTML)
+        assert result.score > 0
+
+    def test_score_zero_for_empty_html(self):
+        """Empty HTML falls back to body → score should be 0."""
+        result = extract("")
+        assert result.score == 0.0
+
+    def test_score_zero_for_nav_only(self):
+        """Navigation-only page falls back to body → score should be 0."""
+        result = _our_result(EMPTY_HTML)
+        assert result.score == 0.0
+
 
 # ── Tests: Metadata extraction ──
 

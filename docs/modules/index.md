@@ -18,17 +18,17 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
 | [cache](cache.md) | 0.2.4 | 2026-04-27 |
 | [cdp](cdp.md) | 0.1.0 | 2026-05-02 |
-| [config](config.md) | 0.3.0 | 2026-04-27 |
+| [config](config.md) | 0.3.1 | 2026-06-12 |
 | [depdetect](depdetect.md) | 0.4.3 | 2026-04-15 |
 | [diff](diff.md) | 0.3.1 | 2026-04-15 |
 | [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
-| [httpclient](httpclient.md) | 0.4.1 | 2026-05-16 |
+| [httpclient](httpclient.md) | 0.4.2 | 2026-06-01 |
 | [httpserver](httpserver.md) | 0.1.0 | 2026-05-02 |
-| [jsonc](jsonc.md) | 0.3.0 | 2026-04-27 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
 | [jsonschema](jsonschema.md) | 0.2.0 | 2026-05-11 |
+| [jsonx](jsonx.md) | 1.0.0 | 2026-06-12 |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
 | [multipart](multipart.md) | 0.1.0 | 2026-05-16 |
@@ -37,7 +37,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
 | [protobuf](protobuf.md) | 0.4.4 | 2026-04-27 |
 | [qr](qr.md) | 0.3.3 | 2026-04-27 |
-| [readability](readability.md) | 0.1.0 | 2026-04-27 |
+| [readability](readability.md) | 0.1.0 | 2026-06-11 |
 | [retry](retry.md) | 0.3.0 | 2026-04-27 |
 | [runner](runner.md) | 0.3.1 | 2026-04-15 |
 | [scheduler](scheduler.md) | 0.3.1 | 2026-04-15 |
@@ -86,7 +86,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 |--------|-------------|----------|-------------------|
 | [xml](xml.md) | XML ↔ dict converter with fault-tolerant parsing and LLM tag extraction | xmltodict | `xmltodict` |
 | [yaml](yaml.md) | YAML parser and serializer (common subset) | PyYAML, ruamel.yaml (common subset) | `PyYAML` |
-| [jsonc](jsonc.md) | JSONC parser (JSON with comments and trailing commas) | commentjson, json5 (partial) | `commentjson` |
+| [jsonx](jsonx.md) | Extended JSON parser (JSONC + JSONL/NDJSON) | commentjson, jsonlines, ndjson | `commentjson` |
 | [toon](toon.md) | TOON (Token-Oriented Object Notation) encoder/decoder | toon-format | `toon_format` |
 | [frontmatter](frontmatter.md) | Frontmatter parser and serializer (YAML/TOML/JSON) | python-frontmatter | `python-frontmatter` |
 | [protobuf](protobuf.md) | Proto3 encoder/decoder using Python dataclass schemas | protobuf (google), betterproto | `protobuf` |
@@ -173,7 +173,7 @@ graph LR
     acp --> jsonrpc
     cdp --> websocket
     config --> dotenv
-    config --> jsonc
+    config --> jsonx
     config --> yaml
     frontmatter --> yaml
     qr --> png

@@ -6,18 +6,20 @@
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 
-"""JSONC (JSON with Comments) parser — zero dependencies, stdlib only, Python 3.10+.
+"""Extended JSON parser — zero dependencies, stdlib only, Python 3.10+.
 
 Part of zerodep: https://github.com/Oaklight/zerodep
 Copyright (c) 2026 Peng Ding. MIT License.
 
-Drop-in replacement for commentjson / stdlib json with JSONC support.
+Drop-in replacement for commentjson / stdlib json with JSONC support,
+plus JSONL (JSON Lines) helpers.
 
 Supports:
     - Single-line comments: ``//`` and ``#``
     - Block comments: ``/* ... */``
     - Trailing commas in objects and arrays
     - All standard JSON types
+    - JSONL (one JSON value per line, with optional comments)
 
 Example::
 
@@ -25,6 +27,10 @@ Example::
     # {'a': 1, 'b': 2}
     load(open("config.jsonc"))
     # {...}
+
+    # JSONL with comments
+    loads_lines('{"a":1}\n// skip\n{"b":2}')
+    # [{'a': 1}, {'b': 2}]
 """
 
 from __future__ import annotations
@@ -39,6 +45,10 @@ __all__ = [
     "load",
     "dumps",
     "dump",
+    "loads_lines",
+    "load_lines",
+    "dumps_lines",
+    "dump_lines",
 ]
 
 # ── Comment stripping ─────────────────────────────────────────────────────────
@@ -350,3 +360,99 @@ def dump(
         sort_keys=sort_keys,
         **kwargs,
     )
+
+
+# ── JSONL (JSON Lines) API ────────────────────────────────────────────────────────────
+
+# JSONL = one JSON value per line.  Each line is preprocessed through the
+# JSONC comment/trailing-comma stripper, so "JSONL with comments" works
+# out of the box.
+
+
+def _is_blank_or_comment(line: str) -> bool:
+    """Return *True* if *line* is empty or a pure-comment line."""
+    s = line.strip()
+    return s == "" or s.startswith("//") or s.startswith("#")
+
+
+def loads_lines(
+    text: str,
+    **kwargs: Any,
+) -> list[Any]:
+    """Deserialize a JSONL string to a list of Python objects.
+
+    Each non-blank, non-comment line is preprocessed through the JSONC
+    pipeline (strips ``//`` / ``#`` / ``/* */`` comments and trailing commas)
+    before being parsed with :func:`json.loads`.
+
+    Args:
+        text: JSONL source string (one JSON value per line).
+        **kwargs: Keyword arguments forwarded to :func:`loads`.
+
+    Returns:
+        List of deserialized Python objects.
+
+    Raises:
+        JSONCDecodeError: If any line contains invalid JSON/JSONC.
+    """
+    results: list[Any] = []
+    for line in text.splitlines():
+        if _is_blank_or_comment(line):
+            continue
+        results.append(loads(line, **kwargs))
+    return results
+
+
+def load_lines(
+    fp: IO[str],
+    **kwargs: Any,
+) -> list[Any]:
+    """Deserialize a JSONL file to a list of Python objects.
+
+    Args:
+        fp: A text file-like object containing JSONL.
+        **kwargs: Keyword arguments forwarded to :func:`loads`.
+
+    Returns:
+        List of deserialized Python objects.
+
+    Raises:
+        JSONCDecodeError: If any line contains invalid JSON/JSONC.
+    """
+    return loads_lines(fp.read(), **kwargs)
+
+
+def dumps_lines(
+    objects: list[Any],
+    **kwargs: Any,
+) -> str:
+    """Serialize a list of Python objects to a JSONL string.
+
+    Each object is serialized on its own line using :func:`json.dumps`.
+    No trailing newline is emitted (consistent with ``"\\n".join(...)``
+    semantics).
+
+    Args:
+        objects: Iterable of Python objects to serialize.
+        **kwargs: Keyword arguments forwarded to :func:`json.dumps`.
+
+    Returns:
+        JSONL string (one JSON value per line).
+    """
+    return "\n".join(json.dumps(obj, **kwargs) for obj in objects)
+
+
+def dump_lines(
+    objects: list[Any],
+    fp: IO[str],
+    **kwargs: Any,
+) -> None:
+    """Serialize a list of Python objects to a JSONL file.
+
+    Args:
+        objects: Iterable of Python objects to serialize.
+        fp: A text file-like object to write to.
+        **kwargs: Keyword arguments forwarded to :func:`json.dumps`.
+    """
+    fp.write(dumps_lines(objects, **kwargs))
+    fp.write("\n")

@@ -63,6 +63,7 @@ print(result.title)    # "我的博客文章"
 print(result.text)     # 文章的纯文本内容
 print(result.content)  # 文章的清洁 HTML
 print(result.length)   # 提取文本的字符数
+print(result.score)    # Readability 评分（越高表示信心越强）
 ```
 
 ### 检查页面是否可读
@@ -174,6 +175,7 @@ Readability 算法遵循 Mozilla Readability.js 的方法：
 | `lang` | `str \| None` | 语言代码（如 `"en"`） |
 | `dir` | `str \| None` | 文本方向（`"ltr"` 或 `"rtl"`） |
 | `length` | `int` | 纯文本字符数 |
+| `score` | `float` | 最佳候选容器的 readability 评分。分数越高，表示提取内容为真实文章的信心越强。未找到评分候选容器（body 回退）时为 `0.0`。 |
 
 ## 与替代方案对比
 

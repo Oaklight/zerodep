@@ -6,6 +6,10 @@
 
 ## [未发布]
 
+### 新功能
+
+- **readability**：在 `ReadabilityResult` 中暴露 best-candidate 评分（[#97](https://github.com/Oaklight/zerodep/pull/97)）。新增 `score: float` 字段（默认 `0.0`），携带评分算法选出的最佳候选容器的 readability 分数。分数越高，表示提取内容为真实文章而非导航/样板内容的信心越强。未找到评分候选容器（body 回退）时为 `0.0`。使下游消费者能够做出更智能的内容质量决策（例如 SPA 空壳检测）。
+
 ## [2026.6.1] - 2026-06-01
 
 ### 问题修复

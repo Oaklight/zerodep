@@ -231,6 +231,8 @@ class ReadabilityResult:
         lang: Language code from ``<html lang="...">``, or ``None``.
         dir: Text direction (``"ltr"`` / ``"rtl"``), or ``None``.
         length: Character count of *text*.
+        score: Readability score of the best candidate (0.0 when
+            falling back to ``<body>`` content).
     """
 
     title: str
@@ -243,6 +245,7 @@ class ReadabilityResult:
     lang: str | None = None
     dir: str | None = None
     length: int = 0
+    score: float = 0.0
 
 
 # ── Public API ───────────────────────────────────────────────────────────────
@@ -360,7 +363,7 @@ class _Readability:
         # Grab article content.  The first iteration reuses self._soup
         # (removing non-content tags in-place); retries use a faster
         # parse that skips those tags during tree construction.
-        article_html, article_text = self._grab_article()
+        article_html, article_text, article_score = self._grab_article()
 
         # If metadata title is empty, try to derive from article headings.
         title = metadata.get("title", "")
@@ -379,17 +382,20 @@ class _Readability:
             lang=lang,
             dir=direction,
             length=len(text),
+            score=article_score,
         )
 
     # ── Article grabbing (with retry) ────────────────────────────────────
 
     _PRE_CLEAN_TAGS = ["script", "style", "link", "noscript"]
 
-    def _grab_article(self) -> tuple[str, str]:
+    def _grab_article(self) -> tuple[str, str, float]:
         """Extract article content, retrying with relaxed rules if needed.
 
         Returns:
-            ``(article_html, article_text)`` tuple.
+            ``(article_html, article_text, best_score)`` tuple.  ``best_score``
+            is the readability score of the best candidate (0.0 when falling
+            back to ``<body>``).
         """
         ruthless = True
 
@@ -417,7 +423,7 @@ class _Readability:
                 article_text = article_tag.get_text(separator=" ", strip=True)
 
                 if len(article_text) >= RETRY_LENGTH or not ruthless:
-                    return article_html, article_text
+                    return article_html, article_text, best["score"]
 
                 # Too short — retry without ruthless filtering.
                 log.debug(
@@ -438,8 +444,8 @@ class _Readability:
         # Final fallback: return body content as-is.
         body = self._soup.find("body")
         if body is not None:
-            return body.to_html(), body.get_text(separator=" ", strip=True)
-        return "", ""
+            return body.to_html(), body.get_text(separator=" ", strip=True), 0.0
+        return "", "", 0.0
 
     # ── Pre-cleaning ─────────────────────────────────────────────────────
 

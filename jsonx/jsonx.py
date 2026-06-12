@@ -381,13 +381,15 @@ def loads_lines(
 ) -> list[Any]:
     """Deserialize a JSONL string to a list of Python objects.
 
-    Each non-blank, non-comment line is preprocessed through the JSONC
-    pipeline (strips ``//`` / ``#`` / ``/* */`` comments and trailing commas)
-    before being parsed with :func:`json.loads`.
+    Uses a batch fast-path for clean JSONL: non-empty lines are joined
+    into a JSON array and parsed in a single :func:`json.loads` call,
+    matching ``ndjson``-level performance.  If that fails (comments,
+    trailing commas, etc.), falls back to per-line JSONC processing.
 
     Args:
         text: JSONL source string (one JSON value per line).
-        **kwargs: Keyword arguments forwarded to :func:`loads`.
+        **kwargs: Keyword arguments forwarded to :func:`json.loads`
+            (or :func:`loads` on fallback).
 
     Returns:
         List of deserialized Python objects.
@@ -395,11 +397,27 @@ def loads_lines(
     Raises:
         JSONCDecodeError: If any line contains invalid JSON/JSONC.
     """
+    lines = text.split("\n")
+    stripped = [ln for ln in lines if ln.strip()]
+    if not stripped:
+        return []
+    # Fast path: join non-empty lines into a JSON array, single parse.
+    # This avoids per-line Python overhead and lets the C json parser
+    # handle everything in one call.
+    _json_loads = json.loads
+    try:
+        return _json_loads("[" + ",".join(stripped) + "]", **kwargs)
+    except json.JSONDecodeError:
+        pass
+    # Slow path: comments, trailing commas, or JSONC syntax present.
     results: list[Any] = []
-    for line in text.splitlines():
+    for line in lines:
         if _is_blank_or_comment(line):
             continue
-        results.append(loads(line, **kwargs))
+        try:
+            results.append(_json_loads(line, **kwargs))
+        except json.JSONDecodeError:
+            results.append(loads(line, **kwargs))
     return results
 
 

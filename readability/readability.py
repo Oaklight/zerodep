@@ -739,7 +739,8 @@ class _Readability:
 
             # Propagate to ancestors with diminishing weights.
             for i, anc in enumerate(ancestors):
-                candidates[id(anc)]["score"] += content_score * self._ANCESTOR_WEIGHTS[i]
+                weight = self._ANCESTOR_WEIGHTS[i]
+                candidates[id(anc)]["score"] += content_score * weight
 
         # Scale scores by link density.
         for entry in candidates.values():

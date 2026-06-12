@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-06-12T20:41:21.760825+00:00",
+  "generated": "2026-06-12T22:52:05.836177+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -179,7 +179,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-05-02T17:34:53+08:00",
+      "last_updated": "2026-06-12T15:41:35-05:00",
       "content_hash": "f168c322d56180d14759db3160ac8bcaf5a72b07895205beb9fd16270fbb0eb6"
     },
     "jsonrpc": {
@@ -322,14 +322,14 @@
         "readability/benchmark_compare.py",
         "readability/readability.py"
       ],
-      "version": "0.1.0",
+      "version": "0.2.0",
       "deps": [
         "soup"
       ],
       "tier": "medium",
       "category": "text",
-      "last_updated": "2026-06-11T20:19:15-05:00",
-      "content_hash": "7a3009ee5f5eb00b2f171b8c5bef011085805cc976137c27a93b1108bbe5f181"
+      "last_updated": "2026-06-12T16:33:09-05:00",
+      "content_hash": "7fc61de7eb18191f09e372bbca32722ec5453167005413cec49b23be261b6aa6"
     },
     "retry": {
       "description": "Zero-dependency retry with configurable backoff strategies",

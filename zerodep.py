@@ -268,8 +268,13 @@ def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
                 status_map[mod_name] = "up-to-date"
             elif found_in_any_tag:
                 status_map[mod_name] = "modified"
-            else:
+            elif version == "0.0.0":
+                # Scaffold sentinel — never bumped
                 status_map[mod_name] = "new"
+            else:
+                # Not in any tag but version is non-zero — user already
+                # bumped manually before the first release.
+                status_map[mod_name] = "up-to-date"
             continue
 
         tag_hash = _normalized_hash(tag_content)
@@ -782,7 +787,10 @@ def _bump_frontmatter_version(filepath: Path, level: str) -> tuple[str, str]:
     major, minor, patch = int(m.group(2)), int(m.group(3)), int(m.group(4))
     old_ver = f"{major}.{minor}.{patch}"
 
-    if level == "major":
+    if old_ver == "0.0.0":
+        # Scaffold sentinel — first bump always goes to 0.1.0
+        new_ver = "0.1.0"
+    elif level == "major":
         new_ver = f"{major + 1}.0.0"
     elif level == "minor":
         new_ver = f"{major}.{minor + 1}.0"
@@ -821,7 +829,7 @@ def cmd_bump(args: argparse.Namespace) -> None:
                 _die(f"unknown module: {t}")
     else:
         status_map = _find_changed_modules(repo_root, modules)
-        targets = [m for m, s in status_map.items() if s == "modified"]
+        targets = [m for m, s in status_map.items() if s in ("modified", "new")]
         if not targets:
             _ok("all modules up-to-date, nothing to bump")
             return
@@ -838,6 +846,10 @@ def cmd_bump(args: argparse.Namespace) -> None:
         rows.append((mod_name, old_ver, new_ver))
 
     # Print summary
+    if not rows:
+        _ok("no modules were bumped")
+        return
+
     headers = ("Module", "Old", "New")
     widths = [max(len(headers[i]), *(len(r[i]) for r in rows)) for i in range(3)]
     fmt = "  ".join(f"{{:<{w}}}" for w in widths)
@@ -974,7 +986,7 @@ def _new_scaffold(args: argparse.Namespace, year: int) -> str:
     deps_str = json.dumps(args.deps) if args.deps else "[]"
     return (
         f"# /// zerodep\n"
-        f'# version = "0.1.0"\n'
+        f'# version = "0.0.0"\n'
         f"# deps = {deps_str}\n"
         f'# tier = "{args.tier}"\n'
         f'# category = "{args.category}"\n'
@@ -1078,7 +1090,7 @@ def _new_from_file(args: argparse.Namespace, year: int) -> str:
     deps_str = json.dumps(args.deps) if args.deps else "[]"
     frontmatter = (
         f"# /// zerodep\n"
-        f'# version = "0.1.0"\n'
+        f'# version = "0.0.0"\n'
         f"# deps = {deps_str}\n"
         f'# tier = "{args.tier}"\n'
         f'# category = "{args.category}"\n'
@@ -1155,7 +1167,7 @@ def cmd_version_check(args: argparse.Namespace) -> None:
     display = {
         "up-to-date": "up-to-date",
         "modified": "modified (needs version bump)",
-        "new": "new (initial release)",
+        "new": "new (needs version bump)",
         "error": "error",
     }
 
@@ -1171,14 +1183,14 @@ def cmd_version_check(args: argparse.Namespace) -> None:
     print(fmt.format(*headers))
     print(fmt.format(*("-" * w for w in widths)))
 
-    modified = 0
+    needs_bump = 0
     for row in rows:
         print(fmt.format(*row))
-        if status_map[row[0]] == "modified":
-            modified += 1
+        if status_map[row[0]] in ("modified", "new"):
+            needs_bump += 1
 
-    if modified:
-        _warn(f"{modified} module(s) need a version bump")
+    if needs_bump:
+        _warn(f"{needs_bump} module(s) need a version bump")
         if getattr(args, "strict", False):
             sys.exit(1)
     else:

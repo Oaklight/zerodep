@@ -76,3 +76,13 @@ jobs:
           gh release create "v${VER}" \
             --title "v${VER}" \
             --generate-notes
+
+      - name: Trigger downstream workflows
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # GITHUB_TOKEN-created releases don't emit `release: published`
+          # events, so cascade workflows must be triggered explicitly.
+          VER="${{ steps.version.outputs.version }}"
+          gh workflow run benchmark.yml --ref "v${VER}" || echo "::warning::Benchmark trigger failed"
+          gh workflow run pypi.yml --ref "v${VER}" || echo "::warning::PyPI trigger failed"

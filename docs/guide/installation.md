@@ -44,7 +44,7 @@ cp zerodep/yaml/yaml.py ./
 |------|------|
 | `a2a` | `jsonrpc` |
 | `acp` | `jsonrpc` |
-| `config` | `dotenv`、`yaml`、`jsonc` |
+| `config` | `dotenv`、`yaml`、`jsonx` |
 | `frontmatter` | `yaml` |
 | `skills` | `frontmatter`、`search` |
 | `sse` | `httpclient` |

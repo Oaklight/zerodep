@@ -32,7 +32,7 @@ title: 迁移指南
 ```python
 # /// zerodep
 # version = "0.3.0"
-# deps = ["dotenv", "yaml", "jsonc"]
+# deps = ["dotenv", "yaml", "jsonx"]
 # note = "Install/update via zerodep CLI (...). Manual copy may miss deps."
 # ///
 ```

@@ -1,6 +1,6 @@
-# JSONC 性能测试
+# jsonx 性能测试
 
-zerodep JSONC 与 [`commentjson`](https://pypi.org/project/commentjson/) 的性能对比。
+zerodep jsonx 与 [`commentjson`](https://pypi.org/project/commentjson/) 的性能对比。
 
 !!! info "测试环境"
     - **CPU:** x86_64 Linux
@@ -13,7 +13,7 @@ zerodep JSONC 与 [`commentjson`](https://pypi.org/project/commentjson/) 的性�
 
 | 实现 | 文件/包 | 说明 |
 |------|---------|------|
-| **zerodep** | `jsonc.py` | 基于正则的注释/尾逗号剥离 + 标准库 `json.loads` |
+| **zerodep** | `jsonx.py` | 基于正则的注释/尾逗号剥离 + 标准库 `json.loads` |
 | **commentjson** | *（参考库）* | Lark LALR 解析器 + AST 重建 + 标准库 `json.loads` |
 
 ## 测试数据规模
@@ -43,7 +43,7 @@ zerodep JSONC 与 [`commentjson`](https://pypi.org/project/commentjson/) 的性�
 
 ```bash
 pip install pytest pytest-benchmark commentjson
-pytest jsonc/test_jsonc_benchmark.py --benchmark-only -v
+pytest jsonx/test_jsonx_benchmark.py --benchmark-only -v
 ```
 
 ---
@@ -51,7 +51,7 @@ pytest jsonc/test_jsonc_benchmark.py --benchmark-only -v
 ## 最新 CI 结果
 
 <iframe
-  src="https://oaklight.github.io/zerodep/dev/bench/modules/jsonc.html"
+  src="https://oaklight.github.io/zerodep/dev/bench/modules/jsonx.html"
   width="100%" height="600" frameborder="0"
   style="border: 1px solid #dee2e6; border-radius: 8px;">
 </iframe>

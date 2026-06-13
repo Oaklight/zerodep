@@ -1,6 +1,6 @@
-# JSONC 解析器
+# jsonx 扩展 JSON 解析器
 
-零依赖的 JSONC（JSON with Comments）解析器，支持单行注释（`//`、`#`）、块注释（`/* */`）和尾逗号。
+零依赖的扩展 JSON 解析器，支持 JSONC（JSON with Comments）、JSONL/NDJSON（换行分隔 JSON）、单行注释（`//`、`#`）、块注释（`/* */`）和尾逗号。
 
 > **可替代:** `commentjson`、`json5`（部分）
 
@@ -9,6 +9,7 @@
 - **单行注释**：`//` 和 `#` 两种风格
 - **块注释**：`/* ... */`（支持多行）
 - **尾逗号**：对象和数组末尾允许多余的逗号
+- **JSONL/NDJSON**：换行分隔 JSON 的解析和序列化
 - **直接替换**：与标准库 `json` 模块相同的 API
 - **字符串安全**：引号内的注释标记不会被误处理
 - **错误报告**：`JSONCDecodeError` 包含位置信息
@@ -16,7 +17,7 @@
 ## 快速开始
 
 ```python
-from jsonc import loads, load, dumps, dump
+from jsonx import loads, load, dumps, dump
 
 # 解析 JSONC 字符串
 config = loads("""
@@ -93,12 +94,13 @@ text = dumps(config, indent=2)
 
 ## 与 commentjson 的对比
 
-| 特性 | zerodep JSONC | commentjson |
+| 特性 | zerodep jsonx | commentjson |
 |------|--------------|-------------|
 | `//` 注释 | 支持 | 支持 |
 | `#` 注释 | 支持 | 支持 |
 | `/* */` 注释 | 支持 | 不支持（PyPI 0.9.0） |
 | 尾逗号 | 支持 | 支持 |
+| JSONL/NDJSON | 支持 | 不支持 |
 | 依赖 | 无（仅标准库） | `lark-parser` |
 | 实现方式 | 正则 + `json.loads` | LALR 解析器 + 重建 |
 | 维护状态 | 活跃 | 停止维护（2021） |

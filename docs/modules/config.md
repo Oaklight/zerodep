@@ -10,7 +10,7 @@ Config 模块提供了 `python-decouple` 和 `dynaconf`（子集）核心功能�
 
 | 文件 | 说明 | 依赖 |
 |------|------|------|
-| `config.py` | 纯 Python 实现 | `dotenv`、`yaml`、`jsonc`（均为可选兄弟模块） |
+| `config.py` | 纯 Python 实现 | `dotenv`、`yaml`、`jsonx`（均为可选兄弟模块） |
 
 该模块支持所有常见的配置模式：带前缀命名空间的环境变量查找、`.env` 文件自动发现、通过分隔符的嵌套键访问，以及内置的 `bool`、`int`、`float`、`list`、`tuple` 类型转换，还有 `Csv` 和 `Choices` 辅助类。
 
@@ -27,7 +27,7 @@ cp config/config.py your_project/
 ```bash
 cp dotenv/dotenv.py your_project/   # .env 文件支持
 cp yaml/yaml.py your_project/       # YAML 配置文件支持
-cp jsonc/jsonc.py your_project/     # JSONC 配置文件支持
+cp jsonx/jsonx.py your_project/     # JSONC 配置文件支持
 ```
 
 然后直接导入：
@@ -331,7 +331,7 @@ cfg("APP_MODE")  # "dotenv"（.env 优先于配置文件）
 | 扩展名 | 解析器 | 要求 |
 |--------|--------|------|
 | `.json` | 标准库 `json` | -- |
-| `.jsonc` | 兄弟 `jsonc` 模块，回退到 `json` | jsonc（可选） |
+| `.jsonc` | 兄弟 `jsonx` 模块，回退到 `json` | jsonx（可选） |
 | `.yaml`、`.yml` | 兄弟 `yaml` 模块 | yaml（必需） |
 | `.toml` | 标准库 `tomllib` | Python 3.11+ |
 | `.ini`、`.cfg` | 标准库 `configparser` | -- |
@@ -355,7 +355,7 @@ cfg("APP_MODE")  # "dotenv"（.env 优先于配置文件）
     `config()` 函数和 `Csv`/`Choices` 辅助类与 `python-decouple` 的 API 一致，因此可以最小化代码修改进行替换。`Config` 类添加了 `python-decouple` 中没有的额外功能（配置文件、嵌套键）。
 
 !!! info "兄弟模块依赖"
-    `dotenv`、`yaml` 和 `jsonc` 兄弟模块是**可选的**。没有它们时，对应功能会优雅降级：跳过 `.env` 自动发现，YAML 配置文件抛出 `ImportError`，JSONC 回退到普通 JSON 解析。
+    `dotenv`、`yaml` 和 `jsonx` 兄弟模块是**可选的**。没有它们时，对应功能会优雅降级：跳过 `.env` 自动发现，YAML 配置文件抛出 `ImportError`，JSONC 回退到普通 JSON 解析。
 
 !!! info "INI 段落展平"
     对于 `.ini`/`.cfg` 文件，段落会被展平为分隔符连接的键。例如，`[database]` 段落中的 `host = localhost` 变为 `database__host`。

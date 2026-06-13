@@ -275,13 +275,13 @@ hg = Mercurial("/path/to/repo", merge_func=None)
 
 `Config` 接受两个注入参数：
 
-- **`loaders`**：覆盖文件格式加载器注册表（默认使用 sibling yaml/jsonc 模块）
+- **`loaders`**：覆盖文件格式加载器注册表（默认使用 sibling yaml/jsonx 模块）
 - **`dotenv_loader`**：覆盖 dotenv 加载机制（默认使用 sibling dotenv 模块）
 
 ```python
 from config import Config
 
-# 默认：自动发现 sibling yaml、jsonc、dotenv
+# 默认：自动发现 sibling yaml、jsonx、dotenv
 cfg = Config(config_path="settings.yaml")
 
 # 注入：使用自定义加载器
@@ -392,7 +392,7 @@ class HttpConnectionError(HttpClientError):
 
 #### 不需要自定义异常的模块
 
-简单工具模块（`cache`、`search`、`dotenv`、`yaml`、`jsonc`、`aes`、`qr` 等）使用标准库异常（`ValueError`、`KeyError`、`FileNotFoundError`）。只有当模块具有调用方需要区分的领域特定故障模式时，才需要自定义异常。
+简单工具模块（`cache`、`search`、`dotenv`、`yaml`、`jsonx`、`aes`、`qr` 等）使用标准库异常（`ValueError`、`KeyError`、`FileNotFoundError`）。只有当模块具有调用方需要区分的领域特定故障模式时，才需要自定义异常。
 
 ---
 

@@ -115,7 +115,7 @@ graph LR
     acp --> jsonrpc
     config --> dotenv
     config --> yaml
-    config --> jsonc
+    config --> jsonx
     frontmatter --> yaml
     skills --> frontmatter
     skills --> search

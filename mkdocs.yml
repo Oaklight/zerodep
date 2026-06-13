@@ -48,7 +48,7 @@ plugins:
             - ../httpclient
             - ../dotenv
             - ../yaml
-            - ../jsonc
+            - ../jsonx
             - ../structlog
             - ../retry
             - ../toon
@@ -92,7 +92,7 @@ plugins:
             - httpclient
             - dotenv
             - yaml
-            - jsonc
+            - jsonx
             - structlog
             - retry
             - toon
@@ -164,7 +164,7 @@ plugins:
           - modules/skills.md
           - modules/xml.md
           - modules/yaml.md
-          - modules/jsonc.md
+          - modules/jsonx.md
           - modules/toon.md
           - modules/frontmatter.md
           - modules/protobuf.md
@@ -208,7 +208,7 @@ plugins:
           - api/skills.md
           - api/xml.md
           - api/yaml.md
-          - api/jsonc.md
+          - api/jsonx.md
           - api/toon.md
           - api/frontmatter.md
           - api/protobuf.md
@@ -252,7 +252,7 @@ plugins:
           - benchmarks/skills.md
           - benchmarks/xml.md
           - benchmarks/yaml.md
-          - benchmarks/jsonc.md
+          - benchmarks/jsonx.md
           - benchmarks/toon.md
           - benchmarks/frontmatter.md
           - benchmarks/protobuf.md
@@ -344,7 +344,7 @@ nav:
       - 序列化:
           - xml / XML 转换器: modules/xml.md
           - yaml / YAML 解析器: modules/yaml.md
-          - jsonc / JSONC 解析器: modules/jsonc.md
+          - jsonx / 扩展 JSON 解析器: modules/jsonx.md
           - toon / TOON 序列化: modules/toon.md
           - frontmatter / Frontmatter 解析器: modules/frontmatter.md
           - protobuf / Protobuf 编解码器: modules/protobuf.md
@@ -401,7 +401,7 @@ nav:
       - 序列化:
           - xml / XML 转换器: api/xml.md
           - yaml / YAML 解析器: api/yaml.md
-          - jsonc / JSONC 解析器: api/jsonc.md
+          - jsonx / 扩展 JSON 解析器: api/jsonx.md
           - toon / TOON 序列化: api/toon.md
           - frontmatter / Frontmatter 解析器: api/frontmatter.md
           - protobuf / Protobuf 编解码器: api/protobuf.md
@@ -458,7 +458,7 @@ nav:
       - 序列化:
           - xml / XML 转换器: benchmarks/xml.md
           - yaml / YAML 解析器: benchmarks/yaml.md
-          - jsonc / JSONC 解析器: benchmarks/jsonc.md
+          - jsonx / 扩展 JSON 解析器: benchmarks/jsonx.md
           - toon / TOON 序列化: benchmarks/toon.md
           - frontmatter / Frontmatter 解析器: benchmarks/frontmatter.md
           - protobuf / Protobuf 编解码器: benchmarks/protobuf.md

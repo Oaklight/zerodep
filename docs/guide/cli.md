@@ -214,7 +214,7 @@ mymodule/
 $ zerodep dep-graph
 Module       Depends on           Depended on by
 -----------  -------------------  -------------------
-config       dotenv, jsonc, yaml  (none)
+config       dotenv, jsonx, yaml  (none)
 frontmatter  yaml                 skills
 yaml         (none)               config, frontmatter
 ...

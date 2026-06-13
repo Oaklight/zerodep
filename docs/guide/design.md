@@ -74,7 +74,7 @@ zerodep 不是传统意义上的 Python 包。它不提供统一的运行时，�
 |------|------|
 | `ansi` | ANSI 终端颜色序列 |
 | `dotenv` | `.env` 文件加载 |
-| `jsonc` | 带注释的 JSON 解析 |
+| `jsonx` | 扩展 JSON 解析（JSONC + JSONL/NDJSON） |
 | `prompt` | 交互式命令行提示 |
 
 ### 中等功能模块

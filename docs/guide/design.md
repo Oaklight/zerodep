@@ -74,7 +74,7 @@ Small, focused modules that solve one well-bounded problem. They typically have 
 |--------|-------------|
 | `ansi` | ANSI terminal color sequences |
 | `dotenv` | `.env` file loading |
-| `jsonc` | JSON-with-comments parsing |
+| `jsonx` | Extended JSON parsing (JSONC + JSONL/NDJSON) |
 | `prompt` | Interactive CLI prompts |
 
 ### Medium functionality modules

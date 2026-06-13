@@ -1,6 +1,6 @@
-# JSONC Parser
+# Extended JSON Parser (jsonx)
 
-A zero-dependency JSONC (JSON with Comments) parser that supports single-line comments (`//`, `#`), block comments (`/* */`), and trailing commas.
+A zero-dependency extended JSON parser that supports JSONC (JSON with Comments), JSONL/NDJSON (newline-delimited JSON), single-line comments (`//`, `#`), block comments (`/* */`), and trailing commas.
 
 > **Replaces:** `commentjson`, `json5` (partial)
 
@@ -9,6 +9,7 @@ A zero-dependency JSONC (JSON with Comments) parser that supports single-line co
 - **Single-line comments**: `//` and `#` styles
 - **Block comments**: `/* ... */` (including multiline)
 - **Trailing commas**: In objects and arrays
+- **JSONL/NDJSON**: Newline-delimited JSON parsing and serialization
 - **Drop-in replacement**: Same API as stdlib `json` module
 - **String-safe**: Comments inside quoted strings are preserved
 - **Error reporting**: `JSONCDecodeError` with position information
@@ -16,7 +17,7 @@ A zero-dependency JSONC (JSON with Comments) parser that supports single-line co
 ## Quick Start
 
 ```python
-from jsonc import loads, load, dumps, dump
+from jsonx import loads, load, dumps, dump
 
 # Parse JSONC string
 config = loads("""
@@ -93,12 +94,13 @@ Subclass of `json.JSONDecodeError`, raised when JSONC parsing fails.
 
 ## Comparison with commentjson
 
-| Feature | zerodep JSONC | commentjson |
+| Feature | zerodep jsonx | commentjson |
 |---------|--------------|-------------|
 | `//` comments | Yes | Yes |
 | `#` comments | Yes | Yes |
 | `/* */` comments | Yes | No (PyPI 0.9.0) |
 | Trailing commas | Yes | Yes |
+| JSONL/NDJSON | Yes | No |
 | Dependencies | None (stdlib only) | `lark-parser` |
 | Implementation | Regex + `json.loads` | LALR parser + reconstruct |
 | Maintained | Active | Abandoned (2021) |

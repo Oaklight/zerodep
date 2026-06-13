@@ -275,13 +275,13 @@ The `detect()` function forwards `merge_func` to the backend it constructs.
 
 `Config` accepts two injection parameters:
 
-- **`loaders`**: Override the file-format loader registry (default uses sibling yaml/jsonc modules)
+- **`loaders`**: Override the file-format loader registry (default uses sibling yaml/jsonx modules)
 - **`dotenv_loader`**: Override the dotenv loading mechanism (default uses sibling dotenv module)
 
 ```python
 from config import Config
 
-# Default: auto-discover sibling yaml, jsonc, dotenv
+# Default: auto-discover sibling yaml, jsonx, dotenv
 cfg = Config(config_path="settings.yaml")
 
 # Injected: use custom loaders
@@ -392,7 +392,7 @@ Minimum context per error category:
 
 #### Modules Without Custom Exceptions
 
-Simple utility modules (`cache`, `search`, `dotenv`, `yaml`, `jsonc`, `aes`, `qr`, etc.) use standard library exceptions (`ValueError`, `KeyError`, `FileNotFoundError`). Custom exceptions are only needed when the module has domain-specific failure modes that callers need to distinguish.
+Simple utility modules (`cache`, `search`, `dotenv`, `yaml`, `jsonx`, `aes`, `qr`, etc.) use standard library exceptions (`ValueError`, `KeyError`, `FileNotFoundError`). Custom exceptions are only needed when the module has domain-specific failure modes that callers need to distinguish.
 
 ---
 

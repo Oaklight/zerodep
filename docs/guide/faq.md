@@ -22,7 +22,7 @@ When module A depends on module B, both `.py` files must be present in your proj
 
 ## Are these modules production-ready?
 
-Every module is correctness-tested against its reference library (e.g. `yaml` against PyYAML, `jsonc` against `json5`) and includes performance benchmarks. That said, they are stdlib-only reimplementations — evaluate the test coverage and benchmark results against your specific requirements before adopting them in production.
+Every module is correctness-tested against its reference library (e.g. `yaml` against PyYAML, `jsonx` against `json5`) and includes performance benchmarks. That said, they are stdlib-only reimplementations — evaluate the test coverage and benchmark results against your specific requirements before adopting them in production.
 
 ## Why not publish on PyPI?
 

@@ -1,6 +1,6 @@
-# JSONC Benchmark
+# jsonx Benchmark
 
-Apple-to-apple performance comparison between zerodep JSONC and [`commentjson`](https://pypi.org/project/commentjson/).
+Apple-to-apple performance comparison between zerodep jsonx and [`commentjson`](https://pypi.org/project/commentjson/).
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
@@ -13,7 +13,7 @@ Apple-to-apple performance comparison between zerodep JSONC and [`commentjson`](
 
 | Implementation | File/Package | Description |
 |----------------|--------------|-------------|
-| **zerodep** | `jsonc.py` | Regex-based comment stripping + stdlib `json.loads` |
+| **zerodep** | `jsonx.py` | Regex-based comment stripping + stdlib `json.loads` |
 | **commentjson** | *(reference)* | Lark LALR parser + AST reconstruction + stdlib `json.loads` |
 
 ## Data Sizes Tested
@@ -43,7 +43,7 @@ Apple-to-apple performance comparison between zerodep JSONC and [`commentjson`](
 
 ```bash
 pip install pytest pytest-benchmark commentjson
-pytest jsonc/test_jsonc_benchmark.py --benchmark-only -v
+pytest jsonx/test_jsonx_benchmark.py --benchmark-only -v
 ```
 
 ---
@@ -51,7 +51,7 @@ pytest jsonc/test_jsonc_benchmark.py --benchmark-only -v
 ## Latest CI Results
 
 <iframe
-  src="https://oaklight.github.io/zerodep/dev/bench/modules/jsonc.html"
+  src="https://oaklight.github.io/zerodep/dev/bench/modules/jsonx.html"
   width="100%" height="600" frameborder="0"
   style="border: 1px solid #dee2e6; border-radius: 8px;">
 </iframe>

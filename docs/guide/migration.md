@@ -32,7 +32,7 @@ All modules now include a `note` field in their frontmatter:
 ```python
 # /// zerodep
 # version = "0.3.0"
-# deps = ["dotenv", "yaml", "jsonc"]
+# deps = ["dotenv", "yaml", "jsonx"]
 # note = "Install/update via zerodep CLI (...). Manual copy may miss deps."
 # ///
 ```

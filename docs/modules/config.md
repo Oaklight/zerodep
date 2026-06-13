@@ -10,7 +10,7 @@ The Config module provides a drop-in replacement for `python-decouple` and `dyna
 
 | File | Description | Dependencies |
 |------|-------------|--------------|
-| `config.py` | Pure Python implementation | `dotenv`, `yaml`, `jsonc` (all optional sibling modules) |
+| `config.py` | Pure Python implementation | `dotenv`, `yaml`, `jsonx` (all optional sibling modules) |
 
 The module supports all common configuration patterns: environment variable lookups with prefix namespacing, `.env` file auto-discovery, nested key access via separators, and built-in type coercion for `bool`, `int`, `float`, `list`, `tuple`, plus `Csv` and `Choices` helpers.
 
@@ -27,7 +27,7 @@ For full functionality, also copy the optional sibling modules:
 ```bash
 cp dotenv/dotenv.py your_project/   # .env file support
 cp yaml/yaml.py your_project/       # YAML config file support
-cp jsonc/jsonc.py your_project/     # JSONC config file support
+cp jsonx/jsonx.py your_project/     # JSONC config file support
 ```
 
 Then import directly:
@@ -331,7 +331,7 @@ cfg("APP_MODE")  # "dotenv" (.env wins over config file)
 | Extension | Parser | Requirement |
 |-----------|--------|-------------|
 | `.json` | stdlib `json` | -- |
-| `.jsonc` | sibling `jsonc` module, falls back to `json` | jsonc (optional) |
+| `.jsonc` | sibling `jsonx` module, falls back to `json` | jsonx (optional) |
 | `.yaml`, `.yml` | sibling `yaml` module | yaml (required) |
 | `.toml` | stdlib `tomllib` | Python 3.11+ |
 | `.ini`, `.cfg` | stdlib `configparser` | -- |
@@ -355,7 +355,7 @@ cfg("APP_MODE")  # "dotenv" (.env wins over config file)
     The `config()` function and `Csv`/`Choices` helpers match `python-decouple`'s API, so you can swap one for the other with minimal code changes. The `Config` class adds extra features (config files, nested keys) not available in `python-decouple`.
 
 !!! info "Sibling Module Dependencies"
-    The `dotenv`, `yaml`, and `jsonc` sibling modules are **optional**. Without them, the corresponding features are gracefully disabled: `.env` auto-discovery is skipped, YAML config files raise `ImportError`, and JSONC falls back to plain JSON parsing.
+    The `dotenv`, `yaml`, and `jsonx` sibling modules are **optional**. Without them, the corresponding features are gracefully disabled: `.env` auto-discovery is skipped, YAML config files raise `ImportError`, and JSONC falls back to plain JSON parsing.
 
 !!! info "INI Section Flattening"
     For `.ini`/`.cfg` files, sections are flattened into separator-joined keys. For example, `[database]` section with `host = localhost` becomes `database__host`.

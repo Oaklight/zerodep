@@ -44,7 +44,7 @@ Some zerodep modules depend on other zerodep modules. The full dependency table 
 |--------|------------|
 | `a2a` | `jsonrpc` |
 | `acp` | `jsonrpc` |
-| `config` | `dotenv`, `yaml`, `jsonc` |
+| `config` | `dotenv`, `yaml`, `jsonx` |
 | `frontmatter` | `yaml` |
 | `skills` | `frontmatter`, `search` |
 | `sse` | `httpclient` |

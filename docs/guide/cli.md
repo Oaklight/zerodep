@@ -214,7 +214,7 @@ Show module dependency relationships. Without arguments, displays a table of all
 $ zerodep dep-graph
 Module       Depends on           Depended on by
 -----------  -------------------  -------------------
-config       dotenv, jsonc, yaml  (none)
+config       dotenv, jsonx, yaml  (none)
 frontmatter  yaml                 skills
 yaml         (none)               config, frontmatter
 ...

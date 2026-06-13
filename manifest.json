@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-06-12T22:52:05.836177+00:00",
+  "generated": "2026-06-13T04:02:06.739919+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",

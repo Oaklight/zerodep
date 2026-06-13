@@ -125,16 +125,16 @@ td { white-space: nowrap; }
 <h1>dotenv</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: c656938 | Commit: c656938d | 2026-06-12T19:17:17.580680+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-06-12T19:17:17.580680+00:00"></span></p>
+<p class="meta">Version: 9d8122a | Commit: 9d8122ab | 2026-06-13T04:56:45.098149+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-06-13T04:56:45.098149+00:00"></span></p>
 <h2>dotenv</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>python-dotenv</td><td>1.34 ms</td><td>1.34 ms</td><td>746.0</td><td>748.3</td><td title="CV=1.7% | rounds=685">1.32 ms</td><td title="CV=1.7% | rounds=685">1.75 ms</td><td title="CV=1.7% | rounds=685">22.1 µs</td><td title="CV=1.7% | rounds=685">1.37 ms</td><td title="CV=1.4% | rounds=727">1.31 ms</td><td title="CV=1.4% | rounds=727">1.50 ms</td><td title="CV=1.4% | rounds=727">19.2 µs</td><td title="CV=1.4% | rounds=727">1.36 ms</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-dotenv</td><td>190.3 µs</td><td>190.9 µs</td><td>5.3K</td><td>5.2K</td><td title="CV=6.4% | rounds=2800">183.0 µs</td><td title="CV=6.4% | rounds=2800">361.5 µs</td><td title="CV=6.4% | rounds=2800">12.2 µs</td><td title="CV=6.4% | rounds=2800">201.1 µs</td><td title="CV=3.2% | rounds=4449">186.3 µs</td><td title="CV=3.2% | rounds=4449">278.4 µs</td><td title="CV=3.2% | rounds=4449">6.0 µs</td><td title="CV=3.2% | rounds=4449">199.6 µs</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>python-dotenv</td><td>27.2 µs</td><td>26.9 µs</td><td>36.8K</td><td>37.2K</td><td title="CV=10.1% | rounds=16601">26.0 µs</td><td title="CV=10.1% | rounds=16601">96.0 µs</td><td title="CV=10.1% | rounds=16601">2.8 µs</td><td title="CV=10.1% | rounds=16601">28.2 µs</td><td title="CV=8.6% | rounds=22324">25.8 µs</td><td title="CV=8.6% | rounds=22324">79.8 µs</td><td title="CV=8.6% | rounds=22324">2.3 µs</td><td title="CV=8.6% | rounds=22324">27.8 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>python-dotenv</td><td>1.34 ms</td><td>1.34 ms</td><td>748.5</td><td>748.0</td><td title="CV=1.1% | rounds=664">1.31 ms</td><td title="CV=1.1% | rounds=664">1.53 ms</td><td title="CV=1.1% | rounds=664">15.3 µs</td><td title="CV=1.1% | rounds=664">1.35 ms</td><td title="CV=1.4% | rounds=715">1.32 ms</td><td title="CV=1.4% | rounds=715">1.69 ms</td><td title="CV=1.4% | rounds=715">19.0 µs</td><td title="CV=1.4% | rounds=715">1.35 ms</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>python-dotenv</td><td>190.2 µs</td><td>190.8 µs</td><td>5.3K</td><td>5.2K</td><td title="CV=10.3% | rounds=2931">185.4 µs</td><td title="CV=10.3% | rounds=2931">1.19 ms</td><td title="CV=10.3% | rounds=2931">19.7 µs</td><td title="CV=10.3% | rounds=2931">198.6 µs</td><td title="CV=3.1% | rounds=4464">186.3 µs</td><td title="CV=3.1% | rounds=4464">276.8 µs</td><td title="CV=3.1% | rounds=4464">5.8 µs</td><td title="CV=3.1% | rounds=4464">199.4 µs</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>python-dotenv</td><td>27.3 µs</td><td>27.1 µs</td><td>36.6K</td><td>36.9K</td><td title="CV=9.7% | rounds=16518">26.2 µs</td><td title="CV=9.7% | rounds=16518">94.5 µs</td><td title="CV=9.7% | rounds=16518">2.6 µs</td><td title="CV=9.7% | rounds=16518">27.8 µs</td><td title="CV=6.8% | rounds=22353">26.1 µs</td><td title="CV=6.8% | rounds=22353">72.9 µs</td><td title="CV=6.8% | rounds=22353">1.8 µs</td><td title="CV=6.8% | rounds=22353">27.5 µs</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -206,13 +206,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [745.982037560536, 5254.934209153695, 36787.882106633064],
+        data: [748.5065833847308, 5258.367491650354, 36603.01352068564],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-dotenv" + ' (ops/s)',
-        data: [748.2892204245832, 5237.8673192002925, 37153.170003188694],
+        data: [748.0460691420586, 5240.866668923776, 36916.88007963914],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

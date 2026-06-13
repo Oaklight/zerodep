@@ -125,18 +125,18 @@ td { white-space: nowrap; }
 <h1>jsonschema</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: c656938 | Commit: c656938d | 2026-06-12T19:17:17.580680+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-06-12T19:17:17.580680+00:00"></span></p>
+<p class="meta">Version: 9d8122a | Commit: 9d8122ab | 2026-06-13T04:56:45.098149+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-06-13T04:56:45.098149+00:00"></span></p>
 <h2>jsonschema</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Perf (Large)</td><td>zerodep</td><td>allof-merge (JS)</td><td>232.9 µs</td><td>767.2 µs</td><td>4.3K</td><td>1.3K</td><td title="CV=3.9% | rounds=2859">222.9 µs</td><td title="CV=3.9% | rounds=2859">346.7 µs</td><td title="CV=3.9% | rounds=2859">9.1 µs</td><td title="CV=3.9% | rounds=2859">244.7 µs</td><td title="CV=30.0% | rounds=476">600.5 µs</td><td title="CV=30.0% | rounds=476">3.50 ms</td><td title="CV=30.0% | rounds=476">230.5 µs</td><td title="CV=30.0% | rounds=476">1.14 ms</td><td class="ratio-cell faster">3.3x faster</td></tr>
-<tr><td>Perf (Medium)</td><td>zerodep</td><td>allof-merge (JS)</td><td>76.4 µs</td><td>353.0 µs</td><td>13.1K</td><td>2.8K</td><td title="CV=4.8% | rounds=6331">73.3 µs</td><td title="CV=4.8% | rounds=6331">156.0 µs</td><td title="CV=4.8% | rounds=6331">3.6 µs</td><td title="CV=4.8% | rounds=6331">84.1 µs</td><td title="CV=26.7% | rounds=525">259.1 µs</td><td title="CV=26.7% | rounds=525">878.6 µs</td><td title="CV=26.7% | rounds=525">94.3 µs</td><td title="CV=26.7% | rounds=525">556.5 µs</td><td class="ratio-cell faster">4.6x faster</td></tr>
-<tr><td>Perf (Small)</td><td>zerodep</td><td>allof-merge (JS)</td><td>29.5 µs</td><td>188.1 µs</td><td>33.9K</td><td>5.3K</td><td title="CV=7.2% | rounds=12851">28.0 µs</td><td title="CV=7.2% | rounds=12851">70.5 µs</td><td title="CV=7.2% | rounds=12851">2.1 µs</td><td title="CV=7.2% | rounds=12851">30.9 µs</td><td title="CV=29.0% | rounds=1310">114.9 µs</td><td title="CV=29.0% | rounds=1310">775.6 µs</td><td title="CV=29.0% | rounds=1310">54.6 µs</td><td title="CV=29.0% | rounds=1310">286.8 µs</td><td class="ratio-cell faster">6.4x faster</td></tr>
-<tr><td>Perf Tiny</td><td>zerodep</td><td>allof-merge (JS)</td><td>17.1 µs</td><td>160.1 µs</td><td>58.4K</td><td>6.2K</td><td title="CV=10.0% | rounds=16203">16.3 µs</td><td title="CV=10.0% | rounds=16203">118.7 µs</td><td title="CV=10.0% | rounds=16203">1.7 µs</td><td title="CV=10.0% | rounds=16203">17.5 µs</td><td title="CV=54.9% | rounds=877">87.0 µs</td><td title="CV=54.9% | rounds=877">1.79 ms</td><td title="CV=54.9% | rounds=877">87.9 µs</td><td title="CV=54.9% | rounds=877">259.1 µs</td><td class="ratio-cell faster">9.3x faster</td></tr>
-<tr><td>Perf Xlarge</td><td>zerodep</td><td>allof-merge (JS)</td><td>1.61 ms</td><td>3.04 ms</td><td>621.9</td><td>329.4</td><td title="CV=1.1% | rounds=438">1.57 ms</td><td title="CV=1.1% | rounds=438">1.69 ms</td><td title="CV=1.1% | rounds=438">18.3 µs</td><td title="CV=1.1% | rounds=438">1.65 ms</td><td title="CV=7.6% | rounds=229">2.87 ms</td><td title="CV=7.6% | rounds=229">5.14 ms</td><td title="CV=7.6% | rounds=229">230.1 µs</td><td title="CV=7.6% | rounds=229">3.13 ms</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Perf (Large)</td><td>zerodep</td><td>allof-merge (JS)</td><td>233.0 µs</td><td>776.6 µs</td><td>4.3K</td><td>1.3K</td><td title="CV=3.0% | rounds=2765">224.0 µs</td><td title="CV=3.0% | rounds=2765">353.4 µs</td><td title="CV=3.0% | rounds=2765">7.0 µs</td><td title="CV=3.0% | rounds=2765">243.2 µs</td><td title="CV=27.0% | rounds=518">623.0 µs</td><td title="CV=27.0% | rounds=518">2.27 ms</td><td title="CV=27.0% | rounds=518">209.9 µs</td><td title="CV=27.0% | rounds=518">1.23 ms</td><td class="ratio-cell faster">3.3x faster</td></tr>
+<tr><td>Perf (Medium)</td><td>zerodep</td><td>allof-merge (JS)</td><td>79.2 µs</td><td>367.8 µs</td><td>12.6K</td><td>2.7K</td><td title="CV=5.8% | rounds=5446">76.2 µs</td><td title="CV=5.8% | rounds=5446">224.4 µs</td><td title="CV=5.8% | rounds=5446">4.6 µs</td><td title="CV=5.8% | rounds=5446">86.8 µs</td><td title="CV=24.0% | rounds=599">264.4 µs</td><td title="CV=24.0% | rounds=599">984.8 µs</td><td title="CV=24.0% | rounds=599">88.4 µs</td><td title="CV=24.0% | rounds=599">551.7 µs</td><td class="ratio-cell faster">4.6x faster</td></tr>
+<tr><td>Perf (Small)</td><td>zerodep</td><td>allof-merge (JS)</td><td>29.4 µs</td><td>178.8 µs</td><td>34.1K</td><td>5.6K</td><td title="CV=7.3% | rounds=12771">27.9 µs</td><td title="CV=7.3% | rounds=12771">112.7 µs</td><td title="CV=7.3% | rounds=12771">2.1 µs</td><td title="CV=7.3% | rounds=12771">30.4 µs</td><td title="CV=34.2% | rounds=1273">113.7 µs</td><td title="CV=34.2% | rounds=1273">773.0 µs</td><td title="CV=34.2% | rounds=1273">61.2 µs</td><td title="CV=34.2% | rounds=1273">279.9 µs</td><td class="ratio-cell faster">6.1x faster</td></tr>
+<tr><td>Perf Tiny</td><td>zerodep</td><td>allof-merge (JS)</td><td>17.1 µs</td><td>160.0 µs</td><td>58.6K</td><td>6.3K</td><td title="CV=9.8% | rounds=16578">16.2 µs</td><td title="CV=9.8% | rounds=16578">108.5 µs</td><td title="CV=9.8% | rounds=16578">1.7 µs</td><td title="CV=9.8% | rounds=16578">17.4 µs</td><td title="CV=55.6% | rounds=855">91.6 µs</td><td title="CV=55.6% | rounds=855">1.95 ms</td><td title="CV=55.6% | rounds=855">89.0 µs</td><td title="CV=55.6% | rounds=855">265.6 µs</td><td class="ratio-cell faster">9.4x faster</td></tr>
+<tr><td>Perf Xlarge</td><td>zerodep</td><td>allof-merge (JS)</td><td>1.60 ms</td><td>3.11 ms</td><td>624.1</td><td>321.4</td><td title="CV=1.3% | rounds=398">1.57 ms</td><td title="CV=1.3% | rounds=398">1.77 ms</td><td title="CV=1.3% | rounds=398">21.0 µs</td><td title="CV=1.3% | rounds=398">1.64 ms</td><td title="CV=10.7% | rounds=218">2.93 ms</td><td title="CV=10.7% | rounds=218">5.09 ms</td><td title="CV=10.7% | rounds=218">332.7 µs</td><td title="CV=10.7% | rounds=218">3.58 ms</td><td class="ratio-cell faster">1.9x faster</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -208,13 +208,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [4293.033028565105, 13088.435467833082, 33939.08136376752, 58379.91971904328, 621.9358239004658],
+        data: [4291.66214136966, 12619.546363550315, 34060.67475966839, 58631.931364418444, 624.0705552959773],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "allof-merge (JS)" + ' (ops/s)',
-        data: [1303.4861726765412, 2832.931246851409, 5315.347495797925, 6246.1845391672405, 329.39493122887376],
+        data: [1287.6206716813845, 2718.944368355049, 5592.643686938034, 6250.8343585157745, 321.42010171417735],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -125,17 +125,17 @@ td { white-space: nowrap; }
 <h1>useragent</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 9d8122a | Commit: 9d8122ab | 2026-06-13T04:56:45.098149+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-06-13T04:56:45.098149+00:00"></span></p>
+<p class="meta">Version: v2026.6.21 | Commit: 46f37055 | 2026-06-21T14:06:20.573630+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-06-21T14:06:20.573630+00:00"></span></p>
 <h2>useragent</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Generate Chrome Desktop</td><td>zerodep</td><td>ua_generator</td><td>5.0 µs</td><td>12.2 µs</td><td>201.7K</td><td>82.1K</td><td title="CV=121.0% | rounds=59681">3.9 µs</td><td title="CV=121.0% | rounds=59681">236.1 µs</td><td title="CV=121.0% | rounds=59681">6.0 µs</td><td title="CV=121.0% | rounds=59681">5.2 µs</td><td title="CV=12.3% | rounds=20136">10.5 µs</td><td title="CV=12.3% | rounds=20136">62.5 µs</td><td title="CV=12.3% | rounds=20136">1.5 µs</td><td title="CV=12.3% | rounds=20136">13.1 µs</td><td class="ratio-cell faster">2.5x faster</td></tr>
-<tr><td>Generate Default</td><td>zerodep</td><td>ua_generator</td><td>5.4 µs</td><td>12.6 µs</td><td>184.4K</td><td>79.6K</td><td title="CV=134.0% | rounds=20424">4.2 µs</td><td title="CV=134.0% | rounds=20424">467.3 µs</td><td title="CV=134.0% | rounds=20424">7.3 µs</td><td title="CV=134.0% | rounds=20424">5.5 µs</td><td title="CV=20.2% | rounds=11026">8.7 µs</td><td title="CV=20.2% | rounds=11026">83.1 µs</td><td title="CV=20.2% | rounds=11026">2.5 µs</td><td title="CV=20.2% | rounds=11026">16.0 µs</td><td class="ratio-cell faster">2.3x faster</td></tr>
-<tr><td>Generate Edge Mobile</td><td>zerodep</td><td>ua_generator</td><td>5.3 µs</td><td>14.3 µs</td><td>189.9K</td><td>70.1K</td><td title="CV=116.3% | rounds=49923">4.4 µs</td><td title="CV=116.3% | rounds=49923">309.0 µs</td><td title="CV=116.3% | rounds=49923">6.1 µs</td><td title="CV=116.3% | rounds=49923">5.1 µs</td><td title="CV=16.9% | rounds=16916">11.8 µs</td><td title="CV=16.9% | rounds=16916">87.5 µs</td><td title="CV=16.9% | rounds=16916">2.4 µs</td><td title="CV=16.9% | rounds=16916">16.3 µs</td><td class="ratio-cell faster">2.7x faster</td></tr>
-<tr><td>Headers Get</td><td>zerodep</td><td>ua_generator</td><td>7.9 µs</td><td>16.2 µs</td><td>126.3K</td><td>61.7K</td><td title="CV=88.0% | rounds=23472">6.7 µs</td><td title="CV=88.0% | rounds=23472">287.4 µs</td><td title="CV=88.0% | rounds=23472">7.0 µs</td><td title="CV=88.0% | rounds=23472">8.1 µs</td><td title="CV=29.4% | rounds=12221">13.9 µs</td><td title="CV=29.4% | rounds=12221">157.2 µs</td><td title="CV=29.4% | rounds=12221">4.8 µs</td><td title="CV=29.4% | rounds=12221">19.5 µs</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Generate Chrome Desktop</td><td>zerodep</td><td>ua_generator</td><td>5.2 µs</td><td>12.4 µs</td><td>190.7K</td><td>80.5K</td><td title="CV=115.4% | rounds=60566">4.1 µs</td><td title="CV=115.4% | rounds=60566">223.4 µs</td><td title="CV=115.4% | rounds=60566">6.1 µs</td><td title="CV=115.4% | rounds=60566">5.5 µs</td><td title="CV=14.6% | rounds=22350">10.6 µs</td><td title="CV=14.6% | rounds=22350">85.2 µs</td><td title="CV=14.6% | rounds=22350">1.8 µs</td><td title="CV=14.6% | rounds=22350">13.4 µs</td><td class="ratio-cell faster">2.4x faster</td></tr>
+<tr><td>Generate Default</td><td>zerodep</td><td>ua_generator</td><td>5.8 µs</td><td>13.7 µs</td><td>173.6K</td><td>73.2K</td><td title="CV=157.4% | rounds=22795">4.5 µs</td><td title="CV=157.4% | rounds=22795">1.03 ms</td><td title="CV=157.4% | rounds=22795">9.1 µs</td><td title="CV=157.4% | rounds=22795">5.9 µs</td><td title="CV=21.9% | rounds=12023">8.9 µs</td><td title="CV=21.9% | rounds=12023">62.0 µs</td><td title="CV=21.9% | rounds=12023">3.0 µs</td><td title="CV=21.9% | rounds=12023">17.9 µs</td><td class="ratio-cell faster">2.4x faster</td></tr>
+<tr><td>Generate Edge Mobile</td><td>zerodep</td><td>ua_generator</td><td>5.5 µs</td><td>15.4 µs</td><td>182.7K</td><td>64.8K</td><td title="CV=111.8% | rounds=42528">4.7 µs</td><td title="CV=111.8% | rounds=42528">263.0 µs</td><td title="CV=111.8% | rounds=42528">6.1 µs</td><td title="CV=111.8% | rounds=42528">5.3 µs</td><td title="CV=19.6% | rounds=18629">12.1 µs</td><td title="CV=19.6% | rounds=18629">51.6 µs</td><td title="CV=19.6% | rounds=18629">3.0 µs</td><td title="CV=19.6% | rounds=18629">18.1 µs</td><td class="ratio-cell faster">2.8x faster</td></tr>
+<tr><td>Headers Get</td><td>zerodep</td><td>ua_generator</td><td>8.2 µs</td><td>17.0 µs</td><td>121.8K</td><td>58.9K</td><td title="CV=88.3% | rounds=28133">6.9 µs</td><td title="CV=88.3% | rounds=28133">263.6 µs</td><td title="CV=88.3% | rounds=28133">7.3 µs</td><td title="CV=88.3% | rounds=28133">8.4 µs</td><td title="CV=13.5% | rounds=15354">14.6 µs</td><td title="CV=13.5% | rounds=15354">53.3 µs</td><td title="CV=13.5% | rounds=15354">2.3 µs</td><td title="CV=13.5% | rounds=15354">18.4 µs</td><td class="ratio-cell faster">2.1x faster</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -207,13 +207,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [201731.40104898618, 184443.52352991642, 189936.12396650857, 126332.37068223982],
+        data: [190693.87205185267, 173600.4372078528, 182699.6405776072, 121768.13706149673],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "ua_generator" + ' (ops/s)',
-        data: [82089.19546228829, 79561.41556467471, 70118.33991464852, 61746.52509309131],
+        data: [80506.14831287034, 73208.49131078013, 64761.072315953315, 58860.64378717671],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

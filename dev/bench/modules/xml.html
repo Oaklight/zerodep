@@ -125,28 +125,28 @@ td { white-space: nowrap; }
 <h1>xml</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 9d8122a | Commit: 9d8122ab | 2026-06-13T04:56:45.098149+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-06-13T04:56:45.098149+00:00"></span></p>
+<p class="meta">Version: v2026.6.21 | Commit: 46f37055 | 2026-06-21T14:06:20.573630+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-06-21T14:06:20.573630+00:00"></span></p>
 <h2>xml</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>xmltodict</td><td>5.02 ms</td><td>5.68 ms</td><td>199.2</td><td>176.1</td><td title="CV=0.8% | rounds=178">4.96 ms</td><td title="CV=0.8% | rounds=178">5.24 ms</td><td title="CV=0.8% | rounds=178">38.3 µs</td><td title="CV=0.8% | rounds=178">5.09 ms</td><td title="CV=0.7% | rounds=171">5.59 ms</td><td title="CV=0.7% | rounds=171">5.85 ms</td><td title="CV=0.7% | rounds=171">40.0 µs</td><td title="CV=0.7% | rounds=171">5.75 ms</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>371.8 µs</td><td>434.3 µs</td><td>2.7K</td><td>2.3K</td><td title="CV=2.7% | rounds=2190">363.1 µs</td><td title="CV=2.7% | rounds=2190">593.8 µs</td><td title="CV=2.7% | rounds=2190">9.9 µs</td><td title="CV=2.7% | rounds=2190">381.7 µs</td><td title="CV=3.3% | rounds=2056">414.6 µs</td><td title="CV=3.3% | rounds=2056">547.6 µs</td><td title="CV=3.3% | rounds=2056">14.1 µs</td><td title="CV=3.3% | rounds=2056">461.6 µs</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>xmltodict</td><td>14.8 µs</td><td>17.0 µs</td><td>67.6K</td><td>58.8K</td><td title="CV=10.0% | rounds=8842">14.1 µs</td><td title="CV=10.0% | rounds=8842">48.1 µs</td><td title="CV=10.0% | rounds=8842">1.5 µs</td><td title="CV=10.0% | rounds=8842">15.0 µs</td><td title="CV=9.8% | rounds=12387">16.3 µs</td><td title="CV=9.8% | rounds=12387">62.9 µs</td><td title="CV=9.8% | rounds=12387">1.7 µs</td><td title="CV=9.8% | rounds=12387">17.4 µs</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Unparse (Large)</td><td>zerodep</td><td>xmltodict</td><td>4.00 ms</td><td>6.66 ms</td><td>250.3</td><td>150.1</td><td title="CV=1.0% | rounds=230">3.95 ms</td><td title="CV=1.0% | rounds=230">4.40 ms</td><td title="CV=1.0% | rounds=230">40.0 µs</td><td title="CV=1.0% | rounds=230">4.05 ms</td><td title="CV=0.6% | rounds=142">6.60 ms</td><td title="CV=0.6% | rounds=142">6.90 ms</td><td title="CV=0.6% | rounds=142">36.7 µs</td><td title="CV=0.6% | rounds=142">6.72 ms</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Unparse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>271.6 µs</td><td>469.9 µs</td><td>3.7K</td><td>2.1K</td><td title="CV=2.7% | rounds=2745">264.9 µs</td><td title="CV=2.7% | rounds=2745">440.1 µs</td><td title="CV=2.7% | rounds=2745">7.2 µs</td><td title="CV=2.7% | rounds=2745">280.2 µs</td><td title="CV=1.8% | rounds=1826">459.0 µs</td><td title="CV=1.8% | rounds=1826">567.5 µs</td><td title="CV=1.8% | rounds=1826">8.5 µs</td><td title="CV=1.8% | rounds=1826">480.8 µs</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>Unparse (Small)</td><td>zerodep</td><td>xmltodict</td><td>14.9 µs</td><td>19.9 µs</td><td>67.0K</td><td>50.3K</td><td title="CV=10.0% | rounds=6838">14.3 µs</td><td title="CV=10.0% | rounds=6838">47.3 µs</td><td title="CV=10.0% | rounds=6838">1.5 µs</td><td title="CV=10.0% | rounds=6838">15.2 µs</td><td title="CV=8.1% | rounds=7984">19.2 µs</td><td title="CV=8.1% | rounds=7984">64.9 µs</td><td title="CV=8.1% | rounds=7984">1.6 µs</td><td title="CV=8.1% | rounds=7984">20.4 µs</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>xmltodict</td><td>5.50 ms</td><td>6.03 ms</td><td>181.7</td><td>165.9</td><td title="CV=1.2% | rounds=168">5.39 ms</td><td title="CV=1.2% | rounds=168">5.78 ms</td><td title="CV=1.2% | rounds=168">66.2 µs</td><td title="CV=1.2% | rounds=168">5.63 ms</td><td title="CV=7.3% | rounds=164">5.82 ms</td><td title="CV=7.3% | rounds=164">9.39 ms</td><td title="CV=7.3% | rounds=164">439.3 µs</td><td title="CV=7.3% | rounds=164">6.31 ms</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>403.4 µs</td><td>453.5 µs</td><td>2.5K</td><td>2.2K</td><td title="CV=3.2% | rounds=2056">387.8 µs</td><td title="CV=3.2% | rounds=2056">571.6 µs</td><td title="CV=3.2% | rounds=2056">12.8 µs</td><td title="CV=3.2% | rounds=2056">420.1 µs</td><td title="CV=3.6% | rounds=2050">436.9 µs</td><td title="CV=3.6% | rounds=2050">847.6 µs</td><td title="CV=3.6% | rounds=2050">16.3 µs</td><td title="CV=3.6% | rounds=2050">468.5 µs</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>xmltodict</td><td>16.0 µs</td><td>18.0 µs</td><td>62.5K</td><td>55.5K</td><td title="CV=18.9% | rounds=9799">15.1 µs</td><td title="CV=18.9% | rounds=9799">157.0 µs</td><td title="CV=18.9% | rounds=9799">3.0 µs</td><td title="CV=18.9% | rounds=9799">17.2 µs</td><td title="CV=12.7% | rounds=14266">17.2 µs</td><td title="CV=12.7% | rounds=14266">68.6 µs</td><td title="CV=12.7% | rounds=14266">2.3 µs</td><td title="CV=12.7% | rounds=14266">19.0 µs</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Unparse (Large)</td><td>zerodep</td><td>xmltodict</td><td>4.14 ms</td><td>6.58 ms</td><td>241.7</td><td>151.9</td><td title="CV=1.1% | rounds=221">4.08 ms</td><td title="CV=1.1% | rounds=221">4.54 ms</td><td title="CV=1.1% | rounds=221">46.4 µs</td><td title="CV=1.1% | rounds=221">4.21 ms</td><td title="CV=0.8% | rounds=148">6.50 ms</td><td title="CV=0.8% | rounds=148">6.94 ms</td><td title="CV=0.8% | rounds=148">55.0 µs</td><td title="CV=0.8% | rounds=148">6.67 ms</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Unparse (Medium)</td><td>zerodep</td><td>xmltodict</td><td>283.4 µs</td><td>463.4 µs</td><td>3.5K</td><td>2.2K</td><td title="CV=3.4% | rounds=2808">273.9 µs</td><td title="CV=3.4% | rounds=2808">474.2 µs</td><td title="CV=3.4% | rounds=2808">9.7 µs</td><td title="CV=3.4% | rounds=2808">294.8 µs</td><td title="CV=3.1% | rounds=1940">449.7 µs</td><td title="CV=3.1% | rounds=1940">775.0 µs</td><td title="CV=3.1% | rounds=1940">14.4 µs</td><td title="CV=3.1% | rounds=1940">478.5 µs</td><td class="ratio-cell faster">1.6x faster</td></tr>
+<tr><td>Unparse (Small)</td><td>zerodep</td><td>xmltodict</td><td>15.2 µs</td><td>23.1 µs</td><td>66.0K</td><td>43.2K</td><td title="CV=13.7% | rounds=7568">14.4 µs</td><td title="CV=13.7% | rounds=7568">52.4 µs</td><td title="CV=13.7% | rounds=7568">2.1 µs</td><td title="CV=13.7% | rounds=7568">15.9 µs</td><td title="CV=36.6% | rounds=7711">19.2 µs</td><td title="CV=36.6% | rounds=7711">89.0 µs</td><td title="CV=36.6% | rounds=7711">8.5 µs</td><td title="CV=36.6% | rounds=7711">44.0 µs</td><td class="ratio-cell faster">1.5x faster</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <div class="table-wrap"><table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>Extract Tags</td><td>extract_all</td><td>726.5 µs</td><td>1.4K</td><td title="CV=1.9% | rounds=760">711.0 µs</td><td title="CV=1.9% | rounds=760">932.0 µs</td><td title="CV=1.9% | rounds=760">13.9 µs</td><td title="CV=1.9% | rounds=760">743.5 µs</td></tr>
-<tr><td>Extract Tags</td><td>extract_filtered</td><td>438.1 µs</td><td>2.3K</td><td title="CV=2.5% | rounds=2145">426.6 µs</td><td title="CV=2.5% | rounds=2145">761.6 µs</td><td title="CV=2.5% | rounds=2145">10.9 µs</td><td title="CV=2.5% | rounds=2145">448.4 µs</td></tr>
-<tr><td>Extract Tags</td><td>extract_first_only</td><td>9.6 µs</td><td>104.0K</td><td title="CV=11.0% | rounds=37079">9.3 µs</td><td title="CV=11.0% | rounds=37079">49.6 µs</td><td title="CV=11.0% | rounds=37079">1.1 µs</td><td title="CV=11.0% | rounds=37079">9.7 µs</td></tr>
+<tr><td>Extract Tags</td><td>extract_all</td><td>762.2 µs</td><td>1.3K</td><td title="CV=2.0% | rounds=754">737.1 µs</td><td title="CV=2.0% | rounds=754">902.3 µs</td><td title="CV=2.0% | rounds=754">15.4 µs</td><td title="CV=2.0% | rounds=754">786.7 µs</td></tr>
+<tr><td>Extract Tags</td><td>extract_filtered</td><td>448.1 µs</td><td>2.2K</td><td title="CV=3.9% | rounds=1974">430.2 µs</td><td title="CV=3.9% | rounds=1974">940.4 µs</td><td title="CV=3.9% | rounds=1974">17.5 µs</td><td title="CV=3.9% | rounds=1974">467.2 µs</td></tr>
+<tr><td>Extract Tags</td><td>extract_first_only</td><td>9.7 µs</td><td>102.6K</td><td title="CV=15.4% | rounds=40184">9.4 µs</td><td title="CV=15.4% | rounds=40184">59.1 µs</td><td title="CV=15.4% | rounds=40184">1.5 µs</td><td title="CV=15.4% | rounds=40184">9.8 µs</td></tr>
 </tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -217,13 +217,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [199.20845282284492, 2689.4313431266883, 67634.66648059401, 250.25423245875416, 3682.1008480972273, 67024.58986713618],
+        data: [181.6565199012326, 2478.947971424362, 62511.247989727075, 241.67702650043015, 3528.2763080890163, 65984.15785628965],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "xmltodict" + ' (ops/s)',
-        data: [176.1413892494834, 2302.525298097387, 58813.267343850355, 150.07708476938885, 2127.9759838897144, 50270.03743316292],
+        data: [165.88350300171146, 2204.9876040894633, 55481.72360228175, 151.86394761757248, 2158.014437958865, 43238.43581826454],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

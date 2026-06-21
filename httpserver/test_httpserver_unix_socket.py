@@ -72,14 +72,15 @@ class TestUnixSocketServe:
     @pytest.mark.asyncio
     async def test_stale_socket_removed(self, app, socket_path):
         """A stale socket file is cleaned up before starting."""
-        # Create a fake stale socket using a real server
-        stale_server = await asyncio.start_unix_server(
-            lambda r, w: None, path=socket_path
-        )
-        stale_server.close()
-        await stale_server.wait_closed()
-        # Socket file still exists (stale)
+        # Create a stale socket file using bind() — works on all Python versions
+        # (asyncio.start_unix_server may auto-clean on close in 3.13+)
+        import socket as socket_mod
+
+        sock = socket_mod.socket(socket_mod.AF_UNIX, socket_mod.SOCK_STREAM)
+        sock.bind(socket_path)
+        sock.close()
         assert os.path.exists(socket_path)
+        assert stat.S_ISSOCK(os.stat(socket_path).st_mode)
 
         serve_task = asyncio.create_task(app._serve("", 0, socket=socket_path))
         await asyncio.sleep(0.3)

@@ -159,11 +159,16 @@ class _SSEParser:
 
     __slots__ = ("_event_type", "_data_buf", "_last_id", "_retry", "_first_line")
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        last_id: str = "",
+        retry: int | None = None,
+    ) -> None:
         self._event_type: str = ""
         self._data_buf: list[str] = []
-        self._last_id: str = ""
-        self._retry: int | None = None
+        self._last_id: str = last_id
+        self._retry: int | None = retry
         self._first_line: bool = True
 
     @property
@@ -336,11 +341,14 @@ class _SSEClientMixin:
 
     def _init_parser(self) -> _SSEParser:
         """Create a parser with restored persistent state."""
-        parser = _SSEParser()
-        parser._last_id = self._last_event_id
-        if self._retry_interval != DEFAULT_RETRY_INTERVAL:
-            parser._retry = self._retry_interval
-        return parser
+        return _SSEParser(
+            last_id=self._last_event_id,
+            retry=(
+                self._retry_interval
+                if self._retry_interval != DEFAULT_RETRY_INTERVAL
+                else None
+            ),
+        )
 
     def _handle_event(self, event: SSEEvent) -> None:
         """Update reconnection state from a received event."""

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-06-26T20:05:21.587537+00:00",
+  "generated": "2026-06-26T20:20:53.291143+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -423,14 +423,14 @@
       "files": [
         "sse/sse.py"
       ],
-      "version": "0.3.1",
+      "version": "0.3.2",
       "deps": [
         "httpclient"
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-04-15T09:45:45Z",
-      "content_hash": "1647daea59f9efb7ab87067d93d65cca0c479641a530a08b9688b5313044bacb"
+      "last_updated": "2026-06-24T06:07:53-05:00",
+      "content_hash": "be5c83e235b111a9c86e94ccf416044a9a387258044b89d03494ea9db5acc397"
     },
     "structlog": {
       "description": "Zero-dependency structured logging with pretty console output",

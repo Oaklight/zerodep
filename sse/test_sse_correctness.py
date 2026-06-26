@@ -277,6 +277,18 @@ class TestSSEParser:
         p.feed_line("")
         assert p.retry_interval == 5000
 
+    def test_parser_init_with_restored_state(self):
+        """Keyword args restore reconnect state at construction time."""
+        p = _SSEParser(last_id="42", retry=5000)
+        assert p.last_event_id == "42"
+        assert p.retry_interval == 5000
+
+    def test_parser_init_defaults(self):
+        """Default construction still gives blank state."""
+        p = _SSEParser()
+        assert p.last_event_id == ""
+        assert p.retry_interval is None
+
 
 # ── EventSource tests ──
 

@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.2.0"
+# version = "0.2.1"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -908,10 +908,40 @@ class App:
                 pass
             writer.close()
             return
-        except (asyncio.TimeoutError, asyncio.IncompleteReadError):
+        except asyncio.TimeoutError:
+            logger.debug("Request read timed out from %s", client_addr)
+            response = JSONResponse(
+                {"error": "Request Timeout"},
+                status_code=408,
+            )
+            try:
+                await response._write(writer)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            writer.close()
+            return
+        except asyncio.IncompleteReadError:
+            logger.debug("Incomplete request body from %s", client_addr)
+            response = JSONResponse(
+                {"error": "Bad Request: incomplete body"},
+                status_code=400,
+            )
+            try:
+                await response._write(writer)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
             writer.close()
             return
         except Exception:
+            logger.debug("Failed to read request from %s", client_addr, exc_info=True)
+            response = JSONResponse(
+                {"error": "Internal Server Error"},
+                status_code=500,
+            )
+            try:
+                await response._write(writer)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
             writer.close()
             return
 

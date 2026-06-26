@@ -874,6 +874,22 @@ class App:
 
     # ── Connection Handling ───────────────────────────────────────────────
 
+    @staticmethod
+    async def _send_error_and_close(
+        writer: asyncio.StreamWriter,
+        response: Response | JSONResponse,
+    ) -> None:
+        """Write an error response to the client and close the connection.
+
+        Swallows broken-pipe / reset errors that occur when the client has
+        already disconnected.
+        """
+        try:
+            await response._write(writer)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        writer.close()
+
     async def _handle_connection(
         self,
         reader: asyncio.StreamReader,
@@ -889,60 +905,43 @@ class App:
             )
         except _BadRequest as exc:
             logger.debug("Bad request from %s: %s", client_addr, exc)
-            response = Response(
-                body=str(exc),
-                status_code=400,
-                content_type="text/plain; charset=utf-8",
+            await self._send_error_and_close(
+                writer,
+                Response(
+                    body=str(exc),
+                    status_code=400,
+                    content_type="text/plain; charset=utf-8",
+                ),
             )
-            try:
-                await response._write(writer)
-            except (BrokenPipeError, ConnectionResetError):
-                pass
-            writer.close()
             return
         except HTTPException as exc:
-            response = JSONResponse({"error": exc.message}, status_code=exc.status_code)
-            try:
-                await response._write(writer)
-            except (BrokenPipeError, ConnectionResetError):
-                pass
-            writer.close()
+            await self._send_error_and_close(
+                writer,
+                JSONResponse({"error": exc.message}, status_code=exc.status_code),
+            )
             return
         except asyncio.TimeoutError:
             logger.debug("Request read timed out from %s", client_addr)
-            response = JSONResponse(
-                {"error": "Request Timeout"},
-                status_code=408,
+            await self._send_error_and_close(
+                writer,
+                JSONResponse({"error": "Request Timeout"}, status_code=408),
             )
-            try:
-                await response._write(writer)
-            except (BrokenPipeError, ConnectionResetError):
-                pass
-            writer.close()
             return
         except asyncio.IncompleteReadError:
             logger.debug("Incomplete request body from %s", client_addr)
-            response = JSONResponse(
-                {"error": "Bad Request: incomplete body"},
-                status_code=400,
+            await self._send_error_and_close(
+                writer,
+                JSONResponse(
+                    {"error": "Bad Request: incomplete body"}, status_code=400
+                ),
             )
-            try:
-                await response._write(writer)
-            except (BrokenPipeError, ConnectionResetError):
-                pass
-            writer.close()
             return
         except Exception:
             logger.debug("Failed to read request from %s", client_addr, exc_info=True)
-            response = JSONResponse(
-                {"error": "Internal Server Error"},
-                status_code=500,
+            await self._send_error_and_close(
+                writer,
+                JSONResponse({"error": "Internal Server Error"}, status_code=500),
             )
-            try:
-                await response._write(writer)
-            except (BrokenPipeError, ConnectionResetError):
-                pass
-            writer.close()
             return
 
         request = Request(

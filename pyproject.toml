@@ -155,9 +155,9 @@ bench-multipart = [
     "python-multipart>=0.0.20",
 ]
 dev = [
-    "ruff>=0.1.0",
-    "ty>=0.0.24",
-    "complexipy>=5.2.0",
+    "ruff==0.15.20",
+    "ty==0.0.54",
+    "complexipy==5.6.1",
     "build>=1.2.2.post1",
     "twine>=6.1.0",
     "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonx,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-persistdict,bench-runner,bench-readability,bench-png,bench-useragent,bench-httpserver,bench-websocket,bench-cdp,bench-multipart]",

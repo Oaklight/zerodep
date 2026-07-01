@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Performance
 
+- **validate**: O(1) discriminated union dispatch — `_try_discriminated` now uses a cached `{literal_value: TypedDict}` dispatch table instead of O(variants) linear scan per call. ~230x faster on large unions (e.g. 500 items × 10-variant union: 917ms → 4ms in production profiling). ([#107](https://github.com/Oaklight/zerodep/issues/107), [#108](https://github.com/Oaklight/zerodep/pull/108))
 - **jsonx**: `loads_lines` uses batch parsing (join lines into JSON array, single `json.loads` call) for clean JSONL, achieving ndjson-level performance. Falls back to per-line JSONC processing when comments are present.
 
 ## [2026.6.1] - 2026-06-01

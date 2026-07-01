@@ -624,7 +624,7 @@ def _validate_literal(
 @functools.cache
 def _build_dispatch_table(
     disc_field: str, union_args: tuple[Any, ...]
-) -> dict[Any, Any]:
+) -> dict[object, type]:
     """Build a ``{literal_value: TypedDict}`` dispatch table for a union.
 
     Called once per unique (discriminator field, union args) combination
@@ -639,7 +639,7 @@ def _build_dispatch_table(
         Mapping from each Literal value to its corresponding TypedDict
         type.  Non-TypedDict variants are silently skipped.
     """
-    table: dict[Any, Any] = {}
+    table: dict[object, type] = {}
     for candidate in union_args:
         if not _is_typeddict(candidate):
             continue

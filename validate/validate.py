@@ -621,6 +621,38 @@ def _validate_literal(
     return value
 
 
+@functools.cache
+def _build_dispatch_table(
+    disc_field: str, union_args: tuple[Any, ...]
+) -> dict[Any, Any]:
+    """Build a ``{literal_value: TypedDict}`` dispatch table for a union.
+
+    Called once per unique (discriminator field, union args) combination
+    and cached forever — type structures are static at runtime.
+
+    Args:
+        disc_field: The discriminator field name (e.g. ``"type"``).
+        union_args: The non-None union member types (must be a tuple
+            for hashability).
+
+    Returns:
+        Mapping from each Literal value to its corresponding TypedDict
+        type.  Non-TypedDict variants are silently skipped.
+    """
+    table: dict[Any, Any] = {}
+    for candidate in union_args:
+        if not _is_typeddict(candidate):
+            continue
+        fields = _typeddict_fields(candidate)
+        if disc_field not in fields:
+            continue
+        base, _ = _unwrap_annotated(fields[disc_field][0])
+        if typing.get_origin(base) is typing.Literal:
+            for lit_val in typing.get_args(base):
+                table[lit_val] = candidate
+    return table
+
+
 def _try_discriminated(
     value: Any,
     path: str,
@@ -630,23 +662,24 @@ def _try_discriminated(
 ) -> tuple[Any, bool]:
     """Try to resolve a discriminated union via a shared Literal field.
 
+    Uses a cached dispatch table for O(1) lookup instead of scanning
+    all variants on every call.
+
     Returns:
         ``(result, True)`` if a discriminator matched, ``(value, False)`` otherwise.
     """
-    disc_field = _find_discriminator(tuple(non_none_args))
+    args_key = tuple(non_none_args)
+    disc_field = _find_discriminator(args_key)
     if disc_field is None or not isinstance(value, dict) or disc_field not in value:
         return value, False
-    disc_val = value[disc_field]
-    for candidate in non_none_args:
-        if not _is_typeddict(candidate):
-            continue
-        fields = _typeddict_fields(candidate)
-        if disc_field not in fields:
-            continue
-        base, _ = _unwrap_annotated(fields[disc_field][0])
-        if typing.get_origin(base) is typing.Literal:
-            if disc_val in typing.get_args(base):
-                return _validate(value, candidate, path, errors, coerce), True
+    table = _build_dispatch_table(disc_field, args_key)
+    try:
+        candidate = table.get(value[disc_field])
+    except TypeError:
+        # Unhashable discriminator value (e.g. list or dict) — fall back
+        return value, False
+    if candidate is not None:
+        return _validate(value, candidate, path, errors, coerce), True
     return value, False
 
 

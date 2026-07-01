@@ -21,6 +21,7 @@
 
 ### 性能优化
 
+- **validate**：O(1) 可辨识联合类型分发——`_try_discriminated` 现使用缓存的 `{字面量值: TypedDict}` 分发表代替每次调用的 O(variants) 线性扫描。大规模联合类型验证约 230 倍加速（例如 500 项 × 10 变体联合：生产环境 917ms → 4ms）。([#107](https://github.com/Oaklight/zerodep/issues/107)、[#108](https://github.com/Oaklight/zerodep/pull/108))
 - **jsonx**：`loads_lines` 对干净 JSONL 使用批量解析（将所有行拼接为 JSON 数组，单次 `json.loads` 调用），达到 ndjson 级别性能。有注释时自动降级为逐行 JSONC 处理。
 
 ## [2026.6.1] - 2026-06-01

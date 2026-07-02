@@ -395,6 +395,188 @@ class TestUnion:
         with pytest.raises(ValidationError):
             validate(data, DiscUnion)
 
+    def test_discriminated_union_unknown_discriminator_value(self):
+        """Unknown discriminator value should fall back to linear probe and fail."""
+        DiscUnion = Union[TypeA, TypeB]
+        data = {"kind": "c", "value_a": "hello"}
+        with pytest.raises(ValidationError):
+            validate(data, DiscUnion)
+
+    def test_discriminated_union_missing_discriminator_field(self):
+        """Missing discriminator field should fall back to linear probe."""
+        DiscUnion = Union[TypeA, TypeB]
+        data = {"value_a": "hello"}  # no "kind" field
+        with pytest.raises(ValidationError):
+            validate(data, DiscUnion)
+
+    def test_discriminated_union_unhashable_discriminator_value(self):
+        """Unhashable discriminator value should not crash."""
+        DiscUnion = Union[TypeA, TypeB]
+        data = {"kind": ["not", "hashable"], "value_a": "hello"}
+        with pytest.raises(ValidationError):
+            validate(data, DiscUnion)
+
+    def test_discriminated_union_many_variants(self):
+        """10-variant union with Literal discriminator."""
+
+        class V1(TypedDict):
+            type: Literal["text"]
+            text: str
+
+        class V2(TypedDict):
+            type: Literal["image"]
+            url: str
+
+        class V3(TypedDict):
+            type: Literal["file"]
+            path: str
+
+        class V4(TypedDict):
+            type: Literal["tool_call"]
+            name: str
+
+        class V5(TypedDict):
+            type: Literal["tool_result"]
+            output: str
+
+        class V6(TypedDict):
+            type: Literal["reasoning"]
+            content: str
+
+        class V7(TypedDict):
+            type: Literal["refusal"]
+            reason: str
+
+        class V8(TypedDict):
+            type: Literal["citation"]
+            source: str
+
+        class V9(TypedDict):
+            type: Literal["audio"]
+            data: str
+
+        class V10(TypedDict):
+            type: Literal["meta"]
+            info: str
+
+        BigUnion = Union[V1, V2, V3, V4, V5, V6, V7, V8, V9, V10]
+
+        # Every variant should match correctly
+        assert validate({"type": "text", "text": "hi"}, BigUnion)["type"] == "text"
+        assert validate({"type": "meta", "info": "x"}, BigUnion)["type"] == "meta"
+        assert (
+            validate({"type": "tool_call", "name": "f"}, BigUnion)["type"]
+            == "tool_call"
+        )
+
+        # Wrong inner fields should fail
+        with pytest.raises(ValidationError):
+            validate({"type": "text", "text": 123}, BigUnion)
+
+        # Unknown type should fail
+        with pytest.raises(ValidationError):
+            validate({"type": "unknown", "data": "x"}, BigUnion)
+
+    def test_discriminated_union_list_large_payload(self):
+        """Validate a large list of discriminated union items (stress test)."""
+
+        class TextPart(TypedDict):
+            type: Literal["text"]
+            text: str
+
+        class ToolCallPart(TypedDict):
+            type: Literal["tool_call"]
+            name: str
+            args: str
+
+        class ToolResultPart(TypedDict):
+            type: Literal["tool_result"]
+            output: str
+
+        ContentPart = Union[TextPart, ToolCallPart, ToolResultPart]
+
+        # Build a large payload: 200 items cycling through types
+        templates = [
+            {"type": "text", "text": "hello"},
+            {"type": "tool_call", "name": "read", "args": "{}"},
+            {"type": "tool_result", "output": "data"},
+        ]
+        payload = [templates[i % 3] for i in range(200)]
+
+        result = validate(payload, list[ContentPart])
+        assert len(result) == 200
+        assert result[0]["type"] == "text"
+        assert result[1]["type"] == "tool_call"
+        assert result[2]["type"] == "tool_result"
+
+    def test_discriminated_union_nested_messages(self):
+        """Nested structure: list of messages, each with list of union content parts."""
+
+        class TextPart(TypedDict):
+            type: Literal["text"]
+            text: str
+
+        class ImagePart(TypedDict):
+            type: Literal["image"]
+            url: str
+
+        class ToolCallPart(TypedDict):
+            type: Literal["tool_call"]
+            name: str
+
+        ContentPart = Union[TextPart, ImagePart, ToolCallPart]
+
+        class Message(TypedDict):
+            role: Literal["user", "assistant"]
+            content: list[ContentPart]
+
+        # 50 messages, each with 5 content parts = 250 union validations
+        messages = [
+            {
+                "role": "user" if i % 2 == 0 else "assistant",
+                "content": [
+                    {"type": "text", "text": f"msg {i}"},
+                    {"type": "tool_call", "name": "fn"},
+                    {"type": "text", "text": "response"},
+                    {"type": "image", "url": "http://img"},
+                    {"type": "text", "text": "end"},
+                ],
+            }
+            for i in range(50)
+        ]
+
+        result = validate(messages, list[Message])
+        assert len(result) == 50
+        assert len(result[0]["content"]) == 5
+
+    def test_discriminated_union_multi_literal(self):
+        """Variant with multiple Literal values."""
+
+        class Draft(TypedDict):
+            status: Literal["draft", "pending"]
+            title: str
+
+        class Published(TypedDict):
+            status: Literal["published"]
+            title: str
+            url: str
+
+        Article = Union[Draft, Published]
+
+        assert (
+            validate({"status": "draft", "title": "WIP"}, Article)["status"] == "draft"
+        )
+        assert (
+            validate({"status": "pending", "title": "Rev"}, Article)["status"]
+            == "pending"
+        )
+        assert (
+            validate({"status": "published", "title": "Done", "url": "/a"}, Article)[
+                "status"
+            ]
+            == "published"
+        )
+
 
 # ── Literal ──
 

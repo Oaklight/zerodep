@@ -125,29 +125,29 @@ td { white-space: nowrap; }
 <h1>jsonrpc</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.6.26 | Commit: c4a87ec1 | 2026-06-26T20:46:45.494656+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-06-26T20:46:45.494656+00:00"></span></p>
+<p class="meta">Version: 7e5cc0e | Commit: 7e5cc0ef | 2026-07-02T02:16:09.315442+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-07-02T02:16:09.315442+00:00"></span></p>
 <h2>jsonrpc</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>137.9 µs</td><td>2.75 ms</td><td>7.2K</td><td>363.5</td><td title="CV=5.4% | rounds=5755">132.5 µs</td><td title="CV=5.4% | rounds=5755">324.1 µs</td><td title="CV=5.4% | rounds=5755">7.4 µs</td><td title="CV=5.4% | rounds=5755">149.7 µs</td><td title="CV=1.3% | rounds=309">2.68 ms</td><td title="CV=1.3% | rounds=309">2.99 ms</td><td title="CV=1.3% | rounds=309">36.7 µs</td><td title="CV=1.3% | rounds=309">2.83 ms</td><td class="ratio-cell faster">19.9x faster</td></tr>
-<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>9.2 µs</td><td>133.6 µs</td><td>108.1K</td><td>7.5K</td><td title="CV=19.0% | rounds=18980">8.7 µs</td><td title="CV=19.0% | rounds=18980">57.9 µs</td><td title="CV=19.0% | rounds=18980">1.8 µs</td><td title="CV=19.0% | rounds=18980">9.5 µs</td><td title="CV=7.5% | rounds=3317">124.7 µs</td><td title="CV=7.5% | rounds=3317">220.1 µs</td><td title="CV=7.5% | rounds=3317">10.0 µs</td><td title="CV=7.5% | rounds=3317">155.7 µs</td><td class="ratio-cell faster">14.4x faster</td></tr>
-<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>7.7 µs</td><td>103.9 µs</td><td>130.5K</td><td>9.6K</td><td title="CV=16.3% | rounds=34502">7.3 µs</td><td title="CV=16.3% | rounds=34502">42.6 µs</td><td title="CV=16.3% | rounds=34502">1.3 µs</td><td title="CV=16.3% | rounds=34502">7.7 µs</td><td title="CV=9.3% | rounds=4270">97.5 µs</td><td title="CV=9.3% | rounds=4270">373.3 µs</td><td title="CV=9.3% | rounds=4270">9.7 µs</td><td title="CV=9.3% | rounds=4270">124.7 µs</td><td class="ratio-cell faster">13.6x faster</td></tr>
-<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>7.3 µs</td><td>139.9 µs</td><td>137.1K</td><td>7.1K</td><td title="CV=17.9% | rounds=15526">6.9 µs</td><td title="CV=17.9% | rounds=15526">41.6 µs</td><td title="CV=17.9% | rounds=15526">1.3 µs</td><td title="CV=17.9% | rounds=15526">7.3 µs</td><td title="CV=7.4% | rounds=1622">131.6 µs</td><td title="CV=7.4% | rounds=1622">232.1 µs</td><td title="CV=7.4% | rounds=1622">10.3 µs</td><td title="CV=7.4% | rounds=1622">161.9 µs</td><td class="ratio-cell faster">19.2x faster</td></tr>
+<tr><td>Dispatch Batch</td><td>zerodep</td><td>jsonrpcserver</td><td>107.0 µs</td><td>1.44 ms</td><td>9.3K</td><td>693.5</td><td title="CV=3.7% | rounds=7117">104.3 µs</td><td title="CV=3.7% | rounds=7117">184.1 µs</td><td title="CV=3.7% | rounds=7117">3.9 µs</td><td title="CV=3.7% | rounds=7117">113.4 µs</td><td title="CV=2.0% | rounds=533">1.40 ms</td><td title="CV=2.0% | rounds=533">1.69 ms</td><td title="CV=2.0% | rounds=533">29.0 µs</td><td title="CV=2.0% | rounds=533">1.50 ms</td><td class="ratio-cell faster">13.5x faster</td></tr>
+<tr><td>Dispatch Error</td><td>zerodep</td><td>jsonrpcserver</td><td>7.0 µs</td><td>70.0 µs</td><td>143.1K</td><td>14.3K</td><td title="CV=10.9% | rounds=24043">6.7 µs</td><td title="CV=10.9% | rounds=24043">27.0 µs</td><td title="CV=10.9% | rounds=24043">765.1 ns</td><td title="CV=10.9% | rounds=24043">7.1 µs</td><td title="CV=8.2% | rounds=4156">65.8 µs</td><td title="CV=8.2% | rounds=4156">139.1 µs</td><td title="CV=8.2% | rounds=4156">5.7 µs</td><td title="CV=8.2% | rounds=4156">79.5 µs</td><td class="ratio-cell faster">10.0x faster</td></tr>
+<tr><td>Dispatch Not Found</td><td>zerodep</td><td>jsonrpcserver</td><td>5.8 µs</td><td>55.4 µs</td><td>172.1K</td><td>18.0K</td><td title="CV=16.5% | rounds=37524">5.5 µs</td><td title="CV=16.5% | rounds=37524">131.0 µs</td><td title="CV=16.5% | rounds=37524">960.0 ns</td><td title="CV=16.5% | rounds=37524">5.9 µs</td><td title="CV=6.3% | rounds=4379">53.2 µs</td><td title="CV=6.3% | rounds=4379">122.5 µs</td><td title="CV=6.3% | rounds=4379">3.5 µs</td><td title="CV=6.3% | rounds=4379">63.6 µs</td><td class="ratio-cell faster">9.5x faster</td></tr>
+<tr><td>Dispatch Success</td><td>zerodep</td><td>jsonrpcserver</td><td>5.5 µs</td><td>74.9 µs</td><td>181.6K</td><td>13.3K</td><td title="CV=11.3% | rounds=13307">5.3 µs</td><td title="CV=11.3% | rounds=13307">20.9 µs</td><td title="CV=11.3% | rounds=13307">623.0 ns</td><td title="CV=11.3% | rounds=13307">5.6 µs</td><td title="CV=7.3% | rounds=1634">70.6 µs</td><td title="CV=7.3% | rounds=1634">157.3 µs</td><td title="CV=7.3% | rounds=1634">5.4 µs</td><td title="CV=7.3% | rounds=1634">85.1 µs</td><td class="ratio-cell faster">13.6x faster</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <div class="table-wrap"><table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>744.2 ns</td><td>1.34M</td><td title="CV=11.0% | rounds=66191">715.4 ns</td><td title="CV=11.0% | rounds=66191">3.7 µs</td><td title="CV=11.0% | rounds=66191">82.0 ns</td><td title="CV=11.0% | rounds=66191">746.9 ns</td></tr>
-<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>912.3 ns</td><td>1.10M</td><td title="CV=35.8% | rounds=124147">861.0 ns</td><td title="CV=35.8% | rounds=124147">30.7 µs</td><td title="CV=35.8% | rounds=124147">326.3 ns</td><td title="CV=35.8% | rounds=124147">922.0 ns</td></tr>
-<tr><td>Id Generation</td><td>next_id</td><td>118.7 ns</td><td>8.42M</td><td title="CV=8.9% | rounds=95887">104.1 ns</td><td title="CV=8.9% | rounds=95887">546.7 ns</td><td title="CV=8.9% | rounds=95887">10.6 ns</td><td title="CV=8.9% | rounds=95887">121.2 ns</td></tr>
-<tr><td>Json Round Trip</td><td>json_round_trip</td><td>6.5 µs</td><td>154.6K</td><td title="CV=17.3% | rounds=29769">6.2 µs</td><td title="CV=17.3% | rounds=29769">43.1 µs</td><td title="CV=17.3% | rounds=29769">1.1 µs</td><td title="CV=17.3% | rounds=29769">6.5 µs</td></tr>
-<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>392.2 ns</td><td>2.55M</td><td title="CV=15.8% | rounds=199641">376.7 ns</td><td title="CV=15.8% | rounds=199641">3.8 µs</td><td title="CV=15.8% | rounds=199641">61.9 ns</td><td title="CV=15.8% | rounds=199641">393.8 ns</td></tr>
-<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>322.9 ns</td><td>3.10M</td><td title="CV=14.3% | rounds=194553">312.4 ns</td><td title="CV=14.3% | rounds=194553">3.0 µs</td><td title="CV=14.3% | rounds=194553">46.1 ns</td><td title="CV=14.3% | rounds=194553">325.0 ns</td></tr>
+<tr><td>Deserialize From Dict</td><td>request_from_dict</td><td>568.2 ns</td><td>1.76M</td><td title="CV=8.6% | rounds=86904">538.8 ns</td><td title="CV=8.6% | rounds=86904">3.5 µs</td><td title="CV=8.6% | rounds=86904">48.8 ns</td><td title="CV=8.6% | rounds=86904">573.9 ns</td></tr>
+<tr><td>Deserialize From Dict</td><td>response_from_dict</td><td>717.0 ns</td><td>1.39M</td><td title="CV=27.9% | rounds=144509">651.0 ns</td><td title="CV=27.9% | rounds=144509">14.5 µs</td><td title="CV=27.9% | rounds=144509">199.8 ns</td><td title="CV=27.9% | rounds=144509">742.0 ns</td></tr>
+<tr><td>Id Generation</td><td>next_id</td><td>88.0 ns</td><td>11.37M</td><td title="CV=9.4% | rounds=125440">78.9 ns</td><td title="CV=9.4% | rounds=125440">603.6 ns</td><td title="CV=9.4% | rounds=125440">8.2 ns</td><td title="CV=9.4% | rounds=125440">89.2 ns</td></tr>
+<tr><td>Json Round Trip</td><td>json_round_trip</td><td>4.9 µs</td><td>205.7K</td><td title="CV=11.9% | rounds=31049">4.6 µs</td><td title="CV=11.9% | rounds=31049">19.0 µs</td><td title="CV=11.9% | rounds=31049">580.5 ns</td><td title="CV=11.9% | rounds=31049">4.9 µs</td></tr>
+<tr><td>Serialize To Dict</td><td>request_to_dict</td><td>298.1 ns</td><td>3.35M</td><td title="CV=14.3% | rounds=190549">279.8 ns</td><td title="CV=14.3% | rounds=190549">6.7 µs</td><td title="CV=14.3% | rounds=190549">42.5 ns</td><td title="CV=14.3% | rounds=190549">304.0 ns</td></tr>
+<tr><td>Serialize To Dict</td><td>response_to_dict</td><td>248.0 ns</td><td>4.03M</td><td title="CV=37.0% | rounds=195008">228.8 ns</td><td title="CV=37.0% | rounds=195008">11.3 µs</td><td title="CV=37.0% | rounds=195008">91.7 ns</td><td title="CV=37.0% | rounds=195008">248.9 ns</td></tr>
 </tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -218,13 +218,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [7249.806363732685, 108146.31058799056, 130512.26555816812, 137082.00011442736],
+        data: [9342.429999350648, 143074.89339279296, 172079.94381431505, 181566.0209215735],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "jsonrpcserver" + ' (ops/s)',
-        data: [363.46722936301165, 7485.626677255529, 9621.302015171193, 7147.552469062526],
+        data: [693.4769712459577, 14280.057140903533, 18036.64091489728, 13346.452716666912],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

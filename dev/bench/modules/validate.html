@@ -125,20 +125,34 @@ td { white-space: nowrap; }
 <h1>validate</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: v2026.6.26 | Commit: c4a87ec1 | 2026-06-26T20:46:45.494656+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-06-26T20:46:45.494656+00:00"></span></p>
+<p class="meta">Version: 7e5cc0e | Commit: 7e5cc0ef | 2026-07-02T02:16:09.315442+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-07-02T02:16:09.315442+00:00"></span></p>
 <h2>validate</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Benchmark Constrained</td><td>ours</td><td>pydantic</td><td>9.9 µs</td><td>1.5 µs</td><td>100.6K</td><td>653.8K</td><td title="CV=12.3% | rounds=7732">9.5 µs</td><td title="CV=12.3% | rounds=7732">37.4 µs</td><td title="CV=12.3% | rounds=7732">1.2 µs</td><td title="CV=12.3% | rounds=7732">10.1 µs</td><td title="CV=43.4% | rounds=60640">1.4 µs</td><td title="CV=43.4% | rounds=60640">96.9 µs</td><td title="CV=43.4% | rounds=60640">664.1 ns</td><td title="CV=43.4% | rounds=60640">1.5 µs</td><td class="ratio-cell slower">6.5x slower</td></tr>
-<tr><td>Benchmark Json Schema</td><td>ours</td><td>pydantic</td><td>9.5 µs</td><td>199.3 µs</td><td>105.3K</td><td>5.0K</td><td title="CV=13.9% | rounds=19233">9.1 µs</td><td title="CV=13.9% | rounds=19233">57.9 µs</td><td title="CV=13.9% | rounds=19233">1.3 µs</td><td title="CV=13.9% | rounds=19233">9.5 µs</td><td title="CV=35.9% | rounds=844">173.2 µs</td><td title="CV=35.9% | rounds=844">1.98 ms</td><td title="CV=35.9% | rounds=844">71.5 µs</td><td title="CV=35.9% | rounds=844">286.0 µs</td><td class="ratio-cell faster">21.0x faster</td></tr>
-<tr><td>Benchmark List Of Dicts</td><td>ours</td><td>pydantic</td><td>226.3 µs</td><td>32.2 µs</td><td>4.4K</td><td>31.1K</td><td title="CV=3.5% | rounds=3290">220.4 µs</td><td title="CV=3.5% | rounds=3290">354.1 µs</td><td title="CV=3.5% | rounds=3290">7.9 µs</td><td title="CV=3.5% | rounds=3290">235.6 µs</td><td title="CV=8.3% | rounds=12666">31.1 µs</td><td title="CV=8.3% | rounds=12666">144.7 µs</td><td title="CV=8.3% | rounds=12666">2.7 µs</td><td title="CV=8.3% | rounds=12666">32.5 µs</td><td class="ratio-cell slower">7.0x slower</td></tr>
-<tr><td>Benchmark Nested</td><td>ours</td><td>pydantic</td><td>10.2 µs</td><td>2.1 µs</td><td>97.9K</td><td>465.7K</td><td title="CV=14.2% | rounds=8674">9.8 µs</td><td title="CV=14.2% | rounds=8674">69.5 µs</td><td title="CV=14.2% | rounds=8674">1.4 µs</td><td title="CV=14.2% | rounds=8674">10.3 µs</td><td title="CV=23.2% | rounds=54072">2.1 µs</td><td title="CV=23.2% | rounds=54072">24.8 µs</td><td title="CV=23.2% | rounds=54072">498.8 ns</td><td title="CV=23.2% | rounds=54072">2.2 µs</td><td class="ratio-cell slower">4.8x slower</td></tr>
-<tr><td>Benchmark Simple</td><td>ours</td><td>pydantic</td><td>5.7 µs</td><td>1.5 µs</td><td>175.1K</td><td>686.5K</td><td title="CV=22.1% | rounds=12742">5.4 µs</td><td title="CV=22.1% | rounds=12742">100.2 µs</td><td title="CV=22.1% | rounds=12742">1.3 µs</td><td title="CV=22.1% | rounds=12742">5.8 µs</td><td title="CV=31.4% | rounds=65151">1.4 µs</td><td title="CV=31.4% | rounds=65151">32.0 µs</td><td title="CV=31.4% | rounds=65151">457.9 ns</td><td title="CV=31.4% | rounds=65151">1.5 µs</td><td class="ratio-cell slower">3.9x slower</td></tr>
+<tr><td>Benchmark Constrained</td><td>ours</td><td>pydantic</td><td>7.9 µs</td><td>1.2 µs</td><td>126.3K</td><td>822.1K</td><td title="CV=9.5% | rounds=9520">7.5 µs</td><td title="CV=9.5% | rounds=9520">21.5 µs</td><td title="CV=9.5% | rounds=9520">751.7 ns</td><td title="CV=9.5% | rounds=9520">8.0 µs</td><td title="CV=21.7% | rounds=59720">1.1 µs</td><td title="CV=21.7% | rounds=59720">18.9 µs</td><td title="CV=21.7% | rounds=59720">263.6 ns</td><td title="CV=21.7% | rounds=59720">1.2 µs</td><td class="ratio-cell slower">6.5x slower</td></tr>
+<tr><td>Benchmark Json Schema</td><td>ours</td><td>pydantic</td><td>7.6 µs</td><td>127.7 µs</td><td>130.7K</td><td>7.8K</td><td title="CV=11.6% | rounds=19800">7.3 µs</td><td title="CV=11.6% | rounds=19800">81.6 µs</td><td title="CV=11.6% | rounds=19800">887.5 ns</td><td title="CV=11.6% | rounds=19800">7.8 µs</td><td title="CV=72.6% | rounds=369">108.3 µs</td><td title="CV=72.6% | rounds=369">1.85 ms</td><td title="CV=72.6% | rounds=369">92.8 µs</td><td title="CV=72.6% | rounds=369">179.9 µs</td><td class="ratio-cell faster">16.7x faster</td></tr>
+<tr><td>Benchmark List Of Dicts</td><td>ours</td><td>pydantic</td><td>182.7 µs</td><td>24.9 µs</td><td>5.5K</td><td>40.2K</td><td title="CV=3.4% | rounds=3729">176.8 µs</td><td title="CV=3.4% | rounds=3729">298.5 µs</td><td title="CV=3.4% | rounds=3729">6.2 µs</td><td title="CV=3.4% | rounds=3729">190.0 µs</td><td title="CV=5.6% | rounds=15948">23.7 µs</td><td title="CV=5.6% | rounds=15948">50.8 µs</td><td title="CV=5.6% | rounds=15948">1.4 µs</td><td title="CV=5.6% | rounds=15948">25.4 µs</td><td class="ratio-cell slower">7.3x slower</td></tr>
+<tr><td>Benchmark Nested</td><td>ours</td><td>pydantic</td><td>8.2 µs</td><td>1.7 µs</td><td>122.6K</td><td>591.6K</td><td title="CV=12.0% | rounds=11775">7.7 µs</td><td title="CV=12.0% | rounds=11775">76.1 µs</td><td title="CV=12.0% | rounds=11775">980.1 ns</td><td title="CV=12.0% | rounds=11775">8.3 µs</td><td title="CV=19.5% | rounds=58528">1.6 µs</td><td title="CV=19.5% | rounds=58528">24.6 µs</td><td title="CV=19.5% | rounds=58528">329.2 ns</td><td title="CV=19.5% | rounds=58528">1.7 µs</td><td class="ratio-cell slower">4.8x slower</td></tr>
+<tr><td>Benchmark Simple</td><td>ours</td><td>pydantic</td><td>4.7 µs</td><td>1.2 µs</td><td>214.5K</td><td>854.3K</td><td title="CV=12.1% | rounds=5719">4.4 µs</td><td title="CV=12.1% | rounds=5719">18.5 µs</td><td title="CV=12.1% | rounds=5719">564.2 ns</td><td title="CV=12.1% | rounds=5719">4.7 µs</td><td title="CV=28.0% | rounds=66169">1.1 µs</td><td title="CV=28.0% | rounds=66169">48.0 µs</td><td title="CV=28.0% | rounds=66169">328.3 ns</td><td title="CV=28.0% | rounds=66169">1.2 µs</td><td class="ratio-cell slower">4.0x slower</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
+<h3>Standalone benchmarks</h3>
+<div class="table-wrap"><table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
+<tbody>
+<tr><td>Benchmark Conversation (Large)</td><td>ours</td><td>32.54 ms</td><td>30.7</td><td title="CV=0.5% | rounds=31">32.20 ms</td><td title="CV=0.5% | rounds=31">32.79 ms</td><td title="CV=0.5% | rounds=31">154.9 µs</td><td title="CV=0.5% | rounds=31">32.76 ms</td></tr>
+<tr><td>Benchmark Conversation (Medium)</td><td>ours</td><td>6.50 ms</td><td>153.8</td><td title="CV=0.6% | rounds=152">6.44 ms</td><td title="CV=0.6% | rounds=152">6.66 ms</td><td title="CV=0.6% | rounds=152">35.8 µs</td><td title="CV=0.6% | rounds=152">6.55 ms</td></tr>
+<tr><td>Benchmark Conversation (Small)</td><td>ours</td><td>450.1 µs</td><td>2.2K</td><td title="CV=2.0% | rounds=1905">440.9 µs</td><td title="CV=2.0% | rounds=1905">642.9 µs</td><td title="CV=2.0% | rounds=1905">9.0 µs</td><td title="CV=2.0% | rounds=1905">456.9 µs</td></tr>
+<tr><td>Benchmark Disc Union Flat2000</td><td>ours</td><td>11.67 ms</td><td>85.7</td><td title="CV=4.0% | rounds=86">11.50 ms</td><td title="CV=4.0% | rounds=86">15.86 ms</td><td title="CV=4.0% | rounds=86">466.5 µs</td><td title="CV=4.0% | rounds=86">11.79 ms</td></tr>
+<tr><td>Benchmark Disc Union Flat50</td><td>ours</td><td>297.8 µs</td><td>3.4K</td><td title="CV=1.8% | rounds=1851">290.7 µs</td><td title="CV=1.8% | rounds=1851">369.8 µs</td><td title="CV=1.8% | rounds=1851">5.3 µs</td><td title="CV=1.8% | rounds=1851">305.5 µs</td></tr>
+<tr><td>Benchmark Disc Union Flat500</td><td>ours</td><td>2.91 ms</td><td>344.2</td><td title="CV=0.9% | rounds=336">2.87 ms</td><td title="CV=0.9% | rounds=336">3.06 ms</td><td title="CV=0.9% | rounds=336">25.2 µs</td><td title="CV=0.9% | rounds=336">2.95 ms</td></tr>
+<tr><td>Benchmark Tools10</td><td>ours</td><td>328.2 µs</td><td>3.0K</td><td title="CV=1.8% | rounds=2264">320.8 µs</td><td title="CV=1.8% | rounds=2264">404.5 µs</td><td title="CV=1.8% | rounds=2264">6.0 µs</td><td title="CV=1.8% | rounds=2264">335.3 µs</td></tr>
+<tr><td>Benchmark Tools200</td><td>ours</td><td>11.97 ms</td><td>83.5</td><td title="CV=0.7% | rounds=80">11.86 ms</td><td title="CV=0.7% | rounds=80">12.30 ms</td><td title="CV=0.7% | rounds=80">83.3 µs</td><td title="CV=0.7% | rounds=80">12.11 ms</td></tr>
+<tr><td>Benchmark Tools50</td><td>ours</td><td>2.45 ms</td><td>408.2</td><td title="CV=1.0% | rounds=396">2.40 ms</td><td title="CV=1.0% | rounds=396">2.58 ms</td><td title="CV=1.0% | rounds=396">23.8 µs</td><td title="CV=1.0% | rounds=396">2.49 ms</td></tr>
+</tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
 <h3>Performance Trend</h3>
@@ -208,13 +222,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [100593.06978244489, 105288.65810761307, 4418.553903223458, 97912.30069573817, 175106.9369283556],
+        data: [126283.13849234777, 130727.31641331998, 5473.2336272593775, 122603.47940725982, 214487.9785388033],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "pydantic" + ' (ops/s)',
-        data: [653751.1218159581, 5016.946102608148, 31070.57157312672, 465650.7198705787, 686466.6096998375],
+        data: [822080.5097805877, 7830.068916039045, 40165.52406925922, 591625.5628799523, 854315.0332272422],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

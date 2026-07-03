@@ -241,18 +241,38 @@ def s3_preloaded_objects(s3_zerodep_client, s3_bench_bucket):
 
 @pytest.fixture(scope="session")
 def s3_populated_bucket(s3_zerodep_client, s3_bench_bucket):
-    """Upload 10 small objects under list-test/ for list_objects benchmarks.
+    """Upload objects under list-test/ for list_objects benchmarks.
 
-    Returns a dict with 'prefix' and 'count'.
+    Creates three tiers to test listing at different scales:
+
+    - ``list-test/small/``  — 10 objects  (no pagination)
+    - ``list-test/medium/`` — 100 objects (no pagination, but heavier XML)
+    - ``list-test/large/``  — 1500 objects (forces pagination at 1000)
+
+    Each object has a deterministic, varying size (64 B – 4 KB) seeded
+    by its index so results are reproducible without storing files.
+
+    Returns a dict with tier info: ``{tier: {"prefix": ..., "count": ...}}``.
     """
-    prefix = "list-test/"
-    count = 10
-    for i in range(count):
-        key = f"{prefix}obj-{i:03d}.bin"
-        s3_zerodep_client.put_object(
-            s3_bench_bucket,
-            key,
-            SMALL_PAYLOAD,
-            length=len(SMALL_PAYLOAD),
-        )
-    return {"prefix": prefix, "count": count}
+    rng = random.Random(99)  # noqa: S311
+    tiers = {
+        "small": 10,
+        "medium": 100,
+        "large": 1500,
+    }
+    result = {}
+    for tier, count in tiers.items():
+        prefix = f"list-test/{tier}/"
+        for i in range(count):
+            # Varying size: 64 B – 4 KB, deterministic per index
+            size = 64 + rng.randint(0, 4032)
+            payload = rng.randbytes(size)
+            key = f"{prefix}obj-{i:04d}.bin"
+            s3_zerodep_client.put_object(
+                s3_bench_bucket,
+                key,
+                payload,
+                length=len(payload),
+            )
+        result[tier] = {"prefix": prefix, "count": count}
+    return result

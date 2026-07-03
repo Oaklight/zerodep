@@ -364,25 +364,24 @@ class TestStatObject:
 # ── Phase 2: list_objects benchmark ──
 
 
-class TestListObjects:
+class TestListObjectsSmall:
+    """List 10 objects — no pagination."""
+
     def test_zerodep(
-        self,
-        benchmark,
-        s3_zerodep_client,
-        s3_bench_bucket,
-        s3_populated_bucket,
+        self, benchmark, s3_zerodep_client, s3_bench_bucket, s3_populated_bucket
     ):
-        prefix = s3_populated_bucket["prefix"]
-        benchmark(s3_zerodep_client.list_objects, s3_bench_bucket, prefix=prefix)
+        prefix = s3_populated_bucket["small"]["prefix"]
+        benchmark(
+            s3_zerodep_client.list_objects,
+            s3_bench_bucket,
+            prefix=prefix,
+            recursive=True,
+        )
 
     def test_boto3(
-        self,
-        benchmark,
-        s3_boto3_client,
-        s3_bench_bucket,
-        s3_populated_bucket,
+        self, benchmark, s3_boto3_client, s3_bench_bucket, s3_populated_bucket
     ):
-        prefix = s3_populated_bucket["prefix"]
+        prefix = s3_populated_bucket["small"]["prefix"]
 
         def _list():
             s3_boto3_client.list_objects_v2(Bucket=s3_bench_bucket, Prefix=prefix)
@@ -390,16 +389,98 @@ class TestListObjects:
         benchmark(_list)
 
     def test_minio(
-        self,
-        benchmark,
-        s3_minio_client,
-        s3_bench_bucket,
-        s3_populated_bucket,
+        self, benchmark, s3_minio_client, s3_bench_bucket, s3_populated_bucket
     ):
-        prefix = s3_populated_bucket["prefix"]
+        prefix = s3_populated_bucket["small"]["prefix"]
 
         def _list():
-            list(s3_minio_client.list_objects(s3_bench_bucket, prefix=prefix))
+            list(
+                s3_minio_client.list_objects(
+                    s3_bench_bucket, prefix=prefix, recursive=True
+                )
+            )
+
+        benchmark(_list)
+
+
+class TestListObjectsMedium:
+    """List 100 objects — single page but heavier XML parsing."""
+
+    def test_zerodep(
+        self, benchmark, s3_zerodep_client, s3_bench_bucket, s3_populated_bucket
+    ):
+        prefix = s3_populated_bucket["medium"]["prefix"]
+        benchmark(
+            s3_zerodep_client.list_objects,
+            s3_bench_bucket,
+            prefix=prefix,
+            recursive=True,
+        )
+
+    def test_boto3(
+        self, benchmark, s3_boto3_client, s3_bench_bucket, s3_populated_bucket
+    ):
+        prefix = s3_populated_bucket["medium"]["prefix"]
+
+        def _list():
+            s3_boto3_client.list_objects_v2(Bucket=s3_bench_bucket, Prefix=prefix)
+
+        benchmark(_list)
+
+    def test_minio(
+        self, benchmark, s3_minio_client, s3_bench_bucket, s3_populated_bucket
+    ):
+        prefix = s3_populated_bucket["medium"]["prefix"]
+
+        def _list():
+            list(
+                s3_minio_client.list_objects(
+                    s3_bench_bucket, prefix=prefix, recursive=True
+                )
+            )
+
+        benchmark(_list)
+
+
+class TestListObjectsLarge:
+    """List 1500 objects — forces pagination (2 pages at 1000/page)."""
+
+    def test_zerodep(
+        self, benchmark, s3_zerodep_client, s3_bench_bucket, s3_populated_bucket
+    ):
+        prefix = s3_populated_bucket["large"]["prefix"]
+        benchmark(
+            s3_zerodep_client.list_objects,
+            s3_bench_bucket,
+            prefix=prefix,
+            recursive=True,
+        )
+
+    def test_boto3(
+        self, benchmark, s3_boto3_client, s3_bench_bucket, s3_populated_bucket
+    ):
+        prefix = s3_populated_bucket["large"]["prefix"]
+
+        def _list():
+            # boto3 paginator handles continuation automatically
+            paginator = s3_boto3_client.get_paginator("list_objects_v2")
+            objs = []
+            for page in paginator.paginate(Bucket=s3_bench_bucket, Prefix=prefix):
+                objs.extend(page.get("Contents", []))
+
+        benchmark(_list)
+
+    def test_minio(
+        self, benchmark, s3_minio_client, s3_bench_bucket, s3_populated_bucket
+    ):
+        prefix = s3_populated_bucket["large"]["prefix"]
+
+        def _list():
+            list(
+                s3_minio_client.list_objects(
+                    s3_bench_bucket, prefix=prefix, recursive=True
+                )
+            )
 
         benchmark(_list)
 

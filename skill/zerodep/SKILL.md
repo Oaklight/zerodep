@@ -6,7 +6,7 @@ description: "Manage the zerodep module library: scaffold new modules, run tests
 
 # zerodep — zero-dependency Python module library
 
-A library of 45+ (growing) stdlib-only, single-file Python modules. Each module is a self-contained `.py` file you copy (vendor) into your project — no `pip install` at runtime, no transitive dependencies, no supply-chain risk.
+A growing library of stdlib-only, single-file Python modules. Each module is a self-contained `.py` file you copy (vendor) into your project — no `pip install` at runtime, no transitive dependencies, no supply-chain risk.
 
 Repo: <https://github.com/Oaklight/zerodep>
 Docs: [English](https://zerodep.readthedocs.io/en/) | [中文](https://zerodep.readthedocs.io/zh-cn/)
@@ -63,14 +63,36 @@ Dependencies between modules are resolved automatically — if module A depends 
 
 Once the CLI is installed, use it to browse, add, and update modules. The CLI's `--help` output explains all options.
 
-After vendoring, import the module directly:
+The recommended convention is to vendor into a `_vendor/` directory inside your package, keeping vendored code separate from your own:
+
+```bash
+myproject/
+  __init__.py
+  app.py
+  _vendor/          # zerodep modules go here
+    yaml.py
+    httpclient.py
+    __init__.py     # empty, makes it a package
+```
+
+Then import with a relative path:
 
 ```python
-# Example: if you vendored yaml.py into lib/
-from lib.yaml import load, dump
+# inside myproject/app.py
+from ._vendor.yaml import load, dump
 
 data = load("name: Alice\nage: 30")
 print(data)  # {'name': 'Alice', 'age': 30}
+```
+
+The `_vendor` prefix signals these are internal vendored files, not part of your public API. Exclude the directory from linting and type-checking in `pyproject.toml`:
+
+```toml
+[tool.ruff]
+exclude = ["*/_vendor"]
+
+[tool.ty]
+exclude = ["*/_vendor"]
 ```
 
 The vendored file is plain Python — no magic, no runtime hooks. Read it, modify it, vendor it into wherever your project needs it.

@@ -244,7 +244,7 @@ def _sign_request(
 
     signed_names = sorted(k.lower() for k in hdrs)
     canonical_headers = "".join(
-        f"{k}:{hdrs[k].strip()}\n" for k in sorted(hdrs, key=str.lower)
+        f"{k.lower()}:{hdrs[k].strip()}\n" for k in sorted(hdrs, key=str.lower)
     )
     signed_headers_str = ";".join(signed_names)
 

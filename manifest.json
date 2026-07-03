@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-07-02T01:41:43.819381+00:00",
+  "generated": "2026-07-03T10:13:50.375573+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -355,6 +355,18 @@
       "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "b4864085c534273da7734f69bcbda528ba1c073774db099d146afb32e632bf79"
     },
+    "s3": {
+      "description": "Zero-dependency S3-compatible storage client (stdlib only)",
+      "files": [
+        "s3/s3.py"
+      ],
+      "version": "0.1.0",
+      "deps": [],
+      "tier": "subsystem",
+      "category": "storage",
+      "last_updated": null,
+      "content_hash": "948127ab03fd1e46d7da61a1b5a3c05c148b19ac1d7cdd2ac655856925e2236e"
+    },
     "scheduler": {
       "description": "Zero-dependency in-process task scheduler with cron support",
       "files": [
@@ -501,7 +513,7 @@
       "deps": [],
       "tier": "medium",
       "category": "validation",
-      "last_updated": "2026-07-01T16:44:01-05:00",
+      "last_updated": "2026-07-01T20:42:51-05:00",
       "content_hash": "e84779ea6cb6a3b9bec7d9f7ac0986a09b1d40080ac0b2e1b9ee8bb358a1dc97"
     },
     "vcs": {

@@ -5,12 +5,14 @@
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-change`)
 3. Install dev dependencies: `pip install -e ".[dev]"`
-4. Set up pre-commit hooks: `pre-commit install`
+4. **Install pre-commit hooks: `pre-commit install`** — this is mandatory, not optional. The hooks enforce `ruff check`, `ruff format`, `ty check`, and `complexipy` on every commit. If you skip this step, your PR will fail CI lint.
 5. Make your changes
 6. Run `make lint` to check code quality
 7. Run `make test` to run correctness tests
-8. Commit and push
+8. Commit and push (pre-commit hooks will run automatically)
 9. Open a Pull Request
+
+> **Note for AI agent contributors:** Your first action after cloning should be `pre-commit install`. Do not use `--no-verify` to skip hooks. If a hook fails, fix the issue and re-commit — the CI runs the same checks and will reject unformatted code.
 
 ## Branch Naming
 
@@ -58,11 +60,12 @@ Using AI tools (e.g. Claude, Cursor, Copilot) to assist with development is welc
 
 ## Code Style
 
-- Python code follows `ruff` defaults
+- Python code follows `ruff` defaults — enforced by pre-commit hooks
 - Docstrings use Google style
 - Comments and docstrings in English
 - Type hints are encouraged
 - Each module must use only the Python standard library
+- Run `pre-commit run --all-files` before pushing to catch any issues the per-file hooks might miss
 
 ## License
 

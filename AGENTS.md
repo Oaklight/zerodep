@@ -111,6 +111,7 @@ Each module file starts with a PEP 723-style metadata block:
 - **Do not manually edit version in frontmatter** — use `zerodep bump`. It tracks content hashes to detect actual changes and prevent double-bumping.
 - **Inter-module deps must be declared** in the `deps` frontmatter field. Undeclared cross-module imports will break `zerodep add` dependency resolution.
 - **After creating a new module** with `zerodep new`, you must run `make manifest` and `make docs-index` to register it.
+- **Pre-commit hooks must be installed** before making any commits. Run `pre-commit install` after cloning. The hooks run `ruff check`, `ruff format`, `ty check`, and `complexipy` automatically on commit — if a hook fails, the commit is blocked. Do not use `--no-verify` to bypass them.
 
 ## Testing
 

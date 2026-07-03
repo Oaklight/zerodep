@@ -120,7 +120,9 @@ def minio_endpoint():
 
         container_id = result.stdout.strip()
 
-        # Register cleanup as safety net
+        # Register atexit as a safety net: the finally block below handles
+        # normal teardown, but atexit catches the case where pytest is
+        # killed hard (SIGKILL) and the finally block never runs.
         def _cleanup():
             subprocess.run(
                 ["docker", "rm", "-f", container_id],
@@ -235,3 +237,22 @@ def s3_preloaded_objects(s3_zerodep_client, s3_bench_bucket):
         )
         keys[label] = key
     return keys
+
+
+@pytest.fixture(scope="session")
+def s3_populated_bucket(s3_zerodep_client, s3_bench_bucket):
+    """Upload 10 small objects under list-test/ for list_objects benchmarks.
+
+    Returns a dict with 'prefix' and 'count'.
+    """
+    prefix = "list-test/"
+    count = 10
+    for i in range(count):
+        key = f"{prefix}obj-{i:03d}.bin"
+        s3_zerodep_client.put_object(
+            s3_bench_bucket,
+            key,
+            SMALL_PAYLOAD,
+            length=len(SMALL_PAYLOAD),
+        )
+    return {"prefix": prefix, "count": count}

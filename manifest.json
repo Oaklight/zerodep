@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-07-03T22:04:35.524078+00:00",
+  "generated": "2026-07-03T23:21:41.293700+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -364,8 +364,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "storage",
-      "last_updated": "2026-07-03T15:41:13-05:00",
-      "content_hash": "93d997c6a715dbfc789f98c3a79966c7935c2c311d6dd5ce400af79c6bf5df46"
+      "last_updated": "2026-07-03T17:04:52-05:00",
+      "content_hash": "326e91696bf03f0c5ecd70541c94dbc522968252fd7ae702c3a4c5e3f32e4988"
     },
     "scheduler": {
       "description": "Zero-dependency in-process task scheduler with cron support",

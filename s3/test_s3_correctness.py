@@ -1,4 +1,4 @@
-"""Correctness tests for the zerodep s3 module (Phase 1).
+"""Correctness tests for the zerodep s3 module.
 
 Tests are split into two tiers:
 
@@ -38,6 +38,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from unittest.mock import MagicMock, patch
 
 from s3 import (
+    BucketInfo,
+    ObjectInfo,
     S3Client,
     S3Error,
     S3NoSuchBucket,
@@ -437,6 +439,109 @@ class TestS3ClientMocked(unittest.TestCase):
             with self.assertRaises(S3Error):
                 self.client.put_object("b", "k", b"x", length=1)
 
+    # --- stat_object ---
+
+    def test_stat_object_200(self):
+        mock_resp = _mock_response(200, b"")
+        hdr_data = {
+            "Content-Length": "42",
+            "ETag": '"abc123"',
+            "Last-Modified": "Thu, 01 Jan 2026 00:00:00 GMT",
+            "Content-Type": "text/plain",
+            "x-amz-meta-author": "test",
+        }
+        mock_hdrs = MagicMock()
+        mock_hdrs.get = lambda k, d="": hdr_data.get(k, d)
+        mock_hdrs.items = lambda: list(hdr_data.items())
+        mock_resp.headers = mock_hdrs
+
+        with self._mock_op("_request", mock_resp):
+            info = self.client.stat_object("b", "k")
+        self.assertIsInstance(info, ObjectInfo)
+        self.assertEqual(info.size, 42)
+        self.assertEqual(info.etag, "abc123")
+        self.assertEqual(info.content_type, "text/plain")
+        self.assertEqual(info.metadata, {"author": "test"})
+
+    def test_stat_object_404_raises(self):
+        with self._mock_op("_request", _mock_response(404, b"")):
+            with self.assertRaises(S3NoSuchKey):
+                self.client.stat_object("b", "missing")
+
+    # --- remove_object ---
+
+    def test_remove_object_204(self):
+        with self._mock_op("_request", _mock_response(204)):
+            self.client.remove_object("b", "k")  # should not raise
+
+    # --- copy_object ---
+
+    def test_copy_object_success(self):
+        captured = {}
+
+        def fake_request(method, url, headers=None, body=None):
+            captured["headers"] = headers
+            return _mock_response(200, b"<CopyObjectResult/>")
+
+        with patch.object(self.client, "_request", side_effect=fake_request):
+            self.client.copy_object("src-b", "src-k", "dst-b", "dst-k")
+        self.assertIn("x-amz-copy-source", captured["headers"])
+        self.assertIn("/src-b/src-k", captured["headers"]["x-amz-copy-source"])
+
+    # --- remove_bucket ---
+
+    def test_remove_bucket_204(self):
+        with self._mock_op("_request", _mock_response(204)):
+            self.client.remove_bucket("b")  # should not raise
+
+    # --- list_buckets ---
+
+    def test_list_buckets(self):
+        xml_body = (
+            b'<?xml version="1.0"?>'
+            b"<ListAllMyBucketsResult>"
+            b"<Buckets>"
+            b"<Bucket><Name>alpha</Name>"
+            b"<CreationDate>2026-01-01T00:00:00Z</CreationDate></Bucket>"
+            b"<Bucket><Name>beta</Name>"
+            b"<CreationDate>2026-06-15T12:00:00Z</CreationDate></Bucket>"
+            b"</Buckets>"
+            b"</ListAllMyBucketsResult>"
+        )
+        with self._mock_op("_request", _mock_response(200, xml_body)):
+            buckets = self.client.list_buckets()
+        self.assertEqual(len(buckets), 2)
+        self.assertEqual(buckets[0].name, "alpha")
+        self.assertEqual(buckets[1].name, "beta")
+        self.assertIsInstance(buckets[0], BucketInfo)
+
+    # --- list_objects ---
+
+    def test_list_objects_single_page(self):
+        xml_body = (
+            b'<?xml version="1.0"?>'
+            b"<ListBucketResult>"
+            b"<IsTruncated>false</IsTruncated>"
+            b"<Contents>"
+            b"<Key>dir/a.txt</Key><Size>10</Size>"
+            b'<ETag>"abc"</ETag>'
+            b"<LastModified>2026-01-01T00:00:00Z</LastModified>"
+            b"</Contents>"
+            b"<Contents>"
+            b"<Key>dir/b.txt</Key><Size>20</Size>"
+            b'<ETag>"def"</ETag>'
+            b"<LastModified>2026-01-02T00:00:00Z</LastModified>"
+            b"</Contents>"
+            b"</ListBucketResult>"
+        )
+        with self._mock_op("_request", _mock_response(200, xml_body)):
+            objs = self.client.list_objects("b", prefix="dir/")
+        self.assertEqual(len(objs), 2)
+        self.assertEqual(objs[0].key, "dir/a.txt")
+        self.assertEqual(objs[0].size, 10)
+        self.assertEqual(objs[1].key, "dir/b.txt")
+        self.assertIsInstance(objs[0], ObjectInfo)
+
 
 # ---------------------------------------------------------------------------
 # Unit tests: round-trip with local HTTP mock server
@@ -456,7 +561,21 @@ class _SimpleMockS3Handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         parts = parsed.path.strip("/").split("/", 1)
         bucket = parts[0] if parts else ""
-        if bucket in self._buckets:
+        if len(parts) == 2:
+            # Object HEAD (stat_object)
+            key = parts[1]
+            obj_key = f"{bucket}/{key}"
+            if obj_key in self._objects:
+                data = self._objects[obj_key]
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("ETag", f'"{hashlib.md5(data).hexdigest()}"')
+                self.send_header("Content-Type", "application/octet-stream")
+                self.end_headers()
+            else:
+                self.send_response(404)
+                self.end_headers()
+        elif bucket in self._buckets:
             self.send_response(200)
             self.end_headers()
         else:
@@ -477,10 +596,44 @@ class _SimpleMockS3Handler(BaseHTTPRequestHandler):
             self.end_headers()
         else:
             bucket, key = parts[0], parts[1]
-            length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(length)
-            self._objects[f"{bucket}/{key}"] = body
-            self.send_response(200)
+            # Check for copy operation
+            copy_src = self.headers.get("x-amz-copy-source")
+            if copy_src:
+                src_path = urllib.parse.unquote(copy_src).lstrip("/")
+                if src_path in self._objects:
+                    self._objects[f"{bucket}/{key}"] = self._objects[src_path]
+                    body = b"<CopyObjectResult/>"
+                    self.send_response(200)
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                else:
+                    body = _s3_error_xml("NoSuchKey", src_path)
+                    self.send_response(404)
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+            else:
+                length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(length)
+                self._objects[f"{bucket}/{key}"] = body
+                self.send_response(200)
+                self.end_headers()
+
+    def do_DELETE(self):
+        parsed = urllib.parse.urlparse(self.path)
+        parts = parsed.path.strip("/").split("/", 1)
+        if len(parts) == 1:
+            # Remove bucket
+            bucket = parts[0]
+            self._buckets.discard(bucket)
+            self.send_response(204)
+            self.end_headers()
+        else:
+            # Remove object
+            bucket, key = parts[0], parts[1]
+            self._objects.pop(f"{bucket}/{key}", None)
+            self.send_response(204)
             self.end_headers()
 
     def do_GET(self):
@@ -563,6 +716,44 @@ class TestLocalMockServer(unittest.TestCase):
         self.client.put_object("filelike-bucket", "file.bin", buf, length=len(payload))
         with self.client.get_object("filelike-bucket", "file.bin") as resp:
             self.assertEqual(resp.read(), payload)
+
+    # --- Phase 2: stat, remove, copy ---
+
+    def test_stat_object(self):
+        self.client.make_bucket("stat-bucket")
+        payload = b"stat me"
+        self.client.put_object("stat-bucket", "obj.txt", payload, length=len(payload))
+        info = self.client.stat_object("stat-bucket", "obj.txt")
+        self.assertIsInstance(info, ObjectInfo)
+        self.assertEqual(info.size, len(payload))
+        self.assertEqual(info.bucket, "stat-bucket")
+        self.assertEqual(info.key, "obj.txt")
+
+    def test_stat_object_missing_raises(self):
+        self.client.make_bucket("stat-miss-bucket")
+        with self.assertRaises(S3NoSuchKey):
+            self.client.stat_object("stat-miss-bucket", "nope")
+
+    def test_remove_object(self):
+        self.client.make_bucket("rm-bucket")
+        self.client.put_object("rm-bucket", "del.txt", b"bye", length=3)
+        self.client.remove_object("rm-bucket", "del.txt")
+        with self.assertRaises(S3NoSuchKey):
+            self.client.get_object("rm-bucket", "del.txt")
+
+    def test_copy_object(self):
+        self.client.make_bucket("copy-bucket")
+        payload = b"copy me"
+        self.client.put_object("copy-bucket", "src.txt", payload, length=len(payload))
+        self.client.copy_object("copy-bucket", "src.txt", "copy-bucket", "dst.txt")
+        with self.client.get_object("copy-bucket", "dst.txt") as resp:
+            self.assertEqual(resp.read(), payload)
+
+    def test_remove_bucket(self):
+        self.client.make_bucket("to-remove")
+        self.assertTrue(self.client.bucket_exists("to-remove"))
+        self.client.remove_bucket("to-remove")
+        self.assertFalse(self.client.bucket_exists("to-remove"))
 
 
 # ---------------------------------------------------------------------------

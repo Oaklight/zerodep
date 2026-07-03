@@ -7,13 +7,24 @@
 # ///
 """Zero-dependency S3-compatible storage client (stdlib only).
 
-Implements AWS Signature Version 4 and a minimal S3 REST client covering the
-four operations needed to drive a read/write object cache:
+Implements AWS Signature Version 4 and a minimal S3 REST client covering
+common object storage operations:
+
+**Bucket operations:**
 
 - ``bucket_exists`` — check whether a bucket is accessible
 - ``make_bucket``   — create a bucket
+- ``remove_bucket`` — delete an empty bucket
+- ``list_buckets``  — list all accessible buckets
+
+**Object operations:**
+
 - ``get_object``    — download an object (returns a readable response)
 - ``put_object``    — upload an object
+- ``stat_object``   — get object metadata without downloading
+- ``remove_object`` — delete an object
+- ``copy_object``   — server-side copy between keys/buckets
+- ``list_objects``  — list objects with prefix filtering and pagination
 
 Compatible with AWS S3, Cloudflare R2, Oracle Object Storage, MinIO, and any
 other S3-compatible backend.  Uses only Python stdlib (``hashlib``, ``hmac``,
@@ -72,10 +83,14 @@ import logging
 import ssl
 import urllib.parse
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import IO
 
 __all__ = [
+    # Data classes
+    "BucketInfo",
+    "ObjectInfo",
     # Exceptions
     "S3Error",
     "S3NoSuchBucket",
@@ -111,6 +126,33 @@ class S3NoSuchBucket(S3Error):
 
 class S3NoSuchKey(S3Error):
     """Raised when the requested object key does not exist."""
+
+
+# ---------------------------------------------------------------------------
+# Data classes
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class ObjectInfo:
+    """Metadata for an S3 object, returned by :meth:`S3Client.stat_object`
+    and :meth:`S3Client.list_objects`."""
+
+    bucket: str
+    key: str
+    size: int
+    etag: str
+    last_modified: str  # ISO 8601 or HTTP-date string
+    content_type: str | None = None
+    metadata: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class BucketInfo:
+    """Metadata for an S3 bucket, returned by :meth:`S3Client.list_buckets`."""
+
+    name: str
+    creation_date: str  # ISO 8601 string
 
 
 # ---------------------------------------------------------------------------
@@ -243,6 +285,10 @@ def _sign_request(
     hdrs["x-amz-content-sha256"] = payload_hash
 
     signed_names = sorted(k.lower() for k in hdrs)
+    # SigV4 spec requires canonical header names to be lowercased.
+    # Caller-supplied headers may use original casing (e.g. "Content-Length"),
+    # so we explicitly lowercase the key while looking up the value via
+    # the original-case key from the dict.
     canonical_headers = "".join(
         f"{k.lower()}:{hdrs[k].strip()}\n" for k in sorted(hdrs, key=str.lower)
     )
@@ -338,9 +384,10 @@ def _parse_s3_error(body: bytes, status: int) -> S3Error:
 class S3Client:
     """Minimal S3-compatible REST client (stdlib only, sync).
 
-    Implements the four operations needed to drive a persistent render cache:
-    :meth:`bucket_exists`, :meth:`make_bucket`, :meth:`get_object`,
-    :meth:`put_object`.
+    Covers bucket management (:meth:`bucket_exists`, :meth:`make_bucket`,
+    :meth:`remove_bucket`, :meth:`list_buckets`) and object operations
+    (:meth:`get_object`, :meth:`put_object`, :meth:`stat_object`,
+    :meth:`remove_object`, :meth:`copy_object`, :meth:`list_objects`).
 
     For async callers, wrap individual calls in ``asyncio.to_thread()``::
 
@@ -436,8 +483,9 @@ class S3Client:
         elif body is None:
             payload_bytes = b""
         else:
-            # File-like: read into memory for signing
-            # (put_object handles chunking above)
+            # File-like: read into memory for signing.
+            # TODO: support streaming PUT via chunked transfer encoding
+            # to avoid materialising large objects in memory.
             payload_bytes = body.read()
             body = payload_bytes  # re-send as bytes
 
@@ -484,7 +532,7 @@ class S3Client:
         return resp
 
     # ------------------------------------------------------------------ #
-    # Public API — Phase 1
+    # Public API — Bucket operations
     # ------------------------------------------------------------------ #
 
     def bucket_exists(self, bucket: str) -> bool:
@@ -492,6 +540,8 @@ class S3Client:
 
         HTTP 200 and 403 both indicate the bucket exists (403 means it exists
         but this account lacks ``s3:ListBucket`` — the bucket is still there).
+        HTTP 301 also means the bucket exists but is in a different region;
+        subsequent operations against this endpoint will fail with a redirect.
         HTTP 404 means the bucket does not exist.
 
         Args:
@@ -528,7 +578,6 @@ class S3Client:
                 with ``BucketAlreadyOwnedByYou``).
         """
         url = self._bucket_url(bucket)
-        headers: dict[str, str] = {"Content-Length": "0"}
 
         # For AWS S3, non-us-east-1 regions require a location constraint body
         if self._region not in ("us-east-1", "auto"):
@@ -539,17 +588,80 @@ class S3Client:
                 f"<LocationConstraint>{self._region}</LocationConstraint>"
                 f"</CreateBucketConfiguration>"
             ).encode()
-            headers["Content-Length"] = str(len(body_xml))
-            headers["Content-Type"] = "application/xml"
+            headers: dict[str, str] = {
+                "Content-Length": str(len(body_xml)),
+                "Content-Type": "application/xml",
+            }
             self._request_expect_ok(
                 "PUT", url, headers=headers, body=body_xml, ok_statuses=(200,)
             )
         else:
             self._request_expect_ok(
-                "PUT", url, headers=headers, body=b"", ok_statuses=(200,)
+                "PUT",
+                url,
+                headers={"Content-Length": "0"},
+                body=b"",
+                ok_statuses=(200,),
             )
 
         logger.info("Created bucket: %s", bucket)
+
+    def remove_bucket(self, bucket: str) -> None:
+        """Delete an empty bucket.
+
+        The bucket must be empty (no objects) before it can be deleted.
+
+        Args:
+            bucket: Bucket name.
+
+        Raises:
+            :class:`S3Error`: If the bucket is not empty or does not exist.
+        """
+        url = self._bucket_url(bucket)
+        self._request_expect_ok("DELETE", url, ok_statuses=(204, 200))
+        logger.info("Removed bucket: %s", bucket)
+
+    def list_buckets(self) -> list[BucketInfo]:
+        """List all buckets accessible by this account.
+
+        Returns:
+            List of :class:`BucketInfo` with bucket name and creation date.
+
+        Raises:
+            :class:`S3Error`: On server errors.
+        """
+        scheme = "https" if self._secure else "http"
+        url = f"{scheme}://{self._endpoint}/"
+        resp = self._request_expect_ok("GET", url)
+        body = resp.read()
+
+        root = ET.fromstring(body)
+        buckets_el = _find_xml_el(root, "Buckets")
+        if buckets_el is None:
+            return []
+
+        result: list[BucketInfo] = []
+        for bucket_el in buckets_el:
+            # Handle with or without namespace
+            tag = bucket_el.tag
+            if tag == "Bucket" or tag == f"{{{_S3_NS}}}Bucket":
+                name_el = _find_xml_el(bucket_el, "Name")
+                date_el = _find_xml_el(bucket_el, "CreationDate")
+                if name_el is not None and name_el.text:
+                    cdate = ""
+                    if date_el is not None and date_el.text:
+                        cdate = date_el.text
+                    result.append(
+                        BucketInfo(
+                            name=name_el.text,
+                            creation_date=cdate,
+                        )
+                    )
+        return result
+
+    # ------------------------------------------------------------------ #
+    # Public API — Object operations
+    # ------------------------------------------------------------------ #
 
     def get_object(self, bucket: str, key: str) -> S3Response:
         """Download the object at *bucket*/*key*.
@@ -635,3 +747,188 @@ class S3Client:
             "PUT", url, headers=headers, body=body_bytes, ok_statuses=(200,)
         )
         logger.debug("Stored object: %s/%s (%d bytes)", bucket, key, length)
+
+    def stat_object(self, bucket: str, key: str) -> ObjectInfo:
+        """Get metadata for *bucket*/*key* without downloading the body.
+
+        Args:
+            bucket: Bucket name.
+            key:    Object key.
+
+        Returns:
+            :class:`ObjectInfo` with size, ETag, last-modified, content type,
+            and user metadata.
+
+        Raises:
+            :class:`S3NoSuchKey`:    If the key does not exist.
+            :class:`S3NoSuchBucket`: If the bucket does not exist.
+            :class:`S3Error`:        On other server errors.
+        """
+        url = self._object_url(bucket, key)
+        resp = self._request("HEAD", url)
+        resp.read()  # consume (empty) body
+
+        if resp.status == 404:
+            raise S3NoSuchKey("NoSuchKey", f"{bucket}/{key}", 404)
+        if resp.status not in (200,):
+            raise S3Error("HeadFailed", f"HTTP {resp.status}", resp.status)
+
+        hdrs = resp.headers
+        metadata = {
+            k.lower().removeprefix("x-amz-meta-"): v
+            for k, v in hdrs.items()
+            if k.lower().startswith("x-amz-meta-")
+        }
+        return ObjectInfo(
+            bucket=bucket,
+            key=key,
+            size=int(hdrs.get("Content-Length", 0)),
+            etag=hdrs.get("ETag", "").strip('"'),
+            last_modified=hdrs.get("Last-Modified", ""),
+            content_type=hdrs.get("Content-Type"),
+            metadata=metadata,
+        )
+
+    def remove_object(self, bucket: str, key: str) -> None:
+        """Delete the object at *bucket*/*key*.
+
+        S3 returns 204 on success (even if the key didn't exist).
+
+        Args:
+            bucket: Bucket name.
+            key:    Object key.
+
+        Raises:
+            :class:`S3Error`: On server errors.
+        """
+        url = self._object_url(bucket, key)
+        self._request_expect_ok("DELETE", url, ok_statuses=(204, 200))
+        logger.debug("Removed object: %s/%s", bucket, key)
+
+    def copy_object(
+        self,
+        src_bucket: str,
+        src_key: str,
+        dst_bucket: str,
+        dst_key: str,
+    ) -> None:
+        """Server-side copy from *src* to *dst*.
+
+        The copy is performed entirely on the server — no data is
+        downloaded to the client.
+
+        Args:
+            src_bucket: Source bucket name.
+            src_key:    Source object key.
+            dst_bucket: Destination bucket name.
+            dst_key:    Destination object key.
+
+        Raises:
+            :class:`S3NoSuchKey`:    If the source key does not exist.
+            :class:`S3NoSuchBucket`: If a bucket does not exist.
+            :class:`S3Error`:        On other server errors.
+        """
+        url = self._object_url(dst_bucket, dst_key)
+        copy_source = urllib.parse.quote(f"/{src_bucket}/{src_key}", safe="/")
+        headers = {
+            "x-amz-copy-source": copy_source,
+            "Content-Length": "0",
+        }
+        self._request_expect_ok(
+            "PUT", url, headers=headers, body=b"", ok_statuses=(200,)
+        )
+        logger.debug("Copied %s/%s → %s/%s", src_bucket, src_key, dst_bucket, dst_key)
+
+    def list_objects(
+        self,
+        bucket: str,
+        prefix: str = "",
+        recursive: bool = False,
+        max_keys: int = 1000,
+    ) -> list[ObjectInfo]:
+        """List objects in *bucket* matching *prefix*.
+
+        Uses the ListObjectsV2 API with automatic pagination.
+
+        Args:
+            bucket:    Bucket name.
+            prefix:    Only return keys starting with this prefix.
+            recursive: If ``False`` (default), use ``/`` as delimiter to
+                       group keys by "directory".  If ``True``, list all
+                       keys recursively.
+            max_keys:  Maximum number of keys to return across all pages
+                       (default 1000).
+
+        Returns:
+            List of :class:`ObjectInfo` (without per-object metadata —
+            use :meth:`stat_object` for that).
+
+        Raises:
+            :class:`S3NoSuchBucket`: If the bucket does not exist.
+            :class:`S3Error`:        On other server errors.
+        """
+        result: list[ObjectInfo] = []
+        continuation_token: str | None = None
+
+        while len(result) < max_keys:
+            # Build query string
+            page_size = min(max_keys - len(result), 1000)
+            params: dict[str, str] = {
+                "list-type": "2",
+                "max-keys": str(page_size),
+            }
+            if prefix:
+                params["prefix"] = prefix
+            if not recursive:
+                params["delimiter"] = "/"
+            if continuation_token:
+                params["continuation-token"] = continuation_token
+
+            qs = urllib.parse.urlencode(params)
+            url = self._bucket_url(bucket).rstrip("/") + f"?{qs}"
+            resp = self._request_expect_ok("GET", url)
+            body = resp.read()
+
+            root = ET.fromstring(body)
+
+            # Parse <Contents> elements
+            for content_el in root:
+                tag = content_el.tag
+                if tag != "Contents" and tag != f"{{{_S3_NS}}}Contents":
+                    continue
+
+                key_el = _find_xml_el(content_el, "Key")
+                size_el = _find_xml_el(content_el, "Size")
+                etag_el = _find_xml_el(content_el, "ETag")
+                modified_el = _find_xml_el(content_el, "LastModified")
+
+                if key_el is not None and key_el.text:
+                    obj_size = 0
+                    if size_el is not None and size_el.text:
+                        obj_size = int(size_el.text)
+                    obj_etag = ""
+                    if etag_el is not None and etag_el.text:
+                        obj_etag = etag_el.text.strip('"')
+                    obj_modified = ""
+                    if modified_el is not None and modified_el.text:
+                        obj_modified = modified_el.text
+                    result.append(
+                        ObjectInfo(
+                            bucket=bucket,
+                            key=key_el.text,
+                            size=obj_size,
+                            etag=obj_etag,
+                            last_modified=obj_modified,
+                        )
+                    )
+
+            # Check for more pages
+            truncated_el = _find_xml_el(root, "IsTruncated")
+            if truncated_el is not None and truncated_el.text == "true":
+                token_el = _find_xml_el(root, "NextContinuationToken")
+                if token_el is not None and token_el.text:
+                    continuation_token = token_el.text
+                    continue
+            break
+
+        return result

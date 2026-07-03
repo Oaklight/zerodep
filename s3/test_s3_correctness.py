@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import gzip
 import hashlib
-import hmac
 import io
 import json
 import os
@@ -35,7 +34,6 @@ import time
 import unittest
 import unittest.mock
 import urllib.parse
-import xml.etree.ElementTree as ET
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from unittest.mock import MagicMock, patch
 
@@ -98,7 +96,9 @@ class TestSigV4Helpers(unittest.TestCase):
     def test_sha256_hex_known_value(self):
         # SHA-256("") = e3b0...
         result = _sha256_hex(b"")
-        self.assertEqual(result, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+        self.assertEqual(
+            result, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        )
 
     def test_sha256_hex_hello(self):
         result = _sha256_hex(b"hello")
@@ -170,7 +170,9 @@ class TestSignRequest(unittest.TestCase):
             secret_key=_FAKE_SECRET,
             region=_FAKE_REGION,
         )
-        self.assertEqual(headers["x-amz-content-sha256"], hashlib.sha256(payload).hexdigest())
+        self.assertEqual(
+            headers["x-amz-content-sha256"], hashlib.sha256(payload).hexdigest()
+        )
 
     def test_host_included_in_signed_headers(self):
         headers = _sign_request(
@@ -336,11 +338,15 @@ class TestS3ClientMocked(unittest.TestCase):
             self.assertTrue(self.client.bucket_exists("b"))
 
     def test_bucket_exists_404(self):
-        with self._mock_op("_request", _mock_response(404, _s3_error_xml("NoSuchBucket", "nope"))):
+        with self._mock_op(
+            "_request", _mock_response(404, _s3_error_xml("NoSuchBucket", "nope"))
+        ):
             self.assertFalse(self.client.bucket_exists("b"))
 
     def test_bucket_exists_500_raises(self):
-        with self._mock_op("_request", _mock_response(500, _s3_error_xml("InternalError", "oops"))):
+        with self._mock_op(
+            "_request", _mock_response(500, _s3_error_xml("InternalError", "oops"))
+        ):
             with self.assertRaises(S3Error):
                 self.client.bucket_exists("b")
 
@@ -351,7 +357,10 @@ class TestS3ClientMocked(unittest.TestCase):
             self.client.make_bucket("newbucket")  # should not raise
 
     def test_make_bucket_error_raises(self):
-        with self._mock_op("_request", _mock_response(409, _s3_error_xml("BucketAlreadyOwnedByYou", "owned"))):
+        with self._mock_op(
+            "_request",
+            _mock_response(409, _s3_error_xml("BucketAlreadyOwnedByYou", "owned")),
+        ):
             with self.assertRaises(S3Error):
                 self.client.make_bucket("dup")
 
@@ -363,12 +372,16 @@ class TestS3ClientMocked(unittest.TestCase):
             self.assertEqual(resp.read(), b"content")
 
     def test_get_object_404_no_such_key(self):
-        with self._mock_op("_request", _mock_response(404, _s3_error_xml("NoSuchKey", "missing"))):
+        with self._mock_op(
+            "_request", _mock_response(404, _s3_error_xml("NoSuchKey", "missing"))
+        ):
             with self.assertRaises(S3NoSuchKey):
                 self.client.get_object("b", "k")
 
     def test_get_object_404_no_such_bucket(self):
-        with self._mock_op("_request", _mock_response(404, _s3_error_xml("NoSuchBucket", "gone"))):
+        with self._mock_op(
+            "_request", _mock_response(404, _s3_error_xml("NoSuchBucket", "gone"))
+        ):
             with self.assertRaises(S3NoSuchBucket):
                 self.client.get_object("b", "k")
 
@@ -392,12 +405,13 @@ class TestS3ClientMocked(unittest.TestCase):
 
         with patch.object(self.client, "_request", side_effect=fake_request):
             self.client.put_object(
-                "b", "k", b"x", length=1,
-                metadata={"stored-at": "1720000000"}
+                "b", "k", b"x", length=1, metadata={"stored-at": "1720000000"}
             )
 
         # Should appear with x-amz-meta- prefix (case-normalised)
-        self.assertIn("x-amz-meta-stored-at", {k.lower(): v for k, v in captured_headers.items()})
+        self.assertIn(
+            "x-amz-meta-stored-at", {k.lower(): v for k, v in captured_headers.items()}
+        )
 
     def test_put_object_metadata_prefix_not_doubled(self):
         """If caller already uses x-amz-meta- prefix, don't double it."""
@@ -409,8 +423,7 @@ class TestS3ClientMocked(unittest.TestCase):
 
         with patch.object(self.client, "_request", side_effect=fake_request):
             self.client.put_object(
-                "b", "k", b"x", length=1,
-                metadata={"x-amz-meta-mykey": "val"}
+                "b", "k", b"x", length=1, metadata={"x-amz-meta-mykey": "val"}
             )
 
         norm = {k.lower(): v for k, v in captured_headers.items()}
@@ -418,7 +431,9 @@ class TestS3ClientMocked(unittest.TestCase):
         self.assertNotIn("x-amz-meta-x-amz-meta-mykey", norm)
 
     def test_put_object_error_raises(self):
-        with self._mock_op("_request", _mock_response(403, _s3_error_xml("AccessDenied", "no"))):
+        with self._mock_op(
+            "_request", _mock_response(403, _s3_error_xml("AccessDenied", "no"))
+        ):
             with self.assertRaises(S3Error):
                 self.client.put_object("b", "k", b"x", length=1)
 
@@ -433,7 +448,9 @@ class _SimpleMockS3Handler(BaseHTTPRequestHandler):
 
     _objects: dict[str, bytes] = {}
     _buckets: set[str] = set()
-    log_message = lambda *a: None  # silence request logs
+
+    def log_message(self, *args):  # silence request logs
+        pass
 
     def do_HEAD(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -524,8 +541,10 @@ class TestLocalMockServer(unittest.TestCase):
         self.client.make_bucket("rw-bucket")
         payload = gzip.compress(json.dumps({"k": "v"}).encode())
         self.client.put_object(
-            "rw-bucket", "render/abc.json.gz",
-            payload, length=len(payload),
+            "rw-bucket",
+            "render/abc.json.gz",
+            payload,
+            length=len(payload),
             content_type="application/json",
         )
         with self.client.get_object("rw-bucket", "render/abc.json.gz") as resp:
@@ -557,7 +576,9 @@ _INTEGRATION_SKIP = not (
 )
 
 
-@unittest.skipIf(_INTEGRATION_SKIP, "S3_TEST_* env vars not set — skipping integration tests")
+@unittest.skipIf(
+    _INTEGRATION_SKIP, "S3_TEST_* env vars not set — skipping integration tests"
+)
 class TestS3Integration(unittest.TestCase):
     """Live integration tests against a real S3-compatible backend."""
 
@@ -582,7 +603,10 @@ class TestS3Integration(unittest.TestCase):
         payload = gzip.compress(json.dumps({"ts": time.time()}).encode())
         key = f"test/roundtrip-{int(time.time())}.json.gz"
         self.client.put_object(
-            self.bucket, key, payload, length=len(payload),
+            self.bucket,
+            key,
+            payload,
+            length=len(payload),
             content_type="application/json",
             metadata={"stored-at": str(int(time.time()))},
         )
@@ -593,7 +617,9 @@ class TestS3Integration(unittest.TestCase):
 
     def test_get_missing_key(self):
         with self.assertRaises(S3NoSuchKey):
-            self.client.get_object(self.bucket, f"test/definitely-missing-{time.time()}")
+            self.client.get_object(
+                self.bucket, f"test/definitely-missing-{time.time()}"
+            )
 
 
 if __name__ == "__main__":

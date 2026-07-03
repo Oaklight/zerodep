@@ -68,7 +68,6 @@ from __future__ import annotations
 import hashlib
 import hmac
 import http.client
-import io
 import logging
 import ssl
 import urllib.parse
@@ -228,7 +227,7 @@ def _sign_request(
     """
     now = datetime.now(timezone.utc)
     amz_date = now.strftime("%Y%m%dT%H%M%SZ")  # e.g. 20240101T120000Z
-    date_stamp = now.strftime("%Y%m%d")          # e.g. 20240101
+    date_stamp = now.strftime("%Y%m%d")  # e.g. 20240101
 
     parsed = urllib.parse.urlparse(url)
     host = parsed.netloc
@@ -245,8 +244,7 @@ def _sign_request(
 
     signed_names = sorted(k.lower() for k in hdrs)
     canonical_headers = "".join(
-        f"{k}:{hdrs[k].strip()}\n"
-        for k in sorted(hdrs, key=str.lower)
+        f"{k}:{hdrs[k].strip()}\n" for k in sorted(hdrs, key=str.lower)
     )
     signed_headers_str = ";".join(signed_names)
 
@@ -258,27 +256,33 @@ def _sign_request(
         canonical_qs = ""
 
     # Canonical request
-    canonical_request = "\n".join([
-        method.upper(),
-        urllib.parse.quote(path, safe="/-_.~"),
-        canonical_qs,
-        canonical_headers,
-        signed_headers_str,
-        payload_hash,
-    ])
+    canonical_request = "\n".join(
+        [
+            method.upper(),
+            urllib.parse.quote(path, safe="/-_.~"),
+            canonical_qs,
+            canonical_headers,
+            signed_headers_str,
+            payload_hash,
+        ]
+    )
 
     # String to sign
     credential_scope = f"{date_stamp}/{region}/{service}/aws4_request"
-    string_to_sign = "\n".join([
-        "AWS4-HMAC-SHA256",
-        amz_date,
-        credential_scope,
-        _sha256_hex(canonical_request.encode("utf-8")),
-    ])
+    string_to_sign = "\n".join(
+        [
+            "AWS4-HMAC-SHA256",
+            amz_date,
+            credential_scope,
+            _sha256_hex(canonical_request.encode("utf-8")),
+        ]
+    )
 
     # Signature
     signing_key = _derive_signing_key(secret_key, date_stamp, region, service)
-    signature = hmac.new(signing_key, string_to_sign.encode("utf-8"), hashlib.sha256).hexdigest()
+    signature = hmac.new(
+        signing_key, string_to_sign.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
 
     authorization = (
         f"AWS4-HMAC-SHA256 Credential={access_key}/{credential_scope}, "
@@ -374,7 +378,9 @@ class S3Client:
         self._region = "auto" if region == "auto" else region
         self._secure = secure
         if url_style not in ("path", "virtual-host"):
-            raise ValueError(f"url_style must be 'path' or 'virtual-host', got {url_style!r}")
+            raise ValueError(
+                f"url_style must be 'path' or 'virtual-host', got {url_style!r}"
+            )
         self._url_style = url_style
         self._timeout = timeout
         self._ssl_ctx = ssl.create_default_context() if secure else None
@@ -402,7 +408,9 @@ class S3Client:
 
     def _connect(self, host: str) -> http.client.HTTPConnection:
         if self._secure:
-            return http.client.HTTPSConnection(host, timeout=self._timeout, context=self._ssl_ctx)
+            return http.client.HTTPSConnection(
+                host, timeout=self._timeout, context=self._ssl_ctx
+            )
         return http.client.HTTPConnection(host, timeout=self._timeout)
 
     def _request(
@@ -421,13 +429,15 @@ class S3Client:
 
         hdrs: dict[str, str] = dict(headers or {})
 
-        # Materialise body for signing (small objects only; streaming is handled separately)
+        # Materialise body for signing
+        # (small objects only; streaming is handled separately)
         if isinstance(body, (bytes, bytearray)):
             payload_bytes = bytes(body)
         elif body is None:
             payload_bytes = b""
         else:
-            # File-like: read into memory for signing (put_object handles chunking above)
+            # File-like: read into memory for signing
+            # (put_object handles chunking above)
             payload_bytes = body.read()
             body = payload_bytes  # re-send as bytes
 
@@ -531,9 +541,13 @@ class S3Client:
             ).encode()
             headers["Content-Length"] = str(len(body_xml))
             headers["Content-Type"] = "application/xml"
-            self._request_expect_ok("PUT", url, headers=headers, body=body_xml, ok_statuses=(200,))
+            self._request_expect_ok(
+                "PUT", url, headers=headers, body=body_xml, ok_statuses=(200,)
+            )
         else:
-            self._request_expect_ok("PUT", url, headers=headers, body=b"", ok_statuses=(200,))
+            self._request_expect_ok(
+                "PUT", url, headers=headers, body=b"", ok_statuses=(200,)
+            )
 
         logger.info("Created bucket: %s", bucket)
 

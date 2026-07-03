@@ -219,6 +219,7 @@ exclude = [
     "frontmatter/",
     "depdetect/",
     "config/",
+    "s3/",
     "zerodep.py",
 ]
 

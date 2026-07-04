@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from httpclient import (
     AsyncClient,
     BasicAuth,
+    CaseInsensitiveDict,
     Client,
     DigestAuth,
     HttpConnectionError,
@@ -852,6 +853,95 @@ from httpclient import (
     _merge_headers,
     _prepare_request,
 )
+
+
+class TestCaseInsensitiveDict:
+    """CaseInsensitiveDict: O(1) case-insensitive key operations."""
+
+    def test_set_and_get_same_case(self):
+        d = CaseInsensitiveDict()
+        d["Content-Type"] = "application/json"
+        assert d["Content-Type"] == "application/json"
+
+    def test_get_different_case(self):
+        d = CaseInsensitiveDict()
+        d["Content-Type"] = "application/json"
+        assert d["content-type"] == "application/json"
+        assert d["CONTENT-TYPE"] == "application/json"
+
+    def test_no_duplicate_keys_on_overwrite(self):
+        d = CaseInsensitiveDict()
+        d["User-Agent"] = "a"
+        d["user-agent"] = "b"
+        assert len(d) == 1
+        assert d["user-agent"] == "b"
+
+    def test_contains_case_insensitive(self):
+        d = CaseInsensitiveDict({"Host": "example.com"})
+        assert "host" in d
+        assert "HOST" in d
+        assert "Host" in d
+
+    def test_delitem_case_insensitive(self):
+        d = CaseInsensitiveDict({"Content-Type": "text/plain"})
+        del d["content-type"]
+        assert "content-type" not in d
+
+    def test_get_with_default(self):
+        d = CaseInsensitiveDict()
+        assert d.get("Missing") is None
+        assert d.get("Missing", "fallback") == "fallback"
+
+    def test_setdefault_does_not_overwrite(self):
+        d = CaseInsensitiveDict({"X-Foo": "original"})
+        d.setdefault("x-foo", "new")
+        assert d["x-foo"] == "original"
+
+    def test_setdefault_inserts_when_absent(self):
+        d = CaseInsensitiveDict()
+        d.setdefault("X-Bar", "default")
+        assert d["x-bar"] == "default"
+
+    def test_pop_case_insensitive(self):
+        d = CaseInsensitiveDict({"Authorization": "Bearer token"})
+        val = d.pop("authorization")
+        assert val == "Bearer token"
+        assert len(d) == 0
+
+    def test_update_from_dict(self):
+        d = CaseInsensitiveDict({"User-Agent": "old"})
+        d.update({"user-agent": "new", "Accept": "*/*"})
+        assert len(d) == 2
+        assert d["user-agent"] == "new"
+        assert d["accept"] == "*/*"
+
+    def test_init_from_list_of_tuples(self):
+        d = CaseInsensitiveDict([("Content-Type", "text/html"), ("X-Foo", "bar")])
+        assert d["content-type"] == "text/html"
+        assert d["x-foo"] == "bar"
+
+    def test_keys_stored_lowercase(self):
+        d = CaseInsensitiveDict({"Content-Type": "text/plain", "HOST": "example.com"})
+        assert set(d.keys()) == {"content-type", "host"}
+
+    def test_is_dict_subclass(self):
+        d = CaseInsensitiveDict()
+        assert isinstance(d, dict)
+
+    def test_sigv4_headers_no_duplicate_host(self):
+        """Key use case: SigV4 headers merged with library defaults."""
+        d = CaseInsensitiveDict()
+        d.setdefault("User-Agent", "zerodep/1")
+        d.setdefault("Accept-Encoding", "gzip")
+        d.update(
+            {
+                "host": "mybucket.s3.amazonaws.com",
+                "x-amz-date": "20240101T120000Z",
+                "Authorization": "AWS4-HMAC-SHA256 ...",
+            }
+        )
+        host_keys = [k for k in d if k == "host"]
+        assert len(host_keys) == 1
 
 
 class TestPrepareRequestHeaderDedup:

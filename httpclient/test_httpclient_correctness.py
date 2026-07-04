@@ -1,6 +1,7 @@
 """Correctness tests: zerodep HTTP client vs httpx."""
 
 import asyncio
+import io
 import os
 import sys
 import time
@@ -261,7 +262,6 @@ class TestSyncFileUpload:
         assert "file" in body["files"]
 
     def test_upload_file_object(self, httpbin_url):
-        import io
 
         buf = io.BytesIO(b"file object content")
         buf.name = "buffer.txt"
@@ -843,12 +843,14 @@ class TestSyncConcurrency:
 # - _prepare_request: case-insensitive merge; user headers win over defaults
 # - _build_raw_http_request: no duplicate Host when user provides one
 
-import io
-import unittest.mock
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from httpclient import _build_raw_http_request, _prepare_request
+from httpclient import (
+    _build_raw_http_request,
+    _merge_headers,
+    _prepare_request,
+)
 
 
 class TestPrepareRequestHeaderDedup:
@@ -952,17 +954,17 @@ class TestBuildRawHttpRequestHostDedup:
     def test_no_duplicate_host_when_user_provides_host(self):
         """User-supplied 'host' must not result in two Host lines."""
         raw = self._build({"host": "mybucket.s3.amazonaws.com"})
-        host_lines = [l for l in raw.splitlines() if l.lower().startswith("host:")]
+        host_lines = [ln for ln in raw.splitlines() if ln.lower().startswith("host:")]
         assert len(host_lines) == 1, f"duplicate Host lines: {host_lines}"
 
     def test_no_duplicate_host_uppercase(self):
         raw = self._build({"Host": "custom.example.com"})
-        host_lines = [l for l in raw.splitlines() if l.lower().startswith("host:")]
+        host_lines = [ln for ln in raw.splitlines() if ln.lower().startswith("host:")]
         assert len(host_lines) == 1, f"duplicate Host lines: {host_lines}"
 
     def test_user_host_value_preserved(self):
         raw = self._build({"host": "mybucket.s3.amazonaws.com"})
-        host_lines = [l for l in raw.splitlines() if l.lower().startswith("host:")]
+        host_lines = [ln for ln in raw.splitlines() if ln.lower().startswith("host:")]
         assert "mybucket.s3.amazonaws.com" in host_lines[0]
 
     def test_connection_close_added_when_no_pool(self):
@@ -972,21 +974,28 @@ class TestBuildRawHttpRequestHostDedup:
     def test_no_duplicate_connection_when_user_sets_it(self):
         raw = self._build({"Connection": "keep-alive"}, use_pool=False)
         conn_lines = [
-            l for l in raw.splitlines() if l.lower().startswith("connection:")
+            ln for ln in raw.splitlines() if ln.lower().startswith("connection:")
         ]
         assert len(conn_lines) == 1
         assert "keep-alive" in conn_lines[0]
 
     def test_sigv4_full_roundtrip(self):
         """Simulate what AsyncS3Client would pass; verify no duplicates."""
+        sha256_empty = (
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        )
+        auth_val = (
+            "AWS4-HMAC-SHA256 Credential=minioadmin/20240101/us-east-1/s3/aws4_request,"
+            " SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=abc123"
+        )
         sigv4_headers = {
             "host": "127.0.0.1:9000",
             "x-amz-date": "20240101T120000Z",
-            "x-amz-content-sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-            "Authorization": "AWS4-HMAC-SHA256 Credential=minioadmin/20240101/us-east-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=abc123",
+            "x-amz-content-sha256": sha256_empty,
+            "Authorization": auth_val,
         }
         raw = self._build(sigv4_headers, host="127.0.0.1:9000")
-        host_lines = [l for l in raw.splitlines() if l.lower().startswith("host:")]
+        host_lines = [ln for ln in raw.splitlines() if ln.lower().startswith("host:")]
         assert len(host_lines) == 1, f"duplicate Host: {host_lines}"
         assert "Authorization" in raw
         assert "x-amz-date" in raw
@@ -1040,10 +1049,13 @@ class TestClientInterfaceParity:
 
     def test_client_init_params_match(self):
         import inspect
+
         cp = inspect.signature(Client.__init__).parameters
         acp = inspect.signature(AsyncClient.__init__).parameters
         # Exclude 'self'; both should accept the same keyword args
-        assert set(cp) == set(acp), f"param mismatch: Client={set(cp)} AsyncClient={set(acp)}"
+        assert set(cp) == set(acp), (
+            f"param mismatch: Client={set(cp)} AsyncClient={set(acp)}"
+        )
 
     def test_client_methods_match(self):
         sync_methods = {m for m in dir(Client) if not m.startswith("_")}

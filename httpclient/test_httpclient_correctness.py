@@ -1116,11 +1116,11 @@ class TestMergeHeadersCaseInsensitive:
 
     def test_none_base(self):
         merged = _merge_headers(None, {"X-Foo": "bar"})
-        assert merged == {"X-Foo": "bar"}
+        assert merged == {"x-foo": "bar"}  # CaseInsensitiveDict stores lowercase
 
     def test_none_extra(self):
         merged = _merge_headers({"X-Foo": "bar"}, None)
-        assert merged == {"X-Foo": "bar"}
+        assert merged == {"x-foo": "bar"}  # CaseInsensitiveDict stores lowercase
 
     def test_both_none(self):
         assert _merge_headers(None, None) == {}

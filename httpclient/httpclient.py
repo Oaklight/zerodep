@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.3"
+# version = "0.4.4"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -69,6 +69,8 @@ __all__ = [
     "HttpConnectionError",
     "HttpTimeoutError",
     "Socks5Error",
+    # Data structures
+    "CaseInsensitiveDict",
     # Response classes
     "Response",
     "StreamingResponse",
@@ -106,6 +108,71 @@ DEFAULT_MAX_REDIRECTS = 10
 DEFAULT_USER_AGENT = "zerodep-http/0.1"
 DEFAULT_POOL_SIZE = 10
 DEFAULT_POOL_IDLE_TIMEOUT = 60.0
+
+
+# ── CaseInsensitiveDict ──
+
+
+class CaseInsensitiveDict(dict):
+    """A ``dict`` subclass that normalises all keys to lowercase.
+
+    Provides case-insensitive HTTP header storage: ``d["Content-Type"]``
+    and ``d["content-type"]`` resolve to the same slot.  Iteration always
+    yields lowercase keys; original casing is not preserved.
+
+    This is the type used for ``Response.headers``,
+    ``StreamingResponse.headers``, and the internal ``req_headers`` dict
+    that flows through ``_prepare_request``.  HTTP header names are
+    case-insensitive per :rfc:`7230` \u00a73.2.
+
+    It is a plain ``dict`` subclass, so it is accepted everywhere a
+    ``dict`` is expected.  Passing it as ``headers=`` to the convenience
+    functions or client methods works without any conversion.
+    """
+
+    def __init__(
+        self,
+        data: dict | list[tuple[str, str]] | None = None,
+        **kwargs: str,
+    ) -> None:
+        super().__init__()
+        if data is not None:
+            self.update(data)
+        if kwargs:
+            self.update(kwargs)
+
+    def __setitem__(self, key: str, value: str) -> None:  # type: ignore[override]
+        super().__setitem__(key.lower(), value)
+
+    def __getitem__(self, key: str) -> str:  # type: ignore[override]
+        return super().__getitem__(key.lower())  # type: ignore[return-value]
+
+    def __delitem__(self, key: str) -> None:
+        super().__delitem__(key.lower())
+
+    def __contains__(self, key: object) -> bool:
+        return super().__contains__(key.lower() if isinstance(key, str) else key)
+
+    def get(self, key: str, default: str | None = None) -> str | None:  # type: ignore[override]
+        return super().get(key.lower(), default)  # type: ignore[return-value]
+
+    def pop(self, key: str, *args: str) -> str:  # type: ignore[override]
+        return super().pop(key.lower(), *args)  # type: ignore[return-value]
+
+    def setdefault(self, key: str, default: str = "") -> str:  # type: ignore[override]
+        return super().setdefault(key.lower(), default)  # type: ignore[return-value]
+
+    def update(  # type: ignore[override]
+        self,
+        data: dict | list[tuple[str, str]] | None = None,
+        **kwargs: str,
+    ) -> None:
+        if data is not None:
+            items = data.items() if hasattr(data, "items") else data
+            for k, v in items:
+                self[k] = v
+        for k, v in kwargs.items():
+            self[k] = v
 
 
 # ── Exceptions ──
@@ -193,7 +260,7 @@ class Response:
     def __init__(
         self,
         status_code: int,
-        headers: dict[str, str],
+        headers: CaseInsensitiveDict,
         content: bytes,
         url: str,
     ) -> None:
@@ -255,7 +322,7 @@ class Response:
         return f"<Response [{self.status_code}]>"
 
 
-def _guess_encoding_from_headers(headers: dict[str, str]) -> str:
+def _guess_encoding_from_headers(headers: CaseInsensitiveDict) -> str:
     """Extract charset from Content-Type header, default utf-8."""
     ct = headers.get("content-type", "")
     for part in ct.split(";"):
@@ -474,7 +541,7 @@ class StreamingResponse:
     )
 
     status_code: int
-    headers: dict[str, str]
+    headers: CaseInsensitiveDict
     url: str
     _encoding: str
     _decompressor: zlib._Decompress | None
@@ -495,7 +562,7 @@ class StreamingResponse:
     def _from_sync(
         cls,
         status_code: int,
-        headers: dict[str, str],
+        headers: CaseInsensitiveDict,
         url: str,
         resp: http.client.HTTPResponse,
         conn: http.client.HTTPConnection,
@@ -524,7 +591,7 @@ class StreamingResponse:
     def _from_async(
         cls,
         status_code: int,
-        headers: dict[str, str],
+        headers: CaseInsensitiveDict,
         url: str,
         reader: asyncio.StreamReader,
         writer: asyncio.StreamWriter,
@@ -1270,35 +1337,28 @@ def _parse_url(url: str) -> tuple[str, str, int, str, bool]:
 # -- Shared request preparation helpers --
 
 
-def _headers_set_default(req_headers: dict[str, str], key: str, value: str) -> None:
-    """Set *key*/*value* only when no case-insensitive match already exists.
+def _headers_set_default(
+    req_headers: CaseInsensitiveDict, key: str, value: str
+) -> None:
+    """Set *key*/*value* only when the key is not already present.
 
-    This ensures user-supplied headers (e.g. ``user-agent``, ``content-type``)
-    always win over defaults, regardless of case.
+    With ``CaseInsensitiveDict``, ``setdefault`` already handles case
+    normalisation.  This thin wrapper keeps the call-site readable.
     """
-    key_lower = key.lower()
-    if not any(k.lower() == key_lower for k in req_headers):
-        req_headers[key] = value
+    req_headers.setdefault(key, value)
 
 
 def _headers_merge_user(
-    req_headers: dict[str, str], user_headers: dict[str, str] | None
+    req_headers: CaseInsensitiveDict, user_headers: dict[str, str] | None
 ) -> None:
-    """Merge *user_headers* into *req_headers* with case-insensitive replacement.
+    """Merge *user_headers* into *req_headers*; user values always win.
 
-    For each user-supplied header, any existing entry with the same name
-    (case-insensitively) is removed and the user value is inserted.  This
-    prevents duplicate headers like ``User-Agent`` + ``user-agent``.
+    With ``CaseInsensitiveDict``, ``update`` handles case-insensitive
+    collision automatically — setting ``user-agent`` overwrites
+    ``User-Agent`` in the same slot.
     """
-    if not user_headers:
-        return
-    for k, v in user_headers.items():
-        k_lower = k.lower()
-        # Remove any existing key that matches case-insensitively
-        conflicts = [ek for ek in req_headers if ek.lower() == k_lower]
-        for ck in conflicts:
-            del req_headers[ck]
-        req_headers[k] = v
+    if user_headers:
+        req_headers.update(user_headers)
 
 
 def _prepare_request(
@@ -1310,7 +1370,7 @@ def _prepare_request(
     files: dict[str, Any] | list[tuple[str, Any]] | None,
     params: dict[str, Any] | None,
     auth: tuple[str, str] | Auth | None,
-) -> tuple[str, bytes | None, dict[str, str], Auth | None]:
+) -> tuple[str, bytes | None, CaseInsensitiveDict, Auth | None]:
     """Build URL, encode body, assemble headers, and normalize auth.
 
     Shared by _sync_request and _async_request (Phases 1-3).
@@ -1321,8 +1381,8 @@ def _prepare_request(
       3. body-derived defaults (Content-Type, Content-Length)
       4. library defaults (User-Agent, Accept-Encoding)
 
-    All merging is case-insensitive: ``user-agent`` overrides ``User-Agent``
-    and vice-versa.  No duplicate header names are ever emitted.
+    All keys are normalised to lowercase via :class:`CaseInsensitiveDict`;
+    no duplicate header names are ever emitted.
 
     Returns:
         (final_url, body_bytes, request_headers, auth_object).
@@ -1330,19 +1390,19 @@ def _prepare_request(
     url = _build_url(url, params)
     body, content_type = _prepare_body(data, json_data, files)
 
-    req_headers: dict[str, str] = {}
+    req_headers: CaseInsensitiveDict = CaseInsensitiveDict()
 
     # Library defaults — only applied when the user hasn't already set them
     _headers_set_default(req_headers, "User-Agent", DEFAULT_USER_AGENT)
     _headers_set_default(req_headers, "Accept-Encoding", "gzip, deflate")
 
-    # Body-derived headers — set as defaults too so user can override
+    # Body-derived headers — set as defaults so user can override
     if content_type:
         _headers_set_default(req_headers, "Content-Type", content_type)
     if body is not None:
         _headers_set_default(req_headers, "Content-Length", str(len(body)))
 
-    # User headers win over all of the above (case-insensitive merge)
+    # User headers win over all of the above
     _headers_merge_user(req_headers, headers)
 
     auth_obj = _normalize_auth(auth)
@@ -1697,7 +1757,7 @@ def _sync_request(
             try:
                 conn.request(method, request_path, body=body, headers=req_headers)
                 resp = conn.getresponse()
-                resp_headers = {k.lower(): v for k, v in resp.getheaders()}
+                resp_headers = CaseInsensitiveDict(resp.getheaders())
                 status = resp.status
 
                 if _is_redirect(status, resp_headers):
@@ -1764,7 +1824,7 @@ def _sync_request(
 async def _async_read_response_headers(
     reader: asyncio.StreamReader,
     timeout: float,
-) -> tuple[int, dict[str, str]]:
+) -> tuple[int, CaseInsensitiveDict]:
     """Read HTTP status line and headers from an asyncio StreamReader.
 
     Does NOT consume the body -- the reader is left positioned at the
@@ -1782,7 +1842,7 @@ async def _async_read_response_headers(
     status_code = int(parts[1])
 
     # Headers until empty line
-    headers: dict[str, str] = {}
+    headers: CaseInsensitiveDict = CaseInsensitiveDict()
     while True:
         line = await asyncio.wait_for(reader.readline(), timeout=timeout)
         decoded = line.decode("latin-1").rstrip("\r\n")
@@ -1790,7 +1850,7 @@ async def _async_read_response_headers(
             break
         if ":" in decoded:
             k, v = decoded.split(":", 1)
-            headers[k.strip().lower()] = v.strip()
+            headers[k.strip()] = v.strip()
 
     return status_code, headers
 
@@ -2047,16 +2107,13 @@ def _build_raw_http_request(
         Encoded HTTP/1.1 request bytes (without body).
     """
     request_line = f"{method} {request_path} HTTP/1.1\r\n"
-    # Emit Host first (RFC 7230 §5.4), but only if the user hasn't already
-    # provided it (e.g. SigV4 callers set host explicitly).
-    has_host = any(k.lower() == "host" for k in req_headers)
-    header_lines = "" if has_host else f"Host: {host}\r\n"
+    # Emit Host first (RFC 7230 §5.4). req_headers is a CaseInsensitiveDict
+    # so the 'in' check is O(1) and case-insensitive.
+    header_lines = "" if "host" in req_headers else f"Host: {host}\r\n"
     for k, v in req_headers.items():
         header_lines += f"{k}: {v}\r\n"
-    if not use_pool or use_proxy:
-        # Only add Connection: close if not already set by the caller
-        if not any(k.lower() == "connection" for k in req_headers):
-            header_lines += "Connection: close\r\n"
+    if (not use_pool or use_proxy) and "connection" not in req_headers:
+        header_lines += "Connection: close\r\n"
     header_lines += "\r\n"
     return (request_line + header_lines).encode("latin-1")
 
@@ -2397,17 +2454,13 @@ def _encode_multipart(
 def _merge_headers(
     base: dict[str, str] | None,
     extra: dict[str, str] | None,
-) -> dict[str, str]:
-    """Merge header dicts with case-insensitive dedup; *extra* wins on conflict.
-
-    Iterates *base* first, then *extra*.  For each key in *extra*, any
-    existing entry in the accumulator that matches case-insensitively is
-    removed before the new value is inserted, so the result never contains
-    two keys that differ only in case.
-    """
-    merged: dict[str, str] = {}
-    _headers_merge_user(merged, base)
-    _headers_merge_user(merged, extra)
+) -> CaseInsensitiveDict:
+    """Merge header dicts into a :class:`CaseInsensitiveDict`; *extra* wins."""
+    merged = CaseInsensitiveDict()
+    if base:
+        merged.update(base)
+    if extra:
+        merged.update(extra)
     return merged
 
 

@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.3"
+# version = "0.4.4"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -2398,12 +2398,16 @@ def _merge_headers(
     base: dict[str, str] | None,
     extra: dict[str, str] | None,
 ) -> dict[str, str]:
-    """Merge header dicts (case-insensitive merge, last wins)."""
+    """Merge header dicts with case-insensitive dedup; *extra* wins on conflict.
+
+    Iterates *base* first, then *extra*.  For each key in *extra*, any
+    existing entry in the accumulator that matches case-insensitively is
+    removed before the new value is inserted, so the result never contains
+    two keys that differ only in case.
+    """
     merged: dict[str, str] = {}
-    for h in (base, extra):
-        if h:
-            for k, v in h.items():
-                merged[k] = v
+    _headers_merge_user(merged, base)
+    _headers_merge_user(merged, extra)
     return merged
 
 
@@ -2560,6 +2564,13 @@ class Client:
         """Close all pooled connections."""
         self._pool.close_all()
 
+    # Async-style alias so callers can use the same name for both clients
+    # in generic code (``await client.aclose()`` works for AsyncClient;
+    # ``client.aclose()`` works here as a plain synchronous no-op wrapper).
+    async def aclose(self) -> None:  # type: ignore[misc]
+        """Async-compatible alias for :meth:`close` (for interface parity with AsyncClient)."""
+        self.close()
+
     def __enter__(self) -> Client:
         return self
 
@@ -2638,6 +2649,26 @@ class AsyncClient:
     async def aclose(self) -> None:
         """Close all pooled connections."""
         await self._pool.close_all()
+
+    # Sync-style alias for interface parity with Client.
+    def close(self) -> None:
+        """Schedule pool teardown synchronously (fires-and-forgets the coroutine).
+
+        Prefer :meth:`aclose` inside async code.  This alias exists so that
+        generic teardown helpers that call ``client.close()`` work with both
+        ``Client`` and ``AsyncClient`` without branching.
+        """
+        import asyncio
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            loop.create_task(self._pool.close_all())
+        else:
+            asyncio.run(self._pool.close_all())
 
     async def __aenter__(self) -> AsyncClient:
         return self

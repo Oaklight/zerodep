@@ -990,3 +990,65 @@ class TestBuildRawHttpRequestHostDedup:
         assert len(host_lines) == 1, f"duplicate Host: {host_lines}"
         assert "Authorization" in raw
         assert "x-amz-date" in raw
+
+
+class TestMergeHeadersCaseInsensitive:
+    """_merge_headers: case-insensitive dedup, extra wins."""
+
+    def test_extra_overrides_base_same_case(self):
+        merged = _merge_headers({"User-Agent": "base/1"}, {"User-Agent": "extra/2"})
+        ua = [v for k, v in merged.items() if k.lower() == "user-agent"]
+        assert ua == ["extra/2"]
+
+    def test_extra_overrides_base_different_case(self):
+        merged = _merge_headers({"User-Agent": "base/1"}, {"user-agent": "extra/2"})
+        ua = [v for k, v in merged.items() if k.lower() == "user-agent"]
+        assert len(ua) == 1, f"duplicate: {merged}"
+        assert ua[0] == "extra/2"
+
+    def test_no_duplicate_keys(self):
+        merged = _merge_headers(
+            {"Content-Type": "application/json"},
+            {"content-type": "text/plain"},
+        )
+        keys_lower = [k.lower() for k in merged]
+        assert len(keys_lower) == len(set(keys_lower)), f"duplicates: {merged}"
+
+    def test_none_base(self):
+        merged = _merge_headers(None, {"X-Foo": "bar"})
+        assert merged == {"X-Foo": "bar"}
+
+    def test_none_extra(self):
+        merged = _merge_headers({"X-Foo": "bar"}, None)
+        assert merged == {"X-Foo": "bar"}
+
+    def test_both_none(self):
+        assert _merge_headers(None, None) == {}
+
+
+class TestClientInterfaceParity:
+    """Client and AsyncClient expose the same interface."""
+
+    def test_client_has_aclose(self):
+        c = Client()
+        assert callable(getattr(c, "aclose", None)), "Client missing aclose"
+        c.close()
+
+    def test_async_client_has_close(self):
+        ac = AsyncClient()
+        assert callable(getattr(ac, "close", None)), "AsyncClient missing close"
+
+    def test_client_init_params_match(self):
+        import inspect
+        cp = inspect.signature(Client.__init__).parameters
+        acp = inspect.signature(AsyncClient.__init__).parameters
+        # Exclude 'self'; both should accept the same keyword args
+        assert set(cp) == set(acp), f"param mismatch: Client={set(cp)} AsyncClient={set(acp)}"
+
+    def test_client_methods_match(self):
+        sync_methods = {m for m in dir(Client) if not m.startswith("_")}
+        async_methods = {m for m in dir(AsyncClient) if not m.startswith("_")}
+        assert sync_methods == async_methods, (
+            f"only in Client: {sync_methods - async_methods}\n"
+            f"only in AsyncClient: {async_methods - sync_methods}"
+        )

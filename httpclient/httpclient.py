@@ -2568,7 +2568,7 @@ class Client:
     # in generic code (``await client.aclose()`` works for AsyncClient;
     # ``client.aclose()`` works here as a plain synchronous no-op wrapper).
     async def aclose(self) -> None:  # type: ignore[misc]
-        """Async-compatible alias for :meth:`close` (for interface parity with AsyncClient)."""
+        """Async-compatible alias for :meth:`close` (parity with AsyncClient)."""
         self.close()
 
     def __enter__(self) -> Client:

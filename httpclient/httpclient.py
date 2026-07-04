@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.2"
+# version = "0.4.3"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -1270,6 +1270,37 @@ def _parse_url(url: str) -> tuple[str, str, int, str, bool]:
 # -- Shared request preparation helpers --
 
 
+def _headers_set_default(req_headers: dict[str, str], key: str, value: str) -> None:
+    """Set *key*/*value* only when no case-insensitive match already exists.
+
+    This ensures user-supplied headers (e.g. ``user-agent``, ``content-type``)
+    always win over defaults, regardless of case.
+    """
+    key_lower = key.lower()
+    if not any(k.lower() == key_lower for k in req_headers):
+        req_headers[key] = value
+
+
+def _headers_merge_user(
+    req_headers: dict[str, str], user_headers: dict[str, str] | None
+) -> None:
+    """Merge *user_headers* into *req_headers* with case-insensitive replacement.
+
+    For each user-supplied header, any existing entry with the same name
+    (case-insensitively) is removed and the user value is inserted.  This
+    prevents duplicate headers like ``User-Agent`` + ``user-agent``.
+    """
+    if not user_headers:
+        return
+    for k, v in user_headers.items():
+        k_lower = k.lower()
+        # Remove any existing key that matches case-insensitively
+        conflicts = [ek for ek in req_headers if ek.lower() == k_lower]
+        for ck in conflicts:
+            del req_headers[ck]
+        req_headers[k] = v
+
+
 def _prepare_request(
     method: str,
     url: str,
@@ -1284,25 +1315,40 @@ def _prepare_request(
 
     Shared by _sync_request and _async_request (Phases 1-3).
 
+    Header precedence (highest → lowest):
+      1. auth headers (digest/basic — must override everything)
+      2. user-supplied *headers*
+      3. body-derived defaults (Content-Type, Content-Length)
+      4. library defaults (User-Agent, Accept-Encoding)
+
+    All merging is case-insensitive: ``user-agent`` overrides ``User-Agent``
+    and vice-versa.  No duplicate header names are ever emitted.
+
     Returns:
         (final_url, body_bytes, request_headers, auth_object).
     """
     url = _build_url(url, params)
     body, content_type = _prepare_body(data, json_data, files)
 
-    req_headers: dict[str, str] = {
-        "User-Agent": DEFAULT_USER_AGENT,
-        "Accept-Encoding": "gzip, deflate",
-    }
+    req_headers: dict[str, str] = {}
+
+    # Library defaults — only applied when the user hasn't already set them
+    _headers_set_default(req_headers, "User-Agent", DEFAULT_USER_AGENT)
+    _headers_set_default(req_headers, "Accept-Encoding", "gzip, deflate")
+
+    # Body-derived headers — set as defaults too so user can override
     if content_type:
-        req_headers["Content-Type"] = content_type
+        _headers_set_default(req_headers, "Content-Type", content_type)
     if body is not None:
-        req_headers["Content-Length"] = str(len(body))
-    req_headers.update(headers or {})
+        _headers_set_default(req_headers, "Content-Length", str(len(body)))
+
+    # User headers win over all of the above (case-insensitive merge)
+    _headers_merge_user(req_headers, headers)
 
     auth_obj = _normalize_auth(auth)
     if isinstance(auth_obj, BasicAuth):
-        req_headers.update(auth_obj.auth_headers(method, url))
+        # Auth headers have highest priority — always override
+        _headers_merge_user(req_headers, auth_obj.auth_headers(method, url))
 
     return url, body, req_headers, auth_obj
 
@@ -2001,11 +2047,16 @@ def _build_raw_http_request(
         Encoded HTTP/1.1 request bytes (without body).
     """
     request_line = f"{method} {request_path} HTTP/1.1\r\n"
-    header_lines = f"Host: {host}\r\n"
+    # Emit Host first (RFC 7230 §5.4), but only if the user hasn't already
+    # provided it (e.g. SigV4 callers set host explicitly).
+    has_host = any(k.lower() == "host" for k in req_headers)
+    header_lines = "" if has_host else f"Host: {host}\r\n"
     for k, v in req_headers.items():
         header_lines += f"{k}: {v}\r\n"
     if not use_pool or use_proxy:
-        header_lines += "Connection: close\r\n"
+        # Only add Connection: close if not already set by the caller
+        if not any(k.lower() == "connection" for k in req_headers):
+            header_lines += "Connection: close\r\n"
     header_lines += "\r\n"
     return (request_line + header_lines).encode("latin-1")
 

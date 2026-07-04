@@ -836,3 +836,157 @@ class TestSyncConcurrency:
 
         client.close()
         assert not errors, f"Thread errors: {errors}"
+
+
+# ── Unit tests: header deduplication (no network) ──
+# These tests verify the fix for issue #116:
+# - _prepare_request: case-insensitive merge; user headers win over defaults
+# - _build_raw_http_request: no duplicate Host when user provides one
+
+import io
+import unittest.mock
+
+sys.path.insert(0, os.path.dirname(__file__))
+
+from httpclient import _build_raw_http_request, _prepare_request
+
+
+class TestPrepareRequestHeaderDedup:
+    """_prepare_request: case-insensitive merge, user headers always win."""
+
+    def _prepare(self, headers=None, data=None):
+        _, _, req_headers, _ = _prepare_request(
+            "GET",
+            "https://example.com/",
+            headers,
+            data,
+            None,
+            None,
+            None,
+            None,
+        )
+        return req_headers
+
+    def test_default_user_agent_present(self):
+        h = self._prepare()
+        assert any(k.lower() == "user-agent" for k in h)
+
+    def test_user_agent_override_same_case(self):
+        h = self._prepare({"User-Agent": "my-agent/1.0"})
+        ua_values = [v for k, v in h.items() if k.lower() == "user-agent"]
+        assert ua_values == ["my-agent/1.0"], f"got: {h}"
+
+    def test_user_agent_override_lowercase(self):
+        """user-agent (lowercase) must override the default User-Agent."""
+        h = self._prepare({"user-agent": "custom/2.0"})
+        ua_values = [v for k, v in h.items() if k.lower() == "user-agent"]
+        assert len(ua_values) == 1, f"duplicate user-agent: {h}"
+        assert ua_values[0] == "custom/2.0"
+
+    def test_accept_encoding_override(self):
+        h = self._prepare({"Accept-Encoding": "identity"})
+        ae_values = [v for k, v in h.items() if k.lower() == "accept-encoding"]
+        assert ae_values == ["identity"]
+
+    def test_accept_encoding_override_lowercase(self):
+        h = self._prepare({"accept-encoding": "identity"})
+        ae_values = [v for k, v in h.items() if k.lower() == "accept-encoding"]
+        assert len(ae_values) == 1, f"duplicate accept-encoding: {h}"
+        assert ae_values[0] == "identity"
+
+    def test_no_duplicate_keys_with_mixed_case(self):
+        h = self._prepare({"user-agent": "x", "accept-encoding": "identity"})
+        lower_keys = [k.lower() for k in h]
+        assert len(lower_keys) == len(set(lower_keys)), f"duplicate keys: {lower_keys}"
+
+    def test_user_provided_content_type_wins(self):
+        """User content-type overrides the body-derived one."""
+        h = self._prepare(
+            headers={"Content-Type": "application/x-custom"},
+            data=b"body",
+        )
+        ct_values = [v for k, v in h.items() if k.lower() == "content-type"]
+        assert ct_values == ["application/x-custom"], f"got: {h}"
+
+    def test_no_duplicate_content_type(self):
+        h = self._prepare(
+            headers={"content-type": "text/plain"},
+            data=b"hello",
+        )
+        ct_values = [v for k, v in h.items() if k.lower() == "content-type"]
+        assert len(ct_values) == 1
+
+    def test_sigv4_style_headers_preserved(self):
+        """Simulate a SigV4-signed headers dict; no defaults should clobber them."""
+        sigv4_headers = {
+            "host": "mybucket.s3.amazonaws.com",
+            "x-amz-date": "20240101T120000Z",
+            "x-amz-content-sha256": "e3b0c44298fc1c149afbf4c8996fb924"
+            "27ae41e4649b934ca495991b7852b855",
+            "Authorization": "AWS4-HMAC-SHA256 Credential=AKIA.../...",
+        }
+        h = self._prepare(sigv4_headers)
+        # host must appear exactly once
+        host_values = [v for k, v in h.items() if k.lower() == "host"]
+        assert host_values == ["mybucket.s3.amazonaws.com"], f"got: {h}"
+        # SigV4 headers must survive intact
+        assert "x-amz-date" in h or "X-Amz-Date" in h
+
+
+class TestBuildRawHttpRequestHostDedup:
+    """_build_raw_http_request: no duplicate Host when user already provides one."""
+
+    def _build(self, req_headers, host="example.com", use_pool=False, use_proxy=False):
+        raw = _build_raw_http_request(
+            "GET", "/path", host, req_headers, use_pool, use_proxy
+        )
+        return raw.decode("latin-1")
+
+    def test_host_added_when_absent(self):
+        raw = self._build({})
+        host_count = sum(
+            1 for line in raw.splitlines() if line.lower().startswith("host:")
+        )
+        assert host_count == 1
+
+    def test_no_duplicate_host_when_user_provides_host(self):
+        """User-supplied 'host' must not result in two Host lines."""
+        raw = self._build({"host": "mybucket.s3.amazonaws.com"})
+        host_lines = [l for l in raw.splitlines() if l.lower().startswith("host:")]
+        assert len(host_lines) == 1, f"duplicate Host lines: {host_lines}"
+
+    def test_no_duplicate_host_uppercase(self):
+        raw = self._build({"Host": "custom.example.com"})
+        host_lines = [l for l in raw.splitlines() if l.lower().startswith("host:")]
+        assert len(host_lines) == 1, f"duplicate Host lines: {host_lines}"
+
+    def test_user_host_value_preserved(self):
+        raw = self._build({"host": "mybucket.s3.amazonaws.com"})
+        host_lines = [l for l in raw.splitlines() if l.lower().startswith("host:")]
+        assert "mybucket.s3.amazonaws.com" in host_lines[0]
+
+    def test_connection_close_added_when_no_pool(self):
+        raw = self._build({}, use_pool=False)
+        assert "Connection: close" in raw
+
+    def test_no_duplicate_connection_when_user_sets_it(self):
+        raw = self._build({"Connection": "keep-alive"}, use_pool=False)
+        conn_lines = [
+            l for l in raw.splitlines() if l.lower().startswith("connection:")
+        ]
+        assert len(conn_lines) == 1
+        assert "keep-alive" in conn_lines[0]
+
+    def test_sigv4_full_roundtrip(self):
+        """Simulate what AsyncS3Client would pass; verify no duplicates."""
+        sigv4_headers = {
+            "host": "127.0.0.1:9000",
+            "x-amz-date": "20240101T120000Z",
+            "x-amz-content-sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "Authorization": "AWS4-HMAC-SHA256 Credential=minioadmin/20240101/us-east-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=abc123",
+        }
+        raw = self._build(sigv4_headers, host="127.0.0.1:9000")
+        host_lines = [l for l in raw.splitlines() if l.lower().startswith("host:")]
+        assert len(host_lines) == 1, f"duplicate Host: {host_lines}"
+        assert "Authorization" in raw
+        assert "x-amz-date" in raw

@@ -5,6 +5,7 @@ import io
 import os
 import sys
 import time
+import unittest.mock
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -1043,9 +1044,18 @@ class TestClientInterfaceParity:
         assert callable(getattr(c, "aclose", None)), "Client missing aclose"
         c.close()
 
-    def test_async_client_has_close(self):
+    def test_async_client_close_is_noop_with_warning(self):
+        """AsyncClient.close() must exist, be callable, and log a warning."""
+        import logging
+
         ac = AsyncClient()
         assert callable(getattr(ac, "close", None)), "AsyncClient missing close"
+        with unittest.mock.patch.object(
+            logging.getLogger("httpclient"), "warning"
+        ) as mock_warn:
+            ac.close()
+            mock_warn.assert_called_once()
+            assert "aclose" in mock_warn.call_args[0][0]
 
     def test_client_init_params_match(self):
         import inspect

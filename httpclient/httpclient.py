@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.4"
+# version = "0.4.3"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -2652,23 +2652,18 @@ class AsyncClient:
 
     # Sync-style alias for interface parity with Client.
     def close(self) -> None:
-        """Schedule pool teardown synchronously (fires-and-forgets the coroutine).
+        """Emit a warning and do nothing — use ``await aclose()`` instead.
 
-        Prefer :meth:`aclose` inside async code.  This alias exists so that
-        generic teardown helpers that call ``client.close()`` work with both
-        ``Client`` and ``AsyncClient`` without branching.
+        ``AsyncClient`` manages async resources; calling synchronous ``close()``
+        cannot safely await the pool teardown coroutine.  This method exists
+        solely for interface parity with :class:`Client` so that type-annotated
+        code that calls ``client.close()`` does not raise ``AttributeError``.
+        Always prefer :meth:`aclose` inside async code.
         """
-        import asyncio
-
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-
-        if loop and loop.is_running():
-            loop.create_task(self._pool.close_all())
-        else:
-            asyncio.run(self._pool.close_all())
+        logger.warning(
+            "AsyncClient.close() is a no-op — use 'await client.aclose()' "
+            "to properly close async connections."
+        )
 
     async def __aenter__(self) -> AsyncClient:
         return self

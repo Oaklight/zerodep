@@ -920,13 +920,29 @@ class TestCaseInsensitiveDict:
         assert d["content-type"] == "text/html"
         assert d["x-foo"] == "bar"
 
-    def test_keys_stored_lowercase(self):
+    def test_iteration_preserves_original_casing(self):
+        """keys()/items() must yield the casing the caller supplied, not lowercase."""
         d = CaseInsensitiveDict({"Content-Type": "text/plain", "HOST": "example.com"})
-        assert set(d.keys()) == {"content-type", "host"}
+        # Original casing is preserved in iteration (important for wire format)
+        assert set(d.keys()) == {"Content-Type", "HOST"}
+        # But lookups are still case-insensitive
+        assert d["content-type"] == "text/plain"
+        assert d["host"] == "example.com"
 
     def test_is_dict_subclass(self):
         d = CaseInsensitiveDict()
         assert isinstance(d, dict)
+
+    def test_wire_format_preserves_casing(self):
+        """items() must yield original casing — critical for http.client wire format."""
+        d = CaseInsensitiveDict(
+            {"Content-Type": "application/json", "X-Custom": "test"}
+        )
+        wire_keys = [k for k, _ in d.items()]
+        assert "Content-Type" in wire_keys
+        assert "X-Custom" in wire_keys
+        # Lowercase lookup still works
+        assert d["content-type"] == "application/json"
 
     def test_sigv4_headers_no_duplicate_host(self):
         """Key use case: SigV4 headers merged with library defaults."""
@@ -940,8 +956,12 @@ class TestCaseInsensitiveDict:
                 "Authorization": "AWS4-HMAC-SHA256 ...",
             }
         )
-        host_keys = [k for k in d if k == "host"]
+        # No duplicate host key
+        host_keys = [k for k in d if k.lower() == "host"]
         assert len(host_keys) == 1
+        # Original casing preserved in items()
+        item_keys = [k for k, _ in d.items()]
+        assert "User-Agent" in item_keys  # setdefault preserves casing
 
 
 class TestPrepareRequestHeaderDedup:
@@ -1116,11 +1136,11 @@ class TestMergeHeadersCaseInsensitive:
 
     def test_none_base(self):
         merged = _merge_headers(None, {"X-Foo": "bar"})
-        assert merged == {"x-foo": "bar"}  # CaseInsensitiveDict stores lowercase
+        assert merged == {"X-Foo": "bar"}  # __eq__ is case-insensitive on keys
 
     def test_none_extra(self):
         merged = _merge_headers({"X-Foo": "bar"}, None)
-        assert merged == {"x-foo": "bar"}  # CaseInsensitiveDict stores lowercase
+        assert merged == {"X-Foo": "bar"}
 
     def test_both_none(self):
         assert _merge_headers(None, None) == {}

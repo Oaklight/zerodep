@@ -114,21 +114,30 @@ DEFAULT_POOL_IDLE_TIMEOUT = 60.0
 
 
 class CaseInsensitiveDict(dict):
-    """A ``dict`` subclass that normalises all keys to lowercase.
+    """Case-insensitive key lookup ``dict`` subclass that preserves original casing.
 
     Provides case-insensitive HTTP header storage: ``d["Content-Type"]``
-    and ``d["content-type"]`` resolve to the same slot.  Iteration always
-    yields lowercase keys; original casing is not preserved.
+    and ``d["content-type"]`` resolve to the same slot, but iteration and
+    wire serialisation yield the original casing the caller supplied.
+
+    Internally the underlying ``dict`` stores ``{lowercase_key: value}``
+    for O(1) lookups, while a parallel ``_keys`` mapping records
+    ``{lowercase_key: original_key}`` for casing-preserving iteration.
 
     This is the type used for ``Response.headers``,
     ``StreamingResponse.headers``, and the internal ``req_headers`` dict
     that flows through ``_prepare_request``.  HTTP header names are
-    case-insensitive per :rfc:`7230` \u00a73.2.
+    case-insensitive per :rfc:`7230` \u00a73.2, but the wire format and
+    echo tests expect the casing the caller supplied.
 
-    It is a plain ``dict`` subclass, so it is accepted everywhere a
-    ``dict`` is expected.  Passing it as ``headers=`` to the convenience
-    functions or client methods works without any conversion.
+    It is a ``dict`` subclass, so it is accepted everywhere a ``dict``
+    is expected.  Equality is case-insensitive on keys:
+    ``CaseInsensitiveDict({"X-Foo": "bar"}) == {"x-foo": "bar"}``.
     """
+
+    # Parallel store: lowercase_key → original_key supplied by the caller.
+    # Kept in sync with the underlying dict at all times.
+    _keys: dict[str, str]
 
     def __init__(
         self,
@@ -136,19 +145,32 @@ class CaseInsensitiveDict(dict):
         **kwargs: str,
     ) -> None:
         super().__init__()
+        self._keys = {}
         if data is not None:
             self.update(data)
         if kwargs:
             self.update(kwargs)
 
+    # ------------------------------------------------------------------ #
+    # Core write operations — all funnel through __setitem__ / __delitem__
+    # ------------------------------------------------------------------ #
+
     def __setitem__(self, key: str, value: str) -> None:  # type: ignore[override]
-        super().__setitem__(key.lower(), value)
+        lower = key.lower()
+        self._keys[lower] = key  # preserve (or update) original casing
+        super().__setitem__(lower, value)
+
+    def __delitem__(self, key: str) -> None:
+        lower = key.lower()
+        self._keys.pop(lower, None)
+        super().__delitem__(lower)
+
+    # ------------------------------------------------------------------ #
+    # Read operations — normalise lookup key to lowercase
+    # ------------------------------------------------------------------ #
 
     def __getitem__(self, key: str) -> str:  # type: ignore[override]
         return super().__getitem__(key.lower())  # type: ignore[return-value]
-
-    def __delitem__(self, key: str) -> None:
-        super().__delitem__(key.lower())
 
     def __contains__(self, key: object) -> bool:
         return super().__contains__(key.lower() if isinstance(key, str) else key)
@@ -157,10 +179,14 @@ class CaseInsensitiveDict(dict):
         return super().get(key.lower(), default)  # type: ignore[return-value]
 
     def pop(self, key: str, *args: str) -> str:  # type: ignore[override]
-        return super().pop(key.lower(), *args)  # type: ignore[return-value]
+        lower = key.lower()
+        self._keys.pop(lower, None)
+        return super().pop(lower, *args)  # type: ignore[return-value]
 
     def setdefault(self, key: str, default: str = "") -> str:  # type: ignore[override]
-        return super().setdefault(key.lower(), default)  # type: ignore[return-value]
+        if key.lower() not in self:
+            self[key] = default
+        return self[key]
 
     def update(  # type: ignore[override]
         self,
@@ -173,6 +199,54 @@ class CaseInsensitiveDict(dict):
                 self[k] = v
         for k, v in kwargs.items():
             self[k] = v
+
+    # ------------------------------------------------------------------ #
+    # Iteration — yield original casing so wire format is preserved
+    # ------------------------------------------------------------------ #
+
+    def __iter__(self):  # type: ignore[override]
+        for lower in super().__iter__():
+            yield self._keys.get(lower, lower)
+
+    def keys(self):  # type: ignore[override]
+        return list(self.__iter__())
+
+    def values(self):  # type: ignore[override]
+        return list(super().values())
+
+    def items(self):  # type: ignore[override]
+        """Yield ``(original_key, value)`` pairs; preserves casing on the wire."""
+        for lower, value in super().items():
+            yield self._keys.get(lower, lower), value
+
+    # ------------------------------------------------------------------ #
+    # Equality — case-insensitive on keys
+    # ------------------------------------------------------------------ #
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, dict):
+            return NotImplemented
+        if len(self) != len(other):
+            return False
+        # Use our case-insensitive .get() so "X-Foo" == "x-foo" for key lookups
+        return all(self.get(k) == v for k, v in other.items())
+
+    def __hash__(self) -> None:  # type: ignore[override]
+        return None  # dicts are unhashable; satisfy type checkers
+
+    # ------------------------------------------------------------------ #
+    # Miscellaneous
+    # ------------------------------------------------------------------ #
+
+    def copy(self) -> "CaseInsensitiveDict":
+        return CaseInsensitiveDict(self.items())
+
+    def __reduce__(self):  # type: ignore[override]
+        """Ensure pickle/copy reconstructs via __init__ to restore _keys."""
+        return (type(self), (list(self.items()),))
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({dict(self.items())!r})"
 
 
 # ── Exceptions ──

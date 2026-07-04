@@ -1050,6 +1050,10 @@ class TestBuildRawHttpRequestHostDedup:
     """_build_raw_http_request: no duplicate Host when user already provides one."""
 
     def _build(self, req_headers, host="example.com", use_pool=False, use_proxy=False):
+        # _build_raw_http_request always receives a CaseInsensitiveDict in
+        # production (from _prepare_request); wrap here to match reality.
+        if not isinstance(req_headers, CaseInsensitiveDict):
+            req_headers = CaseInsensitiveDict(req_headers)
         raw = _build_raw_http_request(
             "GET", "/path", host, req_headers, use_pool, use_proxy
         )

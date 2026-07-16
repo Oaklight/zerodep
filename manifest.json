@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-07-04T05:34:55.974821+00:00",
+  "generated": "2026-07-16T06:03:01.704549+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -167,7 +167,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-07-04T00:03:12-05:00",
+      "last_updated": "2026-07-04T00:35:22-05:00",
       "content_hash": "5621cb6b10e8c9b79750aa3790c6a9d6a5792649db7bc5117c01fd5aa61f6ef1"
     },
     "httpserver": {
@@ -509,12 +509,12 @@
       "files": [
         "validate/validate.py"
       ],
-      "version": "0.6.0",
+      "version": "0.6.1",
       "deps": [],
       "tier": "medium",
       "category": "validation",
-      "last_updated": "2026-07-01T20:42:51-05:00",
-      "content_hash": "e84779ea6cb6a3b9bec7d9f7ac0986a09b1d40080ac0b2e1b9ee8bb358a1dc97"
+      "last_updated": "2026-07-16T10:30:23+07:00",
+      "content_hash": "9374d94321a73e24dacf93dc090c43495436423ffba7d4c5e1b28e04f9f136ad"
     },
     "vcs": {
       "description": "VCS CLI wrapper — zero dependencies, stdlib only, Python 3.10+",

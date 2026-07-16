@@ -317,7 +317,7 @@ class TestDataclass:
         obj = Outer(name="test", inner=Inner(value=42))
         result = validate(obj, Outer)
         assert result["name"] == "test"
-        # vars() is shallow: nested DC instances stay as-is in the returned dict
+        # Conversion is shallow: nested DC instances stay as-is in the returned dict
         assert isinstance(result["inner"], Inner)
         assert result["inner"].value == 42
 

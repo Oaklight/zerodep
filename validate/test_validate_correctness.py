@@ -366,6 +366,25 @@ class TestDataclass:
         assert isinstance(result[0], Point)
         assert result[0].x == 1.0
 
+    def test_instance_slots(self):
+        """dataclass(slots=True) instances work (no __dict__)."""
+
+        @dataclasses.dataclass(slots=True)
+        class SlottedPoint:
+            x: float
+            y: float
+
+        p = SlottedPoint(x=1.0, y=2.0)
+        result = validate(p, SlottedPoint)
+        assert result == {"x": 1.0, "y": 2.0}
+
+    def test_instance_no_mutation(self):
+        """Modifying the returned dict must not alter the original instance."""
+        p = Point(x=1.0, y=2.0)
+        result = validate(p, Point)
+        result["x"] = 999.0
+        assert p.x == 1.0
+
 
 # ── Annotated Constraints ──
 

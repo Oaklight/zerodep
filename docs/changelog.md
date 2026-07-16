@@ -6,6 +6,10 @@
 
 ## [未发布]
 
+### 功能增强
+
+- **validate**：`validate()` 现支持直接传入 dataclass 实例。实例在每个嵌套层级自动通过 `vars()` 转换为 dict，支持嵌套 dataclass 树的递归验证。跨类型验证（dataclass 实例对 TypedDict schema）同样可用。此前传入 dataclass 实例会抛出 `ValidationError: Expected dict, got <ClassName>`。
+
 ### 性能优化
 
 - **validate**：O(1) 可辨识联合类型分发——`_try_discriminated` 现使用缓存的 `{字面量值: TypedDict}` 分发表代替每次调用的 O(variants) 线性扫描。大规模联合类型验证约 230 倍加速（例如 500 项 × 10 变体联合：生产环境 917ms → 4ms）。([#107](https://github.com/Oaklight/zerodep/issues/107)、[#108](https://github.com/Oaklight/zerodep/pull/108))

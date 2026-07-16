@@ -18,7 +18,7 @@
 ## 功能特性
 
 - **TypedDict 验证** -- 必需/可选字段、嵌套结构、`Required`/`NotRequired`
-- **dataclass 验证** -- 与 TypedDict 相同的验证逻辑
+- **dataclass 验证** -- 与 TypedDict 相同的验证逻辑，支持 dataclass 实例直接验证
 - **Annotated 约束** -- `Gt`、`Ge`、`Lt`、`Le`、`MinLen`、`MaxLen`、`Match`、`Predicate`
 - **字段验证器** -- `FieldValidator`，支持值转换和自定义验证（基于 `Annotated`）
 - **模型验证器** -- `model_validator` 装饰器，支持跨字段验证
@@ -103,6 +103,55 @@ Content = Union[TextContent, ImageContent]
 validate({"kind": "text", "text": "hello"}, Content)    # 自动识别 TextContent
 validate({"kind": "image", "url": "https://..."}, Content)  # 自动识别 ImageContent
 ```
+
+### Dataclass 实例验证
+
+除了 dict 数据，还可以直接传入 dataclass **实例** 进行验证——`validate()` 会在每个嵌套层级自动通过 `dataclasses.fields()` + `getattr()` 将其转换为 dict，因此嵌套的 dataclass 实例也会被递归验证。支持普通 dataclass 和 `slots=True` dataclass。
+
+```python
+import dataclasses
+from validate import validate
+
+@dataclasses.dataclass
+class Address:
+    city: str
+    state: str
+
+@dataclasses.dataclass
+class User:
+    name: str
+    age: int
+    address: Address
+
+# 直接验证 dataclass 实例
+user = User(name="Alice", age=30, address=Address(city="NYC", state="NY"))
+validate(user, User)  # 通过
+
+# 字段错误会被捕获，附带点号路径
+bad = User(name="Alice", age="thirty", address=Address(city=123, state="NY"))
+validate(bad, User)   # 抛出 ValidationError: age, address.city
+```
+
+跨类型验证也支持——dataclass 实例可以用 TypedDict schema 验证（反之亦然），只要字段匹配即可：
+
+```python
+from typing import TypedDict
+
+class PointTD(TypedDict):
+    x: float
+    y: float
+
+@dataclasses.dataclass
+class Point:
+    x: float
+    y: float
+
+p = Point(x=1.0, y=2.0)
+validate(p, PointTD)  # 通过——字段匹配
+```
+
+!!! note "返回值"
+    验证 dataclass 实例时，返回值是 `dataclasses.fields()` 构建的浅层 dict。嵌套的 dataclass 字段在返回的 dict 中仍然是实例——如需完全递归的 dict 转换，请使用 `dataclasses.asdict()`。返回的 dict 是全新副本，修改它不会影响原始实例。
 
 ### 类型强转
 
@@ -224,7 +273,7 @@ validate({"password": "secret", "confirm": "wrong"}, RegisterForm)    # 抛出�
 
 | 参数名 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `data` | `Any` | -- | 待验证的数据 |
+| `data` | `Any` | -- | 待验证的数据（dict、dataclass 实例或任意值） |
 | `tp` | `type` | -- | TypedDict、dataclass 或任意类型注解 |
 | `coerce` | `bool` | `False` | 为 True 时尝试类型强转（如 str→int） |
 

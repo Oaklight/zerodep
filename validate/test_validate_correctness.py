@@ -293,6 +293,79 @@ class TestDataclass:
         # z has a default, so it's optional
         assert validate({"x": 1.0, "y": 2.0}, PointWithDefault) == {"x": 1.0, "y": 2.0}
 
+    def test_instance_flat(self):
+        p = Point(x=1.0, y=2.0)
+        result = validate(p, Point)
+        assert result == {"x": 1.0, "y": 2.0}
+
+    def test_instance_invalid_field(self):
+        p = Point(x="bad", y=2.0)  # type: ignore[arg-type]
+        with pytest.raises(ValidationError) as exc_info:
+            validate(p, Point)
+        assert any("x" in e.path for e in exc_info.value.errors)
+
+    def test_instance_nested(self):
+        @dataclasses.dataclass
+        class Inner:
+            value: int
+
+        @dataclasses.dataclass
+        class Outer:
+            name: str
+            inner: Inner
+
+        obj = Outer(name="test", inner=Inner(value=42))
+        result = validate(obj, Outer)
+        assert result["name"] == "test"
+        # vars() is shallow: nested DC instances stay as-is in the returned dict
+        assert isinstance(result["inner"], Inner)
+        assert result["inner"].value == 42
+
+    def test_instance_nested_invalid(self):
+        @dataclasses.dataclass
+        class Inner:
+            value: int
+
+        @dataclasses.dataclass
+        class Outer:
+            name: str
+            inner: Inner
+
+        obj = Outer(name="test", inner=Inner(value="bad"))  # type: ignore[arg-type]
+        with pytest.raises(ValidationError) as exc_info:
+            validate(obj, Outer)
+        assert any("inner.value" in e.path for e in exc_info.value.errors)
+
+    def test_instance_against_typeddict(self):
+        """DC instance validated against a mismatched TypedDict fails."""
+        p = Point(x=1.0, y=2.0)
+        with pytest.raises(ValidationError):
+            validate(p, SimpleUser)  # Point has x,y but SimpleUser requires name,age
+
+    def test_instance_cross_schema(self):
+        """DC instance validated against a TypedDict with matching fields."""
+
+        class PointTD(TypedDict):
+            x: float
+            y: float
+
+        p = Point(x=1.0, y=2.0)
+        result = validate(p, PointTD)
+        assert result == {"x": 1.0, "y": 2.0}
+
+    def test_instance_with_default_fields(self):
+        p = PointWithDefault(x=1.0, y=2.0)
+        result = validate(p, PointWithDefault)
+        assert result == {"x": 1.0, "y": 2.0, "z": 0.0}
+
+    def test_instance_in_list(self):
+        points = [Point(x=1.0, y=2.0), Point(x=3.0, y=4.0)]
+        result = validate(points, list[Point])
+        assert len(result) == 2
+        # validate doesn't replace list items; originals stay as DC instances
+        assert isinstance(result[0], Point)
+        assert result[0].x == 1.0
+
 
 # ── Annotated Constraints ──
 

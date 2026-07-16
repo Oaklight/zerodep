@@ -741,7 +741,7 @@ def _validate_struct_fields(
 ) -> Any:
     """Validate a struct-like type (TypedDict or dataclass) against its fields."""
     if dataclasses.is_dataclass(value) and not isinstance(value, type):
-        value = vars(value)
+        value = {f.name: getattr(value, f.name) for f in dataclasses.fields(value)}
     if not isinstance(value, dict):
         errors.append(
             ErrorDetail(

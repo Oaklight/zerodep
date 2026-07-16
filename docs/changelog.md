@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Enhancements
+
+- **validate**: accept dataclass instances as input to `validate()`. Instances are automatically converted to dicts via `vars()` at each nesting level, enabling recursive validation of nested dataclass trees. Cross-type validation (dataclass instance against TypedDict schema) also works. Previously, passing a dataclass instance would raise `ValidationError: Expected dict, got <ClassName>`.
+
 ### Performance
 
 - **validate**: O(1) discriminated union dispatch — `_try_discriminated` now uses a cached `{literal_value: TypedDict}` dispatch table instead of O(variants) linear scan per call. ~230x faster on large unions (e.g. 500 items × 10-variant union: 917ms → 4ms in production profiling). ([#107](https://github.com/Oaklight/zerodep/issues/107), [#108](https://github.com/Oaklight/zerodep/pull/108))

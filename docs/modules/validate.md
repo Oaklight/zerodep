@@ -157,6 +157,50 @@ validate({"x": 1.0, "y": 2.0}, Point)           # ok, z has default
 validate({"x": 1.0, "y": 2.0, "z": 3.0}, Point) # ok
 ```
 
+### Dataclass Instance Validation
+
+You can also pass dataclass **instances** directly -- `validate()` automatically converts them to dicts via `dataclasses.fields()` + `getattr()` at each nesting level, so nested dataclass instances are validated recursively. Both regular and `slots=True` dataclasses are supported.
+
+```python
+import dataclasses
+from validate import validate
+
+@dataclasses.dataclass
+class Address:
+    city: str
+    state: str
+
+@dataclasses.dataclass
+class User:
+    name: str
+    age: int
+    address: Address
+
+# Validate a dataclass instance directly
+user = User(name="Alice", age=30, address=Address(city="NYC", state="NY"))
+validate(user, User)  # ok
+
+# Invalid fields are caught with dotted paths
+bad = User(name="Alice", age="thirty", address=Address(city=123, state="NY"))
+validate(bad, User)   # raises ValidationError: age, address.city
+```
+
+Cross-type validation also works -- a dataclass instance can be validated against a TypedDict schema (or vice versa), as long as the fields match:
+
+```python
+from typing import TypedDict
+
+class PointTD(TypedDict):
+    x: float
+    y: float
+
+p = Point(x=1.0, y=2.0)
+validate(p, PointTD)  # ok -- fields match
+```
+
+!!! note "Return value"
+    When validating a dataclass instance, the return value is a shallow dict built from `dataclasses.fields()`. Nested dataclass fields remain as instances in the returned dict -- use `dataclasses.asdict()` if you need a fully recursive dict conversion. The returned dict is a fresh copy; modifying it does not affect the original instance.
+
 ### Type Coercion
 
 ```python
@@ -279,7 +323,7 @@ Validate data against a type annotation.
 
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
-| `data` | `Any` | -- | The data to validate. |
+| `data` | `Any` | -- | The data to validate (dict, dataclass instance, or any value). |
 | `tp` | `type` | -- | A TypedDict class, dataclass class, or any type annotation. |
 | `coerce` | `bool` | `False` | If True, attempt type coercion (e.g. str to int). |
 

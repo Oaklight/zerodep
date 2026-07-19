@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.4"
+# version = "0.4.5"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -859,7 +859,7 @@ class StreamingResponse:
         await self.aclose()
 
     def close(self) -> None:
-        """Close the underlying sync connection."""
+        """Close the underlying connection (sync or async best-effort)."""
         if self._closed:
             return
         self._closed = True
@@ -879,6 +879,15 @@ class StreamingResponse:
             except Exception:
                 logger.debug(
                     "failed to close sync connection for %s",
+                    self.url,
+                    exc_info=True,
+                )
+        if self._async_writer is not None:
+            try:
+                self._async_writer.close()
+            except Exception:
+                logger.debug(
+                    "failed to close async writer for %s",
                     self.url,
                     exc_info=True,
                 )

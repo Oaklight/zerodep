@@ -7,6 +7,8 @@ import warnings
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+import pytest
+
 from httpclient import (
     Client,
     HttpConnectionError,
@@ -15,6 +17,7 @@ from httpclient import (
     StreamingResponse,
     _prepare_body,
     _SyncConnectionPool,
+    async_get,
     get,
 )
 
@@ -133,6 +136,78 @@ class TestStreamingCleanup:
             # There should have been a ResourceWarning
             assert len(resource_warnings) >= 1
             assert "Unclosed StreamingResponse" in str(resource_warnings[0].message)
+
+
+# ── Async Streaming Cleanup ─────────────────────────────────────────────────
+
+
+class TestAsyncStreamingCleanup:
+    """Async counterparts of TestStreamingCleanup."""
+
+    @pytest.mark.asyncio
+    async def test_aclose_releases_writer(self, httpbin_url):
+        """Explicit aclose() should close the underlying async writer."""
+        r = await async_get(f"{httpbin_url}/get", stream=True)
+        assert isinstance(r, StreamingResponse)
+        assert not r._closed
+        assert r._async_writer is not None
+        await r.aclose()
+        assert r._closed
+
+    @pytest.mark.asyncio
+    async def test_async_context_manager_cleanup(self, httpbin_url):
+        """async with should call aclose() on exit."""
+        r = await async_get(f"{httpbin_url}/get", stream=True)
+        async with r:
+            assert not r._closed
+        assert r._closed
+
+    @pytest.mark.asyncio
+    async def test_async_double_aclose_is_noop(self, httpbin_url):
+        """Calling aclose() twice should not raise."""
+        r = await async_get(f"{httpbin_url}/get", stream=True)
+        await r.aclose()
+        assert r._closed
+        await r.aclose()
+        assert r._closed
+
+    @pytest.mark.asyncio
+    async def test_sync_close_closes_async_writer(self, httpbin_url):
+        """close() must also close _async_writer (the fd-leak fix)."""
+        r = await async_get(f"{httpbin_url}/get", stream=True)
+        assert r._async_writer is not None
+        writer = r._async_writer
+
+        r.close()
+        assert r._closed
+        assert writer.is_closing()
+
+    @pytest.mark.asyncio
+    async def test_del_closes_async_writer(self, httpbin_url):
+        """__del__ → close() must close _async_writer to prevent fd leaks."""
+        r = await async_get(f"{httpbin_url}/get", stream=True)
+        assert r._async_writer is not None
+        writer = r._async_writer
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", ResourceWarning)
+            r.__del__()
+            resource_warnings = [
+                x for x in w if issubclass(x.category, ResourceWarning)
+            ]
+            assert r._closed
+            assert writer.is_closing()
+            assert len(resource_warnings) >= 1
+            assert "Unclosed StreamingResponse" in str(resource_warnings[0].message)
+
+    @pytest.mark.asyncio
+    async def test_unconsumed_async_stream_close_prevents_leak(self, httpbin_url):
+        """An async stream that is never iterated must still be closeable."""
+        r = await async_get(f"{httpbin_url}/get", stream=True)
+        assert r._async_writer is not None
+        r.close()
+        assert r._closed
+        assert r._async_writer.is_closing()
 
 
 # ── Timeout Behavior ────────────────────────────────────────────────────────

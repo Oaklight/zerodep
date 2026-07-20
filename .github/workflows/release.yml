@@ -48,6 +48,10 @@ jobs:
         run: |
           python -m zerodep version-check --strict
 
+      - name: Regenerate manifest
+        run: |
+          python -m zerodep manifest
+
       - name: Bump project version
         run: |
           VER="${{ steps.version.outputs.version }}"

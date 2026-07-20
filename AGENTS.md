@@ -196,8 +196,10 @@ GitHub Actions:
    `docs_zh/docs/changelog.md` — move `[Unreleased]` entries into a new
    versioned section `[YYYY.M.D]`.  Commit and push in both doc worktrees.
 3. **Trigger the Release workflow** (`Actions → Release → Run workflow`).
-   It auto-detects the CalVer version, bumps module versions, tags, and
-   creates a GitHub Release with auto-generated notes.
+   It auto-detects the CalVer version, regenerates `manifest.json`, bumps
+   module versions, tags, and creates a GitHub Release with auto-generated
+   notes. If releasing manually without the workflow, run `make manifest`
+   before tagging — the workflow handles this automatically.
 4. **Rewrite the release notes** on GitHub if the auto-generated notes are
    insufficient — add structured sections (New Modules, Features, Bug Fixes,
    etc.).

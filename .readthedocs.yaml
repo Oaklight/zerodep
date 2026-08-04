@@ -22,7 +22,7 @@ build:
       html:
         - python _scripts/generate_module_index.py --lang en --out-en docs/modules/index.md
         - zensical build
-        - python -m llmstxt_standalone build -c mkdocs.yml -s site -v
+        - python scripts/generate_llmstxt.py -c mkdocs.yml -s site -d docs -v
     post_build:
       - mkdir -p $READTHEDOCS_OUTPUT/html/
       - cp --recursive site/* $READTHEDOCS_OUTPUT/html/

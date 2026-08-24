@@ -67,11 +67,12 @@ log = logging.getLogger(__name__)
 
 
 def _ensure_sibling_path(name: str) -> str:
-    """Add a sibling module directory to ``sys.path`` if not present."""
-    sibling_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", name))
-    if sibling_dir not in sys.path:
-        sys.path.insert(0, sibling_dir)
-    return sibling_dir
+    """Add sibling module paths to ``sys.path`` for flat and nested layouts."""
+    base = os.path.dirname(__file__)
+    for candidate in [base, os.path.normpath(os.path.join(base, "..", name))]:
+        if candidate not in sys.path:
+            sys.path.insert(0, candidate)
+    return base
 
 
 def _load_soup():

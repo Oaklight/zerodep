@@ -844,6 +844,13 @@ class ratelimit:
 class ThreadSafeLimiter:
     """Wraps any :class:`RateLimiter` with a ``threading.Lock``.
 
+    The async methods (``aacquire``, ``apeek``) use the same
+    ``threading.Lock`` — not ``asyncio.Lock`` — so they are safe for
+    mixed sync+async access to the same limiter.  For pure-async
+    high-contention scenarios, the lock may briefly block the event
+    loop; in practice the hold time is negligible (microseconds of
+    in-memory computation).
+
     Args:
         limiter: The underlying rate limiter.
     """

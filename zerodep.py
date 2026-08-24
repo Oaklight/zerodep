@@ -870,7 +870,7 @@ def cmd_outdated(args: argparse.Namespace) -> None:
     manifest = _load_manifest(local=args.local, offline=args.offline)
     modules_data = manifest.get("modules", {})
 
-    scan_dir = Path.cwd()
+    scan_dir = Path(args.dir).resolve()
     rows: list[tuple[str, str, str, str]] = []
 
     for mod_name, mod in sorted(modules_data.items()):
@@ -906,7 +906,7 @@ def cmd_outdated(args: argparse.Namespace) -> None:
                 break
 
     if not rows:
-        _ok("No zerodep modules found in current directory.")
+        _ok(f"No zerodep modules found in {scan_dir}.")
         return
 
     # Print table
@@ -1476,7 +1476,12 @@ def main(argv: list[str] | None = None) -> None:
     bump_level.add_argument("--major", action="store_true", help="major bump")
 
     # outdated
-    sub.add_parser("outdated", help="check local files for upstream changes")
+    p_outdated = sub.add_parser(
+        "outdated", help="check local files for upstream changes"
+    )
+    p_outdated.add_argument(
+        "-d", "--dir", default=".", help="target directory (default: .)"
+    )
 
     # manifest
     sub.add_parser("manifest", help="regenerate manifest.json from source")

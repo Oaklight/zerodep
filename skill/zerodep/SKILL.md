@@ -39,9 +39,20 @@ dev = ["zerodep", ...]
 
 The CLI is self-documenting. Run `zerodep --help` to see all available subcommands, and `zerodep <subcommand> --help` for details on any specific command.
 
-The typical workflow is: browse modules, pick what you need, vendor them into your project directory.
+The typical workflow is: browse modules, pick what you need, vendor them into your project directory. Dependencies between modules are resolved automatically — if module A depends on module B, both are copied.
 
-Dependencies between modules are resolved automatically — if module A depends on module B, both are copied.
+Quick reference:
+
+```bash
+zerodep list                        # Browse all modules by category
+zerodep info sse                    # Show module details and deps
+zerodep add sse retry -d lib/       # Copy sse + httpclient + retry to lib/
+zerodep add sse --nested            # Copy into sse/ and httpclient/ subdirs
+zerodep update sse -d lib/          # Update existing modules in lib/
+zerodep outdated -d lib/            # Check for upstream changes in lib/
+```
+
+The `-d`/`--dir` flag is shared by `add`, `update`, and `outdated` — it specifies the target directory (defaults to `.`).
 
 ## What zerodep modules are
 

@@ -30,6 +30,11 @@ Typical usage::
     @ratelimit("10/s", algorithm="sliding_window")
     def handle_request(): ...
 
+Thread safety: individual limiter classes are **not** thread-safe.
+For concurrent access from multiple threads, wrap with
+:class:`ThreadSafeLimiter` or pass a pre-wrapped instance via the
+``limiter`` parameter of :class:`ratelimit`.
+
 Part of zerodep: https://github.com/Oaklight/zerodep
 Copyright (c) 2026 Peng Ding. MIT License.
 """
@@ -109,6 +114,7 @@ class RateLimiter(Protocol):
 # ---------------------------------------------------------------------------
 
 _EVICT_INTERVAL = 128
+_DEFAULT_RETRY_WAIT = 0.1  # fallback wait (seconds) when retry_after is None
 
 
 class _EvictionMixin:
@@ -196,6 +202,11 @@ class TokenBucketLimiter(_EvictionMixin):
         )
 
     def peek(self, key: str) -> RateLimitResult:
+        """Return current quota state without consuming.
+
+        Note: initializes internal state for previously unseen keys
+        (the bucket starts full, so the result is correct).
+        """
         now = self._clock()
         bucket = self._get_or_create(key, now)
         self._refill(bucket, now)
@@ -609,12 +620,7 @@ def parse_quota(quota: str) -> dict[str, Any]:
 # Factory
 # ---------------------------------------------------------------------------
 
-_ALGORITHM_MAP: dict[str, str] = {
-    "token_bucket": "token_bucket",
-    "fixed_window": "fixed_window",
-    "sliding_window": "sliding_window",
-    "gcra": "gcra",
-}
+_ALGORITHMS = {"token_bucket", "fixed_window", "sliding_window", "gcra"}
 
 
 def create_limiter(
@@ -633,11 +639,25 @@ def create_limiter(
 
     Returns:
         A :class:`RateLimiter` instance.
+
+    How ``burst`` maps per algorithm:
+
+    - **token_bucket**: ``burst`` sets bucket capacity directly
+      (default: ``limit``).
+    - **fixed_window** / **sliding_window**: ``burst`` is ignored.
+    - **gcra**: ``burst`` is total capacity, so internal burst
+      parameter = ``burst - 1`` (extra slots above steady rate).
+
+    Note:
+        The ``timeout`` parameter for wait-and-retry always uses
+        wall-clock time (``time.monotonic``), even when the limiter
+        has an injected clock.
     """
     algo = algorithm.lower()
-    if algo not in _ALGORITHM_MAP:
+    if algo not in _ALGORITHMS:
         raise ValueError(
-            f"unknown algorithm: {algorithm!r}  (choices: {', '.join(_ALGORITHM_MAP)})"
+            f"unknown algorithm: {algorithm!r}  "
+            f"(choices: {', '.join(sorted(_ALGORITHMS))})"
         )
     q = parse_quota(quota)
     limit, period, burst = q["limit"], q["period"], q["burst"]
@@ -652,6 +672,8 @@ def create_limiter(
         return SlidingWindowLimiter(limit=limit, window_seconds=period, clock=clock)  # type: ignore[return-value]
     else:  # gcra
         rate = limit / period
+        # GCRA burst = "extra slots above steady rate", so user's
+        # "burst N" (total capacity) maps to burst=N-1 internally.
         b = (burst - 1) if burst is not None and burst > 0 else 0
         return GCRALimiter(rate=rate, burst=b, clock=clock)  # type: ignore[return-value]
 
@@ -725,7 +747,7 @@ class ratelimit:
 
         deadline = time.monotonic() + self._timeout
         while not result.allowed:
-            wait = result.retry_after or 0.1
+            wait = result.retry_after or _DEFAULT_RETRY_WAIT
             remaining_budget = deadline - time.monotonic()
             if remaining_budget <= 0:
                 raise RateLimitExceeded(result)
@@ -743,7 +765,7 @@ class ratelimit:
 
         deadline = time.monotonic() + self._timeout
         while not result.allowed:
-            wait = result.retry_after or 0.1
+            wait = result.retry_after or _DEFAULT_RETRY_WAIT
             remaining_budget = deadline - time.monotonic()
             if remaining_budget <= 0:
                 raise RateLimitExceeded(result)

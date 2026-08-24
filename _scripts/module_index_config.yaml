@@ -13,7 +13,7 @@ categories:
   - id: network
     name_en: "Web & Networking"
     name_zh: "网络与通信"
-    modules: [httpclient, sse, httpserver, useragent, websocket]
+    modules: [httpclient, sse, httpserver, useragent, websocket, ratelimit]
 
   - id: protocol
     name_en: "Agent Protocols"
@@ -324,3 +324,9 @@ modules:
     replaces_zh: "pychrome、pycdp"
     desc_en: "Chrome DevTools Protocol client for headless browser automation"
     desc_zh: "Chrome DevTools Protocol 客户端（无头浏览器自动化）"
+  ratelimit:
+    benchmark: limits
+    replaces: "limits, pyrate-limiter, aiolimiter, limiter"
+    replaces_zh: "limits、pyrate-limiter、aiolimiter、limiter"
+    desc_en: "Multi-algorithm rate limiter (token bucket, fixed/sliding window, GCRA)"
+    desc_zh: "多算法限流器（令牌桶、固定/滑动窗口、GCRA）"

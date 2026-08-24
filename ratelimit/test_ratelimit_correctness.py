@@ -532,6 +532,16 @@ class TestCreateLimiter:
         lim = create_limiter("gcra", "10/s burst 20")
         assert isinstance(lim, GCRALimiter)
 
+    def test_gcra_burst_1_equals_no_burst(self):
+        """'10/s' and '10/s burst 1' should produce identical GCRA limiters."""
+        clock = FakeClock()
+        lim_no_burst = create_limiter("gcra", "10/s", clock=clock)
+        lim_burst_1 = create_limiter("gcra", "10/s burst 1", clock=clock)
+        assert isinstance(lim_no_burst, GCRALimiter)
+        assert isinstance(lim_burst_1, GCRALimiter)
+        assert lim_no_burst.burst == lim_burst_1.burst == 0
+        assert lim_no_burst.rate == lim_burst_1.rate
+
     def test_unknown_algorithm(self):
         with pytest.raises(ValueError, match="unknown algorithm"):
             create_limiter("leaky_bucket", "10/s")

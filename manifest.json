@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-07-20T10:17:59.443787+00:00",
+  "generated": "2026-08-24T17:03:19.974281+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -315,6 +315,18 @@
       "category": "image",
       "last_updated": "2026-04-27T19:31:53Z",
       "content_hash": "992def53fe2e34c3031a112906b9f4ce5a7b7523f43cdf070415d17117f3e37d"
+    },
+    "ratelimit": {
+      "description": "Multi-algorithm rate limiter with zero dependencies",
+      "files": [
+        "ratelimit/ratelimit.py"
+      ],
+      "version": "0.1.0",
+      "deps": [],
+      "tier": "subsystem",
+      "category": "network",
+      "last_updated": null,
+      "content_hash": "68f189765331997eeebbff5bb96c81f8bac64b3e1407745dc7e8c43cbdb4f8be"
     },
     "readability": {
       "description": "HTML readability content extractor — zero-dep, stdlib only, Python 3.10+",

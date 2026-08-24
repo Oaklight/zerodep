@@ -46,6 +46,7 @@ import math
 import re
 import threading
 import time
+from abc import abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
@@ -108,6 +109,14 @@ class RateLimiter(Protocol):
         """Return current quota state for *key* without consuming."""
         ...
 
+    async def aacquire(self, key: str, tokens: int = 1) -> RateLimitResult:
+        """Async version of :meth:`acquire`."""
+        ...
+
+    async def apeek(self, key: str) -> RateLimitResult:
+        """Async version of :meth:`peek`."""
+        ...
+
 
 # ---------------------------------------------------------------------------
 # Eviction mixin
@@ -115,6 +124,29 @@ class RateLimiter(Protocol):
 
 _EVICT_INTERVAL = 128
 _DEFAULT_RETRY_WAIT = 0.1  # fallback wait (seconds) when retry_after is None
+
+
+class _AsyncMixin:
+    """Adds ``aacquire`` and ``apeek`` coroutines that delegate to sync methods.
+
+    The sync methods are pure in-memory computation (no I/O), so the
+    async wrappers yield to the event loop once before calling them.
+    This ensures the coroutine is a proper awaitable with a real
+    suspension point, avoiding starvation in tight loops.
+    """
+
+    @abstractmethod
+    def acquire(self, key: str, tokens: int = 1) -> RateLimitResult: ...
+    @abstractmethod
+    def peek(self, key: str) -> RateLimitResult: ...
+
+    async def aacquire(self, key: str, tokens: int = 1) -> RateLimitResult:
+        await asyncio.sleep(0)
+        return self.acquire(key, tokens)
+
+    async def apeek(self, key: str) -> RateLimitResult:
+        await asyncio.sleep(0)
+        return self.peek(key)
 
 
 class _EvictionMixin:
@@ -147,7 +179,7 @@ class _Bucket:
     last_refill: float
 
 
-class TokenBucketLimiter(_EvictionMixin):
+class TokenBucketLimiter(_AsyncMixin, _EvictionMixin):
     """Token-bucket rate limiter.
 
     Tokens are replenished lazily on each ``acquire`` call.
@@ -252,7 +284,7 @@ class _FixedWindow:
     window_start: float
 
 
-class FixedWindowLimiter(_EvictionMixin):
+class FixedWindowLimiter(_AsyncMixin, _EvictionMixin):
     """Fixed-window rate limiter.
 
     Divides time into non-overlapping windows.  Each key gets at most
@@ -351,7 +383,7 @@ class _SlidingState:
     curr_start: float
 
 
-class SlidingWindowLimiter(_EvictionMixin):
+class SlidingWindowLimiter(_AsyncMixin, _EvictionMixin):
     """Sliding-window counter rate limiter.
 
     Blends the previous window's count with the current window's count
@@ -473,7 +505,7 @@ class SlidingWindowLimiter(_EvictionMixin):
 # ---------------------------------------------------------------------------
 
 
-class GCRALimiter(_EvictionMixin):
+class GCRALimiter(_AsyncMixin, _EvictionMixin):
     """GCRA (Generic Cell Rate Algorithm) rate limiter.
 
     Maintains a single TAT (Theoretical Arrival Time) per key.
@@ -757,7 +789,7 @@ class ratelimit:
         return result
 
     async def _acquire_or_wait_async(self, tokens: int = 1) -> RateLimitResult:
-        result = self._limiter.acquire(self._key, tokens)
+        result = await self._limiter.aacquire(self._key, tokens)
         if result.allowed:
             return result
         if self._timeout is None:
@@ -770,7 +802,7 @@ class ratelimit:
             if remaining_budget <= 0:
                 raise RateLimitExceeded(result)
             await asyncio.sleep(min(wait, remaining_budget))
-            result = self._limiter.acquire(self._key, tokens)
+            result = await self._limiter.aacquire(self._key, tokens)
 
         return result
 
@@ -825,5 +857,15 @@ class ThreadSafeLimiter:
             return self._limiter.acquire(key, tokens)
 
     def peek(self, key: str) -> RateLimitResult:
+        with self._lock:
+            return self._limiter.peek(key)
+
+    async def aacquire(self, key: str, tokens: int = 1) -> RateLimitResult:
+        await asyncio.sleep(0)
+        with self._lock:
+            return self._limiter.acquire(key, tokens)
+
+    async def apeek(self, key: str) -> RateLimitResult:
+        await asyncio.sleep(0)
         with self._lock:
             return self._limiter.peek(key)

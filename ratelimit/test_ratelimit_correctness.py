@@ -719,6 +719,143 @@ class TestThreadSafe:
 
 
 # ---------------------------------------------------------------------------
+# Async API (aacquire / apeek)
+# ---------------------------------------------------------------------------
+
+
+class TestAsyncAPI:
+    def test_token_bucket_aacquire(self):
+        clock = FakeClock()
+        limiter = TokenBucketLimiter(rate=1.0, capacity=3, clock=clock)
+
+        async def run():
+            r = await limiter.aacquire("k")
+            assert r.allowed is True
+            assert r.remaining == 2
+            await limiter.aacquire("k")
+            await limiter.aacquire("k")
+            r = await limiter.aacquire("k")
+            assert r.allowed is False
+
+        asyncio.run(run())
+
+    def test_token_bucket_apeek(self):
+        clock = FakeClock()
+        limiter = TokenBucketLimiter(rate=1.0, capacity=5, clock=clock)
+
+        async def run():
+            r1 = await limiter.apeek("k")
+            r2 = await limiter.apeek("k")
+            assert r1.remaining == r2.remaining == 5
+
+        asyncio.run(run())
+
+    def test_fixed_window_aacquire(self):
+        clock = FakeClock()
+        limiter = FixedWindowLimiter(limit=2, window_seconds=60.0, clock=clock)
+
+        async def run():
+            r = await limiter.aacquire("k")
+            assert r.allowed is True
+            await limiter.aacquire("k")
+            r = await limiter.aacquire("k")
+            assert r.allowed is False
+
+        asyncio.run(run())
+
+    def test_sliding_window_aacquire(self):
+        clock = FakeClock()
+        limiter = SlidingWindowLimiter(limit=2, window_seconds=60.0, clock=clock)
+
+        async def run():
+            r = await limiter.aacquire("k")
+            assert r.allowed is True
+            await limiter.aacquire("k")
+            r = await limiter.aacquire("k")
+            assert r.allowed is False
+
+        asyncio.run(run())
+
+    def test_gcra_aacquire(self):
+        clock = FakeClock()
+        limiter = GCRALimiter(rate=1.0, burst=1, clock=clock)
+
+        async def run():
+            r = await limiter.aacquire("k")
+            assert r.allowed is True
+            await limiter.aacquire("k")
+            r = await limiter.aacquire("k")
+            assert r.allowed is False
+
+        asyncio.run(run())
+
+    def test_gcra_apeek(self):
+        clock = FakeClock()
+        limiter = GCRALimiter(rate=1.0, burst=2, clock=clock)
+
+        async def run():
+            r1 = await limiter.apeek("k")
+            r2 = await limiter.apeek("k")
+            assert r1.remaining == r2.remaining
+
+        asyncio.run(run())
+
+    def test_thread_safe_aacquire(self):
+        inner = TokenBucketLimiter(rate=1.0, capacity=2)
+        limiter = ThreadSafeLimiter(inner)
+
+        async def run():
+            r = await limiter.aacquire("k")
+            assert r.allowed is True
+            r = await limiter.apeek("k")
+            assert r.remaining == 1
+
+        asyncio.run(run())
+
+    def test_aacquire_matches_acquire(self):
+        """aacquire and acquire produce identical results on same state."""
+        clock = FakeClock()
+        lim_sync = TokenBucketLimiter(rate=5.0, capacity=3, clock=clock)
+        lim_async = TokenBucketLimiter(rate=5.0, capacity=3, clock=clock)
+
+        sync_results = [lim_sync.acquire("k") for _ in range(4)]
+
+        async def run():
+            return [await lim_async.aacquire("k") for _ in range(4)]
+
+        async_results = asyncio.run(run())
+
+        for s, a in zip(sync_results, async_results):
+            assert s.allowed == a.allowed
+            assert s.remaining == a.remaining
+            assert s.limit == a.limit
+
+    def test_aacquire_yields_to_event_loop(self):
+        """aacquire yields control, allowing other tasks to run."""
+        limiter = TokenBucketLimiter(rate=100.0, capacity=100)
+        order: list[str] = []
+
+        async def task_a():
+            order.append("a-start")
+            await limiter.aacquire("k")
+            order.append("a-end")
+
+        async def task_b():
+            order.append("b-start")
+            await limiter.aacquire("k")
+            order.append("b-end")
+
+        async def run():
+            await asyncio.gather(task_a(), task_b())
+
+        asyncio.run(run())
+        assert order[0] == "a-start"
+        assert "b-start" in order
+        assert "a-end" in order
+        assert "b-end" in order
+
+
+# ---------------------------------------------------------------------------
 # RateLimitExceeded
 # ---------------------------------------------------------------------------
 

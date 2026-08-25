@@ -73,7 +73,7 @@ logger = logging.getLogger(__name__)
 
 def _ensure_sibling_path(name: str) -> str:
     """Add sibling module paths to ``sys.path`` for flat and nested layouts."""
-    base = os.path.dirname(__file__)
+    base = os.path.dirname(os.path.abspath(__file__))
     for candidate in [base, os.path.normpath(os.path.join(base, "..", name))]:
         if candidate not in sys.path:
             sys.path.insert(0, candidate)
@@ -81,7 +81,7 @@ def _ensure_sibling_path(name: str) -> str:
 
 
 try:
-    _websocket_dir = _ensure_sibling_path("websocket")
+    _ensure_sibling_path("websocket")
     from websocket import AsyncWebSocketClient as _AsyncWebSocketClient
     from websocket import WebSocketClient as _WebSocketClient
     from websocket import WebSocketConnectionError as _WebSocketConnectionError

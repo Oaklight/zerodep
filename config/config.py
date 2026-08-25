@@ -58,7 +58,7 @@ __all__ = [
 
 def _ensure_sibling_path(name: str) -> str:
     """Add sibling module paths to ``sys.path`` for flat and nested layouts."""
-    base = os.path.dirname(__file__)
+    base = os.path.dirname(os.path.abspath(__file__))
     for candidate in [base, os.path.normpath(os.path.join(base, "..", name))]:
         if candidate not in sys.path:
             sys.path.insert(0, candidate)

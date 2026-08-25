@@ -739,12 +739,17 @@ class TestThreadSafe:
         limiter = ThreadSafeLimiter(inner)
         for i in range(200):
             limiter.acquire(f"k{i}")
-        initial_locks = len(limiter._locks)
-        assert initial_locks >= 199  # eviction may fire once during creation
+        assert "k0" in limiter._locks
+        assert "k199" in limiter._locks
         clock.advance(100.0)
+        # Trigger eviction; use existing key to avoid creating new locks
         for _ in range(128):
-            limiter.acquire("trigger")
-        assert len(limiter._locks) < initial_locks
+            limiter.acquire("k0")
+        # Stale keys' locks should be cleaned
+        assert "k1" not in limiter._locks
+        assert "k199" not in limiter._locks
+        # Active key's lock should survive
+        assert "k0" in limiter._locks
 
 
 # ---------------------------------------------------------------------------

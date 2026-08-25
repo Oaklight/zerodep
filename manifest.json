@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-08-25T15:56:28.616041+00:00",
+  "generated": "2026-08-25T16:23:38.195279+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -331,7 +331,6 @@
     "readability": {
       "description": "HTML readability content extractor — zero-dep, stdlib only, Python 3.10+",
       "files": [
-        "readability/benchmark_compare.py",
         "readability/readability.py"
       ],
       "version": "0.2.1",

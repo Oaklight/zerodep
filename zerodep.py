@@ -360,7 +360,9 @@ def _find_module_py_files(directory: Path) -> list[Path]:
     return sorted(
         f
         for f in directory.glob("*.py")
-        if not f.name.startswith("test_") and f.name != "conftest.py"
+        if not f.name.startswith("test_")
+        and not f.name.startswith("benchmark_")
+        and f.name != "conftest.py"
     )
 
 

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-08-25T15:33:43.865445+00:00",
+  "generated": "2026-08-25T15:37:02.591061+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -313,7 +313,7 @@
       ],
       "tier": "simple",
       "category": "image",
-      "last_updated": "2026-08-25T07:09:01-05:00",
+      "last_updated": "2026-08-25T10:33:53-05:00",
       "content_hash": "e699cac0658466c8938b2113e8120646e1c3d718b95b5c2440d378d9607031d4"
     },
     "ratelimit": {
@@ -340,7 +340,7 @@
       ],
       "tier": "medium",
       "category": "text",
-      "last_updated": "2026-08-25T07:09:01-05:00",
+      "last_updated": "2026-08-25T10:33:53-05:00",
       "content_hash": "f37bcf6832e2de7735d901bace73c69cd5ef0a6f1b8b9d8837eac47bad425b3a"
     },
     "retry": {
@@ -415,7 +415,7 @@
       ],
       "tier": "medium",
       "category": "protocol",
-      "last_updated": "2026-08-25T07:09:01-05:00",
+      "last_updated": "2026-08-25T10:33:53-05:00",
       "content_hash": "0363eb438d5bf078a90747b680645e99ae01370c7f7bf8f3745a476d91499250"
     },
     "soup": {
@@ -453,7 +453,7 @@
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-08-25T07:09:01-05:00",
+      "last_updated": "2026-08-25T10:33:53-05:00",
       "content_hash": "a5f03ab5e795737ef37b1979b2dfe2b227869df52e8d774689bd14a32821f8d3"
     },
     "structlog": {
@@ -539,7 +539,7 @@
       ],
       "tier": "subsystem",
       "category": "devtools",
-      "last_updated": "2026-08-25T07:09:01-05:00",
+      "last_updated": "2026-08-25T10:33:53-05:00",
       "content_hash": "682a1f376940b66b490a150ecde10ed071220452c9af4c025ebac9e51b5d1d41"
     },
     "websocket": {

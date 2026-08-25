@@ -287,7 +287,7 @@ def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
 
 def _find_test_file(mod_name: str, modules: dict, repo_root: Path) -> Path | None:
     """Locate the correctness test file for a module."""
-    primary = modules[mod_name]["files"][0]
+    primary = modules[mod_name].get("primary_file", modules[mod_name]["files"][0])
     mod_dir = repo_root / Path(primary).parent
     matches = sorted(mod_dir.glob("test_*_correctness.py"))
     return matches[0] if matches else None
@@ -837,7 +837,9 @@ def cmd_bump(args: argparse.Namespace) -> None:
     # Bump each module
     rows: list[tuple[str, str, str]] = []
     for mod_name in sorted(targets):
-        primary = repo_root / modules[mod_name]["files"][0]
+        primary = repo_root / modules[mod_name].get(
+            "primary_file", modules[mod_name]["files"][0]
+        )
         try:
             old_ver, new_ver = _bump_frontmatter_version(primary, level)
         except ValueError as e:

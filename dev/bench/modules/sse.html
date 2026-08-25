@@ -125,16 +125,16 @@ td { white-space: nowrap; }
 <h1>sse</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 7e5cc0e | Commit: 7e5cc0ef | 2026-07-02T02:16:09.315442+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-07-02T02:16:09.315442+00:00"></span></p>
+<p class="meta">Version: 8adcc2f | Commit: 8adcc2f6 | 2026-08-25T13:08:27.843524+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-08-25T13:08:27.843524+00:00"></span></p>
 <h2>sse</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Large Stream</td><td>zerodep</td><td>httpx</td><td>2.25 ms</td><td>1.61 ms</td><td>444.4</td><td>622.2</td><td title="CV=1.4% | rounds=357">2.21 ms</td><td title="CV=1.4% | rounds=357">2.72 ms</td><td title="CV=1.4% | rounds=357">31.0 µs</td><td title="CV=1.4% | rounds=357">2.28 ms</td><td title="CV=1.0% | rounds=593">1.58 ms</td><td title="CV=1.0% | rounds=593">1.72 ms</td><td title="CV=1.0% | rounds=593">15.6 µs</td><td title="CV=1.0% | rounds=593">1.63 ms</td><td class="ratio-cell slower">1.4x slower</td></tr>
-<tr><td>Medium Stream</td><td>zerodep</td><td>httpx</td><td>299.1 µs</td><td>232.1 µs</td><td>3.3K</td><td>4.3K</td><td title="CV=2.0% | rounds=2963">291.1 µs</td><td title="CV=2.0% | rounds=2963">366.9 µs</td><td title="CV=2.0% | rounds=2963">6.1 µs</td><td title="CV=2.0% | rounds=2963">306.6 µs</td><td title="CV=2.3% | rounds=4068">225.7 µs</td><td title="CV=2.3% | rounds=4068">334.7 µs</td><td title="CV=2.3% | rounds=4068">5.3 µs</td><td title="CV=2.3% | rounds=4068">239.7 µs</td><td class="ratio-cell slower">1.3x slower</td></tr>
-<tr><td>Small Stream</td><td>zerodep</td><td>httpx</td><td>23.5 µs</td><td>16.6 µs</td><td>42.6K</td><td>60.1K</td><td title="CV=6.2% | rounds=18904">22.7 µs</td><td title="CV=6.2% | rounds=18904">74.3 µs</td><td title="CV=6.2% | rounds=18904">1.5 µs</td><td title="CV=6.2% | rounds=18904">24.0 µs</td><td title="CV=7.1% | rounds=28001">16.0 µs</td><td title="CV=7.1% | rounds=28001">74.0 µs</td><td title="CV=7.1% | rounds=28001">1.2 µs</td><td title="CV=7.1% | rounds=28001">16.9 µs</td><td class="ratio-cell slower">1.4x slower</td></tr>
+<tr><td>Large Stream</td><td>zerodep</td><td>httpx</td><td>2.94 ms</td><td>2.18 ms</td><td>340.6</td><td>458.8</td><td title="CV=1.3% | rounds=282">2.89 ms</td><td title="CV=1.3% | rounds=282">3.30 ms</td><td title="CV=1.3% | rounds=282">37.2 µs</td><td title="CV=1.3% | rounds=282">2.98 ms</td><td title="CV=0.8% | rounds=438">2.15 ms</td><td title="CV=0.8% | rounds=438">2.29 ms</td><td title="CV=0.8% | rounds=438">18.5 µs</td><td title="CV=0.8% | rounds=438">2.21 ms</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Medium Stream</td><td>zerodep</td><td>httpx</td><td>395.9 µs</td><td>313.4 µs</td><td>2.5K</td><td>3.2K</td><td title="CV=2.7% | rounds=1896">385.3 µs</td><td title="CV=2.7% | rounds=1896">723.7 µs</td><td title="CV=2.7% | rounds=1896">10.6 µs</td><td title="CV=2.7% | rounds=1896">404.9 µs</td><td title="CV=3.1% | rounds=3022">304.0 µs</td><td title="CV=3.1% | rounds=3022">554.1 µs</td><td title="CV=3.1% | rounds=3022">9.8 µs</td><td title="CV=3.1% | rounds=3022">322.4 µs</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Small Stream</td><td>zerodep</td><td>httpx</td><td>30.1 µs</td><td>22.2 µs</td><td>33.2K</td><td>45.1K</td><td title="CV=6.9% | rounds=12074">29.2 µs</td><td title="CV=6.9% | rounds=12074">77.1 µs</td><td title="CV=6.9% | rounds=12074">2.1 µs</td><td title="CV=6.9% | rounds=12074">30.1 µs</td><td title="CV=8.6% | rounds=23036">21.4 µs</td><td title="CV=8.6% | rounds=23036">66.1 µs</td><td title="CV=8.6% | rounds=23036">1.9 µs</td><td title="CV=8.6% | rounds=23036">22.2 µs</td><td class="ratio-cell slower">1.4x slower</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -206,13 +206,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [444.43968106935284, 3343.3228276412738, 42576.87068258789],
+        data: [340.64373717964577, 2526.160052801156, 33229.213296725844],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "httpx" + ' (ops/s)',
-        data: [622.2153809073574, 4308.348598164382, 60061.511944264035],
+        data: [458.84800601333535, 3190.895206479433, 45115.2207600164],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

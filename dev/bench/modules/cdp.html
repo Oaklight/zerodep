@@ -125,18 +125,18 @@ td { white-space: nowrap; }
 <h1>cdp</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 7e5cc0e | Commit: 7e5cc0ef | 2026-07-02T02:16:09.315442+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-07-02T02:16:09.315442+00:00"></span></p>
+<p class="meta">Version: 8adcc2f | Commit: 8adcc2f6 | 2026-08-25T13:08:27.843524+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-08-25T13:08:27.843524+00:00"></span></p>
 <h2>cdp</h2>
 <h3>Standalone benchmarks</h3>
 <div class="table-wrap"><table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>Command Throughput</td><td>send_command_burst</td><td>3.89 ms</td><td>256.9</td><td title="CV=12.5% | rounds=243">3.18 ms</td><td title="CV=12.5% | rounds=243">4.35 ms</td><td title="CV=12.5% | rounds=243">487.4 µs</td><td title="CV=12.5% | rounds=243">4.31 ms</td></tr>
-<tr><td>Full Render Pipeline</td><td>get_rendered_text</td><td>739.8 µs</td><td>1.4K</td><td title="CV=16.4% | rounds=1198">550.2 µs</td><td title="CV=16.4% | rounds=1198">2.05 ms</td><td title="CV=16.4% | rounds=1198">121.0 µs</td><td title="CV=16.4% | rounds=1198">931.1 µs</td></tr>
-<tr><td>Full Render Pipeline</td><td>get_rendered_text_fresh_client</td><td>1.04 ms</td><td>961.4</td><td title="CV=13.5% | rounds=843">867.5 µs</td><td title="CV=13.5% | rounds=843">1.31 ms</td><td title="CV=13.5% | rounds=843">140.5 µs</td><td title="CV=13.5% | rounds=843">1.23 ms</td></tr>
-<tr><td>Js Eval Throughput</td><td>evaluate_burst</td><td>932.0 µs</td><td>1.1K</td><td title="CV=10.7% | rounds=817">841.9 µs</td><td title="CV=10.7% | rounds=817">1.23 ms</td><td title="CV=10.7% | rounds=817">99.5 µs</td><td title="CV=10.7% | rounds=817">1.16 ms</td></tr>
-<tr><td>Multi Target</td><td>multi_target_pipeline</td><td>3.76 ms</td><td>265.8</td><td title="CV=13.7% | rounds=340">2.88 ms</td><td title="CV=13.7% | rounds=340">5.26 ms</td><td title="CV=13.7% | rounds=340">517.1 µs</td><td title="CV=13.7% | rounds=340">4.95 ms</td></tr>
-<tr><td>Render Html</td><td>get_rendered_html</td><td>689.4 µs</td><td>1.5K</td><td title="CV=8.3% | rounds=1196">573.6 µs</td><td title="CV=8.3% | rounds=1196">1.04 ms</td><td title="CV=8.3% | rounds=1196">57.4 µs</td><td title="CV=8.3% | rounds=1196">817.3 µs</td></tr>
+<tr><td>Command Throughput</td><td>send_command_burst</td><td>5.47 ms</td><td>182.7</td><td title="CV=10.0% | rounds=164">5.12 ms</td><td title="CV=10.0% | rounds=164">6.62 ms</td><td title="CV=10.0% | rounds=164">546.6 µs</td><td title="CV=10.0% | rounds=164">6.59 ms</td></tr>
+<tr><td>Full Render Pipeline</td><td>get_rendered_text</td><td>1.12 ms</td><td>895.7</td><td title="CV=13.1% | rounds=855">919.9 µs</td><td title="CV=13.1% | rounds=855">1.41 ms</td><td title="CV=13.1% | rounds=855">146.6 µs</td><td title="CV=13.1% | rounds=855">1.33 ms</td></tr>
+<tr><td>Full Render Pipeline</td><td>get_rendered_text_fresh_client</td><td>1.42 ms</td><td>702.1</td><td title="CV=2.4% | rounds=608">1.35 ms</td><td title="CV=2.4% | rounds=608">1.83 ms</td><td title="CV=2.4% | rounds=608">34.8 µs</td><td title="CV=2.4% | rounds=608">1.48 ms</td></tr>
+<tr><td>Js Eval Throughput</td><td>evaluate_burst</td><td>1.53 ms</td><td>653.6</td><td title="CV=10.6% | rounds=657">1.35 ms</td><td title="CV=10.6% | rounds=657">2.20 ms</td><td title="CV=10.6% | rounds=657">162.3 µs</td><td title="CV=10.6% | rounds=657">1.75 ms</td></tr>
+<tr><td>Multi Target</td><td>multi_target_pipeline</td><td>5.70 ms</td><td>175.5</td><td title="CV=10.9% | rounds=201">4.78 ms</td><td title="CV=10.9% | rounds=201">6.86 ms</td><td title="CV=10.9% | rounds=201">620.3 µs</td><td title="CV=10.9% | rounds=201">6.65 ms</td></tr>
+<tr><td>Render Html</td><td>get_rendered_html</td><td>1.13 ms</td><td>881.8</td><td title="CV=14.4% | rounds=976">909.3 µs</td><td title="CV=14.4% | rounds=976">1.48 ms</td><td title="CV=14.4% | rounds=976">163.2 µs</td><td title="CV=14.4% | rounds=976">1.37 ms</td></tr>
 </tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">

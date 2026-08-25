@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>readability Benchmark — zerodep</title>
+<title>ratelimit Benchmark — zerodep</title>
 <style>:root, [data-theme="light"] {
   --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
   --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
@@ -122,35 +122,25 @@ td { white-space: nowrap; }
 </head>
 <body>
 <div class="header-row">
-<h1>readability</h1>
+<h1>ratelimit</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
 <p class="meta">Version: 8adcc2f | Commit: 8adcc2f6 | 2026-08-25T13:08:27.843524+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-08-25T13:08:27.843524+00:00"></span></p>
-<h2>readability</h2>
-<div class="table-wrap"><table>
-<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
-<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
-</thead>
-<tbody>
-<tr><td>Large</td><td>zerodep</td><td>readability-lxml</td><td>33.90 ms</td><td>28.06 ms</td><td>29.5</td><td>35.6</td><td title="CV=1.7% | rounds=29">33.00 ms</td><td title="CV=1.7% | rounds=29">35.41 ms</td><td title="CV=1.7% | rounds=29">560.0 µs</td><td title="CV=1.7% | rounds=29">34.45 ms</td><td title="CV=0.9% | rounds=33">27.71 ms</td><td title="CV=0.9% | rounds=33">28.90 ms</td><td title="CV=0.9% | rounds=33">256.6 µs</td><td title="CV=0.9% | rounds=33">28.60 ms</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Large</td><td>zerodep</td><td>Mozilla Readability.js</td><td>33.90 ms</td><td>632.05 ms</td><td>29.5</td><td>1.6</td><td title="CV=1.7% | rounds=29">33.00 ms</td><td title="CV=1.7% | rounds=29">35.41 ms</td><td title="CV=1.7% | rounds=29">560.0 µs</td><td title="CV=1.7% | rounds=29">34.45 ms</td><td title="CV=13.1% | rounds=5">581.24 ms</td><td title="CV=13.1% | rounds=5">773.95 ms</td><td title="CV=13.1% | rounds=5">82.87 ms</td><td title="CV=13.1% | rounds=5">773.95 ms</td><td class="ratio-cell faster">18.6x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>readability-lxml</td><td>2.75 ms</td><td>3.32 ms</td><td>363.3</td><td>301.5</td><td title="CV=3.7% | rounds=307">2.61 ms</td><td title="CV=3.7% | rounds=307">3.23 ms</td><td title="CV=3.7% | rounds=307">102.3 µs</td><td title="CV=3.7% | rounds=307">2.91 ms</td><td title="CV=1.4% | rounds=253">3.23 ms</td><td title="CV=1.4% | rounds=253">3.56 ms</td><td title="CV=1.4% | rounds=253">46.3 µs</td><td title="CV=1.4% | rounds=253">3.39 ms</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Medium</td><td>zerodep</td><td>Mozilla Readability.js</td><td>2.75 ms</td><td>27.19 ms</td><td>363.3</td><td>36.8</td><td title="CV=3.7% | rounds=307">2.61 ms</td><td title="CV=3.7% | rounds=307">3.23 ms</td><td title="CV=3.7% | rounds=307">102.3 µs</td><td title="CV=3.7% | rounds=307">2.91 ms</td><td title="CV=29.4% | rounds=19">18.66 ms</td><td title="CV=29.4% | rounds=19">51.11 ms</td><td title="CV=29.4% | rounds=19">7.98 ms</td><td title="CV=29.4% | rounds=19">51.11 ms</td><td class="ratio-cell faster">9.9x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>readability-lxml</td><td>280.7 µs</td><td>741.2 µs</td><td>3.6K</td><td>1.3K</td><td title="CV=94.5% | rounds=1826">253.0 µs</td><td title="CV=94.5% | rounds=1826">11.20 ms</td><td title="CV=94.5% | rounds=1826">265.4 µs</td><td title="CV=94.5% | rounds=1826">336.2 µs</td><td title="CV=5.2% | rounds=613">704.6 µs</td><td title="CV=5.2% | rounds=613">1.16 ms</td><td title="CV=5.2% | rounds=613">38.9 µs</td><td title="CV=5.2% | rounds=613">781.8 µs</td><td class="ratio-cell faster">2.6x faster</td></tr>
-<tr><td>Small</td><td>zerodep</td><td>Mozilla Readability.js</td><td>280.7 µs</td><td>14.79 ms</td><td>3.6K</td><td>67.6</td><td title="CV=94.5% | rounds=1826">253.0 µs</td><td title="CV=94.5% | rounds=1826">11.20 ms</td><td title="CV=94.5% | rounds=1826">265.4 µs</td><td title="CV=94.5% | rounds=1826">336.2 µs</td><td title="CV=21.2% | rounds=7">11.34 ms</td><td title="CV=21.2% | rounds=7">19.23 ms</td><td title="CV=21.2% | rounds=7">3.14 ms</td><td title="CV=21.2% | rounds=7">19.23 ms</td><td class="ratio-cell faster">52.7x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>readability-lxml</td><td>5.19 ms</td><td>15.19 ms</td><td>192.6</td><td>65.8</td><td title="CV=4.4% | rounds=104">5.00 ms</td><td title="CV=4.4% | rounds=104">6.09 ms</td><td title="CV=4.4% | rounds=104">230.4 µs</td><td title="CV=4.4% | rounds=104">5.92 ms</td><td title="CV=3.4% | rounds=63">14.90 ms</td><td title="CV=3.4% | rounds=63">18.61 ms</td><td title="CV=3.4% | rounds=63">515.4 µs</td><td title="CV=3.4% | rounds=63">15.53 ms</td><td class="ratio-cell faster">2.9x faster</td></tr>
-<tr><td>Synthetic (Large)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>5.19 ms</td><td>42.05 ms</td><td>192.6</td><td>23.8</td><td title="CV=4.4% | rounds=104">5.00 ms</td><td title="CV=4.4% | rounds=104">6.09 ms</td><td title="CV=4.4% | rounds=104">230.4 µs</td><td title="CV=4.4% | rounds=104">5.92 ms</td><td title="CV=1.6% | rounds=22">40.80 ms</td><td title="CV=1.6% | rounds=22">43.15 ms</td><td title="CV=1.6% | rounds=22">680.3 µs</td><td title="CV=1.6% | rounds=22">43.13 ms</td><td class="ratio-cell faster">8.1x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>readability-lxml</td><td>1.10 ms</td><td>2.65 ms</td><td>910.4</td><td>377.0</td><td title="CV=13.5% | rounds=495">1.02 ms</td><td title="CV=13.5% | rounds=495">2.22 ms</td><td title="CV=13.5% | rounds=495">148.7 µs</td><td title="CV=13.5% | rounds=495">1.31 ms</td><td title="CV=1.6% | rounds=345">2.59 ms</td><td title="CV=1.6% | rounds=345">3.07 ms</td><td title="CV=1.6% | rounds=345">42.8 µs</td><td title="CV=1.6% | rounds=345">2.72 ms</td><td class="ratio-cell faster">2.4x faster</td></tr>
-<tr><td>Synthetic (Medium)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>1.10 ms</td><td>12.84 ms</td><td>910.4</td><td>77.9</td><td title="CV=13.5% | rounds=495">1.02 ms</td><td title="CV=13.5% | rounds=495">2.22 ms</td><td title="CV=13.5% | rounds=495">148.7 µs</td><td title="CV=13.5% | rounds=495">1.31 ms</td><td title="CV=17.9% | rounds=81">10.32 ms</td><td title="CV=17.9% | rounds=81">19.42 ms</td><td title="CV=17.9% | rounds=81">2.29 ms</td><td title="CV=17.9% | rounds=81">16.06 ms</td><td class="ratio-cell faster">11.7x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>readability-lxml</td><td>435.7 µs</td><td>856.1 µs</td><td>2.3K</td><td>1.2K</td><td title="CV=9.7% | rounds=1899">399.3 µs</td><td title="CV=9.7% | rounds=1899">1.19 ms</td><td title="CV=9.7% | rounds=1899">42.4 µs</td><td title="CV=9.7% | rounds=1899">522.8 µs</td><td title="CV=9.1% | rounds=661">773.0 µs</td><td title="CV=9.1% | rounds=661">1.38 ms</td><td title="CV=9.1% | rounds=661">78.0 µs</td><td title="CV=9.1% | rounds=661">1.02 ms</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Synthetic (Small)</td><td>zerodep</td><td>Mozilla Readability.js</td><td>435.7 µs</td><td>8.56 ms</td><td>2.3K</td><td>116.9</td><td title="CV=9.7% | rounds=1899">399.3 µs</td><td title="CV=9.7% | rounds=1899">1.19 ms</td><td title="CV=9.7% | rounds=1899">42.4 µs</td><td title="CV=9.7% | rounds=1899">522.8 µs</td><td title="CV=26.3% | rounds=111">6.33 ms</td><td title="CV=26.3% | rounds=111">16.29 ms</td><td title="CV=26.3% | rounds=111">2.25 ms</td><td title="CV=26.3% | rounds=111">12.48 ms</td><td class="ratio-cell faster">19.6x faster</td></tr>
-</tbody></table></div>
-<div class="chart-container"><canvas id="chart_0"></canvas></div>
+<h2>ratelimit</h2>
 <h3>Standalone benchmarks</h3>
 <div class="table-wrap"><table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>Is Probably Readable</td><td>zerodep</td><td>1.61 ms</td><td>622.6</td><td title="CV=8.6% | rounds=544">1.51 ms</td><td title="CV=8.6% | rounds=544">2.36 ms</td><td title="CV=8.6% | rounds=544">138.4 µs</td><td title="CV=8.6% | rounds=544">1.69 ms</td></tr>
+<tr><td>Limits Benchmarks</td><td>fixed_window_hit</td><td>3.6 µs</td><td>275.7K</td><td title="CV=67.9% | rounds=25719">3.4 µs</td><td title="CV=67.9% | rounds=25719">190.1 µs</td><td title="CV=67.9% | rounds=25719">2.5 µs</td><td title="CV=67.9% | rounds=25719">3.6 µs</td></tr>
+<tr><td>Limits Benchmarks</td><td>moving_window_hit</td><td>3.8 µs</td><td>265.4K</td><td title="CV=1065.9% | rounds=43549">2.9 µs</td><td title="CV=1065.9% | rounds=43549">7.88 ms</td><td title="CV=1065.9% | rounds=43549">40.2 µs</td><td title="CV=1065.9% | rounds=43549">5.0 µs</td></tr>
+<tr><td>Limits Benchmarks</td><td>sliding_window_hit</td><td>5.3 µs</td><td>188.9K</td><td title="CV=48.9% | rounds=28397">4.2 µs</td><td title="CV=48.9% | rounds=28397">243.9 µs</td><td title="CV=48.9% | rounds=28397">2.6 µs</td><td title="CV=48.9% | rounds=28397">6.8 µs</td></tr>
+<tr><td>Limits Benchmarks</td><td>fixed_window_test</td><td>2.1 µs</td><td>474.9K</td><td title="CV=29.1% | rounds=86200">2.0 µs</td><td title="CV=29.1% | rounds=86200">64.9 µs</td><td title="CV=29.1% | rounds=86200">613.7 ns</td><td title="CV=29.1% | rounds=86200">2.1 µs</td></tr>
+<tr><td>Zerodep Benchmarks</td><td>token_bucket_acquire</td><td>2.9 µs</td><td>345.1K</td><td title="CV=23.7% | rounds=43587">2.4 µs</td><td title="CV=23.7% | rounds=43587">36.0 µs</td><td title="CV=23.7% | rounds=43587">686.9 ns</td><td title="CV=23.7% | rounds=43587">3.1 µs</td></tr>
+<tr><td>Zerodep Benchmarks</td><td>fixed_window_acquire</td><td>2.7 µs</td><td>366.4K</td><td title="CV=24.5% | rounds=76313">1.9 µs</td><td title="CV=24.5% | rounds=76313">32.4 µs</td><td title="CV=24.5% | rounds=76313">668.9 ns</td><td title="CV=24.5% | rounds=76313">2.9 µs</td></tr>
+<tr><td>Zerodep Benchmarks</td><td>sliding_window_acquire</td><td>3.3 µs</td><td>299.5K</td><td title="CV=24.2% | rounds=46340">2.9 µs</td><td title="CV=24.2% | rounds=46340">64.7 µs</td><td title="CV=24.2% | rounds=46340">806.8 ns</td><td title="CV=24.2% | rounds=46340">3.4 µs</td></tr>
+<tr><td>Zerodep Benchmarks</td><td>gcra_acquire</td><td>2.9 µs</td><td>342.7K</td><td title="CV=25.2% | rounds=113161">2.3 µs</td><td title="CV=25.2% | rounds=113161">114.1 µs</td><td title="CV=25.2% | rounds=113161">733.9 ns</td><td title="CV=25.2% | rounds=113161">3.0 µs</td></tr>
+<tr><td>Zerodep Benchmarks</td><td>token_bucket_peek</td><td>2.3 µs</td><td>434.7K</td><td title="CV=22.0% | rounds=31637">2.2 µs</td><td title="CV=22.0% | rounds=31637">16.9 µs</td><td title="CV=22.0% | rounds=31637">505.5 ns</td><td title="CV=22.0% | rounds=31637">2.3 µs</td></tr>
+<tr><td>Zerodep Benchmarks</td><td>fixed_window_peek</td><td>2.1 µs</td><td>485.4K</td><td title="CV=25.4% | rounds=113818">1.9 µs</td><td title="CV=25.4% | rounds=113818">32.7 µs</td><td title="CV=25.4% | rounds=113818">522.5 ns</td><td title="CV=25.4% | rounds=113818">2.1 µs</td></tr>
 </tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -214,40 +204,6 @@ var TREND_COLORS = [
 ];
 
 
-new Chart(document.getElementById('chart_0'), {
-  type: 'bar',
-  data: {
-    labels: ["Large", "Medium", "Small", "Synthetic (Large)", "Synthetic (Medium)", "Synthetic (Small)"],
-    datasets: [
-      {
-        label: 'zerodep (ops/s)',
-        data: [29.494496139380274, 363.2947632825292, 3562.2402656819145, 192.59057110487697, 910.4385269898257, 2295.1969780920167],
-        backgroundColor: 'rgba(111, 66, 193, 0.8)',
-        borderRadius: 4,
-      },
-      {
-        label: "readability-lxml" + ' (ops/s)',
-        data: [35.63892154486151, 301.48889923480584, 1349.167937093278, 65.83991877789101, 376.97501059780103, 1168.044295687123],
-        backgroundColor: 'rgba(13, 110, 253, 0.6)',
-        borderRadius: 4,
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'top' },
-      title: { display: true, text: 'readability — ops/s (higher is better)' }
-    },
-    scales: {
-      y: {
-        type: 'logarithmic',
-        title: { display: true, text: 'ops/s (log scale)' }
-      }
-    }
-  }
-});
 (async function() {
   var section = document.getElementById('trend-section');
   if (!section) return;
@@ -255,7 +211,7 @@ new Chart(document.getElementById('chart_0'), {
   if (!data || !data.entries || !data.entries.Benchmark) {
     section.style.display = 'none'; return;
   }
-  var filtered = filterBenchesForModule(data.entries.Benchmark, 'readability');
+  var filtered = filterBenchesForModule(data.entries.Benchmark, 'ratelimit');
   if (!filtered.length) { section.style.display = 'none'; return; }
 
   // Collect unique zerodep bench names
@@ -297,7 +253,7 @@ new Chart(document.getElementById('chart_0'), {
         },
         title: {
           display: true,
-          text: 'readability — zerodep ops/s over time'
+          text: 'ratelimit — zerodep ops/s over time'
         },
         tooltip: {
           callbacks: {

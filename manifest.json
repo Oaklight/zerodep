@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-08-24T17:03:19.974281+00:00",
+  "generated": "2026-08-25T15:33:43.865445+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -13,8 +13,8 @@
       ],
       "tier": "subsystem",
       "category": "protocol",
-      "last_updated": "2026-04-27T23:17:36+08:00",
-      "content_hash": "11c6769744f13875563b39b8379295e128762bfeba67fbaa4e316e72e96d9604"
+      "last_updated": "2026-08-25T07:09:01-05:00",
+      "content_hash": "a019b8de7a59e81c38276a82701b13922891c8d0100982db30d529b5ebfe93de"
     },
     "acp": {
       "description": "ACP (Agent Client Protocol) -- Zero-dependency Python implementation",
@@ -27,8 +27,8 @@
       ],
       "tier": "subsystem",
       "category": "protocol",
-      "last_updated": "2026-04-27T23:17:36+08:00",
-      "content_hash": "6c7dc3a97e136d0d949f34520952ef31e82f00f882320d997149461e78d5efa6"
+      "last_updated": "2026-08-25T07:09:01-05:00",
+      "content_hash": "e7edcc91e53069926b71656bcf955e1f4b5b52d2a7666a5324b0cd22f8b07943"
     },
     "aes": {
       "description": "AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",
@@ -77,8 +77,8 @@
       ],
       "tier": "medium",
       "category": "protocol",
-      "last_updated": "2026-05-02T17:34:53+08:00",
-      "content_hash": "e5bd722ec32c6c15a210ec2f18cc960acbd4cbabb9b8c7c55a98063e2e05d989"
+      "last_updated": "2026-08-25T07:09:01-05:00",
+      "content_hash": "a95910894a2ce329debb14aa8cad904e2f7a957ae23b776204397812b71c9796"
     },
     "config": {
       "description": "Unified configuration loader — zero dependencies, stdlib only, Python 3.10+",
@@ -93,8 +93,8 @@
       ],
       "tier": "subsystem",
       "category": "config",
-      "last_updated": "2026-06-12T14:01:49-05:00",
-      "content_hash": "83e2fc106c73f02bf5d239538c0e5916dcd9b2cc147bf648ae16c49ff4e5f459"
+      "last_updated": "2026-08-25T07:09:01-05:00",
+      "content_hash": "416bbc25eb68aaa48987774c46d4a9f03d44617c49631b0ad16eff2996c31d1e"
     },
     "depdetect": {
       "description": "Dependency detection and verification — zero dependencies, stdlib only, Python 3.10+",
@@ -307,14 +307,14 @@
       "files": [
         "qr/qr.py"
       ],
-      "version": "0.3.3",
+      "version": "0.3.4",
       "deps": [
         "png"
       ],
       "tier": "simple",
       "category": "image",
-      "last_updated": "2026-04-27T19:31:53Z",
-      "content_hash": "992def53fe2e34c3031a112906b9f4ce5a7b7523f43cdf070415d17117f3e37d"
+      "last_updated": "2026-08-25T07:09:01-05:00",
+      "content_hash": "e699cac0658466c8938b2113e8120646e1c3d718b95b5c2440d378d9607031d4"
     },
     "ratelimit": {
       "description": "Multi-algorithm rate limiter with zero dependencies",
@@ -325,8 +325,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": null,
-      "content_hash": "68f189765331997eeebbff5bb96c81f8bac64b3e1407745dc7e8c43cbdb4f8be"
+      "last_updated": "2026-08-25T09:47:07-05:00",
+      "content_hash": "d8ca78a8dc00e76e6614d6b5c789073876bb4eb2eb3f87861eb6a78b7be46457"
     },
     "readability": {
       "description": "HTML readability content extractor — zero-dep, stdlib only, Python 3.10+",
@@ -334,14 +334,14 @@
         "readability/benchmark_compare.py",
         "readability/readability.py"
       ],
-      "version": "0.2.0",
+      "version": "0.2.1",
       "deps": [
         "soup"
       ],
       "tier": "medium",
       "category": "text",
-      "last_updated": "2026-06-12T23:02:16-05:00",
-      "content_hash": "7fc61de7eb18191f09e372bbca32722ec5453167005413cec49b23be261b6aa6"
+      "last_updated": "2026-08-25T07:09:01-05:00",
+      "content_hash": "f37bcf6832e2de7735d901bace73c69cd5ef0a6f1b8b9d8837eac47bad425b3a"
     },
     "retry": {
       "description": "Zero-dependency retry with configurable backoff strategies",
@@ -408,15 +408,15 @@
       "files": [
         "skills/skills.py"
       ],
-      "version": "0.4.2",
+      "version": "0.4.3",
       "deps": [
         "frontmatter",
         "sparse_search"
       ],
       "tier": "medium",
       "category": "protocol",
-      "last_updated": "2026-04-27T23:17:36+08:00",
-      "content_hash": "af69314728164602db323a5240feac58260e4b0d5ceedb32945c80e2ddfa13e7"
+      "last_updated": "2026-08-25T07:09:01-05:00",
+      "content_hash": "0363eb438d5bf078a90747b680645e99ae01370c7f7bf8f3745a476d91499250"
     },
     "soup": {
       "description": "HTML parser with BeautifulSoup-like API — zero-dep, stdlib only, Python 3.10+",
@@ -447,14 +447,14 @@
       "files": [
         "sse/sse.py"
       ],
-      "version": "0.3.2",
+      "version": "0.3.3",
       "deps": [
         "httpclient"
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-06-26T15:16:33-05:00",
-      "content_hash": "be5c83e235b111a9c86e94ccf416044a9a387258044b89d03494ea9db5acc397"
+      "last_updated": "2026-08-25T07:09:01-05:00",
+      "content_hash": "a5f03ab5e795737ef37b1979b2dfe2b227869df52e8d774689bd14a32821f8d3"
     },
     "structlog": {
       "description": "Zero-dependency structured logging with pretty console output",
@@ -533,14 +533,14 @@
       "files": [
         "vcs/vcs.py"
       ],
-      "version": "0.3.0",
+      "version": "0.3.1",
       "deps": [
         "diff"
       ],
       "tier": "subsystem",
       "category": "devtools",
-      "last_updated": "2026-04-11T01:00:28+08:00",
-      "content_hash": "bc7cf7b24daf282ae4311e432a62c192d1570bce95985c211948c7a25837e225"
+      "last_updated": "2026-08-25T07:09:01-05:00",
+      "content_hash": "682a1f376940b66b490a150ecde10ed071220452c9af4c025ebac9e51b5d1d41"
     },
     "websocket": {
       "description": "Zero-dependency WebSocket client (RFC 6455)",

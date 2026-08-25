@@ -132,6 +132,7 @@ plugins:
             - websocket
             - cdp
             - multipart
+            - ratelimit
           options:
             docstring_style: google
             show_source: true

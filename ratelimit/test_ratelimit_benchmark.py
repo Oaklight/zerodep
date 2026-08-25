@@ -1,4 +1,4 @@
-"""Benchmarks for zerodep ratelimit module vs ``limits`` library."""
+"""Benchmarks for zerodep ratelimit module vs ``limits`` and ``limiter`` libraries."""
 
 from __future__ import annotations
 
@@ -95,3 +95,26 @@ class TestLimitsBenchmarks:
 
     def test_fixed_window_test(self, benchmark, limits_fixed_window):
         benchmark(limits_fixed_window.test, RATE, "bench-key")
+
+
+# ---------------------------------------------------------------------------
+# limiter library benchmarks (token bucket only)
+# ---------------------------------------------------------------------------
+
+limiter_mod = pytest.importorskip("limiter")
+from limiter import Limiter as _Limiter  # noqa: E402
+
+
+class TestLimiterBenchmarks:
+    def test_token_bucket_consume(self, benchmark):
+        lim = _Limiter(rate=10000, capacity=10000)
+        benchmark(lim.limiter.consume, "bench-key")
+
+    def test_token_bucket_decorator(self, benchmark):
+        lim = _Limiter(rate=10000, capacity=10000)
+
+        @lim
+        def noop():
+            pass
+
+        benchmark(noop)

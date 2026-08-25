@@ -48,7 +48,6 @@ import threading
 import time
 from abc import abstractmethod
 from collections.abc import Callable
-from dataclasses import dataclass
 from functools import wraps
 from typing import Any, Protocol, runtime_checkable
 
@@ -71,7 +70,6 @@ __all__: list[str] = [
 # ---------------------------------------------------------------------------
 
 
-@dataclass(frozen=True, slots=True)
 class RateLimitResult:
     """Outcome of a rate-limit check.
 
@@ -85,11 +83,39 @@ class RateLimitResult:
             ``allowed`` is ``True``.
     """
 
-    allowed: bool
-    limit: int
-    remaining: int
-    reset_at: float
-    retry_after: float | None
+    __slots__ = ("allowed", "limit", "remaining", "reset_at", "retry_after")
+
+    def __init__(
+        self,
+        allowed: bool,
+        limit: int | float,
+        remaining: int | float,
+        reset_at: float,
+        retry_after: float | None,
+    ) -> None:
+        self.allowed = allowed
+        self.limit = limit
+        self.remaining = remaining
+        self.reset_at = reset_at
+        self.retry_after = retry_after
+
+    def __repr__(self) -> str:
+        return (
+            f"RateLimitResult(allowed={self.allowed!r}, limit={self.limit!r}, "
+            f"remaining={self.remaining!r}, reset_at={self.reset_at!r}, "
+            f"retry_after={self.retry_after!r})"
+        )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RateLimitResult):
+            return NotImplemented
+        return (
+            self.allowed == other.allowed
+            and self.limit == other.limit
+            and self.remaining == other.remaining
+            and self.reset_at == other.reset_at
+            and self.retry_after == other.retry_after
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -173,10 +199,12 @@ class _EvictionMixin:
 # ---------------------------------------------------------------------------
 
 
-@dataclass
 class _Bucket:
-    tokens: float
-    last_refill: float
+    __slots__ = ("tokens", "last_refill")
+
+    def __init__(self, tokens: float, last_refill: float) -> None:
+        self.tokens = tokens
+        self.last_refill = last_refill
 
 
 class TokenBucketLimiter(_AsyncMixin, _EvictionMixin):
@@ -210,27 +238,39 @@ class TokenBucketLimiter(_AsyncMixin, _EvictionMixin):
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
         now = self._clock()
         self._maybe_evict(now)
-        bucket = self._get_or_create(key, now)
-        self._refill(bucket, now)
 
-        if bucket.tokens >= tokens:
-            bucket.tokens -= tokens
+        # Inlined _get_or_create + _refill for hot-path performance
+        buckets = self._buckets
+        bucket = buckets.get(key)
+        if bucket is None:
+            bucket = _Bucket(float(self.capacity), now)
+            buckets[key] = bucket
+        else:
+            elapsed = now - bucket.last_refill
+            if elapsed > 0:
+                bucket.tokens = min(self.capacity, bucket.tokens + elapsed * self.rate)
+                bucket.last_refill = now
+
+        cur = bucket.tokens
+        capacity = self.capacity
+        rate = self.rate
+        if cur >= tokens:
+            cur -= tokens
+            bucket.tokens = cur
             return RateLimitResult(
-                allowed=True,
-                limit=self.capacity,
-                remaining=int(bucket.tokens),
-                reset_at=now + (self.capacity - bucket.tokens) / self.rate,
-                retry_after=None,
+                True,
+                capacity,
+                cur,
+                now + (capacity - cur) / rate,
+                None,
             )
 
-        deficit = tokens - bucket.tokens
-        retry_after = deficit / self.rate
         return RateLimitResult(
-            allowed=False,
-            limit=self.capacity,
-            remaining=int(bucket.tokens),
-            reset_at=now + self.capacity / self.rate,
-            retry_after=round(retry_after, 3),
+            False,
+            capacity,
+            cur,
+            now + capacity / rate,
+            (tokens - cur) / rate,
         )
 
     def peek(self, key: str) -> RateLimitResult:
@@ -278,10 +318,12 @@ class TokenBucketLimiter(_AsyncMixin, _EvictionMixin):
 # ---------------------------------------------------------------------------
 
 
-@dataclass
 class _FixedWindow:
-    count: int
-    window_start: float
+    __slots__ = ("count", "window_start")
+
+    def __init__(self, count: int, window_start: float) -> None:
+        self.count = count
+        self.window_start = window_start
 
 
 class FixedWindowLimiter(_AsyncMixin, _EvictionMixin):
@@ -316,28 +358,33 @@ class FixedWindowLimiter(_AsyncMixin, _EvictionMixin):
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
         now = self._clock()
         self._maybe_evict(now)
-        window = self._get_or_reset(key, now)
 
-        if window.count + tokens <= self.limit:
+        # Inlined _get_or_reset for hot-path performance
+        windows = self._windows
+        window = windows.get(key)
+        ws = self.window_seconds
+        if window is None or now - window.window_start >= ws:
+            window = _FixedWindow(0, now)
+            windows[key] = window
+
+        limit = self.limit
+        if window.count + tokens <= limit:
             window.count += tokens
-            remaining = self.limit - window.count
-            reset_at = window.window_start + self.window_seconds
             return RateLimitResult(
-                allowed=True,
-                limit=self.limit,
-                remaining=remaining,
-                reset_at=reset_at,
-                retry_after=None,
+                True,
+                limit,
+                limit - window.count,
+                window.window_start + ws,
+                None,
             )
 
-        reset_at = window.window_start + self.window_seconds
-        retry_after = max(0.0, reset_at - now)
+        reset_at = window.window_start + ws
         return RateLimitResult(
-            allowed=False,
-            limit=self.limit,
-            remaining=max(0, self.limit - window.count),
-            reset_at=reset_at,
-            retry_after=round(retry_after, 3),
+            False,
+            limit,
+            max(0, limit - window.count),
+            reset_at,
+            max(0.0, reset_at - now),
         )
 
     def peek(self, key: str) -> RateLimitResult:
@@ -375,12 +422,20 @@ class FixedWindowLimiter(_AsyncMixin, _EvictionMixin):
 # ---------------------------------------------------------------------------
 
 
-@dataclass
 class _SlidingState:
-    prev_count: int
-    prev_start: float
-    curr_count: int
-    curr_start: float
+    __slots__ = ("prev_count", "prev_start", "curr_count", "curr_start")
+
+    def __init__(
+        self,
+        prev_count: int,
+        prev_start: float,
+        curr_count: int,
+        curr_start: float,
+    ) -> None:
+        self.prev_count = prev_count
+        self.prev_start = prev_start
+        self.curr_count = curr_count
+        self.curr_start = curr_start
 
 
 class SlidingWindowLimiter(_AsyncMixin, _EvictionMixin):
@@ -415,32 +470,50 @@ class SlidingWindowLimiter(_AsyncMixin, _EvictionMixin):
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
         now = self._clock()
         self._maybe_evict(now)
-        state = self._get_or_create(key, now)
-        self._advance(state, now)
+        ws = self.window_seconds
+        limit = self.limit
 
-        effective = self._effective_count(state, now)
-        if effective + tokens <= self.limit:
+        # Inlined _get_or_create + _advance + _effective_count
+        states = self._states
+        state = states.get(key)
+        if state is None:
+            state = _SlidingState(0, now - ws, 0, now)
+            states[key] = state
+        elif now >= state.curr_start + ws:
+            ew = int((now - state.curr_start) / ws)
+            if ew == 1:
+                state.prev_count = state.curr_count
+                state.prev_start = state.curr_start
+                state.curr_count = 0
+                state.curr_start = state.prev_start + ws
+            else:
+                state.prev_count = 0
+                state.prev_start = state.curr_start + (ew - 1) * ws
+                state.curr_count = 0
+                state.curr_start = state.prev_start + ws
+
+        elapsed_in_curr = now - state.curr_start
+        overlap = max(0.0, 1.0 - elapsed_in_curr / ws)
+        effective = state.curr_count + state.prev_count * overlap
+
+        if effective + tokens <= limit:
             state.curr_count += tokens
-            new_effective = self._effective_count(state, now)
-            remaining = max(0, self.limit - math.ceil(new_effective))
-            reset_at = state.curr_start + self.window_seconds
+            new_eff = state.curr_count + state.prev_count * overlap
             return RateLimitResult(
-                allowed=True,
-                limit=self.limit,
-                remaining=remaining,
-                reset_at=reset_at,
-                retry_after=None,
+                True,
+                limit,
+                max(0.0, limit - new_eff),
+                state.curr_start + ws,
+                None,
             )
 
-        reset_at = state.curr_start + self.window_seconds
-        retry_after = max(0.0, reset_at - now)
-        remaining = max(0, self.limit - math.ceil(effective))
+        reset_at = state.curr_start + ws
         return RateLimitResult(
-            allowed=False,
-            limit=self.limit,
-            remaining=remaining,
-            reset_at=reset_at,
-            retry_after=round(retry_after, 3),
+            False,
+            limit,
+            max(0.0, limit - effective),
+            reset_at,
+            max(0.0, reset_at - now),
         )
 
     def peek(self, key: str) -> RateLimitResult:
@@ -540,37 +613,30 @@ class GCRALimiter(_AsyncMixin, _EvictionMixin):
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
         now = self._clock()
         self._maybe_evict(now)
+        ei = self._emission_interval
+        dt = self._delay_tolerance
+        limit = self._limit
         tat = self._tats.get(key, now)
-        increment = self._emission_interval * tokens
 
-        new_tat = max(tat, now) + increment
-        allow_at = new_tat - self._delay_tolerance - self._emission_interval
+        new_tat = max(tat, now) + ei * tokens
+        allow_at = new_tat - dt - ei
 
         if now < allow_at:
-            retry_after = allow_at - now
-            remaining = max(
-                0,
-                int((self._delay_tolerance - (tat - now)) / self._emission_interval),
-            )
             return RateLimitResult(
-                allowed=False,
-                limit=self._limit,
-                remaining=remaining,
-                reset_at=tat,
-                retry_after=round(retry_after, 3),
+                False,
+                limit,
+                max(0.0, (dt - (tat - now)) / ei),
+                tat,
+                allow_at - now,
             )
 
         self._tats[key] = new_tat
-        remaining = max(
-            0,
-            int((self._delay_tolerance - (new_tat - now)) / self._emission_interval),
-        )
         return RateLimitResult(
-            allowed=True,
-            limit=self._limit,
-            remaining=remaining,
-            reset_at=new_tat,
-            retry_after=None,
+            True,
+            limit,
+            max(0.0, (dt - (new_tat - now)) / ei),
+            new_tat,
+            None,
         )
 
     def peek(self, key: str) -> RateLimitResult:
@@ -842,14 +908,14 @@ class ratelimit:
 
 
 class ThreadSafeLimiter:
-    """Wraps any :class:`RateLimiter` with a ``threading.Lock``.
+    """Wraps any :class:`RateLimiter` with per-key ``threading.Lock`` instances.
 
-    The async methods (``aacquire``, ``apeek``) use the same
-    ``threading.Lock`` — not ``asyncio.Lock`` — so they are safe for
-    mixed sync+async access to the same limiter.  For pure-async
-    high-contention scenarios, the lock may briefly block the event
-    loop; in practice the hold time is negligible (microseconds of
-    in-memory computation).
+    Different keys are fully concurrent; only requests to the same key
+    serialize.  Uses ``threading.Lock`` (not ``asyncio.Lock``) so the
+    wrapper is safe for mixed sync+async access.  For pure-async
+    high-contention scenarios on a single key, the lock may briefly
+    block the event loop; in practice the hold time is negligible
+    (microseconds of in-memory computation).
 
     Args:
         limiter: The underlying rate limiter.
@@ -857,22 +923,46 @@ class ThreadSafeLimiter:
 
     def __init__(self, limiter: RateLimiter) -> None:
         self._limiter = limiter
-        self._lock = threading.Lock()
+        self._locks: dict[str, threading.Lock] = {}
+        self._meta_lock = threading.Lock()
+
+    def _get_lock(self, key: str) -> threading.Lock:
+        lock = self._locks.get(key)
+        if lock is not None:
+            return lock
+        with self._meta_lock:
+            lock = self._locks.get(key)
+            if lock is None:
+                lock = threading.Lock()
+                self._locks[key] = lock
+            return lock
+
+    def _safe_acquire(self, key: str, tokens: int) -> RateLimitResult:
+        # Eviction touches multiple keys and must serialize globally.
+        # The _EvictionMixin triggers every 128 calls via _call_count,
+        # which is on the limiter (shared state). We hold the meta lock
+        # only when eviction is about to fire, keeping the common path
+        # per-key only.
+        limiter = self._limiter
+        cc = getattr(limiter, "_call_count", None)
+        if cc is not None and cc >= _EVICT_INTERVAL - 1:
+            with self._meta_lock:
+                return limiter.acquire(key, tokens)
+        with self._get_lock(key):
+            return limiter.acquire(key, tokens)
 
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
-        with self._lock:
-            return self._limiter.acquire(key, tokens)
+        return self._safe_acquire(key, tokens)
 
     def peek(self, key: str) -> RateLimitResult:
-        with self._lock:
+        with self._get_lock(key):
             return self._limiter.peek(key)
 
     async def aacquire(self, key: str, tokens: int = 1) -> RateLimitResult:
         await asyncio.sleep(0)
-        with self._lock:
-            return self._limiter.acquire(key, tokens)
+        return self._safe_acquire(key, tokens)
 
     async def apeek(self, key: str) -> RateLimitResult:
         await asyncio.sleep(0)
-        with self._lock:
+        with self._get_lock(key):
             return self._limiter.peek(key)

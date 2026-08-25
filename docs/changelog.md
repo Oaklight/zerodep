@@ -6,13 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### New Modules
+
+- **ratelimit** (v0.1.0): zero-dependency multi-algorithm rate limiter with 4 algorithms (Token Bucket, Fixed Window, Sliding Window Counter, GCRA) behind a common `RateLimiter` protocol. Convenience API: `ratelimit()` decorator/context manager (sync + async), `create_limiter()` factory, `parse_quota()` string parser (`"10/s"`, `"100/m burst 200"`), `ThreadSafeLimiter` with per-key locking, `RateLimitExceeded` exception, wait-and-retry with timeout. Full async API (`aacquire`/`apeek`) on all limiter classes. 2-4x faster than `limits` library, within 1.05x of `token-bucket` C-extension on FixedWindow. ([#120](https://github.com/Oaklight/zerodep/issues/120), [#121](https://github.com/Oaklight/zerodep/pull/121))
+
 ### Enhancements
 
 - **validate**: accept dataclass instances as input to `validate()`. Instances are automatically converted to dicts via `vars()` at each nesting level, enabling recursive validation of nested dataclass trees. Cross-type validation (dataclass instance against TypedDict schema) also works. Previously, passing a dataclass instance would raise `ValidationError: Expected dict, got <ClassName>`.
 
+### Bug Fixes
+
+- **sibling imports**: `_ensure_sibling_path()` now supports both flat (`_vendor/soup.py`) and nested (`soup/soup.py`) vendor layouts. Previously only the nested layout worked, causing silent import failures in flat-vendored projects. Restored `os.path.abspath(__file__)` for robustness. Affects 9 modules: readability, qr, vcs, skills, sse, config, a2a, acp, cdp. ([#124](https://github.com/Oaklight/zerodep/issues/124), [#125](https://github.com/Oaklight/zerodep/pull/125))
+
 ### Performance
 
 - **validate**: O(1) discriminated union dispatch — `_try_discriminated` now uses a cached `{literal_value: TypedDict}` dispatch table instead of O(variants) linear scan per call. ~230x faster on large unions (e.g. 500 items × 10-variant union: 917ms → 4ms in production profiling). ([#107](https://github.com/Oaklight/zerodep/issues/107), [#108](https://github.com/Oaklight/zerodep/pull/108))
+- **ratelimit**: +75% single-thread throughput via `__slots__` result class, inlined hot paths, per-key threading locks, and eliminated `int()`/`round()` overhead. TokenBucket: 1338→762 ns/op. Multi-thread different-key: +76%. ([#126](https://github.com/Oaklight/zerodep/pull/126))
 
 ## [2026.6.13] - 2026-06-13
 

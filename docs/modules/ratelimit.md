@@ -131,24 +131,17 @@ Every `acquire()` / `peek()` call returns a `RateLimitResult`:
 
 ## Quota String Format
 
-```
-<N>/<unit>                  "100/s", "10/m", "5/h", "1/d"
-<N> per <unit>              "10 per minute"
-<N>/<unit> burst <B>        "100/s burst 200"
-<N> per <unit> burst <B>    "10 per minute burst 20"
-```
+| Pattern | Example |
+|---------|---------|
+| `N/unit` | `"100/s"`, `"10/m"`, `"5/h"`, `"1/d"` |
+| `N per unit` | `"10 per minute"` |
+| `N/unit burst B` | `"100/s burst 200"` |
+| `N per unit burst B` | `"10 per minute burst 20"` |
 
 Supported units: `s`/`sec`/`second`, `m`/`min`/`minute`, `h`/`hr`/`hour`, `d`/`day` (plurals accepted).
 
 ## Performance
 
-Benchmarked against `limits` (most popular Python rate limiter) and `limiter` (C-extension token bucket):
+All four algorithms run under 1μs per `acquire()` call, **6-7x faster** than the `limits` library on comparable algorithms, and within 5% of `token-bucket`'s C-extension on FixedWindow.
 
-| Algorithm | zerodep (ns/op) | limits (ns/op) | Speedup |
-|-----------|----------------|----------------|---------|
-| FixedWindow | ~575 | ~3,478 | **6.0x** |
-| TokenBucket | ~762 | — | — |
-| GCRA | ~740 | — | — |
-| SlidingWindow | ~873 | ~6,261 | **7.2x** |
-
-FixedWindow is within 5% of `token-bucket` library's C-extension performance (~549 ns/op).
+See [full benchmark results](../benchmarks/ratelimit.md) for detailed comparisons, multi-threaded throughput, and optimization history.

@@ -89,12 +89,28 @@ class TestRateLimitResult:
         assert r.allowed is False
         assert r.retry_after == 5.0
 
-    def test_frozen(self):
+    def test_repr(self):
+        r = RateLimitResult(
+            allowed=True, limit=10, remaining=9, reset_at=100.0, retry_after=None
+        )
+        assert "allowed=True" in repr(r)
+        assert "remaining=9" in repr(r)
+
+    def test_eq(self):
+        r1 = RateLimitResult(
+            allowed=True, limit=10, remaining=9, reset_at=100.0, retry_after=None
+        )
+        r2 = RateLimitResult(
+            allowed=True, limit=10, remaining=9, reset_at=100.0, retry_after=None
+        )
+        assert r1 == r2
+
+    def test_slots(self):
         r = RateLimitResult(
             allowed=True, limit=10, remaining=9, reset_at=100.0, retry_after=None
         )
         with pytest.raises(AttributeError):
-            r.allowed = False  # type: ignore[misc]
+            r.extra = 42  # type: ignore[attr-defined]
 
 
 # ---------------------------------------------------------------------------

@@ -6,13 +6,22 @@
 
 ## [未发布]
 
+### 新模块
+
+- **ratelimit** (v0.1.0)：零依赖多算法限流器，提供 4 种算法（令牌桶、固定窗口、滑动窗口计数器、GCRA）并统一于 `RateLimiter` Protocol。便捷 API：`ratelimit()` 装饰器/上下文管理器（同步 + 异步）、`create_limiter()` 工厂函数、`parse_quota()` 字符串解析（`"10/s"`、`"100/m burst 200"`）、per-key 锁的 `ThreadSafeLimiter`、`RateLimitExceeded` 异常、带超时的等待重试。所有算法类均支持完整异步 API（`aacquire`/`apeek`）。性能比 `limits` 库快 2-4 倍，FixedWindow 与 `token-bucket` C 扩展差距仅 1.05 倍。([#120](https://github.com/Oaklight/zerodep/issues/120)、[#121](https://github.com/Oaklight/zerodep/pull/121))
+
 ### 功能增强
 
 - **validate**：`validate()` 现支持直接传入 dataclass 实例。实例在每个嵌套层级自动通过 `vars()` 转换为 dict，支持嵌套 dataclass 树的递归验证。跨类型验证（dataclass 实例对 TypedDict schema）同样可用。此前传入 dataclass 实例会抛出 `ValidationError: Expected dict, got <ClassName>`。
 
+### 问题修复
+
+- **兄弟模块导入**：`_ensure_sibling_path()` 现同时支持扁平（`_vendor/soup.py`）和嵌套（`soup/soup.py`）vendor 布局。此前仅嵌套布局可用，导致扁平 vendor 项目中兄弟导入静默失败。恢复 `os.path.abspath(__file__)` 以增强健壮性。涉及 9 个模块：readability、qr、vcs、skills、sse、config、a2a、acp、cdp。([#124](https://github.com/Oaklight/zerodep/issues/124)、[#125](https://github.com/Oaklight/zerodep/pull/125))
+
 ### 性能优化
 
 - **validate**：O(1) 可辨识联合类型分发——`_try_discriminated` 现使用缓存的 `{字面量值: TypedDict}` 分发表代替每次调用的 O(variants) 线性扫描。大规模联合类型验证约 230 倍加速（例如 500 项 × 10 变体联合：生产环境 917ms → 4ms）。([#107](https://github.com/Oaklight/zerodep/issues/107)、[#108](https://github.com/Oaklight/zerodep/pull/108))
+- **ratelimit**：单线程吞吐量提升 75%——通过 `__slots__` 结果类、内联热路径、per-key 线程锁、消除 `int()`/`round()` 开销。TokenBucket：1338→762 ns/op。多线程不同 key 场景提升 76%。([#126](https://github.com/Oaklight/zerodep/pull/126))
 
 ## [2026.6.13] - 2026-06-13
 

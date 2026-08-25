@@ -131,24 +131,17 @@ state = await limiter.apeek("client-ip")
 
 ## 配额字符串格式
 
-```
-<N>/<unit>                  "100/s"、"10/m"、"5/h"、"1/d"
-<N> per <unit>              "10 per minute"
-<N>/<unit> burst <B>        "100/s burst 200"
-<N> per <unit> burst <B>    "10 per minute burst 20"
-```
+| 模式 | 示例 |
+|------|------|
+| `N/unit` | `"100/s"`、`"10/m"`、`"5/h"`、`"1/d"` |
+| `N per unit` | `"10 per minute"` |
+| `N/unit burst B` | `"100/s burst 200"` |
+| `N per unit burst B` | `"10 per minute burst 20"` |
 
 支持的时间单位：`s`/`sec`/`second`、`m`/`min`/`minute`、`h`/`hr`/`hour`、`d`/`day`（接受复数形式）。
 
 ## 性能
 
-与 `limits`（最流行的 Python 限流库）和 `limiter`（C 扩展令牌桶）对比：
+全部 4 种算法的 `acquire()` 调用均在 1μs 以内，比 `limits` 库在可比算法上**快 6-7 倍**，FixedWindow 与 `token-bucket` C 扩展差距仅 5%。
 
-| 算法 | zerodep (ns/op) | limits (ns/op) | 加速比 |
-|------|----------------|----------------|--------|
-| FixedWindow | ~575 | ~3,478 | **6.0x** |
-| TokenBucket | ~762 | — | — |
-| GCRA | ~740 | — | — |
-| SlidingWindow | ~873 | ~6,261 | **7.2x** |
-
-FixedWindow 与 `token-bucket` 库的 C 扩展性能差距仅 5%（~549 ns/op）。
+详见[完整性能测试结果](../benchmarks/ratelimit.md)，包含详细对比、多线程吞吐量和优化历程。

@@ -73,14 +73,18 @@ __all__: list[str] = [
 class RateLimitResult:
     """Outcome of a rate-limit check.
 
+    Instances are **not hashable** (mutable ``__slots__`` class).
+
     Attributes:
         allowed: Whether the request is permitted.
         limit: Total quota (bucket capacity or window limit).
-        remaining: Remaining quota (>= 0).
+        remaining: Remaining quota (>= 0).  May be ``float`` for
+            algorithms with fractional token counts (token bucket,
+            sliding window, GCRA).
         reset_at: Monotonic timestamp when quota fully replenishes or
             the current window ends.
-        retry_after: Seconds to wait before retrying.  ``None`` when
-            ``allowed`` is ``True``.
+        retry_after: Seconds to wait before retrying (raw ``float``,
+            not rounded).  ``None`` when ``allowed`` is ``True``.
     """
 
     __slots__ = ("allowed", "limit", "remaining", "reset_at", "retry_after")
@@ -925,6 +929,30 @@ class ThreadSafeLimiter:
         self._limiter = limiter
         self._locks: dict[str, threading.Lock] = {}
         self._meta_lock = threading.Lock()
+        # Wrap _evict_stale so eviction always runs under _meta_lock
+        # and stale per-key locks are cleaned up alongside data.
+        if hasattr(limiter, "_evict_stale"):
+            original_evict = limiter._evict_stale  # type: ignore[union-attr]
+            locks = self._locks
+            meta = self._meta_lock
+
+            def _safe_evict(
+                now: float,
+                _orig: Any = original_evict,
+                _lock: threading.Lock = meta,
+                _locks: dict[str, threading.Lock] = locks,
+            ) -> None:
+                with _lock:
+                    _orig(now)
+                    # Purge locks for keys that were just evicted.
+                    # After _orig runs, any key still in the limiter's
+                    # state dict is alive; the rest can be dropped.
+                    alive = set(_get_state_keys(limiter))
+                    stale = [k for k in _locks if k not in alive]
+                    for k in stale:
+                        del _locks[k]
+
+            object.__setattr__(limiter, "_evict_stale", _safe_evict)
 
     def _get_lock(self, key: str) -> threading.Lock:
         lock = self._locks.get(key)
@@ -937,22 +965,9 @@ class ThreadSafeLimiter:
                 self._locks[key] = lock
             return lock
 
-    def _safe_acquire(self, key: str, tokens: int) -> RateLimitResult:
-        # Eviction touches multiple keys and must serialize globally.
-        # The _EvictionMixin triggers every 128 calls via _call_count,
-        # which is on the limiter (shared state). We hold the meta lock
-        # only when eviction is about to fire, keeping the common path
-        # per-key only.
-        limiter = self._limiter
-        cc = getattr(limiter, "_call_count", None)
-        if cc is not None and cc >= _EVICT_INTERVAL - 1:
-            with self._meta_lock:
-                return limiter.acquire(key, tokens)
-        with self._get_lock(key):
-            return limiter.acquire(key, tokens)
-
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
-        return self._safe_acquire(key, tokens)
+        with self._get_lock(key):
+            return self._limiter.acquire(key, tokens)
 
     def peek(self, key: str) -> RateLimitResult:
         with self._get_lock(key):
@@ -960,9 +975,19 @@ class ThreadSafeLimiter:
 
     async def aacquire(self, key: str, tokens: int = 1) -> RateLimitResult:
         await asyncio.sleep(0)
-        return self._safe_acquire(key, tokens)
+        with self._get_lock(key):
+            return self._limiter.acquire(key, tokens)
 
     async def apeek(self, key: str) -> RateLimitResult:
         await asyncio.sleep(0)
         with self._get_lock(key):
             return self._limiter.peek(key)
+
+
+def _get_state_keys(limiter: Any) -> set[str]:
+    """Return the set of active keys in a limiter's internal state."""
+    for attr in ("_buckets", "_windows", "_states", "_tats"):
+        d = getattr(limiter, attr, None)
+        if d is not None:
+            return set(d.keys())
+    return set()

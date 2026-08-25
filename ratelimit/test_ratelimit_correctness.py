@@ -733,6 +733,19 @@ class TestThreadSafe:
         r = limiter.peek("k")
         assert r.remaining == 5
 
+    def test_locks_cleaned_on_eviction(self):
+        clock = FakeClock()
+        inner = TokenBucketLimiter(rate=1.0, capacity=2, clock=clock)
+        limiter = ThreadSafeLimiter(inner)
+        for i in range(200):
+            limiter.acquire(f"k{i}")
+        initial_locks = len(limiter._locks)
+        assert initial_locks >= 199  # eviction may fire once during creation
+        clock.advance(100.0)
+        for _ in range(128):
+            limiter.acquire("trigger")
+        assert len(limiter._locks) < initial_locks
+
 
 # ---------------------------------------------------------------------------
 # Async API (aacquire / apeek)

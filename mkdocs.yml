@@ -83,6 +83,7 @@ plugins:
             - ../llmstxt
             - ../synctex
             - ../useragent
+            - ../ratelimit
             - ../httpserver
             - ../websocket
             - ../cdp
@@ -185,6 +186,7 @@ nav:
           - httpserver / HTTP 服务器: modules/httpserver.md
           - websocket / WebSocket 客户端: modules/websocket.md
           - useragent / User-Agent 生成器: modules/useragent.md
+          - ratelimit / 限流器: modules/ratelimit.md
       - 智能体协议:
           - jsonrpc / JSON-RPC: modules/jsonrpc.md
           - a2a / A2A 协议: modules/a2a.md
@@ -242,6 +244,7 @@ nav:
           - httpserver / HTTP 服务器: api/httpserver.md
           - websocket / WebSocket 客户端: api/websocket.md
           - useragent / User-Agent 生成器: api/useragent.md
+          - ratelimit / 限流器: api/ratelimit.md
       - 智能体协议:
           - jsonrpc / JSON-RPC: api/jsonrpc.md
           - a2a / A2A 协议: api/a2a.md
@@ -299,6 +302,7 @@ nav:
           - httpserver / HTTP 服务器: benchmarks/httpserver.md
           - websocket / WebSocket 客户端: benchmarks/websocket.md
           - useragent / User-Agent 生成器: benchmarks/useragent.md
+          - ratelimit / 限流器: benchmarks/ratelimit.md
       - 智能体协议:
           - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md
           - a2a / A2A 协议: benchmarks/a2a.md

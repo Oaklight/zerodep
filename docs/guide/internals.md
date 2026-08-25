@@ -35,49 +35,50 @@ zerodep 模块必须在单独复制时可独立工作，但当同级模块存在
 4. **设置能力标记** — `_HAS_<NAME> = True/False`
 5. **延迟报错** — 仅在运行时真正需要该能力时才抛出用户可理解的错误
 
+同时支持**扁平**和**嵌套**两种 vendor 布局：
+
+- **嵌套：** `yaml/yaml.py` 与 `config/config.py` 并列（仓库默认布局）
+- **扁平：** `_vendor/yaml.py` 与 `_vendor/config.py` 并列（vendor 到项目中）
+
+`_ensure_sibling_path` 辅助函数同时将模块自身目录和嵌套兄弟路径添加到 `sys.path`：
+
 ```python
-# 步骤 1-2: 定位同级模块
+def _ensure_sibling_path(name: str) -> str:
+    """为扁平和嵌套布局添加兄弟模块路径到 sys.path。"""
+    base = os.path.dirname(os.path.abspath(__file__))
+    for candidate in [base, os.path.normpath(os.path.join(base, "..", name))]:
+        if candidate not in sys.path:
+            sys.path.insert(0, candidate)
+    return base
+```
+
+然后配合懒加载和延迟报错使用：
+
+```python
+def _load_yaml():
+    _ensure_sibling_path("yaml")
+    try:
+        from yaml import load as _yaml_load
+        return _yaml_load
+    except ImportError as exc:
+        raise NotImplementedError(
+            "YAML support requires the zerodep yaml module. "
+            "Place yaml/yaml.py alongside this file."
+        ) from exc
+```
+
+#### 旧模式（v2026.8.25 之前）
+
+部分旧模块可能仍使用手动路径插入模式，仅支持嵌套布局：
+
+```python
+# 仅支持嵌套布局（yaml/yaml.py）
 _sibling_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "yaml")
 if _sibling_dir not in sys.path:
     sys.path.insert(0, _sibling_dir)
-
-# 步骤 3-4: 探测
-try:
-    from yaml import load as _yaml_load
-    _HAS_YAML = True
-except ImportError:
-    _HAS_YAML = False
-
-# 步骤 5: 延迟报错（在需要该能力的函数内部）
-def load_yaml(path):
-    if not _HAS_YAML:
-        raise RuntimeError(
-            "YAML support requires the zerodep yaml module. "
-            "Copy yaml/yaml.py alongside this file."
-        )
-    ...
 ```
 
-### 懒加载
-
-为避免导入时副作用，sibling 模块采用懒加载。导入被延迟到首次使用时：
-
-```python
-_yaml_mod = None
-
-def _get_yaml():
-    global _yaml_mod
-    if _yaml_mod is None:
-        _sibling_dir = os.path.join(os.path.dirname(__file__), "..", "yaml")
-        if _sibling_dir not in sys.path:
-            sys.path.insert(0, _sibling_dir)
-        try:
-            import yaml as _mod
-            _yaml_mod = _mod
-        except ImportError:
-            raise RuntimeError("YAML support requires the zerodep yaml module.")
-    return _yaml_mod
-```
+新模块应使用 `_ensure_sibling_path` 代替。
 
 ### 命名约定
 

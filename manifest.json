@@ -1,13 +1,13 @@
 {
   "version": "1",
-  "generated": "2026-08-25T15:37:02.591061+00:00",
+  "generated": "2026-08-25T15:54:23.546373+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
       "files": [
         "a2a/a2a.py"
       ],
-      "version": "0.3.1",
+      "version": "0.3.2",
       "deps": [
         "jsonrpc"
       ],
@@ -21,7 +21,7 @@
       "files": [
         "acp/acp.py"
       ],
-      "version": "0.3.1",
+      "version": "0.3.2",
       "deps": [
         "jsonrpc"
       ],
@@ -71,7 +71,7 @@
       "files": [
         "cdp/cdp.py"
       ],
-      "version": "0.1.0",
+      "version": "0.1.1",
       "deps": [
         "websocket"
       ],
@@ -85,7 +85,7 @@
       "files": [
         "config/config.py"
       ],
-      "version": "0.3.1",
+      "version": "0.3.2",
       "deps": [
         "dotenv",
         "yaml",

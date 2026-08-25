@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-08-25T15:54:23.546373+00:00",
+  "generated": "2026-08-25T15:56:28.616041+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -13,7 +13,7 @@
       ],
       "tier": "subsystem",
       "category": "protocol",
-      "last_updated": "2026-08-25T07:09:01-05:00",
+      "last_updated": "2026-08-25T10:54:32-05:00",
       "content_hash": "a019b8de7a59e81c38276a82701b13922891c8d0100982db30d529b5ebfe93de"
     },
     "acp": {
@@ -27,7 +27,7 @@
       ],
       "tier": "subsystem",
       "category": "protocol",
-      "last_updated": "2026-08-25T07:09:01-05:00",
+      "last_updated": "2026-08-25T10:54:32-05:00",
       "content_hash": "e7edcc91e53069926b71656bcf955e1f4b5b52d2a7666a5324b0cd22f8b07943"
     },
     "aes": {
@@ -77,7 +77,7 @@
       ],
       "tier": "medium",
       "category": "protocol",
-      "last_updated": "2026-08-25T07:09:01-05:00",
+      "last_updated": "2026-08-25T10:54:32-05:00",
       "content_hash": "a95910894a2ce329debb14aa8cad904e2f7a957ae23b776204397812b71c9796"
     },
     "config": {
@@ -93,7 +93,7 @@
       ],
       "tier": "subsystem",
       "category": "config",
-      "last_updated": "2026-08-25T07:09:01-05:00",
+      "last_updated": "2026-08-25T10:54:32-05:00",
       "content_hash": "416bbc25eb68aaa48987774c46d4a9f03d44617c49631b0ad16eff2996c31d1e"
     },
     "depdetect": {

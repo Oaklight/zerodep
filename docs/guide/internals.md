@@ -35,49 +35,50 @@ Every sibling import follows this sequence:
 4. **Set capability flag** — `_HAS_<NAME> = True/False`
 5. **Defer errors** — raise user-friendly messages only when the capability is actually needed at runtime
 
+Both **flat** and **nested** vendor layouts are supported:
+
+- **Nested:** `yaml/yaml.py` alongside `config/config.py` (default repo layout)
+- **Flat:** `_vendor/yaml.py` alongside `_vendor/config.py` (vendored into a project)
+
+The `_ensure_sibling_path` helper adds both the module's own directory and the nested sibling path to `sys.path`:
+
 ```python
-# Step 1-2: locate sibling
+def _ensure_sibling_path(name: str) -> str:
+    """Add sibling module paths to sys.path for flat and nested layouts."""
+    base = os.path.dirname(os.path.abspath(__file__))
+    for candidate in [base, os.path.normpath(os.path.join(base, "..", name))]:
+        if candidate not in sys.path:
+            sys.path.insert(0, candidate)
+    return base
+```
+
+Then use it with lazy loading and deferred errors:
+
+```python
+def _load_yaml():
+    _ensure_sibling_path("yaml")
+    try:
+        from yaml import load as _yaml_load
+        return _yaml_load
+    except ImportError as exc:
+        raise NotImplementedError(
+            "YAML support requires the zerodep yaml module. "
+            "Place yaml/yaml.py alongside this file."
+        ) from exc
+```
+
+#### Legacy pattern (pre-v2026.8.25)
+
+Older modules may still use the manual path insertion pattern. This only supports the nested layout:
+
+```python
+# Only works for nested layout (yaml/yaml.py)
 _sibling_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "yaml")
 if _sibling_dir not in sys.path:
     sys.path.insert(0, _sibling_dir)
-
-# Step 3-4: probe
-try:
-    from yaml import load as _yaml_load
-    _HAS_YAML = True
-except ImportError:
-    _HAS_YAML = False
-
-# Step 5: deferred error (inside the function that needs it)
-def load_yaml(path):
-    if not _HAS_YAML:
-        raise RuntimeError(
-            "YAML support requires the zerodep yaml module. "
-            "Copy yaml/yaml.py alongside this file."
-        )
-    ...
 ```
 
-### Lazy Loading
-
-Sibling modules are lazy-loaded to avoid import-time side effects. Instead of importing at module load, the import is deferred until the capability is first used:
-
-```python
-_yaml_mod = None
-
-def _get_yaml():
-    global _yaml_mod
-    if _yaml_mod is None:
-        _sibling_dir = os.path.join(os.path.dirname(__file__), "..", "yaml")
-        if _sibling_dir not in sys.path:
-            sys.path.insert(0, _sibling_dir)
-        try:
-            import yaml as _mod
-            _yaml_mod = _mod
-        except ImportError:
-            raise RuntimeError("YAML support requires the zerodep yaml module.")
-    return _yaml_mod
-```
+New modules should use `_ensure_sibling_path` instead.
 
 ### Naming Conventions
 

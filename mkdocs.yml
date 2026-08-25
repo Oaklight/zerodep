@@ -83,6 +83,7 @@ plugins:
             - ../llmstxt
             - ../synctex
             - ../useragent
+            - ../ratelimit
             - ../httpserver
             - ../websocket
             - ../cdp
@@ -185,6 +186,7 @@ nav:
           - httpserver / HTTP Server: modules/httpserver.md
           - websocket / WebSocket Client: modules/websocket.md
           - useragent / User-Agent Generator: modules/useragent.md
+          - ratelimit / Rate Limiter: modules/ratelimit.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: modules/jsonrpc.md
           - a2a / A2A Protocol: modules/a2a.md
@@ -242,6 +244,7 @@ nav:
           - httpserver / HTTP Server: api/httpserver.md
           - websocket / WebSocket Client: api/websocket.md
           - useragent / User-Agent Generator: api/useragent.md
+          - ratelimit / Rate Limiter: api/ratelimit.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: api/jsonrpc.md
           - a2a / A2A Protocol: api/a2a.md
@@ -299,6 +302,7 @@ nav:
           - httpserver / HTTP Server: benchmarks/httpserver.md
           - websocket / WebSocket Client: benchmarks/websocket.md
           - useragent / User-Agent Generator: benchmarks/useragent.md
+          - ratelimit / Rate Limiter: benchmarks/ratelimit.md
       - Agent Protocols:
           - jsonrpc / JSON-RPC: benchmarks/jsonrpc.md
           - a2a / A2A Protocol: benchmarks/a2a.md

@@ -125,16 +125,16 @@ td { white-space: nowrap; }
 <h1>retry</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 488e14e | Commit: 488e14eb | 2026-08-25T15:29:16.803401+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-08-25T15:29:16.803401+00:00"></span></p>
+<p class="meta">Version: 2ae37be | Commit: 2ae37be3 | 2026-08-26T03:23:34.974861+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-08-26T03:23:34.974861+00:00"></span></p>
 <h2>retry</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Backoff Calculation</td><td>zerodep</td><td>tenacity</td><td>5.4 µs</td><td>14.9 µs</td><td>185.8K</td><td>67.3K</td><td title="CV=16.7% | rounds=59130">5.0 µs</td><td title="CV=16.7% | rounds=59130">57.8 µs</td><td title="CV=16.7% | rounds=59130">900.0 ns</td><td title="CV=16.7% | rounds=59130">5.6 µs</td><td title="CV=9.9% | rounds=34864">14.3 µs</td><td title="CV=9.9% | rounds=34864">66.7 µs</td><td title="CV=9.9% | rounds=34864">1.5 µs</td><td title="CV=9.9% | rounds=34864">14.9 µs</td><td class="ratio-cell faster">2.8x faster</td></tr>
-<tr><td>Decorator Overhead</td><td>zerodep</td><td>tenacity</td><td>520.0 ns</td><td>19.9 µs</td><td>1.92M</td><td>50.4K</td><td title="CV=15.4% | rounds=187970">500.9 ns</td><td title="CV=15.4% | rounds=187970">6.3 µs</td><td title="CV=15.4% | rounds=187970">79.9 ns</td><td title="CV=15.4% | rounds=187970">521.0 ns</td><td title="CV=77.7% | rounds=10176">16.8 µs</td><td title="CV=77.7% | rounds=10176">998.7 µs</td><td title="CV=77.7% | rounds=10176">15.4 µs</td><td title="CV=77.7% | rounds=10176">21.5 µs</td><td class="ratio-cell faster">38.2x faster</td></tr>
-<tr><td>Retry With Failures</td><td>zerodep</td><td>tenacity</td><td>248.8 µs</td><td>325.6 µs</td><td>4.0K</td><td>3.1K</td><td title="CV=3.6% | rounds=3446">236.2 µs</td><td title="CV=3.6% | rounds=3446">617.8 µs</td><td title="CV=3.6% | rounds=3446">8.8 µs</td><td title="CV=3.6% | rounds=3446">253.9 µs</td><td title="CV=5.8% | rounds=2314">268.0 µs</td><td title="CV=5.8% | rounds=2314">580.2 µs</td><td title="CV=5.8% | rounds=2314">19.0 µs</td><td title="CV=5.8% | rounds=2314">334.9 µs</td><td class="ratio-cell faster">1.3x faster</td></tr>
+<tr><td>Backoff Calculation</td><td>zerodep</td><td>tenacity</td><td>5.0 µs</td><td>14.0 µs</td><td>198.4K</td><td>71.2K</td><td title="CV=13.8% | rounds=56635">4.7 µs</td><td title="CV=13.8% | rounds=56635">34.5 µs</td><td title="CV=13.8% | rounds=56635">696.5 ns</td><td title="CV=13.8% | rounds=56635">5.3 µs</td><td title="CV=10.1% | rounds=35789">13.4 µs</td><td title="CV=10.1% | rounds=35789">75.3 µs</td><td title="CV=10.1% | rounds=35789">1.4 µs</td><td title="CV=10.1% | rounds=35789">14.2 µs</td><td class="ratio-cell faster">2.8x faster</td></tr>
+<tr><td>Decorator Overhead</td><td>zerodep</td><td>tenacity</td><td>484.5 ns</td><td>17.7 µs</td><td>2.06M</td><td>56.6K</td><td title="CV=22.3% | rounds=181885">458.8 ns</td><td title="CV=22.3% | rounds=181885">12.2 µs</td><td title="CV=22.3% | rounds=181885">108.0 ns</td><td title="CV=22.3% | rounds=181885">488.9 ns</td><td title="CV=97.7% | rounds=10676">15.2 µs</td><td title="CV=97.7% | rounds=10676">1.34 ms</td><td title="CV=97.7% | rounds=10676">17.3 µs</td><td title="CV=97.7% | rounds=10676">17.5 µs</td><td class="ratio-cell faster">36.4x faster</td></tr>
+<tr><td>Retry With Failures</td><td>zerodep</td><td>tenacity</td><td>129.5 µs</td><td>175.4 µs</td><td>7.7K</td><td>5.7K</td><td title="CV=3.3% | rounds=5401">77.5 µs</td><td title="CV=3.3% | rounds=5401">159.9 µs</td><td title="CV=3.3% | rounds=5401">4.3 µs</td><td title="CV=3.3% | rounds=5401">131.2 µs</td><td title="CV=10.0% | rounds=3478">123.3 µs</td><td title="CV=10.0% | rounds=3478">410.4 µs</td><td title="CV=10.0% | rounds=3478">17.6 µs</td><td title="CV=10.0% | rounds=3478">191.3 µs</td><td class="ratio-cell faster">1.4x faster</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -206,13 +206,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [185753.3448507647, 1923164.1207052844, 4018.4891549013314],
+        data: [198374.73177141216, 2063890.1266146286, 7723.944214499425],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "tenacity" + ' (ops/s)',
-        data: [67330.59141206494, 50371.72386933439, 3071.2885070813445],
+        data: [71228.16812405568, 56639.88778502572, 5702.806961254328],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

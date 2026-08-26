@@ -125,21 +125,25 @@ td { white-space: nowrap; }
 <h1>toon</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 488e14e | Commit: 488e14eb | 2026-08-25T15:29:16.803401+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-08-25T15:29:16.803401+00:00"></span></p>
+<p class="meta">Version: 2ae37be | Commit: 2ae37be3 | 2026-08-26T03:23:34.974861+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-08-26T03:23:34.974861+00:00"></span></p>
 <h2>toon</h2>
-<div class="table-wrap"><table>
-<thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
-<tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
-</thead>
+<h3>Standalone benchmarks</h3>
+<div class="table-wrap"><table class="standalone-table">
+<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>Decode Benchmark</td><td>decode_large_ours</td><td>decode_large_ref</td><td>2.23 ms</td><td>2.34 ms</td><td>447.5</td><td>427.5</td><td title="CV=1.5% | rounds=420">2.18 ms</td><td title="CV=1.5% | rounds=420">2.53 ms</td><td title="CV=1.5% | rounds=420">32.9 µs</td><td title="CV=1.5% | rounds=420">2.29 ms</td><td title="CV=1.5% | rounds=409">2.31 ms</td><td title="CV=1.5% | rounds=409">2.75 ms</td><td title="CV=1.5% | rounds=409">34.7 µs</td><td title="CV=1.5% | rounds=409">2.41 ms</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_medium_ours</td><td>decode_medium_ref</td><td>332.6 µs</td><td>344.5 µs</td><td>3.0K</td><td>2.9K</td><td title="CV=7.1% | rounds=2258">313.4 µs</td><td title="CV=7.1% | rounds=2258">697.8 µs</td><td title="CV=7.1% | rounds=2258">23.7 µs</td><td title="CV=7.1% | rounds=2258">369.9 µs</td><td title="CV=4.0% | rounds=2412">332.9 µs</td><td title="CV=4.0% | rounds=2412">624.7 µs</td><td title="CV=4.0% | rounds=2412">13.6 µs</td><td title="CV=4.0% | rounds=2412">357.4 µs</td><td class="ratio-cell similar">~equal</td></tr>
-<tr><td>Decode Benchmark</td><td>decode_small_ours</td><td>decode_small_ref</td><td>20.7 µs</td><td>23.0 µs</td><td>48.4K</td><td>43.5K</td><td title="CV=11.7% | rounds=13558">19.7 µs</td><td title="CV=11.7% | rounds=13558">64.1 µs</td><td title="CV=11.7% | rounds=13558">2.4 µs</td><td title="CV=11.7% | rounds=13558">21.1 µs</td><td title="CV=9.8% | rounds=13461">22.1 µs</td><td title="CV=9.8% | rounds=13461">61.2 µs</td><td title="CV=9.8% | rounds=13461">2.3 µs</td><td title="CV=9.8% | rounds=13461">23.5 µs</td><td class="ratio-cell faster">1.1x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_large_ours</td><td>encode_large_ref</td><td>1.31 ms</td><td>1.67 ms</td><td>761.7</td><td>598.4</td><td title="CV=1.9% | rounds=452">1.29 ms</td><td title="CV=1.9% | rounds=452">1.60 ms</td><td title="CV=1.9% | rounds=452">25.4 µs</td><td title="CV=1.9% | rounds=452">1.35 ms</td><td title="CV=3.8% | rounds=548">1.61 ms</td><td title="CV=3.8% | rounds=548">2.34 ms</td><td title="CV=3.8% | rounds=548">63.0 µs</td><td title="CV=3.8% | rounds=548">1.74 ms</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_medium_ours</td><td>encode_medium_ref</td><td>206.9 µs</td><td>273.6 µs</td><td>4.8K</td><td>3.7K</td><td title="CV=4.4% | rounds=3483">199.2 µs</td><td title="CV=4.4% | rounds=3483">303.7 µs</td><td title="CV=4.4% | rounds=3483">9.1 µs</td><td title="CV=4.4% | rounds=3483">219.9 µs</td><td title="CV=3.9% | rounds=3020">264.2 µs</td><td title="CV=3.9% | rounds=3020">418.6 µs</td><td title="CV=3.9% | rounds=3020">10.8 µs</td><td title="CV=3.9% | rounds=3020">287.7 µs</td><td class="ratio-cell faster">1.3x faster</td></tr>
-<tr><td>Encode Benchmark</td><td>encode_small_ours</td><td>encode_small_ref</td><td>9.1 µs</td><td>12.5 µs</td><td>109.4K</td><td>79.8K</td><td title="CV=17.8% | rounds=5539">8.7 µs</td><td title="CV=17.8% | rounds=5539">41.8 µs</td><td title="CV=17.8% | rounds=5539">1.6 µs</td><td title="CV=17.8% | rounds=5539">9.3 µs</td><td title="CV=14.6% | rounds=2124">11.8 µs</td><td title="CV=14.6% | rounds=2124">33.9 µs</td><td title="CV=14.6% | rounds=2124">1.8 µs</td><td title="CV=14.6% | rounds=2124">13.3 µs</td><td class="ratio-cell faster">1.4x faster</td></tr>
+<tr><td>decode_large_ours</td><td>Decode</td><td>2.10 ms</td><td>475.7</td><td title="CV=1.5% | rounds=294">2.07 ms</td><td title="CV=1.5% | rounds=294">2.35 ms</td><td title="CV=1.5% | rounds=294">31.3 µs</td><td title="CV=1.5% | rounds=294">2.16 ms</td></tr>
+<tr><td>decode_large_ref</td><td>Decode</td><td>2.18 ms</td><td>458.9</td><td title="CV=1.0% | rounds=432">2.15 ms</td><td title="CV=1.0% | rounds=432">2.42 ms</td><td title="CV=1.0% | rounds=432">22.6 µs</td><td title="CV=1.0% | rounds=432">2.22 ms</td></tr>
+<tr><td>decode_medium_ours</td><td>Decode</td><td>303.1 µs</td><td>3.3K</td><td title="CV=3.1% | rounds=2533">295.7 µs</td><td title="CV=3.1% | rounds=2533">516.6 µs</td><td title="CV=3.1% | rounds=2533">9.3 µs</td><td title="CV=3.1% | rounds=2533">312.7 µs</td></tr>
+<tr><td>decode_medium_ref</td><td>Decode</td><td>324.3 µs</td><td>3.1K</td><td title="CV=9.6% | rounds=2501">312.2 µs</td><td title="CV=9.6% | rounds=2501">767.2 µs</td><td title="CV=9.6% | rounds=2501">31.0 µs</td><td title="CV=9.6% | rounds=2501">351.8 µs</td></tr>
+<tr><td>decode_small_ours</td><td>Decode</td><td>20.0 µs</td><td>50.0K</td><td title="CV=7.5% | rounds=13756">19.3 µs</td><td title="CV=7.5% | rounds=13756">50.4 µs</td><td title="CV=7.5% | rounds=13756">1.5 µs</td><td title="CV=7.5% | rounds=13756">20.4 µs</td></tr>
+<tr><td>decode_small_ref</td><td>Decode</td><td>21.9 µs</td><td>45.7K</td><td title="CV=8.2% | rounds=13925">21.0 µs</td><td title="CV=8.2% | rounds=13925">88.6 µs</td><td title="CV=8.2% | rounds=13925">1.8 µs</td><td title="CV=8.2% | rounds=13925">22.4 µs</td></tr>
+<tr><td>encode_large_ours</td><td>Encode</td><td>1.16 ms</td><td>865.8</td><td title="CV=2.7% | rounds=696">1.12 ms</td><td title="CV=2.7% | rounds=696">1.32 ms</td><td title="CV=2.7% | rounds=696">31.8 µs</td><td title="CV=2.7% | rounds=696">1.21 ms</td></tr>
+<tr><td>encode_large_ref</td><td>Encode</td><td>1.55 ms</td><td>645.2</td><td title="CV=1.4% | rounds=602">1.52 ms</td><td title="CV=1.4% | rounds=602">1.76 ms</td><td title="CV=1.4% | rounds=602">21.4 µs</td><td title="CV=1.4% | rounds=602">1.58 ms</td></tr>
+<tr><td>encode_medium_ours</td><td>Encode</td><td>186.7 µs</td><td>5.4K</td><td title="CV=3.5% | rounds=4058">181.5 µs</td><td title="CV=3.5% | rounds=4058">337.9 µs</td><td title="CV=3.5% | rounds=4058">6.6 µs</td><td title="CV=3.5% | rounds=4058">195.1 µs</td></tr>
+<tr><td>encode_medium_ref</td><td>Encode</td><td>245.1 µs</td><td>4.1K</td><td title="CV=4.3% | rounds=2814">236.1 µs</td><td title="CV=4.3% | rounds=2814">519.5 µs</td><td title="CV=4.3% | rounds=2814">10.6 µs</td><td title="CV=4.3% | rounds=2814">254.9 µs</td></tr>
+<tr><td>encode_small_ours</td><td>Encode</td><td>8.5 µs</td><td>117.5K</td><td title="CV=10.4% | rounds=5629">8.2 µs</td><td title="CV=10.4% | rounds=5629">24.0 µs</td><td title="CV=10.4% | rounds=5629">885.7 ns</td><td title="CV=10.4% | rounds=5629">8.7 µs</td></tr>
+<tr><td>encode_small_ref</td><td>Encode</td><td>11.7 µs</td><td>85.4K</td><td title="CV=10.0% | rounds=2354">11.1 µs</td><td title="CV=10.0% | rounds=2354">29.9 µs</td><td title="CV=10.0% | rounds=2354">1.2 µs</td><td title="CV=10.0% | rounds=2354">11.9 µs</td></tr>
 </tbody></table></div>
-<div class="chart-container"><canvas id="chart_0"></canvas></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
 <h3>Performance Trend</h3>
@@ -202,40 +206,6 @@ var TREND_COLORS = [
 ];
 
 
-new Chart(document.getElementById('chart_0'), {
-  type: 'bar',
-  data: {
-    labels: ["Decode Benchmark", "Encode Benchmark"],
-    datasets: [
-      {
-        label: 'zerodep (ops/s)',
-        data: [48416.18579046554, 109449.09246831168],
-        backgroundColor: 'rgba(111, 66, 193, 0.8)',
-        borderRadius: 4,
-      },
-      {
-        label: "Reference" + ' (ops/s)',
-        data: [43536.906877952846, 79801.48816276134],
-        backgroundColor: 'rgba(13, 110, 253, 0.6)',
-        borderRadius: 4,
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'top' },
-      title: { display: true, text: 'toon — ops/s (higher is better)' }
-    },
-    scales: {
-      y: {
-        type: 'logarithmic',
-        title: { display: true, text: 'ops/s (log scale)' }
-      }
-    }
-  }
-});
 (async function() {
   var section = document.getElementById('trend-section');
   if (!section) return;

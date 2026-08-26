@@ -101,10 +101,15 @@ class TestLimitsBenchmarks:
 # limiter library benchmarks (token bucket only)
 # ---------------------------------------------------------------------------
 
-limiter_mod = pytest.importorskip("limiter")
-from limiter import Limiter as _Limiter  # noqa: E402
+try:
+    from limiter import Limiter as _Limiter
+
+    _HAS_LIMITER = True
+except ImportError:
+    _HAS_LIMITER = False
 
 
+@pytest.mark.skipif(not _HAS_LIMITER, reason="limiter not installed")
 class TestLimiterBenchmarks:
     def test_token_bucket_consume(self, benchmark):
         lim = _Limiter(rate=10000, capacity=10000)

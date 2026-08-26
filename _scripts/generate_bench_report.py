@@ -16,6 +16,11 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+try:
+    import tomllib
+except ImportError:
+    tomllib = None  # type: ignore[assignment]
+
 # ---------------------------------------------------------------------------
 # Classification helpers
 # ---------------------------------------------------------------------------
@@ -66,14 +71,55 @@ _REF_LIBS: dict[str, str] = {
 }
 
 
-def _is_zerodep(method: str) -> bool:
+def _load_ref_libs_from_pyproject() -> dict[str, str]:
+    """Auto-discover reference libraries from pyproject.toml bench-* extras."""
+    pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    if tomllib is None or not pyproject.exists():
+        return {}
+    with open(pyproject, "rb") as f:
+        toml = tomllib.load(f)
+    extras = toml.get("project", {}).get("optional-dependencies", {})
+    refs: dict[str, str] = {}
+    for key, deps in extras.items():
+        if not key.startswith("bench-"):
+            continue
+        for dep in deps:
+            pkg = re.split(r"[><=!]", dep.strip())[0].strip()
+            norm = pkg.lower().replace("-", "_")
+            refs[norm] = pkg
+    return refs
+
+
+# Merge auto-discovered refs into the static map (static takes precedence)
+_AUTO_REFS = _load_ref_libs_from_pyproject()
+_ALL_REFS = {**_AUTO_REFS, **_REF_LIBS}
+
+# Class name pattern: TestFooBenchmarks → "foo" (ref library)
+_CLASS_RE = re.compile(r"Test(.+?)Benchmarks?$")
+
+
+def _is_zerodep(method: str, test_class: str | None = None) -> bool:
+    if test_class:
+        m = _CLASS_RE.match(test_class)
+        if m:
+            return m.group(1).lower() == "zerodep"
     m = method.lower()
     return any(marker in m for marker in _ZERODEP_MARKERS)
 
 
-def _ref_display_name(method: str) -> str:
+def _ref_display_name(method: str, test_class: str | None = None) -> str:
+    # Try class name first (most reliable)
+    if test_class:
+        cm = _CLASS_RE.match(test_class)
+        if cm:
+            cls_lib = cm.group(1).lower()
+            # Look up in merged refs
+            if cls_lib in _ALL_REFS:
+                return _ALL_REFS[cls_lib]
+            return cm.group(1)  # Use class fragment as-is
+    # Fall back to method name matching
     m = method.lower().removeprefix("test_")
-    for frag, name in _REF_LIBS.items():
+    for frag, name in _ALL_REFS.items():
         if frag in m:
             return name
     return method.removeprefix("test_")
@@ -115,8 +161,14 @@ def _parse_benchmarks(data: dict) -> dict:
         if len(parts) == 3:
             test_class = parts[1]
             test_method = parts[2]
-            # For jsonrpc-style: class name IS the operation
-            operation = _class_to_operation(test_class)
+            # If class follows Test<Lib>Benchmarks pattern, use method
+            # as operation (the class just identifies the library)
+            if _CLASS_RE.match(test_class):
+                operation = test_method.removeprefix("test_")
+            else:
+                # For scenario-style classes (TestEcbEncryptSmall):
+                # class name IS the operation
+                operation = _class_to_operation(test_class)
         elif len(parts) == 2:
             # Function-level tests (no class)
             test_method = parts[1]
@@ -127,7 +179,7 @@ def _parse_benchmarks(data: dict) -> dict:
             test_class = None
             operation = test_method
 
-        is_zd = _is_zerodep(test_method)
+        is_zd = _is_zerodep(test_method, test_class)
 
         # Calculate P95 from raw data if available
         raw_data = b["stats"].get("data")
@@ -145,7 +197,7 @@ def _parse_benchmarks(data: dict) -> dict:
         entry = {
             "method": test_method,
             "is_zerodep": is_zd,
-            "label": "zerodep" if is_zd else _ref_display_name(test_method),
+            "label": "zerodep" if is_zd else _ref_display_name(test_method, test_class),
             "mean": mean,
             "ops": b["stats"]["ops"],
             "stddev": stddev,

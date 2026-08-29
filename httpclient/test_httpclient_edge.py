@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import pytest
 
 from httpclient import (
+    CaseInsensitiveDict,
     Client,
     HttpConnectionError,
     HTTPError,
@@ -287,3 +288,66 @@ class TestPrepareBody:
         body, content_type = _prepare_body()
         assert body is None
         assert content_type is None
+
+
+# ── Chunked Transfer Decoding ───────────────────────────────────────────────
+
+
+class TestChunkedDecoding:
+    """Tests for chunked transfer encoding edge cases."""
+
+    @staticmethod
+    def _make_chunked_response(raw_bytes: bytes) -> StreamingResponse:
+        """Build a StreamingResponse wired to an in-memory chunked stream."""
+        import asyncio
+
+        reader = asyncio.StreamReader()
+        reader.feed_data(raw_bytes)
+        reader.feed_eof()
+        return StreamingResponse._from_async(
+            status_code=200,
+            headers=CaseInsensitiveDict(),
+            url="http://test",
+            reader=reader,
+            writer=None,
+            is_chunked=True,
+            content_length=None,
+            timeout=5.0,
+        )
+
+    @pytest.mark.asyncio
+    async def test_valid_chunked_stream(self):
+        """Normal chunked stream should decode correctly."""
+        raw = b"5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n"
+        resp = self._make_chunked_response(raw)
+        data = b"".join([chunk async for chunk in resp.aiter_bytes()])
+        assert data == b"hello world"
+
+    @pytest.mark.asyncio
+    async def test_http_error_injected_mid_stream(self):
+        """Mid-stream HTTP error raises HttpConnectionError."""
+        raw = b"HTTP/1.1 502 Bad Gateway\r\n"
+        resp = self._make_chunked_response(raw)
+        with pytest.raises(HttpConnectionError, match="Invalid chunked encoding"):
+            async for _ in resp.aiter_bytes():
+                pass
+
+    @pytest.mark.asyncio
+    async def test_garbage_chunk_size(self):
+        """Non-hex chunk size line should raise HttpConnectionError."""
+        raw = b"not-hex\r\nsome data\r\n0\r\n\r\n"
+        resp = self._make_chunked_response(raw)
+        with pytest.raises(HttpConnectionError, match="Invalid chunked encoding"):
+            async for _ in resp.aiter_bytes():
+                pass
+
+    @pytest.mark.asyncio
+    async def test_error_after_valid_chunks(self):
+        """Error injected after some valid chunks should raise HttpConnectionError."""
+        raw = b"5\r\nhello\r\nHTTP/1.1 500 Internal Server Error\r\n"
+        resp = self._make_chunked_response(raw)
+        chunks = []
+        with pytest.raises(HttpConnectionError, match="Invalid chunked encoding"):
+            async for chunk in resp.aiter_bytes():
+                chunks.append(chunk)
+        assert b"hello" in chunks

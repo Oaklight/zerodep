@@ -814,7 +814,13 @@ class StreamingResponse:
             size_str = size_line.decode("latin-1").split(";")[0].strip()
             if not size_str:
                 break
-            chunk_size = int(size_str, 16)
+            try:
+                chunk_size = int(size_str, 16)
+            except ValueError:
+                raise HttpConnectionError(
+                    f"Invalid chunked encoding: expected hex chunk size, "
+                    f"got {size_str!r} (upstream may have injected an error mid-stream)"
+                ) from None
             if chunk_size == 0:
                 await asyncio.wait_for(
                     reader.readline(), timeout=timeout

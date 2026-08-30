@@ -817,9 +817,10 @@ class StreamingResponse:
             try:
                 chunk_size = int(size_str, 16)
             except ValueError:
+                preview = size_str[:100]
                 raise HttpConnectionError(
                     f"Invalid chunked encoding: expected hex chunk size, "
-                    f"got {size_str!r} (upstream may have injected an error mid-stream)"
+                    f"got {preview!r} (upstream may have injected an error mid-stream)"
                 ) from None
             if chunk_size == 0:
                 await asyncio.wait_for(

@@ -6,23 +6,75 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.8.30] - 2026-08-30
+
+### Bug Fixes
+
+- **httpclient**: `_aiter_chunked` no longer crashes with a bare `ValueError` when the chunk-size line is not valid hex (e.g. when an upstream reverse proxy injects a raw HTTP error into an active chunked stream). Now raises `HttpConnectionError` with the raw line content (truncated to 100 bytes). ([#129](https://github.com/Oaklight/zerodep/issues/129), [#130](https://github.com/Oaklight/zerodep/pull/130))
+
+### Infrastructure
+
+- **benchmarks**: auto-discover reference libraries from `pyproject.toml` extras instead of hardcoded lists. Fix ratelimit benchmark skipping entire suite when limiter is absent.
+
+## [2026.8.25] - 2026-08-25
+
 ### New Modules
 
 - **ratelimit** (v0.1.0): zero-dependency multi-algorithm rate limiter with 4 algorithms (Token Bucket, Fixed Window, Sliding Window Counter, GCRA) behind a common `RateLimiter` protocol. Convenience API: `ratelimit()` decorator/context manager (sync + async), `create_limiter()` factory, `parse_quota()` string parser (`"10/s"`, `"100/m burst 200"`), `ThreadSafeLimiter` with per-key locking, `RateLimitExceeded` exception, wait-and-retry with timeout. Full async API (`aacquire`/`apeek`) on all limiter classes. 2-4x faster than `limits` library, within 1.05x of `token-bucket` C-extension on FixedWindow. ([#120](https://github.com/Oaklight/zerodep/issues/120), [#121](https://github.com/Oaklight/zerodep/pull/121))
 
-### Enhancements
-
-- **validate**: accept dataclass instances as input to `validate()`. Instances are automatically converted to dicts via `vars()` at each nesting level, enabling recursive validation of nested dataclass trees. Cross-type validation (dataclass instance against TypedDict schema) also works. Previously, passing a dataclass instance would raise `ValidationError: Expected dict, got <ClassName>`.
-
 ### Bug Fixes
 
 - **sibling imports**: `_ensure_sibling_path()` now supports both flat (`_vendor/soup.py`) and nested (`soup/soup.py`) vendor layouts. Previously only the nested layout worked, causing silent import failures in flat-vendored projects. Restored `os.path.abspath(__file__)` for robustness. Affects 9 modules: readability, qr, vcs, skills, sse, config, a2a, acp, cdp. ([#124](https://github.com/Oaklight/zerodep/issues/124), [#125](https://github.com/Oaklight/zerodep/pull/125))
-- **httpclient**: `_aiter_chunked` no longer crashes with a bare `ValueError` when the chunk-size line is not valid hex (e.g. when an upstream reverse proxy injects a raw HTTP error into an active chunked stream). Now raises `HttpConnectionError` with the raw line content (truncated to 100 bytes). ([#129](https://github.com/Oaklight/zerodep/issues/129), [#130](https://github.com/Oaklight/zerodep/pull/130))
+- **CLI**: `bump` subcommand now uses `primary_file` instead of `files[0]`. `outdated` subcommand gains `-d/--dir` flag. Benchmark files (`benchmark_*.py`) excluded from module file lists.
+
+### Performance
+
+- **ratelimit**: +75% single-thread throughput via `__slots__` result class, inlined hot paths, per-key threading locks, and eliminated `int()`/`round()` overhead. TokenBucket: 1338→762 ns/op. Multi-thread different-key: +76%. ([#126](https://github.com/Oaklight/zerodep/pull/126))
+
+## [2026.7.20] - 2026-07-20
+
+### Bug Fixes
+
+- **httpclient**: close async writer in sync `close()` to prevent file descriptor leaks on long-lived connections.
+
+### Infrastructure
+
+- **release**: regenerate `manifest.json` in release workflow to ensure it stays in sync.
+
+## [2026.7.16] - 2026-07-16
+
+### New Modules
+
+- **s3** (v0.2.0): stdlib-only S3-compatible client. Phase 1: SigV4 signing, `get_object`, `put_object`, `head_object`, `delete_object`, `list_objects_v2`. Phase 2: `create_bucket`, `delete_bucket`, `head_bucket`, `list_buckets`, `copy_object`. Benchmarked against boto3 and minio on MinIO Docker.
+
+### Enhancements
+
+- **validate**: accept dataclass instances as input to `validate()`. Instances are automatically converted to dicts via `dataclasses.fields()` at each nesting level, enabling recursive validation of nested dataclass trees. Cross-type validation (dataclass instance against TypedDict schema) also works. Previously, passing a dataclass instance would raise `ValidationError: Expected dict, got <ClassName>`.
+- **httpclient**: add `CaseInsensitiveDict` for headers; use throughout the header pipeline. Fixes case-insensitive header deduplication. ([#116](https://github.com/Oaklight/zerodep/issues/116))
+- **httpclient**: align sync/async client behavior and interface parity. `AsyncClient.close()` no longer warns on no-op calls.
+
+### Infrastructure
+
+- Add `zerodep` CLI skill for Claude Code and Hermes Agent.
+
+## [2026.6.29] - 2026-07-02
+
+### Enhancements
+
+- **httpserver**: add Unix domain socket support. Return HTTP error responses instead of silent disconnects. Extract `_send_error_and_close` helper to reduce repetition.
+
+### Bug Fixes
+
+- **httpserver**: fix stale socket test for Python 3.13 compatibility (use `socket.bind()` instead of `socket.connect()`).
+- **sse**: replace private slot writes with keyword args in `_SSEParser`, fixing initialization issues. Bump to 0.3.2.
 
 ### Performance
 
 - **validate**: O(1) discriminated union dispatch — `_try_discriminated` now uses a cached `{literal_value: TypedDict}` dispatch table instead of O(variants) linear scan per call. ~230x faster on large unions (e.g. 500 items × 10-variant union: 917ms → 4ms in production profiling). ([#107](https://github.com/Oaklight/zerodep/issues/107), [#108](https://github.com/Oaklight/zerodep/pull/108))
-- **ratelimit**: +75% single-thread throughput via `__slots__` result class, inlined hot paths, per-key threading locks, and eliminated `int()`/`round()` overhead. TokenBucket: 1338→762 ns/op. Multi-thread different-key: +76%. ([#126](https://github.com/Oaklight/zerodep/pull/126))
+
+### Infrastructure
+
+- Pin dev tool versions in CI workflows: ruff 0.15.20, ty 0.0.54, complexipy 5.6.1.
 
 ## [2026.6.13] - 2026-06-13
 

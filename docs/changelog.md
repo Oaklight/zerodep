@@ -6,23 +6,75 @@
 
 ## [未发布]
 
+## [2026.8.30] - 2026-08-30
+
+### 问题修复
+
+- **httpclient**：`_aiter_chunked` 不再因 chunk-size 行非合法十六进制（例如上游反向代理向活跃的 chunked 流中注入原始 HTTP 错误响应）而抛出裸 `ValueError`。现改为抛出 `HttpConnectionError`，包含原始行内容（截断至 100 字节）。([#129](https://github.com/Oaklight/zerodep/issues/129)、[#130](https://github.com/Oaklight/zerodep/pull/130))
+
+### 基础设施
+
+- **benchmarks**：从 `pyproject.toml` extras 自动发现参考库，替代硬编码列表。修复 ratelimit benchmark 在 limiter 缺失时跳过整个测试套件的问题。
+
+## [2026.8.25] - 2026-08-25
+
 ### 新模块
 
 - **ratelimit** (v0.1.0)：零依赖多算法限流器，提供 4 种算法（令牌桶、固定窗口、滑动窗口计数器、GCRA）并统一于 `RateLimiter` Protocol。便捷 API：`ratelimit()` 装饰器/上下文管理器（同步 + 异步）、`create_limiter()` 工厂函数、`parse_quota()` 字符串解析（`"10/s"`、`"100/m burst 200"`）、per-key 锁的 `ThreadSafeLimiter`、`RateLimitExceeded` 异常、带超时的等待重试。所有算法类均支持完整异步 API（`aacquire`/`apeek`）。性能比 `limits` 库快 2-4 倍，FixedWindow 与 `token-bucket` C 扩展差距仅 1.05 倍。([#120](https://github.com/Oaklight/zerodep/issues/120)、[#121](https://github.com/Oaklight/zerodep/pull/121))
 
-### 功能增强
-
-- **validate**：`validate()` 现支持直接传入 dataclass 实例。实例在每个嵌套层级自动通过 `vars()` 转换为 dict，支持嵌套 dataclass 树的递归验证。跨类型验证（dataclass 实例对 TypedDict schema）同样可用。此前传入 dataclass 实例会抛出 `ValidationError: Expected dict, got <ClassName>`。
-
 ### 问题修复
 
 - **兄弟模块导入**：`_ensure_sibling_path()` 现同时支持扁平（`_vendor/soup.py`）和嵌套（`soup/soup.py`）vendor 布局。此前仅嵌套布局可用，导致扁平 vendor 项目中兄弟导入静默失败。恢复 `os.path.abspath(__file__)` 以增强健壮性。涉及 9 个模块：readability、qr、vcs、skills、sse、config、a2a、acp、cdp。([#124](https://github.com/Oaklight/zerodep/issues/124)、[#125](https://github.com/Oaklight/zerodep/pull/125))
-- **httpclient**：`_aiter_chunked` 不再因 chunk-size 行非合法十六进制（例如上游反向代理向活跃的 chunked 流中注入原始 HTTP 错误响应）而抛出裸 `ValueError`。现改为抛出 `HttpConnectionError`，包含原始行内容（截断至 100 字节）。([#129](https://github.com/Oaklight/zerodep/issues/129)、[#130](https://github.com/Oaklight/zerodep/pull/130))
+- **CLI**：`bump` 子命令现使用 `primary_file` 而非 `files[0]`。`outdated` 子命令新增 `-d/--dir` 标志。Benchmark 文件（`benchmark_*.py`）已从模块文件列表中排除。
+
+### 性能优化
+
+- **ratelimit**：单线程吞吐量提升 75%——通过 `__slots__` 结果类、内联热路径、per-key 线程锁、消除 `int()`/`round()` 开销。TokenBucket：1338→762 ns/op。多线程不同 key 场景提升 76%。([#126](https://github.com/Oaklight/zerodep/pull/126))
+
+## [2026.7.20] - 2026-07-20
+
+### 问题修复
+
+- **httpclient**：在同步 `close()` 中关闭 async writer，防止长连接场景下的文件描述符泄漏。
+
+### 基础设施
+
+- **release**：在 release workflow 中重新生成 `manifest.json`，确保与源码保持同步。
+
+## [2026.7.16] - 2026-07-16
+
+### 新模块
+
+- **s3** (v0.2.0)：纯标准库 S3 兼容客户端。第一阶段：SigV4 签名、`get_object`、`put_object`、`head_object`、`delete_object`、`list_objects_v2`。第二阶段：`create_bucket`、`delete_bucket`、`head_bucket`、`list_buckets`、`copy_object`。已在 MinIO Docker 上与 boto3 和 minio 进行基准测试。
+
+### 功能增强
+
+- **validate**：`validate()` 现支持直接传入 dataclass 实例。实例在每个嵌套层级通过 `dataclasses.fields()` 自动转换为 dict，支持嵌套 dataclass 树的递归验证。跨类型验证（dataclass 实例对 TypedDict schema）同样可用。此前传入 dataclass 实例会抛出 `ValidationError: Expected dict, got <ClassName>`。
+- **httpclient**：新增 `CaseInsensitiveDict` 用于 header 处理，贯穿整个 header 管道。修复大小写不敏感的 header 去重问题。([#116](https://github.com/Oaklight/zerodep/issues/116))
+- **httpclient**：统一同步/异步客户端行为和接口一致性。`AsyncClient.close()` 不再对空操作发出警告。
+
+### 基础设施
+
+- 为 Claude Code 和 Hermes Agent 添加 `zerodep` CLI skill。
+
+## [2026.6.29] - 2026-07-02
+
+### 功能增强
+
+- **httpserver**：新增 Unix domain socket 支持。返回 HTTP 错误响应而非静默断开连接。提取 `_send_error_and_close` 辅助方法以减少重复代码。
+
+### 问题修复
+
+- **httpserver**：修复 Python 3.13 兼容性问题（使用 `socket.bind()` 替代 `socket.connect()` 进行旧 socket 测试）。
+- **sse**：在 `_SSEParser` 中使用关键字参数替代私有 slot 写入，修复初始化问题。版本升至 0.3.2。
 
 ### 性能优化
 
 - **validate**：O(1) 可辨识联合类型分发——`_try_discriminated` 现使用缓存的 `{字面量值: TypedDict}` 分发表代替每次调用的 O(variants) 线性扫描。大规模联合类型验证约 230 倍加速（例如 500 项 × 10 变体联合：生产环境 917ms → 4ms）。([#107](https://github.com/Oaklight/zerodep/issues/107)、[#108](https://github.com/Oaklight/zerodep/pull/108))
-- **ratelimit**：单线程吞吐量提升 75%——通过 `__slots__` 结果类、内联热路径、per-key 线程锁、消除 `int()`/`round()` 开销。TokenBucket：1338→762 ns/op。多线程不同 key 场景提升 76%。([#126](https://github.com/Oaklight/zerodep/pull/126))
+
+### 基础设施
+
+- 锁定 CI workflow 中的开发工具版本：ruff 0.15.20、ty 0.0.54、complexipy 5.6.1。
 
 ## [2026.6.13] - 2026-06-13
 

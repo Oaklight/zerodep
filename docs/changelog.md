@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Bug Fixes
 
 - **sibling imports**: `_ensure_sibling_path()` now supports both flat (`_vendor/soup.py`) and nested (`soup/soup.py`) vendor layouts. Previously only the nested layout worked, causing silent import failures in flat-vendored projects. Restored `os.path.abspath(__file__)` for robustness. Affects 9 modules: readability, qr, vcs, skills, sse, config, a2a, acp, cdp. ([#124](https://github.com/Oaklight/zerodep/issues/124), [#125](https://github.com/Oaklight/zerodep/pull/125))
+- **httpclient**: `_aiter_chunked` no longer crashes with a bare `ValueError` when the chunk-size line is not valid hex (e.g. when an upstream reverse proxy injects a raw HTTP error into an active chunked stream). Now raises `HttpConnectionError` with the raw line content (truncated to 100 bytes). ([#129](https://github.com/Oaklight/zerodep/issues/129), [#130](https://github.com/Oaklight/zerodep/pull/130))
 
 ### Performance
 

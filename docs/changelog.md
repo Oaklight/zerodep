@@ -17,6 +17,7 @@
 ### 问题修复
 
 - **兄弟模块导入**：`_ensure_sibling_path()` 现同时支持扁平（`_vendor/soup.py`）和嵌套（`soup/soup.py`）vendor 布局。此前仅嵌套布局可用，导致扁平 vendor 项目中兄弟导入静默失败。恢复 `os.path.abspath(__file__)` 以增强健壮性。涉及 9 个模块：readability、qr、vcs、skills、sse、config、a2a、acp、cdp。([#124](https://github.com/Oaklight/zerodep/issues/124)、[#125](https://github.com/Oaklight/zerodep/pull/125))
+- **httpclient**：`_aiter_chunked` 不再因 chunk-size 行非合法十六进制（例如上游反向代理向活跃的 chunked 流中注入原始 HTTP 错误响应）而抛出裸 `ValueError`。现改为抛出 `HttpConnectionError`，包含原始行内容（截断至 100 字节）。([#129](https://github.com/Oaklight/zerodep/issues/129)、[#130](https://github.com/Oaklight/zerodep/pull/130))
 
 ### 性能优化
 

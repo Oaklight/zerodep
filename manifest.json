@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-09-03T23:33:43.053319+00:00",
+  "generated": "2026-09-04T06:03:32.165430+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -179,8 +179,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-09-03T18:10:53-05:00",
-      "content_hash": "edd19faf629c59160cc3fe90068563dd11c4231a8bac2264107ed7f4af18c9c8"
+      "last_updated": "2026-09-04T00:40:55-05:00",
+      "content_hash": "7262797f4fb0d295d5257c3fc2c22582b3e6a18d697c9ac14b4aa020426175d6"
     },
     "jsonrpc": {
       "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",

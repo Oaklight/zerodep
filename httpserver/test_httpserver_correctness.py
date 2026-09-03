@@ -365,6 +365,16 @@ class TestStreaming:
             assert f"chunk-{i}" in text
 
 
+class _MockWriter:
+    """Minimal writer stub for StreamingResponse tests."""
+
+    def write(self, data):
+        pass
+
+    async def drain(self):
+        pass
+
+
 class TestStreamingBackground:
     """StreamingResponse background callback."""
 
@@ -376,15 +386,8 @@ class TestStreamingBackground:
 
         resp = StreamingResponse(gen(), background=lambda: called.append("done"))
 
-        class MockWriter:
-            def write(self, data):
-                pass
-
-            async def drain(self):
-                pass
-
         async def _run():
-            await resp._write(MockWriter())
+            await resp._write(_MockWriter())
             assert called == ["done"]
 
         asyncio.run(_run())
@@ -400,15 +403,8 @@ class TestStreamingBackground:
 
         resp = StreamingResponse(gen(), background=on_complete)
 
-        class MockWriter:
-            def write(self, data):
-                pass
-
-            async def drain(self):
-                pass
-
         async def _run():
-            await resp._write(MockWriter())
+            await resp._write(_MockWriter())
             assert called == ["async_done"]
 
         asyncio.run(_run())
@@ -426,15 +422,8 @@ class TestStreamingBackground:
 
         resp = StreamingResponse(gen(), background=on_complete)
 
-        class MockWriter:
-            def write(self, data):
-                pass
-
-            async def drain(self):
-                pass
-
         async def _run():
-            await resp._write(MockWriter())
+            await resp._write(_MockWriter())
             assert order == ["chunk-0", "chunk-1", "chunk-2", "background"]
 
         asyncio.run(_run())
@@ -446,15 +435,8 @@ class TestStreamingBackground:
         resp = StreamingResponse(gen())
         assert resp.background is None
 
-        class MockWriter:
-            def write(self, data):
-                pass
-
-            async def drain(self):
-                pass
-
         async def _run():
-            await resp._write(MockWriter())
+            await resp._write(_MockWriter())
 
         asyncio.run(_run())
 
@@ -467,15 +449,24 @@ class TestStreamingBackground:
 
         resp = StreamingResponse(gen(), background=bad_callback)
 
-        class MockWriter:
-            def write(self, data):
-                pass
+        async def _run():
+            await resp._write(_MockWriter())
 
-            async def drain(self):
-                pass
+        asyncio.run(_run())
+
+    def test_background_called_after_generator_error(self):
+        called = []
+
+        async def gen():
+            yield "ok"
+            raise RuntimeError("generator error")
+
+        resp = StreamingResponse(gen(), background=lambda: called.append("done"))
 
         async def _run():
-            await resp._write(MockWriter())
+            with pytest.raises(RuntimeError, match="generator error"):
+                await resp._write(_MockWriter())
+            assert called == ["done"]
 
         asyncio.run(_run())
 

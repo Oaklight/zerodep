@@ -322,7 +322,7 @@ class StreamingResponse:
         status_code: int = 200,
         headers: dict[str, str] | None = None,
         content_type: str = "application/octet-stream",
-        background: Callable[..., Any] | None = None,
+        background: Callable[[], Any] | None = None,
     ):
         self._generator = generator
         self.status_code = status_code
@@ -365,14 +365,17 @@ class StreamingResponse:
         finally:
             aclose = getattr(self._generator, "aclose", None)
             if aclose is not None:
-                await aclose()
+                try:
+                    await aclose()
+                except Exception:
+                    logger.debug("Generator aclose failed", exc_info=True)
             if self.background is not None:
                 try:
                     result = self.background()
                     if inspect.isawaitable(result):
                         await result
                 except Exception:
-                    logger.debug("Background callback failed", exc_info=True)
+                    logger.warning("Background callback failed", exc_info=True)
 
 
 class FileResponse(Response):

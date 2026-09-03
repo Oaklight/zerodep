@@ -309,9 +309,12 @@ class StreamingResponse:
         status_code: HTTP status code.
         headers: Extra response headers.
         content_type: MIME type (default ``application/octet-stream``).
+        background: Optional callable invoked after the stream completes
+            (including client disconnect).  Accepts both sync and async
+            callables.  Exceptions are logged and suppressed.
     """
 
-    __slots__ = ("_generator", "status_code", "headers", "content_type")
+    __slots__ = ("_generator", "status_code", "headers", "content_type", "background")
 
     def __init__(
         self,
@@ -319,11 +322,13 @@ class StreamingResponse:
         status_code: int = 200,
         headers: dict[str, str] | None = None,
         content_type: str = "application/octet-stream",
+        background: Callable[..., Any] | None = None,
     ):
         self._generator = generator
         self.status_code = status_code
         self.headers: dict[str, str] = headers.copy() if headers else {}
         self.content_type = content_type
+        self.background = background
 
     async def _write(self, writer: asyncio.StreamWriter) -> None:
         """Write status line, headers, then stream the body."""
@@ -361,6 +366,13 @@ class StreamingResponse:
             aclose = getattr(self._generator, "aclose", None)
             if aclose is not None:
                 await aclose()
+            if self.background is not None:
+                try:
+                    result = self.background()
+                    if inspect.isawaitable(result):
+                        await result
+                except Exception:
+                    logger.debug("Background callback failed", exc_info=True)
 
 
 class FileResponse(Response):

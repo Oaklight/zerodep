@@ -17,6 +17,7 @@ from httpserver import (
     JSONResponse,
     Request,
     Response,
+    StreamingResponse,
     _coerce_response,
     _compile_route,
     abort,
@@ -362,6 +363,121 @@ class TestStreaming:
         text = r.text
         for i in range(3):
             assert f"chunk-{i}" in text
+
+
+class TestStreamingBackground:
+    """StreamingResponse background callback."""
+
+    def test_sync_background_called(self):
+        called = []
+
+        async def gen():
+            yield "hello"
+
+        resp = StreamingResponse(gen(), background=lambda: called.append("done"))
+
+        class MockWriter:
+            def write(self, data):
+                pass
+
+            async def drain(self):
+                pass
+
+        async def _run():
+            await resp._write(MockWriter())
+            assert called == ["done"]
+
+        asyncio.run(_run())
+
+    def test_async_background_called(self):
+        called = []
+
+        async def gen():
+            yield "hello"
+
+        async def on_complete():
+            called.append("async_done")
+
+        resp = StreamingResponse(gen(), background=on_complete)
+
+        class MockWriter:
+            def write(self, data):
+                pass
+
+            async def drain(self):
+                pass
+
+        async def _run():
+            await resp._write(MockWriter())
+            assert called == ["async_done"]
+
+        asyncio.run(_run())
+
+    def test_background_called_after_generator_completes(self):
+        order = []
+
+        async def gen():
+            for i in range(3):
+                order.append(f"chunk-{i}")
+                yield f"data-{i}"
+
+        def on_complete():
+            order.append("background")
+
+        resp = StreamingResponse(gen(), background=on_complete)
+
+        class MockWriter:
+            def write(self, data):
+                pass
+
+            async def drain(self):
+                pass
+
+        async def _run():
+            await resp._write(MockWriter())
+            assert order == ["chunk-0", "chunk-1", "chunk-2", "background"]
+
+        asyncio.run(_run())
+
+    def test_background_not_called_when_none(self):
+        async def gen():
+            yield "hello"
+
+        resp = StreamingResponse(gen())
+        assert resp.background is None
+
+        class MockWriter:
+            def write(self, data):
+                pass
+
+            async def drain(self):
+                pass
+
+        async def _run():
+            await resp._write(MockWriter())
+
+        asyncio.run(_run())
+
+    def test_background_exception_suppressed(self):
+        async def gen():
+            yield "hello"
+
+        def bad_callback():
+            raise ValueError("boom")
+
+        resp = StreamingResponse(gen(), background=bad_callback)
+
+        class MockWriter:
+            def write(self, data):
+                pass
+
+            async def drain(self):
+                pass
+
+        async def _run():
+            await resp._write(MockWriter())
+
+        asyncio.run(_run())
 
 
 class TestMiddleware:

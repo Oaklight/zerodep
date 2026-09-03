@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.2.1"
+# version = "0.3.0"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -61,6 +61,7 @@ __all__ = [
     "JSONResponse",
     "StreamingResponse",
     "FileResponse",
+    "State",
     # Exceptions
     "HTTPException",
     # Utilities
@@ -156,6 +157,32 @@ def abort(status_code: int, message: str | None = None) -> None:
     raise HTTPException(status_code, message)
 
 
+# ── Request State ────────────────────────────────────────────────────────────
+
+
+class State:
+    """Mutable namespace for storing arbitrary per-request data.
+
+    Middleware and handlers can attach attributes freely::
+
+        @app.before_request
+        async def start_timer(req):
+            req.state.start_time = time.monotonic()
+
+    Uses ``__dict__``-based attribute access (no ``__slots__``), following
+    the same pattern as Starlette's ``State``.
+    """
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, State):
+            return NotImplemented
+        return self.__dict__ == other.__dict__
+
+    def __repr__(self) -> str:
+        items = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f"State({items})"
+
+
 # ── Request ──────────────────────────────────────────────────────────────────
 
 
@@ -172,6 +199,7 @@ class Request:
         path_params: Parameters extracted from the route pattern.
         client_addr: Client ``(host, port)`` tuple.
         app: Reference to the :class:`App` instance handling this request.
+        state: Per-request :class:`State` namespace for arbitrary data.
     """
 
     __slots__ = (
@@ -184,6 +212,7 @@ class Request:
         "path_params",
         "client_addr",
         "app",
+        "state",
         "_json",
     )
 
@@ -206,6 +235,7 @@ class Request:
         self.path_params: dict[str, Any] = {}
         self.client_addr = client_addr
         self.app = app
+        self.state = State()
         self._json: Any = _SENTINEL
 
     def json(self) -> Any:

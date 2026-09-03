@@ -684,6 +684,8 @@ class App:
         self._static_routes: list[tuple[str, str]] = []
         self._before_request_handlers: list[Callable[..., Any]] = []
         self._after_request_handlers: list[Callable[..., Any]] = []
+        self._startup_handlers: list[Callable[..., Any]] = []
+        self._shutdown_handlers: list[Callable[..., Any]] = []
         self._error_handlers: dict[int | type, Callable[..., Any]] = {}
         self._server: asyncio.Server | None = None
         self._shutdown_event: asyncio.Event | None = None
@@ -800,6 +802,46 @@ class App:
             return handler
 
         return decorator
+
+    # ── Lifespan Hooks ───────────────────────────────────────────────────
+
+    def on_startup(self, handler: Callable[..., Any]) -> Callable[..., Any]:
+        """Register a startup hook.
+
+        The hook is called (with no arguments) before the server starts
+        accepting connections.  Both sync and async callables are supported.
+        Hooks run in registration order.
+
+        If a startup hook raises, the error is logged and re-raised so the
+        server does not start with failed initialization.
+
+        Example::
+
+            @app.on_startup
+            async def init_pool():
+                app.state["pool"] = await create_pool()
+        """
+        self._startup_handlers.append(handler)
+        return handler
+
+    def on_shutdown(self, handler: Callable[..., Any]) -> Callable[..., Any]:
+        """Register a shutdown hook.
+
+        The hook is called (with no arguments) after the server stops
+        accepting connections.  Both sync and async callables are supported.
+        Hooks run in **reverse** registration order (LIFO).
+
+        If a shutdown hook raises, the error is logged and the remaining
+        hooks still execute (best-effort cleanup).
+
+        Example::
+
+            @app.on_shutdown
+            async def close_pool():
+                await app.state["pool"].close()
+        """
+        self._shutdown_handlers.append(handler)
+        return handler
 
     # ── Request Dispatch ─────────────────────────────────────────────────
 
@@ -1020,6 +1062,43 @@ class App:
 
     # ── Server Lifecycle ─────────────────────────────────────────────────
 
+    async def _run_startup_hooks(self) -> None:
+        """Run all registered startup hooks in registration order.
+
+        If any hook raises, the exception is logged and re-raised so the
+        server does not start with failed initialization.
+        """
+        for hook in self._startup_handlers:
+            try:
+                result = hook()
+                if inspect.isawaitable(result):
+                    await result
+            except Exception:
+                logger.error(
+                    "Startup hook %r failed",
+                    getattr(hook, "__name__", repr(hook)),
+                    exc_info=True,
+                )
+                raise
+
+    async def _run_shutdown_hooks(self) -> None:
+        """Run all registered shutdown hooks in reverse registration order.
+
+        Errors are logged and suppressed so that remaining hooks still
+        execute (best-effort cleanup).
+        """
+        for hook in reversed(self._shutdown_handlers):
+            try:
+                result = hook()
+                if inspect.isawaitable(result):
+                    await result
+            except Exception:
+                logger.warning(
+                    "Shutdown hook %r failed",
+                    getattr(hook, "__name__", repr(hook)),
+                    exc_info=True,
+                )
+
     def run(
         self,
         host: str = DEFAULT_HOST,
@@ -1048,6 +1127,9 @@ class App:
         self._shutdown_event = asyncio.Event()
         self._socket_path: str | None = None
 
+        # Run startup hooks before accepting connections
+        await self._run_startup_hooks()
+
         if socket:
             server = await self._start_unix_socket(socket)
         else:
@@ -1068,11 +1150,15 @@ class App:
             for sig in (signal.SIGINT, signal.SIGTERM):
                 loop.add_signal_handler(sig, self._shutdown_event.set)
 
-        async with server:
-            await self._shutdown_event.wait()
-            logger.info("Shutting down server")
-            if self._socket_path:
-                self._cleanup_socket()
+        try:
+            async with server:
+                await self._shutdown_event.wait()
+                logger.info("Shutting down server")
+                if self._socket_path:
+                    self._cleanup_socket()
+        finally:
+            # Run shutdown hooks after server stops accepting connections
+            await self._run_shutdown_hooks()
 
     async def _start_unix_socket(self, socket_path: str) -> asyncio.Server:
         """Start listening on a Unix domain socket.

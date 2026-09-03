@@ -655,3 +655,220 @@ class TestRequestState:
             assert log == ["before", "handler", "after"]
 
         asyncio.run(_test())
+class TestLifespan:
+    """Lifespan event hooks (on_startup / on_shutdown)."""
+
+    def test_sync_startup(self):
+        """Sync startup hook is called."""
+        app = App()
+        called = []
+
+        @app.on_startup
+        def init():
+            called.append("started")
+
+        asyncio.run(app._run_startup_hooks())
+        assert called == ["started"]
+
+    def test_async_startup(self):
+        """Async startup hook is called."""
+        app = App()
+        called = []
+
+        @app.on_startup
+        async def init():
+            called.append("async_started")
+
+        asyncio.run(app._run_startup_hooks())
+        assert called == ["async_started"]
+
+    def test_sync_shutdown(self):
+        """Sync shutdown hook is called."""
+        app = App()
+        called = []
+
+        @app.on_shutdown
+        def cleanup():
+            called.append("stopped")
+
+        asyncio.run(app._run_shutdown_hooks())
+        assert called == ["stopped"]
+
+    def test_async_shutdown(self):
+        """Async shutdown hook is called."""
+        app = App()
+        called = []
+
+        @app.on_shutdown
+        async def cleanup():
+            called.append("async_stopped")
+
+        asyncio.run(app._run_shutdown_hooks())
+        assert called == ["async_stopped"]
+
+    def test_startup_order(self):
+        """Startup hooks run in registration order."""
+        app = App()
+        order = []
+
+        @app.on_startup
+        def first():
+            order.append(1)
+
+        @app.on_startup
+        async def second():
+            order.append(2)
+
+        @app.on_startup
+        def third():
+            order.append(3)
+
+        asyncio.run(app._run_startup_hooks())
+        assert order == [1, 2, 3]
+
+    def test_shutdown_reverse_order(self):
+        """Shutdown hooks run in reverse registration order (LIFO)."""
+        app = App()
+        order = []
+
+        @app.on_shutdown
+        def first():
+            order.append(1)
+
+        @app.on_shutdown
+        async def second():
+            order.append(2)
+
+        @app.on_shutdown
+        def third():
+            order.append(3)
+
+        asyncio.run(app._run_shutdown_hooks())
+        assert order == [3, 2, 1]
+
+    def test_startup_failure_reraises(self):
+        """Startup hook failure is re-raised to prevent server start."""
+        app = App()
+        called = []
+
+        @app.on_startup
+        def good():
+            called.append("good")
+
+        @app.on_startup
+        async def bad():
+            raise RuntimeError("init failed")
+
+        @app.on_startup
+        def after_bad():
+            called.append("should_not_run")
+
+        with pytest.raises(RuntimeError, match="init failed"):
+            asyncio.run(app._run_startup_hooks())
+
+        # First hook ran, third did not
+        assert called == ["good"]
+
+    def test_shutdown_failure_continues(self):
+        """Shutdown hook failure does not prevent remaining hooks."""
+        app = App()
+        called = []
+
+        @app.on_shutdown
+        def first():
+            called.append("first")
+
+        @app.on_shutdown
+        async def bad():
+            raise RuntimeError("cleanup failed")
+
+        @app.on_shutdown
+        def third():
+            called.append("third")
+
+        # No exception raised despite the failing hook
+        asyncio.run(app._run_shutdown_hooks())
+
+        # Reverse order: third, bad (fails), first — both non-failing hooks ran
+        assert called == ["third", "first"]
+
+    def test_decorators_return_original(self):
+        """on_startup / on_shutdown return the original callable."""
+        app = App()
+
+        @app.on_startup
+        def my_startup():
+            pass
+
+        @app.on_shutdown
+        async def my_shutdown():
+            pass
+
+        assert my_startup.__name__ == "my_startup"
+        assert my_shutdown.__name__ == "my_shutdown"
+
+    def test_lifespan_integration_with_serve(self):
+        """Startup and shutdown hooks fire during a full server lifecycle."""
+        import threading
+
+        app = App()
+        events = []
+
+        @app.on_startup
+        async def on_start():
+            events.append("startup")
+
+        @app.on_shutdown
+        async def on_stop():
+            events.append("shutdown")
+
+        @app.get("/ping")
+        async def ping(request):
+            return {"pong": True}
+
+        ready = threading.Event()
+
+        def _run():
+            async def _start():
+                app._shutdown_event = asyncio.Event()
+                # Startup hooks
+                await app._run_startup_hooks()
+                server = await asyncio.start_server(
+                    app._handle_connection, "127.0.0.1", 0
+                )
+                app._server = server
+                addrs = server.sockets[0].getsockname()
+                app.host = addrs[0]
+                app.port = addrs[1]
+                ready.set()
+                try:
+                    async with server:
+                        await app._shutdown_event.wait()
+                finally:
+                    await app._run_shutdown_hooks()
+
+            asyncio.run(_start())
+
+        thread = threading.Thread(target=_run, daemon=True)
+        thread.start()
+        ready.wait(timeout=5)
+
+        from httpclient import get as http_get
+
+        r = http_get(f"http://127.0.0.1:{app.port}/ping")
+        assert r.status_code == 200
+
+        app.shutdown()
+        thread.join(timeout=2)
+
+        assert events == ["startup", "shutdown"]
+
+    def test_no_hooks_is_noop(self):
+        """Server works fine with no lifespan hooks registered."""
+        app = App()
+
+        async def _test():
+            await app._run_startup_hooks()
+            await app._run_shutdown_hooks()
+
+        asyncio.run(_test())  # Should not raise

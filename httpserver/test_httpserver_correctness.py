@@ -17,6 +17,7 @@ from httpserver import (
     JSONResponse,
     Request,
     Response,
+    State,
     StreamingResponse,
     _coerce_response,
     _compile_route,
@@ -536,5 +537,121 @@ class TestMiddleware:
             resp = await app._dispatch(req)
             assert resp.status_code == 404
             assert json.loads(resp.body)["custom"] == "not found"
+
+        asyncio.run(_test())
+
+
+class TestRequestState:
+    """Per-request State namespace."""
+
+    def test_set_and_get_attribute(self):
+        """State allows arbitrary attribute set/get."""
+        state = State()
+        state.foo = "bar"
+        state.count = 42
+        assert state.foo == "bar"
+        assert state.count == 42
+
+    def test_missing_attribute_raises(self):
+        """Accessing an unset attribute raises AttributeError."""
+        state = State()
+        with pytest.raises(AttributeError):
+            _ = state.no_such_attr
+
+    def test_repr_empty(self):
+        """Empty State has a clean repr."""
+        state = State()
+        assert repr(state) == "State()"
+
+    def test_repr_with_attrs(self):
+        """State repr shows stored attributes."""
+        state = State()
+        state.x = 1
+        r = repr(state)
+        assert r.startswith("State(")
+        assert "x=1" in r
+
+    def test_equality(self):
+        """Two State objects with the same attributes are equal."""
+        a = State()
+        a.x = 1
+        a.y = "hello"
+        b = State()
+        b.x = 1
+        b.y = "hello"
+        assert a == b
+
+    def test_inequality(self):
+        """State objects with different attributes are not equal."""
+        a = State()
+        a.x = 1
+        b = State()
+        b.x = 2
+        assert a != b
+
+    def test_equality_not_implemented_for_other_types(self):
+        """State.__eq__ returns NotImplemented for non-State objects."""
+        state = State()
+        assert state != "not a state"
+        assert state.__eq__("not a state") is NotImplemented
+
+    def test_request_has_fresh_state(self):
+        """Each Request gets its own fresh State instance."""
+        req = Request("GET", "/", "", {}, b"", ("127.0.0.1", 0))
+        assert isinstance(req.state, State)
+        assert repr(req.state) == "State()"
+
+    def test_each_request_gets_independent_state(self):
+        """Two requests do not share state."""
+        req1 = Request("GET", "/", "", {}, b"", ("127.0.0.1", 0))
+        req2 = Request("GET", "/", "", {}, b"", ("127.0.0.1", 0))
+        req1.state.marker = "req1"
+        assert not hasattr(req2.state, "marker")
+
+    def test_state_in_before_request_middleware(self):
+        """State set in before_request is visible in the handler."""
+        app = App()
+        observed = {}
+
+        @app.before_request
+        async def inject(request):
+            request.state.injected = "hello"
+
+        @app.get("/check")
+        async def handler(request):
+            observed["value"] = request.state.injected
+            return {"ok": True}
+
+        async def _test():
+            req = Request("GET", "/check", "", {}, b"", ("127.0.0.1", 0), app=app)
+            await app._dispatch(req)
+            assert observed["value"] == "hello"
+
+        asyncio.run(_test())
+
+    def test_state_persists_across_middleware_and_handler(self):
+        """State survives from before_request through handler to after_request."""
+        app = App()
+        log = []
+
+        @app.before_request
+        async def before(request):
+            request.state.trace = ["before"]
+
+        @app.get("/traced")
+        async def handler(request):
+            request.state.trace.append("handler")
+            return {"ok": True}
+
+        @app.after_request
+        async def after(request, response):
+            request.state.trace.append("after")
+            log.extend(request.state.trace)
+            return response
+
+        async def _test():
+            req = Request("GET", "/traced", "", {}, b"", ("127.0.0.1", 0), app=app)
+            await app._dispatch(req)
+            assert log == ["before", "handler", "after"]
 
         asyncio.run(_test())

@@ -689,6 +689,7 @@ class App:
         self._error_handlers: dict[int | type, Callable[..., Any]] = {}
         self._server: asyncio.Server | None = None
         self._shutdown_event: asyncio.Event | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
         self.max_body_size = max_body_size
         self.read_timeout = read_timeout
         self.port: int | None = None
@@ -1125,6 +1126,7 @@ class App:
     async def _serve(self, host: str, port: int, *, socket: str | None = None) -> None:
         """Internal async server loop."""
         self._shutdown_event = asyncio.Event()
+        self._loop = asyncio.get_running_loop()
         self._socket_path: str | None = None
 
         try:
@@ -1227,10 +1229,10 @@ class App:
     def shutdown(self) -> None:
         """Request a graceful server shutdown.
 
-        Safe to call from a request handler.
+        Safe to call from any thread or from a request handler.
         """
-        if self._shutdown_event is not None:
-            self._shutdown_event.set()
+        if self._shutdown_event is not None and self._loop is not None:
+            self._loop.call_soon_threadsafe(self._shutdown_event.set)
 
 
 # ── Handler Invocation ───────────────────────────────────────────────────────

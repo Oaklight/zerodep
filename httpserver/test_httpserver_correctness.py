@@ -831,7 +831,7 @@ class TestLifespan:
         def _run():
             async def _start():
                 app._shutdown_event = asyncio.Event()
-                # Startup hooks
+                app._loop = asyncio.get_running_loop()
                 await app._run_startup_hooks()
                 server = await asyncio.start_server(
                     app._handle_connection, "127.0.0.1", 0

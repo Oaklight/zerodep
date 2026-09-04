@@ -859,7 +859,8 @@ class TestLifespan:
         assert r.status_code == 200
 
         app.shutdown()
-        thread.join(timeout=2)
+        thread.join(timeout=5)
+        assert not thread.is_alive(), "Server thread did not exit in time"
 
         assert events == ["startup", "shutdown"]
 

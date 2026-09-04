@@ -173,6 +173,9 @@ class State:
     the same pattern as Starlette's ``State``.
     """
 
+    def __init__(self, **kwargs: Any) -> None:
+        self.__dict__.update(kwargs)
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, State):
             return NotImplemented

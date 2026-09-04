@@ -6,6 +6,19 @@
 
 ## [未发布]
 
+## [2026.9.4] - 2026-09-04
+
+### 新功能
+
+- **httpserver**：为 `StreamingResponse` 添加可选的 `background` 回调参数——流式生成器完成后（包括客户端断开连接时）调用的同步或异步可调用对象。遵循 Starlette 的 `BackgroundTask` 模式。回调异常以 warning 级别记录并被抑制。([#132](https://github.com/Oaklight/zerodep/issues/132)、[#133](https://github.com/Oaklight/zerodep/pull/133))
+- **httpserver**：添加 `on_startup` 和 `on_shutdown` 装饰器钩子用于服务器生命周期管理。启动钩子按注册顺序在接受连接前运行；关闭钩子按反序（LIFO）在服务器停止后运行。支持同步和异步可调用对象。即使启动部分失败，关闭钩子也保证运行。([#134](https://github.com/Oaklight/zerodep/issues/134)、[#137](https://github.com/Oaklight/zerodep/pull/137))
+- **httpserver**：添加 `State` 类和 `request.state` 属性，用于在中间件和处理器之间共享每请求数据。遵循 Starlette 模式，使用基于 `__dict__` 的属性访问。([#135](https://github.com/Oaklight/zerodep/issues/135)、[#138](https://github.com/Oaklight/zerodep/pull/138))
+
+### 问题修复
+
+- **httpserver**：`shutdown()` 现在是线程安全的——使用 `loop.call_soon_threadsafe()` 替代直接调用 `asyncio.Event.set()`，后者在从不同线程调用时会静默失败。
+- **httpserver**：`StreamingResponse` 中生成器 `aclose()` 失败不再阻止 background 回调的执行。
+
 ## [2026.8.30] - 2026-08-30
 
 ### 问题修复

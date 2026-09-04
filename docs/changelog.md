@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.9.4] - 2026-09-04
+
+### Features
+
+- **httpserver**: Add optional `background` callback to `StreamingResponse` — a sync or async callable invoked after the stream generator completes (including on client disconnect). Follows the Starlette `BackgroundTask` pattern. Callback exceptions are logged at warning level and suppressed. ([#132](https://github.com/Oaklight/zerodep/issues/132), [#133](https://github.com/Oaklight/zerodep/pull/133))
+- **httpserver**: Add `on_startup` and `on_shutdown` decorator hooks for server lifecycle management. Startup hooks run in registration order before accepting connections; shutdown hooks run in reverse order (LIFO) after server stops. Both sync and async callables supported. Shutdown hooks are guaranteed to run even on partial startup failure. ([#134](https://github.com/Oaklight/zerodep/issues/134), [#137](https://github.com/Oaklight/zerodep/pull/137))
+- **httpserver**: Add `State` class and `request.state` attribute for per-request data sharing between middleware and handlers. Follows the Starlette pattern with `__dict__`-based attribute access. ([#135](https://github.com/Oaklight/zerodep/issues/135), [#138](https://github.com/Oaklight/zerodep/pull/138))
+
+### Bug Fixes
+
+- **httpserver**: `shutdown()` is now thread-safe — uses `loop.call_soon_threadsafe()` instead of directly calling `asyncio.Event.set()`, which was silently failing when called from a different thread.
+- **httpserver**: Generator `aclose()` failure in `StreamingResponse` no longer prevents the background callback from running.
+
 ## [2026.8.30] - 2026-08-30
 
 ### Bug Fixes

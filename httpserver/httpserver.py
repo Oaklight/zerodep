@@ -684,8 +684,8 @@ class App:
         self._static_routes: list[tuple[str, str]] = []
         self._before_request_handlers: list[Callable[..., Any]] = []
         self._after_request_handlers: list[Callable[..., Any]] = []
-        self._startup_handlers: list[Callable[..., Any]] = []
-        self._shutdown_handlers: list[Callable[..., Any]] = []
+        self._startup_handlers: list[Callable[[], Any]] = []
+        self._shutdown_handlers: list[Callable[[], Any]] = []
         self._error_handlers: dict[int | type, Callable[..., Any]] = {}
         self._server: asyncio.Server | None = None
         self._shutdown_event: asyncio.Event | None = None
@@ -805,7 +805,7 @@ class App:
 
     # ── Lifespan Hooks ───────────────────────────────────────────────────
 
-    def on_startup(self, handler: Callable[..., Any]) -> Callable[..., Any]:
+    def on_startup(self, handler: Callable[[], Any]) -> Callable[[], Any]:
         """Register a startup hook.
 
         The hook is called (with no arguments) before the server starts
@@ -819,12 +819,12 @@ class App:
 
             @app.on_startup
             async def init_pool():
-                app.state["pool"] = await create_pool()
+                app.pool = await create_pool()
         """
         self._startup_handlers.append(handler)
         return handler
 
-    def on_shutdown(self, handler: Callable[..., Any]) -> Callable[..., Any]:
+    def on_shutdown(self, handler: Callable[[], Any]) -> Callable[[], Any]:
         """Register a shutdown hook.
 
         The hook is called (with no arguments) after the server stops
@@ -838,7 +838,7 @@ class App:
 
             @app.on_shutdown
             async def close_pool():
-                await app.state["pool"].close()
+                await app.pool.close()
         """
         self._shutdown_handlers.append(handler)
         return handler
@@ -1127,30 +1127,32 @@ class App:
         self._shutdown_event = asyncio.Event()
         self._socket_path: str | None = None
 
-        # Run startup hooks before accepting connections
-        await self._run_startup_hooks()
-
-        if socket:
-            server = await self._start_unix_socket(socket)
-        else:
-            server = await asyncio.start_server(
-                self._handle_connection,
-                host,
-                port,
-            )
-            addrs = server.sockets[0].getsockname() if server.sockets else (host, port)
-            self.host = addrs[0]
-            self.port = addrs[1]
-            logger.info("Serving on %s:%d", self.host, self.port)
-
-        self._server = server
-
-        loop = asyncio.get_running_loop()
-        if sys.platform != "win32":
-            for sig in (signal.SIGINT, signal.SIGTERM):
-                loop.add_signal_handler(sig, self._shutdown_event.set)
-
         try:
+            # Run startup hooks before accepting connections
+            await self._run_startup_hooks()
+
+            if socket:
+                server = await self._start_unix_socket(socket)
+            else:
+                server = await asyncio.start_server(
+                    self._handle_connection,
+                    host,
+                    port,
+                )
+                addrs = (
+                    server.sockets[0].getsockname() if server.sockets else (host, port)
+                )
+                self.host = addrs[0]
+                self.port = addrs[1]
+                logger.info("Serving on %s:%d", self.host, self.port)
+
+            self._server = server
+
+            loop = asyncio.get_running_loop()
+            if sys.platform != "win32":
+                for sig in (signal.SIGINT, signal.SIGTERM):
+                    loop.add_signal_handler(sig, self._shutdown_event.set)
+
             async with server:
                 await self._shutdown_event.wait()
                 logger.info("Shutting down server")

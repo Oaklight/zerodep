@@ -655,6 +655,8 @@ class TestRequestState:
             assert log == ["before", "handler", "after"]
 
         asyncio.run(_test())
+
+
 class TestLifespan:
     """Lifespan event hooks (on_startup / on_shutdown)."""
 

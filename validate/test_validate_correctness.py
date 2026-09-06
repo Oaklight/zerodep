@@ -476,6 +476,20 @@ class TestUnion:
         with pytest.raises(ValidationError):
             validate([], Union[str, int])
 
+    def test_pep604_optional(self):
+        """PEP 604 ``X | None`` works like ``Optional[X]``."""
+        assert validate("hello", str | None) == "hello"
+        assert validate(None, str | None) is None
+        with pytest.raises(ValidationError):
+            validate(42, str | None)
+
+    def test_pep604_union(self):
+        """PEP 604 ``X | Y`` works like ``Union[X, Y]``."""
+        assert validate("hello", str | int) == "hello"
+        assert validate(42, str | int) == 42
+        with pytest.raises(ValidationError):
+            validate([], str | int)
+
     def test_discriminated_union(self):
         DiscUnion = Union[TypeA, TypeB]
         data_a = {"kind": "a", "value_a": "hello"}
@@ -842,6 +856,21 @@ class TestJsonSchema:
         schema = json_schema(HasOptional)
         val = schema["properties"]["value"]
         assert val["type"] == ["string", "null"]
+
+    def test_pep604_optional_schema(self):
+        """PEP 604 ``X | None`` produces same schema as ``Optional[X]``."""
+        schema = _type_to_schema_import(str | None)
+        assert schema == {"type": ["string", "null"]}
+
+    def test_pep604_union_schema(self):
+        """PEP 604 ``X | Y`` produces same schema as ``Union[X, Y]``."""
+        schema = _type_to_schema_import(str | int)
+        assert "oneOf" in schema
+
+    def test_pep604_double_optional_no_duplicate_null(self):
+        """``Optional[X | None]`` does not produce double null in schema."""
+        schema = _type_to_schema_import(Optional[str | None])
+        assert schema == {"type": ["string", "null"]}
 
     def test_dict_schema(self):
         schema = _type_to_schema_import(dict[str, int])

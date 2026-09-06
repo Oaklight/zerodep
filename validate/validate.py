@@ -70,9 +70,12 @@ from __future__ import annotations
 import dataclasses
 import functools
 import re
+import types
 import typing
 from collections.abc import Callable
 from typing import Any, Union, get_type_hints
+
+_UNION_ORIGINS = (Union, types.UnionType)
 
 __all__ = [
     # Constraint annotations
@@ -535,7 +538,7 @@ def _type_name(tp: Any) -> str:
     if origin is typing.Annotated:
         base = typing.get_args(tp)[0]
         return _type_name(base)
-    if origin is Union:
+    if origin in _UNION_ORIGINS:
         args = typing.get_args(tp)
         return " | ".join(_type_name(a) for a in args)
     if origin is typing.Literal:
@@ -1116,7 +1119,7 @@ def _validate(
         return _validate_annotated(value, tp, path, errors, coerce)
     if origin is typing.Literal:
         return _validate_literal(value, path, errors, args)
-    if origin is Union:
+    if origin in _UNION_ORIGINS:
         return _validate_union(value, tp, path, errors, coerce, args)
     if origin is list:
         return _validate_list(value, tp, path, errors, coerce, args)
@@ -1174,7 +1177,12 @@ def _schema_union(args: tuple[Any, ...]) -> dict[str, Any]:
     if len(non_none) == 1 and none_args:
         schema = _type_to_schema(non_none[0])
         if "type" in schema:
-            schema["type"] = [schema["type"], "null"]
+            current = schema["type"]
+            if isinstance(current, list):
+                if "null" not in current:
+                    schema["type"] = [*current, "null"]
+            else:
+                schema["type"] = [current, "null"]
         else:
             schema = {"oneOf": [schema, {"type": "null"}]}
         return schema
@@ -1262,7 +1270,7 @@ def _type_to_schema(tp: Any) -> dict[str, Any]:
         return _schema_annotated(tp)
     if origin is typing.Literal:
         return {"enum": list(args)}
-    if origin is Union:
+    if origin in _UNION_ORIGINS:
         return _schema_union(args)
     if origin is list:
         return _schema_list(args)

@@ -386,19 +386,33 @@ def _is_dataclass_type(tp: Any) -> bool:
     return isinstance(tp, type) and dataclasses.is_dataclass(tp)
 
 
+def _resolve_required(tp: Any) -> tuple[Any, bool | None]:
+    """Unwrap ``Required``/``NotRequired`` and report the wrapper kind.
+
+    Returns:
+        ``(inner_type, is_required)`` where *is_required* is ``True`` for
+        ``Required``, ``False`` for ``NotRequired``, or ``None`` when the
+        type has no such wrapper.
+
+    Detection uses the origin's ``_name`` attribute, which both
+    ``typing`` (3.11+) and ``typing_extensions`` set to ``"Required"``
+    or ``"NotRequired"``.  This avoids version-gated imports.
+    """
+    origin = typing.get_origin(tp)
+    name = getattr(origin, "_name", None)
+    if name == "Required":
+        args = typing.get_args(tp)
+        return (args[0] if args else tp), True
+    if name == "NotRequired":
+        args = typing.get_args(tp)
+        return (args[0] if args else tp), False
+    return tp, None
+
+
 def _strip_required(tp: Any) -> Any:
     """Strip ``Required`` / ``NotRequired`` wrappers, returning the inner type."""
-    import sys
-
-    origin = typing.get_origin(tp)
-    if sys.version_info >= (3, 11):
-        from typing import NotRequired, Required
-    else:
-        from typing_extensions import NotRequired, Required
-    if origin is Required or origin is NotRequired:
-        args = typing.get_args(tp)
-        return args[0] if args else tp
-    return tp
+    inner, _ = _resolve_required(tp)
+    return inner
 
 
 @functools.cache
@@ -419,13 +433,18 @@ def _typeddict_fields(td: type) -> dict[str, tuple[Any, bool]]:
     optional = getattr(td, "__optional_keys__", set())
     result: dict[str, tuple[Any, bool]] = {}
     for name, tp in hints.items():
-        inner = _strip_required(tp)
-        if name in required:
+        inner, explicit = _resolve_required(tp)
+        if explicit is not None:
+            # Annotation-level Required/NotRequired is authoritative.
+            # On Python 3.10, typing.TypedDict ignores these wrappers
+            # when populating __required_keys__ / __optional_keys__,
+            # so the annotation is the only reliable source.
+            result[name] = (inner, explicit)
+        elif name in required:
             result[name] = (inner, True)
         elif name in optional:
             result[name] = (inner, False)
         else:
-            # Default: assume required (total=True is the default)
             result[name] = (inner, True)
     return result
 

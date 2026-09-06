@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.3.0"
+# version = "0.3.1"
 # deps = []
 # tier = "simple"
 # category = "process"
@@ -176,6 +176,12 @@ def retry_if_status(*status_codes: int) -> Callable[[BaseException], bool]:
 # ── Internal Helpers ──
 
 
+# Cache frequently used functions as module-level references to avoid
+# repeated global/attribute lookups on the hot path.
+_random = random.random
+_min = min
+
+
 def _compute_delay(
     attempt: int,
     backoff: str,
@@ -183,6 +189,8 @@ def _compute_delay(
     backoff_factor: float,
     max_delay: float,
     jitter: str,
+    _random: Callable[[], float] = _random,
+    _min: Callable[..., float] = _min,
 ) -> float:
     """Compute the sleep duration for a given retry attempt.
 
@@ -209,13 +217,13 @@ def _compute_delay(
     else:
         raise ValueError(f"Unknown backoff strategy: {backoff!r}")
 
-    delay = min(delay, max_delay)
+    delay = _min(delay, max_delay)
 
     if jitter == "full":
-        delay = random.uniform(0, delay)
+        delay *= _random()
     elif jitter == "equal":
-        half = delay / 2
-        delay = half + random.uniform(0, half)
+        half = delay * 0.5
+        delay = half + half * _random()
     elif jitter == "none":
         pass
     else:
@@ -251,10 +259,12 @@ def _retry_sync(
     retry_on: tuple[type[BaseException], ...] | Callable[[BaseException], bool],
     retry_on_result: Callable[[Any], bool] | None,
     on_retry: Callable[[RetryState], None] | None,
+    _start_attempt: int = 0,
+    _start_time: float | None = None,
 ) -> Any:
-    start = time.monotonic()
+    start = _start_time if _start_time is not None else time.monotonic()
 
-    for attempt in range(max_retries + 1):  # 0 = initial call
+    for attempt in range(_start_attempt, max_retries + 1):  # 0 = initial call
         try:
             result = fn(*args, **kwargs)
 
@@ -421,7 +431,11 @@ def retry(
     """
 
     def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-        if inspect.iscoroutinefunction(fn):
+        # Cache the coroutine check at decoration time so the per-call
+        # wrapper never touches ``inspect``.
+        is_async = inspect.iscoroutinefunction(fn)
+
+        if is_async:
 
             @functools.wraps(fn)
             async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -442,22 +456,76 @@ def retry(
 
             return async_wrapper
 
-        @functools.wraps(fn)
-        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
-            return _retry_sync(
-                fn,
-                args,
-                kwargs,
-                max_retries=max_retries,
-                base_delay=base_delay,
-                max_delay=max_delay,
-                backoff=backoff,
-                backoff_factor=backoff_factor,
-                jitter=jitter,
-                retry_on=retry_on,
-                retry_on_result=retry_on_result,
-                on_retry=on_retry,
-            )
+        # Build a fast-path wrapper: when the first call succeeds and no
+        # result predicate fires, return immediately without entering
+        # the full _retry_sync loop (avoids time.monotonic, range, etc.).
+        _check_result = retry_on_result
+        _inner_retry = _retry_sync
+
+        _should_retry = _should_retry_exception
+
+        if _check_result is None:
+            # Hot path – no result predicate.  Try the happy path first;
+            # only fall into the full retry loop on exception.
+            @functools.wraps(fn)
+            def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+                try:
+                    return fn(*args, **kwargs)
+                except BaseException as first_exc:
+                    if max_retries == 0 or not _should_retry(first_exc, retry_on):
+                        raise
+                    # First call failed and is retryable – handle the
+                    # first retry delay here, then delegate remaining
+                    # retries with correct attempt bookkeeping.
+                    start = time.monotonic()
+                    delay = _compute_delay(
+                        0, backoff, base_delay, backoff_factor, max_delay, jitter
+                    )
+                    if on_retry:
+                        on_retry(
+                            RetryState(
+                                attempt=1,
+                                exception=first_exc,
+                                result=None,
+                                delay=delay,
+                                elapsed=time.monotonic() - start,
+                            )
+                        )
+                    time.sleep(delay)
+                    return _inner_retry(
+                        fn,
+                        args,
+                        kwargs,
+                        max_retries=max_retries,
+                        base_delay=base_delay,
+                        max_delay=max_delay,
+                        backoff=backoff,
+                        backoff_factor=backoff_factor,
+                        jitter=jitter,
+                        retry_on=retry_on,
+                        retry_on_result=None,
+                        on_retry=on_retry,
+                        _start_attempt=1,
+                        _start_time=start,
+                    )
+        else:
+
+            @functools.wraps(fn)
+            def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+                return _inner_retry(
+                    fn,
+                    args,
+                    kwargs,
+                    max_retries=max_retries,
+                    base_delay=base_delay,
+                    max_delay=max_delay,
+                    backoff=backoff,
+                    backoff_factor=backoff_factor,
+                    jitter=jitter,
+                    retry_on=retry_on,
+                    retry_on_result=_check_result,
+                    on_retry=on_retry,
+                )
 
         return sync_wrapper
 

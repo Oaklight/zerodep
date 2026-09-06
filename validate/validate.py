@@ -509,7 +509,12 @@ def _dataclass_fields(dc: type) -> dict[str, tuple[Any, bool]]:
 
 
 def _dataclass_defaults(dc: type) -> dict[str, Any] | None:
-    """Extract static default values from a dataclass type."""
+    """Extract static default values from a dataclass type.
+
+    Fields using ``default_factory`` are intentionally excluded — factory
+    return values are not statically known and calling them would risk
+    side effects.
+    """
     result: dict[str, Any] = {}
     for f in dataclasses.fields(dc):
         if f.default is not dataclasses.MISSING:
@@ -1190,6 +1195,7 @@ def _schema_struct(
             required.append(name)
         if defaults and name in defaults:
             default_val = defaults[name]
+            # Shallow check — list/dict contents are not inspected.
             if isinstance(default_val, (str, int, float, bool, type(None), list, dict)):
                 properties[name]["default"] = default_val
     schema: dict[str, Any] = {
@@ -1356,7 +1362,7 @@ def create_struct(name: str, fields: dict[str, tuple[Any, ...]]) -> type:
     annotations: dict[str, Any] = {}
     defaults: dict[str, Any] = {}
     for field_name, spec in fields.items():
-        field_type, default = spec[0], spec[1]
+        field_type, default = spec
         if default is ...:
             annotations[field_name] = field_type
         else:

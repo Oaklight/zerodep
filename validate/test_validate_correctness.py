@@ -319,9 +319,9 @@ class TestDataclass:
         obj = Outer(name="test", inner=Inner(value=42))
         result = validate(obj, Outer)
         assert result["name"] == "test"
-        # Conversion is shallow: nested DC instances stay as-is in the returned dict
-        assert isinstance(result["inner"], Inner)
-        assert result["inner"].value == 42
+        # After fix: nested DC instances are recursively validated into dicts
+        assert isinstance(result["inner"], dict)
+        assert result["inner"]["value"] == 42
 
     def test_instance_nested_invalid(self):
         @dataclasses.dataclass
@@ -725,6 +725,27 @@ class TestCoercion:
     def test_invalid_coerce(self):
         with pytest.raises(ValidationError):
             validate("not_a_number", int, coerce=True)
+
+    def test_struct_field_coercion(self):
+        """Coerced values should propagate back into struct fields."""
+        T = create_struct(
+            "T", {"name": (str, ...), "age": (int, ...), "score": (float, ...)}
+        )
+        result = validate(
+            {"name": "Alice", "age": "25", "score": "3.14"}, T, coerce=True
+        )
+        assert result["age"] == 25
+        assert isinstance(result["age"], int)
+        assert result["score"] == 3.14
+        assert isinstance(result["score"], float)
+
+    def test_nested_struct_field_coercion(self):
+        """Coerced values should propagate in nested structs."""
+        Inner = create_struct("Inner", {"value": (int, ...)})
+        Outer = create_struct("Outer", {"name": (str, ...), "inner": (Inner, ...)})
+        result = validate({"name": "Bob", "inner": {"value": "42"}}, Outer, coerce=True)
+        assert result["inner"]["value"] == 42
+        assert isinstance(result["inner"]["value"], int)
 
 
 # ── Error Collection ──

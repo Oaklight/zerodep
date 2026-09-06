@@ -44,7 +44,7 @@ bench-aes = [
 ]
 bench-qr = [
     "qrcode==8.2",
-    "Pillow==12.2.0",
+    "Pillow==12.3.0",
 ]
 bench-http = [
     "httpx==0.28.1",
@@ -83,7 +83,7 @@ bench-sse = [
     "httpx==0.28.1",
 ]
 bench-markdown = [
-    "mistune==3.3.0",
+    "mistune==3.3.3",
 ]
 bench-diff = [
     "unidiff==0.7.5",
@@ -128,13 +128,13 @@ bench-persistdict = [
     "sqlitedict==2.1.0",
 ]
 bench-runner = [
-    "sh==2.2.2",
+    "sh==2.2.4",
 ]
 bench-readability = [
     "readability-lxml==0.8.4.1",
 ]
 bench-png = [
-    "Pillow==12.2.0",
+    "Pillow==12.3.0",
     "numpy>=1.26.0",
 ]
 bench-useragent = [

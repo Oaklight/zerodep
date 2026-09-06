@@ -6,6 +6,25 @@
 
 ## [未发布]
 
+## [2026.9.6] - 2026-09-06
+
+### 新功能
+
+- **validate**：添加 `Doc` 注解标记，用于在 JSON Schema 中为字段添加描述。通过 `Annotated[str, Doc("...")]` 使用，支持静态 TypedDict/dataclass 字段和动态创建的类型。([#142](https://github.com/Oaklight/zerodep/issues/142)、[#143](https://github.com/Oaklight/zerodep/pull/143))
+- **validate**：添加 `create_struct(name, fields)` 用于运行时动态构建 TypedDict。字段以 `(type, default)` 元组指定，`...` 表示必填。返回的 TypedDict 兼容 `validate()`、`json_schema()` 和 `model_validator()`。([#142](https://github.com/Oaklight/zerodep/issues/142)、[#143](https://github.com/Oaklight/zerodep/pull/143))
+- **validate**：`json_schema()` 现在为 `create_struct` 类型和 dataclass 静态默认值输出 `"default"` 属性。([#142](https://github.com/Oaklight/zerodep/issues/142)、[#143](https://github.com/Oaklight/zerodep/pull/143))
+
+### 问题修复
+
+- **validate**：支持 PEP 604 联合类型（`X | Y` 语法）。此前 `types.UnionType` 未被识别，导致 PEP 604 联合类型静默通过验证并生成空 schema。同时修复 `get_type_hints()` 双重包装 `Optional[X | None]` 时 schema 中出现重复 null 的问题。([#143](https://github.com/Oaklight/zerodep/pull/143))
+- **validate**：修复 Python 3.10 上 `Required`/`NotRequired` 注解检测问题，该版本 `typing.TypedDict` 未正确填充 `__required_keys__`/`__optional_keys__`。([#141](https://github.com/Oaklight/zerodep/pull/141))
+- **httpclient**：在 `iter_lines()`/`aiter_lines()` 中使用字节缓冲区，防止多字节字符跨 chunk 边界时 UTF-8 编码损坏。([#140](https://github.com/Oaklight/zerodep/pull/140))
+- **httpclient**：修复 `iter_lines()` 绕过 gzip 解压的问题。
+
+### 性能优化
+
+- **retry**：装饰器开销优化 -60%（430→170 ns），重试循环优化 -30%（3,374→2,348 ns）。成功路径快速返回，绕过 `_retry_sync` 循环。模块级缓存 `random.random`。([#144](https://github.com/Oaklight/zerodep/pull/144))
+
 ## [2026.9.4] - 2026-09-04
 
 ### 新功能

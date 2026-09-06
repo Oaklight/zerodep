@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.9.6] - 2026-09-06
+
+### Features
+
+- **validate**: Add `Doc` annotation marker for per-field descriptions in JSON Schema. Works with `Annotated[str, Doc("...")]` on both static TypedDict/dataclass fields and dynamically created types. ([#142](https://github.com/Oaklight/zerodep/issues/142), [#143](https://github.com/Oaklight/zerodep/pull/143))
+- **validate**: Add `create_struct(name, fields)` for dynamic TypedDict construction at runtime. Fields specified as `(type, default)` tuples where `...` means required. Returns a real TypedDict compatible with `validate()`, `json_schema()`, and `model_validator()`. ([#142](https://github.com/Oaklight/zerodep/issues/142), [#143](https://github.com/Oaklight/zerodep/pull/143))
+- **validate**: `json_schema()` now emits `"default"` per property for `create_struct` types and dataclass static defaults. ([#142](https://github.com/Oaklight/zerodep/issues/142), [#143](https://github.com/Oaklight/zerodep/pull/143))
+
+### Bug Fixes
+
+- **validate**: Support PEP 604 unions (`X | Y` syntax) in both `validate()` and `json_schema()`. Previously `types.UnionType` was not recognized, causing PEP 604 unions to silently pass validation and produce empty schemas. Also fix duplicate null in schema when `Optional[X | None]` is double-wrapped by `get_type_hints()`. ([#143](https://github.com/Oaklight/zerodep/pull/143))
+- **validate**: Detect `Required`/`NotRequired` from annotation on Python 3.10 where `typing.TypedDict` doesn't populate `__required_keys__`/`__optional_keys__` correctly for these wrappers. ([#141](https://github.com/Oaklight/zerodep/pull/141))
+- **httpclient**: Use byte-buffer in `iter_lines()`/`aiter_lines()` to prevent UTF-8 corruption when multi-byte characters are split across chunk boundaries. ([#140](https://github.com/Oaklight/zerodep/pull/140))
+- **httpclient**: Fix `iter_lines()` bypassing gzip decompression.
+
+### Performance
+
+- **retry**: Optimize decorator overhead -60% (430→170 ns) and retry-with-failures -30% (3,374→2,348 ns). Fast-path for success case bypasses `_retry_sync` loop. Module-level caching of `random.random`. ([#144](https://github.com/Oaklight/zerodep/pull/144))
+
 ## [2026.9.4] - 2026-09-04
 
 ### Features

@@ -364,9 +364,9 @@ class TestDataclass:
         points = [Point(x=1.0, y=2.0), Point(x=3.0, y=4.0)]
         result = validate(points, list[Point])
         assert len(result) == 2
-        # validate doesn't replace list items; originals stay as DC instances
-        assert isinstance(result[0], Point)
-        assert result[0].x == 1.0
+        # After fix: nested DC instances are recursively validated into dicts
+        assert isinstance(result[0], dict)
+        assert result[0]["x"] == 1.0
 
     def test_instance_slots(self):
         """dataclass(slots=True) instances work (no __dict__)."""
@@ -746,6 +746,59 @@ class TestCoercion:
         result = validate({"name": "Bob", "inner": {"value": "42"}}, Outer, coerce=True)
         assert result["inner"]["value"] == 42
         assert isinstance(result["inner"]["value"], int)
+
+    def test_list_coercion(self):
+        """Coerced values should propagate in list items."""
+        result = validate(["1", "2", "3"], list[int], coerce=True)
+        assert result == [1, 2, 3]
+        assert all(isinstance(v, int) for v in result)
+
+    def test_list_no_input_mutation(self):
+        """Validating a list should not mutate the original."""
+        data = ["1", "2"]
+        result = validate(data, list[int], coerce=True)
+        assert result == [1, 2]
+        assert data == ["1", "2"]
+
+    def test_dict_value_coercion(self):
+        """Coerced values should propagate in dict values."""
+        result = validate({"a": "1", "b": "2"}, dict[str, int], coerce=True)
+        assert result == {"a": 1, "b": 2}
+        assert all(isinstance(v, int) for v in result.values())
+
+    def test_dict_key_coercion(self):
+        """Coerced keys should propagate in dict keys."""
+        result = validate({"1": "a", "2": "b"}, dict[int, str], coerce=True)
+        assert result == {1: "a", 2: "b"}
+        assert all(isinstance(k, int) for k in result.keys())
+
+    def test_dict_no_input_mutation(self):
+        """Validating a dict should not mutate the original."""
+        data = {"a": "1"}
+        result = validate(data, dict[str, int], coerce=True)
+        assert result == {"a": 1}
+        assert data == {"a": "1"}
+
+    def test_tuple_coercion_variadic(self):
+        """Coerced values should propagate in tuple[X, ...] items."""
+        result = validate(("1", "2", "3"), tuple[int, ...], coerce=True)
+        assert result == (1, 2, 3)
+        assert all(isinstance(v, int) for v in result)
+
+    def test_tuple_coercion_fixed(self):
+        """Coerced values should propagate in tuple[X, Y] items."""
+        result = validate(("1", "3.14"), tuple[int, float], coerce=True)
+        assert result == (1, 3.14)
+        assert isinstance(result[0], int)
+        assert isinstance(result[1], float)
+
+    def test_struct_no_input_mutation(self):
+        """Validating a struct should not mutate the original dict."""
+        T = create_struct("T", {"name": (str, ...), "age": (int, ...)})
+        data = {"name": "Alice", "age": "25"}
+        result = validate(data, T, coerce=True)
+        assert result["age"] == 25
+        assert data["age"] == "25"
 
 
 # ── Error Collection ──
@@ -1189,10 +1242,8 @@ class TestFieldValidator:
 
         data = {"username": "  Alice  ", "age": 30}
         result = validate(data, Profile)
-        # Note: validate doesn't mutate the original dict for field values,
-        # but the returned value from _validate_annotated is the transformed one.
-        # The top-level dict values are not replaced in-place (current behavior).
-        assert result == data  # dict itself is returned as-is
+        assert result == {"username": "alice", "age": 30}
+        assert data == {"username": "  Alice  ", "age": 30}  # input not mutated
 
 
 # ── Model Validator ──

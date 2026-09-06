@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-09-06T18:30:38.778326+00:00",
+  "generated": "2026-09-06T18:48:43.674107+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -347,12 +347,12 @@
       "files": [
         "retry/retry.py"
       ],
-      "version": "0.3.1",
+      "version": "0.3.2",
       "deps": [],
       "tier": "simple",
       "category": "process",
-      "last_updated": "2026-09-06T04:44:06-05:00",
-      "content_hash": "b95011242469647a5ec905a92787bba65ebafad8157a75bb2188f91db2060eb7"
+      "last_updated": "2026-09-06T13:33:07-05:00",
+      "content_hash": "b29ca3c9022a2d305ce05e2c5024ce51abf655856b8be3e2ed2fd98130a94a26"
     },
     "runner": {
       "description": "Structured subprocess execution — zero dependencies, stdlib only, Python 3.10+",

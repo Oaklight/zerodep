@@ -85,6 +85,7 @@ __all__ = [
     "Match",
     "Predicate",
     "FieldValidator",
+    "Doc",
     # Error types
     "ErrorDetail",
     "ValidationError",
@@ -92,6 +93,7 @@ __all__ = [
     "validate",
     "json_schema",
     "model_validator",
+    "create_struct",
 ]
 
 # ── Constraint Annotations ──
@@ -265,8 +267,44 @@ class FieldValidator:
         return self.description
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class Doc:
+    """Field description marker for ``Annotated`` types.
+
+    Attaches a human-readable description to a type annotation.  The
+    description is emitted as ``{"description": ...}`` in JSON Schema
+    and has no effect on validation.
+
+    Example::
+
+        Annotated[str, Doc("The user's full name")]
+    """
+
+    description: str
+
+    def check(self, value: Any) -> bool:
+        return True
+
+    def schema_kw(self) -> dict[str, Any]:
+        return {"description": self.description}
+
+    def __str__(self) -> str:
+        return self.description
+
+
 # Constraint base types for isinstance checks
-_CONSTRAINT_TYPES = (Gt, Ge, Lt, Le, MinLen, MaxLen, Match, Predicate, FieldValidator)
+_CONSTRAINT_TYPES = (
+    Gt,
+    Ge,
+    Lt,
+    Le,
+    MinLen,
+    MaxLen,
+    Match,
+    Predicate,
+    FieldValidator,
+    Doc,
+)
 
 
 # ── Model Validator Registry ──
@@ -468,6 +506,15 @@ def _dataclass_fields(dc: type) -> dict[str, tuple[Any, bool]]:
         )
         result[f.name] = (tp, not has_default)
     return result
+
+
+def _dataclass_defaults(dc: type) -> dict[str, Any] | None:
+    """Extract static default values from a dataclass type."""
+    result: dict[str, Any] = {}
+    for f in dataclasses.fields(dc):
+        if f.default is not dataclasses.MISSING:
+            result[f.name] = f.default
+    return result or None
 
 
 def _join_path(base: str, key: str | int) -> str:
@@ -1130,7 +1177,10 @@ def _schema_union(args: tuple[Any, ...]) -> dict[str, Any]:
     return {"oneOf": [_type_to_schema(a) for a in args]}
 
 
-def _schema_struct(fields: dict[str, tuple[Any, bool]]) -> dict[str, Any]:
+def _schema_struct(
+    fields: dict[str, tuple[Any, bool]],
+    defaults: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Generate JSON Schema for a struct-like type (TypedDict or dataclass)."""
     properties: dict[str, Any] = {}
     required: list[str] = []
@@ -1138,6 +1188,10 @@ def _schema_struct(fields: dict[str, tuple[Any, bool]]) -> dict[str, Any]:
         properties[name] = _type_to_schema(field_tp)
         if is_required:
             required.append(name)
+        if defaults and name in defaults:
+            default_val = defaults[name]
+            if isinstance(default_val, (str, int, float, bool, type(None), list, dict)):
+                properties[name]["default"] = default_val
     schema: dict[str, Any] = {
         "type": "object",
         "properties": properties,
@@ -1213,9 +1267,11 @@ def _type_to_schema(tp: Any) -> dict[str, Any]:
     if origin in (set, frozenset):
         return _schema_set(args)
     if _is_typeddict(tp):
-        return _schema_struct(_typeddict_fields(tp))
+        return _schema_struct(
+            _typeddict_fields(tp), getattr(tp, "__field_defaults__", None)
+        )
     if _is_dataclass_type(tp):
-        return _schema_struct(_dataclass_fields(tp))
+        return _schema_struct(_dataclass_fields(tp), _dataclass_defaults(tp))
     if isinstance(tp, type) and tp in _PY_TO_JSON_TYPE:
         return {"type": _PY_TO_JSON_TYPE[tp]}
     return {}
@@ -1261,3 +1317,52 @@ def json_schema(tp: Any, *, title: str | None = None) -> dict[str, Any]:
     elif isinstance(tp, type) and hasattr(tp, "__name__"):
         schema["title"] = tp.__name__
     return schema
+
+
+def create_struct(name: str, fields: dict[str, tuple[Any, ...]]) -> type:
+    """Dynamically create a TypedDict type from a field specification.
+
+    Each field is specified as ``(type, default)`` where ``...`` (Ellipsis)
+    marks the field as required.  Fields with any other default value are
+    optional (``NotRequired``).
+
+    The returned type works with :func:`validate` and :func:`json_schema`
+    just like a hand-written ``TypedDict``.  Default values are stored in
+    a ``__field_defaults__`` class attribute and emitted by
+    :func:`json_schema`.
+
+    Args:
+        name: The name of the new type.
+        fields: Mapping of field names to ``(type, default)`` tuples.
+
+    Returns:
+        A new TypedDict class.
+
+    Example::
+
+        Params = create_struct("Params", {
+            "query": (str, ...),            # required
+            "limit": (int, 10),             # optional, default 10
+            "tag": (str | None, None),      # optional, default None
+        })
+    """
+    import sys
+
+    if sys.version_info >= (3, 11):
+        from typing import NotRequired, TypedDict
+    else:
+        from typing_extensions import NotRequired, TypedDict
+
+    annotations: dict[str, Any] = {}
+    defaults: dict[str, Any] = {}
+    for field_name, spec in fields.items():
+        field_type, default = spec[0], spec[1]
+        if default is ...:
+            annotations[field_name] = field_type
+        else:
+            annotations[field_name] = NotRequired[field_type]
+            defaults[field_name] = default
+
+    td = TypedDict(name, annotations)  # type: ignore[operator]  # ty: ignore[invalid-argument-type, mismatched-type-name]
+    td.__field_defaults__ = defaults  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+    return td

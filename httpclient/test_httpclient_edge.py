@@ -351,3 +351,133 @@ class TestChunkedDecoding:
             async for chunk in resp.aiter_bytes():
                 chunks.append(chunk)
         assert b"hello" in chunks
+
+
+class TestIterLinesDecoding:
+    """Tests for iter_lines / aiter_lines edge cases (gzip, UTF-8 boundaries)."""
+
+    @staticmethod
+    def _make_sync_response(
+        chunks: list[bytes], content_encoding: str = ""
+    ) -> StreamingResponse:
+        """Build a sync StreamingResponse backed by an in-memory chunk list."""
+        it = iter(chunks)
+
+        class FakeResp:
+            def read(self, n: int = 4096) -> bytes:
+                return next(it, b"")
+
+        obj = object.__new__(StreamingResponse)
+        obj.status_code = 200
+        obj.headers = CaseInsensitiveDict()
+        obj.url = "http://test"
+        obj._encoding = "utf-8"
+        if content_encoding:
+            import zlib
+
+            wbits = (
+                16 + zlib.MAX_WBITS
+                if content_encoding in ("gzip", "x-gzip")
+                else -zlib.MAX_WBITS
+            )
+            obj._decompressor = zlib.decompressobj(wbits)
+        else:
+            obj._decompressor = None
+        obj._sync_resp = FakeResp()
+        obj._sync_conn = None
+        obj._async_reader = None
+        obj._async_writer = None
+        obj._async_timeout = None
+        obj._is_chunked = False
+        obj._content_length = None
+        obj._bytes_remaining = None
+        obj._closed = False
+        return obj
+
+    @staticmethod
+    def _make_async_response(
+        chunks: list[bytes], content_encoding: str = ""
+    ) -> StreamingResponse:
+        """Build an async StreamingResponse backed by an in-memory chunk list."""
+        import asyncio
+
+        reader = asyncio.StreamReader()
+        total = b"".join(chunks)
+        reader.feed_data(total)
+        reader.feed_eof()
+        return StreamingResponse._from_async(
+            status_code=200,
+            headers=CaseInsensitiveDict(),
+            url="http://test",
+            reader=reader,
+            writer=None,
+            is_chunked=False,
+            content_length=len(total),
+            timeout=5.0,
+            content_encoding=content_encoding,
+        )
+
+    def test_iter_lines_gzip(self):
+        """iter_lines should decompress gzip content correctly."""
+        import gzip
+
+        payload = b"line one\nline two\nline three\n"
+        compressed = gzip.compress(payload)
+        resp = self._make_sync_response([compressed], content_encoding="gzip")
+        lines = list(resp.iter_lines())
+        assert lines == ["line one", "line two", "line three"]
+
+    def test_iter_lines_gzip_chunked(self):
+        """iter_lines should handle gzip data split across multiple chunks."""
+        import gzip
+
+        payload = b"hello\nworld\n"
+        compressed = gzip.compress(payload)
+        mid = len(compressed) // 2
+        resp = self._make_sync_response(
+            [compressed[:mid], compressed[mid:]], content_encoding="gzip"
+        )
+        lines = list(resp.iter_lines())
+        assert lines == ["hello", "world"]
+
+    def test_iter_lines_utf8_chunk_boundary(self):
+        """iter_lines should not corrupt multi-byte UTF-8 split across chunks."""
+        text = "café\nnaïve\n"
+        raw = text.encode("utf-8")
+        split_at = raw.index(b"\xc3\xa9") + 1  # split mid-é
+        resp = self._make_sync_response([raw[:split_at], raw[split_at:]])
+        lines = list(resp.iter_lines())
+        assert lines == ["café", "naïve"]
+
+    @pytest.mark.asyncio
+    async def test_aiter_lines_gzip(self):
+        """aiter_lines should decompress gzip content correctly."""
+        import gzip
+
+        payload = b"async line one\nasync line two\n"
+        compressed = gzip.compress(payload)
+        resp = self._make_async_response([compressed], content_encoding="gzip")
+        lines = [line async for line in resp.aiter_lines()]
+        assert lines == ["async line one", "async line two"]
+
+    @pytest.mark.asyncio
+    async def test_aiter_lines_utf8_chunk_boundary(self):
+        """aiter_lines should not corrupt multi-byte UTF-8 split across chunks."""
+        import gzip
+
+        text = "données\nrésumé\n"
+        raw = text.encode("utf-8")
+        compressed = gzip.compress(raw)
+        mid = len(compressed) // 2
+        resp = self._make_async_response(
+            [compressed[:mid], compressed[mid:]], content_encoding="gzip"
+        )
+        lines = [line async for line in resp.aiter_lines()]
+        assert lines == ["données", "résumé"]
+
+    def test_iter_lines_crlf(self):
+        """iter_lines should handle \\r\\n line endings."""
+        payload = b"line1\r\nline2\r\nline3"
+        resp = self._make_sync_response([payload])
+        lines = list(resp.iter_lines())
+        assert lines == ["line1", "line2", "line3"]

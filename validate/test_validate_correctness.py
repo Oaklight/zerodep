@@ -10,6 +10,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(__file__))
 
 from validate import (
+    Doc,
     ErrorDetail,
     FieldValidator,
     Ge,
@@ -21,6 +22,7 @@ from validate import (
     MinLen,
     Predicate,
     ValidationError,
+    create_struct,
     json_schema,
     model_validator,
     validate,
@@ -889,6 +891,156 @@ def _type_to_schema_import(tp: Any) -> dict[str, Any]:
     from validate import _type_to_schema
 
     return _type_to_schema(tp)
+
+
+# ── Doc ──
+
+
+class TestDoc:
+    def test_schema_description(self):
+        """Doc adds description to JSON Schema."""
+        schema = json_schema(Annotated[str, Doc("A name")])
+        assert schema == {"type": "string", "description": "A name"}
+
+    def test_with_constraints(self):
+        """Doc and constraints can be combined."""
+        tp = Annotated[int, Doc("User age"), Ge(0)]
+        schema = json_schema(tp)
+        assert schema["type"] == "integer"
+        assert schema["description"] == "User age"
+        assert schema["minimum"] == 0
+
+    def test_no_validation_effect(self):
+        """Doc does not affect validation."""
+        tp = Annotated[str, Doc("just a label")]
+        assert validate("hello", tp) == "hello"
+        with pytest.raises(ValidationError):
+            validate(123, tp)
+
+    def test_in_typeddict_schema(self):
+        """Doc descriptions appear in struct property schemas."""
+
+        class Params(TypedDict):
+            name: Annotated[str, Doc("The user's name")]
+            age: Annotated[int, Doc("Years old")]
+
+        schema = json_schema(Params)
+        assert schema["properties"]["name"]["description"] == "The user's name"
+        assert schema["properties"]["age"]["description"] == "Years old"
+
+    def test_str(self):
+        assert str(Doc("hello")) == "hello"
+
+
+# ── create_struct ──
+
+
+class TestCreateStruct:
+    def test_required_fields(self):
+        """Fields with Ellipsis default are required."""
+        T = create_struct("T", {"x": (int, ...), "y": (str, ...)})
+        assert validate({"x": 1, "y": "a"}, T) == {"x": 1, "y": "a"}
+        with pytest.raises(ValidationError):
+            validate({"x": 1}, T)
+
+    def test_optional_with_default(self):
+        """Fields with non-Ellipsis default are optional."""
+        T = create_struct("T", {"x": (int, ...), "y": (str, "hello")})
+        assert validate({"x": 1}, T) == {"x": 1}
+        assert validate({"x": 1, "y": "world"}, T) == {"x": 1, "y": "world"}
+
+    def test_is_typeddict(self):
+        """Returned type behaves as a TypedDict."""
+        T = create_struct("T", {"x": (int, ...)})
+        assert hasattr(T, "__required_keys__")
+        assert hasattr(T, "__optional_keys__")
+
+    def test_field_defaults_stored(self):
+        """Default values are stored in __field_defaults__."""
+        T = create_struct("T", {"x": (int, ...), "y": (str, "hi"), "z": (int, 0)})
+        assert T.__field_defaults__ == {"y": "hi", "z": 0}
+
+    def test_all_required_empty_defaults(self):
+        """All-required struct has empty __field_defaults__."""
+        T = create_struct("T", {"x": (int, ...), "y": (str, ...)})
+        assert T.__field_defaults__ == {}
+
+    def test_with_doc(self):
+        """Doc annotations work inside create_struct fields."""
+        T = create_struct(
+            "T",
+            {
+                "name": (Annotated[str, Doc("The name")], ...),
+            },
+        )
+        schema = json_schema(T)
+        assert schema["properties"]["name"]["description"] == "The name"
+
+    def test_with_constraints(self):
+        """Constraint annotations work inside create_struct fields."""
+        T = create_struct("T", {"age": (Annotated[int, Ge(0)], ...)})
+        validate({"age": 5}, T)
+        with pytest.raises(ValidationError):
+            validate({"age": -1}, T)
+        schema = json_schema(T)
+        assert schema["properties"]["age"]["minimum"] == 0
+
+    def test_schema_includes_defaults(self):
+        """json_schema emits default values for optional fields."""
+        T = create_struct(
+            "T",
+            {
+                "x": (int, ...),
+                "y": (str, "hello"),
+                "z": (int, 42),
+            },
+        )
+        schema = json_schema(T)
+        assert "default" not in schema["properties"]["x"]
+        assert schema["properties"]["y"]["default"] == "hello"
+        assert schema["properties"]["z"]["default"] == 42
+
+    def test_nested_struct(self):
+        """create_struct types can be nested."""
+        Inner = create_struct("Inner", {"v": (int, ...)})
+        Outer = create_struct("Outer", {"inner": (Inner, ...), "tag": (str, "x")})
+        data = {"inner": {"v": 1}}
+        assert validate(data, Outer) == data
+        schema = json_schema(Outer)
+        assert schema["properties"]["inner"]["type"] == "object"
+        assert schema["properties"]["tag"]["default"] == "x"
+
+    def test_schema_title(self):
+        """create_struct type name becomes schema title."""
+        T = create_struct("MyParams", {"x": (int, ...)})
+        schema = json_schema(T)
+        assert schema["title"] == "MyParams"
+
+    def test_none_default(self):
+        """None as default value is emitted in schema."""
+        T = create_struct("T", {"tag": (str | None, None)})
+        schema = json_schema(T)
+        assert schema["properties"]["tag"]["default"] is None
+
+    def test_dataclass_defaults_in_schema(self):
+        """Dataclass static defaults appear in json_schema output."""
+        schema = json_schema(PointWithDefault)
+        assert schema["properties"]["z"]["default"] == 0.0
+        assert "default" not in schema["properties"]["x"]
+        assert "default" not in schema["properties"]["y"]
+
+    def test_doc_and_default_combined(self):
+        """Doc description and default coexist in schema."""
+        T = create_struct(
+            "T",
+            {
+                "limit": (Annotated[int, Doc("Max results")], 10),
+            },
+        )
+        schema = json_schema(T)
+        prop = schema["properties"]["limit"]
+        assert prop["description"] == "Max results"
+        assert prop["default"] == 10
 
 
 # ── FieldValidator ──

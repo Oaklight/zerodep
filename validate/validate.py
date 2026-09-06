@@ -842,7 +842,9 @@ def _validate_struct_fields(
     for name, val in value.items():
         if name in fields:
             field_tp, _ = fields[name]
-            _validate(val, field_tp, _join_path(path, name), errors, coerce)
+            value[name] = _validate(
+                val, field_tp, _join_path(path, name), errors, coerce
+            )
 
     # Run model validators only if no field-level errors were added
     validators = _MODEL_VALIDATORS.get(tp)

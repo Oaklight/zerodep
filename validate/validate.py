@@ -399,6 +399,8 @@ def _resolve_required(tp: Any) -> tuple[Any, bool | None]:
     or ``"NotRequired"``.  This avoids version-gated imports.
     """
     origin = typing.get_origin(tp)
+    # _name is a CPython implementation detail, stable across 3.10-3.14+
+    # and explicitly maintained by typing_extensions.
     name = getattr(origin, "_name", None)
     if name in ("Required", "NotRequired"):
         args = typing.get_args(tp)

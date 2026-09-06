@@ -400,12 +400,9 @@ def _resolve_required(tp: Any) -> tuple[Any, bool | None]:
     """
     origin = typing.get_origin(tp)
     name = getattr(origin, "_name", None)
-    if name == "Required":
+    if name in ("Required", "NotRequired"):
         args = typing.get_args(tp)
-        return (args[0] if args else tp), True
-    if name == "NotRequired":
-        args = typing.get_args(tp)
-        return (args[0] if args else tp), False
+        return (args[0] if args else tp), (name == "Required")
     return tp, None
 
 

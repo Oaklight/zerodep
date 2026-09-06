@@ -189,8 +189,6 @@ def _compute_delay(
     backoff_factor: float,
     max_delay: float,
     jitter: str,
-    _random: Callable[[], float] = _random,
-    _min: Callable[..., float] = _min,
 ) -> float:
     """Compute the sleep duration for a given retry attempt.
 
@@ -436,6 +434,8 @@ def retry(
         is_async = inspect.iscoroutinefunction(fn)
 
         if is_async:
+            # Async path is not fast-pathed: coroutine/event-loop overhead
+            # already dwarfs the ns-level savings from skipping monotonic/range.
 
             @functools.wraps(fn)
             async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -462,22 +462,19 @@ def retry(
         _check_result = retry_on_result
         _inner_retry = _retry_sync
 
-        _should_retry = _should_retry_exception
-
         if _check_result is None:
+            _should_retry = _should_retry_exception
+
             # Hot path – no result predicate.  Try the happy path first;
             # only fall into the full retry loop on exception.
             @functools.wraps(fn)
             def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+                start = time.monotonic()
                 try:
                     return fn(*args, **kwargs)
                 except BaseException as first_exc:
                     if max_retries == 0 or not _should_retry(first_exc, retry_on):
                         raise
-                    # First call failed and is retryable – handle the
-                    # first retry delay here, then delegate remaining
-                    # retries with correct attempt bookkeeping.
-                    start = time.monotonic()
                     delay = _compute_delay(
                         0, backoff, base_delay, backoff_factor, max_delay, jitter
                     )

@@ -728,12 +728,15 @@ class StreamingResponse:
         """Yield response body line by line (decoded)."""
         if self._sync_resp is None:
             raise RuntimeError("iter_lines() on async response")
+        buf = ""
         try:
-            while True:
-                line = self._sync_resp.readline()
-                if not line:
-                    break
-                yield line.decode(self._encoding, errors="replace").rstrip("\r\n")
+            for chunk in self.iter_bytes():
+                buf += chunk.decode(self._encoding, errors="replace")
+                while "\n" in buf:
+                    line, buf = buf.split("\n", 1)
+                    yield line.rstrip("\r")
+            if buf:
+                yield buf.rstrip("\r")
         except (OSError, http.client.HTTPException) as exc:
             raise HttpConnectionError(str(exc)) from exc
 

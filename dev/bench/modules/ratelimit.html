@@ -125,22 +125,22 @@ td { white-space: nowrap; }
 <h1>ratelimit</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: d65c38f | Commit: d65c38f9 | 2026-08-26T14:13:18.000031+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-08-26T14:13:18.000031+00:00"></span></p>
+<p class="meta">Version: 53cd6b93920aae8bef4805766e0372b450b4ffc9 | Commit: 53cd6b93 | 2026-09-07T03:04:04.817357+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-09-07T03:04:04.817357+00:00"></span></p>
 <h2>ratelimit</h2>
 <h3>Standalone benchmarks</h3>
 <div class="table-wrap"><table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>fixed_window_acquire</td><td>fixed_window_acquire</td><td>846.3 ns</td><td>1.18M</td><td title="CV=34.7% | rounds=144530">540.0 ns</td><td title="CV=34.7% | rounds=144530">53.2 µs</td><td title="CV=34.7% | rounds=144530">293.4 ns</td><td title="CV=34.7% | rounds=144530">950.0 ns</td></tr>
-<tr><td>fixed_window_hit</td><td>limits</td><td>2.8 µs</td><td>356.9K</td><td title="CV=80.0% | rounds=18360">2.4 µs</td><td title="CV=80.0% | rounds=18360">166.2 µs</td><td title="CV=80.0% | rounds=18360">2.2 µs</td><td title="CV=80.0% | rounds=18360">3.1 µs</td></tr>
-<tr><td>fixed_window_peek</td><td>fixed_window_peek</td><td>889.0 ns</td><td>1.12M</td><td title="CV=39.5% | rounds=125282">792.0 ns</td><td title="CV=39.5% | rounds=125282">72.1 µs</td><td title="CV=39.5% | rounds=125282">350.7 ns</td><td title="CV=39.5% | rounds=125282">970.0 ns</td></tr>
-<tr><td>fixed_window_test</td><td>limits</td><td>1.5 µs</td><td>651.7K</td><td title="CV=36.8% | rounds=75879">1.4 µs</td><td title="CV=36.8% | rounds=75879">70.5 µs</td><td title="CV=36.8% | rounds=75879">565.3 ns</td><td title="CV=36.8% | rounds=75879">1.7 µs</td></tr>
-<tr><td>gcra_acquire</td><td>gcra_acquire</td><td>871.1 ns</td><td>1.15M</td><td title="CV=41.0% | rounds=157605">771.0 ns</td><td title="CV=41.0% | rounds=157605">69.6 µs</td><td title="CV=41.0% | rounds=157605">357.5 ns</td><td title="CV=41.0% | rounds=157605">946.0 ns</td></tr>
-<tr><td>moving_window_hit</td><td>limits</td><td>3.2 µs</td><td>316.4K</td><td title="CV=1987.0% | rounds=38407">2.1 µs</td><td title="CV=1987.0% | rounds=38407">11.16 ms</td><td title="CV=1987.0% | rounds=38407">62.8 µs</td><td title="CV=1987.0% | rounds=38407">4.2 µs</td></tr>
-<tr><td>sliding_window_acquire</td><td>sliding_window_acquire</td><td>1.2 µs</td><td>861.4K</td><td title="CV=691.6% | rounds=92490">982.0 ns</td><td title="CV=691.6% | rounds=92490">2.44 ms</td><td title="CV=691.6% | rounds=92490">8.0 µs</td><td title="CV=691.6% | rounds=92490">1.3 µs</td></tr>
-<tr><td>sliding_window_hit</td><td>limits</td><td>4.2 µs</td><td>236.5K</td><td title="CV=65.7% | rounds=19288">3.0 µs</td><td title="CV=65.7% | rounds=19288">211.0 µs</td><td title="CV=65.7% | rounds=19288">2.8 µs</td><td title="CV=65.7% | rounds=19288">5.3 µs</td></tr>
-<tr><td>token_bucket_acquire</td><td>token_bucket_acquire</td><td>835.3 ns</td><td>1.20M</td><td title="CV=38.3% | rounds=71953">749.0 ns</td><td title="CV=38.3% | rounds=71953">38.7 µs</td><td title="CV=38.3% | rounds=71953">320.0 ns</td><td title="CV=38.3% | rounds=71953">916.0 ns</td></tr>
-<tr><td>token_bucket_peek</td><td>token_bucket_peek</td><td>1.0 µs</td><td>966.6K</td><td title="CV=26.9% | rounds=72866">937.0 ns</td><td title="CV=26.9% | rounds=72866">29.2 µs</td><td title="CV=26.9% | rounds=72866">278.6 ns</td><td title="CV=26.9% | rounds=72866">1.2 µs</td></tr>
+<tr><td>fixed_window_acquire</td><td>fixed_window_acquire</td><td>1.1 µs</td><td>889.1K</td><td title="CV=29.5% | rounds=111062">732.0 ns</td><td title="CV=29.5% | rounds=111062">20.7 µs</td><td title="CV=29.5% | rounds=111062">331.5 ns</td><td title="CV=29.5% | rounds=111062">1.2 µs</td></tr>
+<tr><td>fixed_window_hit</td><td>limits</td><td>3.7 µs</td><td>270.7K</td><td title="CV=68.5% | rounds=25715">3.4 µs</td><td title="CV=68.5% | rounds=25715">218.7 µs</td><td title="CV=68.5% | rounds=25715">2.5 µs</td><td title="CV=68.5% | rounds=25715">3.7 µs</td></tr>
+<tr><td>fixed_window_peek</td><td>fixed_window_peek</td><td>1.2 µs</td><td>816.1K</td><td title="CV=37.5% | rounds=98281">1.1 µs</td><td title="CV=37.5% | rounds=98281">51.8 µs</td><td title="CV=37.5% | rounds=98281">459.3 ns</td><td title="CV=37.5% | rounds=98281">1.3 µs</td></tr>
+<tr><td>fixed_window_test</td><td>limits</td><td>2.1 µs</td><td>472.2K</td><td title="CV=34.7% | rounds=69099">2.0 µs</td><td title="CV=34.7% | rounds=69099">120.3 µs</td><td title="CV=34.7% | rounds=69099">733.9 ns</td><td title="CV=34.7% | rounds=69099">2.1 µs</td></tr>
+<tr><td>gcra_acquire</td><td>gcra_acquire</td><td>1.2 µs</td><td>844.2K</td><td title="CV=33.7% | rounds=146822">1.1 µs</td><td title="CV=33.7% | rounds=146822">42.5 µs</td><td title="CV=33.7% | rounds=146822">399.2 ns</td><td title="CV=33.7% | rounds=146822">1.2 µs</td></tr>
+<tr><td>moving_window_hit</td><td>limits</td><td>3.9 µs</td><td>257.6K</td><td title="CV=1263.6% | rounds=46529">3.0 µs</td><td title="CV=1263.6% | rounds=46529">9.67 ms</td><td title="CV=1263.6% | rounds=46529">49.1 µs</td><td title="CV=1263.6% | rounds=46529">4.9 µs</td></tr>
+<tr><td>sliding_window_acquire</td><td>sliding_window_acquire</td><td>1.6 µs</td><td>636.5K</td><td title="CV=25.5% | rounds=75586">1.4 µs</td><td title="CV=25.5% | rounds=75586">27.5 µs</td><td title="CV=25.5% | rounds=75586">400.7 ns</td><td title="CV=25.5% | rounds=75586">1.6 µs</td></tr>
+<tr><td>sliding_window_hit</td><td>limits</td><td>5.5 µs</td><td>182.4K</td><td title="CV=45.2% | rounds=24229">4.2 µs</td><td title="CV=45.2% | rounds=24229">167.0 µs</td><td title="CV=45.2% | rounds=24229">2.5 µs</td><td title="CV=45.2% | rounds=24229">6.9 µs</td></tr>
+<tr><td>token_bucket_acquire</td><td>token_bucket_acquire</td><td>1.2 µs</td><td>829.9K</td><td title="CV=33.6% | rounds=66525">1.1 µs</td><td title="CV=33.6% | rounds=66525">49.0 µs</td><td title="CV=33.6% | rounds=66525">404.3 ns</td><td title="CV=33.6% | rounds=66525">1.3 µs</td></tr>
+<tr><td>token_bucket_peek</td><td>token_bucket_peek</td><td>1.5 µs</td><td>664.2K</td><td title="CV=23.1% | rounds=86297">1.4 µs</td><td title="CV=23.1% | rounds=86297">18.3 µs</td><td title="CV=23.1% | rounds=86297">347.7 ns</td><td title="CV=23.1% | rounds=86297">1.6 µs</td></tr>
 </tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">

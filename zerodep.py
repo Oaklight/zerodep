@@ -5,7 +5,9 @@ Usage::
     python zerodep.py list                  # list available modules
     python zerodep.py info <module>         # module details + deps
     python zerodep.py add <module> [...]    # copy modules to cwd
+    python zerodep.py update --all          # update all outdated modules
     python zerodep.py outdated              # check local files for updates
+    python zerodep.py outdated --json       # machine-readable output
     python zerodep.py manifest              # regenerate manifest.json
 
 Requires Python 3.10+, zero external dependencies.
@@ -28,6 +30,11 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    tomllib = None  # type: ignore[assignment]
 
 # ── Constants ──
 
@@ -525,6 +532,35 @@ _REPLACED_BY: dict[str, str] = {
 }
 
 
+# ── Config ──
+
+
+def _read_config() -> dict:
+    """Read ``[tool.zerodep]`` from ``pyproject.toml`` in CWD, if available."""
+    pyproject = Path("pyproject.toml")
+    if not pyproject.exists() or tomllib is None:
+        return {}
+    try:
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+        return data.get("tool", {}).get("zerodep", {})
+    except Exception:
+        return {}
+
+
+def _resolve_dir(args: argparse.Namespace) -> str:
+    """Return the target directory, falling back to ``[tool.zerodep]`` config.
+
+    Parser defaults for ``-d/--dir`` should use ``default=None`` so this
+    function can distinguish "user passed -d" from "default".
+    """
+    if args.dir is not None:
+        return args.dir
+    vendor_dir = _read_config().get("vendor-dir")
+    if vendor_dir:
+        return vendor_dir
+    return "."
+
+
 # ── Commands ──
 
 
@@ -664,7 +700,7 @@ def cmd_add(args: argparse.Namespace) -> None:
     to_copy = _resolve_deps(args.modules, manifest, no_deps=args.no_deps)
 
     # Determine target directory
-    target = Path(args.dir).resolve()
+    target = Path(_resolve_dir(args)).resolve()
 
     # Build file list
     file_plan: list[tuple[str, Path]] = []  # (remote_path, local_dest)
@@ -737,6 +773,20 @@ def cmd_add(args: argparse.Namespace) -> None:
 
 def cmd_update(args: argparse.Namespace) -> None:
     """Update existing module files (alias for add --force --yes)."""
+    if getattr(args, "all", False):
+        if args.modules:
+            _die("cannot use --all together with explicit module names")
+        manifest = _load_manifest(local=args.local, offline=args.offline)
+        scan_dir = Path(_resolve_dir(args)).resolve()
+        rows = _scan_outdated(manifest, scan_dir)
+        outdated = [r[0] for r in rows if r[3] == "outdated"]
+        if not outdated:
+            _ok("All modules are up-to-date.")
+            return
+        args.modules = outdated
+    elif not args.modules:
+        _die("provide module names or use --all")
+    args.dir = _resolve_dir(args)
     args.force = True
     args.yes = True
     cmd_add(args)
@@ -869,12 +919,14 @@ def cmd_bump(args: argparse.Namespace) -> None:
     cmd_manifest(args)
 
 
-def cmd_outdated(args: argparse.Namespace) -> None:
-    """Check local zerodep files against the upstream manifest for changes."""
-    manifest = _load_manifest(local=args.local, offline=args.offline)
-    modules_data = manifest.get("modules", {})
+def _scan_outdated(manifest: dict, scan_dir: Path) -> list[tuple[str, str, str, str]]:
+    """Scan *scan_dir* for vendored zerodep modules and return status rows.
 
-    scan_dir = Path(args.dir).resolve()
+    Each row is ``(module_name, local_version, latest_version, status)``
+    where *status* is ``"up-to-date"``, ``"outdated"``, or
+    ``"renamed → <new_name>"``.
+    """
+    modules_data = manifest.get("modules", {})
     rows: list[tuple[str, str, str, str]] = []
 
     for mod_name, mod in sorted(modules_data.items()):
@@ -896,9 +948,7 @@ def cmd_outdated(args: argparse.Namespace) -> None:
                 status = "outdated"
             rows.append((mod_name, local_ver, upstream_ver, status))
 
-    # Detect locally installed modules that have been replaced upstream
     for old_name, new_name in sorted(_REPLACED_BY.items()):
-        # Check for old module files in scan_dir
         old_mod = modules_data.get(old_name)
         fallback = [f"{old_name}/{old_name}.py"]
         old_files = old_mod.get("files", fallback) if old_mod else fallback
@@ -909,27 +959,55 @@ def cmd_outdated(args: argparse.Namespace) -> None:
                 rows.append((old_name, "—", "—", f"renamed → {new_name}"))
                 break
 
+    return rows
+
+
+def cmd_outdated(args: argparse.Namespace) -> None:
+    """Check local zerodep files against the upstream manifest for changes."""
+    manifest = _load_manifest(local=args.local, offline=args.offline)
+    scan_dir = Path(_resolve_dir(args)).resolve()
+    rows = _scan_outdated(manifest, scan_dir)
+
     if not rows:
-        _ok(f"No zerodep modules found in {scan_dir}.")
+        if getattr(args, "json", False):
+            print(json.dumps({"modules": [], "outdated_count": 0}))
+        else:
+            _ok(f"No zerodep modules found in {scan_dir}.")
         return
 
-    # Print table
-    headers = ("Module", "Local Ver", "Latest Ver", "Status")
-    widths = [max(len(headers[i]), *(len(r[i]) for r in rows)) for i in range(4)]
-    fmt = "  ".join(f"{{:<{w}}}" for w in widths)
-    print(fmt.format(*headers))
-    print(fmt.format(*("-" * w for w in widths)))
-    for row in rows:
-        print(fmt.format(*row))
+    has_outdated = any(r[3] != "up-to-date" for r in rows)
 
-    # Print migration hints for renamed modules
-    for row in rows:
-        if row[3].startswith("renamed"):
-            new_name = row[3].split("→ ")[1].strip()
-            _warn(
-                f"'{row[0]}' has been renamed to '{new_name}'. "
-                f"Run `zerodep add {new_name}` and remove the old file."
-            )
+    if getattr(args, "json", False):
+        modules = [
+            {
+                "name": r[0],
+                "local_version": r[1],
+                "latest_version": r[2],
+                "status": r[3],
+            }
+            for r in rows
+        ]
+        outdated_count = sum(1 for r in rows if r[3] != "up-to-date")
+        print(json.dumps({"modules": modules, "outdated_count": outdated_count}))
+    else:
+        headers = ("Module", "Local Ver", "Latest Ver", "Status")
+        widths = [max(len(headers[i]), *(len(r[i]) for r in rows)) for i in range(4)]
+        fmt = "  ".join(f"{{:<{w}}}" for w in widths)
+        print(fmt.format(*headers))
+        print(fmt.format(*("-" * w for w in widths)))
+        for row in rows:
+            print(fmt.format(*row))
+
+        for row in rows:
+            if row[3].startswith("renamed"):
+                new_name = row[3].split("→ ")[1].strip()
+                _warn(
+                    f"'{row[0]}' has been renamed to '{new_name}'. "
+                    f"Run `zerodep add {new_name}` and remove the old file."
+                )
+
+    if getattr(args, "exit_code", False) and has_outdated:
+        sys.exit(1)
 
 
 def _normalized_hash(source: str) -> str:
@@ -1419,7 +1497,12 @@ def main(argv: list[str] | None = None) -> None:
     # add
     p_add = sub.add_parser("add", help="copy modules to your project")
     p_add.add_argument("modules", nargs="+", help="module names to copy")
-    p_add.add_argument("-d", "--dir", default=".", help="target directory (default: .)")
+    p_add.add_argument(
+        "-d",
+        "--dir",
+        default=None,
+        help="target directory (default: from pyproject.toml or .)",
+    )
     p_add.add_argument(
         "--nested", action="store_true", help="use subdirectories per module"
     )
@@ -1431,14 +1514,22 @@ def main(argv: list[str] | None = None) -> None:
 
     # update
     p_update = sub.add_parser("update", help="update existing modules")
-    p_update.add_argument("modules", nargs="+", help="module names to update")
     p_update.add_argument(
-        "-d", "--dir", default=".", help="target directory (default: .)"
+        "modules", nargs="*", default=[], help="module names to update"
+    )
+    p_update.add_argument(
+        "-d",
+        "--dir",
+        default=None,
+        help="target directory (default: from pyproject.toml or .)",
     )
     p_update.add_argument(
         "--nested", action="store_true", help="use subdirectories per module"
     )
     p_update.add_argument("--no-deps", action="store_true", help="skip dependencies")
+    p_update.add_argument(
+        "--all", action="store_true", help="update all outdated modules"
+    )
 
     # new
     p_new = sub.add_parser("new", help="scaffold a new module")
@@ -1484,7 +1575,16 @@ def main(argv: list[str] | None = None) -> None:
         "outdated", help="check local files for upstream changes"
     )
     p_outdated.add_argument(
-        "-d", "--dir", default=".", help="target directory (default: .)"
+        "-d",
+        "--dir",
+        default=None,
+        help="target directory (default: from pyproject.toml or .)",
+    )
+    p_outdated.add_argument(
+        "--json", action="store_true", help="output JSON instead of table"
+    )
+    p_outdated.add_argument(
+        "--exit-code", action="store_true", help="exit 1 if outdated modules found"
     )
 
     # manifest

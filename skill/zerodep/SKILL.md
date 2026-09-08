@@ -49,10 +49,13 @@ zerodep info sse                    # Show module details and deps
 zerodep add sse retry -d lib/       # Copy sse + httpclient + retry to lib/
 zerodep add sse --nested            # Copy into sse/ and httpclient/ subdirs
 zerodep update sse -d lib/          # Update existing modules in lib/
+zerodep update --all                # Update all outdated modules
 zerodep outdated -d lib/            # Check for upstream changes in lib/
+zerodep outdated --json             # Machine-readable JSON output
+zerodep outdated --exit-code        # Exit 1 if any module is outdated
 ```
 
-The `-d`/`--dir` flag is shared by `add`, `update`, and `outdated` — it specifies the target directory (defaults to `.`).
+The `-d`/`--dir` flag is shared by `add`, `update`, and `outdated` — it specifies the target directory. If omitted, it reads `vendor-dir` from `[tool.zerodep]` in `pyproject.toml`, falling back to `.`.
 
 ## What zerodep modules are
 
@@ -107,6 +110,43 @@ exclude = ["*/_vendor"]
 ```
 
 The vendored file is plain Python — no magic, no runtime hooks. Read it, modify it, vendor it into wherever your project needs it.
+
+## CI Automation — keeping vendored modules up to date
+
+Projects that vendor zerodep modules can use a scheduled GitHub Actions workflow to detect outdated modules and auto-create PRs with updates.
+
+### Project configuration
+
+Add `[tool.zerodep]` to your project's `pyproject.toml` so the CLI knows where vendored modules live:
+
+```toml
+[tool.zerodep]
+vendor-dir = "src/mypackage/_vendor"
+```
+
+With this set, `zerodep outdated` and `zerodep update --all` work without `-d`.
+
+### CI-friendly CLI flags
+
+```bash
+zerodep outdated --json        # JSON output: {"modules": [...], "outdated_count": N}
+zerodep outdated --exit-code   # exit 1 if any module is outdated
+zerodep update --all           # update all outdated modules in one command
+```
+
+These can be combined: `zerodep outdated --json --exit-code`.
+
+### Deploying the workflow
+
+Copy the `zerodep-update.yml` workflow template from [dev-playbook](https://github.com/Oaklight/dev-playbook/tree/main/ci/templates/workflows/zerodep-update.yml) into your project's `.github/workflows/`. The workflow:
+
+1. Runs weekly (Monday) and on manual dispatch
+2. Installs the `zerodep` CLI
+3. Runs `zerodep outdated --json` to check for updates
+4. If outdated modules found, runs `zerodep update --all`
+5. Creates a PR with the changes via `peter-evans/create-pull-request`
+
+The workflow reads `vendor-dir` from `[tool.zerodep]` in `pyproject.toml` — no per-workflow configuration needed.
 
 ## Contributing
 

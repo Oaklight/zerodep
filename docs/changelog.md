@@ -6,6 +6,34 @@
 
 ## [未发布]
 
+## [2026.9.9] - 2026-09-09
+
+### 新功能
+
+- **CLI**：新增 `outdated --json` 标志，提供机器可读的 JSON 输出，包含模块列表和 `outdated_count`。([#149](https://github.com/Oaklight/zerodep/pull/149))
+- **CLI**：新增 `outdated --exit-code` 标志——存在过期或已重命名的模块时以退出码 1 退出，遵循 `git diff --exit-code` 惯例。([#149](https://github.com/Oaklight/zerodep/pull/149))
+- **CLI**：新增 `update --all` 标志，一键发现并更新所有过期模块，无需逐个指定模块名。([#149](https://github.com/Oaklight/zerodep/pull/149))
+- **CLI**：新增 `pyproject.toml` 中的 `[tool.zerodep]` 配置支持——通过 `vendor-dir` 键声明 vendor 目录，省略 `-d` 参数。使用轻量正则解析器（无 `tomllib` 依赖，Python 3.10+ 可用）。([#149](https://github.com/Oaklight/zerodep/pull/149))
+- **httpclient**：新增 Cookie 支持——`Response.cookies` / `StreamingResponse.cookies` 属性、所有请求函数的 `cookies=` 参数、`Client` / `AsyncClient` 的会话 Cookie Jar。([#150](https://github.com/Oaklight/zerodep/issues/150))
+- **httpserver**：新增 Cookie 支持——`Request.cookies` 属性（延迟解析）、所有响应类型的 `Response.set_cookie()` / `delete_cookie()` 方法。([#150](https://github.com/Oaklight/zerodep/issues/150))
+
+### 问题修复
+
+- **httpclient**：修复多个 `Set-Cookie` 头部丢失的问题，此前 `CaseInsensitiveDict` 仅保留最后一个值。([#150](https://github.com/Oaklight/zerodep/issues/150))
+
+### 基础设施
+
+- **CLI**：提取 `_scan_outdated()` 辅助函数，供 `cmd_outdated` 和 `cmd_update --all` 共享使用。
+- **CLI**：新增 `test_cli.py`，包含 11 个测试，覆盖 `--json` 输出结构、`--exit-code` 行为、`update --all` 及 `pyproject.toml` 配置读取。
+- **文档**：在 zerodep skill 文件中新增 CI 自动化章节，记录工作流模式和新增 CLI 标志。
+
+## [2026.9.7] - 2026-09-07
+
+### 问题修复
+
+- **validate**：修复 struct 字段验证中类型强制转换值丢失的问题——此前强制转换的值（如字符串转整数）在 `create_struct` 字段处理过程中被丢弃。([#148](https://github.com/Oaklight/zerodep/pull/148))
+- **validate**：修复所有集合类验证器（list、set、frozenset、tuple、dict）中类型强制转换值丢失的问题——嵌套集合验证路径中转换结果被丢弃。([#148](https://github.com/Oaklight/zerodep/pull/148))
+
 ## [2026.9.6] - 2026-09-06
 
 ### 新功能

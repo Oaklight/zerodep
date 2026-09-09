@@ -136,6 +136,8 @@ zerodep update --all           # update all outdated modules in one command
 
 These can be combined: `zerodep outdated --json --exit-code`.
 
+Note: `outdated_count` and `--exit-code` include renamed modules (status `renamed → <name>`), not just version-outdated ones. Renames require manual migration — `update --all` skips them.
+
 ### Deploying the workflow
 
 Copy the `zerodep-update.yml` workflow template from [dev-playbook](https://github.com/Oaklight/dev-playbook/tree/main/ci/templates/workflows/zerodep-update.yml) into your project's `.github/workflows/`. The workflow:

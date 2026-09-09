@@ -312,6 +312,54 @@ def _build_set_cookie(
     return morsel.OutputString()
 
 
+def _append_set_cookie(
+    cookie_headers: list[str],
+    name: str,
+    value: str = "",
+    *,
+    max_age: int | None = None,
+    expires: str | None = None,
+    path: str | None = None,
+    domain: str | None = None,
+    secure: bool = False,
+    httponly: bool = False,
+    samesite: str | None = None,
+) -> None:
+    """Append a Set-Cookie header value to the list."""
+    cookie_headers.append(
+        _build_set_cookie(
+            name,
+            value,
+            max_age=max_age,
+            expires=expires,
+            path=path,
+            domain=domain,
+            secure=secure,
+            httponly=httponly,
+            samesite=samesite,
+        )
+    )
+
+
+def _append_delete_cookie(
+    cookie_headers: list[str],
+    name: str,
+    *,
+    path: str | None = None,
+    domain: str | None = None,
+) -> None:
+    """Append a Set-Cookie header that expires the named cookie."""
+    _append_set_cookie(
+        cookie_headers,
+        name,
+        value="",
+        max_age=0,
+        expires="Thu, 01 Jan 1970 00:00:00 GMT",
+        path=path,
+        domain=domain,
+    )
+
+
 class Response:
     """HTTP response with a fixed body.
 
@@ -367,18 +415,17 @@ class Response:
             httponly: Restrict to HTTP (no JavaScript access).
             samesite: SameSite attribute (``"Strict"``, ``"Lax"``, or ``"None"``).
         """
-        self._cookie_headers.append(
-            _build_set_cookie(
-                name,
-                value,
-                max_age=max_age,
-                expires=expires,
-                path=path,
-                domain=domain,
-                secure=secure,
-                httponly=httponly,
-                samesite=samesite,
-            )
+        _append_set_cookie(
+            self._cookie_headers,
+            name,
+            value,
+            max_age=max_age,
+            expires=expires,
+            path=path,
+            domain=domain,
+            secure=secure,
+            httponly=httponly,
+            samesite=samesite,
         )
 
     def delete_cookie(
@@ -395,11 +442,9 @@ class Response:
             path: Must match the path used when the cookie was set.
             domain: Must match the domain used when the cookie was set.
         """
-        self.set_cookie(
+        _append_delete_cookie(
+            self._cookie_headers,
             name,
-            value="",
-            max_age=0,
-            expires="Thu, 01 Jan 1970 00:00:00 GMT",
             path=path,
             domain=domain,
         )
@@ -504,18 +549,17 @@ class StreamingResponse:
         samesite: str | None = None,
     ) -> None:
         """Append a Set-Cookie header to the response."""
-        self._cookie_headers.append(
-            _build_set_cookie(
-                name,
-                value,
-                max_age=max_age,
-                expires=expires,
-                path=path,
-                domain=domain,
-                secure=secure,
-                httponly=httponly,
-                samesite=samesite,
-            )
+        _append_set_cookie(
+            self._cookie_headers,
+            name,
+            value,
+            max_age=max_age,
+            expires=expires,
+            path=path,
+            domain=domain,
+            secure=secure,
+            httponly=httponly,
+            samesite=samesite,
         )
 
     def delete_cookie(
@@ -526,11 +570,9 @@ class StreamingResponse:
         domain: str | None = None,
     ) -> None:
         """Append a Set-Cookie header that expires the named cookie."""
-        self.set_cookie(
+        _append_delete_cookie(
+            self._cookie_headers,
             name,
-            value="",
-            max_age=0,
-            expires="Thu, 01 Jan 1970 00:00:00 GMT",
             path=path,
             domain=domain,
         )

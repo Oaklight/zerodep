@@ -338,6 +338,7 @@ class Response:
         "_text",
         "_json",
         "_raw_set_cookies",
+        "_cookies",
     )
 
     def __init__(
@@ -355,6 +356,7 @@ class Response:
         self._text: str | None = None
         self._json: Any = None
         self._raw_set_cookies: list[str] = raw_set_cookies or []
+        self._cookies: dict[str, str] | None = None
 
     @property
     def text(self) -> str:
@@ -382,8 +384,10 @@ class Response:
 
     @property
     def cookies(self) -> dict[str, str]:
-        """Parse Set-Cookie headers into a ``{name: value}`` dict."""
-        return _parse_cookies(self._raw_set_cookies)
+        """Parse Set-Cookie headers into a ``{name: value}`` dict (cached)."""
+        if self._cookies is None:
+            self._cookies = _parse_cookies(self._raw_set_cookies)
+        return self._cookies
 
     def _guess_encoding(self) -> str:
         return _guess_encoding_from_headers(self.headers)
@@ -658,6 +662,7 @@ class StreamingResponse:
         "_bytes_remaining",
         "_closed",
         "_raw_set_cookies",
+        "_cookies",
     )
 
     status_code: int
@@ -675,6 +680,7 @@ class StreamingResponse:
     _bytes_remaining: int | None
     _closed: bool
     _raw_set_cookies: list[str]
+    _cookies: dict[str, str] | None
 
     def __init__(self) -> None:
         raise TypeError("Use _from_sync() or _from_async()")
@@ -708,6 +714,7 @@ class StreamingResponse:
         obj._bytes_remaining = None
         obj._closed = False
         obj._raw_set_cookies = raw_set_cookies or []
+        obj._cookies = None
         return obj
 
     @classmethod
@@ -742,6 +749,7 @@ class StreamingResponse:
         obj._bytes_remaining = content_length
         obj._closed = False
         obj._raw_set_cookies = raw_set_cookies or []
+        obj._cookies = None
         return obj
 
     @property
@@ -756,8 +764,10 @@ class StreamingResponse:
 
     @property
     def cookies(self) -> dict[str, str]:
-        """Parse Set-Cookie headers into a ``{name: value}`` dict."""
-        return _parse_cookies(self._raw_set_cookies)
+        """Parse Set-Cookie headers into a ``{name: value}`` dict (cached)."""
+        if self._cookies is None:
+            self._cookies = _parse_cookies(self._raw_set_cookies)
+        return self._cookies
 
     # ── Sync iteration ──
 
@@ -2794,9 +2804,10 @@ class Client:
         kwargs["_pool"] = self._pool
         kwargs["headers"] = _merge_headers(self._base_headers, kwargs.get("headers"))
         result = _sync_request(method, url, **kwargs)
-        self._cookies.update(result.cookies)
-        for name in _expired_cookie_names(result._raw_set_cookies):
-            self._cookies.pop(name, None)
+        if result._raw_set_cookies:
+            self._cookies.update(result.cookies)
+            for name in _expired_cookie_names(result._raw_set_cookies):
+                self._cookies.pop(name, None)
         return result
 
     def get(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
@@ -2896,9 +2907,10 @@ class AsyncClient:
         kwargs["_pool"] = self._pool
         kwargs["headers"] = _merge_headers(self._base_headers, kwargs.get("headers"))
         result = await _async_request(method, url, **kwargs)
-        self._cookies.update(result.cookies)
-        for name in _expired_cookie_names(result._raw_set_cookies):
-            self._cookies.pop(name, None)
+        if result._raw_set_cookies:
+            self._cookies.update(result.cookies)
+            for name in _expired_cookie_names(result._raw_set_cookies):
+                self._cookies.pop(name, None)
         return result
 
     async def get(self, url: str, **kwargs: Any) -> Response | StreamingResponse:

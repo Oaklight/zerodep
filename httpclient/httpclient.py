@@ -383,16 +383,7 @@ class Response:
     @property
     def cookies(self) -> dict[str, str]:
         """Parse Set-Cookie headers into a ``{name: value}`` dict."""
-        result: dict[str, str] = {}
-        for raw in self._raw_set_cookies:
-            sc = http.cookies.SimpleCookie()
-            try:
-                sc.load(raw)
-            except http.cookies.CookieError:
-                continue
-            for name, morsel in sc.items():
-                result[name] = morsel.value
-        return result
+        return _parse_cookies(self._raw_set_cookies)
 
     def _guess_encoding(self) -> str:
         return _guess_encoding_from_headers(self.headers)
@@ -419,6 +410,35 @@ class Response:
 
     def __repr__(self) -> str:
         return f"<Response [{self.status_code}]>"
+
+
+def _parse_cookies(raw_set_cookies: list[str]) -> dict[str, str]:
+    """Parse raw Set-Cookie header values into a ``{name: value}`` dict."""
+    result: dict[str, str] = {}
+    for raw in raw_set_cookies:
+        sc = http.cookies.SimpleCookie()
+        try:
+            sc.load(raw)
+        except http.cookies.CookieError:
+            continue
+        for name, morsel in sc.items():
+            result[name] = morsel.value
+    return result
+
+
+def _expired_cookie_names(raw_set_cookies: list[str]) -> set[str]:
+    """Return names of cookies with Max-Age=0 (deletion markers)."""
+    names: set[str] = set()
+    for raw in raw_set_cookies:
+        sc = http.cookies.SimpleCookie()
+        try:
+            sc.load(raw)
+        except http.cookies.CookieError:
+            continue
+        for name, morsel in sc.items():
+            if morsel.get("max-age") == "0":
+                names.add(name)
+    return names
 
 
 def _guess_encoding_from_headers(headers: CaseInsensitiveDict) -> str:
@@ -737,16 +757,7 @@ class StreamingResponse:
     @property
     def cookies(self) -> dict[str, str]:
         """Parse Set-Cookie headers into a ``{name: value}`` dict."""
-        result: dict[str, str] = {}
-        for raw in self._raw_set_cookies:
-            sc = http.cookies.SimpleCookie()
-            try:
-                sc.load(raw)
-            except http.cookies.CookieError:
-                continue
-            for name, morsel in sc.items():
-                result[name] = morsel.value
-        return result
+        return _parse_cookies(self._raw_set_cookies)
 
     # ── Sync iteration ──
 
@@ -1544,7 +1555,8 @@ def _prepare_request(
 
     # Cookies — serialised as a single Cookie header (user header wins)
     if cookies:
-        cookie_header = "; ".join(f"{k}={v}" for k, v in cookies.items())
+        sc = http.cookies.SimpleCookie(cookies)
+        cookie_header = sc.output(header="", sep="; ").strip()
         _headers_set_default(req_headers, "Cookie", cookie_header)
 
     # User headers win over all of the above
@@ -1888,6 +1900,7 @@ def _sync_request(
 
     redirects = 0
     _digest_attempted = False
+    accumulated_set_cookies: list[str] = []
     while True:
         scheme, host, port, path, is_https = _parse_url(url)
         close_conn = True
@@ -1912,9 +1925,9 @@ def _sync_request(
                 conn.request(method, request_path, body=body, headers=req_headers)
                 resp = conn.getresponse()
                 raw_headers = resp.getheaders()
-                raw_set_cookies = [
+                accumulated_set_cookies.extend(
                     v for k, v in raw_headers if k.lower() == "set-cookie"
-                ]
+                )
                 resp_headers = CaseInsensitiveDict(raw_headers)
                 status = resp.status
 
@@ -1955,7 +1968,7 @@ def _sync_request(
                     resp,
                     conn,
                     stream,
-                    raw_set_cookies=raw_set_cookies,
+                    raw_set_cookies=accumulated_set_cookies,
                 )
                 return result
             finally:
@@ -2398,6 +2411,7 @@ async def _async_request(
 
     redirects = 0
     _digest_attempted = False
+    accumulated_set_cookies: list[str] = []
     while True:
         scheme, host, port, path, is_https = _parse_url(url)
 
@@ -2423,9 +2437,10 @@ async def _async_request(
                 writer.write(body)
             await asyncio.wait_for(writer.drain(), timeout=timeout)
 
-            status, resp_headers, raw_set_cookies = await _async_read_response_headers(
+            status, resp_headers, iter_set_cookies = await _async_read_response_headers(
                 reader, timeout
             )
+            accumulated_set_cookies.extend(iter_set_cookies)
 
             if _is_redirect(status, resp_headers):
                 await _async_read_body(reader, resp_headers, timeout)
@@ -2467,7 +2482,7 @@ async def _async_request(
                     reader,
                     writer,
                     timeout,
-                    raw_set_cookies=raw_set_cookies,
+                    raw_set_cookies=accumulated_set_cookies,
                 )
 
             content_encoding = resp_headers.get("content-encoding", "")
@@ -2479,7 +2494,7 @@ async def _async_request(
                 resp_headers,
                 resp_body,
                 url,
-                raw_set_cookies=raw_set_cookies,
+                raw_set_cookies=accumulated_set_cookies,
             )
         except asyncio.TimeoutError:
             raise HttpTimeoutError(
@@ -2727,6 +2742,11 @@ class Client:
     Thread-safe: the underlying connection pool uses its own
     ``threading.Lock`` to protect shared state.
 
+    The cookie jar is a flat ``dict[str, str]`` — cookies are **not**
+    scoped by domain or path.  This is suitable for single-origin use
+    (e.g. an API client talking to one service).  For multi-origin
+    scenarios, manage cookies per-domain yourself.
+
     Usage::
 
         with Client(headers={"Authorization": "Bearer token"}) as c:
@@ -2775,6 +2795,8 @@ class Client:
         kwargs["headers"] = _merge_headers(self._base_headers, kwargs.get("headers"))
         result = _sync_request(method, url, **kwargs)
         self._cookies.update(result.cookies)
+        for name in _expired_cookie_names(result._raw_set_cookies):
+            self._cookies.pop(name, None)
         return result
 
     def get(self, url: str, **kwargs: Any) -> Response | StreamingResponse:
@@ -2821,6 +2843,11 @@ class AsyncClient:
 
     Safe for concurrent use from multiple asyncio tasks.  The underlying
     connection pool uses its own ``asyncio.Lock`` to protect shared state.
+
+    The cookie jar is a flat ``dict[str, str]`` — cookies are **not**
+    scoped by domain or path.  This is suitable for single-origin use
+    (e.g. an API client talking to one service).  For multi-origin
+    scenarios, manage cookies per-domain yourself.
 
     Usage::
 
@@ -2870,6 +2897,8 @@ class AsyncClient:
         kwargs["headers"] = _merge_headers(self._base_headers, kwargs.get("headers"))
         result = await _async_request(method, url, **kwargs)
         self._cookies.update(result.cookies)
+        for name in _expired_cookie_names(result._raw_set_cookies):
+            self._cookies.pop(name, None)
         return result
 
     async def get(self, url: str, **kwargs: Any) -> Response | StreamingResponse:

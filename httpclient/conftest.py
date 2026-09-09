@@ -150,6 +150,15 @@ class _HttpBinHandler(BaseHTTPRequestHandler):
             self.send_header("Connection", "close")
             self.end_headers()
             self.wfile.write(body)
+        elif path == "/cookies/set-redirect":
+            params = parse_qs(query)
+            self.send_response(302)
+            for name, values in sorted(params.items()):
+                self.send_header("Set-Cookie", f"{name}={values[0]}; Path=/")
+            self.send_header("Location", "/cookies")
+            self.send_header("Content-Length", "0")
+            self.send_header("Connection", "close")
+            self.end_headers()
         elif path == "/cookies/delete":
             params = parse_qs(query, keep_blank_values=True)
             self.send_response(200)

@@ -1238,6 +1238,23 @@ class TestSyncCookies:
         assert r.cookies["old"] == ""
 
 
+class TestSyncCookieRedirect:
+    """Cookies accumulated across redirect chains."""
+
+    def test_redirect_preserves_cookies(self, httpbin_url):
+        """Cookies set during a 302 redirect survive to the final response."""
+        r = get(f"{httpbin_url}/cookies/set-redirect?session=redir123")
+        assert r.cookies["session"] == "redir123"
+
+    def test_redirect_cookies_in_jar(self, httpbin_url):
+        """Client jar captures cookies set during redirects."""
+        with Client() as c:
+            c.get(f"{httpbin_url}/cookies/set-redirect?token=abc")
+            assert c._cookies["token"] == "abc"
+            r = c.get(f"{httpbin_url}/cookies")
+            assert r.json()["cookies"]["token"] == "abc"
+
+
 class TestSyncClientCookieJar:
     """Sync Client session cookie persistence."""
 
@@ -1269,6 +1286,14 @@ class TestSyncClientCookieJar:
         with Client(cookies={"init": "val"}) as c:
             r = c.get(f"{httpbin_url}/cookies")
             assert r.json()["cookies"]["init"] == "val"
+
+    def test_jar_deletion(self, httpbin_url):
+        """Max-Age=0 cookies are removed from the jar."""
+        with Client() as c:
+            c.get(f"{httpbin_url}/cookies/set?temp=val")
+            assert c._cookies["temp"] == "val"
+            c.get(f"{httpbin_url}/cookies/delete?temp=")
+            assert "temp" not in c._cookies
 
     def test_jar_vs_httpx_session(self, httpbin_url):
         """Cookie jar behavior matches httpx.Client."""
@@ -1307,6 +1332,15 @@ class TestAsyncCookies:
         assert zd["cookies"] == hd["cookies"]
 
 
+class TestAsyncCookieRedirect:
+    """Async cookies accumulated across redirect chains."""
+
+    @pytest.mark.asyncio
+    async def test_redirect_preserves_cookies(self, httpbin_url):
+        r = await async_get(f"{httpbin_url}/cookies/set-redirect?session=redir123")
+        assert r.cookies["session"] == "redir123"
+
+
 class TestAsyncClientCookieJar:
     """Async Client session cookie persistence."""
 
@@ -1332,6 +1366,14 @@ class TestAsyncClientCookieJar:
         async with AsyncClient(cookies={"init": "val"}) as c:
             r = await c.get(f"{httpbin_url}/cookies")
             assert r.json()["cookies"]["init"] == "val"
+
+    @pytest.mark.asyncio
+    async def test_jar_deletion(self, httpbin_url):
+        async with AsyncClient() as c:
+            await c.get(f"{httpbin_url}/cookies/set?temp=val")
+            assert c._cookies["temp"] == "val"
+            await c.get(f"{httpbin_url}/cookies/delete?temp=")
+            assert "temp" not in c._cookies
 
     @pytest.mark.asyncio
     async def test_jar_vs_httpx_session(self, httpbin_url):

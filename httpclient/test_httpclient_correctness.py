@@ -1188,3 +1188,175 @@ class TestClientInterfaceParity:
             f"only in Client: {sync_methods - async_methods}\n"
             f"only in AsyncClient: {async_methods - sync_methods}"
         )
+
+
+# ── Cookie support ──
+
+
+class TestSyncCookies:
+    """Sync cookie parsing and sending."""
+
+    def test_response_cookies_single(self, httpbin_url):
+        """Response.cookies parses a single Set-Cookie header."""
+        r = get(f"{httpbin_url}/cookies/set?session=abc123")
+        assert "session" in r.cookies
+        assert r.cookies["session"] == "abc123"
+
+    def test_response_cookies_multiple(self, httpbin_url):
+        """Response.cookies parses multiple Set-Cookie headers."""
+        r = get(f"{httpbin_url}/cookies/set?a=1&b=2")
+        assert r.cookies == {"a": "1", "b": "2"}
+
+    def test_response_cookies_empty(self, httpbin_url):
+        """Response.cookies returns empty dict when no cookies set."""
+        r = get(f"{httpbin_url}/get")
+        assert r.cookies == {}
+
+    def test_send_cookies_kwarg(self, httpbin_url):
+        """cookies= kwarg sends Cookie header."""
+        r = get(f"{httpbin_url}/cookies", cookies={"token": "xyz"})
+        data = r.json()
+        assert data["cookies"]["token"] == "xyz"
+
+    def test_send_cookies_vs_httpx(self, httpbin_url):
+        """Cookie sending matches httpx behavior."""
+        cookies = {"sid": "session1", "lang": "en"}
+        zd = get(f"{httpbin_url}/cookies", cookies=cookies).json()
+        hx = httpx.get(f"{httpbin_url}/cookies", cookies=cookies).json()
+        assert zd["cookies"] == hx["cookies"]
+
+    def test_response_cookies_vs_httpx(self, httpbin_url):
+        """Response.cookies matches httpx cookie parsing."""
+        zd = get(f"{httpbin_url}/cookies/set?theme=dark&lang=en")
+        hx = httpx.get(f"{httpbin_url}/cookies/set?theme=dark&lang=en")
+        assert zd.cookies == dict(hx.cookies)
+
+    def test_delete_cookies(self, httpbin_url):
+        """Server can delete cookies via Max-Age=0."""
+        r = get(f"{httpbin_url}/cookies/delete?old=")
+        assert "old" in r.cookies
+        assert r.cookies["old"] == ""
+
+
+class TestSyncClientCookieJar:
+    """Sync Client session cookie persistence."""
+
+    def test_jar_persistence(self, httpbin_url):
+        """Cookies from server are sent on subsequent requests."""
+        with Client() as c:
+            c.get(f"{httpbin_url}/cookies/set?session=abc")
+            r = c.get(f"{httpbin_url}/cookies")
+            assert r.json()["cookies"]["session"] == "abc"
+
+    def test_jar_multiple_sets(self, httpbin_url):
+        """Multiple cookie sets accumulate in the jar."""
+        with Client() as c:
+            c.get(f"{httpbin_url}/cookies/set?a=1")
+            c.get(f"{httpbin_url}/cookies/set?b=2")
+            r = c.get(f"{httpbin_url}/cookies")
+            cookies = r.json()["cookies"]
+            assert cookies["a"] == "1"
+            assert cookies["b"] == "2"
+
+    def test_jar_per_request_override(self, httpbin_url):
+        """Per-request cookies override session cookies."""
+        with Client(cookies={"x": "session"}) as c:
+            r = c.get(f"{httpbin_url}/cookies", cookies={"x": "override"})
+            assert r.json()["cookies"]["x"] == "override"
+
+    def test_jar_init_cookies(self, httpbin_url):
+        """Cookies passed at init are sent."""
+        with Client(cookies={"init": "val"}) as c:
+            r = c.get(f"{httpbin_url}/cookies")
+            assert r.json()["cookies"]["init"] == "val"
+
+    def test_jar_vs_httpx_session(self, httpbin_url):
+        """Cookie jar behavior matches httpx.Client."""
+        with Client() as zc, httpx.Client() as hc:
+            zc.get(f"{httpbin_url}/cookies/set?token=abc")
+            hc.get(f"{httpbin_url}/cookies/set?token=abc")
+            zd = zc.get(f"{httpbin_url}/cookies").json()
+            hd = hc.get(f"{httpbin_url}/cookies").json()
+            assert zd["cookies"] == hd["cookies"]
+
+
+class TestAsyncCookies:
+    """Async cookie parsing and sending."""
+
+    @pytest.mark.asyncio
+    async def test_response_cookies_single(self, httpbin_url):
+        r = await async_get(f"{httpbin_url}/cookies/set?session=abc123")
+        assert r.cookies["session"] == "abc123"
+
+    @pytest.mark.asyncio
+    async def test_response_cookies_multiple(self, httpbin_url):
+        r = await async_get(f"{httpbin_url}/cookies/set?a=1&b=2")
+        assert r.cookies == {"a": "1", "b": "2"}
+
+    @pytest.mark.asyncio
+    async def test_send_cookies_kwarg(self, httpbin_url):
+        r = await async_get(f"{httpbin_url}/cookies", cookies={"token": "xyz"})
+        assert r.json()["cookies"]["token"] == "xyz"
+
+    @pytest.mark.asyncio
+    async def test_send_cookies_vs_httpx(self, httpbin_url):
+        cookies = {"sid": "session1"}
+        zd = (await async_get(f"{httpbin_url}/cookies", cookies=cookies)).json()
+        async with httpx.AsyncClient() as hc:
+            hd = (await hc.get(f"{httpbin_url}/cookies", cookies=cookies)).json()
+        assert zd["cookies"] == hd["cookies"]
+
+
+class TestAsyncClientCookieJar:
+    """Async Client session cookie persistence."""
+
+    @pytest.mark.asyncio
+    async def test_jar_persistence(self, httpbin_url):
+        async with AsyncClient() as c:
+            await c.get(f"{httpbin_url}/cookies/set?session=abc")
+            r = await c.get(f"{httpbin_url}/cookies")
+            assert r.json()["cookies"]["session"] == "abc"
+
+    @pytest.mark.asyncio
+    async def test_jar_multiple_sets(self, httpbin_url):
+        async with AsyncClient() as c:
+            await c.get(f"{httpbin_url}/cookies/set?a=1")
+            await c.get(f"{httpbin_url}/cookies/set?b=2")
+            r = await c.get(f"{httpbin_url}/cookies")
+            cookies = r.json()["cookies"]
+            assert cookies["a"] == "1"
+            assert cookies["b"] == "2"
+
+    @pytest.mark.asyncio
+    async def test_jar_init_cookies(self, httpbin_url):
+        async with AsyncClient(cookies={"init": "val"}) as c:
+            r = await c.get(f"{httpbin_url}/cookies")
+            assert r.json()["cookies"]["init"] == "val"
+
+    @pytest.mark.asyncio
+    async def test_jar_vs_httpx_session(self, httpbin_url):
+        async with AsyncClient() as zc, httpx.AsyncClient() as hc:
+            await zc.get(f"{httpbin_url}/cookies/set?token=abc")
+            await hc.get(f"{httpbin_url}/cookies/set?token=abc")
+            zd = (await zc.get(f"{httpbin_url}/cookies")).json()
+            hd = (await hc.get(f"{httpbin_url}/cookies")).json()
+            assert zd["cookies"] == hd["cookies"]
+
+
+class TestStreamingResponseCookies:
+    """Streaming response cookie support."""
+
+    def test_streaming_cookies(self, httpbin_url):
+        """StreamingResponse carries cookies."""
+        with get(f"{httpbin_url}/cookies/set?stream=yes", stream=True) as r:
+            assert r.cookies["stream"] == "yes"
+            r.read()
+
+    @pytest.mark.asyncio
+    async def test_async_streaming_cookies(self, httpbin_url):
+        """Async StreamingResponse carries cookies."""
+        async with await async_get(
+            f"{httpbin_url}/cookies/set?stream=yes", stream=True
+        ) as r:
+            assert r.cookies["stream"] == "yes"
+            await r.aread()

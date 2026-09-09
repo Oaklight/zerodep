@@ -110,6 +110,40 @@ def _build_test_app(static_dir=None):
     async def response_obj(request):
         return Response(body="custom", status_code=200, content_type="text/html")
 
+    @app.get("/cookies/echo")
+    async def cookies_echo(request):
+        return JSONResponse({"cookies": request.cookies})
+
+    @app.get("/cookies/set")
+    async def cookies_set(request):
+        resp = JSONResponse({"set": dict(request.query_params)})
+        for name, values in request.query_params.items():
+            resp.set_cookie(name, values[0], path="/")
+        return resp
+
+    @app.get("/cookies/set-multiple")
+    async def cookies_set_multiple(request):
+        resp = JSONResponse({"set": dict(request.query_params)})
+        for name, values in request.query_params.items():
+            resp.set_cookie(
+                name,
+                values[0],
+                path="/",
+                httponly=True,
+                samesite="Lax",
+            )
+        return resp
+
+    @app.get("/cookies/delete")
+    async def cookies_delete(request):
+        from urllib.parse import parse_qs
+
+        params = parse_qs(request.query_string, keep_blank_values=True)
+        resp = JSONResponse({"deleted": list(params.keys())})
+        for name in params:
+            resp.delete_cookie(name, path="/")
+        return resp
+
     if static_dir:
         app.static("/static", static_dir)
 

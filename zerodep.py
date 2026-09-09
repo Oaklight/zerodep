@@ -31,11 +31,6 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-try:
-    import tomllib
-except ModuleNotFoundError:
-    tomllib = None  # type: ignore[assignment]
-
 # ── Constants ──
 
 REPO_OWNER = "Oaklight"
@@ -535,16 +530,33 @@ _REPLACED_BY: dict[str, str] = {
 # ── Config ──
 
 
+_TOOL_ZERODEP_RE = re.compile(
+    r"^\[tool\.zerodep\]\s*$"
+    r"(.*?)"
+    r"(?=^\[|\Z)",
+    re.MULTILINE | re.DOTALL,
+)
+_KV_RE = re.compile(r'^([\w-]+)\s*=\s*"([^"]*)"', re.MULTILINE)
+
+
 def _read_config() -> dict:
-    """Read ``[tool.zerodep]`` from ``pyproject.toml`` in CWD, if available."""
+    """Read ``[tool.zerodep]`` from ``pyproject.toml`` in CWD, if available.
+
+    Uses a lightweight regex parser instead of ``tomllib`` so the CLI
+    stays zero-dependency and works on Python 3.10+.
+    """
     pyproject = Path("pyproject.toml")
-    if not pyproject.exists() or tomllib is None:
+    if not pyproject.exists():
         return {}
     try:
-        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-        return data.get("tool", {}).get("zerodep", {})
-    except Exception:
+        text = pyproject.read_text(encoding="utf-8")
+    except OSError as exc:
+        _warn(f"cannot read pyproject.toml: {exc}")
         return {}
+    m = _TOOL_ZERODEP_RE.search(text)
+    if not m:
+        return {}
+    return dict(_KV_RE.findall(m.group(1)))
 
 
 def _resolve_dir(args: argparse.Namespace) -> str:
@@ -773,11 +785,12 @@ def cmd_add(args: argparse.Namespace) -> None:
 
 def cmd_update(args: argparse.Namespace) -> None:
     """Update existing module files (alias for add --force --yes)."""
-    if getattr(args, "all", False):
+    resolved = _resolve_dir(args)
+    if args.update_all:
         if args.modules:
             _die("cannot use --all together with explicit module names")
         manifest = _load_manifest(local=args.local, offline=args.offline)
-        scan_dir = Path(_resolve_dir(args)).resolve()
+        scan_dir = Path(resolved).resolve()
         rows = _scan_outdated(manifest, scan_dir)
         outdated = [r[0] for r in rows if r[3] == "outdated"]
         if not outdated:
@@ -786,7 +799,7 @@ def cmd_update(args: argparse.Namespace) -> None:
         args.modules = outdated
     elif not args.modules:
         _die("provide module names or use --all")
-    args.dir = _resolve_dir(args)
+    args.dir = resolved
     args.force = True
     args.yes = True
     cmd_add(args)
@@ -969,7 +982,7 @@ def cmd_outdated(args: argparse.Namespace) -> None:
     rows = _scan_outdated(manifest, scan_dir)
 
     if not rows:
-        if getattr(args, "json", False):
+        if args.json_output:
             print(json.dumps({"modules": [], "outdated_count": 0}))
         else:
             _ok(f"No zerodep modules found in {scan_dir}.")
@@ -977,12 +990,12 @@ def cmd_outdated(args: argparse.Namespace) -> None:
 
     has_outdated = any(r[3] != "up-to-date" for r in rows)
 
-    if getattr(args, "json", False):
+    if args.json_output:
         modules = [
             {
                 "name": r[0],
-                "local_version": r[1],
-                "latest_version": r[2],
+                "local_version": r[1] if r[1] != "—" else None,
+                "latest_version": r[2] if r[2] != "—" else None,
                 "status": r[3],
             }
             for r in rows
@@ -1006,7 +1019,7 @@ def cmd_outdated(args: argparse.Namespace) -> None:
                     f"Run `zerodep add {new_name}` and remove the old file."
                 )
 
-    if getattr(args, "exit_code", False) and has_outdated:
+    if args.exit_code and has_outdated:
         sys.exit(1)
 
 
@@ -1528,7 +1541,10 @@ def main(argv: list[str] | None = None) -> None:
     )
     p_update.add_argument("--no-deps", action="store_true", help="skip dependencies")
     p_update.add_argument(
-        "--all", action="store_true", help="update all outdated modules"
+        "--all",
+        dest="update_all",
+        action="store_true",
+        help="update all outdated modules",
     )
 
     # new
@@ -1581,10 +1597,15 @@ def main(argv: list[str] | None = None) -> None:
         help="target directory (default: from pyproject.toml or .)",
     )
     p_outdated.add_argument(
-        "--json", action="store_true", help="output JSON instead of table"
+        "--json",
+        dest="json_output",
+        action="store_true",
+        help="output JSON instead of table",
     )
     p_outdated.add_argument(
-        "--exit-code", action="store_true", help="exit 1 if outdated modules found"
+        "--exit-code",
+        action="store_true",
+        help="exit 1 if outdated or renamed modules found",
     )
 
     # manifest

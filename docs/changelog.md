@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.9.9] - 2026-09-09
+
+### Features
+
+- **CLI**: Add `outdated --json` flag for machine-readable JSON output with module list and `outdated_count`. ([#149](https://github.com/Oaklight/zerodep/pull/149))
+- **CLI**: Add `outdated --exit-code` flag — exit 1 when outdated or renamed modules found, following `git diff --exit-code` convention. ([#149](https://github.com/Oaklight/zerodep/pull/149))
+- **CLI**: Add `update --all` flag to discover and update all outdated modules without listing them explicitly. ([#149](https://github.com/Oaklight/zerodep/pull/149))
+- **CLI**: Add `[tool.zerodep]` config support in `pyproject.toml` — `vendor-dir` key allows omitting `-d` flag in projects that declare their vendor directory. Uses a lightweight regex parser (no `tomllib` dependency, works on Python 3.10+). ([#149](https://github.com/Oaklight/zerodep/pull/149))
+- **httpclient**: Add cookie support — `Response.cookies` / `StreamingResponse.cookies` property, `cookies=` kwarg on all request functions, session cookie jar on `Client` / `AsyncClient`. ([#150](https://github.com/Oaklight/zerodep/issues/150))
+- **httpserver**: Add cookie support — `Request.cookies` property (lazy-parsed), `Response.set_cookie()` / `delete_cookie()` methods on all response types. ([#150](https://github.com/Oaklight/zerodep/issues/150))
+
+### Bug Fixes
+
+- **httpclient**: Fix multi-`Set-Cookie` header loss where `CaseInsensitiveDict` kept only the last value. ([#150](https://github.com/Oaklight/zerodep/issues/150))
+
+### Infrastructure
+
+- **CLI**: Extract `_scan_outdated()` helper shared by `cmd_outdated` and `cmd_update --all`.
+- **CLI**: Add `test_cli.py` with 11 tests covering `--json` output structure, `--exit-code` behavior, `update --all`, and `pyproject.toml` config reading.
+- **docs**: Add CI automation section to zerodep skill file documenting the workflow pattern and new CLI flags.
+
+## [2026.9.7] - 2026-09-07
+
+### Bug Fixes
+
+- **validate**: Propagate coerced values in struct field validation — previously coerced values (e.g. string-to-int) were discarded during `create_struct` field processing. ([#148](https://github.com/Oaklight/zerodep/pull/148))
+- **validate**: Propagate coerced values in all collection validators (list, set, frozenset, tuple, dict) — coercion results were being dropped in nested collection validation paths. ([#148](https://github.com/Oaklight/zerodep/pull/148))
+
 ## [2026.9.6] - 2026-09-06
 
 ### Features

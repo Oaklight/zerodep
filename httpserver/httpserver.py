@@ -48,7 +48,7 @@ import signal
 import sys
 from collections.abc import AsyncIterator, Callable
 from email.utils import formatdate
-from http.cookies import SimpleCookie
+from http.cookies import CookieError, SimpleCookie
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
@@ -253,7 +253,7 @@ class Request:
                 sc = SimpleCookie()
                 try:
                     sc.load(raw)
-                except Exception:
+                except CookieError:
                     self._cookies = {}
                 else:
                     self._cookies = {k: m.value for k, m in sc.items()}

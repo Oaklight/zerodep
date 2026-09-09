@@ -971,7 +971,7 @@ class TestCookieRoundTrip:
             assert r.json()["cookies"]["session"] == "test123"
 
     def test_set_delete_echo(self, server_url):
-        """Set a cookie, delete it, verify it's gone."""
+        """Set a cookie, delete it, verify jar removes it."""
         from httpclient import Client
 
         with Client() as c:
@@ -980,7 +980,6 @@ class TestCookieRoundTrip:
             assert "temp" in r1.json()["cookies"]
 
             c.get(f"{server_url}/cookies/delete?temp=")
+            assert "temp" not in c._cookies
             r2 = c.get(f"{server_url}/cookies/echo")
-            # After deletion, the cookie value should be empty
-            cookies = r2.json()["cookies"]
-            assert cookies.get("temp", "") == ""
+            assert "temp" not in r2.json()["cookies"]

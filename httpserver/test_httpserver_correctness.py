@@ -875,3 +875,112 @@ class TestLifespan:
             await app._run_shutdown_hooks()
 
         asyncio.run(_test())  # Should not raise
+
+
+# ── Cookie support ──
+
+
+class TestRequestCookies:
+    """Request.cookies property."""
+
+    def test_parse_cookies(self, server_url):
+        """Request.cookies parses Cookie header correctly."""
+        r = get(
+            f"{server_url}/cookies/echo",
+            headers={"Cookie": "a=1; b=hello"},
+        )
+        data = r.json()
+        assert data["cookies"] == {"a": "1", "b": "hello"}
+
+    def test_empty_cookies(self, server_url):
+        """Request.cookies returns empty dict when no Cookie header."""
+        r = get(f"{server_url}/cookies/echo")
+        assert r.json()["cookies"] == {}
+
+    def test_cookies_single(self, server_url):
+        """Single cookie is parsed."""
+        r = get(
+            f"{server_url}/cookies/echo",
+            headers={"Cookie": "session=abc123"},
+        )
+        assert r.json()["cookies"]["session"] == "abc123"
+
+
+class TestResponseSetCookie:
+    """Response.set_cookie() and delete_cookie()."""
+
+    def test_set_single_cookie(self, server_url):
+        """set_cookie sets a single Set-Cookie header."""
+        r = get(f"{server_url}/cookies/set?token=xyz")
+        assert "set-cookie" in r.headers or "Set-Cookie" in r.headers
+        assert r.cookies["token"] == "xyz"
+
+    def test_set_multiple_cookies(self, server_url):
+        """Multiple set_cookie calls produce multiple Set-Cookie headers."""
+        r = get(f"{server_url}/cookies/set?a=1&b=2")
+        cookies = r.cookies
+        assert cookies["a"] == "1"
+        assert cookies["b"] == "2"
+
+    def test_set_cookie_attributes(self, server_url):
+        """set_cookie with httponly and samesite."""
+        import http.client as hc
+
+        url_parts = server_url.replace("http://", "").split(":")
+        host, port = url_parts[0], int(url_parts[1])
+        conn = hc.HTTPConnection(host, port)
+        conn.request("GET", "/cookies/set-multiple?secure_test=val")
+        resp = conn.getresponse()
+        raw_headers = resp.getheaders()
+        set_cookie_headers = [v for k, v in raw_headers if k.lower() == "set-cookie"]
+        resp.read()
+        conn.close()
+        assert len(set_cookie_headers) >= 1
+        header = set_cookie_headers[0].lower()
+        assert "httponly" in header
+        assert "samesite=lax" in header
+
+    def test_delete_cookie(self, server_url):
+        """delete_cookie sets Max-Age=0 and epoch expires."""
+        import http.client as hc
+
+        url_parts = server_url.replace("http://", "").split(":")
+        host, port = url_parts[0], int(url_parts[1])
+        conn = hc.HTTPConnection(host, port)
+        conn.request("GET", "/cookies/delete?old=")
+        resp = conn.getresponse()
+        raw_headers = resp.getheaders()
+        set_cookie_headers = [v for k, v in raw_headers if k.lower() == "set-cookie"]
+        resp.read()
+        conn.close()
+        assert len(set_cookie_headers) >= 1
+        header = set_cookie_headers[0].lower()
+        assert "max-age=0" in header
+
+
+class TestCookieRoundTrip:
+    """Full cookie round-trip through the server."""
+
+    def test_set_then_echo(self, server_url):
+        """Set cookies, then verify they echo back."""
+        from httpclient import Client
+
+        with Client() as c:
+            c.get(f"{server_url}/cookies/set?session=test123")
+            r = c.get(f"{server_url}/cookies/echo")
+            assert r.json()["cookies"]["session"] == "test123"
+
+    def test_set_delete_echo(self, server_url):
+        """Set a cookie, delete it, verify it's gone."""
+        from httpclient import Client
+
+        with Client() as c:
+            c.get(f"{server_url}/cookies/set?temp=value")
+            r1 = c.get(f"{server_url}/cookies/echo")
+            assert "temp" in r1.json()["cookies"]
+
+            c.get(f"{server_url}/cookies/delete?temp=")
+            r2 = c.get(f"{server_url}/cookies/echo")
+            # After deletion, the cookie value should be empty
+            cookies = r2.json()["cookies"]
+            assert cookies.get("temp", "") == ""

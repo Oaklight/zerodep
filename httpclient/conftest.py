@@ -137,6 +137,51 @@ class _HttpBinHandler(BaseHTTPRequestHandler):
 
     # ── HTTP methods ──
 
+    def _handle_cookies(self, path, query):
+        """Handle /cookies/* endpoints."""
+        if path == "/cookies/set":
+            params = parse_qs(query)
+            self.send_response(200)
+            for name, values in sorted(params.items()):
+                self.send_header("Set-Cookie", f"{name}={values[0]}; Path=/")
+            body = json.dumps({k: v[0] for k, v in sorted(params.items())}).encode()
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.wfile.write(body)
+        elif path == "/cookies/delete":
+            params = parse_qs(query, keep_blank_values=True)
+            self.send_response(200)
+            for name in sorted(params.keys()):
+                self.send_header(
+                    "Set-Cookie",
+                    f"{name}=; Path=/; Max-Age=0; "
+                    f"Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+                )
+            body = json.dumps({"deleted": sorted(params.keys())}).encode()
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.wfile.write(body)
+        else:
+            cookie_header = self.headers.get("Cookie", "")
+            cookies = {}
+            if cookie_header:
+                for pair in cookie_header.split(";"):
+                    pair = pair.strip()
+                    if "=" in pair:
+                        k, v = pair.split("=", 1)
+                        cookies[k.strip()] = v.strip()
+            body = json.dumps({"cookies": cookies}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.wfile.write(body)
+
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
@@ -293,6 +338,8 @@ class _HttpBinHandler(BaseHTTPRequestHandler):
             seconds = float(path.rsplit("/", 1)[1])
             time.sleep(seconds)
             self._send_json({"delay": seconds})
+        elif path.startswith("/cookies"):
+            self._handle_cookies(path, parsed.query)
         else:
             self.send_response(404)
             self.send_header("Content-Length", "0")

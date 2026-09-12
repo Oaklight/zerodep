@@ -6,6 +6,16 @@
 
 ## [未发布]
 
+## [2026.9.12] - 2026-09-12
+
+### 问题修复
+
+- **jsonschema**：位置感知的 walker 现在能正确保留与 schema 关键字冲突的用户参数名（如 `title`、`deprecated`、`examples`）。此前这些参数名在 `properties` 映射中会被静默删除。同时将 `dependentSchemas` 加入属性映射键集合。([#153](https://github.com/Oaklight/zerodep/issues/153), [#154](https://github.com/Oaklight/zerodep/pull/154))
+
+### 基础设施
+
+- **CI**：将 PyPI 发布内联到 `release.yml` 中作为直接 job，替代通过 `GITHUB_TOKEN` 的 `gh workflow run` 调度（该方式不可靠）。([#152](https://github.com/Oaklight/zerodep/issues/152), [#155](https://github.com/Oaklight/zerodep/pull/155))
+
 ## [2026.9.9] - 2026-09-09
 
 ### 新功能

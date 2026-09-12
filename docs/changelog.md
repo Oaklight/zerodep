@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.9.12] - 2026-09-12
+
+### Bug Fixes
+
+- **jsonschema**: Position-aware walkers preserve user parameter names that collide with schema keywords (e.g. `title`, `deprecated`, `examples`). Previously these were silently stripped from `properties` maps. Also adds `dependentSchemas` to the property-map key set. ([#153](https://github.com/Oaklight/zerodep/issues/153), [#154](https://github.com/Oaklight/zerodep/pull/154))
+
+### Infrastructure
+
+- **CI**: Inline PyPI publish into `release.yml` as a direct job instead of unreliable `gh workflow run` dispatch via `GITHUB_TOKEN`. ([#152](https://github.com/Oaklight/zerodep/issues/152), [#155](https://github.com/Oaklight/zerodep/pull/155))
+
 ## [2026.9.9] - 2026-09-09
 
 ### Features

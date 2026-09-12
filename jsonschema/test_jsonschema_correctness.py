@@ -1043,3 +1043,214 @@ class TestEdgeCases:
             "const",
         }
         assert UNSUPPORTED_SCHEMA_KEYS == expected
+
+
+# ---------------------------------------------------------------------------
+# Regression: position-aware walkers (issue #153)
+# ---------------------------------------------------------------------------
+
+
+class TestPropertyNameCollisions:
+    """Parameter names that collide with schema keywords must survive."""
+
+    def _tool_schema(self, **props):
+        """Build a minimal tool-parameter schema."""
+        return {
+            "type": "object",
+            "properties": props,
+            "required": list(props),
+        }
+
+    # -- sanitize ----------------------------------------------------------
+
+    def test_param_named_title_survives_sanitize(self):
+        schema = self._tool_schema(
+            title={"type": "string"},
+            name={"type": "string"},
+        )
+        result = sanitize(schema, strip_keys={"title"})
+        assert "title" in result["properties"]
+        assert "title" in result["required"]
+
+    def test_param_named_deprecated_survives_sanitize(self):
+        schema = self._tool_schema(
+            deprecated={"type": "boolean"},
+            name={"type": "string"},
+        )
+        result = sanitize(schema)
+        assert "deprecated" in result["properties"]
+
+    def test_param_named_examples_survives_sanitize(self):
+        schema = self._tool_schema(
+            examples={"type": "array", "items": {"type": "string"}},
+            query={"type": "string"},
+        )
+        result = sanitize(schema)
+        assert "examples" in result["properties"]
+
+    def test_param_named_nullable_survives_sanitize(self):
+        schema = self._tool_schema(
+            nullable={"type": "boolean"},
+            value={"type": "integer"},
+        )
+        result = sanitize(schema, strip_keys={"nullable"})
+        assert "nullable" in result["properties"]
+
+    def test_param_named_const_survives_sanitize(self):
+        schema = self._tool_schema(
+            const={"type": "string"},
+        )
+        result = sanitize(schema)
+        assert "const" in result["properties"]
+
+    def test_schema_keyword_title_still_stripped(self):
+        """title as a schema keyword (not a param name) should still be stripped."""
+        schema = {
+            "type": "object",
+            "title": "MyModel",
+            "properties": {
+                "name": {"type": "string", "title": "Name Field"},
+            },
+        }
+        result = sanitize(schema, strip_keys={"title"})
+        assert "title" not in result
+        assert "title" not in result["properties"]["name"]
+        assert "name" in result["properties"]
+
+    def test_nested_object_param_named_title_survives(self):
+        schema = {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "size": {"type": "integer"},
+                    },
+                    "required": ["title"],
+                },
+            },
+        }
+        result = sanitize(schema, strip_keys={"title"})
+        inner = result["properties"]["config"]["properties"]
+        assert "title" in inner
+        assert "title" in result["properties"]["config"]["required"]
+
+    def test_required_preserved_when_param_name_collides(self):
+        schema = self._tool_schema(
+            data_path={"type": "string"},
+            title={"type": "string"},
+            width={"type": "integer"},
+        )
+        result = sanitize(schema, strip_keys={"title"})
+        assert sorted(result["required"]) == ["data_path", "title", "width"]
+        assert sorted(result["properties"]) == ["data_path", "title", "width"]
+
+    # -- simplify_unions ---------------------------------------------------
+
+    def test_param_named_anyOf_survives_simplify(self):
+        """A parameter literally named 'anyOf' should not trigger simplification."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "anyOf": {"type": "string", "description": "filter expression"},
+                "name": {"type": "string"},
+            },
+        }
+        result = simplify_unions(schema)
+        assert "anyOf" in result["properties"]
+        assert result["properties"]["anyOf"]["type"] == "string"
+
+    # -- merge_allof -------------------------------------------------------
+
+    def test_param_named_allOf_survives_merge(self):
+        """A parameter literally named 'allOf' should not trigger merging."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "allOf": {"type": "string", "description": "merge strategy"},
+                "name": {"type": "string"},
+            },
+        }
+        result = merge_allof(schema)
+        assert "allOf" in result["properties"]
+        assert result["properties"]["allOf"]["type"] == "string"
+
+    # -- flatten_schema (full pipeline) ------------------------------------
+
+    def test_flatten_preserves_title_param(self):
+        """The exact scenario from toolregistry#265."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "data_path": {"type": "string", "description": "input file"},
+                "title": {"type": "string", "description": "figure title"},
+                "width": {"type": "integer", "default": 800},
+            },
+            "required": ["data_path", "title"],
+        }
+        result = flatten_schema(schema, strip_keys={"title", "nullable"})
+        assert sorted(result["properties"]) == ["data_path", "title", "width"]
+        assert sorted(result["required"]) == ["data_path", "title"]
+
+    def test_flatten_preserves_multiple_colliding_params(self):
+        schema = {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "deprecated": {"type": "boolean", "default": False},
+                "examples": {"type": "array", "items": {"type": "string"}},
+                "name": {"type": "string"},
+            },
+            "required": ["title", "name"],
+        }
+        result = flatten_schema(schema, strip_keys={"title", "nullable"})
+        props = result["properties"]
+        assert "title" in props
+        assert "deprecated" in props
+        assert "examples" in props
+        assert "name" in props
+
+    def test_flatten_strips_schema_keywords_but_keeps_param_names(self):
+        """Schema-level title stripped, param-level title kept."""
+        schema = {
+            "type": "object",
+            "title": "PlotParams",
+            "deprecated": True,
+            "properties": {
+                "title": {"type": "string", "title": "Title", "deprecated": True},
+                "size": {"type": "integer", "examples": [100, 200]},
+            },
+            "required": ["title"],
+        }
+        result = flatten_schema(schema, strip_keys={"title", "nullable"})
+        # Schema-level keywords stripped
+        assert "title" not in {
+            k for k in result if k != "properties" and k != "required" and k != "type"
+        }
+        assert "deprecated" not in result
+        # Param "title" survives
+        assert "title" in result["properties"]
+        assert result["required"] == ["title"]
+        # Schema keywords inside param sub-schemas are stripped
+        assert "title" not in result["properties"]["title"]
+        assert "deprecated" not in result["properties"]["title"]
+        assert "examples" not in result["properties"]["size"]
+
+    def test_flatten_with_ref_and_colliding_param(self):
+        """$ref resolution + sanitization should not eat param named 'title'."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "title": {"$ref": "#/$defs/Title"},
+                "count": {"type": "integer"},
+            },
+            "required": ["title"],
+            "$defs": {
+                "Title": {"type": "string", "minLength": 1},
+            },
+        }
+        result = flatten_schema(schema, strip_keys={"title", "nullable"})
+        assert "title" in result["properties"]
+        assert result["properties"]["title"] == {"type": "string", "minLength": 1}
+        assert "title" in result["required"]

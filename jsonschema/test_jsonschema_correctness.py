@@ -1103,6 +1103,30 @@ class TestPropertyNameCollisions:
         result = sanitize(schema)
         assert "const" in result["properties"]
 
+    def test_pattern_property_key_survives_sanitize(self):
+        schema = {
+            "type": "object",
+            "patternProperties": {
+                "title": {"type": "string"},
+                "^x-": {"type": "string"},
+            },
+        }
+        result = sanitize(schema, strip_keys={"title"})
+        assert "title" in result["patternProperties"]
+
+    def test_dependent_schemas_key_survives_sanitize(self):
+        schema = {
+            "type": "object",
+            "properties": {"mode": {"type": "string"}},
+            "dependentSchemas": {
+                "title": {
+                    "properties": {"subtitle": {"type": "string"}},
+                },
+            },
+        }
+        result = sanitize(schema, strip_keys={"title"})
+        assert "title" in result["dependentSchemas"]
+
     def test_schema_keyword_title_still_stripped(self):
         """title as a schema keyword (not a param name) should still be stripped."""
         schema = {
@@ -1225,9 +1249,7 @@ class TestPropertyNameCollisions:
         }
         result = flatten_schema(schema, strip_keys={"title", "nullable"})
         # Schema-level keywords stripped
-        assert "title" not in {
-            k for k in result if k != "properties" and k != "required" and k != "type"
-        }
+        assert "title" not in result
         assert "deprecated" not in result
         # Param "title" survives
         assert "title" in result["properties"]

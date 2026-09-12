@@ -204,7 +204,7 @@ GitHub Actions:
    insufficient — add structured sections (New Modules, Features, Bug Fixes,
    etc.).
 5. The **Benchmark workflow** runs automatically on release publish.
-6. The **PyPI workflow** runs automatically on release publish, but only
+6. The **PyPI publish** runs as a job within `release.yml`, and only
    publishes if `zerodep.py` or `pyproject.toml` have substantive changes
    (not just version bumps).
 
@@ -221,8 +221,8 @@ Lint and test logic lives in a single **reusable workflow**
 - `ci.yml` calls `lint-test.yml` with the default 4-version matrix.
 - `release.yml` calls `lint-test.yml` with `["3.12"]` only as a quality
   gate, then runs release-specific steps.
-- Benchmark and PyPI workflows are cascade-triggered on `release: published`
-  and are independent.
+- Benchmark workflow is cascade-triggered via `gh workflow run` from
+  `release.yml`. PyPI publish runs inline as a job within `release.yml`.
 
 ### Reference library management
 

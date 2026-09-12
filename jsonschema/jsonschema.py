@@ -62,7 +62,7 @@ _DEFS_KEYS: set[str] = {"$defs", "definitions"}
 # When a walker enters one of these, it must NOT treat the map's keys as
 # schema keywords — they are user-defined parameter names.  The map's
 # *values* are sub-schemas and should still be processed.
-_PROPERTY_MAP_KEYS: set[str] = {"properties", "patternProperties"}
+_PROPERTY_MAP_KEYS: set[str] = {"properties", "patternProperties", "dependentSchemas"}
 
 UNSUPPORTED_SCHEMA_KEYS: set[str] = {
     # JSON Schema meta

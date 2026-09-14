@@ -1008,11 +1008,21 @@ class CompositeLimiter(_AsyncMixin):
     composite result is denied with the longest ``retry_after``.
 
     Note:
-        When a composite ``acquire`` is denied, sub-limiters that
-        individually allowed the request will have already consumed
-        tokens.  This false consumption is bounded by *tokens*
-        (typically 1) and self-corrects as windows slide or buckets
-        refill.
+        A peek-then-acquire strategy is used: all sub-limiters are
+        peeked first, and tokens are only consumed when all would
+        allow.  Under concurrent access without external locking
+        there is a small TOCTOU window between peek and acquire;
+        wrap with :class:`ThreadSafeLimiter` to eliminate it.
+
+    Thread safety:
+        Wrap the composite itself for atomic multi-limiter checks::
+
+            ThreadSafeLimiter(CompositeLimiter([a, b]))
+
+        Composing individually-wrapped sub-limiters protects each
+        sub-limiter but does **not** make the composite acquire
+        sequence atomic — two threads can interleave across
+        sub-limiters.
 
     Args:
         limiters: One or more :class:`RateLimiter` instances to enforce.
@@ -1024,6 +1034,16 @@ class CompositeLimiter(_AsyncMixin):
         self._limiters: tuple[RateLimiter, ...] = tuple(limiters)
 
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
+        peeks = [lim.peek(key) for lim in self._limiters]
+        if any(not p.allowed for p in peeks):
+            # At least one would deny — acquire only the deniers (to get
+            # accurate retry_after; denied acquire does not consume tokens)
+            # and leave the allowing sub-limiters untouched.
+            results = [
+                lim.acquire(key, tokens) if not p.allowed else p
+                for lim, p in zip(self._limiters, peeks)
+            ]
+            return self._merge(results)
         results = [lim.acquire(key, tokens) for lim in self._limiters]
         return self._merge(results)
 
@@ -1038,8 +1058,8 @@ class CompositeLimiter(_AsyncMixin):
             strictest = max(denied, key=lambda r: r.retry_after or 0.0)
             return RateLimitResult(
                 allowed=False,
-                limit=strictest.limit,
-                remaining=strictest.remaining,
+                limit=min(r.limit for r in results),
+                remaining=min(r.remaining for r in results),
                 reset_at=strictest.reset_at,
                 retry_after=strictest.retry_after,
             )

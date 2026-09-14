@@ -180,6 +180,7 @@ class Profiler:
         Raises:
             ProfilerError: If accessed before profiling has completed.
         """
+        # CPython internal; no public accessor for total wall time
         return cast(Any, self.stats).total_tt
 
     # -- Output --------------------------------------------------------------
@@ -211,13 +212,14 @@ class Profiler:
         self._ensure_stopped()
         sort_key = self._resolve_sort_key(sort_by) if sort_by else self._default_sort
 
+        assert self._stats is not None  # noqa: S101
         stream = io.StringIO()
-        stats = pstats.Stats(self._profile, stream=stream)
-        stats.sort_stats(sort_key)
+        cast(Any, self._stats).stream = stream
+        self._stats.sort_stats(sort_key)
         if limit is not None:
-            stats.print_stats(limit)
+            self._stats.print_stats(limit)
         else:
-            stats.print_stats()
+            self._stats.print_stats()
         text = stream.getvalue()
 
         if file is not None:
@@ -387,7 +389,7 @@ class Profiler:
             '<span class="arrow"></span></th>\n'
             '<th data-sortable data-sort-type="number">Calls'
             '<span class="arrow"></span></th>\n'
-            '<th data-sortable data-sort-type="number">Per Call'
+            '<th data-sortable data-sort-type="number">Per Call (cum)'
             '<span class="arrow"></span></th>\n'
             '<th data-sortable data-sort-type="number">% of Total'
             '<span class="arrow"></span></th>\n'
@@ -466,8 +468,8 @@ _TABLE_JS = """\
   function sortTable(ci){
     var t=document.getElementById('profile-table');
     var tb=t.tBodies[0],rows=Array.prototype.slice.call(tb.rows);
-    if(col===ci)asc=!asc;else{col=ci;asc=true;}
     var th=t.tHead.rows[0].cells[ci];
+    if(col===ci)asc=!asc;else{col=ci;asc=th.getAttribute('data-sort-type')!=='number';}
     var numeric=th.getAttribute('data-sort-type')==='number';
     rows.sort(function(a,b){
       var va=a.cells[ci].getAttribute('data-sort-value')||a.cells[ci].textContent;

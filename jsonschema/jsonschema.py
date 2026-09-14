@@ -1252,7 +1252,10 @@ def iter_errors(
         instance: The data to validate.
         schema: A JSON Schema dict, or a boolean schema.
         resolved: If ``True``, skip ``$ref`` resolution (caller already
-            called :func:`resolve_refs`).
+            called :func:`resolve_refs`).  Defaults to ``False`` because
+            passing an unresolved schema with ``resolved=True`` silently
+            skips ``$ref`` targets — the validator would ignore them and
+            report no errors for the referenced sub-schemas.
 
     Returns:
         A list of :class:`SchemaErrorDetail`; empty if valid.
@@ -1278,7 +1281,9 @@ def schema_validate(
         instance: The data to validate.
         schema: A JSON Schema dict.
         resolved: If ``True``, skip ``$ref`` resolution (caller already
-            called :func:`resolve_refs`).
+            called :func:`resolve_refs`).  Must not be set to ``True``
+            unless the schema has been resolved — unresolved ``$ref``
+            nodes would be silently ignored.
 
     Raises:
         SchemaValidationError: If validation fails, with all errors collected.

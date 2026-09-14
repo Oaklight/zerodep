@@ -1044,13 +1044,13 @@ class CompositeLimiter(_AsyncMixin):
     def __repr__(self) -> str:
         return f"CompositeLimiter({list(self._limiters)!r})"
 
-    def detail(self, key: str) -> list[RateLimitResult]:
+    def detail(self, key: str) -> tuple[RateLimitResult, ...]:
         """Peek each sub-limiter independently, returning per-limiter results.
 
         Useful for observability — callers can identify which specific
         sub-limiter(s) are denying or near exhaustion.
         """
-        return [lim.peek(key) for lim in self._limiters]
+        return tuple(lim.peek(key) for lim in self._limiters)
 
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
         peeks = [lim.peek(key) for lim in self._limiters]

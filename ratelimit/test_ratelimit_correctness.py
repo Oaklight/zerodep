@@ -1101,6 +1101,43 @@ class TestCompositeLimiter:
 
         asyncio.run(run())
 
+    def test_limiters_property(self):
+        clock = FakeClock()
+        a = TokenBucketLimiter(rate=1.0, capacity=1, clock=clock)
+        b = FixedWindowLimiter(limit=10, window_seconds=60.0, clock=clock)
+        composite = CompositeLimiter([a, b])
+        assert composite.limiters == (a, b)
+        assert len(composite) == 2
+
+    def test_repr(self):
+        inner = TokenBucketLimiter(rate=1.0, capacity=1)
+        composite = CompositeLimiter([inner])
+        r = repr(composite)
+        assert r.startswith("CompositeLimiter([")
+        assert "TokenBucketLimiter" in r
+
+    def test_detail_per_limiter_results(self):
+        clock = FakeClock()
+        rpm = FixedWindowLimiter(limit=2, window_seconds=60.0, clock=clock)
+        rpd = FixedWindowLimiter(limit=100, window_seconds=86400.0, clock=clock)
+        composite = CompositeLimiter([rpm, rpd])
+        composite.acquire("k")
+        composite.acquire("k")
+        details = composite.detail("k")
+        assert len(details) == 2
+        assert details[0].allowed is False  # RPM exhausted
+        assert details[0].remaining == 0
+        assert details[1].allowed is True  # RPD still has quota
+        assert details[1].remaining == 98
+
+    def test_detail_does_not_consume(self):
+        clock = FakeClock()
+        lim = TokenBucketLimiter(rate=1.0, capacity=3, clock=clock)
+        composite = CompositeLimiter([lim])
+        d1 = composite.detail("k")
+        d2 = composite.detail("k")
+        assert d1[0].remaining == d2[0].remaining == 3
+
     def test_composite_apeek(self):
         clock = FakeClock()
         composite = CompositeLimiter(

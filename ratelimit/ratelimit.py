@@ -1033,6 +1033,25 @@ class CompositeLimiter(_AsyncMixin):
             raise ValueError("CompositeLimiter requires at least one limiter")
         self._limiters: tuple[RateLimiter, ...] = tuple(limiters)
 
+    @property
+    def limiters(self) -> tuple[RateLimiter, ...]:
+        """The sub-limiters enforced by this composite."""
+        return self._limiters
+
+    def __len__(self) -> int:
+        return len(self._limiters)
+
+    def __repr__(self) -> str:
+        return f"CompositeLimiter({list(self._limiters)!r})"
+
+    def detail(self, key: str) -> list[RateLimitResult]:
+        """Peek each sub-limiter independently, returning per-limiter results.
+
+        Useful for observability — callers can identify which specific
+        sub-limiter(s) are denying or near exhaustion.
+        """
+        return [lim.peek(key) for lim in self._limiters]
+
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
         peeks = [lim.peek(key) for lim in self._limiters]
         if any(not p.allowed for p in peeks):

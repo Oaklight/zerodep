@@ -68,7 +68,7 @@ categories:
   - id: devtools
     name_en: "Dev Tools"
     name_zh: "开发工具"
-    modules: [structlog, vcs, depdetect]
+    modules: [structlog, vcs, depdetect, profiler]
 
 # -- Per-module doc metadata --
 # Keys: desc_en, desc_zh (required), benchmark (optional, default "--"),
@@ -297,6 +297,12 @@ modules:
     replaces_zh: "pipreqs（部分）"
     desc_en: "Dependency detection and verification"
     desc_zh: "依赖检测与验证"
+  profiler:
+    benchmark: pyinstrument
+    replaces: "pyinstrument"
+    replaces_zh: "pyinstrument"
+    desc_en: "cProfile wrapper with HTML report output"
+    desc_zh: "cProfile 封装，支持 HTML 报告输出"
   useragent:
     benchmark: ua-generator
     replaces: "fake-useragent, ua-generator, user-agents"

@@ -1232,6 +1232,8 @@ def _validate_schema(
 def iter_errors(
     instance: Any,
     schema: dict[str, Any] | bool,
+    *,
+    resolved: bool = False,
 ) -> list[SchemaErrorDetail]:
     """Validate *instance* against JSON Schema *schema* and return all errors.
 
@@ -1239,9 +1241,18 @@ def iter_errors(
     validation.  Composition keywords (``allOf``, ``anyOf``, ``oneOf``,
     ``not``) are evaluated semantically, not merged.
 
+    When validating many instances against the same schema, resolve once
+    and pass ``resolved=True`` to skip redundant ``$ref`` resolution::
+
+        schema = resolve_refs(raw_schema)
+        for item in items:
+            errors = iter_errors(item, schema, resolved=True)
+
     Args:
         instance: The data to validate.
         schema: A JSON Schema dict, or a boolean schema.
+        resolved: If ``True``, skip ``$ref`` resolution (caller already
+            called :func:`resolve_refs`).
 
     Returns:
         A list of :class:`SchemaErrorDetail`; empty if valid.
@@ -1250,24 +1261,28 @@ def iter_errors(
     if isinstance(schema, bool):
         _validate_schema(instance, schema, errors, "", "")
         return errors
-    resolved = resolve_refs(schema)
-    _validate_schema(instance, resolved, errors, "", "")
+    effective = schema if resolved else resolve_refs(schema)
+    _validate_schema(instance, effective, errors, "", "")
     return errors
 
 
 def schema_validate(
     instance: Any,
     schema: dict[str, Any] | bool,
+    *,
+    resolved: bool = False,
 ) -> None:
     """Validate *instance* against JSON Schema *schema*.
 
     Args:
         instance: The data to validate.
         schema: A JSON Schema dict.
+        resolved: If ``True``, skip ``$ref`` resolution (caller already
+            called :func:`resolve_refs`).
 
     Raises:
         SchemaValidationError: If validation fails, with all errors collected.
     """
-    errors = iter_errors(instance, schema)
+    errors = iter_errors(instance, schema, resolved=resolved)
     if errors:
         raise SchemaValidationError(errors)

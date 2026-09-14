@@ -947,6 +947,7 @@ class TestCompositeLimiter:
         r = composite.acquire("k")
         assert r.allowed is False
         assert r.retry_after is not None and r.retry_after > 0
+        assert r.limit == 1  # min(1, 100) — composite effective limit
 
     def test_multiple_deny_returns_longest_retry(self):
         clock = FakeClock()
@@ -1027,21 +1028,45 @@ class TestCompositeLimiter:
     def test_rpm_plus_rpd_scenario(self):
         clock = FakeClock()
         rpm = FixedWindowLimiter(limit=3, window_seconds=60.0, clock=clock)
-        rpd = FixedWindowLimiter(limit=10, window_seconds=86400.0, clock=clock)
+        rpd = FixedWindowLimiter(limit=5, window_seconds=86400.0, clock=clock)
         composite = CompositeLimiter([rpm, rpd])
         # First 3 requests allowed (RPM OK, RPD OK)
         for _ in range(3):
             assert composite.acquire("k").allowed is True
-        # 4th denied by RPM (RPD still consumes a token due to false consumption)
+        # 4th denied by RPM — peek-then-acquire means RPD is NOT consumed
         assert composite.acquire("k").allowed is False
         # Advance past minute window — RPM resets
         clock.advance(60.0)
-        # RPD has consumed 4 tokens (3 allowed + 1 false), 6 remaining
+        # RPD has consumed exactly 3 tokens (no false consumption), 2 remaining
         assert composite.acquire("k").allowed is True
         assert composite.acquire("k").allowed is True
-        assert composite.acquire("k").allowed is True
-        # RPM exhausted again (3 in new window)
+        # RPD exhausted (5 total)
         assert composite.acquire("k").allowed is False
+
+    def test_no_false_consumption_on_denial(self):
+        clock = FakeClock()
+        tight = FixedWindowLimiter(limit=1, window_seconds=60.0, clock=clock)
+        loose = FixedWindowLimiter(limit=100, window_seconds=3600.0, clock=clock)
+        composite = CompositeLimiter([tight, loose])
+        assert composite.acquire("k").allowed is True
+        # Tight is exhausted; repeated denied calls should NOT drain loose
+        for _ in range(50):
+            assert composite.acquire("k").allowed is False
+        # Verify loose only consumed 1 token (the allowed call)
+        loose_peek = loose.peek("k")
+        assert loose_peek.remaining == 99
+
+    def test_nested_composite(self):
+        clock = FakeClock()
+        inner = CompositeLimiter(
+            [TokenBucketLimiter(rate=1.0, capacity=2, clock=clock)]
+        )
+        outer = CompositeLimiter(
+            [inner, FixedWindowLimiter(limit=5, window_seconds=60.0, clock=clock)]
+        )
+        assert outer.acquire("k").allowed is True
+        outer.acquire("k")
+        assert outer.acquire("k").allowed is False
 
     def test_decorator_with_composite_limiter(self):
         clock = FakeClock()

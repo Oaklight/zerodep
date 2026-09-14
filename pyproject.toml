@@ -177,6 +177,9 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
+markers = [
+    "cold_start: cold-start (import + first-call) benchmarks via subprocess",
+]
 testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonx", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema", "png", "llmstxt", "useragent", "synctex", "httpserver", "websocket", "cdp", "multipart", "s3", "ratelimit", "profiler"]
 
 [tool.ruff]

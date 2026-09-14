@@ -5,12 +5,19 @@ warm bytecode cache or pre-initialized state from the test runner.  Each
 invocation spawns a fresh Python process -- Python startup overhead cancels
 out when comparing zerodep vs reference library.
 
-Modules that require network, servers, or complex setup (httpclient,
-httpserver, websocket, cdp, sse, s3, ratelimit, runner, scheduler,
-persistdict) are excluded.
+Run via ``make benchmark-cold-start`` or ``pytest test_cold_start.py -v``.
+All tests carry the ``cold_start`` marker, so they can be excluded from
+normal test runs with ``-m "not cold_start"``.
+
+Modules that require network, servers, or complex setup are excluded:
+httpclient, httpserver, websocket, cdp, sse, s3, ratelimit, runner,
+scheduler, persistdict.  Modules without a meaningful one-shot call
+(a2a, acp, skills, llmstxt, depdetect, filelock, vcs, ansi, prompt,
+synctex, toon) are also excluded -- they are protocol/decorator/TUI
+modules where cold-start benchmarking adds little value.
 """
 
-import functools
+import importlib.util
 import os
 import subprocess
 import sys
@@ -19,6 +26,14 @@ import pytest
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PYTHON = sys.executable
+
+# Stripped environment for fair benchmark comparison.
+# PYTHONPATH / PYTHONSTARTUP / PYTHONCASEOK can affect import resolution
+# and timing; remove them so zerodep and reference libs are compared on
+# equal footing.
+_STRIP_VARS = {"PYTHONPATH", "PYTHONSTARTUP", "PYTHONCASEOK"}
+_BENCH_ENV = {k: v for k, v in os.environ.items() if k not in _STRIP_VARS}
+_BENCH_ENV["PYTHONDONTWRITEBYTECODE"] = "1"
 
 # -------------------------------------------------------------------
 # Module registry
@@ -137,7 +152,39 @@ ZERODEP_MODULES = [
 # -------------------------------------------------------------------
 # Reference libraries
 # Each entry: (label, import_stmt, first_call_snippet | None)
+#
+# ``_REF_TOP_PKG`` maps module name -> top-level package name used by
+# ``importlib.util.find_spec()`` to check availability without
+# spawning a subprocess.
 # -------------------------------------------------------------------
+
+_REF_TOP_PKG = {
+    "yaml": "yaml",
+    "dotenv": "dotenv",
+    "semver": "packaging",
+    "xml": "xmltodict",
+    "jsonx": "commentjson",
+    "soup": "bs4",
+    "multipart": "multipart",
+    "frontmatter": "frontmatter",
+    "validate": "pydantic",
+    "markdown": "mistune",
+    "diff": "unidiff",
+    "aes": "Crypto",
+    "qr": "qrcode",
+    "tabulate": "tabulate",
+    "structlog": "structlog",
+    "cache": "cachetools",
+    "readability": "readability",
+    "jsonschema": "jsonschema",
+    "sparse_search": "rank_bm25",
+    "useragent": "ua_generator",
+    "jsonrpc": "jsonrpcserver",
+    "png": "PIL",
+    "protobuf": "google.protobuf",
+    "config": "decouple",
+    "retry": "tenacity",
+}
 
 REFERENCE_LIBS = {
     "yaml": (
@@ -229,7 +276,7 @@ REFERENCE_LIBS = {
         "Document('<html><body>' + '<p>word </p>'*50 + '</body></html>')",
     ),
     "jsonschema": (
-        "jsonschema-lib",
+        "jsonschema",
         "import jsonschema",
         "jsonschema.validate({'a': 'x'}, "
         "{'type': 'object', "
@@ -256,7 +303,7 @@ REFERENCE_LIBS = {
         "Image.frombytes('RGB', (2, 2), b'\\xff\\x00\\x00' * 4)",
     ),
     "protobuf": (
-        "protobuf-lib",
+        "protobuf",
         "from google.protobuf import json_format",
         None,
     ),
@@ -278,7 +325,8 @@ def _run_snippet(code: str) -> None:
         [PYTHON, "-c", code],
         capture_output=True,
         check=True,
-        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+        env=_BENCH_ENV,
+        timeout=60,
     )
 
 
@@ -299,21 +347,10 @@ def _make_ref_code(import_stmt: str, call: str | None) -> str:
     return "; ".join(lines)
 
 
-@functools.lru_cache(maxsize=None)
-def _check_ref_available(name: str) -> bool:
-    if name not in REFERENCE_LIBS:
+def _is_ref_available(name: str) -> bool:
+    if name not in _REF_TOP_PKG:
         return False
-    _, ref_imp, _ = REFERENCE_LIBS[name]
-    try:
-        subprocess.run(
-            [PYTHON, "-c", ref_imp],
-            capture_output=True,
-            check=True,
-            timeout=10,
-        )
-        return True
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        return False
+    return importlib.util.find_spec(_REF_TOP_PKG[name]) is not None
 
 
 # -------------------------------------------------------------------
@@ -329,7 +366,7 @@ for _name, _subdir, _imp, _ in ZERODEP_MODULES:
             id=f"zerodep-{_name}",
         )
     )
-    if _name in REFERENCE_LIBS and _check_ref_available(_name):
+    if _name in REFERENCE_LIBS and _is_ref_available(_name):
         _ref_label, _ref_imp, _ = REFERENCE_LIBS[_name]
         _import_params.append(
             pytest.param(
@@ -339,6 +376,7 @@ for _name, _subdir, _imp, _ in ZERODEP_MODULES:
         )
 
 
+@pytest.mark.cold_start
 class TestColdImport:
     """Measure import-only time via subprocess (no warm cache)."""
 
@@ -362,7 +400,7 @@ for _name, _subdir, _imp, _call in ZERODEP_MODULES:
             id=f"zerodep-{_name}",
         )
     )
-    if _name in REFERENCE_LIBS and _check_ref_available(_name):
+    if _name in REFERENCE_LIBS and _is_ref_available(_name):
         _ref_label, _ref_imp, _ref_call = REFERENCE_LIBS[_name]
         if _ref_call is not None:
             _call_params.append(
@@ -373,6 +411,7 @@ for _name, _subdir, _imp, _call in ZERODEP_MODULES:
             )
 
 
+@pytest.mark.cold_start
 class TestColdFirstCall:
     """Measure import + first call via subprocess (no warm cache)."""
 

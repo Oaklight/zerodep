@@ -6,6 +6,12 @@
 
 ## [未发布]
 
+### 新功能
+
+- **jsonschema**：新增 JSON Schema 数据验证 — `schema_validate()` 和 `iter_errors()` 用于根据 JSON Schema 文档（Draft 2020-12 OpenAPI 3.x 子集）验证数据实例。支持 type、enum、const、字符串/数值约束、对象关键字、数组关键字、组合（allOf/anyOf/oneOf/not）、if/then/else 和布尔 schema。比 `jsonschema` PyPI 快 60-180 倍。模块层级从 `medium` 升级为 `subsystem`。([#131](https://github.com/Oaklight/zerodep/issues/131), [#157](https://github.com/Oaklight/zerodep/pull/157))
+- **jsonschema**：为 `iter_errors()` / `schema_validate()` 新增 `resolved=True` 参数，支持"解析一次、验证多次"模式 — 当调用方已调用 `resolve_refs()` 时跳过重复的 `$ref` 解析。对同一 schema 重复验证时约提速 3.4 倍。注意：`resolved=False` 仍为安全默认值；对未解析的 schema 传入 `resolved=True` 会静默跳过 `$ref` 引用目标。([#157](https://github.com/Oaklight/zerodep/pull/157))
+
+
 ## [2026.9.12] - 2026-09-12
 
 ### 问题修复

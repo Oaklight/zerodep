@@ -413,7 +413,14 @@ for _name, _subdir, _imp, _call in ZERODEP_MODULES:
 
 @pytest.mark.cold_start
 class TestColdFirstCall:
-    """Measure import + first call via subprocess (no warm cache)."""
+    """Measure import + first call via subprocess (no warm cache).
+
+    Snippets exercise representative but not identical operations across
+    zerodep and reference libraries (e.g. encode vs parse, scoring vs
+    extraction).  For fair head-to-head comparison, use TestColdImport;
+    first-call results reflect typical startup cost, not algorithmic
+    differences.
+    """
 
     @pytest.mark.parametrize("code", _call_params)
     def test_cold_first_call(self, benchmark, code):

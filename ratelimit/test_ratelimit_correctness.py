@@ -94,6 +94,13 @@ class TestRateLimitResult:
         assert r.allowed is False
         assert r.retry_after == 5.0
 
+    def test_iter(self):
+        clock = FakeClock()
+        a = TokenBucketLimiter(rate=1.0, capacity=1, clock=clock)
+        b = FixedWindowLimiter(limit=10, window_seconds=60.0, clock=clock)
+        composite = CompositeLimiter([a, b])
+        assert list(composite) == [a, b]
+
     def test_repr(self):
         r = RateLimitResult(
             allowed=True, limit=10, remaining=9, reset_at=100.0, retry_after=None
@@ -756,10 +763,26 @@ class TestThreadSafe:
         # Active key's lock should survive
         assert "k0" in limiter._locks
 
+    # ---------------------------------------------------------------------------
+    # Async API (aacquire / apeek)
+    # ---------------------------------------------------------------------------
 
-# ---------------------------------------------------------------------------
-# Async API (aacquire / apeek)
-# ---------------------------------------------------------------------------
+    def test_limiter_property(self):
+        inner = TokenBucketLimiter(rate=1.0, capacity=1)
+        safe = ThreadSafeLimiter(inner)
+        assert safe.limiter is inner
+
+    def test_detail_through_thread_safe_wrapper(self):
+        clock = FakeClock()
+        rpm = FixedWindowLimiter(limit=2, window_seconds=60.0, clock=clock)
+        rpd = FixedWindowLimiter(limit=100, window_seconds=86400.0, clock=clock)
+        composite = CompositeLimiter([rpm, rpd])
+        safe = ThreadSafeLimiter(composite)
+        safe.acquire("k")
+        safe.acquire("k")
+        details = safe.limiter.detail("k")
+        assert details[0].allowed is False
+        assert details[1].remaining == 98
 
 
 class TestAsyncAPI:
@@ -1108,6 +1131,13 @@ class TestCompositeLimiter:
         composite = CompositeLimiter([a, b])
         assert composite.limiters == (a, b)
         assert len(composite) == 2
+
+    def test_iter(self):
+        clock = FakeClock()
+        a = TokenBucketLimiter(rate=1.0, capacity=1, clock=clock)
+        b = FixedWindowLimiter(limit=10, window_seconds=60.0, clock=clock)
+        composite = CompositeLimiter([a, b])
+        assert list(composite) == [a, b]
 
     def test_repr(self):
         inner = TokenBucketLimiter(rate=1.0, capacity=1)

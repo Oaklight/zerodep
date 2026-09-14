@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-09-12T08:53:19.307764+00:00",
+  "generated": "2026-09-14T02:40:21.322351+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -195,16 +195,16 @@
       "content_hash": "402d88f2ab1d6736a37a69a6b6269ea9e450e3dd22e9dd49c7d52b570b8b6dda"
     },
     "jsonschema": {
-      "description": "JSON Schema flattening & sanitization — zero dependencies, stdlib only",
+      "description": "JSON Schema flattening, sanitization & validation — zero dependencies, stdlib only",
       "files": [
         "jsonschema/jsonschema.py"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
-      "tier": "medium",
+      "tier": "subsystem",
       "category": "validation",
       "last_updated": "2026-09-12T02:27:23-05:00",
-      "content_hash": "9768b09f0d3548220b233b08219606a34e2db5a4b83f2bbe61331afaa4fe22dd"
+      "content_hash": "405fbd2b39118de6266190803461ae578768df5523339dcc2430d0a99bf03def"
     },
     "jsonx": {
       "description": "Extended JSON parser — zero dependencies, stdlib only, Python 3.10+",

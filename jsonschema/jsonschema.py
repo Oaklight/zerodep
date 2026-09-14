@@ -40,6 +40,23 @@ Validation example::
     >>> len(errors)
     1
 
+Supported validation keywords (Draft 2020-12 subset)::
+
+    type, enum, const,
+    minLength, maxLength, pattern,
+    minimum, maximum, exclusiveMinimum, exclusiveMaximum, multipleOf,
+    properties, required, additionalProperties, patternProperties,
+    minProperties, maxProperties,
+    items, prefixItems, minItems, maxItems, uniqueItems, contains,
+    allOf, anyOf, oneOf, not, if/then/else
+
+Not implemented: dependentRequired, dependentSchemas, propertyNames,
+minContains, maxContains, format.
+
+Note: OpenAPI 3.0 ``nullable: true`` is not handled by the validator.
+Use ``flatten_schema`` to convert ``nullable`` to ``type: [..., "null"]``
+before validating, or write schemas using Draft 2020-12 type arrays.
+
 Flattening pipeline::
 
     resolve_refs  →  merge_allof  →  simplify_unions  →  sanitize
@@ -173,6 +190,10 @@ def _inline_refs(
     if isinstance(ref, str):
         if ref in _seen:
             # Circular reference — drop the $ref and keep sibling keys.
+            warnings.warn(
+                f"Circular $ref: {ref!r} — dropped",
+                stacklevel=2,
+            )
             return {k: v for k, v in schema.items() if k != "$ref"}
         resolved = _resolve_ref(ref, root)
         if resolved:
@@ -626,11 +647,11 @@ def _check_type(
     errors: list[SchemaErrorDetail],
     path: str,
     schema_path: str,
-) -> bool:
-    """Validate the ``type`` keyword. Returns True if the type matches."""
+) -> None:
+    """Validate the ``type`` keyword."""
     types = [type_val] if isinstance(type_val, str) else type_val
     if any(_is_json_type(instance, t) for t in types):
-        return True
+        return
     expected = type_val if isinstance(type_val, str) else types
     errors.append(
         SchemaErrorDetail(
@@ -640,7 +661,6 @@ def _check_type(
             message=f"Expected type {expected} at '{path or '$'}', got {_type_name(instance)}",
         )
     )
-    return False
 
 
 def _check_enum(
@@ -650,7 +670,7 @@ def _check_enum(
     path: str,
     schema_path: str,
 ) -> None:
-    if instance not in enum_val:
+    if not any(type(instance) is type(v) and instance == v for v in enum_val):
         errors.append(
             SchemaErrorDetail(
                 path=path or "$",
@@ -668,7 +688,7 @@ def _check_const(
     path: str,
     schema_path: str,
 ) -> None:
-    if instance != const_val:
+    if type(instance) is not type(const_val) or instance != const_val:
         errors.append(
             SchemaErrorDetail(
                 path=path or "$",
@@ -801,7 +821,7 @@ def _check_object_props(
     for prop_name, prop_schema in properties.items():
         if prop_name in instance:
             covered_keys.add(prop_name)
-            if isinstance(prop_schema, dict):
+            if isinstance(prop_schema, (dict, bool)):
                 _validate_schema(
                     instance[prop_name],
                     prop_schema,
@@ -815,7 +835,7 @@ def _check_object_props(
         for key in instance:
             if compiled.search(key):
                 covered_keys.add(key)
-                if isinstance(pat_schema, dict):
+                if isinstance(pat_schema, (dict, bool)):
                     _validate_schema(
                         instance[key],
                         pat_schema,
@@ -965,7 +985,10 @@ def _check_unique_items(
     except TypeError:
         for i in range(len(instance)):
             for j in range(i + 1, len(instance)):
-                if instance[i] == instance[j]:
+                if (
+                    type(instance[i]) is type(instance[j])
+                    and instance[i] == instance[j]
+                ):
                     errors.append(
                         SchemaErrorDetail(
                             path=_jp(path, j),
@@ -1128,6 +1151,31 @@ def _check_not(
         )
 
 
+def _check_if_then_else(
+    instance: Any,
+    schema: dict[str, Any],
+    errors: list[SchemaErrorDetail],
+    path: str,
+    schema_path: str,
+) -> None:
+    """Handle ``if``/``then``/``else`` conditional keywords."""
+    if_schema = schema["if"]
+    trial: list[SchemaErrorDetail] = []
+    _validate_schema(instance, if_schema, trial, path, "")
+    if not trial:
+        then_schema = schema.get("then")
+        if then_schema is not None:
+            _validate_schema(
+                instance, then_schema, errors, path, _jp(schema_path, "then")
+            )
+    else:
+        else_schema = schema.get("else")
+        if else_schema is not None:
+            _validate_schema(
+                instance, else_schema, errors, path, _jp(schema_path, "else")
+            )
+
+
 # -- Core dispatcher ---------------------------------------------------------
 
 
@@ -1174,31 +1222,6 @@ def _validate_schema(
         _check_not(instance, schema["not"], errors, path, schema_path)
     if "if" in schema:
         _check_if_then_else(instance, schema, errors, path, schema_path)
-
-
-def _check_if_then_else(
-    instance: Any,
-    schema: dict[str, Any],
-    errors: list[SchemaErrorDetail],
-    path: str,
-    schema_path: str,
-) -> None:
-    """Handle ``if``/``then``/``else`` conditional keywords."""
-    if_schema = schema["if"]
-    trial: list[SchemaErrorDetail] = []
-    _validate_schema(instance, if_schema, trial, path, "")
-    if not trial:
-        then_schema = schema.get("then")
-        if then_schema is not None:
-            _validate_schema(
-                instance, then_schema, errors, path, _jp(schema_path, "then")
-            )
-    else:
-        else_schema = schema.get("else")
-        if else_schema is not None:
-            _validate_schema(
-                instance, else_schema, errors, path, _jp(schema_path, "else")
-            )
 
 
 # ---------------------------------------------------------------------------

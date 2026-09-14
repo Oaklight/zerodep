@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.1.0"
+# version = "0.2.0"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -47,7 +47,7 @@ import re
 import threading
 import time
 from abc import abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from functools import wraps
 from typing import Any, Protocol, runtime_checkable
 
@@ -59,6 +59,7 @@ __all__: list[str] = [
     "SlidingWindowLimiter",
     "GCRALimiter",
     "ThreadSafeLimiter",
+    "CompositeLimiter",
     "RateLimitExceeded",
     "ratelimit",
     "create_limiter",
@@ -991,3 +992,61 @@ def _get_state_keys(limiter: Any) -> set[str]:
         if d is not None:
             return set(d.keys())
     return set()
+
+
+# ---------------------------------------------------------------------------
+# Composite limiter
+# ---------------------------------------------------------------------------
+
+
+class CompositeLimiter(_AsyncMixin):
+    """Enforces multiple rate limiters, returning the strictest result.
+
+    Useful for multi-window rate limiting — for example, enforcing both
+    RPM (requests per minute) and RPD (requests per day) simultaneously.
+    All sub-limiters are checked on every call; if any denies, the
+    composite result is denied with the longest ``retry_after``.
+
+    Note:
+        When a composite ``acquire`` is denied, sub-limiters that
+        individually allowed the request will have already consumed
+        tokens.  This false consumption is bounded by *tokens*
+        (typically 1) and self-corrects as windows slide or buckets
+        refill.
+
+    Args:
+        limiters: One or more :class:`RateLimiter` instances to enforce.
+    """
+
+    def __init__(self, limiters: Sequence[RateLimiter]) -> None:
+        if not limiters:
+            raise ValueError("CompositeLimiter requires at least one limiter")
+        self._limiters: tuple[RateLimiter, ...] = tuple(limiters)
+
+    def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
+        results = [lim.acquire(key, tokens) for lim in self._limiters]
+        return self._merge(results)
+
+    def peek(self, key: str) -> RateLimitResult:
+        results = [lim.peek(key) for lim in self._limiters]
+        return self._merge(results)
+
+    @staticmethod
+    def _merge(results: list[RateLimitResult]) -> RateLimitResult:
+        denied = [r for r in results if not r.allowed]
+        if denied:
+            strictest = max(denied, key=lambda r: r.retry_after or 0.0)
+            return RateLimitResult(
+                allowed=False,
+                limit=strictest.limit,
+                remaining=strictest.remaining,
+                reset_at=strictest.reset_at,
+                retry_after=strictest.retry_after,
+            )
+        return RateLimitResult(
+            allowed=True,
+            limit=min(r.limit for r in results),
+            remaining=min(r.remaining for r in results),
+            reset_at=max(r.reset_at for r in results),
+            retry_after=None,
+        )

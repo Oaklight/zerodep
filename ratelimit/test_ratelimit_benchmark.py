@@ -10,6 +10,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(__file__))
 
 from ratelimit import (
+    CompositeLimiter,
     FixedWindowLimiter,
     GCRALimiter,
     SlidingWindowLimiter,
@@ -76,6 +77,24 @@ class TestZerodepBenchmarks:
     def test_fixed_window_peek(self, benchmark):
         limiter = FixedWindowLimiter(limit=10000, window_seconds=1.0)
         benchmark(limiter.peek, "bench-key")
+
+    def test_composite_two_buckets_acquire(self, benchmark):
+        composite = CompositeLimiter(
+            [
+                TokenBucketLimiter(rate=10000.0, capacity=10000),
+                TokenBucketLimiter(rate=10000.0, capacity=10000),
+            ]
+        )
+        benchmark(composite.acquire, "bench-key")
+
+    def test_composite_mixed_acquire(self, benchmark):
+        composite = CompositeLimiter(
+            [
+                TokenBucketLimiter(rate=10000.0, capacity=10000),
+                FixedWindowLimiter(limit=10000, window_seconds=1.0),
+            ]
+        )
+        benchmark(composite.acquire, "bench-key")
 
 
 # ---------------------------------------------------------------------------

@@ -1341,7 +1341,11 @@ class App:
         logger.debug("%s %s from %s", method, path, client_addr)
 
         try:
-            response = await self._dispatch(request)
+            try:
+                response = await self._dispatch(request)
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                logger.debug("Connection reset by %s during dispatch", client_addr)
+                return
 
             for hook in self._on_response_started_handlers:
                 try:

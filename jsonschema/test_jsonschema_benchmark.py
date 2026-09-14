@@ -520,3 +520,80 @@ class TestPerfXlarge:
     @pytest.mark.skipif(not _HAS_NODE, reason="Node.js or npm deps missing")
     def test_allof_merge_js(self, benchmark, js_engine):
         benchmark(js_engine.merge, XLARGE_SCHEMA)
+
+
+# ---------------------------------------------------------------------------
+# Phase 6 — Validation benchmarks (zerodep vs jsonschema PyPI)
+# ---------------------------------------------------------------------------
+
+from jsonschema import schema_validate  # noqa: E402
+
+# Import real jsonschema PyPI for comparison
+_saved_path_bench = sys.path[:]
+sys.path = [p for p in sys.path if os.path.abspath(p) != os.path.abspath(_this_dir)]
+sys.modules.pop("jsonschema", None)
+for _k in list(sys.modules):
+    if _k.startswith("jsonschema."):
+        sys.modules.pop(_k, None)
+try:
+    import jsonschema as _jsonschema_ref
+
+    if not hasattr(_jsonschema_ref, "validate"):
+        raise ImportError
+    _ref_validate = _jsonschema_ref.validate
+    _HAS_JSONSCHEMA_REF = True
+except ImportError:
+    _HAS_JSONSCHEMA_REF = False
+    _ref_validate = None
+finally:
+    sys.path = _saved_path_bench
+    sys.modules.pop("jsonschema", None)
+    for _k in list(sys.modules):
+        if _k.startswith("jsonschema."):
+            sys.modules.pop(_k, None)
+
+
+# Resolved schemas for validation (pre-resolve $ref so benchmarks measure
+# pure validation, not ref resolution overhead).
+_MEDIUM_RESOLVED = resolve_refs(MEDIUM_SCHEMA)
+_LARGE_RESOLVED = resolve_refs(LARGE_SCHEMA)
+
+MEDIUM_INSTANCE = {
+    "user": {"name": "Alice", "age": 30, "role": "admin"},
+    "settings": {"theme": "dark", "lang": "en"},
+}
+
+LARGE_INSTANCE = {
+    "query": "hello world",
+    "filters": {
+        "limit": 100,
+        "offset": 0,
+        "start_date": "2024-01-01",
+        "end_date": None,
+        "tags": ["fiction", "bestseller"],
+    },
+    "output": {
+        "page": 1,
+        "per_page": 20,
+        "format": "json",
+        "fields": [{"name": "title", "sort": "asc", "alias": "t"}],
+    },
+}
+
+
+class TestBenchValidateMedium:
+    def test_ours(self, benchmark):
+        benchmark(schema_validate, MEDIUM_INSTANCE, _MEDIUM_RESOLVED)
+
+    @pytest.mark.skipif(not _HAS_JSONSCHEMA_REF, reason="jsonschema PyPI not installed")
+    def test_jsonschema_ref(self, benchmark):
+        benchmark(_ref_validate, MEDIUM_INSTANCE, _MEDIUM_RESOLVED)
+
+
+class TestBenchValidateLarge:
+    def test_ours(self, benchmark):
+        benchmark(schema_validate, LARGE_INSTANCE, _LARGE_RESOLVED)
+
+    @pytest.mark.skipif(not _HAS_JSONSCHEMA_REF, reason="jsonschema PyPI not installed")
+    def test_jsonschema_ref(self, benchmark):
+        benchmark(_ref_validate, LARGE_INSTANCE, _LARGE_RESOLVED)

@@ -19,10 +19,13 @@ sys.path.insert(0, _this_dir)
 
 from jsonschema import (  # noqa: E402
     UNSUPPORTED_SCHEMA_KEYS,
+    SchemaValidationError,
     flatten_schema,
+    iter_errors,
     merge_allof,
     resolve_refs,
     sanitize,
+    schema_validate,
     simplify_unions,
 )
 
@@ -1276,3 +1279,876 @@ class TestPropertyNameCollisions:
         assert "title" in result["properties"]
         assert result["properties"]["title"] == {"type": "string", "minLength": 1}
         assert "title" in result["required"]
+
+
+# ---------------------------------------------------------------------------
+# Phase 6 — Data validation
+# ---------------------------------------------------------------------------
+
+
+class TestSchemaValidateType:
+    """Type keyword validation."""
+
+    def test_string_valid(self):
+        assert iter_errors("hello", {"type": "string"}) == []
+
+    def test_string_invalid(self):
+        errs = iter_errors(42, {"type": "string"})
+        assert len(errs) == 1
+        assert errs[0].validator == "type"
+
+    def test_integer_valid(self):
+        assert iter_errors(42, {"type": "integer"}) == []
+
+    def test_integer_invalid(self):
+        errs = iter_errors(3.14, {"type": "integer"})
+        assert len(errs) == 1
+
+    def test_integer_rejects_bool(self):
+        errs = iter_errors(True, {"type": "integer"})
+        assert len(errs) == 1
+
+    def test_number_valid(self):
+        assert iter_errors(3.14, {"type": "number"}) == []
+
+    def test_number_accepts_int(self):
+        assert iter_errors(42, {"type": "number"}) == []
+
+    def test_number_rejects_bool(self):
+        errs = iter_errors(False, {"type": "number"})
+        assert len(errs) == 1
+
+    def test_boolean_valid(self):
+        assert iter_errors(True, {"type": "boolean"}) == []
+
+    def test_boolean_invalid(self):
+        errs = iter_errors(1, {"type": "boolean"})
+        assert len(errs) == 1
+
+    def test_null_valid(self):
+        assert iter_errors(None, {"type": "null"}) == []
+
+    def test_null_invalid(self):
+        errs = iter_errors("", {"type": "null"})
+        assert len(errs) == 1
+
+    def test_array_valid(self):
+        assert iter_errors([1, 2], {"type": "array"}) == []
+
+    def test_array_invalid(self):
+        errs = iter_errors("not array", {"type": "array"})
+        assert len(errs) == 1
+
+    def test_object_valid(self):
+        assert iter_errors({"a": 1}, {"type": "object"}) == []
+
+    def test_object_invalid(self):
+        errs = iter_errors([1, 2], {"type": "object"})
+        assert len(errs) == 1
+
+    def test_type_array_accepts_any_listed(self):
+        schema = {"type": ["string", "integer"]}
+        assert iter_errors("hello", schema) == []
+        assert iter_errors(42, schema) == []
+
+    def test_type_array_rejects_unlisted(self):
+        schema = {"type": ["string", "integer"]}
+        errs = iter_errors(3.14, schema)
+        assert len(errs) == 1
+
+    def test_nullable_type_array(self):
+        schema = {"type": ["string", "null"]}
+        assert iter_errors(None, schema) == []
+        assert iter_errors("hello", schema) == []
+        errs = iter_errors(42, schema)
+        assert len(errs) == 1
+
+    def test_empty_schema_accepts_anything(self):
+        assert iter_errors("anything", {}) == []
+        assert iter_errors(42, {}) == []
+        assert iter_errors(None, {}) == []
+        assert iter_errors({"nested": [1, 2]}, {}) == []
+
+
+class TestSchemaValidateEnum:
+    """Enum keyword validation."""
+
+    def test_enum_valid(self):
+        assert iter_errors("red", {"enum": ["red", "green", "blue"]}) == []
+
+    def test_enum_invalid(self):
+        errs = iter_errors("yellow", {"enum": ["red", "green", "blue"]})
+        assert len(errs) == 1
+        assert errs[0].validator == "enum"
+
+    def test_enum_with_null(self):
+        schema = {"enum": ["a", "b", None]}
+        assert iter_errors(None, schema) == []
+        assert iter_errors("a", schema) == []
+
+    def test_enum_with_types(self):
+        schema = {"enum": [1, "one", True]}
+        assert iter_errors(1, schema) == []
+        assert iter_errors("one", schema) == []
+        assert iter_errors(True, schema) == []
+
+
+class TestSchemaValidateConst:
+    """Const keyword validation."""
+
+    def test_const_valid(self):
+        assert iter_errors(42, {"const": 42}) == []
+
+    def test_const_invalid(self):
+        errs = iter_errors(43, {"const": 42})
+        assert len(errs) == 1
+        assert errs[0].validator == "const"
+
+    def test_const_null(self):
+        assert iter_errors(None, {"const": None}) == []
+        errs = iter_errors("", {"const": None})
+        assert len(errs) == 1
+
+
+class TestSchemaValidateString:
+    """String constraint keywords."""
+
+    def test_minlength_valid(self):
+        assert iter_errors("abc", {"type": "string", "minLength": 2}) == []
+
+    def test_minlength_invalid(self):
+        errs = iter_errors("a", {"type": "string", "minLength": 2})
+        assert len(errs) == 1
+        assert errs[0].validator == "minLength"
+
+    def test_maxlength_valid(self):
+        assert iter_errors("ab", {"type": "string", "maxLength": 5}) == []
+
+    def test_maxlength_invalid(self):
+        errs = iter_errors("toolong", {"type": "string", "maxLength": 3})
+        assert len(errs) == 1
+        assert errs[0].validator == "maxLength"
+
+    def test_pattern_valid(self):
+        assert (
+            iter_errors("abc123", {"type": "string", "pattern": "^[a-z]+\\d+$"}) == []
+        )
+
+    def test_pattern_invalid(self):
+        errs = iter_errors("ABC", {"type": "string", "pattern": "^[a-z]+$"})
+        assert len(errs) == 1
+        assert errs[0].validator == "pattern"
+
+    def test_string_constraints_skip_non_string(self):
+        assert iter_errors(42, {"minLength": 1, "maxLength": 10, "pattern": ".*"}) == []
+
+
+class TestSchemaValidateNumber:
+    """Numeric constraint keywords."""
+
+    def test_minimum_valid(self):
+        assert iter_errors(10, {"type": "number", "minimum": 5}) == []
+
+    def test_minimum_invalid(self):
+        errs = iter_errors(3, {"type": "number", "minimum": 5})
+        assert len(errs) == 1
+        assert errs[0].validator == "minimum"
+
+    def test_maximum_valid(self):
+        assert iter_errors(5, {"type": "number", "maximum": 10}) == []
+
+    def test_maximum_invalid(self):
+        errs = iter_errors(15, {"type": "number", "maximum": 10})
+        assert len(errs) == 1
+        assert errs[0].validator == "maximum"
+
+    def test_exclusive_minimum_valid(self):
+        assert iter_errors(6, {"type": "integer", "exclusiveMinimum": 5}) == []
+
+    def test_exclusive_minimum_invalid(self):
+        errs = iter_errors(5, {"type": "integer", "exclusiveMinimum": 5})
+        assert len(errs) == 1
+        assert errs[0].validator == "exclusiveMinimum"
+
+    def test_exclusive_maximum_valid(self):
+        assert iter_errors(4, {"type": "integer", "exclusiveMaximum": 5}) == []
+
+    def test_exclusive_maximum_invalid(self):
+        errs = iter_errors(5, {"type": "integer", "exclusiveMaximum": 5})
+        assert len(errs) == 1
+        assert errs[0].validator == "exclusiveMaximum"
+
+    def test_multiple_of_valid(self):
+        assert iter_errors(10, {"type": "integer", "multipleOf": 5}) == []
+
+    def test_multiple_of_invalid(self):
+        errs = iter_errors(7, {"type": "integer", "multipleOf": 3})
+        assert len(errs) == 1
+        assert errs[0].validator == "multipleOf"
+
+    def test_multiple_of_float(self):
+        assert iter_errors(0.5, {"type": "number", "multipleOf": 0.25}) == []
+        errs = iter_errors(0.3, {"type": "number", "multipleOf": 0.25})
+        assert len(errs) == 1
+
+    def test_number_constraints_skip_non_number(self):
+        assert iter_errors("hello", {"minimum": 0, "maximum": 100}) == []
+
+
+class TestSchemaValidateObject:
+    """Object keyword validation."""
+
+    def test_required_present(self):
+        schema = {
+            "type": "object",
+            "properties": {"name": {"type": "string"}},
+            "required": ["name"],
+        }
+        assert iter_errors({"name": "Alice"}, schema) == []
+
+    def test_required_missing(self):
+        schema = {
+            "type": "object",
+            "properties": {"name": {"type": "string"}},
+            "required": ["name"],
+        }
+        errs = iter_errors({}, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "required"
+
+    def test_required_multiple_missing(self):
+        schema = {"type": "object", "required": ["a", "b", "c"]}
+        errs = iter_errors({"a": 1}, schema)
+        assert len(errs) == 2  # b and c missing
+
+    def test_properties_valid(self):
+        schema = {"type": "object", "properties": {"age": {"type": "integer"}}}
+        assert iter_errors({"age": 25}, schema) == []
+
+    def test_properties_invalid_child(self):
+        schema = {"type": "object", "properties": {"age": {"type": "integer"}}}
+        errs = iter_errors({"age": "old"}, schema)
+        assert len(errs) == 1
+        assert errs[0].path == "age"
+
+    def test_additional_properties_false(self):
+        schema = {
+            "type": "object",
+            "properties": {"name": {"type": "string"}},
+            "additionalProperties": False,
+        }
+        assert iter_errors({"name": "Alice"}, schema) == []
+        errs = iter_errors({"name": "Alice", "extra": 1}, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "additionalProperties"
+
+    def test_additional_properties_schema(self):
+        schema = {
+            "type": "object",
+            "properties": {"name": {"type": "string"}},
+            "additionalProperties": {"type": "integer"},
+        }
+        assert iter_errors({"name": "Alice", "age": 25}, schema) == []
+        errs = iter_errors({"name": "Alice", "age": "old"}, schema)
+        assert len(errs) == 1
+
+    def test_pattern_properties(self):
+        schema = {
+            "type": "object",
+            "patternProperties": {"^x-": {"type": "string"}},
+        }
+        assert iter_errors({"x-custom": "hello"}, schema) == []
+        errs = iter_errors({"x-custom": 42}, schema)
+        assert len(errs) == 1
+
+    def test_pattern_properties_with_additional(self):
+        schema = {
+            "type": "object",
+            "patternProperties": {"^x-": {"type": "string"}},
+            "additionalProperties": False,
+        }
+        assert iter_errors({"x-ext": "val"}, schema) == []
+        errs = iter_errors({"x-ext": "val", "other": 1}, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "additionalProperties"
+
+    def test_min_max_properties(self):
+        schema = {"type": "object", "minProperties": 1, "maxProperties": 2}
+        assert iter_errors({"a": 1}, schema) == []
+        errs_min = iter_errors({}, schema)
+        assert len(errs_min) == 1
+        assert errs_min[0].validator == "minProperties"
+        errs_max = iter_errors({"a": 1, "b": 2, "c": 3}, schema)
+        assert len(errs_max) == 1
+        assert errs_max[0].validator == "maxProperties"
+
+
+class TestSchemaValidateArray:
+    """Array keyword validation."""
+
+    def test_items_valid(self):
+        schema = {"type": "array", "items": {"type": "integer"}}
+        assert iter_errors([1, 2, 3], schema) == []
+
+    def test_items_invalid_child(self):
+        schema = {"type": "array", "items": {"type": "integer"}}
+        errs = iter_errors([1, "two", 3], schema)
+        assert len(errs) == 1
+        assert errs[0].path == "[1]"
+
+    def test_min_items(self):
+        schema = {"type": "array", "minItems": 2}
+        assert iter_errors([1, 2], schema) == []
+        errs = iter_errors([1], schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "minItems"
+
+    def test_max_items(self):
+        schema = {"type": "array", "maxItems": 2}
+        assert iter_errors([1, 2], schema) == []
+        errs = iter_errors([1, 2, 3], schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "maxItems"
+
+    def test_unique_items_valid(self):
+        schema = {"type": "array", "uniqueItems": True}
+        assert iter_errors([1, 2, 3], schema) == []
+
+    def test_unique_items_invalid(self):
+        schema = {"type": "array", "uniqueItems": True}
+        errs = iter_errors([1, 2, 2, 3], schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "uniqueItems"
+
+    def test_unique_items_unhashable(self):
+        schema = {"type": "array", "uniqueItems": True}
+        assert iter_errors([{"a": 1}, {"b": 2}], schema) == []
+        errs = iter_errors([{"a": 1}, {"a": 1}], schema)
+        assert len(errs) == 1
+
+    def test_prefix_items(self):
+        schema = {
+            "type": "array",
+            "prefixItems": [
+                {"type": "string"},
+                {"type": "integer"},
+            ],
+        }
+        assert iter_errors(["hello", 42], schema) == []
+        errs = iter_errors([42, "hello"], schema)
+        assert len(errs) == 2  # both wrong type
+
+    def test_prefix_items_with_items_false(self):
+        schema = {
+            "type": "array",
+            "prefixItems": [{"type": "string"}],
+            "items": False,
+        }
+        assert iter_errors(["hello"], schema) == []
+        errs = iter_errors(["hello", "extra"], schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "items"
+
+    def test_contains(self):
+        schema = {"type": "array", "contains": {"type": "integer"}}
+        assert iter_errors(["a", 1, "b"], schema) == []
+        errs = iter_errors(["a", "b", "c"], schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "contains"
+
+
+class TestSchemaValidateComposition:
+    """Composition keyword validation (allOf, anyOf, oneOf, not)."""
+
+    def test_allof_both_pass(self):
+        schema = {
+            "allOf": [
+                {"type": "object", "properties": {"name": {"type": "string"}}},
+                {"required": ["name"]},
+            ]
+        }
+        assert iter_errors({"name": "Alice"}, schema) == []
+
+    def test_allof_one_fails(self):
+        schema = {
+            "allOf": [
+                {"type": "object"},
+                {"required": ["name"]},
+            ]
+        }
+        errs = iter_errors({}, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "required"
+
+    def test_anyof_one_matches(self):
+        schema = {"anyOf": [{"type": "string"}, {"type": "integer"}]}
+        assert iter_errors("hello", schema) == []
+        assert iter_errors(42, schema) == []
+
+    def test_anyof_none_matches(self):
+        schema = {"anyOf": [{"type": "string"}, {"type": "integer"}]}
+        errs = iter_errors(3.14, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "anyOf"
+
+    def test_oneof_exactly_one(self):
+        schema = {"oneOf": [{"type": "string"}, {"type": "integer"}]}
+        assert iter_errors("hello", schema) == []
+
+    def test_oneof_none_match(self):
+        schema = {"oneOf": [{"type": "string"}, {"type": "integer"}]}
+        errs = iter_errors(3.14, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "oneOf"
+        assert "does not match" in errs[0].message
+
+    def test_oneof_two_match(self):
+        schema = {"oneOf": [{"type": "number"}, {"type": "integer"}]}
+        errs = iter_errors(42, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "oneOf"
+        assert "more than one" in errs[0].message
+
+    def test_not_passes(self):
+        schema = {"not": {"type": "string"}}
+        assert iter_errors(42, schema) == []
+
+    def test_not_fails(self):
+        schema = {"not": {"type": "string"}}
+        errs = iter_errors("hello", schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "not"
+
+    def test_nested_composition(self):
+        schema = {
+            "allOf": [
+                {"anyOf": [{"type": "object"}, {"type": "null"}]},
+                {
+                    "type": "object",
+                    "properties": {
+                        "status": {
+                            "oneOf": [{"const": "active"}, {"const": "inactive"}]
+                        }
+                    },
+                },
+            ]
+        }
+        assert iter_errors({"status": "active"}, schema) == []
+        errs = iter_errors({"status": "unknown"}, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "oneOf"
+
+    def test_if_then_else(self):
+        schema = {
+            "type": "object",
+            "properties": {"kind": {"type": "string"}, "value": {}},
+            "if": {"properties": {"kind": {"const": "number"}}},
+            "then": {"properties": {"value": {"type": "number"}}},
+            "else": {"properties": {"value": {"type": "string"}}},
+        }
+        assert iter_errors({"kind": "number", "value": 42}, schema) == []
+        assert iter_errors({"kind": "text", "value": "hello"}, schema) == []
+        errs = iter_errors({"kind": "number", "value": "not a number"}, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "type"
+
+
+class TestSchemaValidateRef:
+    """$ref resolution before validation."""
+
+    def test_ref_resolved_before_validation(self):
+        schema = {
+            "type": "object",
+            "properties": {"user": {"$ref": "#/$defs/User"}},
+            "$defs": {
+                "User": {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                    "required": ["name"],
+                }
+            },
+        }
+        assert iter_errors({"user": {"name": "Alice"}}, schema) == []
+        errs = iter_errors({"user": {}}, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "required"
+
+    def test_ref_with_allof_composition(self):
+        schema = {
+            "allOf": [
+                {"$ref": "#/$defs/Base"},
+                {"properties": {"extra": {"type": "boolean"}}},
+            ],
+            "$defs": {
+                "Base": {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                    "required": ["name"],
+                }
+            },
+        }
+        assert iter_errors({"name": "Alice", "extra": True}, schema) == []
+
+    def test_circular_ref_does_not_hang(self):
+        schema = {
+            "type": "object",
+            "properties": {
+                "child": {"$ref": "#"},
+            },
+        }
+        # Should not hang — circular $ref is broken by resolve_refs
+        errs = iter_errors({"child": {"child": {}}}, schema)
+        assert isinstance(errs, list)
+
+
+class TestSchemaValidateBooleanSchema:
+    """Boolean schema (true/false) validation."""
+
+    def test_true_accepts_anything(self):
+        assert iter_errors("anything", True) == []
+        assert iter_errors(42, True) == []
+        assert iter_errors(None, True) == []
+        assert iter_errors({"a": [1]}, True) == []
+
+    def test_false_rejects_everything(self):
+        for value in ("anything", 42, None, {}, [], True, False):
+            errs = iter_errors(value, False)
+            assert len(errs) == 1, f"Expected 1 error for {value!r}"
+            assert errs[0].validator == "false_schema"
+
+
+class TestSchemaValidateErrorModel:
+    """Error detail and exception model."""
+
+    def test_error_path_nested_object(self):
+        schema = {
+            "type": "object",
+            "properties": {
+                "user": {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                }
+            },
+        }
+        errs = iter_errors({"user": {"name": 42}}, schema)
+        assert len(errs) == 1
+        assert errs[0].path == "user.name"
+
+    def test_error_path_array_item(self):
+        schema = {"type": "array", "items": {"type": "integer"}}
+        errs = iter_errors([1, "two", 3], schema)
+        assert len(errs) == 1
+        assert errs[0].path == "[1]"
+
+    def test_error_path_deeply_nested(self):
+        schema = {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {"value": {"type": "number"}},
+                    },
+                }
+            },
+        }
+        errs = iter_errors({"data": [{"value": 1}, {"value": "bad"}]}, schema)
+        assert len(errs) == 1
+        assert errs[0].path == "data[1].value"
+
+    def test_error_schema_path_present(self):
+        schema = {
+            "type": "object",
+            "properties": {"age": {"type": "integer", "minimum": 0}},
+        }
+        errs = iter_errors({"age": -1}, schema)
+        assert len(errs) == 1
+        assert "minimum" in errs[0].schema_path
+
+    def test_multiple_errors_collected(self):
+        schema = {
+            "type": "object",
+            "properties": {"a": {"type": "string"}, "b": {"type": "integer"}},
+            "required": ["a", "b"],
+        }
+        errs = iter_errors({}, schema)
+        assert len(errs) == 2  # two required fields missing
+
+    def test_schema_validation_error_message_format(self):
+        schema = {"type": "string"}
+        try:
+            schema_validate(42, schema)
+            assert False, "Should have raised"
+        except SchemaValidationError as exc:
+            assert "1 schema validation error(s)" in str(exc)
+            assert len(exc.errors) == 1
+
+    def test_schema_validation_error_truncates_many(self):
+        schema = {"type": "object", "required": list("abcdefgh")}
+        try:
+            schema_validate({}, schema)
+        except SchemaValidationError as exc:
+            assert len(exc.errors) == 8
+            assert "... and 3 more" in str(exc)
+
+    def test_error_detail_is_frozen(self):
+        errs = iter_errors(42, {"type": "string"})
+        with pytest.raises(AttributeError):
+            errs[0].path = "mutated"
+
+    def test_schema_validate_passes_silently(self):
+        schema_validate("hello", {"type": "string"})  # no exception
+
+
+class TestSchemaValidateEdgeCases:
+    """Edge cases and special scenarios."""
+
+    def test_empty_schema(self):
+        assert iter_errors("anything", {}) == []
+        assert iter_errors(None, {}) == []
+
+    def test_schema_with_no_type(self):
+        schema = {"minLength": 3}
+        assert iter_errors("abcd", schema) == []
+        errs = iter_errors("ab", schema)
+        assert len(errs) == 1
+        # Non-string values should pass (minLength doesn't apply)
+        assert iter_errors(42, schema) == []
+
+    def test_none_instance_against_object_schema(self):
+        schema = {"type": "object", "properties": {"name": {"type": "string"}}}
+        errs = iter_errors(None, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "type"
+
+    def test_deeply_nested_objects(self):
+        schema: dict = {"type": "object", "properties": {"child": {}}}
+        # Build a 10-level nested schema
+        inner = schema
+        for _ in range(10):
+            inner["properties"]["child"] = {
+                "type": "object",
+                "properties": {"child": {}},
+            }
+            inner = inner["properties"]["child"]
+        inner["properties"]["child"] = {"type": "string"}
+
+        # Build matching data
+        data: dict = {"child": {}}
+        inner_data = data
+        for _ in range(10):
+            inner_data["child"] = {"child": {}}
+            inner_data = inner_data["child"]
+        inner_data["child"] = "leaf"
+
+        assert iter_errors(data, schema) == []
+
+    def test_nullable_in_anyof_pattern(self):
+        schema = {"anyOf": [{"type": "string"}, {"type": "null"}]}
+        assert iter_errors(None, schema) == []
+        assert iter_errors("hello", schema) == []
+        errs = iter_errors(42, schema)
+        assert len(errs) == 1
+
+    def test_additional_properties_with_no_properties(self):
+        schema = {"type": "object", "additionalProperties": {"type": "string"}}
+        assert iter_errors({"any": "value"}, schema) == []
+        errs = iter_errors({"any": 42}, schema)
+        assert len(errs) == 1
+
+    def test_empty_required_array(self):
+        schema = {"type": "object", "required": []}
+        assert iter_errors({}, schema) == []
+
+    def test_empty_allof(self):
+        schema = {"allOf": []}
+        assert iter_errors("anything", schema) == []
+
+    def test_items_with_empty_array(self):
+        schema = {"type": "array", "items": {"type": "integer"}}
+        assert iter_errors([], schema) == []
+
+    def test_combined_constraints(self):
+        schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "minLength": 1, "maxLength": 50},
+                "age": {"type": "integer", "minimum": 0, "maximum": 150},
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "minItems": 1,
+                    "uniqueItems": True,
+                },
+            },
+            "required": ["name", "age"],
+        }
+        valid = {"name": "Alice", "age": 30, "tags": ["admin"]}
+        assert iter_errors(valid, schema) == []
+
+        invalid = {"name": "", "age": -1, "tags": ["a", "a"]}
+        errs = iter_errors(invalid, schema)
+        assert len(errs) == 3  # minLength, minimum, uniqueItems
+
+
+class TestSchemaValidateVsReference:
+    """Compare our validation against the jsonschema PyPI package."""
+
+    @pytest.fixture(autouse=True)
+    def _import_reference(self):
+        # Import real jsonschema PyPI by temporarily filtering our dir from path
+        saved_path = sys.path[:]
+        sys.path = [
+            p for p in sys.path if os.path.abspath(p) != os.path.abspath(_this_dir)
+        ]
+        # Evict our local module
+        sys.modules.pop("jsonschema", None)
+        for k in list(sys.modules):
+            if k.startswith("jsonschema."):
+                sys.modules.pop(k, None)
+        try:
+            import jsonschema as ref
+
+            if not hasattr(ref, "validate"):
+                raise ImportError("Not the real jsonschema")
+            self.ref_validate = ref.validate
+            self.ref_ValidationError = ref.ValidationError
+        except ImportError:
+            pytest.skip("jsonschema PyPI not installed")
+        finally:
+            sys.path = saved_path
+            # Clean up real jsonschema from modules
+            sys.modules.pop("jsonschema", None)
+            for k in list(sys.modules):
+                if k.startswith("jsonschema."):
+                    sys.modules.pop(k, None)
+
+    def _both_agree(self, instance, schema):
+        """Assert both implementations agree on validity."""
+        ours = iter_errors(instance, schema)
+        try:
+            self.ref_validate(instance, schema)
+            ref_valid = True
+        except self.ref_ValidationError:
+            ref_valid = False
+
+        our_valid = len(ours) == 0
+        ours_s = "valid" if our_valid else "invalid"
+        ref_s = "valid" if ref_valid else "invalid"
+        assert our_valid == ref_valid, (
+            f"Disagreement on {instance!r}: ours={ours_s}, ref={ref_s}"
+        )
+
+    def test_type_string(self):
+        self._both_agree("hello", {"type": "string"})
+        self._both_agree(42, {"type": "string"})
+
+    def test_type_integer(self):
+        self._both_agree(42, {"type": "integer"})
+        self._both_agree(3.14, {"type": "integer"})
+        self._both_agree(True, {"type": "integer"})
+
+    def test_type_number(self):
+        self._both_agree(3.14, {"type": "number"})
+        self._both_agree(42, {"type": "number"})
+        self._both_agree(True, {"type": "number"})
+
+    def test_required(self):
+        schema = {"type": "object", "required": ["a"]}
+        self._both_agree({"a": 1}, schema)
+        self._both_agree({}, schema)
+
+    def test_enum(self):
+        schema = {"enum": [1, 2, 3]}
+        self._both_agree(1, schema)
+        self._both_agree(4, schema)
+
+    def test_minimum_maximum(self):
+        schema = {"type": "integer", "minimum": 0, "maximum": 10}
+        self._both_agree(5, schema)
+        self._both_agree(-1, schema)
+        self._both_agree(11, schema)
+
+    def test_string_constraints(self):
+        schema = {"type": "string", "minLength": 2, "maxLength": 5}
+        self._both_agree("abc", schema)
+        self._both_agree("a", schema)
+        self._both_agree("toolong", schema)
+
+    def test_additional_properties_false(self):
+        schema = {
+            "type": "object",
+            "properties": {"a": {}},
+            "additionalProperties": False,
+        }
+        self._both_agree({"a": 1}, schema)
+        self._both_agree({"a": 1, "b": 2}, schema)
+
+    def test_anyof(self):
+        schema = {"anyOf": [{"type": "string"}, {"type": "integer"}]}
+        self._both_agree("hello", schema)
+        self._both_agree(42, schema)
+        self._both_agree(3.14, schema)
+
+    def test_nested_object(self):
+        schema = {
+            "type": "object",
+            "properties": {
+                "user": {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                    "required": ["name"],
+                }
+            },
+        }
+        self._both_agree({"user": {"name": "Alice"}}, schema)
+        self._both_agree({"user": {}}, schema)
+
+    def test_array_items(self):
+        schema = {"type": "array", "items": {"type": "integer"}, "minItems": 1}
+        self._both_agree([1, 2, 3], schema)
+        self._both_agree([], schema)
+        self._both_agree([1, "two"], schema)
+
+    def test_oneof(self):
+        schema = {"oneOf": [{"type": "string"}, {"type": "integer"}]}
+        self._both_agree("hello", schema)
+        self._both_agree(3.14, schema)
+
+    def test_not(self):
+        schema = {"not": {"type": "string"}}
+        self._both_agree(42, schema)
+        self._both_agree("hello", schema)
+
+    def test_pattern(self):
+        schema = {"type": "string", "pattern": "^[a-z]+$"}
+        self._both_agree("abc", schema)
+        self._both_agree("ABC", schema)
+
+    def test_openapi_style_schema(self):
+        schema = {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer"},
+                "name": {"type": "string", "minLength": 1},
+                "email": {"type": "string", "pattern": "^.+@.+$"},
+                "role": {"enum": ["admin", "user", "guest"]},
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "uniqueItems": True,
+                },
+            },
+            "required": ["id", "name", "email", "role"],
+        }
+        valid = {
+            "id": 1,
+            "name": "Alice",
+            "email": "a@b.com",
+            "role": "admin",
+            "tags": ["dev"],
+        }
+        self._both_agree(valid, schema)
+        invalid = {"id": "one", "name": "", "email": "bad", "role": "superuser"}
+        self._both_agree(invalid, schema)

@@ -578,7 +578,14 @@ class StreamingResponse:
         )
 
     async def _write(self, writer: asyncio.StreamWriter) -> None:
-        """Write status line, headers, then stream the body."""
+        """Write status line, headers, then stream the body.
+
+        Raises ``BrokenPipeError``, ``ConnectionResetError``, or
+        ``ConnectionAbortedError`` on client disconnect.  The caller
+        (``_handle_connection``) is responsible for handling these.
+        Generator cleanup and the background callback still run via
+        the ``finally`` block before the exception propagates.
+        """
         reason = _STATUS_REASONS.get(self.status_code, "Unknown")
         is_sse = self.content_type.startswith("text/event-stream")
 
@@ -1071,14 +1078,15 @@ class App:
         Fired just before the response is written to the client.  Useful
         for TTFB (time-to-first-byte) metrics.
 
-        The handler receives ``(request)`` and its return value is ignored.
-        Both sync and async callables are supported.  Exceptions are logged
-        and suppressed.
+        The handler receives ``(request, response)`` and its return value
+        is ignored.  Both sync and async callables are supported.
+        Exceptions are logged and suppressed.  Handlers run sequentially;
+        keep them fast to avoid delaying the response write.
 
         Example::
 
             @app.on_response_started
-            async def ttfb(request):
+            async def ttfb(request, response):
                 request.state.response_start = time.monotonic()
         """
         self._on_response_started_handlers.append(handler)
@@ -1093,7 +1101,7 @@ class App:
 
         The handler receives ``(request, response)`` and its return value
         is ignored.  Both sync and async callables are supported.
-        Exceptions are logged and suppressed.
+        Exceptions are logged and suppressed.  Handlers run sequentially.
 
         Not fired when the client disconnects mid-response (see
         :meth:`on_client_disconnect` for that case).
@@ -1111,8 +1119,9 @@ class App:
     def on_client_disconnect(self, handler: Callable[..., Any]) -> Callable[..., Any]:
         """Register a client-disconnect signal.
 
-        Fired when the client closes the connection before the server
-        finishes sending the response (broken pipe, connection reset).
+        Fired when the client closes the connection during response
+        delivery (broken pipe, connection reset).  Does not fire for
+        disconnects during request dispatch (e.g. slow handler).
         Useful for cleanup, metrics, and cancelling expensive work.
 
         The handler receives ``(request)`` and its return value is ignored.
@@ -1336,7 +1345,7 @@ class App:
 
             for hook in self._on_response_started_handlers:
                 try:
-                    await _invoke(hook, request)
+                    await _invoke(hook, request, response)
                 except Exception:
                     logger.warning("on_response_started hook failed", exc_info=True)
 

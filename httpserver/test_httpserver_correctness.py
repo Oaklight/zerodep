@@ -1047,8 +1047,8 @@ class TestLifecycleSignals:
         events = []
 
         @app.on_response_started
-        async def on_start(request):
-            events.append(("started", request.path))
+        async def on_start(request, response):
+            events.append(("started", request.path, response.status_code))
 
         @app.get("/hello")
         async def handler(request):
@@ -1058,7 +1058,7 @@ class TestLifecycleSignals:
             reader = _mock_reader(b"GET /hello HTTP/1.1\r\nHost: localhost\r\n\r\n")
             writer = _TrackingWriter()
             await app._handle_connection(reader, writer)
-            assert events == [("started", "/hello")]
+            assert events == [("started", "/hello", 200)]
             assert b"200 OK" in writer.data
 
         asyncio.run(_test())
@@ -1188,7 +1188,7 @@ class TestLifecycleSignals:
         events = []
 
         @app.on_response_started
-        def on_start(request):
+        def on_start(request, response):
             events.append("started")
 
         @app.on_response_completed
@@ -1212,7 +1212,7 @@ class TestLifecycleSignals:
         app = App()
 
         @app.on_response_started
-        async def bad_start(request):
+        async def bad_start(request, response):
             raise ValueError("hook error")
 
         @app.on_response_completed
@@ -1258,11 +1258,11 @@ class TestLifecycleSignals:
         order = []
 
         @app.on_response_started
-        async def first(request):
+        async def first(request, response):
             order.append(1)
 
         @app.on_response_started
-        def second(request):
+        def second(request, response):
             order.append(2)
 
         @app.on_response_completed
@@ -1327,7 +1327,7 @@ class TestLifecycleSignals:
         writer_had_data_at_start = []
 
         @app.on_response_started
-        def check_writer(request):
+        def check_writer(request, response):
             writer_had_data_at_start.append(len(shared["writer"].data))
 
         @app.get("/timing")

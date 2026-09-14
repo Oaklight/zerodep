@@ -12,6 +12,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(__file__))
 
 from ratelimit import (
+    CompositeLimiter,
     FixedWindowLimiter,
     GCRALimiter,
     RateLimiter,
@@ -66,6 +67,10 @@ class TestProtocolConformance:
     def test_thread_safe_is_rate_limiter(self):
         inner = TokenBucketLimiter(rate=1.0, capacity=1)
         assert isinstance(ThreadSafeLimiter(inner), RateLimiter)
+
+    def test_composite_is_rate_limiter(self):
+        inner = TokenBucketLimiter(rate=1.0, capacity=1)
+        assert isinstance(CompositeLimiter([inner]), RateLimiter)
 
 
 # ---------------------------------------------------------------------------
@@ -902,3 +907,184 @@ class TestRateLimitExceeded:
         exc = RateLimitExceeded(result)
         assert exc.result is result
         assert "retry_after=5.0" in str(exc)
+
+
+# ---------------------------------------------------------------------------
+# Composite limiter
+# ---------------------------------------------------------------------------
+
+
+class TestCompositeLimiter:
+    def test_empty_list_raises(self):
+        with pytest.raises(ValueError, match="at least one limiter"):
+            CompositeLimiter([])
+
+    def test_single_limiter_passthrough(self):
+        clock = FakeClock()
+        inner = TokenBucketLimiter(rate=1.0, capacity=3, clock=clock)
+        composite = CompositeLimiter([inner])
+        r = composite.acquire("k")
+        assert r.allowed is True
+        assert r.remaining == 2
+
+    def test_all_allow_returns_tightest(self):
+        clock = FakeClock()
+        fast = FixedWindowLimiter(limit=10, window_seconds=60.0, clock=clock)
+        slow = FixedWindowLimiter(limit=100, window_seconds=3600.0, clock=clock)
+        composite = CompositeLimiter([fast, slow])
+        r = composite.acquire("k")
+        assert r.allowed is True
+        assert r.limit == 10
+        assert r.remaining == 9
+        assert r.retry_after is None
+
+    def test_one_denies_returns_denied(self):
+        clock = FakeClock()
+        tight = TokenBucketLimiter(rate=1.0, capacity=1, clock=clock)
+        loose = TokenBucketLimiter(rate=100.0, capacity=100, clock=clock)
+        composite = CompositeLimiter([tight, loose])
+        composite.acquire("k")
+        r = composite.acquire("k")
+        assert r.allowed is False
+        assert r.retry_after is not None and r.retry_after > 0
+
+    def test_multiple_deny_returns_longest_retry(self):
+        clock = FakeClock()
+        fast = TokenBucketLimiter(rate=10.0, capacity=1, clock=clock)
+        slow = TokenBucketLimiter(rate=1.0, capacity=1, clock=clock)
+        composite = CompositeLimiter([fast, slow])
+        composite.acquire("k")
+        r = composite.acquire("k")
+        assert r.allowed is False
+        assert r.retry_after == pytest.approx(1.0, abs=0.01)
+
+    def test_mixed_algorithms(self):
+        clock = FakeClock()
+        bucket = TokenBucketLimiter(rate=10.0, capacity=5, clock=clock)
+        window = FixedWindowLimiter(limit=3, window_seconds=60.0, clock=clock)
+        composite = CompositeLimiter([bucket, window])
+        for _ in range(3):
+            r = composite.acquire("k")
+            assert r.allowed is True
+        r = composite.acquire("k")
+        assert r.allowed is False
+
+    def test_key_isolation(self):
+        clock = FakeClock()
+        lim = FixedWindowLimiter(limit=1, window_seconds=60.0, clock=clock)
+        composite = CompositeLimiter([lim])
+        composite.acquire("a")
+        assert composite.acquire("a").allowed is False
+        assert composite.acquire("b").allowed is True
+
+    def test_peek_does_not_consume(self):
+        clock = FakeClock()
+        lim = TokenBucketLimiter(rate=1.0, capacity=3, clock=clock)
+        composite = CompositeLimiter([lim])
+        r1 = composite.peek("k")
+        r2 = composite.peek("k")
+        assert r1.remaining == r2.remaining == 3
+        r3 = composite.acquire("k")
+        assert r3.allowed is True
+        assert r3.remaining == 2
+
+    def test_multi_token_acquire(self):
+        clock = FakeClock()
+        lim = TokenBucketLimiter(rate=1.0, capacity=10, clock=clock)
+        composite = CompositeLimiter([lim])
+        r = composite.acquire("k", tokens=7)
+        assert r.allowed is True
+        assert r.remaining == 3
+        r = composite.acquire("k", tokens=5)
+        assert r.allowed is False
+
+    def test_with_thread_safe_wrapper(self):
+        clock = FakeClock()
+        inner = CompositeLimiter(
+            [TokenBucketLimiter(rate=1.0, capacity=2, clock=clock)]
+        )
+        safe = ThreadSafeLimiter(inner)
+        r = safe.acquire("k")
+        assert r.allowed is True
+        safe.acquire("k")
+        r = safe.acquire("k")
+        assert r.allowed is False
+
+    def test_composing_thread_safe_limiters(self):
+        clock = FakeClock()
+        safe_a = ThreadSafeLimiter(
+            TokenBucketLimiter(rate=1.0, capacity=2, clock=clock)
+        )
+        safe_b = ThreadSafeLimiter(
+            FixedWindowLimiter(limit=1, window_seconds=60.0, clock=clock)
+        )
+        composite = CompositeLimiter([safe_a, safe_b])
+        r = composite.acquire("k")
+        assert r.allowed is True
+        r = composite.acquire("k")
+        assert r.allowed is False
+
+    def test_rpm_plus_rpd_scenario(self):
+        clock = FakeClock()
+        rpm = FixedWindowLimiter(limit=3, window_seconds=60.0, clock=clock)
+        rpd = FixedWindowLimiter(limit=10, window_seconds=86400.0, clock=clock)
+        composite = CompositeLimiter([rpm, rpd])
+        # First 3 requests allowed (RPM OK, RPD OK)
+        for _ in range(3):
+            assert composite.acquire("k").allowed is True
+        # 4th denied by RPM (RPD still consumes a token due to false consumption)
+        assert composite.acquire("k").allowed is False
+        # Advance past minute window — RPM resets
+        clock.advance(60.0)
+        # RPD has consumed 4 tokens (3 allowed + 1 false), 6 remaining
+        assert composite.acquire("k").allowed is True
+        assert composite.acquire("k").allowed is True
+        assert composite.acquire("k").allowed is True
+        # RPM exhausted again (3 in new window)
+        assert composite.acquire("k").allowed is False
+
+    def test_decorator_with_composite_limiter(self):
+        clock = FakeClock()
+        composite = CompositeLimiter(
+            [TokenBucketLimiter(rate=10.0, capacity=2, clock=clock)]
+        )
+
+        @ratelimit(limiter=composite)
+        def func():
+            return 42
+
+        assert func() == 42
+        assert func() == 42
+        with pytest.raises(RateLimitExceeded):
+            func()
+
+    def test_composite_aacquire(self):
+        clock = FakeClock()
+        composite = CompositeLimiter(
+            [
+                TokenBucketLimiter(rate=1.0, capacity=2, clock=clock),
+                FixedWindowLimiter(limit=3, window_seconds=60.0, clock=clock),
+            ]
+        )
+
+        async def run():
+            r = await composite.aacquire("k")
+            assert r.allowed is True
+            await composite.aacquire("k")
+            r = await composite.aacquire("k")
+            assert r.allowed is False
+
+        asyncio.run(run())
+
+    def test_composite_apeek(self):
+        clock = FakeClock()
+        composite = CompositeLimiter(
+            [TokenBucketLimiter(rate=1.0, capacity=5, clock=clock)]
+        )
+
+        async def run():
+            r1 = await composite.apeek("k")
+            r2 = await composite.apeek("k")
+            assert r1.remaining == r2.remaining == 5
+
+        asyncio.run(run())

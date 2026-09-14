@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-09-14T23:41:52.488259+00:00",
+  "generated": "2026-09-15T01:26:41.543349+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -175,12 +175,12 @@
       "files": [
         "httpserver/httpserver.py"
       ],
-      "version": "0.4.0",
+      "version": "0.5.0",
       "deps": [],
       "tier": "subsystem",
       "category": "network",
       "last_updated": "2026-09-09T03:59:12-05:00",
-      "content_hash": "6dbbf15a5a1683d7766f15d487734fb89a12b2a302ee8dfd1c3a63b989f35ae8"
+      "content_hash": "e0640073c600e404785c755bb266adf3ee415e5e98d18329cee27cecba0a49ef"
     },
     "jsonrpc": {
       "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",
@@ -287,8 +287,8 @@
       "deps": [],
       "tier": "medium",
       "category": "devtools",
-      "last_updated": "2026-09-14T18:26:33-05:00",
-      "content_hash": "d9d407b9daaab8c746c97a6577929a8e04b9363569e2fa868410ed9cd91ba45a"
+      "last_updated": "2026-09-14T18:40:27-05:00",
+      "content_hash": "3c9a99462020857e4adc5ace31813336f5537a450f50bf295ddc5258da92cc6b"
     },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",
@@ -337,8 +337,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-09-14T17:40:33-05:00",
-      "content_hash": "303f315d541e9083e3cd279741f1790ce48cab6339f33c7842555f0733e78f55"
+      "last_updated": "2026-09-14T19:05:20-05:00",
+      "content_hash": "8631c3eec614fbf0f12022840f498ff3b558ca8a5e1846bcc1205192baf61ef0"
     },
     "readability": {
       "description": "HTML readability content extractor — zero-dep, stdlib only, Python 3.10+",

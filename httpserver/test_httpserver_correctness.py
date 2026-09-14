@@ -983,3 +983,417 @@ class TestCookieRoundTrip:
             assert "temp" not in c._cookies
             r2 = c.get(f"{server_url}/cookies/echo")
             assert "temp" not in r2.json()["cookies"]
+
+
+class _DisconnectWriter:
+    """Mock writer that raises BrokenPipeError on the first write."""
+
+    def __init__(self):
+        self._extra = {"peername": ("127.0.0.1", 9999)}
+
+    def get_extra_info(self, key):
+        return self._extra.get(key)
+
+    def write(self, data):
+        raise BrokenPipeError("client gone")
+
+    async def drain(self):
+        raise BrokenPipeError("client gone")
+
+    def close(self):
+        pass
+
+    async def wait_closed(self):
+        pass
+
+
+class _TrackingWriter:
+    """Mock writer that records writes and supports drain."""
+
+    def __init__(self):
+        self._extra = {"peername": ("127.0.0.1", 9999)}
+        self.data = bytearray()
+
+    def get_extra_info(self, key):
+        return self._extra.get(key)
+
+    def write(self, data):
+        self.data.extend(data)
+
+    async def drain(self):
+        pass
+
+    def close(self):
+        pass
+
+    async def wait_closed(self):
+        pass
+
+
+def _mock_reader(raw_request: bytes):
+    """Create a mock StreamReader pre-loaded with raw HTTP bytes."""
+    reader = asyncio.StreamReader()
+    reader.feed_data(raw_request)
+    reader.feed_eof()
+    return reader
+
+
+class TestLifecycleSignals:
+    """Request lifecycle signals."""
+
+    def test_response_started_fires(self):
+        """on_response_started fires before the response is written."""
+        app = App()
+        events = []
+
+        @app.on_response_started
+        async def on_start(request):
+            events.append(("started", request.path))
+
+        @app.get("/hello")
+        async def handler(request):
+            return "ok"
+
+        async def _test():
+            reader = _mock_reader(b"GET /hello HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _TrackingWriter()
+            await app._handle_connection(reader, writer)
+            assert events == [("started", "/hello")]
+            assert b"200 OK" in writer.data
+
+        asyncio.run(_test())
+
+    def test_response_completed_fires(self):
+        """on_response_completed fires after successful response write."""
+        app = App()
+        events = []
+
+        @app.on_response_completed
+        async def on_done(request, response):
+            events.append(("completed", request.path, response.status_code))
+
+        @app.get("/ok")
+        async def handler(request):
+            return JSONResponse({"status": "ok"})
+
+        async def _test():
+            reader = _mock_reader(b"GET /ok HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _TrackingWriter()
+            await app._handle_connection(reader, writer)
+            assert events == [("completed", "/ok", 200)]
+
+        asyncio.run(_test())
+
+    def test_client_disconnect_fires(self):
+        """on_client_disconnect fires when client disconnects mid-response."""
+        app = App()
+        events = []
+
+        @app.on_client_disconnect
+        async def on_disc(request):
+            events.append(("disconnect", request.path))
+
+        @app.get("/slow")
+        async def handler(request):
+            return "some data"
+
+        async def _test():
+            reader = _mock_reader(b"GET /slow HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _DisconnectWriter()
+            await app._handle_connection(reader, writer)
+            assert events == [("disconnect", "/slow")]
+
+        asyncio.run(_test())
+
+    def test_disconnect_not_completed(self):
+        """on_response_completed does NOT fire on disconnect."""
+        app = App()
+        completed = []
+        disconnected = []
+
+        @app.on_response_completed
+        async def on_done(request, response):
+            completed.append(True)
+
+        @app.on_client_disconnect
+        async def on_disc(request):
+            disconnected.append(True)
+
+        @app.get("/x")
+        async def handler(request):
+            return "data"
+
+        async def _test():
+            reader = _mock_reader(b"GET /x HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _DisconnectWriter()
+            await app._handle_connection(reader, writer)
+            assert completed == []
+            assert disconnected == [True]
+
+        asyncio.run(_test())
+
+    def test_streaming_response_completed(self):
+        """on_response_completed fires after streaming response finishes."""
+        app = App()
+        events = []
+
+        @app.on_response_completed
+        async def on_done(request, response):
+            events.append("completed")
+
+        @app.get("/stream")
+        async def handler(request):
+            async def gen():
+                yield "chunk1"
+                yield "chunk2"
+
+            return StreamingResponse(gen(), content_type="text/plain")
+
+        async def _test():
+            reader = _mock_reader(b"GET /stream HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _TrackingWriter()
+            await app._handle_connection(reader, writer)
+            assert events == ["completed"]
+
+        asyncio.run(_test())
+
+    def test_streaming_disconnect(self):
+        """on_client_disconnect fires when client drops during streaming."""
+        app = App()
+        events = []
+
+        @app.on_client_disconnect
+        async def on_disc(request):
+            events.append("disconnect")
+
+        @app.get("/stream")
+        async def handler(request):
+            async def gen():
+                yield "chunk1"
+                yield "chunk2"
+
+            return StreamingResponse(gen(), content_type="text/plain")
+
+        async def _test():
+            reader = _mock_reader(b"GET /stream HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _DisconnectWriter()
+            await app._handle_connection(reader, writer)
+            assert events == ["disconnect"]
+
+        asyncio.run(_test())
+
+    def test_sync_handlers_supported(self):
+        """Sync signal handlers work correctly."""
+        app = App()
+        events = []
+
+        @app.on_response_started
+        def on_start(request):
+            events.append("started")
+
+        @app.on_response_completed
+        def on_done(request, response):
+            events.append("completed")
+
+        @app.get("/sync")
+        def handler(request):
+            return "ok"
+
+        async def _test():
+            reader = _mock_reader(b"GET /sync HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _TrackingWriter()
+            await app._handle_connection(reader, writer)
+            assert events == ["started", "completed"]
+
+        asyncio.run(_test())
+
+    def test_signal_exception_suppressed(self):
+        """Exceptions in signal handlers are suppressed."""
+        app = App()
+
+        @app.on_response_started
+        async def bad_start(request):
+            raise ValueError("hook error")
+
+        @app.on_response_completed
+        async def bad_done(request, response):
+            raise RuntimeError("hook error")
+
+        @app.get("/safe")
+        async def handler(request):
+            return "ok"
+
+        async def _test():
+            reader = _mock_reader(b"GET /safe HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _TrackingWriter()
+            # Should not raise despite hook failures
+            await app._handle_connection(reader, writer)
+            assert b"200 OK" in writer.data
+
+        asyncio.run(_test())
+
+    def test_disconnect_hook_exception_suppressed(self):
+        """Exceptions in on_client_disconnect handlers are suppressed."""
+        app = App()
+
+        @app.on_client_disconnect
+        async def bad_hook(request):
+            raise RuntimeError("cleanup failed")
+
+        @app.get("/x")
+        async def handler(request):
+            return "data"
+
+        async def _test():
+            reader = _mock_reader(b"GET /x HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _DisconnectWriter()
+            # Should not raise despite hook failure
+            await app._handle_connection(reader, writer)
+
+        asyncio.run(_test())
+
+    def test_multiple_hooks_all_fire(self):
+        """Multiple hooks registered for the same signal all fire in order."""
+        app = App()
+        order = []
+
+        @app.on_response_started
+        async def first(request):
+            order.append(1)
+
+        @app.on_response_started
+        def second(request):
+            order.append(2)
+
+        @app.on_response_completed
+        async def done_a(request, response):
+            order.append("a")
+
+        @app.on_response_completed
+        def done_b(request, response):
+            order.append("b")
+
+        @app.get("/multi")
+        async def handler(request):
+            return "ok"
+
+        async def _test():
+            reader = _mock_reader(b"GET /multi HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _TrackingWriter()
+            await app._handle_connection(reader, writer)
+            assert order == [1, 2, "a", "b"]
+
+        asyncio.run(_test())
+
+    def test_decorators_return_original(self):
+        """Signal decorators return the original callable."""
+        app = App()
+
+        @app.on_response_started
+        async def my_start(request):
+            pass
+
+        @app.on_response_completed
+        async def my_done(request, response):
+            pass
+
+        @app.on_client_disconnect
+        async def my_disc(request):
+            pass
+
+        assert my_start.__name__ == "my_start"
+        assert my_done.__name__ == "my_done"
+        assert my_disc.__name__ == "my_disc"
+
+    def test_no_hooks_is_noop(self):
+        """No hooks registered — response still works normally."""
+        app = App()
+
+        @app.get("/plain")
+        async def handler(request):
+            return "ok"
+
+        async def _test():
+            reader = _mock_reader(b"GET /plain HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _TrackingWriter()
+            await app._handle_connection(reader, writer)
+            assert b"200 OK" in writer.data
+
+        asyncio.run(_test())
+
+    def test_started_fires_before_write(self):
+        """on_response_started fires before response bytes are written."""
+        app = App()
+        writer_had_data_at_start = []
+
+        @app.on_response_started
+        def check_writer(request):
+            writer_had_data_at_start.append(len(shared["writer"].data))
+
+        @app.get("/timing")
+        async def handler(request):
+            return "ok"
+
+        shared: dict = {}
+
+        async def _test():
+            reader = _mock_reader(b"GET /timing HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            w = _TrackingWriter()
+            shared["writer"] = w
+            await app._handle_connection(reader, w)
+            assert writer_had_data_at_start == [0]
+            assert len(w.data) > 0
+
+        asyncio.run(_test())
+
+    def test_streaming_background_runs_on_mid_stream_disconnect(self):
+        """StreamingResponse background fires on mid-stream disconnect."""
+        app = App()
+        events = []
+
+        class _MidStreamDisconnectWriter:
+            """Writer that succeeds for headers but fails on body chunks."""
+
+            def __init__(self):
+                self._extra = {"peername": ("127.0.0.1", 9999)}
+                self._header_done = False
+
+            def get_extra_info(self, key):
+                return self._extra.get(key)
+
+            def write(self, data):
+                if self._header_done:
+                    raise BrokenPipeError("client gone mid-stream")
+
+            async def drain(self):
+                if self._header_done:
+                    raise BrokenPipeError("client gone mid-stream")
+                self._header_done = True
+
+            def close(self):
+                pass
+
+            async def wait_closed(self):
+                pass
+
+        @app.on_client_disconnect
+        async def on_disc(request):
+            events.append("disconnect_signal")
+
+        @app.get("/bg")
+        async def handler(request):
+            async def gen():
+                yield "data"
+
+            return StreamingResponse(
+                gen(), background=lambda: events.append("background")
+            )
+
+        async def _test():
+            reader = _mock_reader(b"GET /bg HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _MidStreamDisconnectWriter()
+            await app._handle_connection(reader, writer)
+            assert "background" in events
+            assert "disconnect_signal" in events
+
+        asyncio.run(_test())

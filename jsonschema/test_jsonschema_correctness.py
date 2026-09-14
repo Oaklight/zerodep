@@ -1992,6 +1992,57 @@ class TestSchemaValidateEdgeCases:
         assert len(errs) == 3  # minLength, minimum, uniqueItems
 
 
+class TestSchemaValidateTypeAwareEquality:
+    """Type-aware equality for enum, const, and uniqueItems."""
+
+    def test_enum_bool_not_equal_to_int(self):
+        errs = iter_errors(True, {"enum": [1, 2, 3]})
+        assert len(errs) == 1
+
+    def test_enum_int_not_equal_to_bool(self):
+        errs = iter_errors(1, {"enum": [True, False]})
+        assert len(errs) == 1
+
+    def test_enum_bool_matches_bool(self):
+        assert iter_errors(True, {"enum": [True, False]}) == []
+
+    def test_const_bool_not_equal_to_int(self):
+        errs = iter_errors(1, {"const": True})
+        assert len(errs) == 1
+
+    def test_const_int_not_equal_to_bool(self):
+        errs = iter_errors(True, {"const": 1})
+        assert len(errs) == 1
+
+    def test_const_bool_matches_bool(self):
+        assert iter_errors(True, {"const": True}) == []
+
+    def test_unique_items_bool_vs_int(self):
+        schema = {"type": "array", "uniqueItems": True}
+        # Top-level bool vs int: distinct via (type, value) tuple
+        assert iter_errors([True, 1], schema) == []
+
+
+class TestSchemaValidateBooleanSubSchemas:
+    """Boolean sub-schemas in properties and patternProperties."""
+
+    def test_property_false_rejects(self):
+        schema = {"type": "object", "properties": {"x": False}}
+        errs = iter_errors({"x": 1}, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "false_schema"
+
+    def test_property_true_accepts(self):
+        schema = {"type": "object", "properties": {"x": True}}
+        assert iter_errors({"x": "anything"}, schema) == []
+
+    def test_pattern_property_false_rejects(self):
+        schema = {"type": "object", "patternProperties": {"^x-": False}}
+        errs = iter_errors({"x-custom": "val"}, schema)
+        assert len(errs) == 1
+        assert errs[0].validator == "false_schema"
+
+
 class TestSchemaValidateVsReference:
     """Compare our validation against the jsonschema PyPI package."""
 

@@ -2043,6 +2043,69 @@ class TestSchemaValidateBooleanSubSchemas:
         assert errs[0].validator == "false_schema"
 
 
+class TestSchemaValidateResolved:
+    """The resolved=True flag skips redundant $ref resolution."""
+
+    def test_resolved_matches_default(self):
+        schema = {
+            "type": "object",
+            "properties": {"user": {"$ref": "#/$defs/User"}},
+            "$defs": {
+                "User": {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                    "required": ["name"],
+                }
+            },
+        }
+        resolved = resolve_refs(schema)
+        instance = {"user": {"name": "Alice"}}
+        assert iter_errors(instance, schema) == []
+        assert iter_errors(instance, resolved, resolved=True) == []
+
+    def test_resolved_catches_errors(self):
+        schema = {
+            "type": "object",
+            "properties": {"user": {"$ref": "#/$defs/User"}},
+            "$defs": {
+                "User": {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                    "required": ["name"],
+                }
+            },
+        }
+        resolved = resolve_refs(schema)
+        errs_default = iter_errors({"user": {}}, schema)
+        errs_resolved = iter_errors({"user": {}}, resolved, resolved=True)
+        assert len(errs_default) == len(errs_resolved) == 1
+        assert errs_default[0].validator == errs_resolved[0].validator
+
+    def test_schema_validate_resolved(self):
+        resolved = resolve_refs({"type": "string"})
+        schema_validate("hello", resolved, resolved=True)
+        try:
+            schema_validate(42, resolved, resolved=True)
+            assert False, "Should have raised"
+        except SchemaValidationError:
+            pass
+
+    def test_resolve_once_validate_many(self):
+        schema = resolve_refs(
+            {
+                "type": "object",
+                "properties": {"n": {"type": "integer", "minimum": 0}},
+                "required": ["n"],
+            }
+        )
+        items = [{"n": i} for i in range(10)]
+        for item in items:
+            assert iter_errors(item, schema, resolved=True) == []
+        errs = iter_errors({"n": -1}, schema, resolved=True)
+        assert len(errs) == 1
+        assert errs[0].validator == "minimum"
+
+
 class TestSchemaValidateVsReference:
     """Compare our validation against the jsonschema PyPI package."""
 

@@ -597,3 +597,57 @@ class TestBenchValidateLarge:
     @pytest.mark.skipif(not _HAS_JSONSCHEMA_REF, reason="jsonschema PyPI not installed")
     def test_jsonschema_ref(self, benchmark):
         benchmark(_ref_validate, LARGE_INSTANCE, _LARGE_RESOLVED)
+
+
+class TestBenchResolveOnceVsEveryTime:
+    """Measure the benefit of resolved=True for repeated validation."""
+
+    SCHEMA_WITH_REFS = {
+        "type": "object",
+        "properties": {
+            "user": {"$ref": "#/$defs/Person"},
+            "settings": {
+                "type": "object",
+                "properties": {
+                    "theme": {"type": "string"},
+                    "lang": {"type": "string"},
+                },
+            },
+        },
+        "$defs": {
+            "Person": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "age": {"type": "integer", "minimum": 0},
+                },
+                "required": ["name"],
+            },
+        },
+    }
+
+    ITEMS = [
+        {
+            "user": {"name": f"user_{i}", "age": 20 + i},
+            "settings": {"theme": "dark", "lang": "en"},
+        }
+        for i in range(10)
+    ]
+
+    def test_resolve_every_time(self, benchmark):
+        schema = self.SCHEMA_WITH_REFS
+
+        def validate_all():
+            for item in self.ITEMS:
+                schema_validate(item, schema)
+
+        benchmark(validate_all)
+
+    def test_resolve_once(self, benchmark):
+        resolved = resolve_refs(self.SCHEMA_WITH_REFS)
+
+        def validate_all():
+            for item in self.ITEMS:
+                schema_validate(item, resolved, resolved=True)
+
+        benchmark(validate_all)

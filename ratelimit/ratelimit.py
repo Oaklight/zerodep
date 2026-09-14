@@ -47,7 +47,7 @@ import re
 import threading
 import time
 from abc import abstractmethod
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from functools import wraps
 from typing import Any, Protocol, runtime_checkable
 
@@ -955,6 +955,11 @@ class ThreadSafeLimiter:
 
             object.__setattr__(limiter, "_evict_stale", _safe_evict)
 
+    @property
+    def limiter(self) -> RateLimiter:
+        """The wrapped rate limiter."""
+        return self._limiter
+
     def _get_lock(self, key: str) -> threading.Lock:
         lock = self._locks.get(key)
         if lock is not None:
@@ -1040,6 +1045,9 @@ class CompositeLimiter(_AsyncMixin):
 
     def __len__(self) -> int:
         return len(self._limiters)
+
+    def __iter__(self) -> Iterator[RateLimiter]:
+        return iter(self._limiters)
 
     def __repr__(self) -> str:
         return f"CompositeLimiter({list(self._limiters)!r})"

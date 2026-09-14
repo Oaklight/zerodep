@@ -299,8 +299,8 @@ modules:
     desc_zh: "依赖检测与验证"
   profiler:
     benchmark: pyinstrument
-    replaces: "pyinstrument"
-    replaces_zh: "pyinstrument"
+    replaces: "cProfile (raw)"
+    replaces_zh: "cProfile（原始）"
     desc_en: "cProfile wrapper with HTML report output"
     desc_zh: "cProfile 封装，支持 HTML 报告输出"
   useragent:

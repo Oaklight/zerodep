@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.0"
+# version = "0.5.0"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -610,7 +610,7 @@ class StreamingResponse:
             writer.write(b"0\r\n\r\n")
             await writer.drain()
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-            logger.debug("Client disconnected during streaming")
+            raise
         finally:
             aclose = getattr(self._generator, "aclose", None)
             if aclose is not None:
@@ -902,6 +902,9 @@ class App:
         self._after_request_handlers: list[Callable[..., Any]] = []
         self._startup_handlers: list[Callable[[], Any]] = []
         self._shutdown_handlers: list[Callable[[], Any]] = []
+        self._on_response_started_handlers: list[Callable[..., Any]] = []
+        self._on_response_completed_handlers: list[Callable[..., Any]] = []
+        self._on_client_disconnect_handlers: list[Callable[..., Any]] = []
         self._error_handlers: dict[int | type, Callable[..., Any]] = {}
         self._server: asyncio.Server | None = None
         self._shutdown_event: asyncio.Event | None = None
@@ -1058,6 +1061,71 @@ class App:
                 await app.pool.close()
         """
         self._shutdown_handlers.append(handler)
+        return handler
+
+    # ── Request Lifecycle Signals ────────────────────────────────────────
+
+    def on_response_started(self, handler: Callable[..., Any]) -> Callable[..., Any]:
+        """Register a response-started signal.
+
+        Fired just before the response is written to the client.  Useful
+        for TTFB (time-to-first-byte) metrics.
+
+        The handler receives ``(request)`` and its return value is ignored.
+        Both sync and async callables are supported.  Exceptions are logged
+        and suppressed.
+
+        Example::
+
+            @app.on_response_started
+            async def ttfb(request):
+                request.state.response_start = time.monotonic()
+        """
+        self._on_response_started_handlers.append(handler)
+        return handler
+
+    def on_response_completed(self, handler: Callable[..., Any]) -> Callable[..., Any]:
+        """Register a response-completed signal.
+
+        Fired after the entire response body has been successfully sent
+        to the client.  Useful for total transfer time and post-response
+        logging.
+
+        The handler receives ``(request, response)`` and its return value
+        is ignored.  Both sync and async callables are supported.
+        Exceptions are logged and suppressed.
+
+        Not fired when the client disconnects mid-response (see
+        :meth:`on_client_disconnect` for that case).
+
+        Example::
+
+            @app.on_response_completed
+            async def log_transfer(request, response):
+                elapsed = time.monotonic() - request.state.response_start
+                logger.info("Sent %d in %.3fs", response.status_code, elapsed)
+        """
+        self._on_response_completed_handlers.append(handler)
+        return handler
+
+    def on_client_disconnect(self, handler: Callable[..., Any]) -> Callable[..., Any]:
+        """Register a client-disconnect signal.
+
+        Fired when the client closes the connection before the server
+        finishes sending the response (broken pipe, connection reset).
+        Useful for cleanup, metrics, and cancelling expensive work.
+
+        The handler receives ``(request)`` and its return value is ignored.
+        Both sync and async callables are supported.  Exceptions are logged
+        and suppressed.
+
+        Example::
+
+            @app.on_client_disconnect
+            async def on_disconnect(request):
+                logger.info("Client %s disconnected", request.client_addr)
+        """
+        self._on_client_disconnect_handlers.append(handler)
         return handler
 
     # ── Request Dispatch ─────────────────────────────────────────────────
@@ -1265,9 +1333,32 @@ class App:
 
         try:
             response = await self._dispatch(request)
-            await response._write(writer)
-        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-            logger.debug("Connection reset by %s during response", client_addr)
+
+            for hook in self._on_response_started_handlers:
+                try:
+                    await _invoke(hook, request)
+                except Exception:
+                    logger.warning("on_response_started hook failed", exc_info=True)
+
+            try:
+                await response._write(writer)
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                for hook in self._on_client_disconnect_handlers:
+                    try:
+                        await _invoke(hook, request)
+                    except Exception:
+                        logger.warning(
+                            "on_client_disconnect hook failed", exc_info=True
+                        )
+                logger.debug("Connection reset by %s during response", client_addr)
+            else:
+                for hook in self._on_response_completed_handlers:
+                    try:
+                        await _invoke(hook, request, response)
+                    except Exception:
+                        logger.warning(
+                            "on_response_completed hook failed", exc_info=True
+                        )
         except Exception:
             logger.exception("Error writing response to %s", client_addr)
         finally:

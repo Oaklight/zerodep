@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Features
+
+- **jsonschema**: Add JSON Schema data validation — `schema_validate()` and `iter_errors()` for validating data instances against JSON Schema documents (Draft 2020-12 subset for OpenAPI 3.x). Supports type, enum, const, string/number constraints, object keywords, array keywords, composition (allOf/anyOf/oneOf/not), if/then/else, and boolean schemas. 60-180x faster than `jsonschema` PyPI. Module tier upgraded from `medium` to `subsystem`. ([#131](https://github.com/Oaklight/zerodep/issues/131), [#157](https://github.com/Oaklight/zerodep/pull/157))
+- **jsonschema**: Add `resolved=True` flag to `iter_errors()` / `schema_validate()` for resolve-once-validate-many pattern — skip redundant `$ref` resolution when the caller has already called `resolve_refs()`. ~3.4x faster for repeated validation against the same schema. Note: `resolved=False` remains the safe default; passing `resolved=True` on an unresolved schema silently skips `$ref` targets. ([#157](https://github.com/Oaklight/zerodep/pull/157))
+
+
 ## [2026.9.12] - 2026-09-12
 
 ### Bug Fixes

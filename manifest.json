@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-09-14T22:25:33.406843+00:00",
+  "generated": "2026-09-14T23:41:52.488259+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -278,6 +278,18 @@
       "last_updated": "2026-04-27T19:31:53Z",
       "content_hash": "a69b7f4a781e5bd8b8ac558c34b068800ee9e3042c28bf7c1e4a10bf672827e4"
     },
+    "profiler": {
+      "description": "Ergonomic cProfile wrapper with text and HTML report output",
+      "files": [
+        "profiler/profiler.py"
+      ],
+      "version": "0.0.0",
+      "deps": [],
+      "tier": "medium",
+      "category": "devtools",
+      "last_updated": "2026-09-14T18:26:33-05:00",
+      "content_hash": "d9d407b9daaab8c746c97a6577929a8e04b9363569e2fa868410ed9cd91ba45a"
+    },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",
       "files": [
@@ -325,8 +337,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-08-25T09:47:07-05:00",
-      "content_hash": "599b5bb5bc17f0b117357b1a40f56b42e3f3439c6e971339eb904dff51e71f3b"
+      "last_updated": "2026-09-14T17:40:33-05:00",
+      "content_hash": "303f315d541e9083e3cd279741f1790ce48cab6339f33c7842555f0733e78f55"
     },
     "readability": {
       "description": "HTML readability content extractor — zero-dep, stdlib only, Python 3.10+",

@@ -583,7 +583,7 @@ LARGE_INSTANCE = {
 
 class TestBenchValidateMedium:
     def test_ours(self, benchmark):
-        benchmark(schema_validate, MEDIUM_INSTANCE, _MEDIUM_RESOLVED)
+        benchmark(schema_validate, MEDIUM_INSTANCE, _MEDIUM_RESOLVED, resolved=True)
 
     @pytest.mark.skipif(not _HAS_JSONSCHEMA_REF, reason="jsonschema PyPI not installed")
     def test_jsonschema_ref(self, benchmark):
@@ -592,7 +592,7 @@ class TestBenchValidateMedium:
 
 class TestBenchValidateLarge:
     def test_ours(self, benchmark):
-        benchmark(schema_validate, LARGE_INSTANCE, _LARGE_RESOLVED)
+        benchmark(schema_validate, LARGE_INSTANCE, _LARGE_RESOLVED, resolved=True)
 
     @pytest.mark.skipif(not _HAS_JSONSCHEMA_REF, reason="jsonschema PyPI not installed")
     def test_jsonschema_ref(self, benchmark):

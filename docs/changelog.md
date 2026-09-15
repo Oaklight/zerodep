@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.9.15] - 2026-09-15
+
 ### New Modules
 
 - **profiler** (v0.1.0): cProfile wrapper module with text and HTML report output (table, flamegraph, icicle chart styles). Sync + async context managers for easy profiling. ([#161](https://github.com/Oaklight/zerodep/pull/161), [#166](https://github.com/Oaklight/zerodep/pull/166))

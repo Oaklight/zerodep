@@ -201,6 +201,7 @@ max-complexity = 20
 "diff/diff.py" = ["E501"]
 "vcs/vcs.py" = ["E501"]
 "httpserver/test_httpserver_unix_socket.py" = ["ASYNC240"]
+"httpserver/test_httpserver_tls.py" = ["ASYNC240"]
 "xml/xml.py" = ["E501"]
 "a2a/a2a.py" = ["E501"]
 "acp/acp.py" = ["E501"]

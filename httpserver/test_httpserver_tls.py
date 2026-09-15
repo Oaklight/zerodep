@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import shutil
 import socket as socket_mod
 import ssl
@@ -16,6 +17,22 @@ from httpserver import App, JSONResponse
 pytestmark = pytest.mark.skipif(
     shutil.which("openssl") is None, reason="openssl CLI not found"
 )
+
+
+async def _wait_ready(
+    app: App, *, socket_path: str | None = None, timeout: float = 5
+) -> None:
+    """Poll until the server is ready to accept connections."""
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
+    while loop.time() < deadline:
+        if socket_path is not None:
+            if os.path.exists(socket_path):
+                return
+        elif app.port is not None:
+            return
+        await asyncio.sleep(0.02)
+    raise TimeoutError("Server did not become ready")
 
 
 def _generate_self_signed_cert(cert_path: str, key_path: str) -> None:
@@ -99,22 +116,23 @@ class TestTLSServe:
         serve_task = asyncio.create_task(
             app._serve("127.0.0.1", 0, ssl_context=server_ssl_context)
         )
-        await asyncio.sleep(0.3)
+        await _wait_ready(app)
+        try:
+            reader, writer = await asyncio.open_connection(
+                "127.0.0.1", app.port, ssl=client_ssl_context
+            )
+            writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            await writer.drain()
 
-        reader, writer = await asyncio.open_connection(
-            "127.0.0.1", app.port, ssl=client_ssl_context
-        )
-        writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
-        await writer.drain()
+            response = await asyncio.wait_for(reader.read(4096), timeout=5)
+            assert b"200 OK" in response
+            assert b'"status": "ok"' in response
 
-        response = await asyncio.wait_for(reader.read(4096), timeout=5)
-        assert b"200 OK" in response
-        assert b'"status": "ok"' in response
-
-        writer.close()
-        await writer.wait_closed()
-        app.shutdown()
-        await serve_task
+            writer.close()
+            await writer.wait_closed()
+        finally:
+            app.shutdown()
+            await serve_task
 
     @pytest.mark.asyncio
     async def test_tls_rejects_plaintext(self, app, server_ssl_context):
@@ -122,20 +140,20 @@ class TestTLSServe:
         serve_task = asyncio.create_task(
             app._serve("127.0.0.1", 0, ssl_context=server_ssl_context)
         )
-        await asyncio.sleep(0.3)
+        await _wait_ready(app)
+        try:
+            reader, writer = await asyncio.open_connection("127.0.0.1", app.port)
+            writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            await writer.drain()
 
-        reader, writer = await asyncio.open_connection("127.0.0.1", app.port)
-        writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
-        await writer.drain()
+            response = await asyncio.wait_for(reader.read(4096), timeout=2)
+            assert response == b"" or b"200 OK" not in response
 
-        response = await asyncio.wait_for(reader.read(4096), timeout=2)
-        # Server should close the connection or return empty (TLS handshake fails)
-        assert response == b"" or b"200 OK" not in response
-
-        writer.close()
-        await writer.wait_closed()
-        app.shutdown()
-        await serve_task
+            writer.close()
+            await writer.wait_closed()
+        finally:
+            app.shutdown()
+            await serve_task
 
     @pytest.mark.asyncio
     async def test_tls_post_request(self, app, server_ssl_context, client_ssl_context):
@@ -143,48 +161,50 @@ class TestTLSServe:
         serve_task = asyncio.create_task(
             app._serve("127.0.0.1", 0, ssl_context=server_ssl_context)
         )
-        await asyncio.sleep(0.3)
+        await _wait_ready(app)
+        try:
+            reader, writer = await asyncio.open_connection(
+                "127.0.0.1", app.port, ssl=client_ssl_context
+            )
+            body = b'{"msg":"hello"}'
+            request = (
+                b"POST /echo HTTP/1.1\r\n"
+                b"Host: localhost\r\n"
+                b"Content-Type: application/json\r\n"
+                b"Content-Length: " + str(len(body)).encode() + b"\r\n"
+                b"\r\n" + body
+            )
+            writer.write(request)
+            await writer.drain()
 
-        reader, writer = await asyncio.open_connection(
-            "127.0.0.1", app.port, ssl=client_ssl_context
-        )
-        body = b'{"msg":"hello"}'
-        request = (
-            b"POST /echo HTTP/1.1\r\n"
-            b"Host: localhost\r\n"
-            b"Content-Type: application/json\r\n"
-            b"Content-Length: " + str(len(body)).encode() + b"\r\n"
-            b"\r\n" + body
-        )
-        writer.write(request)
-        await writer.drain()
+            response = await asyncio.wait_for(reader.read(4096), timeout=5)
+            assert b"200 OK" in response
+            assert b'"msg": "hello"' in response
 
-        response = await asyncio.wait_for(reader.read(4096), timeout=5)
-        assert b"200 OK" in response
-        assert b'"msg": "hello"' in response
-
-        writer.close()
-        await writer.wait_closed()
-        app.shutdown()
-        await serve_task
+            writer.close()
+            await writer.wait_closed()
+        finally:
+            app.shutdown()
+            await serve_task
 
     @pytest.mark.asyncio
     async def test_no_ssl_context_serves_plaintext(self, app):
         """Without ssl_context, server accepts plain HTTP (default behavior)."""
         serve_task = asyncio.create_task(app._serve("127.0.0.1", 0))
-        await asyncio.sleep(0.3)
+        await _wait_ready(app)
+        try:
+            reader, writer = await asyncio.open_connection("127.0.0.1", app.port)
+            writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            await writer.drain()
 
-        reader, writer = await asyncio.open_connection("127.0.0.1", app.port)
-        writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
-        await writer.drain()
+            response = await asyncio.wait_for(reader.read(4096), timeout=5)
+            assert b"200 OK" in response
 
-        response = await asyncio.wait_for(reader.read(4096), timeout=5)
-        assert b"200 OK" in response
-
-        writer.close()
-        await writer.wait_closed()
-        app.shutdown()
-        await serve_task
+            writer.close()
+            await writer.wait_closed()
+        finally:
+            app.shutdown()
+            await serve_task
 
 
 class TestSocketTuning:
@@ -194,37 +214,39 @@ class TestSocketTuning:
     async def test_custom_backlog(self, app):
         """Server starts with custom backlog value."""
         serve_task = asyncio.create_task(app._serve("127.0.0.1", 0, backlog=2048))
-        await asyncio.sleep(0.3)
+        await _wait_ready(app)
+        try:
+            reader, writer = await asyncio.open_connection("127.0.0.1", app.port)
+            writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            await writer.drain()
 
-        reader, writer = await asyncio.open_connection("127.0.0.1", app.port)
-        writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
-        await writer.drain()
+            response = await asyncio.wait_for(reader.read(4096), timeout=5)
+            assert b"200 OK" in response
 
-        response = await asyncio.wait_for(reader.read(4096), timeout=5)
-        assert b"200 OK" in response
-
-        writer.close()
-        await writer.wait_closed()
-        app.shutdown()
-        await serve_task
+            writer.close()
+            await writer.wait_closed()
+        finally:
+            app.shutdown()
+            await serve_task
 
     @pytest.mark.asyncio
     async def test_reuse_address(self, app):
         """Server starts with reuse_address=True."""
         serve_task = asyncio.create_task(app._serve("127.0.0.1", 0, reuse_address=True))
-        await asyncio.sleep(0.3)
+        await _wait_ready(app)
+        try:
+            reader, writer = await asyncio.open_connection("127.0.0.1", app.port)
+            writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            await writer.drain()
 
-        reader, writer = await asyncio.open_connection("127.0.0.1", app.port)
-        writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
-        await writer.drain()
+            response = await asyncio.wait_for(reader.read(4096), timeout=5)
+            assert b"200 OK" in response
 
-        response = await asyncio.wait_for(reader.read(4096), timeout=5)
-        assert b"200 OK" in response
-
-        writer.close()
-        await writer.wait_closed()
-        app.shutdown()
-        await serve_task
+            writer.close()
+            await writer.wait_closed()
+        finally:
+            app.shutdown()
+            await serve_task
 
     @pytest.mark.asyncio
     async def test_combined_tls_and_tuning(
@@ -240,21 +262,22 @@ class TestSocketTuning:
                 reuse_address=True,
             )
         )
-        await asyncio.sleep(0.3)
+        await _wait_ready(app)
+        try:
+            reader, writer = await asyncio.open_connection(
+                "127.0.0.1", app.port, ssl=client_ssl_context
+            )
+            writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            await writer.drain()
 
-        reader, writer = await asyncio.open_connection(
-            "127.0.0.1", app.port, ssl=client_ssl_context
-        )
-        writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
-        await writer.drain()
+            response = await asyncio.wait_for(reader.read(4096), timeout=5)
+            assert b"200 OK" in response
 
-        response = await asyncio.wait_for(reader.read(4096), timeout=5)
-        assert b"200 OK" in response
-
-        writer.close()
-        await writer.wait_closed()
-        app.shutdown()
-        await serve_task
+            writer.close()
+            await writer.wait_closed()
+        finally:
+            app.shutdown()
+            await serve_task
 
 
 @pytest.fixture
@@ -277,23 +300,24 @@ class TestTLSUnixSocket:
         serve_task = asyncio.create_task(
             app._serve("", 0, socket=socket_path, ssl_context=server_ssl_context)
         )
-        await asyncio.sleep(0.3)
+        await _wait_ready(app, socket_path=socket_path)
+        try:
+            raw_sock = socket_mod.socket(socket_mod.AF_UNIX, socket_mod.SOCK_STREAM)
+            raw_sock.connect(socket_path)
+            raw_sock.setblocking(False)
 
-        raw_sock = socket_mod.socket(socket_mod.AF_UNIX, socket_mod.SOCK_STREAM)
-        raw_sock.connect(socket_path)
-        raw_sock.setblocking(False)
+            reader, writer = await asyncio.open_connection(
+                sock=raw_sock, ssl=client_ssl_context, server_hostname="localhost"
+            )
+            writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            await writer.drain()
 
-        reader, writer = await asyncio.open_connection(
-            sock=raw_sock, ssl=client_ssl_context, server_hostname="localhost"
-        )
-        writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
-        await writer.drain()
+            response = await asyncio.wait_for(reader.read(4096), timeout=5)
+            assert b"200 OK" in response
+            assert b'"status": "ok"' in response
 
-        response = await asyncio.wait_for(reader.read(4096), timeout=5)
-        assert b"200 OK" in response
-        assert b'"status": "ok"' in response
-
-        writer.close()
-        await writer.wait_closed()
-        app.shutdown()
-        await serve_task
+            writer.close()
+            await writer.wait_closed()
+        finally:
+            app.shutdown()
+            await serve_task

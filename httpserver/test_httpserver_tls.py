@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import shutil
 import socket as socket_mod
 import ssl
 import subprocess
@@ -11,6 +12,10 @@ import sys
 import pytest
 
 from httpserver import App, JSONResponse
+
+pytestmark = pytest.mark.skipif(
+    shutil.which("openssl") is None, reason="openssl CLI not found"
+)
 
 
 def _generate_self_signed_cert(cert_path: str, key_path: str) -> None:

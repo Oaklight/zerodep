@@ -261,6 +261,8 @@ class Profiler:
             )
 
         if style in ("flamegraph", "icicle"):
+            if sort_by is not None or limit is not None:
+                raise ValueError("sort_by and limit only apply to style='table'")
             tree = self._extract_call_tree()
             doc = self._build_flame_html(tree, title, inverted=(style == "icicle"))
         else:
@@ -357,6 +359,7 @@ class Profiler:
             for callee_key, edge in callees.items():
                 if callee_key in visited:
                     continue
+                # edge is (cc,nc,tt,ct) or (nc,ct) depending on CPython version
                 child_ct = edge[3] if len(edge) == 4 else edge[1]
                 children.append(
                     _build_node(callee_key, visited | {callee_key}, child_ct)
@@ -391,7 +394,8 @@ class Profiler:
         """Build a self-contained flamegraph or icicle chart HTML document."""
         import json as _json
 
-        total_time = self.total_time or 1e-9
+        # Use CPU total_tt (same as _extract_call_tree) for consistency
+        total_time = cast(Any, self._stats).total_tt or 1e-9
         style_name = "Icicle Chart" if inverted else "Flamegraph"
 
         return (
@@ -689,7 +693,6 @@ _FLAME_JS = """\
     return COLORS[Math.abs(h)%COLORS.length];
   }
 
-  var zoomStack=[];
   var inverted=container.classList.contains('inverted');
 
   function flatten(nodes,depth,parentLeft,parentWidth,totalTime,arr){
@@ -747,9 +750,8 @@ _FLAME_JS = """\
     }
   }
 
-  function onFrameClick(e){
+  function onFrameClick(){
     var node=this._node;
-    zoomStack.push({data:FLAME_DATA,total:TOTAL_TIME});
     render([node],node.cumtime);
   }
 
@@ -757,7 +759,7 @@ _FLAME_JS = """\
     var el=this;
     tooltip.innerHTML='<b>'+escH(el.getAttribute('data-name'))+'</b><br>'
       +escH(el.getAttribute('data-file'))+'<br>'
-      +'Cumulative: '+el.getAttribute('data-cumtime')+'s ('
+      +'Cumulative (path): '+el.getAttribute('data-cumtime')+'s ('
       +el.getAttribute('data-pct')+'%)<br>'
       +'Calls: '+el.getAttribute('data-calls');
     tooltip.style.display='block';
@@ -775,7 +777,6 @@ _FLAME_JS = """\
   }
 
   document.getElementById('reset-zoom').addEventListener('click',function(){
-    zoomStack=[];
     render(FLAME_DATA,TOTAL_TIME);
   });
 

@@ -579,6 +579,25 @@ class TestFlamegraphOutput:
         assert "Flamegraph" in html
         assert "Total time:" in html
 
+    def test_flamegraph_empty_profile(self):
+        with Profiler() as p:
+            pass
+        html = p.output_html(style="flamegraph")
+        assert "<!DOCTYPE html>" in html
+        assert "FLAME_DATA" in html
+
+    def test_flamegraph_sort_by_raises(self):
+        with Profiler() as p:
+            _busy_work()
+        with pytest.raises(ValueError, match="sort_by and limit"):
+            p.output_html(style="flamegraph", sort_by="tottime")
+
+    def test_flamegraph_limit_raises(self):
+        with Profiler() as p:
+            _busy_work()
+        with pytest.raises(ValueError, match="sort_by and limit"):
+            p.output_html(style="flamegraph", limit=10)
+
 
 # -- TestIcicleOutput --------------------------------------------------------
 

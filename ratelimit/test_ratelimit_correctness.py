@@ -1180,3 +1180,38 @@ class TestCompositeLimiter:
             assert r1.remaining == r2.remaining == 5
 
         asyncio.run(run())
+
+
+# ---------------------------------------------------------------------------
+# Limiter repr
+# ---------------------------------------------------------------------------
+
+
+class TestLimiterRepr:
+    def test_token_bucket_repr(self):
+        lim = TokenBucketLimiter(rate=10.0, capacity=20)
+        assert repr(lim) == "TokenBucketLimiter(rate=10.0, capacity=20)"
+
+    def test_fixed_window_repr(self):
+        lim = FixedWindowLimiter(limit=100, window_seconds=60.0)
+        assert repr(lim) == "FixedWindowLimiter(limit=100, window_seconds=60.0)"
+
+    def test_sliding_window_repr(self):
+        lim = SlidingWindowLimiter(limit=50, window_seconds=30.0)
+        assert repr(lim) == "SlidingWindowLimiter(limit=50, window_seconds=30.0)"
+
+    def test_gcra_repr(self):
+        lim = GCRALimiter(rate=5.0, burst=10)
+        assert repr(lim) == "GCRALimiter(rate=5.0, burst=10)"
+
+    def test_composite_repr_shows_sub_limiters(self):
+        composite = CompositeLimiter(
+            [
+                TokenBucketLimiter(rate=10.0, capacity=20),
+                FixedWindowLimiter(limit=100, window_seconds=60.0),
+            ]
+        )
+        r = repr(composite)
+        assert r.startswith("CompositeLimiter([")
+        assert "TokenBucketLimiter(rate=10.0, capacity=20)" in r
+        assert "FixedWindowLimiter(limit=100, window_seconds=60.0)" in r

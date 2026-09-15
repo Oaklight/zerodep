@@ -6,6 +6,8 @@
 
 ## [未发布]
 
+## [2026.9.15] - 2026-09-15
+
 ### 新增模块
 
 - **profiler** (v0.1.0)：cProfile 封装模块，支持文本和 HTML 报告输出（表格、火焰图、冰柱图样式）。提供同步和异步上下文管理器，方便进行性能分析。([#161](https://github.com/Oaklight/zerodep/pull/161), [#166](https://github.com/Oaklight/zerodep/pull/166))

@@ -87,9 +87,30 @@ _VALID_STYLES = {"table", "flamegraph", "icicle"}
 _SELF_FILE = __file__
 
 
+def _resolve_sort_key(key: str) -> str:
+    """Resolve a sort key alias to its canonical pstats name.
+
+    Args:
+        key: Sort key string (e.g. ``"cumulative"``, ``"tottime"``).
+
+    Returns:
+        Canonical sort key name.
+
+    Raises:
+        ValueError: If *key* is not recognized.
+    """
+    resolved = _SORT_KEYS.get(key)
+    if resolved is None:
+        raise ValueError(
+            f"unknown sort key {key!r}, expected one of: "
+            f"{', '.join(sorted(_SORT_KEYS))}"
+        )
+    return resolved
+
+
 def _acquire_tool_id(name: str) -> int:
     m = sys.monitoring  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
-    for tid in (3, 4, 0, 1, 5):
+    for tid in (2, 3, 4, 0, 1, 5):
         if m.get_tool(tid) is None:
             try:
                 m.use_tool_id(tid, name)
@@ -142,13 +163,7 @@ class Profiler:
 
     @staticmethod
     def _resolve_sort_key(key: str) -> str:
-        resolved = _SORT_KEYS.get(key)
-        if resolved is None:
-            raise ValueError(
-                f"unknown sort key {key!r}, expected one of: "
-                f"{', '.join(sorted(_SORT_KEYS))}"
-            )
-        return resolved
+        return _resolve_sort_key(key)
 
     # -- Lifecycle -----------------------------------------------------------
 
@@ -465,7 +480,9 @@ class TracingProfiler:
     ) -> None:
         self._async_mode = async_mode
         self._builtins = builtins
-        self._default_sort = Profiler._resolve_sort_key(sort_by)
+        if builtins:
+            raise NotImplementedError("C-level function tracing is not yet supported")
+        self._default_sort = _resolve_sort_key(sort_by)
         self._use_monitoring = hasattr(sys, "monitoring")
         self._running = False
         self._records: list[TraceRecord] = []
@@ -474,6 +491,7 @@ class TracingProfiler:
         self._tool_id: int | None = None
         self._wall_start_ns: int = 0
         self._wall_end_ns: int = 0
+        self._prev_trace: Any = None
 
     # -- Lifecycle -----------------------------------------------------------
 
@@ -555,7 +573,9 @@ class TracingProfiler:
         return {r.thread_id for r in self._records}
 
     def _ensure_stopped(self) -> None:
-        if self._wall_end_ns == 0 and not self._running:
+        if self._running:
+            raise ProfilerError("profiler is still running - call stop() first")
+        if self._wall_end_ns == 0:
             raise ProfilerError("no profiling data - run the profiler first")
 
     # -- sys.monitoring backend ----------------------------------------------
@@ -564,15 +584,20 @@ class TracingProfiler:
         m = sys.monitoring  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
         e = m.events
         self._tool_id = _acquire_tool_id("zerodep.TracingProfiler")
-        m.register_callback(self._tool_id, e.PY_START, self._on_py_start)
-        m.register_callback(self._tool_id, e.PY_RETURN, self._on_py_exit)
-        m.register_callback(self._tool_id, e.PY_UNWIND, self._on_py_exit)
-        m.register_callback(self._tool_id, e.PY_YIELD, self._on_py_yield)
-        m.register_callback(self._tool_id, e.PY_RESUME, self._on_py_resume)
-        m.set_events(
-            self._tool_id,
-            e.PY_START | e.PY_RETURN | e.PY_UNWIND | e.PY_YIELD | e.PY_RESUME,
-        )
+        try:
+            m.register_callback(self._tool_id, e.PY_START, self._on_py_start)
+            m.register_callback(self._tool_id, e.PY_RETURN, self._on_py_exit)
+            m.register_callback(self._tool_id, e.PY_UNWIND, self._on_py_exit)
+            m.register_callback(self._tool_id, e.PY_YIELD, self._on_py_yield)
+            m.register_callback(self._tool_id, e.PY_RESUME, self._on_py_resume)
+            m.set_events(
+                self._tool_id,
+                e.PY_START | e.PY_RETURN | e.PY_UNWIND | e.PY_YIELD | e.PY_RESUME,
+            )
+        except BaseException:
+            m.free_tool_id(self._tool_id)
+            self._tool_id = None
+            raise
 
     def _stop_monitoring(self) -> None:
         m = sys.monitoring  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
@@ -601,7 +626,10 @@ class TracingProfiler:
         stack = self._stacks.get(tid)
         if not stack:
             return
-        func, file, lineno, start_ns = stack.pop()
+        func, file, lineno, start_ns = stack[-1]
+        if func != code.co_qualname:
+            return  # stack desync — skip rather than corrupt
+        stack.pop()
         end_ns = time.perf_counter_ns()
         record = TraceRecord(func, file, lineno, tid, start_ns, end_ns, len(stack))
         with self._records_lock:
@@ -616,12 +644,13 @@ class TracingProfiler:
     # -- sys.settrace fallback -----------------------------------------------
 
     def _start_settrace(self) -> None:
+        self._prev_trace = sys.gettrace()
         sys.settrace(self._trace_func)
         threading.settrace(self._trace_func)
 
     def _stop_settrace(self) -> None:
-        sys.settrace(None)
-        threading.settrace(None)
+        sys.settrace(self._prev_trace)
+        threading.settrace(None)  # no public API to get previous
 
     def _trace_func(self, frame: Any, event: str, arg: Any) -> Any:
         if event == "call":
@@ -653,34 +682,32 @@ class TracingProfiler:
         limit: int | None = None,
     ) -> list[dict[str, Any]]:
         self._ensure_stopped()
-        sort_key = (
-            Profiler._resolve_sort_key(sort_by) if sort_by else self._default_sort
-        )
+        sort_key = _resolve_sort_key(sort_by) if sort_by else self._default_sort
         total_wall = self.total_time or 1e-9
         records = [r for r in self._records if r.file != _SELF_FILE]
 
-        by_thread: dict[int, list[TraceRecord]] = defaultdict(list)
-        for r in records:
-            by_thread[r.thread_id].append(r)
+        by_thread: dict[int, list[tuple[int, TraceRecord]]] = defaultdict(list)
+        for i, r in enumerate(records):
+            by_thread[r.thread_id].append((i, r))
 
         child_sum: dict[int, float] = defaultdict(float)
 
-        for _tid, recs in by_thread.items():
-            recs.sort(key=lambda r: r.start_ns)
+        for _tid, indexed_recs in by_thread.items():
+            indexed_recs.sort(key=lambda x: x[1].start_ns)
             parent_stack: list[tuple[int, TraceRecord]] = []
-            for i, rec in enumerate(recs):
+            for idx, rec in indexed_recs:
                 while parent_stack and parent_stack[-1][1].end_ns <= rec.start_ns:
                     parent_stack.pop()
                 if parent_stack and parent_stack[-1][1].depth == rec.depth - 1:
                     parent_idx = parent_stack[-1][0]
                     child_sum[parent_idx] += (rec.end_ns - rec.start_ns) / 1e9
-                parent_stack.append((id(rec), rec))
+                parent_stack.append((idx, rec))
 
         agg: dict[tuple[str, str, int], dict[str, Any]] = {}
-        for rec in records:
+        for idx, rec in enumerate(records):
             key = (rec.func, rec.file, rec.lineno)
             duration = (rec.end_ns - rec.start_ns) / 1e9
-            self_time = max(duration - child_sum.get(id(rec), 0.0), 0.0)
+            self_time = max(duration - child_sum.get(idx, 0.0), 0.0)
             if key not in agg:
                 agg[key] = {
                     "func": rec.func,
@@ -776,9 +803,9 @@ class TracingProfiler:
                 _compute_self_time(child)
 
         def _merge_children(node: dict[str, Any]) -> None:
-            merged: dict[str, dict[str, Any]] = {}
+            merged: dict[tuple[str, str, int], dict[str, Any]] = {}
             for child in node["children"]:
-                key = child["name"]
+                key = (child["name"], child["file"], child["lineno"])
                 if key in merged:
                     merged[key]["cumtime"] += child["cumtime"]
                     merged[key]["tottime"] += child["tottime"]
@@ -824,9 +851,7 @@ class TracingProfiler:
 
         total_calls = sum(r["calls"] for r in rows)
         total_time_s = self.total_time
-        sort_key = (
-            Profiler._resolve_sort_key(sort_by) if sort_by else self._default_sort
-        )
+        sort_key = _resolve_sort_key(sort_by) if sort_by else self._default_sort
 
         lines: list[str] = [
             f"         {total_calls} function calls in {total_time_s:.3f} seconds\n",

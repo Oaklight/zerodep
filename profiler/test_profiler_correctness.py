@@ -651,16 +651,6 @@ class TestIcicleOutput:
                 assert f.read() == html
 
 
-# -- Yappi availability flag -------------------------------------------------
-
-try:
-    import yappi as _yappi
-
-    _HAS_YAPPI = True
-except ImportError:
-    _HAS_YAPPI = False
-
-
 # ============================================================================
 # TracingProfiler tests
 # ============================================================================
@@ -735,6 +725,10 @@ class TestTracingSyncProfiler:
         with tp as p:
             _busy_work()
         assert p is tp
+
+    def test_builtins_raises_not_implemented(self):
+        with pytest.raises(NotImplementedError, match="C-level"):
+            TracingProfiler(builtins=True)
 
 
 # -- TestTracingAsyncProfiler ------------------------------------------------
@@ -1197,6 +1191,10 @@ class TestTracingEdgeCases:
             x = 1  # noqa: F841
         text = p.output_text()
         assert isinstance(text, str)
+
+    def test_builtins_raises_not_implemented(self):
+        with pytest.raises(NotImplementedError, match="C-level"):
+            TracingProfiler(builtins=True)
 
 
 # -- TestTracingVsYappi ------------------------------------------------------

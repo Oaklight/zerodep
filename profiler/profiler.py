@@ -487,6 +487,7 @@ class TracingProfiler:
         self._running = False
         self._records: list[TraceRecord] = []
         self._records_lock = threading.Lock()
+        # Per-thread stacks — lock-free under GIL; needs lock for free-threaded builds
         self._stacks: dict[int, list[tuple[str, str, int, int]]] = defaultdict(list)
         self._tool_id: int | None = None
         self._wall_start_ns: int = 0
@@ -824,7 +825,23 @@ class TracingProfiler:
             _compute_self_time(root)
             _merge_children(root)
 
-        all_roots.sort(key=lambda n: n["cumtime"], reverse=True)
+        merged_roots: dict[tuple[str, str, int], dict[str, Any]] = {}
+        for root in all_roots:
+            key = (root["name"], root["file"], root["lineno"])
+            if key in merged_roots:
+                merged_roots[key]["cumtime"] += root["cumtime"]
+                merged_roots[key]["tottime"] += root["tottime"]
+                merged_roots[key]["calls"] += root["calls"]
+                merged_roots[key]["cumtime_pct"] += root["cumtime_pct"]
+                merged_roots[key]["children"].extend(root["children"])
+            else:
+                merged_roots[key] = root
+        all_roots = sorted(
+            merged_roots.values(), key=lambda n: n["cumtime"], reverse=True
+        )
+        for root in all_roots:
+            _merge_children(root)
+
         return all_roots
 
     # -- Output methods ------------------------------------------------------

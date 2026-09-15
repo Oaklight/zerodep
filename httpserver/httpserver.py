@@ -1441,7 +1441,7 @@ class App:
         *,
         socket: str | None = None,
         ssl_context: ssl.SSLContext | None = None,
-        backlog: int = 100,
+        backlog: int | None = None,
         reuse_address: bool | None = None,
         reuse_port: bool | None = None,
     ) -> None:
@@ -1489,7 +1489,7 @@ class App:
         *,
         socket: str | None = None,
         ssl_context: ssl.SSLContext | None = None,
-        backlog: int = 100,
+        backlog: int | None = None,
         reuse_address: bool | None = None,
         reuse_port: bool | None = None,
     ) -> None:
@@ -1503,16 +1503,23 @@ class App:
             await self._run_startup_hooks()
 
             if socket:
-                server = await self._start_unix_socket(socket, ssl_context=ssl_context)
+                server = await self._start_unix_socket(
+                    socket, ssl_context=ssl_context, backlog=backlog
+                )
             else:
+                kwargs: dict[str, Any] = {}
+                if backlog is not None:
+                    kwargs["backlog"] = backlog
+                if reuse_address is not None:
+                    kwargs["reuse_address"] = reuse_address
+                if reuse_port is not None:
+                    kwargs["reuse_port"] = reuse_port
                 server = await asyncio.start_server(
                     self._handle_connection,
                     host,
                     port,
                     ssl=ssl_context,
-                    backlog=backlog,
-                    reuse_address=reuse_address,
-                    reuse_port=reuse_port,
+                    **kwargs,
                 )
                 addrs = (
                     server.sockets[0].getsockname() if server.sockets else (host, port)
@@ -1543,6 +1550,7 @@ class App:
         socket_path: str,
         *,
         ssl_context: ssl.SSLContext | None = None,
+        backlog: int | None = None,
     ) -> asyncio.Server:
         """Start listening on a Unix domain socket.
 
@@ -1553,6 +1561,8 @@ class App:
             socket_path: Path for the Unix domain socket file.
             ssl_context: Optional :class:`ssl.SSLContext` for TLS over
                 the Unix socket.
+            backlog: Maximum number of queued connections. ``None``
+                leaves the OS default.
 
         Returns:
             The ``asyncio.Server`` instance.
@@ -1585,10 +1595,14 @@ class App:
             logger.error("Socket parent directory does not exist: %s", parent)
             sys.exit(1)
 
+        kwargs: dict[str, Any] = {}
+        if backlog is not None:
+            kwargs["backlog"] = backlog
         server = await asyncio.start_unix_server(
             self._handle_connection,
             path=path,
             ssl=ssl_context,
+            **kwargs,
         )
 
         # Restrict permissions to owner-only

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-09-15T01:26:49.606515+00:00",
+  "generated": "2026-09-15T05:11:46.731585+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -179,8 +179,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-09-14T17:25:37-05:00",
-      "content_hash": "4f82dddf858711a6ac0019104a24ef3f73e98997072fc945ecd03ad72312749d"
+      "last_updated": "2026-09-14T19:04:23-05:00",
+      "content_hash": "4983837f8402eba1a9f7f5f5a48c7ee4eac27f893a35119c888a3d78f8c69465"
     },
     "jsonrpc": {
       "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",
@@ -287,8 +287,8 @@
       "deps": [],
       "tier": "medium",
       "category": "devtools",
-      "last_updated": "2026-09-14T18:40:27-05:00",
-      "content_hash": "3c9a99462020857e4adc5ace31813336f5537a450f50bf295ddc5258da92cc6b"
+      "last_updated": "2026-09-14T20:53:33-05:00",
+      "content_hash": "b9bd9b27691eae5384bc5deceb1b3d008bf9f33b964bb0d28f208a8b5bdcf01a"
     },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",

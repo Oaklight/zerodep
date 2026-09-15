@@ -166,6 +166,7 @@ bench-jsonschema = [
 ]
 bench-profiler = [
     "pyinstrument>=5.0.0",
+    "yappi>=1.6.0",
 ]
 dev = [
     "ruff==0.15.20",

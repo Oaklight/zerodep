@@ -1,12 +1,12 @@
 # /// zerodep
-# version = "0.0.0"
+# version = "0.1.0"
 # deps = []
 # tier = "medium"
 # category = "devtools"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
 
-"""Ergonomic cProfile wrapper with text and HTML report output.
+"""Ergonomic profiler with text and HTML report output.
 
 Wraps ``cProfile``/``pstats`` in sync and async context managers
 and renders profiling data as formatted text or self-contained HTML
@@ -31,6 +31,16 @@ Async usage::
         await do_async_work()
 
     html = p.output_html()
+
+Thread-aware tracing::
+
+    from profiler import TracingProfiler
+
+    with TracingProfiler() as p:
+        do_work()
+
+    print(p.output_text())
+    records = p.traces()  # raw per-call data
 """
 
 from __future__ import annotations
@@ -39,10 +49,27 @@ import cProfile
 import html as _html
 import io
 import pstats
+import sys
+import threading
+import time
+from collections import defaultdict
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, NamedTuple, cast
 
-__all__ = ["Profiler", "ProfilerError"]
+__all__ = ["Profiler", "TracingProfiler", "TraceRecord", "ProfilerError"]
+
+
+class TraceRecord(NamedTuple):
+    """A single function call/return span."""
+
+    func: str
+    file: str
+    lineno: int
+    thread_id: int
+    start_ns: int
+    end_ns: int
+    depth: int
+
 
 _SORT_KEYS = {
     "cumulative": "cumulative",
@@ -56,6 +83,20 @@ _SORT_KEYS = {
 }
 
 _VALID_STYLES = {"table", "flamegraph", "icicle"}
+
+_SELF_FILE = __file__
+
+
+def _acquire_tool_id(name: str) -> int:
+    m = sys.monitoring  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+    for tid in (3, 4, 0, 1, 5):
+        if m.get_tool(tid) is None:
+            try:
+                m.use_tool_id(tid, name)
+                return tid
+            except ValueError:
+                continue
+    raise ProfilerError("no free sys.monitoring tool ID available")
 
 
 class ProfilerError(Exception):
@@ -391,117 +432,593 @@ class Profiler:
         *,
         inverted: bool = False,
     ) -> str:
-        """Build a self-contained flamegraph or icicle chart HTML document."""
-        import json as _json
-
-        # Use CPU total_tt (same as _extract_call_tree) for consistency
         total_time = cast(Any, self._stats).total_tt or 1e-9
-        style_name = "Icicle Chart" if inverted else "Flamegraph"
-
-        return (
-            "<!DOCTYPE html>\n"
-            '<html lang="en">\n<head>\n'
-            '<meta charset="utf-8">\n'
-            '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
-            f"<title>{_html.escape(title)}</title>\n"
-            f"<style>\n{_FLAME_CSS}\n</style>\n"
-            "</head>\n<body>\n"
-            '<div class="wrap">\n'
-            f"<h1>{_html.escape(title)}</h1>\n"
-            f'<p class="meta">{_html.escape(style_name)} &middot; '
-            f"Total time: {total_time:.6f}s</p>\n"
-            '<div class="toolbar">\n'
-            '<input type="text" id="filter-input" class="filter-input" '
-            'placeholder="Search functions…" autocomplete="off">\n'
-            '<button id="reset-zoom" class="btn">Reset Zoom</button>\n'
-            '<button id="theme-toggle" class="btn" title="Toggle theme">'
-            "\U0001f319</button>\n"
-            "</div>\n"
-            f'<div id="flame-container" class="flame-container'
-            f'{" inverted" if inverted else ""}">\n'
-            "</div>\n</div>\n"
-            "<script>\n"
-            f"var FLAME_DATA={_json.dumps(tree, separators=(',', ':'))};\n"
-            f"var TOTAL_TIME={total_time};\n"
-            f"{_FLAME_JS}\n"
-            "</script>\n"
-            "</body>\n</html>"
-        )
+        return _render_flame_html(tree, title, total_time, inverted=inverted)
 
     def _build_table_html(self, rows: list[dict[str, Any]], title: str) -> str:
-        max_cumtime = max((r["cumtime"] for r in rows), default=1.0) or 1e-9
-        max_tottime = max((r["tottime"] for r in rows), default=1.0) or 1e-9
+        return _render_table_html(rows, title, self.total_time)
 
-        tbody_parts: list[str] = []
-        for r in rows:
-            func_display = _html.escape(f"{r['file']}:{r['lineno']}({r['func']})")
-            cum_bar = r["cumtime"] / max_cumtime * 100
-            tot_bar = r["tottime"] / max_tottime * 100
 
-            calls_str = (
-                str(r["calls"])
-                if r["calls"] == r["primitive_calls"]
-                else f"{r['calls']}/{r['primitive_calls']}"
+class TracingProfiler:
+    """Per-call tracing profiler with thread-aware collection.
+
+    Collects ``(function, thread_id, start_ns, end_ns)`` data for every
+    Python function call, enabling per-call analysis and future waterfall
+    visualization.
+
+    Uses ``sys.monitoring`` (PEP 669) on Python 3.12+ for low overhead,
+    falling back to ``sys.settrace`` on older versions.
+
+    Args:
+        builtins: Reserved for future use (C-level tracing not yet supported).
+        sort_by: Default sort key for output methods.
+        async_mode: If True, the profiler can be used as an async
+            context manager.
+    """
+
+    def __init__(
+        self,
+        *,
+        builtins: bool = False,
+        sort_by: str = "cumulative",
+        async_mode: bool = False,
+    ) -> None:
+        self._async_mode = async_mode
+        self._builtins = builtins
+        self._default_sort = Profiler._resolve_sort_key(sort_by)
+        self._use_monitoring = hasattr(sys, "monitoring")
+        self._running = False
+        self._records: list[TraceRecord] = []
+        self._records_lock = threading.Lock()
+        self._stacks: dict[int, list[tuple[str, str, int, int]]] = defaultdict(list)
+        self._tool_id: int | None = None
+        self._wall_start_ns: int = 0
+        self._wall_end_ns: int = 0
+
+    # -- Lifecycle -----------------------------------------------------------
+
+    def start(self) -> None:
+        """Enable tracing.  No-op if already running."""
+        if self._running:
+            return
+        self._records.clear()
+        self._stacks.clear()
+        self._wall_start_ns = time.perf_counter_ns()
+        self._wall_end_ns = 0
+        if self._use_monitoring:
+            self._start_monitoring()
+        else:
+            self._start_settrace()
+        self._running = True
+
+    def stop(self) -> None:
+        """Disable tracing.  No-op if not running."""
+        if not self._running:
+            return
+        if self._use_monitoring:
+            self._stop_monitoring()
+        else:
+            self._stop_settrace()
+        self._wall_end_ns = time.perf_counter_ns()
+        self._running = False
+
+    def reset(self) -> None:
+        """Clear all collected data."""
+        if self._running:
+            self.stop()
+        self._records.clear()
+        self._stacks.clear()
+        self._wall_start_ns = 0
+        self._wall_end_ns = 0
+
+    def __enter__(self) -> TracingProfiler:
+        self.start()
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.stop()
+
+    async def __aenter__(self) -> TracingProfiler:
+        if not self._async_mode:
+            raise ProfilerError(
+                "async context manager requires TracingProfiler(async_mode=True)"
             )
+        self.start()
+        return self
 
-            tbody_parts.append(
-                f"<tr>"
-                f'<td class="fn" title="{func_display}">{func_display}</td>'
-                f'<td class="num bar-cell" data-sort-value="{r["cumtime"]:.9f}">'
-                f'<div class="bar" style="width:{cum_bar:.1f}%"></div>'
-                f'<span class="val">{r["cumtime"]:.6f}</span></td>'
-                f'<td class="num bar-cell" data-sort-value="{r["tottime"]:.9f}">'
-                f'<div class="bar" style="width:{tot_bar:.1f}%"></div>'
-                f'<span class="val">{r["tottime"]:.6f}</span></td>'
-                f'<td class="num" data-sort-value="{r["calls"]}">{calls_str}</td>'
-                f'<td class="num" data-sort-value="{r["percall_cum"]:.9f}">'
-                f"{r['percall_cum']:.6f}</td>"
-                f'<td class="num" data-sort-value="{r["cumtime_pct"]:.2f}">'
-                f"{r['cumtime_pct']:.1f}%</td>"
-                f"</tr>"
-            )
+    async def __aexit__(self, *args: object) -> None:
+        self.stop()
 
-        total_funcs = len(rows)
-        total_time_s = self.total_time
+    # -- Properties ----------------------------------------------------------
 
-        return (
-            "<!DOCTYPE html>\n"
-            '<html lang="en">\n<head>\n'
-            '<meta charset="utf-8">\n'
-            '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
-            f"<title>{_html.escape(title)}</title>\n"
-            f"<style>\n{_TABLE_CSS}\n</style>\n"
-            "</head>\n<body>\n"
-            '<div class="wrap">\n'
-            f"<h1>{_html.escape(title)}</h1>\n"
-            f'<p class="meta">Total time: {total_time_s:.6f}s &middot; '
-            f"{total_funcs} functions</p>\n"
-            '<div class="toolbar">\n'
-            '<input type="text" id="filter-input" class="filter-input" '
-            'placeholder="Filter functions…" autocomplete="off">\n'
-            '<button id="theme-toggle" class="btn" title="Toggle theme">'
-            "\U0001f319</button>\n"
-            "</div>\n"
-            '<div class="table-wrap">\n'
-            '<table id="profile-table">\n<thead><tr>\n'
-            '<th data-sortable data-sort-type="string">Function'
-            '<span class="arrow"></span></th>\n'
-            '<th data-sortable data-sort-type="number">Cumulative'
-            '<span class="arrow"></span></th>\n'
-            '<th data-sortable data-sort-type="number">Total (self)'
-            '<span class="arrow"></span></th>\n'
-            '<th data-sortable data-sort-type="number">Calls'
-            '<span class="arrow"></span></th>\n'
-            '<th data-sortable data-sort-type="number">Per Call (cum)'
-            '<span class="arrow"></span></th>\n'
-            '<th data-sortable data-sort-type="number">% of Total'
-            '<span class="arrow"></span></th>\n'
-            "</tr></thead>\n<tbody>\n"
-            + "\n".join(tbody_parts)
-            + "\n</tbody></table>\n</div>\n</div>\n"
-            f"<script>\n{_TABLE_JS}\n</script>\n"
-            "</body>\n</html>"
+    @property
+    def is_running(self) -> bool:
+        """Whether the profiler is currently collecting data."""
+        return self._running
+
+    @property
+    def total_time(self) -> float:
+        """Total wall-clock time in seconds."""
+        self._ensure_stopped()
+        end = self._wall_end_ns if not self._running else time.perf_counter_ns()
+        return (end - self._wall_start_ns) / 1e9
+
+    def traces(self) -> list[TraceRecord]:
+        """Return a copy of the raw trace records."""
+        self._ensure_stopped()
+        return list(self._records)
+
+    @property
+    def thread_ids(self) -> set[int]:
+        """Unique thread IDs observed during profiling."""
+        self._ensure_stopped()
+        return {r.thread_id for r in self._records}
+
+    def _ensure_stopped(self) -> None:
+        if self._wall_end_ns == 0 and not self._running:
+            raise ProfilerError("no profiling data - run the profiler first")
+
+    # -- sys.monitoring backend ----------------------------------------------
+
+    def _start_monitoring(self) -> None:
+        m = sys.monitoring  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+        e = m.events
+        self._tool_id = _acquire_tool_id("zerodep.TracingProfiler")
+        m.register_callback(self._tool_id, e.PY_START, self._on_py_start)
+        m.register_callback(self._tool_id, e.PY_RETURN, self._on_py_exit)
+        m.register_callback(self._tool_id, e.PY_UNWIND, self._on_py_exit)
+        m.register_callback(self._tool_id, e.PY_YIELD, self._on_py_yield)
+        m.register_callback(self._tool_id, e.PY_RESUME, self._on_py_resume)
+        m.set_events(
+            self._tool_id,
+            e.PY_START | e.PY_RETURN | e.PY_UNWIND | e.PY_YIELD | e.PY_RESUME,
         )
+
+    def _stop_monitoring(self) -> None:
+        m = sys.monitoring  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+        e = m.events
+        tid = self._tool_id
+        assert tid is not None
+        m.set_events(tid, e.NO_EVENTS)
+        for ev in (e.PY_START, e.PY_RETURN, e.PY_UNWIND, e.PY_YIELD, e.PY_RESUME):
+            m.register_callback(tid, ev, None)
+        m.free_tool_id(tid)
+        self._tool_id = None
+
+    def _on_py_start(self, code: Any, offset: int) -> None:
+        tid = threading.get_ident()
+        self._stacks[tid].append(
+            (
+                code.co_qualname,
+                code.co_filename,
+                code.co_firstlineno,
+                time.perf_counter_ns(),
+            )
+        )
+
+    def _on_py_exit(self, code: Any, offset: int, *args: Any) -> None:
+        tid = threading.get_ident()
+        stack = self._stacks.get(tid)
+        if not stack:
+            return
+        func, file, lineno, start_ns = stack.pop()
+        end_ns = time.perf_counter_ns()
+        record = TraceRecord(func, file, lineno, tid, start_ns, end_ns, len(stack))
+        with self._records_lock:
+            self._records.append(record)
+
+    def _on_py_yield(self, code: Any, offset: int, retval: Any) -> None:
+        self._on_py_exit(code, offset, retval)
+
+    def _on_py_resume(self, code: Any, offset: int) -> None:
+        self._on_py_start(code, offset)
+
+    # -- sys.settrace fallback -----------------------------------------------
+
+    def _start_settrace(self) -> None:
+        sys.settrace(self._trace_func)
+        threading.settrace(self._trace_func)
+
+    def _stop_settrace(self) -> None:
+        sys.settrace(None)
+        threading.settrace(None)
+
+    def _trace_func(self, frame: Any, event: str, arg: Any) -> Any:
+        if event == "call":
+            code = frame.f_code
+            tid = threading.get_ident()
+            func = getattr(code, "co_qualname", code.co_name)
+            self._stacks[tid].append(
+                (func, code.co_filename, code.co_firstlineno, time.perf_counter_ns())
+            )
+        elif event == "return":
+            tid = threading.get_ident()
+            stack = self._stacks.get(tid)
+            if stack:
+                func, file, lineno, start_ns = stack.pop()
+                end_ns = time.perf_counter_ns()
+                record = TraceRecord(
+                    func, file, lineno, tid, start_ns, end_ns, len(stack)
+                )
+                with self._records_lock:
+                    self._records.append(record)
+        return self._trace_func
+
+    # -- Data extraction -----------------------------------------------------
+
+    def _extract_rows(
+        self,
+        *,
+        sort_by: str | None = None,
+        limit: int | None = None,
+    ) -> list[dict[str, Any]]:
+        self._ensure_stopped()
+        sort_key = (
+            Profiler._resolve_sort_key(sort_by) if sort_by else self._default_sort
+        )
+        total_wall = self.total_time or 1e-9
+        records = [r for r in self._records if r.file != _SELF_FILE]
+
+        by_thread: dict[int, list[TraceRecord]] = defaultdict(list)
+        for r in records:
+            by_thread[r.thread_id].append(r)
+
+        child_sum: dict[int, float] = defaultdict(float)
+
+        for _tid, recs in by_thread.items():
+            recs.sort(key=lambda r: r.start_ns)
+            parent_stack: list[tuple[int, TraceRecord]] = []
+            for i, rec in enumerate(recs):
+                while parent_stack and parent_stack[-1][1].end_ns <= rec.start_ns:
+                    parent_stack.pop()
+                if parent_stack and parent_stack[-1][1].depth == rec.depth - 1:
+                    parent_idx = parent_stack[-1][0]
+                    child_sum[parent_idx] += (rec.end_ns - rec.start_ns) / 1e9
+                parent_stack.append((id(rec), rec))
+
+        agg: dict[tuple[str, str, int], dict[str, Any]] = {}
+        for rec in records:
+            key = (rec.func, rec.file, rec.lineno)
+            duration = (rec.end_ns - rec.start_ns) / 1e9
+            self_time = max(duration - child_sum.get(id(rec), 0.0), 0.0)
+            if key not in agg:
+                agg[key] = {
+                    "func": rec.func,
+                    "file": rec.file,
+                    "lineno": rec.lineno,
+                    "calls": 0,
+                    "primitive_calls": 0,
+                    "tottime": 0.0,
+                    "cumtime": 0.0,
+                }
+            entry = agg[key]
+            entry["calls"] += 1
+            entry["primitive_calls"] += 1
+            entry["tottime"] += self_time
+            entry["cumtime"] += duration
+
+        rows: list[dict[str, Any]] = []
+        for entry in agg.values():
+            nc = entry["calls"]
+            cc = entry["primitive_calls"]
+            tt = entry["tottime"]
+            ct = entry["cumtime"]
+            rows.append(
+                {
+                    **entry,
+                    "percall_tot": tt / nc if nc else 0.0,
+                    "percall_cum": ct / cc if cc else 0.0,
+                    "tottime_pct": tt / total_wall * 100,
+                    "cumtime_pct": ct / total_wall * 100,
+                }
+            )
+
+        sort_map: dict[str, Any] = {
+            "cumulative": lambda r: r["cumtime"],
+            "tottime": lambda r: r["tottime"],
+            "calls": lambda r: r["calls"],
+            "name": lambda r: r["func"],
+            "filename": lambda r: r["file"],
+        }
+        key_fn = sort_map.get(sort_key, sort_map["cumulative"])
+        reverse = sort_key not in ("name", "filename")
+        rows.sort(key=key_fn, reverse=reverse)
+
+        if limit is not None:
+            rows = rows[:limit]
+        return rows
+
+    def _extract_call_tree(self) -> list[dict[str, Any]]:
+        self._ensure_stopped()
+        total_wall = self.total_time or 1e-9
+        records = [r for r in self._records if r.file != _SELF_FILE]
+
+        by_thread: dict[int, list[TraceRecord]] = defaultdict(list)
+        for r in records:
+            by_thread[r.thread_id].append(r)
+
+        all_roots: list[dict[str, Any]] = []
+
+        for _tid, recs in by_thread.items():
+            recs.sort(key=lambda r: r.start_ns)
+            stack: list[tuple[int, dict[str, Any]]] = []
+            roots: list[dict[str, Any]] = []
+
+            for rec in recs:
+                duration = (rec.end_ns - rec.start_ns) / 1e9
+                node: dict[str, Any] = {
+                    "name": rec.func,
+                    "file": rec.file,
+                    "lineno": rec.lineno,
+                    "cumtime": duration,
+                    "tottime": 0.0,
+                    "calls": 1,
+                    "cumtime_pct": duration / total_wall * 100,
+                    "children": [],
+                }
+
+                while stack and stack[-1][0] >= rec.depth:
+                    stack.pop()
+
+                if stack:
+                    stack[-1][1]["children"].append(node)
+                else:
+                    roots.append(node)
+
+                stack.append((rec.depth, node))
+
+            all_roots.extend(roots)
+
+        def _compute_self_time(node: dict[str, Any]) -> None:
+            child_cum = sum(c["cumtime"] for c in node["children"])
+            node["tottime"] = max(node["cumtime"] - child_cum, 0.0)
+            for child in node["children"]:
+                _compute_self_time(child)
+
+        def _merge_children(node: dict[str, Any]) -> None:
+            merged: dict[str, dict[str, Any]] = {}
+            for child in node["children"]:
+                key = child["name"]
+                if key in merged:
+                    merged[key]["cumtime"] += child["cumtime"]
+                    merged[key]["tottime"] += child["tottime"]
+                    merged[key]["calls"] += child["calls"]
+                    merged[key]["cumtime_pct"] += child["cumtime_pct"]
+                    merged[key]["children"].extend(child["children"])
+                else:
+                    merged[key] = child
+            node["children"] = sorted(
+                merged.values(), key=lambda c: c["cumtime"], reverse=True
+            )
+            for child in node["children"]:
+                _merge_children(child)
+
+        for root in all_roots:
+            _compute_self_time(root)
+            _merge_children(root)
+
+        all_roots.sort(key=lambda n: n["cumtime"], reverse=True)
+        return all_roots
+
+    # -- Output methods ------------------------------------------------------
+
+    def output_text(
+        self,
+        *,
+        sort_by: str | None = None,
+        limit: int | None = None,
+        file: str | Path | None = None,
+    ) -> str:
+        """Return formatted text profiling output.
+
+        Args:
+            sort_by: Override the default sort key.
+            limit: Show only the top N functions.
+            file: If provided, also write the text to this file path.
+
+        Returns:
+            Formatted text string.
+        """
+        self._ensure_stopped()
+        rows = self._extract_rows(sort_by=sort_by, limit=limit)
+
+        total_calls = sum(r["calls"] for r in rows)
+        total_time_s = self.total_time
+        sort_key = (
+            Profiler._resolve_sort_key(sort_by) if sort_by else self._default_sort
+        )
+
+        lines: list[str] = [
+            f"         {total_calls} function calls in {total_time_s:.3f} seconds\n",
+            f"   Ordered by: {sort_key} time\n",
+            "",
+            f"{'ncalls':>9s}  {'tottime':>9s}  {'percall':>9s}  "
+            f"{'cumtime':>9s}  {'percall':>9s} filename:lineno(function)",
+        ]
+        for r in rows:
+            calls_str = str(r["calls"])
+            if r["calls"] != r["primitive_calls"]:
+                calls_str = f"{r['calls']}/{r['primitive_calls']}"
+            lines.append(
+                f"{calls_str:>9s}  {r['tottime']:>9.3f}  "
+                f"{r['percall_tot']:>9.3f}  {r['cumtime']:>9.3f}  "
+                f"{r['percall_cum']:>9.3f} "
+                f"{r['file']}:{r['lineno']}({r['func']})"
+            )
+
+        text = "\n".join(lines) + "\n"
+        if file is not None:
+            Path(file).write_text(text, encoding="utf-8")
+        return text
+
+    def output_html(
+        self,
+        *,
+        style: str = "table",
+        sort_by: str | None = None,
+        limit: int | None = None,
+        title: str = "Profile Report",
+        file: str | Path | None = None,
+    ) -> str:
+        """Return a self-contained HTML profiling report.
+
+        Args:
+            style: Output style — ``"table"``, ``"flamegraph"``, or ``"icicle"``.
+            sort_by: Override the default sort key for initial table order.
+            limit: Show only the top N functions.
+            title: HTML page title.
+            file: If provided, also write the HTML to this file path.
+
+        Returns:
+            Complete HTML document string with inline CSS/JS.
+        """
+        self._ensure_stopped()
+        if style not in _VALID_STYLES:
+            raise ValueError(
+                f"unknown style {style!r}, expected one of: "
+                f"{', '.join(sorted(_VALID_STYLES))}"
+            )
+
+        if style in ("flamegraph", "icicle"):
+            if sort_by is not None or limit is not None:
+                raise ValueError("sort_by and limit only apply to style='table'")
+            tree = self._extract_call_tree()
+            doc = _render_flame_html(
+                tree, title, self.total_time, inverted=(style == "icicle")
+            )
+        else:
+            rows = self._extract_rows(sort_by=sort_by, limit=limit)
+            doc = _render_table_html(rows, title, self.total_time)
+
+        if file is not None:
+            Path(file).write_text(doc, encoding="utf-8")
+        return doc
+
+
+# ---------------------------------------------------------------------------
+# Module-level HTML rendering functions (shared by Profiler & TracingProfiler)
+# ---------------------------------------------------------------------------
+
+
+def _render_flame_html(
+    tree: list[dict[str, Any]],
+    title: str,
+    total_time: float,
+    *,
+    inverted: bool = False,
+) -> str:
+    import json as _json
+
+    total_time = total_time or 1e-9
+    style_name = "Icicle Chart" if inverted else "Flamegraph"
+
+    return (
+        "<!DOCTYPE html>\n"
+        '<html lang="en">\n<head>\n'
+        '<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
+        f"<title>{_html.escape(title)}</title>\n"
+        f"<style>\n{_FLAME_CSS}\n</style>\n"
+        "</head>\n<body>\n"
+        '<div class="wrap">\n'
+        f"<h1>{_html.escape(title)}</h1>\n"
+        f'<p class="meta">{_html.escape(style_name)} &middot; '
+        f"Total time: {total_time:.6f}s</p>\n"
+        '<div class="toolbar">\n'
+        '<input type="text" id="filter-input" class="filter-input" '
+        'placeholder="Search functions\u2026" autocomplete="off">\n'
+        '<button id="reset-zoom" class="btn">Reset Zoom</button>\n'
+        '<button id="theme-toggle" class="btn" title="Toggle theme">'
+        "\U0001f319</button>\n"
+        "</div>\n"
+        f'<div id="flame-container" class="flame-container'
+        f'{" inverted" if inverted else ""}">\n'
+        "</div>\n</div>\n"
+        "<script>\n"
+        f"var FLAME_DATA={_json.dumps(tree, separators=(',', ':'))};\n"
+        f"var TOTAL_TIME={total_time};\n"
+        f"{_FLAME_JS}\n"
+        "</script>\n"
+        "</body>\n</html>"
+    )
+
+
+def _render_table_html(
+    rows: list[dict[str, Any]], title: str, total_time: float
+) -> str:
+    max_cumtime = max((r["cumtime"] for r in rows), default=1.0) or 1e-9
+    max_tottime = max((r["tottime"] for r in rows), default=1.0) or 1e-9
+
+    tbody_parts: list[str] = []
+    for r in rows:
+        func_display = _html.escape(f"{r['file']}:{r['lineno']}({r['func']})")
+        cum_bar = r["cumtime"] / max_cumtime * 100
+        tot_bar = r["tottime"] / max_tottime * 100
+
+        calls_str = (
+            str(r["calls"])
+            if r["calls"] == r["primitive_calls"]
+            else f"{r['calls']}/{r['primitive_calls']}"
+        )
+
+        tbody_parts.append(
+            f"<tr>"
+            f'<td class="fn" title="{func_display}">{func_display}</td>'
+            f'<td class="num bar-cell" data-sort-value="{r["cumtime"]:.9f}">'
+            f'<div class="bar" style="width:{cum_bar:.1f}%"></div>'
+            f'<span class="val">{r["cumtime"]:.6f}</span></td>'
+            f'<td class="num bar-cell" data-sort-value="{r["tottime"]:.9f}">'
+            f'<div class="bar" style="width:{tot_bar:.1f}%"></div>'
+            f'<span class="val">{r["tottime"]:.6f}</span></td>'
+            f'<td class="num" data-sort-value="{r["calls"]}">{calls_str}</td>'
+            f'<td class="num" data-sort-value="{r["percall_cum"]:.9f}">'
+            f"{r['percall_cum']:.6f}</td>"
+            f'<td class="num" data-sort-value="{r["cumtime_pct"]:.2f}">'
+            f"{r['cumtime_pct']:.1f}%</td>"
+            f"</tr>"
+        )
+
+    total_funcs = len(rows)
+    total_time_s = total_time
+
+    return (
+        "<!DOCTYPE html>\n"
+        '<html lang="en">\n<head>\n'
+        '<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
+        f"<title>{_html.escape(title)}</title>\n"
+        f"<style>\n{_TABLE_CSS}\n</style>\n"
+        "</head>\n<body>\n"
+        '<div class="wrap">\n'
+        f"<h1>{_html.escape(title)}</h1>\n"
+        f'<p class="meta">Total time: {total_time_s:.6f}s &middot; '
+        f"{total_funcs} functions</p>\n"
+        '<div class="toolbar">\n'
+        '<input type="text" id="filter-input" class="filter-input" '
+        'placeholder="Filter functions\u2026" autocomplete="off">\n'
+        '<button id="theme-toggle" class="btn" title="Toggle theme">'
+        "\U0001f319</button>\n"
+        "</div>\n"
+        '<div class="table-wrap">\n'
+        '<table id="profile-table">\n<thead><tr>\n'
+        '<th data-sortable data-sort-type="string">Function'
+        '<span class="arrow"></span></th>\n'
+        '<th data-sortable data-sort-type="number">Cumulative'
+        '<span class="arrow"></span></th>\n'
+        '<th data-sortable data-sort-type="number">Total (self)'
+        '<span class="arrow"></span></th>\n'
+        '<th data-sortable data-sort-type="number">Calls'
+        '<span class="arrow"></span></th>\n'
+        '<th data-sortable data-sort-type="number">Per Call (cum)'
+        '<span class="arrow"></span></th>\n'
+        '<th data-sortable data-sort-type="number">% of Total'
+        '<span class="arrow"></span></th>\n'
+        "</tr></thead>\n<tbody>\n"
+        + "\n".join(tbody_parts)
+        + "\n</tbody></table>\n</div>\n</div>\n"
+        f"<script>\n{_TABLE_JS}\n</script>\n"
+        "</body>\n</html>"
+    )
 
 
 # ---------------------------------------------------------------------------

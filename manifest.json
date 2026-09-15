@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-09-15T05:11:46.731585+00:00",
+  "generated": "2026-09-15T06:34:55.886016+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -179,8 +179,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-09-14T19:04:23-05:00",
-      "content_hash": "4983837f8402eba1a9f7f5f5a48c7ee4eac27f893a35119c888a3d78f8c69465"
+      "last_updated": "2026-09-14T19:10:56-05:00",
+      "content_hash": "bf0527b9d00588dbe19bca5a1325c9f155f448d8c57013764911b35d232464e9"
     },
     "jsonrpc": {
       "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",
@@ -279,16 +279,16 @@
       "content_hash": "a69b7f4a781e5bd8b8ac558c34b068800ee9e3042c28bf7c1e4a10bf672827e4"
     },
     "profiler": {
-      "description": "Ergonomic cProfile wrapper with text and HTML report output",
+      "description": "Ergonomic profiler with text and HTML report output",
       "files": [
         "profiler/profiler.py"
       ],
-      "version": "0.0.0",
+      "version": "0.1.0",
       "deps": [],
       "tier": "medium",
       "category": "devtools",
       "last_updated": "2026-09-14T20:53:33-05:00",
-      "content_hash": "b9bd9b27691eae5384bc5deceb1b3d008bf9f33b964bb0d28f208a8b5bdcf01a"
+      "content_hash": "a870e2bb6d7ff5105caeef234f21b061b75ee52e027d1ec3f029134073985a95"
     },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",

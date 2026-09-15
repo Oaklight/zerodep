@@ -301,7 +301,7 @@ class TestHtmlOutput:
         with Profiler() as p:
             _busy_work()
         with pytest.raises(ValueError, match="unknown style"):
-            p.output_html(style="flamegraph")
+            p.output_html(style="nonexistent")
 
     def test_output_html_before_profiling_raises(self):
         p = Profiler()
@@ -433,3 +433,191 @@ class TestEdgeCases:
         assert not p.is_running
         with pytest.raises(ProfilerError):
             _ = p.stats
+
+
+# -- TestCallTreeExtraction --------------------------------------------------
+
+
+def _call_tree_workload():
+    """Multi-level call tree for flamegraph tests."""
+
+    def leaf():
+        sum(range(500))
+
+    def mid_a():
+        leaf()
+
+    def mid_b():
+        leaf()
+        leaf()
+
+    def top():
+        mid_a()
+        mid_b()
+
+    top()
+
+
+class TestCallTreeExtraction:
+    """Internal _extract_call_tree() helper."""
+
+    def test_returns_list_of_root_nodes(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        tree = p._extract_call_tree()
+        assert isinstance(tree, list)
+        assert len(tree) >= 1
+
+    def test_root_node_has_expected_keys(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        tree = p._extract_call_tree()
+        root = tree[0]
+        for key in (
+            "name",
+            "file",
+            "lineno",
+            "cumtime",
+            "tottime",
+            "calls",
+            "cumtime_pct",
+            "children",
+        ):
+            assert key in root
+
+    def test_children_are_nested(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        tree = p._extract_call_tree()
+        has_children = any(len(node["children"]) > 0 for node in tree)
+        assert has_children
+
+    def test_recursive_function_no_infinite_loop(self):
+        with Profiler() as p:
+            _recursive_fib(12)
+        tree = p._extract_call_tree()
+        assert isinstance(tree, list)
+        assert len(tree) >= 1
+
+    def test_profiler_disable_excluded_from_roots(self):
+        with Profiler() as p:
+            _busy_work()
+        tree = p._extract_call_tree()
+        root_names = {n["name"] for n in tree}
+        assert "<method 'disable' of '_lsprof.Profiler' objects>" not in root_names
+
+
+# -- TestFlamegraphOutput ----------------------------------------------------
+
+
+class TestFlamegraphOutput:
+    """output_html(style='flamegraph') tests."""
+
+    def test_flamegraph_basic(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        html = p.output_html(style="flamegraph")
+        assert "<!DOCTYPE html>" in html
+        assert "FLAME_DATA" in html
+
+    def test_flamegraph_self_contained(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        html = p.output_html(style="flamegraph")
+        assert "http://" not in html
+        assert "https://" not in html
+
+    def test_flamegraph_contains_style_and_script(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        html = p.output_html(style="flamegraph")
+        assert "<style>" in html
+        assert "<script>" in html
+
+    def test_flamegraph_not_inverted(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        html = p.output_html(style="flamegraph")
+        assert 'class="flame-container"' in html
+        assert "inverted" not in html.split("flame-container")[1].split(">")[0]
+
+    def test_flamegraph_custom_title(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        html = p.output_html(style="flamegraph", title="My Flame")
+        assert "<title>My Flame</title>" in html
+        assert "<h1>My Flame</h1>" in html
+
+    def test_flamegraph_title_escaping(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        html = p.output_html(style="flamegraph", title="<script>x</script>")
+        assert "<script>x</script>" not in html.split("<style>")[0]
+        assert "&lt;script&gt;" in html
+
+    def test_flamegraph_to_file(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "flame.html")
+            html = p.output_html(style="flamegraph", file=path)
+            assert os.path.isfile(path)
+            with open(path, encoding="utf-8") as f:
+                assert f.read() == html
+
+    def test_flamegraph_has_toolbar(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        html = p.output_html(style="flamegraph")
+        assert "Reset Zoom" in html
+        assert "filter-input" in html
+
+    def test_flamegraph_subtitle(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        html = p.output_html(style="flamegraph")
+        assert "Flamegraph" in html
+        assert "Total time:" in html
+
+
+# -- TestIcicleOutput --------------------------------------------------------
+
+
+class TestIcicleOutput:
+    """output_html(style='icicle') tests."""
+
+    def test_icicle_basic(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        html = p.output_html(style="icicle")
+        assert "<!DOCTYPE html>" in html
+        assert "FLAME_DATA" in html
+
+    def test_icicle_is_inverted(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        html = p.output_html(style="icicle")
+        assert "inverted" in html
+
+    def test_icicle_subtitle(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        html = p.output_html(style="icicle")
+        assert "Icicle Chart" in html
+
+    def test_icicle_self_contained(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        html = p.output_html(style="icicle")
+        assert "http://" not in html
+        assert "https://" not in html
+
+    def test_icicle_to_file(self):
+        with Profiler() as p:
+            _call_tree_workload()
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "icicle.html")
+            html = p.output_html(style="icicle", file=path)
+            assert os.path.isfile(path)
+            with open(path, encoding="utf-8") as f:
+                assert f.read() == html

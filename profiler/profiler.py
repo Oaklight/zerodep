@@ -55,7 +55,7 @@ _SORT_KEYS = {
     "filename": "filename",
 }
 
-_VALID_STYLES = {"table"}
+_VALID_STYLES = {"table", "flamegraph", "icicle"}
 
 
 class ProfilerError(Exception):
@@ -260,8 +260,12 @@ class Profiler:
                 f"{', '.join(sorted(_VALID_STYLES))}"
             )
 
-        rows = self._extract_rows(sort_by=sort_by, limit=limit)
-        doc = self._build_table_html(rows, title)
+        if style in ("flamegraph", "icicle"):
+            tree = self._extract_call_tree()
+            doc = self._build_flame_html(tree, title, inverted=(style == "icicle"))
+        else:
+            rows = self._extract_rows(sort_by=sort_by, limit=limit)
+            doc = self._build_table_html(rows, title)
 
         if file is not None:
             Path(file).write_text(doc, encoding="utf-8")
@@ -323,7 +327,102 @@ class Profiler:
 
         return rows
 
+    def _extract_call_tree(self) -> list[dict[str, Any]]:
+        """Build a call tree from caller/callee data for flamegraph rendering.
+
+        Returns a list of root nodes.  Each node is a dict with keys:
+        name, file, lineno, cumtime, tottime, calls, children (list of nodes).
+        """
+        assert self._stats is not None  # noqa: S101
+        stats_any = cast(Any, self._stats)
+        self._stats.calc_callees()
+        all_callees: dict[tuple, dict[tuple, tuple]] = stats_any.all_callees
+        total_tt = stats_any.total_tt or 1e-9
+
+        roots: list[tuple] = []
+        for key, (cc, nc, tt, ct, callers) in stats_any.stats.items():
+            if (
+                not callers
+                and key[2] != "<method 'disable' of '_lsprof.Profiler' objects>"
+            ):
+                roots.append(key)
+
+        def _build_node(
+            key: tuple, visited: frozenset[tuple], edge_ct: float | None
+        ) -> dict[str, Any]:
+            cc, nc, tt, ct, _callers = stats_any.stats[key]
+            node_ct = edge_ct if edge_ct is not None else ct
+            children: list[dict[str, Any]] = []
+            callees = all_callees.get(key, {})
+            for callee_key, edge in callees.items():
+                if callee_key in visited:
+                    continue
+                child_ct = edge[3] if len(edge) == 4 else edge[1]
+                children.append(
+                    _build_node(callee_key, visited | {callee_key}, child_ct)
+                )
+            children.sort(key=lambda c: c["cumtime"], reverse=True)
+            return {
+                "name": key[2],
+                "file": key[0],
+                "lineno": key[1],
+                "cumtime": node_ct,
+                "tottime": tt,
+                "calls": nc,
+                "cumtime_pct": node_ct / total_tt * 100,
+                "children": children,
+            }
+
+        tree = []
+        for root_key in roots:
+            tree.append(_build_node(root_key, frozenset({root_key}), None))
+        tree.sort(key=lambda n: n["cumtime"], reverse=True)
+        return tree
+
     # -- HTML rendering ------------------------------------------------------
+
+    def _build_flame_html(
+        self,
+        tree: list[dict[str, Any]],
+        title: str,
+        *,
+        inverted: bool = False,
+    ) -> str:
+        """Build a self-contained flamegraph or icicle chart HTML document."""
+        import json as _json
+
+        total_time = self.total_time or 1e-9
+        style_name = "Icicle Chart" if inverted else "Flamegraph"
+
+        return (
+            "<!DOCTYPE html>\n"
+            '<html lang="en">\n<head>\n'
+            '<meta charset="utf-8">\n'
+            '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
+            f"<title>{_html.escape(title)}</title>\n"
+            f"<style>\n{_FLAME_CSS}\n</style>\n"
+            "</head>\n<body>\n"
+            '<div class="wrap">\n'
+            f"<h1>{_html.escape(title)}</h1>\n"
+            f'<p class="meta">{_html.escape(style_name)} &middot; '
+            f"Total time: {total_time:.6f}s</p>\n"
+            '<div class="toolbar">\n'
+            '<input type="text" id="filter-input" class="filter-input" '
+            'placeholder="Search functions…" autocomplete="off">\n'
+            '<button id="reset-zoom" class="btn">Reset Zoom</button>\n'
+            '<button id="theme-toggle" class="btn" title="Toggle theme">'
+            "\U0001f319</button>\n"
+            "</div>\n"
+            f'<div id="flame-container" class="flame-container'
+            f'{" inverted" if inverted else ""}">\n'
+            "</div>\n</div>\n"
+            "<script>\n"
+            f"var FLAME_DATA={_json.dumps(tree, separators=(',', ':'))};\n"
+            f"var TOTAL_TIME={total_time};\n"
+            f"{_FLAME_JS}\n"
+            "</script>\n"
+            "</body>\n</html>"
+        )
 
     def _build_table_html(self, rows: list[dict[str, Any]], title: str) -> str:
         max_cumtime = max((r["cumtime"] for r in rows), default=1.0) or 1e-9
@@ -513,5 +612,201 @@ _TABLE_JS = """\
       tb.textContent=next==='dark'?'\\u2600':'\\uD83C\\uDF19';
     });
   });
+})();
+"""
+
+
+# ---------------------------------------------------------------------------
+# Inline CSS for flamegraph / icicle chart
+# ---------------------------------------------------------------------------
+
+_FLAME_CSS = """\
+:root,[data-theme="light"]{
+  --bg:#fff;--fg:#1a1a2e;--card:#f8f9fa;--border:#dee2e6;
+  --hover:#f0f4ff;--meta:#666;--input-bg:#fff;--input-border:#ccc;
+  --tooltip-bg:rgba(30,30,50,.92);--tooltip-fg:#f0f0f0;
+}
+[data-theme="dark"]{
+  --bg:#1a1a2e;--fg:#e0e0e0;--card:#252540;--border:#3a3a5c;
+  --hover:#2a2a4a;--meta:#999;--input-bg:#252540;--input-border:#3a3a5c;
+  --tooltip-bg:rgba(240,240,255,.92);--tooltip-fg:#1a1a2e;
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#1a1a2e;--fg:#e0e0e0;--card:#252540;--border:#3a3a5c;
+    --hover:#2a2a4a;--meta:#999;--input-bg:#252540;--input-border:#3a3a5c;
+    --tooltip-bg:rgba(240,240,255,.92);--tooltip-fg:#1a1a2e;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);
+  color:var(--fg);line-height:1.5}
+.wrap{max-width:1200px;margin:0 auto;padding:1.5rem}
+h1{font-size:1.4rem;margin-bottom:.25rem}
+.meta{color:var(--meta);font-size:.85rem;margin-bottom:1rem}
+.toolbar{display:flex;gap:.5rem;margin-bottom:1rem;align-items:center}
+.filter-input{flex:1;padding:.4rem .6rem;font-size:.85rem;border:1px solid
+  var(--input-border);border-radius:4px;background:var(--input-bg);
+  color:var(--fg);outline:none}
+.filter-input:focus{border-color:#6f8cff}
+.btn{padding:.35rem .7rem;font-size:.85rem;border:1px solid var(--border);
+  border-radius:4px;background:var(--card);color:var(--fg);cursor:pointer}
+.btn:hover{background:var(--hover)}
+.flame-container{width:100%;overflow:hidden;position:relative}
+.flame-frame{position:absolute;height:22px;border:1px solid rgba(0,0,0,.15);
+  border-radius:2px;overflow:hidden;cursor:pointer;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:11px;line-height:22px;padding:0 4px;white-space:nowrap;
+  text-overflow:ellipsis;transition:opacity .15s}
+.flame-frame:hover{border-color:rgba(0,0,0,.4);z-index:2}
+.flame-frame.dimmed{opacity:.35}
+.flame-frame.highlight{border-color:#ff6600;border-width:2px;z-index:3}
+#tooltip{position:fixed;pointer-events:none;z-index:100;max-width:450px;
+  padding:6px 10px;border-radius:4px;font-size:12px;line-height:1.4;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  background:var(--tooltip-bg);color:var(--tooltip-fg);
+  box-shadow:0 2px 8px rgba(0,0,0,.25);display:none}
+"""
+
+# ---------------------------------------------------------------------------
+# Inline JS for flamegraph / icicle rendering, zoom, search, tooltip
+# ---------------------------------------------------------------------------
+
+_FLAME_JS = """\
+(function(){
+  var container=document.getElementById('flame-container');
+  var tooltip=document.createElement('div');
+  tooltip.id='tooltip';document.body.appendChild(tooltip);
+
+  var COLORS=[
+    '#ff6633','#ffcc33','#33cc66','#3399ff','#cc66ff',
+    '#ff9966','#66cccc','#9999ff','#ff6699','#99cc33',
+    '#cc9933','#6699cc','#cc6699','#66cc99','#9966cc',
+    '#ff9933','#33cccc','#6666ff','#cc3366','#339966'
+  ];
+  function hashColor(name){
+    var h=0;for(var i=0;i<name.length;i++)h=((h<<5)-h+name.charCodeAt(i))|0;
+    return COLORS[Math.abs(h)%COLORS.length];
+  }
+
+  var zoomStack=[];
+  var inverted=container.classList.contains('inverted');
+
+  function flatten(nodes,depth,parentLeft,parentWidth,totalTime,arr){
+    var x=parentLeft;
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i];
+      var w=parentWidth*(n.cumtime/totalTime);
+      if(w<0.3)continue;
+      arr.push({n:n,depth:depth,left:x,width:w});
+      if(n.children&&n.children.length){
+        flatten(n.children,depth+1,x,w,n.cumtime,arr);
+      }
+      x+=w;
+    }
+    return arr;
+  }
+
+  function render(data,totalTime){
+    var cw=container.clientWidth;
+    var frames=flatten(data,0,0,cw,totalTime,[]);
+    var maxDepth=0;
+    for(var i=0;i<frames.length;i++){
+      if(frames[i].depth>maxDepth)maxDepth=frames[i].depth;
+    }
+    var levelH=24;
+    var totalH=(maxDepth+1)*levelH;
+    container.style.height=totalH+'px';
+    container.innerHTML='';
+
+    for(var i=0;i<frames.length;i++){
+      var f=frames[i];
+      var el=document.createElement('div');
+      el.className='flame-frame';
+      el.style.left=f.left+'px';
+      el.style.width=Math.max(f.width-1,1)+'px';
+      if(inverted){
+        el.style.top=(f.depth*levelH)+'px';
+      }else{
+        el.style.bottom=(f.depth*levelH)+'px';
+      }
+      el.style.position='absolute';
+      el.style.background=hashColor(f.n.name);
+      el.textContent=f.width>40?f.n.name:'';
+      el.setAttribute('data-name',f.n.name);
+      el.setAttribute('data-file',f.n.file+':'+f.n.lineno);
+      el.setAttribute('data-cumtime',f.n.cumtime.toFixed(6));
+      el.setAttribute('data-calls',f.n.calls);
+      el.setAttribute('data-pct',f.n.cumtime_pct.toFixed(1));
+      el._node=f.n;el._totalTime=totalTime;
+      el.addEventListener('click',onFrameClick);
+      el.addEventListener('mouseenter',showTooltip);
+      el.addEventListener('mousemove',moveTooltip);
+      el.addEventListener('mouseleave',hideTooltip);
+      container.appendChild(el);
+    }
+  }
+
+  function onFrameClick(e){
+    var node=this._node;
+    zoomStack.push({data:FLAME_DATA,total:TOTAL_TIME});
+    render([node],node.cumtime);
+  }
+
+  function showTooltip(e){
+    var el=this;
+    tooltip.innerHTML='<b>'+escH(el.getAttribute('data-name'))+'</b><br>'
+      +escH(el.getAttribute('data-file'))+'<br>'
+      +'Cumulative: '+el.getAttribute('data-cumtime')+'s ('
+      +el.getAttribute('data-pct')+'%)<br>'
+      +'Calls: '+el.getAttribute('data-calls');
+    tooltip.style.display='block';
+  }
+  function moveTooltip(e){
+    var x=e.clientX+12,y=e.clientY+12;
+    if(x+tooltip.offsetWidth>window.innerWidth)x=e.clientX-tooltip.offsetWidth-8;
+    if(y+tooltip.offsetHeight>window.innerHeight)y=e.clientY-tooltip.offsetHeight-8;
+    tooltip.style.left=x+'px';tooltip.style.top=y+'px';
+  }
+  function hideTooltip(){tooltip.style.display='none';}
+  function escH(s){
+    var d=document.createElement('div');
+    d.textContent=s;return d.innerHTML;
+  }
+
+  document.getElementById('reset-zoom').addEventListener('click',function(){
+    zoomStack=[];
+    render(FLAME_DATA,TOTAL_TIME);
+  });
+
+  var fi=document.getElementById('filter-input');
+  fi.addEventListener('input',function(){
+    var q=fi.value.toLowerCase();
+    var els=container.querySelectorAll('.flame-frame');
+    for(var i=0;i<els.length;i++){
+      var name=els[i].getAttribute('data-name').toLowerCase();
+      if(!q){els[i].classList.remove('dimmed','highlight');}
+      else if(name.indexOf(q)>=0){
+        els[i].classList.remove('dimmed');
+        els[i].classList.add('highlight');
+      }
+      else{els[i].classList.add('dimmed');els[i].classList.remove('highlight');}
+    }
+  });
+
+  var tb=document.getElementById('theme-toggle');
+  tb.addEventListener('click',function(){
+    var html=document.documentElement;
+    var cur=html.getAttribute('data-theme');
+    var next=cur==='dark'?'light':'dark';
+    if(!cur){
+      var mq=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)');
+      next=mq&&mq.matches?'light':'dark';
+    }
+    html.setAttribute('data-theme',next);
+    tb.textContent=next==='dark'?'\\u2600':'\\uD83C\\uDF19';
+  });
+
+  render(FLAME_DATA,TOTAL_TIME);
 })();
 """

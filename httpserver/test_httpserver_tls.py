@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import socket as socket_mod
 import ssl
 import subprocess
+import sys
 
 import pytest
 
@@ -243,6 +245,48 @@ class TestSocketTuning:
 
         response = await asyncio.wait_for(reader.read(4096), timeout=5)
         assert b"200 OK" in response
+
+        writer.close()
+        await writer.wait_closed()
+        app.shutdown()
+        await serve_task
+
+
+@pytest.fixture
+def socket_path(tmp_path):
+    """Return a path for a Unix socket in a temp directory."""
+    return str(tmp_path / "tls_test.sock")
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="Unix sockets not available on Windows"
+)
+class TestTLSUnixSocket:
+    """Test TLS over Unix domain sockets."""
+
+    @pytest.mark.asyncio
+    async def test_tls_over_unix_socket(
+        self, app, socket_path, server_ssl_context, client_ssl_context
+    ):
+        """TLS works over Unix domain sockets."""
+        serve_task = asyncio.create_task(
+            app._serve("", 0, socket=socket_path, ssl_context=server_ssl_context)
+        )
+        await asyncio.sleep(0.3)
+
+        raw_sock = socket_mod.socket(socket_mod.AF_UNIX, socket_mod.SOCK_STREAM)
+        raw_sock.connect(socket_path)
+        raw_sock.setblocking(False)
+
+        reader, writer = await asyncio.open_connection(
+            sock=raw_sock, ssl=client_ssl_context, server_hostname="localhost"
+        )
+        writer.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
+        await writer.drain()
+
+        response = await asyncio.wait_for(reader.read(4096), timeout=5)
+        assert b"200 OK" in response
+        assert b'"status": "ok"' in response
 
         writer.close()
         await writer.wait_closed()

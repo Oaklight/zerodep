@@ -6,10 +6,28 @@
 
 ## [未发布]
 
+### 新增模块
+
+- **profiler** (v0.1.0)：cProfile 封装模块，支持文本和 HTML 报告输出（表格、火焰图、冰柱图样式）。提供同步和异步上下文管理器，方便进行性能分析。([#161](https://github.com/Oaklight/zerodep/pull/161), [#166](https://github.com/Oaklight/zerodep/pull/166))
+
 ### 新功能
 
+- **profiler**：新增 `TracingProfiler` — 逐调用跟踪分析器，支持线程感知的数据采集，使用 `sys.monitoring`（PEP 669，Python 3.12+）并回退到 `sys.settrace`。与 `Profiler` 共享相同的输出接口，另外支持通过 `traces()` 访问原始调用轨迹。([#168](https://github.com/Oaklight/zerodep/issues/168), [#169](https://github.com/Oaklight/zerodep/pull/169))
+- **profiler**：新增火焰图和冰柱图可视化样式，支持交互式缩放、搜索、工具提示和可折叠调用栈。([#166](https://github.com/Oaklight/zerodep/pull/166))
+- **ratelimit**：新增 `CompositeLimiter`，支持多窗口速率限制组合执行（如 RPM + RPD）。([#159](https://github.com/Oaklight/zerodep/pull/159))
+- **ratelimit**：新增 `CompositeLimiter` 内省 API — 所有限流器类支持 `detail()`、`__iter__`、`__repr__`。([#163](https://github.com/Oaklight/zerodep/pull/163), [#164](https://github.com/Oaklight/zerodep/pull/164))
+- **httpserver**：新增 TLS 支持（`ssl_certfile`/`ssl_keyfile`）和套接字调优参数（`backlog`、`reuse_port`）。([#165](https://github.com/Oaklight/zerodep/pull/165))
+- **httpserver**：新增请求生命周期信号 — `on_request_start`、`on_request_end`、`on_error` 钩子。([5356aa4](https://github.com/Oaklight/zerodep/commit/5356aa4))
 - **jsonschema**：新增 JSON Schema 数据验证 — `schema_validate()` 和 `iter_errors()` 用于根据 JSON Schema 文档（Draft 2020-12 OpenAPI 3.x 子集）验证数据实例。支持 type、enum、const、字符串/数值约束、对象关键字、数组关键字、组合（allOf/anyOf/oneOf/not）、if/then/else 和布尔 schema。比 `jsonschema` PyPI 快 60-180 倍。模块层级从 `medium` 升级为 `subsystem`。([#131](https://github.com/Oaklight/zerodep/issues/131), [#157](https://github.com/Oaklight/zerodep/pull/157))
 - **jsonschema**：为 `iter_errors()` / `schema_validate()` 新增 `resolved=True` 参数，支持"解析一次、验证多次"模式 — 当调用方已调用 `resolve_refs()` 时跳过重复的 `$ref` 解析。对同一 schema 重复验证时约提速 3.4 倍。注意：`resolved=False` 仍为安全默认值；对未解析的 schema 传入 `resolved=True` 会静默跳过 `$ref` 引用目标。([#157](https://github.com/Oaklight/zerodep/pull/157))
+
+### 问题修复
+
+- **httpserver**：防止 `_dispatch` 中 `BrokenPipeError` 异常向上传播。([c0229d1](https://github.com/Oaklight/zerodep/commit/c0229d1))
+
+### 基础设施
+
+- 新增冷启动基准测试，测量导入和首次调用的开销。([#160](https://github.com/Oaklight/zerodep/pull/160))
 
 
 ## [2026.9.12] - 2026-09-12

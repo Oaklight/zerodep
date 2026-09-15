@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-09-15T06:34:55.886016+00:00",
+  "generated": "2026-09-15T09:30:11.658018+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -287,8 +287,8 @@
       "deps": [],
       "tier": "medium",
       "category": "devtools",
-      "last_updated": "2026-09-14T20:53:33-05:00",
-      "content_hash": "a870e2bb6d7ff5105caeef234f21b061b75ee52e027d1ec3f029134073985a95"
+      "last_updated": "2026-09-15T03:31:09-05:00",
+      "content_hash": "cb2480fee4939b1cb869047df0b343762fb416e33638536db389407a4dc3d9ee"
     },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",

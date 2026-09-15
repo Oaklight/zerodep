@@ -45,6 +45,7 @@ import mimetypes
 import os
 import re
 import signal
+import ssl
 import sys
 from collections.abc import AsyncIterator, Callable
 from email.utils import formatdate
@@ -1439,6 +1440,10 @@ class App:
         port: int = DEFAULT_PORT,
         *,
         socket: str | None = None,
+        ssl_context: ssl.SSLContext | None = None,
+        backlog: int = 100,
+        reuse_address: bool | None = None,
+        reuse_port: bool | None = None,
     ) -> None:
         """Start the server (blocking).
 
@@ -1450,13 +1455,44 @@ class App:
                 on a Unix socket instead of TCP. The socket file permissions
                 are restricted to owner-only (``0o600``) after creation.
                 Only available on Unix-like systems.
+            ssl_context: An :class:`ssl.SSLContext` for TLS termination.
+                When provided, the server accepts HTTPS connections.
+                The caller is responsible for configuring the context
+                (loading certs, setting verify mode, etc.).
+            backlog: Maximum number of queued connections passed to
+                :func:`asyncio.start_server`. ``None`` leaves the OS
+                default (typically 128).
+            reuse_address: Sets ``SO_REUSEADDR``. ``None`` lets asyncio
+                decide (``True`` on non-Windows).
+            reuse_port: Sets ``SO_REUSEPORT`` for multi-process load
+                balancing. ``None`` lets asyncio decide (``False``).
         """
         try:
-            asyncio.run(self._serve(host, port, socket=socket))
+            asyncio.run(
+                self._serve(
+                    host,
+                    port,
+                    socket=socket,
+                    ssl_context=ssl_context,
+                    backlog=backlog,
+                    reuse_address=reuse_address,
+                    reuse_port=reuse_port,
+                )
+            )
         except KeyboardInterrupt:
             pass
 
-    async def _serve(self, host: str, port: int, *, socket: str | None = None) -> None:
+    async def _serve(
+        self,
+        host: str,
+        port: int,
+        *,
+        socket: str | None = None,
+        ssl_context: ssl.SSLContext | None = None,
+        backlog: int = 100,
+        reuse_address: bool | None = None,
+        reuse_port: bool | None = None,
+    ) -> None:
         """Internal async server loop."""
         self._shutdown_event = asyncio.Event()
         self._loop = asyncio.get_running_loop()
@@ -1467,19 +1503,24 @@ class App:
             await self._run_startup_hooks()
 
             if socket:
-                server = await self._start_unix_socket(socket)
+                server = await self._start_unix_socket(socket, ssl_context=ssl_context)
             else:
                 server = await asyncio.start_server(
                     self._handle_connection,
                     host,
                     port,
+                    ssl=ssl_context,
+                    backlog=backlog,
+                    reuse_address=reuse_address,
+                    reuse_port=reuse_port,
                 )
                 addrs = (
                     server.sockets[0].getsockname() if server.sockets else (host, port)
                 )
                 self.host = addrs[0]
                 self.port = addrs[1]
-                logger.info("Serving on %s:%d", self.host, self.port)
+                scheme = "https" if ssl_context else "http"
+                logger.info("Serving on %s://%s:%d", scheme, self.host, self.port)
 
             self._server = server
 
@@ -1497,7 +1538,12 @@ class App:
             # Run shutdown hooks after server stops accepting connections
             await self._run_shutdown_hooks()
 
-    async def _start_unix_socket(self, socket_path: str) -> asyncio.Server:
+    async def _start_unix_socket(
+        self,
+        socket_path: str,
+        *,
+        ssl_context: ssl.SSLContext | None = None,
+    ) -> asyncio.Server:
         """Start listening on a Unix domain socket.
 
         Handles stale socket cleanup, permission hardening (``0o600``),
@@ -1505,6 +1551,8 @@ class App:
 
         Args:
             socket_path: Path for the Unix domain socket file.
+            ssl_context: Optional :class:`ssl.SSLContext` for TLS over
+                the Unix socket.
 
         Returns:
             The ``asyncio.Server`` instance.
@@ -1540,6 +1588,7 @@ class App:
         server = await asyncio.start_unix_server(
             self._handle_connection,
             path=path,
+            ssl=ssl_context,
         )
 
         # Restrict permissions to owner-only
@@ -1547,7 +1596,8 @@ class App:
             os.chmod(path, 0o600)
 
         self._socket_path = path
-        logger.info("Serving on unix:%s (mode 0600)", path)
+        scheme = "https+unix" if ssl_context else "unix"
+        logger.info("Serving on %s:%s (mode 0600)", scheme, path)
         return server
 
     def _cleanup_socket(self) -> None:

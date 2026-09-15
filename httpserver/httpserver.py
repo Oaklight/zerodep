@@ -882,6 +882,12 @@ def _resolve_static_file(
 class App:
     """Async HTTP server application.
 
+    Request lifecycle::
+
+        before_request → route handler → after_request
+          → on_response_started → write → on_response_completed
+                                    ↘ on_client_disconnect
+
     Args:
         max_body_size: Maximum request body size in bytes.
         read_timeout: Timeout for reading a single request (seconds).
@@ -1137,6 +1143,15 @@ class App:
         self._on_client_disconnect_handlers.append(handler)
         return handler
 
+    async def _fire_signal(
+        self, name: str, handlers: list[Callable[..., Any]], *args: Any
+    ) -> None:
+        for hook in handlers:
+            try:
+                await _invoke(hook, *args)
+            except Exception:
+                logger.warning("%s hook failed", name, exc_info=True)
+
     # ── Request Dispatch ─────────────────────────────────────────────────
 
     def _match_route(
@@ -1347,31 +1362,29 @@ class App:
                 logger.debug("Connection reset by %s during dispatch", client_addr)
                 return
 
-            for hook in self._on_response_started_handlers:
-                try:
-                    await _invoke(hook, request, response)
-                except Exception:
-                    logger.warning("on_response_started hook failed", exc_info=True)
+            await self._fire_signal(
+                "on_response_started",
+                self._on_response_started_handlers,
+                request,
+                response,
+            )
 
             try:
                 await response._write(writer)
             except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-                for hook in self._on_client_disconnect_handlers:
-                    try:
-                        await _invoke(hook, request)
-                    except Exception:
-                        logger.warning(
-                            "on_client_disconnect hook failed", exc_info=True
-                        )
+                await self._fire_signal(
+                    "on_client_disconnect",
+                    self._on_client_disconnect_handlers,
+                    request,
+                )
                 logger.debug("Connection reset by %s during response", client_addr)
             else:
-                for hook in self._on_response_completed_handlers:
-                    try:
-                        await _invoke(hook, request, response)
-                    except Exception:
-                        logger.warning(
-                            "on_response_completed hook failed", exc_info=True
-                        )
+                await self._fire_signal(
+                    "on_response_completed",
+                    self._on_response_completed_handlers,
+                    request,
+                    response,
+                )
         except Exception:
             logger.exception("Error writing response to %s", client_addr)
         finally:

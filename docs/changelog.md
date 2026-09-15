@@ -6,10 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### New Modules
+
+- **profiler** (v0.1.0): cProfile wrapper module with text and HTML report output (table, flamegraph, icicle chart styles). Sync + async context managers for easy profiling. ([#161](https://github.com/Oaklight/zerodep/pull/161), [#166](https://github.com/Oaklight/zerodep/pull/166))
+
 ### Features
 
+- **profiler**: Add `TracingProfiler` — per-call tracing profiler with thread-aware collection using `sys.monitoring` (PEP 669, Python 3.12+) with `sys.settrace` fallback. Same output interface as `Profiler` plus raw trace access via `traces()`. ([#168](https://github.com/Oaklight/zerodep/issues/168), [#169](https://github.com/Oaklight/zerodep/pull/169))
+- **profiler**: Add flamegraph and icicle chart visualization styles with interactive zoom, search, tooltips, and collapsible stacks. ([#166](https://github.com/Oaklight/zerodep/pull/166))
+- **ratelimit**: Add `CompositeLimiter` for multi-window rate limit enforcement (e.g., RPM + RPD). ([#159](https://github.com/Oaklight/zerodep/pull/159))
+- **ratelimit**: Add `CompositeLimiter` introspection API — `detail()`, `__iter__`, `__repr__` on all limiter classes. ([#163](https://github.com/Oaklight/zerodep/pull/163), [#164](https://github.com/Oaklight/zerodep/pull/164))
+- **httpserver**: Add TLS support (`ssl_certfile`/`ssl_keyfile`) and socket tuning parameters (`backlog`, `reuse_port`). ([#165](https://github.com/Oaklight/zerodep/pull/165))
+- **httpserver**: Add request lifecycle signals — `on_request_start`, `on_request_end`, `on_error` hooks. ([5356aa4](https://github.com/Oaklight/zerodep/commit/5356aa4))
 - **jsonschema**: Add JSON Schema data validation — `schema_validate()` and `iter_errors()` for validating data instances against JSON Schema documents (Draft 2020-12 subset for OpenAPI 3.x). Supports type, enum, const, string/number constraints, object keywords, array keywords, composition (allOf/anyOf/oneOf/not), if/then/else, and boolean schemas. 60-180x faster than `jsonschema` PyPI. Module tier upgraded from `medium` to `subsystem`. ([#131](https://github.com/Oaklight/zerodep/issues/131), [#157](https://github.com/Oaklight/zerodep/pull/157))
 - **jsonschema**: Add `resolved=True` flag to `iter_errors()` / `schema_validate()` for resolve-once-validate-many pattern — skip redundant `$ref` resolution when the caller has already called `resolve_refs()`. ~3.4x faster for repeated validation against the same schema. Note: `resolved=False` remains the safe default; passing `resolved=True` on an unresolved schema silently skips `$ref` targets. ([#157](https://github.com/Oaklight/zerodep/pull/157))
+
+### Bug Fixes
+
+- **httpserver**: Guard `_dispatch` against `BrokenPipeError` escalation. ([c0229d1](https://github.com/Oaklight/zerodep/commit/c0229d1))
+
+### Infrastructure
+
+- Add cold-start benchmark for import + first-call overhead. ([#160](https://github.com/Oaklight/zerodep/pull/160))
 
 
 ## [2026.9.12] - 2026-09-12

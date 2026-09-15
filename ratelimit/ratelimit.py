@@ -240,6 +240,9 @@ class TokenBucketLimiter(_AsyncMixin, _EvictionMixin):
         self._buckets: dict[str, _Bucket] = {}
         self._call_count = 0
 
+    def __repr__(self) -> str:
+        return f"TokenBucketLimiter(rate={self.rate}, capacity={self.capacity})"
+
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
         now = self._clock()
         self._maybe_evict(now)
@@ -360,6 +363,12 @@ class FixedWindowLimiter(_AsyncMixin, _EvictionMixin):
         self._windows: dict[str, _FixedWindow] = {}
         self._call_count = 0
 
+    def __repr__(self) -> str:
+        return (
+            f"FixedWindowLimiter(limit={self.limit},"
+            f" window_seconds={self.window_seconds})"
+        )
+
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
         now = self._clock()
         self._maybe_evict(now)
@@ -471,6 +480,12 @@ class SlidingWindowLimiter(_AsyncMixin, _EvictionMixin):
         self._clock = clock or time.monotonic
         self._states: dict[str, _SlidingState] = {}
         self._call_count = 0
+
+    def __repr__(self) -> str:
+        return (
+            f"SlidingWindowLimiter(limit={self.limit},"
+            f" window_seconds={self.window_seconds})"
+        )
 
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
         now = self._clock()
@@ -614,6 +629,9 @@ class GCRALimiter(_AsyncMixin, _EvictionMixin):
         self._clock = clock or time.monotonic
         self._tats: dict[str, float] = {}
         self._call_count = 0
+
+    def __repr__(self) -> str:
+        return f"GCRALimiter(rate={self.rate}, burst={self.burst})"
 
     def acquire(self, key: str, tokens: int = 1) -> RateLimitResult:
         now = self._clock()

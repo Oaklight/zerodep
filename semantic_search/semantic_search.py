@@ -262,35 +262,32 @@ def _dequantize_sq8_single(
 def detect_zh_en(text: str, threshold: float = 0.3) -> str:
     """Detect whether text is predominantly Chinese or English.
 
-    Counts CJK unified ideographs versus Latin letters. Returns ``"zh"``
-    when the CJK ratio exceeds *threshold*, otherwise ``"en"``.
-
-    Japanese kana and Korean Hangul cause an early ``"en"`` return so the
-    function can be used as a simple CJK-vs-Latin discriminator without
-    confusing Japanese/Korean text for Chinese.
+    Counts CJK unified ideographs versus Latin letters, Japanese kana,
+    and Korean Hangul.  Returns ``"zh"`` when the CJK ratio among all
+    counted characters exceeds *threshold*, otherwise ``"en"``.
 
     Args:
         text: Input text to classify.
-        threshold: Minimum ratio of CJK characters to total alphabetic
-            characters to classify as Chinese. Default 0.3.
+        threshold: Minimum ratio of CJK characters to total counted
+            characters to classify as Chinese.  Default 0.3.
 
     Returns:
         ``"zh"`` or ``"en"``.
     """
     cjk = 0
-    latin = 0
+    other = 0
     for ch in text:
         cp = ord(ch)
-        if (0x3040 <= cp <= 0x309F) or (0x30A0 <= cp <= 0x30FF):
-            return "en"
-        if 0xAC00 <= cp <= 0xD7AF:
-            return "en"
         if (0x4E00 <= cp <= 0x9FFF) or (0x3400 <= cp <= 0x4DBF):
             cjk += 1
         elif (0x0041 <= cp <= 0x005A) or (0x0061 <= cp <= 0x007A):
-            latin += 1
+            other += 1
+        elif (0x3040 <= cp <= 0x309F) or (0x30A0 <= cp <= 0x30FF):
+            other += 1
+        elif 0xAC00 <= cp <= 0xD7AF:
+            other += 1
 
-    total = cjk + latin
+    total = cjk + other
     if total == 0:
         return "en"
     return "zh" if cjk / total >= threshold else "en"
@@ -328,7 +325,7 @@ def _api_post(url: str, headers: dict[str, str], payload: dict) -> Any:
     """
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-    with urllib.request.urlopen(req) as resp:
+    with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
@@ -920,14 +917,19 @@ class _LSHIndex:
 class SemanticIndex:
     """Dense vector search index for semantic similarity.
 
+    This class is not thread-safe.  External locking is required for
+    concurrent access from multiple threads.
+
     Args:
         dim: Vector dimensionality.
         metric: Distance metric. One of ``"cosine"``, ``"euclidean"``,
             ``"inner_product"``.
         index_type: Index type. One of ``"flat"``, ``"ivf"``, ``"lsh"``.
         embed: Optional embedding function ``list[str] -> list[list[float]]``.
-        quantize: If ``True``, use SQ8 scalar quantization (4x memory
-            reduction, ~1% recall drop).
+        quantize: If ``True``, compute SQ8 scalar quantization data
+            on :meth:`build_index`.  Quantized vectors are persisted
+            alongside full-precision vectors for compact storage.
+            Search always uses full-precision vectors for accuracy.
         **index_params: Index-specific parameters. For ``"ivf"``:
             ``n_clusters`` (default 64), ``nprobe`` (default 4).
             For ``"lsh"``: ``n_tables`` (default 8), ``n_hash_funcs``
@@ -1085,6 +1087,10 @@ class SemanticIndex:
             filters: Metadata filters. Each key-value pair must match exactly
                 in the document's metadata. Use a callable value for custom
                 filter logic (e.g. ``{"year": lambda y: y > 2023}``).
+                For approximate indices (IVF, LSH), filtering is applied
+                post-retrieval — restrictive filters may return fewer than
+                *top_k* results when matching documents are in non-probed
+                clusters.
 
         Returns:
             List of :class:`Result` objects sorted by descending score.
@@ -1098,8 +1104,9 @@ class SemanticIndex:
             self.build_index()
 
         n_docs = len(self._doc_ids)
+        fetch_k = min(top_k * 4, n_docs) if filters else top_k
         raw = self._index_impl.search(
-            query, self._vectors, self._dim, self._dist_fn, n_docs, top_k
+            query, self._vectors, self._dim, self._dist_fn, n_docs, fetch_k
         )
 
         results: list[Result] = []
@@ -1567,9 +1574,10 @@ class SemanticIndex:
                     json.loads(metadata_json) if metadata_json is not None else None
                 )
 
-            all_bytes = b""
-            for (data,) in cur.execute("SELECT data FROM vectors ORDER BY idx"):
-                all_bytes += data
+            chunks = [
+                data for (data,) in cur.execute("SELECT data FROM vectors ORDER BY idx")
+            ]
+            all_bytes = b"".join(chunks)
             instance._vectors = array.array("f")
             if all_bytes:
                 instance._vectors.frombytes(all_bytes)

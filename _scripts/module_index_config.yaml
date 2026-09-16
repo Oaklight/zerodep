@@ -33,7 +33,7 @@ categories:
   - id: text
     name_en: "Text & Search"
     name_zh: "文本与搜索"
-    modules: [markdown, soup, readability, diff, sparse_search, synctex]
+    modules: [markdown, soup, readability, diff, sparse_search, semantic_search, synctex]
 
   - id: config
     name_en: "Configuration"
@@ -207,6 +207,12 @@ modules:
     replaces_zh: "rank-bm25、bm25s、whoosh"
     desc_en: "BM25/BM25+/BM25L/BM25F + TF-IDF full-text search with Bayesian calibration, RRF fusion, MMR diversity"
     desc_zh: "BM25/BM25+/BM25L/BM25F + TF-IDF 全文搜索（贝叶斯校准、RRF 融合、MMR 多样性）"
+  semantic_search:
+    benchmark: faiss-cpu
+    replaces: "faiss-cpu, hnswlib, annoy"
+    replaces_zh: "faiss-cpu、hnswlib、annoy"
+    desc_en: "Dense vector search with Flat/IVF/LSH indices, SQ8 quantization, embedding API helpers, RRF fusion, MMR diversity"
+    desc_zh: "稠密向量搜索（Flat/IVF/LSH 索引、SQ8 量化、嵌入 API 辅助、RRF 融合、MMR 多样性）"
   dotenv:
     benchmark: python-dotenv
     replaces: "python-dotenv"

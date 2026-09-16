@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-22T22:18:08.486512+00:00",
+  "generated": "2026-10-23T02:19:26.101725+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -179,8 +179,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-10-22T03:54:55-05:00",
-      "content_hash": "d6ead050d6ba47cbc21f0c62bbe2b64ef185d9174d5482d0004a3e2c2e4e03eb"
+      "last_updated": "2026-10-22T21:07:10-05:00",
+      "content_hash": "888104fbc5bd46a138baeb45b051ff829c88eec837dfe273d78f296800b18316"
     },
     "httpserver": {
       "description": "Zero-dependency async HTTP server with decorator-based routing",
@@ -414,6 +414,18 @@
       "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "fe2d6d5a1037a99e48102f5e5d983e706decca2b1616de31d804d9ef333752ea"
     },
+    "semantic_search": {
+      "description": "Zero-dependency dense vector search with Flat, IVF, and LSH indices",
+      "files": [
+        "semantic_search/semantic_search.py"
+      ],
+      "version": "0.1.0",
+      "deps": [],
+      "tier": "subsystem",
+      "category": "text",
+      "last_updated": null,
+      "content_hash": "cbd2c82e7969bc7a74caebb60b6806690bd505c08a1393ea31f22afaae81c735"
+    },
     "semver": {
       "description": "PEP 440 version parser and comparator -- zero dependencies, stdlib only",
       "files": [
@@ -512,8 +524,8 @@
       "deps": [],
       "tier": "medium",
       "category": "terminal",
-      "last_updated": "2026-04-15T09:45:45Z",
-      "content_hash": "effd04109a31f5ae7b87333d4207a70ceda712ef5e5718acc7e97691d7574667"
+      "last_updated": "2026-10-22T19:36:28-05:00",
+      "content_hash": "d8a5646d6854d738e1b6213dc8bd5ffd28803d8a96f02f0e83113c82ed34e2b7"
     },
     "toon": {
       "description": "TOON encoder/decoder — zero dependencies, stdlib only, Python 3.10+",

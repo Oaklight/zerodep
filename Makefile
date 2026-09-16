@@ -1,4 +1,4 @@
-.PHONY: all test benchmark lint fmt clean help manifest version-check dep-graph dep-check docs-index docs-index-check test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi test-frontmatter benchmark-frontmatter test-cache benchmark-cache test-readability benchmark-readability benchmark-readability-compare test-jsonschema benchmark-jsonschema test-png benchmark-png test-httpserver benchmark-httpserver test-websocket benchmark-websocket test-cdp benchmark-cdp test-multipart benchmark-multipart test-s3 benchmark-s3 test-profiler benchmark-profiler benchmark-cold-start
+.PHONY: all test benchmark lint fmt clean help manifest version-check dep-graph dep-check docs-index docs-index-check test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi test-frontmatter benchmark-frontmatter test-cache benchmark-cache test-readability benchmark-readability benchmark-readability-compare test-jsonschema benchmark-jsonschema test-png benchmark-png test-httpserver benchmark-httpserver test-websocket benchmark-websocket test-cdp benchmark-cdp test-multipart benchmark-multipart test-s3 benchmark-s3 test-profiler benchmark-profiler benchmark-cold-start test-semantic_search benchmark-semantic_search
 
 help:
 	@echo "Available targets:"
@@ -55,6 +55,8 @@ help:
 	@echo "  test-s3          - Run s3 correctness tests"
 	@echo "  benchmark-s3     - Run s3 benchmarks (vs boto3 + minio, requires Docker)"
 	@echo "  test-profiler    - Run profiler correctness tests"
+	@echo "  test-semantic_search - Run semantic_search correctness tests"
+	@echo "  benchmark-semantic_search - Run semantic_search benchmarks (vs faiss-cpu)"
 	@echo "  benchmark-profiler - Run profiler benchmarks (vs pyinstrument)"
 	@echo "  benchmark-cold-start - Run cold-start (import + first-call) benchmarks"
 	@echo "  docs-index       - Generate modules/index.md for EN and ZH docs"
@@ -230,6 +232,12 @@ test-profiler:
 
 benchmark-profiler:
 	pytest profiler/test_profiler_benchmark.py -v
+
+test-semantic_search:
+	pytest semantic_search/test_semantic_search_correctness.py -v
+
+benchmark-semantic_search:
+	pytest semantic_search/test_semantic_search_benchmark.py -v
 
 benchmark-cold-start:
 	pytest test_cold_start.py -v

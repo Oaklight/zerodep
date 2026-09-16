@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-09-15T06:34:55.886016+00:00",
+  "generated": "2026-09-16T04:37:21.712668+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -287,8 +287,8 @@
       "deps": [],
       "tier": "medium",
       "category": "devtools",
-      "last_updated": "2026-09-14T20:53:33-05:00",
-      "content_hash": "a870e2bb6d7ff5105caeef234f21b061b75ee52e027d1ec3f029134073985a95"
+      "last_updated": "2026-09-15T03:31:09-05:00",
+      "content_hash": "cb2480fee4939b1cb869047df0b343762fb416e33638536db389407a4dc3d9ee"
     },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",
@@ -401,6 +401,18 @@
       "category": "process",
       "last_updated": "2026-04-15T09:45:45Z",
       "content_hash": "fe2d6d5a1037a99e48102f5e5d983e706decca2b1616de31d804d9ef333752ea"
+    },
+    "semantic_search": {
+      "description": "Zero-dependency dense vector search with Flat, IVF, and LSH indices",
+      "files": [
+        "semantic_search/semantic_search.py"
+      ],
+      "version": "0.1.0",
+      "deps": [],
+      "tier": "subsystem",
+      "category": "text",
+      "last_updated": null,
+      "content_hash": "cbd2c82e7969bc7a74caebb60b6806690bd505c08a1393ea31f22afaae81c735"
     },
     "semver": {
       "description": "PEP 440 version parser and comparator -- zero dependencies, stdlib only",

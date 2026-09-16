@@ -97,6 +97,10 @@ bench-search = [
     "rank-bm25==0.2.2",
     "bm25s>=0.3.0",
 ]
+bench-semantic_search = [
+    "faiss-cpu>=1.7.0",
+    "numpy>=1.21.0",
+]
 bench-frontmatter = [
     "python-frontmatter==1.1.0",
 ]
@@ -174,14 +178,14 @@ dev = [
     "complexipy==5.6.1",
     "build>=1.2.2.post1",
     "twine>=6.1.0",
-    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonx,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-persistdict,bench-runner,bench-readability,bench-png,bench-useragent,bench-httpserver,bench-websocket,bench-cdp,bench-multipart,bench-s3,bench-ratelimit,bench-jsonschema,bench-profiler]",
+    "zerodep[test,bench-aes,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonx,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-persistdict,bench-runner,bench-readability,bench-png,bench-useragent,bench-httpserver,bench-websocket,bench-cdp,bench-multipart,bench-s3,bench-ratelimit,bench-jsonschema,bench-profiler,bench-semantic_search]",
 ]
 
 [tool.pytest.ini_options]
 markers = [
     "cold_start: cold-start (import + first-call) benchmarks via subprocess",
 ]
-testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonx", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema", "png", "llmstxt", "useragent", "synctex", "httpserver", "websocket", "cdp", "multipart", "s3", "ratelimit", "profiler"]
+testpaths = ["aes", "qr", "httpclient", "dotenv", "yaml", "jsonx", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema", "png", "llmstxt", "useragent", "synctex", "httpserver", "websocket", "cdp", "multipart", "s3", "ratelimit", "profiler", "semantic_search"]
 
 [tool.ruff]
 target-version = "py310"
@@ -238,6 +242,7 @@ exclude = [
     "depdetect/",
     "config/",
     "s3/",
+    "semantic_search/",
     "zerodep.py",
 ]
 
@@ -288,4 +293,5 @@ extra-paths = [
     "./s3",
     "./ratelimit",
     "./profiler",
+    "./semantic_search",
 ]

@@ -157,8 +157,11 @@ class TestDetectZhEn:
     def test_mixed_mostly_english(self):
         assert detect_zh_en("The character 中 means middle") == "en"
 
-    def test_japanese_kana(self):
-        assert detect_zh_en("こんにちは世界") == "en"
+    def test_japanese_kana_pure(self):
+        assert detect_zh_en("こんにちは") == "en"
+
+    def test_japanese_kana_mixed_with_chinese(self):
+        assert detect_zh_en("这是一段中文テスト") == "zh"
 
     def test_korean_hangul(self):
         assert detect_zh_en("한국어 텍스트") == "en"

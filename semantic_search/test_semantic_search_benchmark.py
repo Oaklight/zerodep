@@ -1,6 +1,6 @@
-"""Benchmarks comparing semantic_search against faiss-cpu.
+"""Benchmarks comparing semantic_search against faiss-cpu and hnswlib.
 
-Requires: pip install faiss-cpu numpy
+Requires: pip install faiss-cpu numpy hnswlib
 Run: pytest semantic_search/test_semantic_search_benchmark.py -v
 """
 
@@ -14,6 +14,7 @@ from semantic_search import SemanticIndex
 
 faiss = pytest.importorskip("faiss")
 np = pytest.importorskip("numpy")
+hnswlib = pytest.importorskip("hnswlib")
 
 
 # ---------------------------------------------------------------------------
@@ -222,3 +223,122 @@ class TestQuantizationAccuracy:
             total += 10
         recall = hits / total
         assert recall >= 0.9, f"SQ8 recall = {recall:.2f}, expected >= 0.9"
+
+
+# ---------------------------------------------------------------------------
+# HNSW (hnswlib) Comparisons
+# ---------------------------------------------------------------------------
+
+
+def _build_hnsw(
+    dim: int, vecs: list[list[float]], ef_search: int = 50
+) -> hnswlib.Index:
+    """Build an hnswlib HNSW index for cosine distance."""
+    idx = hnswlib.Index(space="cosine", dim=dim)
+    idx.init_index(max_elements=len(vecs), ef_construction=200, M=16)
+    data = np.array(vecs, dtype="float32")
+    idx.add_items(data, list(range(len(vecs))))
+    idx.set_ef(ef_search)
+    return idx
+
+
+class TestHNSWRecall:
+    """Compare IVF/LSH recall against hnswlib HNSW recall."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self):
+        dim = MEDIUM_DIM
+        self.flat_idx = SemanticIndex(dim=dim)
+        self.ivf_idx = SemanticIndex(dim=dim, index_type="ivf", n_clusters=16, nprobe=8)
+        self.lsh_idx = SemanticIndex(
+            dim=dim, index_type="lsh", n_tables=16, n_hash_funcs=6
+        )
+        for i, v in enumerate(MEDIUM_VECS):
+            self.flat_idx.add(f"d{i}", vector=v)
+            self.ivf_idx.add(f"d{i}", vector=v)
+            self.lsh_idx.add(f"d{i}", vector=v)
+        self.ivf_idx.build_index()
+        self.lsh_idx.build_index()
+        self.hnsw_idx = _build_hnsw(dim, MEDIUM_VECS)
+
+    def _recall(self, search_fn) -> float:
+        hits = 0
+        total = 0
+        for q in QUERIES_MEDIUM:
+            flat_ids = {r.doc_id for r in self.flat_idx.search(vector=q, top_k=10)}
+            found = search_fn(q)
+            hits += len(flat_ids & found)
+            total += 10
+        return hits / total
+
+    def test_ivf_vs_hnsw_recall(self):
+        """IVF and HNSW recall should both be reasonable vs brute-force."""
+        ivf_recall = self._recall(
+            lambda q: {r.doc_id for r in self.ivf_idx.search(vector=q, top_k=10)}
+        )
+        hnsw_labels, _ = self.hnsw_idx.knn_query(
+            np.array(QUERIES_MEDIUM, dtype="float32"), k=10
+        )
+        hnsw_hits = 0
+        for i, q in enumerate(QUERIES_MEDIUM):
+            flat_ids = {r.doc_id for r in self.flat_idx.search(vector=q, top_k=10)}
+            hnsw_ids = {f"d{j}" for j in hnsw_labels[i]}
+            hnsw_hits += len(flat_ids & hnsw_ids)
+        hnsw_recall = hnsw_hits / (10 * len(QUERIES_MEDIUM))
+
+        assert ivf_recall >= 0.5, f"IVF recall = {ivf_recall:.2f}"
+        assert hnsw_recall >= 0.8, f"HNSW recall = {hnsw_recall:.2f}"
+
+    def test_lsh_recall_comparison(self):
+        """LSH recall is expected to be lower than HNSW."""
+        lsh_recall = self._recall(
+            lambda q: {r.doc_id for r in self.lsh_idx.search(vector=q, top_k=10)}
+        )
+        assert lsh_recall >= 0.05, f"LSH recall = {lsh_recall:.2f}"
+
+
+class TestHNSWSearchPerformance:
+    """Benchmark ANN search: our IVF vs hnswlib HNSW."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self):
+        dim = MEDIUM_DIM
+        self.ivf_idx = SemanticIndex(dim=dim, index_type="ivf", n_clusters=16, nprobe=4)
+        for i, v in enumerate(MEDIUM_VECS):
+            self.ivf_idx.add(f"d{i}", vector=v)
+        self.ivf_idx.build_index()
+
+        self.hnsw_idx = _build_hnsw(dim, MEDIUM_VECS, ef_search=50)
+        self.query = QUERIES_MEDIUM[0]
+        self.query_np = np.array([self.query], dtype="float32")
+
+    def test_our_ivf(self, benchmark):
+        """semantic_search IVF: search 2000 docs."""
+        benchmark(self.ivf_idx.search, vector=self.query, top_k=10)
+
+    def test_hnswlib_hnsw(self, benchmark):
+        """hnswlib HNSW: search 2000 docs."""
+        benchmark(self.hnsw_idx.knn_query, self.query_np, k=10)
+
+
+class TestHNSWBuildPerformance:
+    """Benchmark index build: our IVF vs hnswlib HNSW."""
+
+    def test_our_ivf_build(self, benchmark):
+        """semantic_search IVF: build on 2000 docs."""
+        dim = MEDIUM_DIM
+        idx = SemanticIndex(dim=dim, index_type="ivf", n_clusters=16, nprobe=4)
+        for i, v in enumerate(MEDIUM_VECS):
+            idx.add(f"d{i}", vector=v)
+        benchmark(idx.build_index)
+
+    def test_hnswlib_build(self, benchmark):
+        """hnswlib HNSW: build on 2000 docs."""
+        data = np.array(MEDIUM_VECS, dtype="float32")
+
+        def _build():
+            idx = hnswlib.Index(space="l2", dim=MEDIUM_DIM)
+            idx.init_index(max_elements=MEDIUM_N, ef_construction=200, M=16)
+            idx.add_items(data, list(range(MEDIUM_N)))
+
+        benchmark(_build)

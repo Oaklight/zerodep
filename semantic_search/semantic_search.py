@@ -329,6 +329,36 @@ def _api_post(url: str, headers: dict[str, str], payload: dict) -> Any:
         return json.loads(resp.read().decode("utf-8"))
 
 
+def _openai_compat_embed(
+    base_url: str,
+    api_key: str,
+    model: str,
+) -> Callable[[list[str]], list[list[float]]]:
+    """Create an embedding function for OpenAI-compatible ``/v1/embeddings`` APIs.
+
+    Args:
+        base_url: Base URL of the API (without trailing slash).
+        api_key: API key for authentication.
+        model: Model name.
+
+    Returns:
+        Embedding function ``list[str] -> list[list[float]]``.
+    """
+
+    def _embed(texts: list[str]) -> list[list[float]]:
+        url = f"{base_url.rstrip('/')}/v1/embeddings"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        }
+        payload = {"input": texts, "model": model}
+        resp = _api_post(url, headers, payload)
+        items = sorted(resp["data"], key=lambda x: x["index"])
+        return [item["embedding"] for item in items]
+
+    return _embed
+
+
 def openai_embed(
     api_key: str = "",
     model: str = "text-embedding-3-small",
@@ -347,19 +377,7 @@ def openai_embed(
     Returns:
         Embedding function ``list[str] -> list[list[float]]``.
     """
-
-    def _embed(texts: list[str]) -> list[list[float]]:
-        url = f"{base_url.rstrip('/')}/v1/embeddings"
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        }
-        payload = {"input": texts, "model": model}
-        resp = _api_post(url, headers, payload)
-        items = sorted(resp["data"], key=lambda x: x["index"])
-        return [item["embedding"] for item in items]
-
-    return _embed
+    return _openai_compat_embed(base_url, api_key, model)
 
 
 def cohere_embed(
@@ -415,19 +433,7 @@ def voyage_embed(
     Returns:
         Embedding function ``list[str] -> list[list[float]]``.
     """
-
-    def _embed(texts: list[str]) -> list[list[float]]:
-        url = "https://api.voyageai.com/v1/embeddings"
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        }
-        payload = {"input": texts, "model": model}
-        resp = _api_post(url, headers, payload)
-        items = sorted(resp["data"], key=lambda x: x["index"])
-        return [item["embedding"] for item in items]
-
-    return _embed
+    return _openai_compat_embed("https://api.voyageai.com", api_key, model)
 
 
 def jina_embed(
@@ -445,19 +451,7 @@ def jina_embed(
     Returns:
         Embedding function ``list[str] -> list[list[float]]``.
     """
-
-    def _embed(texts: list[str]) -> list[list[float]]:
-        url = "https://api.jina.ai/v1/embeddings"
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        }
-        payload = {"input": texts, "model": model}
-        resp = _api_post(url, headers, payload)
-        items = sorted(resp["data"], key=lambda x: x["index"])
-        return [item["embedding"] for item in items]
-
-    return _embed
+    return _openai_compat_embed("https://api.jina.ai", api_key, model)
 
 
 # ---------------------------------------------------------------------------
@@ -1029,6 +1023,64 @@ class SemanticIndex:
             )
         self._insert(doc_id, vector=vector, text=text, metadata=metadata)
 
+    def add_many(
+        self,
+        doc_ids: list[str],
+        *,
+        vectors: list[list[float]] | None = None,
+        texts: list[str] | None = None,
+        metadatas: list[dict[str, Any] | None] | None = None,
+    ) -> None:
+        """Add multiple documents in one call.
+
+        When *texts* is provided, they are embedded in a single batch call
+        (one API round-trip instead of one per document).
+
+        Args:
+            doc_ids: Unique document identifiers.
+            vectors: Pre-computed embedding vectors (one per doc).
+            texts: Texts to embed via the configured embedding function.
+            metadatas: Per-document metadata (``None`` entries are allowed).
+
+        Raises:
+            ValueError: If lengths mismatch, both or neither of
+                *vectors*/*texts* are given, any ``doc_id`` already exists,
+                or vector dimensions mismatch.
+        """
+        n = len(doc_ids)
+        if vectors is not None and texts is not None:
+            raise ValueError("Provide either vectors or texts, not both")
+        if vectors is None and texts is None:
+            raise ValueError("Provide either vectors or texts")
+
+        if vectors is not None and len(vectors) != n:
+            raise ValueError(f"Length mismatch: {n} doc_ids but {len(vectors)} vectors")
+        if texts is not None and len(texts) != n:
+            raise ValueError(f"Length mismatch: {n} doc_ids but {len(texts)} texts")
+        if metadatas is not None and len(metadatas) != n:
+            raise ValueError(
+                f"Length mismatch: {n} doc_ids but {len(metadatas)} metadatas"
+            )
+
+        for doc_id in doc_ids:
+            if doc_id in self._doc_id_to_idx:
+                raise ValueError(
+                    f"Document {doc_id!r} already exists, use update() instead"
+                )
+
+        if texts is not None:
+            if self._embed is None:
+                raise ValueError(
+                    "texts requires an embedding function (pass embed= to constructor)"
+                )
+            vecs = self._embed(texts)
+            vectors = vecs
+
+        for i, doc_id in enumerate(doc_ids):
+            vec = vectors[i]  # type: ignore[index]
+            meta = metadatas[i] if metadatas is not None else None
+            self._insert(doc_id, vector=vec, text=None, metadata=meta)
+
     def remove(self, doc_id: str) -> None:
         """Remove a document from the index.
 
@@ -1161,15 +1213,15 @@ class SemanticIndex:
 
     # -- persistence ---------------------------------------------------------
 
-    def save(self, path: str, format: str | None = None) -> None:
+    def save(self, path: str, fmt: str | None = None) -> None:
         """Save the index to disk.
 
         Args:
             path: File path to save to.
-            format: ``"json"`` or ``"sqlite"``. If ``None``, inferred from
+            fmt: ``"json"`` or ``"sqlite"``. If ``None``, inferred from
                 file extension (``.db`` -> sqlite, otherwise json).
         """
-        fmt = self._resolve_format(path, format)
+        fmt = self._resolve_format(path, fmt)
         if fmt == "json":
             self._save_json(path)
         else:
@@ -1322,14 +1374,12 @@ class SemanticIndex:
     # -- internal: persistence helpers ---------------------------------------
 
     @staticmethod
-    def _resolve_format(path: str, format: str | None) -> str:
+    def _resolve_format(path: str, fmt: str | None) -> str:
         """Determine save format from explicit arg or file extension."""
-        if format is not None:
-            if format not in ("json", "sqlite"):
-                raise ValueError(
-                    f"Unknown format {format!r}, expected 'json' or 'sqlite'"
-                )
-            return format
+        if fmt is not None:
+            if fmt not in ("json", "sqlite"):
+                raise ValueError(f"Unknown format {fmt!r}, expected 'json' or 'sqlite'")
+            return fmt
         if Path(path).suffix in (".db", ".sqlite", ".sqlite3"):
             return "sqlite"
         return "json"

@@ -282,6 +282,81 @@ class TestSemanticIndexCRUD:
 
 
 # ---------------------------------------------------------------------------
+# Batch Add
+# ---------------------------------------------------------------------------
+
+
+class TestAddMany:
+    def test_basic(self):
+        idx = SemanticIndex(dim=2, metric="euclidean")
+        idx.add_many(
+            ["d1", "d2", "d3"],
+            vectors=[[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]],
+        )
+        assert len(idx) == 3
+        assert "d1" in idx and "d2" in idx and "d3" in idx
+
+    def test_with_metadata(self):
+        idx = SemanticIndex(dim=2)
+        idx.add_many(
+            ["d1", "d2"],
+            vectors=[[1.0, 0.0], [0.0, 1.0]],
+            metadatas=[{"a": 1}, {"b": 2}],
+        )
+        results = idx.search(vector=[1.0, 0.0], top_k=2)
+        meta_by_id = {r.doc_id: r.metadata for r in results}
+        assert meta_by_id["d1"] == {"a": 1}
+        assert meta_by_id["d2"] == {"b": 2}
+
+    def test_with_texts(self):
+        def fake_embed(texts):
+            return [[float(i), float(i + 1)] for i in range(len(texts))]
+
+        idx = SemanticIndex(dim=2, metric="euclidean", embed=fake_embed)
+        idx.add_many(["d1", "d2"], texts=["hello", "world"])
+        assert len(idx) == 2
+
+    def test_duplicate_raises(self):
+        idx = SemanticIndex(dim=2)
+        idx.add("d1", vector=[1.0, 0.0])
+        with pytest.raises(ValueError, match="already exists"):
+            idx.add_many(["d1", "d2"], vectors=[[0.0, 1.0], [1.0, 1.0]])
+
+    def test_both_vectors_and_texts_raises(self):
+        idx = SemanticIndex(dim=2)
+        with pytest.raises(ValueError, match="Provide either"):
+            idx.add_many(["d1"], vectors=[[1.0, 0.0]], texts=["hi"])
+
+    def test_neither_vectors_nor_texts_raises(self):
+        idx = SemanticIndex(dim=2)
+        with pytest.raises(ValueError, match="Provide either"):
+            idx.add_many(["d1"])
+
+    def test_length_mismatch_vectors(self):
+        idx = SemanticIndex(dim=2)
+        with pytest.raises(ValueError, match="Length mismatch"):
+            idx.add_many(["d1", "d2"], vectors=[[1.0, 0.0]])
+
+    def test_length_mismatch_metadatas(self):
+        idx = SemanticIndex(dim=2)
+        with pytest.raises(ValueError, match="Length mismatch"):
+            idx.add_many(
+                ["d1", "d2"],
+                vectors=[[1.0, 0.0], [0.0, 1.0]],
+                metadatas=[{"a": 1}],
+            )
+
+    def test_search_after_add_many(self):
+        idx = SemanticIndex(dim=2, metric="euclidean")
+        idx.add_many(
+            ["d1", "d2", "d3"],
+            vectors=[[1.0, 0.0], [0.0, 1.0], [0.5, 0.5]],
+        )
+        results = idx.search(vector=[1.0, 0.0], top_k=1)
+        assert results[0].doc_id == "d1"
+
+
+# ---------------------------------------------------------------------------
 # Flat Search
 # ---------------------------------------------------------------------------
 
@@ -510,14 +585,14 @@ class TestPersistenceJSON:
         path = str(tmp_path / "idx.dat")
         idx = SemanticIndex(dim=2)
         idx.add("d1", vector=[1.0, 0.0])
-        idx.save(path, format="json")
+        idx.save(path, fmt="json")
         loaded = SemanticIndex.load(path)
         assert loaded.doc_count == 1
 
     def test_invalid_format(self, tmp_path):
         idx = SemanticIndex(dim=2)
         with pytest.raises(ValueError, match="Unknown format"):
-            idx.save(str(tmp_path / "x"), format="parquet")
+            idx.save(str(tmp_path / "x"), fmt="parquet")
 
 
 # ---------------------------------------------------------------------------
@@ -553,7 +628,7 @@ class TestPersistenceSQLite:
         path = str(tmp_path / "idx.txt")
         idx = SemanticIndex(dim=2)
         idx.add("d1", vector=[1.0, 0.0])
-        idx.save(path, format="sqlite")
+        idx.save(path, fmt="sqlite")
         loaded = SemanticIndex.load(path)
         assert loaded.doc_count == 1
 

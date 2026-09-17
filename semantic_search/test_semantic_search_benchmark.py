@@ -101,7 +101,7 @@ class TestIVFRecall:
             hits += len(flat_ids & ivf_ids)
             total += 10
         recall = hits / total
-        assert recall >= 0.5, f"IVF recall@10 = {recall:.2f}, expected >= 0.7"
+        assert recall >= 0.5, f"IVF recall@10 = {recall:.2f}, expected >= 0.5"
 
 
 class TestLSHRecall:
@@ -132,7 +132,7 @@ class TestLSHRecall:
             hits += len(flat_ids & lsh_ids)
             total += 10
         recall = hits / total
-        assert recall >= 0.05, f"LSH recall@10 = {recall:.2f}, expected >= 0.3"
+        assert recall >= 0.05, f"LSH recall@10 = {recall:.2f}, expected >= 0.05"
 
 
 # ---------------------------------------------------------------------------

@@ -574,7 +574,7 @@ class TestSimplifyUnions:
         assert "nullable" not in result
         assert "anyOf" not in result
 
-    def test_multi_variant_keeps_first(self):
+    def test_multi_variant_preserved(self):
         schema = {
             "anyOf": [
                 {"type": "string"},
@@ -582,8 +582,8 @@ class TestSimplifyUnions:
             ]
         }
         result = simplify_unions(schema)
-        assert result["type"] == "string"
-        assert "anyOf" not in result
+        assert result["anyOf"] == [{"type": "string"}, {"type": "integer"}]
+        assert "nullable" not in result
 
     def test_multi_variant_with_null(self):
         schema = {
@@ -594,8 +594,39 @@ class TestSimplifyUnions:
             ]
         }
         result = simplify_unions(schema)
-        assert result["type"] == "string"
+        assert result["anyOf"] == [{"type": "string"}, {"type": "integer"}]
         assert result["nullable"] is True
+
+    def test_multi_variant_number_and_array(self):
+        schema = {
+            "anyOf": [
+                {"type": "number"},
+                {"type": "array", "items": {"type": "number"}},
+                {"type": "null"},
+            ]
+        }
+        result = simplify_unions(schema)
+        assert result["anyOf"] == [
+            {"type": "number"},
+            {"type": "array", "items": {"type": "number"}},
+        ]
+        assert result["nullable"] is True
+
+    def test_multi_variant_no_null(self):
+        schema = {
+            "oneOf": [
+                {"type": "string"},
+                {"type": "number"},
+                {"type": "boolean"},
+            ]
+        }
+        result = simplify_unions(schema)
+        assert result["anyOf"] == [
+            {"type": "string"},
+            {"type": "number"},
+            {"type": "boolean"},
+        ]
+        assert "nullable" not in result
 
     def test_all_null_variants(self):
         schema = {"anyOf": [{"type": "null"}, {"type": "null"}]}

@@ -12,47 +12,49 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 
 | Module | Version | Last Updated |
 |--------|---------|--------------|
-| [a2a](a2a.md) | 0.3.1 | 2026-04-27 |
-| [acp](acp.md) | 0.3.1 | 2026-04-27 |
+| [a2a](a2a.md) | 0.3.2 | 2026-08-25 |
+| [acp](acp.md) | 0.3.2 | 2026-08-25 |
 | [aes](aes.md) | 0.5.0 | 2026-04-20 |
 | [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
 | [cache](cache.md) | 0.2.4 | 2026-04-27 |
-| [cdp](cdp.md) | 0.1.0 | 2026-05-02 |
-| [config](config.md) | 0.3.1 | 2026-06-12 |
+| [cdp](cdp.md) | 0.1.1 | 2026-08-25 |
+| [config](config.md) | 0.3.2 | 2026-08-25 |
 | [depdetect](depdetect.md) | 0.4.3 | 2026-04-15 |
 | [diff](diff.md) | 0.3.1 | 2026-04-15 |
 | [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
-| [httpclient](httpclient.md) | 0.4.2 | 2026-06-01 |
-| [httpserver](httpserver.md) | 0.1.0 | 2026-05-02 |
+| [httpclient](httpclient.md) | 0.5.0 | 2026-09-09 |
+| [httpserver](httpserver.md) | 0.5.0 | 2026-09-14 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
-| [jsonschema](jsonschema.md) | 0.2.0 | 2026-05-11 |
+| [jsonschema](jsonschema.md) | 0.4.1 | 2026-09-23 |
 | [jsonx](jsonx.md) | 1.0.0 | 2026-06-12 |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
 | [multipart](multipart.md) | 0.1.0 | 2026-05-16 |
 | [persistdict](persistdict.md) | 0.4.1 | 2026-04-27 |
 | [png](png.md) | 0.1.1 | 2026-04-27 |
+| [profiler](profiler.md) | 0.1.0 | 2026-09-15 |
 | [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
 | [protobuf](protobuf.md) | 0.4.4 | 2026-04-27 |
-| [qr](qr.md) | 0.3.3 | 2026-04-27 |
-| [readability](readability.md) | 0.1.0 | 2026-06-11 |
-| [retry](retry.md) | 0.3.0 | 2026-04-27 |
+| [qr](qr.md) | 0.3.4 | 2026-08-25 |
+| [ratelimit](ratelimit.md) | 0.2.0 | 2026-09-14 |
+| [readability](readability.md) | 0.2.1 | 2026-08-25 |
+| [retry](retry.md) | 0.3.1 | 2026-09-06 |
 | [runner](runner.md) | 0.3.1 | 2026-04-15 |
 | [scheduler](scheduler.md) | 0.3.1 | 2026-04-15 |
 | [semver](semver.md) | 0.4.1 | 2026-04-27 |
-| [skills](skills.md) | 0.4.2 | 2026-04-27 |
+| [skills](skills.md) | 0.4.3 | 2026-08-25 |
 | [soup](soup.md) | 0.6.0 | 2026-04-27 |
 | [sparse_search](sparse_search.md) | 0.4.0 | 2026-04-27 |
-| [sse](sse.md) | 0.3.1 | 2026-04-15 |
+| [sse](sse.md) | 0.3.3 | 2026-08-25 |
 | [structlog](structlog.md) | 0.3.0 | 2026-04-27 |
 | [synctex](synctex.md) | 0.2.0 | 2026-05-02 |
 | [tabulate](tabulate.md) | 0.1.1 | 2026-04-15 |
 | [toon](toon.md) | 0.3.3 | 2026-04-27 |
 | [useragent](useragent.md) | 0.1.0 | 2026-05-02 |
-| [validate](validate.md) | 0.5.0 | 2026-05-05 |
-| [vcs](vcs.md) | 0.3.0 | 2026-04-11 |
+| [validate](validate.md) | 0.7.1 | 2026-09-06 |
+| [vcs](vcs.md) | 0.3.1 | 2026-08-25 |
 | [websocket](websocket.md) | 0.1.0 | 2026-05-02 |
 | [xml](xml.md) | 0.3.1 | 2026-04-27 |
 | [yaml](yaml.md) | 0.3.1 | 2026-04-27 |
@@ -68,6 +70,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [httpserver](httpserver.md) | Async HTTP server with decorator-based routing, streaming, and static files | flask (lightweight), microdot, bottle, starlette (basic), aiohttp (server) | `flask / microdot / bottle` |
 | [useragent](useragent.md) | Lightweight Chrome/Edge User-Agent generator with Client Hints | fake-useragent, ua-generator, user-agents | `ua-generator` |
 | [websocket](websocket.md) | RFC 6455 WebSocket client with sync + async support | websocket-client, websockets | `websockets` |
+| [ratelimit](ratelimit.md) | Multi-algorithm rate limiter (token bucket, fixed/sliding window, GCRA) | limits, pyrate-limiter, aiolimiter, limiter | `limits` |
 
 ### Agent Protocols
 
@@ -162,6 +165,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [structlog](structlog.md) | Structured logging with pretty console output | structlog, python-json-logger, loguru | `structlog` |
 | [vcs](vcs.md) | Git/Hg/Jujutsu CLI wrapper (diff, status, log, blame) | GitPython, pygit2 (high-level) | -- |
 | [depdetect](depdetect.md) | Dependency detection and verification | pipreqs (partial) | -- |
+| [profiler](profiler.md) | cProfile wrapper with HTML report output | cProfile (raw) | `pyinstrument` |
 
 ## Inter-Module Dependencies
 

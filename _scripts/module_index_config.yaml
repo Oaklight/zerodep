@@ -63,7 +63,7 @@ categories:
   - id: storage
     name_en: "Storage"
     name_zh: "存储"
-    modules: [cache, persistdict]
+    modules: [cache, persistdict, s3]
 
   - id: devtools
     name_en: "Dev Tools"
@@ -292,6 +292,12 @@ modules:
     replaces_zh: "sqlitedict、diskcache（字典接口）"
     desc_en: "Persistent dict with pluggable backends (JSON, SQLite)"
     desc_zh: "持久化字典（JSON / SQLite 后端）"
+  s3:
+    benchmark: boto3
+    replaces: "boto3, minio, s3fs"
+    replaces_zh: "boto3、minio、s3fs"
+    desc_en: "S3-compatible storage client with AWS Signature V4"
+    desc_zh: "S3 兼容存储客户端（AWS Signature V4）"
   depdetect:
     replaces: "pipreqs (partial)"
     replaces_zh: "pipreqs（部分）"

@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- **jsonschema**: Preserve genuine multi-branch `anyOf`/`oneOf` unions instead of collapsing them to the first non-null branch. Previously `float | list[float] | None` silently discarded all branches but the first. Now unions with 2+ non-null branches keep the remaining branches under their original keyword (`anyOf` or `oneOf`), with the null branch stripped and `nullable: true` set. ([#173](https://github.com/Oaklight/zerodep/pull/173))
+
+### Infrastructure
+
+- Add measurement scripts under `_scripts/experiments/`: supply-chain attack surface, import memory, cold-start latency, and install footprint. ([abc8d78](https://github.com/Oaklight/zerodep/commit/abc8d78), [77cecc0](https://github.com/Oaklight/zerodep/commit/77cecc0), [499b8c5](https://github.com/Oaklight/zerodep/commit/499b8c5))
+
 ## [2026.9.15] - 2026-09-15
 
 ### New Modules

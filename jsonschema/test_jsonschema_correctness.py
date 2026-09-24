@@ -621,7 +621,7 @@ class TestSimplifyUnions:
             ]
         }
         result = simplify_unions(schema)
-        assert result["anyOf"] == [
+        assert result["oneOf"] == [
             {"type": "string"},
             {"type": "number"},
             {"type": "boolean"},

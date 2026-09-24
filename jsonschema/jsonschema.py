@@ -407,7 +407,7 @@ def _simplify_node(schema: dict[str, Any]) -> dict[str, Any]:
         if len(non_null) == 1:
             base = _deep_merge_two(base, non_null[0])
         elif len(non_null) > 1:
-            base["anyOf"] = non_null
+            base[keyword] = non_null
         # else: all null — base stays as-is
 
         if has_null:
@@ -451,7 +451,7 @@ def simplify_unions(schema: dict[str, Any]) -> dict[str, Any]:
     - Nullable pattern ``[{type: T}, {type: null}]`` → ``{type: T, nullable: true}``
     - Single-variant: unwrap.
     - Multi-variant with null: strip the ``{type: null}`` branch, keep remaining
-      branches as ``anyOf``.
+      branches under the original keyword (``anyOf`` or ``oneOf``).
 
     Args:
         schema: A JSON Schema dict.

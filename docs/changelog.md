@@ -6,6 +6,14 @@
 
 ## [未发布]
 
+### 问题修复
+
+- **jsonschema**：保留真正的多分支 `anyOf`/`oneOf` 联合类型，不再将其折叠为第一个非 null 分支。此前 `float | list[float] | None` 会静默丢弃除第一个之外的所有分支。现在含 2 个及以上非 null 分支的联合类型会在原有关键字（`anyOf` 或 `oneOf`）下保留剩余分支，同时剥离 null 分支并设置 `nullable: true`。([#173](https://github.com/Oaklight/zerodep/pull/173))
+
+### 基础设施
+
+- 在 `_scripts/experiments/` 下新增测量脚本：供应链攻击面、导入内存占用、冷启动延迟和安装体积。([abc8d78](https://github.com/Oaklight/zerodep/commit/abc8d78), [77cecc0](https://github.com/Oaklight/zerodep/commit/77cecc0), [499b8c5](https://github.com/Oaklight/zerodep/commit/499b8c5))
+
 ## [2026.9.15] - 2026-09-15
 
 ### 新增模块

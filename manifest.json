@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-09-15T09:30:11.658018+00:00",
+  "generated": "2026-09-24T06:30:59.840333+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -199,12 +199,12 @@
       "files": [
         "jsonschema/jsonschema.py"
       ],
-      "version": "0.4.0",
+      "version": "0.4.1",
       "deps": [],
       "tier": "subsystem",
       "category": "validation",
-      "last_updated": "2026-09-14T17:04:46-05:00",
-      "content_hash": "39c67c20198220cfe3b0496a77dca2e36093e460e624b43fdae0175fe99b6512"
+      "last_updated": "2026-09-23T19:15:39-05:00",
+      "content_hash": "9b4f8684930617202004f8024e3e1e7b6e248982060e5d6caacdbf544e3ab0ab"
     },
     "jsonx": {
       "description": "Extended JSON parser — zero dependencies, stdlib only, Python 3.10+",
@@ -283,12 +283,12 @@
       "files": [
         "profiler/profiler.py"
       ],
-      "version": "0.1.0",
+      "version": "0.1.1",
       "deps": [],
       "tier": "medium",
       "category": "devtools",
       "last_updated": "2026-09-15T03:31:09-05:00",
-      "content_hash": "cb2480fee4939b1cb869047df0b343762fb416e33638536db389407a4dc3d9ee"
+      "content_hash": "e9ccd8c5f87e53ec0eee622fc34f778c004cd234acbb7b9a1748a690e6574373"
     },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",

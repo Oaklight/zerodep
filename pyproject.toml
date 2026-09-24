@@ -201,6 +201,7 @@ max-complexity = 20
 "validate/validate.py" = ["E501"]
 "diff/diff.py" = ["E501"]
 "vcs/vcs.py" = ["E501"]
+"profiler/profiler.py" = ["E501"]
 "httpserver/test_httpserver_unix_socket.py" = ["ASYNC240"]
 "httpserver/test_httpserver_tls.py" = ["ASYNC240"]
 "xml/xml.py" = ["E501"]

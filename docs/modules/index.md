@@ -42,6 +42,7 @@ title: 模块概览
 | [readability](readability.md) | 0.2.1 | 2026-08-25 |
 | [retry](retry.md) | 0.3.1 | 2026-09-06 |
 | [runner](runner.md) | 0.3.1 | 2026-04-15 |
+| [s3](s3.md) | 0.2.0 | 2026-07-03 |
 | [scheduler](scheduler.md) | 0.3.1 | 2026-04-15 |
 | [semver](semver.md) | 0.4.1 | 2026-04-27 |
 | [skills](skills.md) | 0.4.3 | 2026-08-25 |
@@ -157,6 +158,7 @@ title: 模块概览
 |--------|-------------|----------|-------------------|
 | [cache](cache.md) | 内存缓存（TTL、LRU/LFU 淘汰、异步支持） | cachetools、diskcache（内存部分） | `cachetools` |
 | [persistdict](persistdict.md) | 持久化字典（JSON / SQLite 后端） | sqlitedict、diskcache（字典接口） | -- |
+| [s3](s3.md) | S3 兼容存储客户端（AWS Signature V4） | boto3、minio、s3fs | `boto3` |
 
 ### 开发工具
 

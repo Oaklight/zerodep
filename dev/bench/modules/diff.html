@@ -125,25 +125,25 @@ td { white-space: nowrap; }
 <h1>diff</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 53cd6b93920aae8bef4805766e0372b450b4ffc9 | Commit: 53cd6b93 | 2026-09-07T03:04:04.817357+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-09-07T03:04:04.817357+00:00"></span></p>
+<p class="meta">Version: 46a0426 | Commit: 46a04268 | 2026-09-28T05:18:16.698929+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-09-28T05:18:16.698929+00:00"></span></p>
 <h2>diff</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Parse (Large)</td><td>zerodep</td><td>unidiff</td><td>94.5 µs</td><td>186.8 µs</td><td>10.6K</td><td>5.4K</td><td title="CV=3.6% | rounds=7145">91.2 µs</td><td title="CV=3.6% | rounds=7145">151.0 µs</td><td title="CV=3.6% | rounds=7145">3.4 µs</td><td title="CV=3.6% | rounds=7145">102.2 µs</td><td title="CV=2.8% | rounds=3887">181.2 µs</td><td title="CV=2.8% | rounds=3887">262.4 µs</td><td title="CV=2.8% | rounds=3887">5.3 µs</td><td title="CV=2.8% | rounds=3887">194.9 µs</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Parse (Medium)</td><td>zerodep</td><td>unidiff</td><td>30.9 µs</td><td>61.0 µs</td><td>32.4K</td><td>16.4K</td><td title="CV=6.3% | rounds=17363">29.8 µs</td><td title="CV=6.3% | rounds=17363">92.9 µs</td><td title="CV=6.3% | rounds=17363">1.9 µs</td><td title="CV=6.3% | rounds=17363">31.9 µs</td><td title="CV=5.0% | rounds=9536">59.0 µs</td><td title="CV=5.0% | rounds=9536">131.3 µs</td><td title="CV=5.0% | rounds=9536">3.1 µs</td><td title="CV=5.0% | rounds=9536">68.4 µs</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Parse (Small)</td><td>zerodep</td><td>unidiff</td><td>10.2 µs</td><td>20.9 µs</td><td>97.7K</td><td>47.8K</td><td title="CV=10.6% | rounds=22986">9.8 µs</td><td title="CV=10.6% | rounds=22986">58.7 µs</td><td title="CV=10.6% | rounds=22986">1.1 µs</td><td title="CV=10.6% | rounds=22986">10.4 µs</td><td title="CV=8.0% | rounds=10119">20.1 µs</td><td title="CV=8.0% | rounds=10119">57.1 µs</td><td title="CV=8.0% | rounds=10119">1.7 µs</td><td title="CV=8.0% | rounds=10119">21.6 µs</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Parse (Large)</td><td>zerodep</td><td>unidiff</td><td>95.8 µs</td><td>187.5 µs</td><td>10.4K</td><td>5.3K</td><td title="CV=4.6% | rounds=7390">92.2 µs</td><td title="CV=4.6% | rounds=7390">174.2 µs</td><td title="CV=4.6% | rounds=7390">4.4 µs</td><td title="CV=4.6% | rounds=7390">105.2 µs</td><td title="CV=4.0% | rounds=3917">182.1 µs</td><td title="CV=4.0% | rounds=3917">316.8 µs</td><td title="CV=4.0% | rounds=3917">7.5 µs</td><td title="CV=4.0% | rounds=3917">198.2 µs</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Parse (Medium)</td><td>zerodep</td><td>unidiff</td><td>31.6 µs</td><td>62.1 µs</td><td>31.6K</td><td>16.1K</td><td title="CV=7.1% | rounds=17904">30.6 µs</td><td title="CV=7.1% | rounds=17904">76.5 µs</td><td title="CV=7.1% | rounds=17904">2.2 µs</td><td title="CV=7.1% | rounds=17904">32.3 µs</td><td title="CV=5.9% | rounds=10600">59.9 µs</td><td title="CV=5.9% | rounds=10600">132.2 µs</td><td title="CV=5.9% | rounds=10600">3.7 µs</td><td title="CV=5.9% | rounds=10600">72.1 µs</td><td class="ratio-cell faster">2.0x faster</td></tr>
+<tr><td>Parse (Small)</td><td>zerodep</td><td>unidiff</td><td>10.4 µs</td><td>22.0 µs</td><td>96.3K</td><td>45.5K</td><td title="CV=11.6% | rounds=25892">10.0 µs</td><td title="CV=11.6% | rounds=25892">51.2 µs</td><td title="CV=11.6% | rounds=25892">1.2 µs</td><td title="CV=11.6% | rounds=25892">10.5 µs</td><td title="CV=8.7% | rounds=13368">21.1 µs</td><td title="CV=8.7% | rounds=13368">53.3 µs</td><td title="CV=8.7% | rounds=13368">1.9 µs</td><td title="CV=8.7% | rounds=13368">22.5 µs</td><td class="ratio-cell faster">2.1x faster</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <div class="table-wrap"><table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>Apply (Large)</td><td>zerodep</td><td>62.9 µs</td><td>15.9K</td><td title="CV=4.8% | rounds=7434">60.7 µs</td><td title="CV=4.8% | rounds=7434">136.0 µs</td><td title="CV=4.8% | rounds=7434">3.1 µs</td><td title="CV=4.8% | rounds=7434">70.4 µs</td></tr>
-<tr><td>Apply (Medium)</td><td>zerodep</td><td>7.6 µs</td><td>131.0K</td><td title="CV=11.5% | rounds=55289">7.2 µs</td><td title="CV=11.5% | rounds=55289">55.1 µs</td><td title="CV=11.5% | rounds=55289">878.4 ns</td><td title="CV=11.5% | rounds=55289">7.7 µs</td></tr>
-<tr><td>Apply (Small)</td><td>zerodep</td><td>2.5 µs</td><td>394.5K</td><td title="CV=19.8% | rounds=56158">2.4 µs</td><td title="CV=19.8% | rounds=56158">49.3 µs</td><td title="CV=19.8% | rounds=56158">502.9 ns</td><td title="CV=19.8% | rounds=56158">2.6 µs</td></tr>
+<tr><td>Apply (Large)</td><td>zerodep</td><td>60.4 µs</td><td>16.6K</td><td title="CV=6.9% | rounds=7855">58.0 µs</td><td title="CV=6.9% | rounds=7855">163.3 µs</td><td title="CV=6.9% | rounds=7855">4.2 µs</td><td title="CV=6.9% | rounds=7855">70.2 µs</td></tr>
+<tr><td>Apply (Medium)</td><td>zerodep</td><td>7.4 µs</td><td>134.6K</td><td title="CV=13.1% | rounds=71706">7.1 µs</td><td title="CV=13.1% | rounds=71706">46.6 µs</td><td title="CV=13.1% | rounds=71706">976.8 ns</td><td title="CV=13.1% | rounds=71706">7.5 µs</td></tr>
+<tr><td>Apply (Small)</td><td>zerodep</td><td>2.5 µs</td><td>395.0K</td><td title="CV=22.2% | rounds=59411">2.4 µs</td><td title="CV=22.2% | rounds=59411">24.1 µs</td><td title="CV=22.2% | rounds=59411">561.1 ns</td><td title="CV=22.2% | rounds=59411">2.6 µs</td></tr>
 </tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -214,13 +214,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [10578.581454752051, 32394.844568056986, 97711.53015896119],
+        data: [10440.099660466945, 31620.279886195403, 96264.04383731945],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "unidiff" + ' (ops/s)',
-        data: [5353.67485526704, 16395.95801200975, 47771.58086035835],
+        data: [5333.401769386626, 16112.117207418782, 45503.3007145264],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

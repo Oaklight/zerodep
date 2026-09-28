@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>validate Benchmark — zerodep</title>
+<title>aiosqlite Benchmark — zerodep</title>
 <style>:root, [data-theme="light"] {
   --bg: #fff; --fg: #1a1a2e; --card-bg: #f8f9fa; --border: #dee2e6;
   --green: #198754; --red: #dc3545; --yellow: #b8860b; --blue: #0d6efd;
@@ -122,37 +122,29 @@ td { white-space: nowrap; }
 </head>
 <body>
 <div class="header-row">
-<h1>validate</h1>
+<h1>aiosqlite</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
 <p class="meta">Version: 46a0426 | Commit: 46a04268 | 2026-09-28T05:18:16.698929+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-09-28T05:18:16.698929+00:00"></span></p>
-<h2>validate</h2>
+<h2>aiosqlite</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Benchmark Constrained</td><td>ours</td><td>pydantic</td><td>10.6 µs</td><td>1.5 µs</td><td>94.7K</td><td>649.1K</td><td title="CV=11.4% | rounds=9136">10.2 µs</td><td title="CV=11.4% | rounds=9136">33.2 µs</td><td title="CV=11.4% | rounds=9136">1.2 µs</td><td title="CV=11.4% | rounds=9136">10.7 µs</td><td title="CV=27.7% | rounds=86566">1.5 µs</td><td title="CV=27.7% | rounds=86566">48.1 µs</td><td title="CV=27.7% | rounds=86566">426.9 ns</td><td title="CV=27.7% | rounds=86566">1.6 µs</td><td class="ratio-cell slower">6.9x slower</td></tr>
-<tr><td>Benchmark Json Schema</td><td>ours</td><td>pydantic</td><td>9.9 µs</td><td>193.1 µs</td><td>101.5K</td><td>5.2K</td><td title="CV=12.5% | rounds=21568">9.4 µs</td><td title="CV=12.5% | rounds=21568">48.0 µs</td><td title="CV=12.5% | rounds=21568">1.2 µs</td><td title="CV=12.5% | rounds=21568">9.9 µs</td><td title="CV=39.6% | rounds=891">169.0 µs</td><td title="CV=39.6% | rounds=891">2.26 ms</td><td title="CV=39.6% | rounds=891">76.5 µs</td><td title="CV=39.6% | rounds=891">260.0 µs</td><td class="ratio-cell faster">19.6x faster</td></tr>
-<tr><td>Benchmark List Of Dicts</td><td>ours</td><td>pydantic</td><td>251.2 µs</td><td>32.9 µs</td><td>4.0K</td><td>30.4K</td><td title="CV=3.5% | rounds=3127">243.9 µs</td><td title="CV=3.5% | rounds=3127">524.4 µs</td><td title="CV=3.5% | rounds=3127">8.8 µs</td><td title="CV=3.5% | rounds=3127">260.7 µs</td><td title="CV=7.6% | rounds=592">31.6 µs</td><td title="CV=7.6% | rounds=592">57.7 µs</td><td title="CV=7.6% | rounds=592">2.5 µs</td><td title="CV=7.6% | rounds=592">33.4 µs</td><td class="ratio-cell slower">7.6x slower</td></tr>
-<tr><td>Benchmark Nested</td><td>ours</td><td>pydantic</td><td>11.1 µs</td><td>2.1 µs</td><td>89.7K</td><td>468.5K</td><td title="CV=11.3% | rounds=11020">10.8 µs</td><td title="CV=11.3% | rounds=11020">52.0 µs</td><td title="CV=11.3% | rounds=11020">1.3 µs</td><td title="CV=11.3% | rounds=11020">11.2 µs</td><td title="CV=24.2% | rounds=79473">2.0 µs</td><td title="CV=24.2% | rounds=79473">47.3 µs</td><td title="CV=24.2% | rounds=79473">515.6 ns</td><td title="CV=24.2% | rounds=79473">2.2 µs</td><td class="ratio-cell slower">5.2x slower</td></tr>
-<tr><td>Benchmark Simple</td><td>ours</td><td>pydantic</td><td>6.2 µs</td><td>1.4 µs</td><td>161.7K</td><td>690.5K</td><td title="CV=13.7% | rounds=12845">6.0 µs</td><td title="CV=13.7% | rounds=12845">27.4 µs</td><td title="CV=13.7% | rounds=12845">849.8 ns</td><td title="CV=13.7% | rounds=12845">6.2 µs</td><td title="CV=25.7% | rounds=63256">1.4 µs</td><td title="CV=25.7% | rounds=63256">19.1 µs</td><td title="CV=25.7% | rounds=63256">371.9 ns</td><td title="CV=25.7% | rounds=63256">1.5 µs</td><td class="ratio-cell slower">4.3x slower</td></tr>
+<tr><td>Bulk Insert</td><td>zerodep</td><td>aiosqlite</td><td>2.22 ms</td><td>2.30 ms</td><td>451.4</td><td>434.2</td><td title="CV=45.0% | rounds=452">1.93 ms</td><td title="CV=45.0% | rounds=452">20.26 ms</td><td title="CV=45.0% | rounds=452">995.9 µs</td><td title="CV=45.0% | rounds=452">2.48 ms</td><td title="CV=21.6% | rounds=298">2.06 ms</td><td title="CV=21.6% | rounds=298">9.51 ms</td><td title="CV=21.6% | rounds=298">496.8 µs</td><td title="CV=21.6% | rounds=298">2.54 ms</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Bulk Select</td><td>zerodep</td><td>aiosqlite</td><td>1.05 ms</td><td>1.13 ms</td><td>951.8</td><td>885.6</td><td title="CV=12.4% | rounds=709">994.3 µs</td><td title="CV=12.4% | rounds=709">2.44 ms</td><td title="CV=12.4% | rounds=709">130.3 µs</td><td title="CV=12.4% | rounds=709">1.10 ms</td><td title="CV=2.7% | rounds=836">1.09 ms</td><td title="CV=2.7% | rounds=836">1.43 ms</td><td title="CV=2.7% | rounds=836">30.1 µs</td><td title="CV=2.7% | rounds=836">1.18 ms</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Concurrent Tasks</td><td>zerodep</td><td>aiosqlite</td><td>138.62 ms</td><td>137.86 ms</td><td>7.2</td><td>7.3</td><td title="CV=2.0% | rounds=8">136.20 ms</td><td title="CV=2.0% | rounds=8">144.76 ms</td><td title="CV=2.0% | rounds=8">2.73 ms</td><td title="CV=2.0% | rounds=8">144.76 ms</td><td title="CV=0.7% | rounds=8">136.43 ms</td><td title="CV=0.7% | rounds=8">139.45 ms</td><td title="CV=0.7% | rounds=8">975.0 µs</td><td title="CV=0.7% | rounds=8">139.45 ms</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Cursor Iteration</td><td>zerodep</td><td>aiosqlite</td><td>58.06 ms</td><td>2.28 ms</td><td>17.2</td><td>439.4</td><td title="CV=11.7% | rounds=16">52.04 ms</td><td title="CV=11.7% | rounds=16">74.38 ms</td><td title="CV=11.7% | rounds=16">6.77 ms</td><td title="CV=11.7% | rounds=16">74.38 ms</td><td title="CV=5.6% | rounds=433">2.18 ms</td><td title="CV=5.6% | rounds=433">3.06 ms</td><td title="CV=5.6% | rounds=433">126.7 µs</td><td title="CV=5.6% | rounds=433">2.53 ms</td><td class="ratio-cell slower">25.5x slower</td></tr>
+<tr><td>Execute Insert</td><td>zerodep</td><td>aiosqlite</td><td>6.46 ms</td><td>7.13 ms</td><td>154.8</td><td>140.2</td><td title="CV=7.0% | rounds=145">6.07 ms</td><td title="CV=7.0% | rounds=145">9.45 ms</td><td title="CV=7.0% | rounds=145">450.0 µs</td><td title="CV=7.0% | rounds=145">7.28 ms</td><td title="CV=9.0% | rounds=134">6.71 ms</td><td title="CV=9.0% | rounds=134">10.66 ms</td><td title="CV=9.0% | rounds=134">645.5 µs</td><td title="CV=9.0% | rounds=134">8.83 ms</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Large Result Fetchall</td><td>zerodep</td><td>aiosqlite</td><td>5.60 ms</td><td>5.69 ms</td><td>178.6</td><td>175.8</td><td title="CV=1.7% | rounds=125">5.45 ms</td><td title="CV=1.7% | rounds=125">6.00 ms</td><td title="CV=1.7% | rounds=125">94.8 µs</td><td title="CV=1.7% | rounds=125">5.79 ms</td><td title="CV=1.8% | rounds=174">5.59 ms</td><td title="CV=1.8% | rounds=174">6.71 ms</td><td title="CV=1.8% | rounds=174">102.7 µs</td><td title="CV=1.8% | rounds=174">5.78 ms</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Large Result Iteration</td><td>zerodep</td><td>aiosqlite</td><td>574.30 ms</td><td>16.23 ms</td><td>1.7</td><td>61.6</td><td title="CV=5.9% | rounds=5">555.77 ms</td><td title="CV=5.9% | rounds=5">634.82 ms</td><td title="CV=5.9% | rounds=5">34.17 ms</td><td title="CV=5.9% | rounds=5">634.82 ms</td><td title="CV=6.7% | rounds=65">15.19 ms</td><td title="CV=6.7% | rounds=65">20.20 ms</td><td title="CV=6.7% | rounds=65">1.09 ms</td><td title="CV=6.7% | rounds=65">18.83 ms</td><td class="ratio-cell slower">35.4x slower</td></tr>
+<tr><td>Large Row Insert</td><td>zerodep</td><td>aiosqlite</td><td>11.34 ms</td><td>10.79 ms</td><td>88.2</td><td>92.7</td><td title="CV=10.4% | rounds=159">10.22 ms</td><td title="CV=10.4% | rounds=159">16.77 ms</td><td title="CV=10.4% | rounds=159">1.17 ms</td><td title="CV=10.4% | rounds=159">13.26 ms</td><td title="CV=9.5% | rounds=164">10.16 ms</td><td title="CV=9.5% | rounds=164">17.67 ms</td><td title="CV=9.5% | rounds=164">1.02 ms</td><td title="CV=9.5% | rounds=164">12.37 ms</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Large Row Select</td><td>zerodep</td><td>aiosqlite</td><td>1.76 ms</td><td>1.81 ms</td><td>568.9</td><td>553.9</td><td title="CV=16.0% | rounds=536">1.66 ms</td><td title="CV=16.0% | rounds=536">6.22 ms</td><td title="CV=16.0% | rounds=536">280.4 µs</td><td title="CV=16.0% | rounds=536">1.83 ms</td><td title="CV=1.7% | rounds=542">1.75 ms</td><td title="CV=1.7% | rounds=542">2.03 ms</td><td title="CV=1.7% | rounds=542">30.2 µs</td><td title="CV=1.7% | rounds=542">1.86 ms</td><td class="ratio-cell similar">~equal</td></tr>
+<tr><td>Mixed Read Write</td><td>zerodep</td><td>aiosqlite</td><td>31.57 ms</td><td>33.51 ms</td><td>31.7</td><td>29.8</td><td title="CV=7.1% | rounds=34">27.86 ms</td><td title="CV=7.1% | rounds=34">35.95 ms</td><td title="CV=7.1% | rounds=34">2.25 ms</td><td title="CV=7.1% | rounds=34">35.34 ms</td><td title="CV=7.5% | rounds=33">29.75 ms</td><td title="CV=7.5% | rounds=33">38.55 ms</td><td title="CV=7.5% | rounds=33">2.50 ms</td><td title="CV=7.5% | rounds=33">38.30 ms</td><td class="ratio-cell faster">1.1x faster</td></tr>
+<tr><td>Single Insert Select</td><td>zerodep</td><td>aiosqlite</td><td>1.63 ms</td><td>1.71 ms</td><td>614.4</td><td>584.6</td><td title="CV=23.1% | rounds=468">1.37 ms</td><td title="CV=23.1% | rounds=468">5.69 ms</td><td title="CV=23.1% | rounds=468">375.6 µs</td><td title="CV=23.1% | rounds=468">2.00 ms</td><td title="CV=24.8% | rounds=456">1.49 ms</td><td title="CV=24.8% | rounds=456">7.70 ms</td><td title="CV=24.8% | rounds=456">424.1 µs</td><td title="CV=24.8% | rounds=456">1.90 ms</td><td class="ratio-cell similar">~equal</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
-<h3>Standalone benchmarks</h3>
-<div class="table-wrap"><table class="standalone-table">
-<thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
-<tbody>
-<tr><td>Benchmark Conversation (Large)</td><td>ours</td><td>44.79 ms</td><td>22.3</td><td title="CV=0.4% | rounds=23">44.48 ms</td><td title="CV=0.4% | rounds=23">45.19 ms</td><td title="CV=0.4% | rounds=23">191.3 µs</td><td title="CV=0.4% | rounds=23">45.14 ms</td></tr>
-<tr><td>Benchmark Conversation (Medium)</td><td>ours</td><td>8.93 ms</td><td>112.0</td><td title="CV=2.0% | rounds=106">8.81 ms</td><td title="CV=2.0% | rounds=106">10.60 ms</td><td title="CV=2.0% | rounds=106">175.7 µs</td><td title="CV=2.0% | rounds=106">8.99 ms</td></tr>
-<tr><td>Benchmark Conversation (Small)</td><td>ours</td><td>612.4 µs</td><td>1.6K</td><td title="CV=2.0% | rounds=1353">597.2 µs</td><td title="CV=2.0% | rounds=1353">879.1 µs</td><td title="CV=2.0% | rounds=1353">12.1 µs</td><td title="CV=2.0% | rounds=1353">623.5 µs</td></tr>
-<tr><td>Benchmark Disc Union Flat2000</td><td>ours</td><td>15.71 ms</td><td>63.7</td><td title="CV=0.5% | rounds=63">15.55 ms</td><td title="CV=0.5% | rounds=63">15.96 ms</td><td title="CV=0.5% | rounds=63">75.0 µs</td><td title="CV=0.5% | rounds=63">15.85 ms</td></tr>
-<tr><td>Benchmark Disc Union Flat50</td><td>ours</td><td>401.6 µs</td><td>2.5K</td><td title="CV=1.9% | rounds=1372">391.2 µs</td><td title="CV=1.9% | rounds=1372">471.4 µs</td><td title="CV=1.9% | rounds=1372">7.7 µs</td><td title="CV=1.9% | rounds=1372">412.3 µs</td></tr>
-<tr><td>Benchmark Disc Union Flat500</td><td>ours</td><td>3.92 ms</td><td>255.0</td><td title="CV=1.1% | rounds=237">3.88 ms</td><td title="CV=1.1% | rounds=237">4.35 ms</td><td title="CV=1.1% | rounds=237">43.4 µs</td><td title="CV=1.1% | rounds=237">3.99 ms</td></tr>
-<tr><td>Benchmark Tools10</td><td>ours</td><td>440.3 µs</td><td>2.3K</td><td title="CV=2.7% | rounds=1802">429.5 µs</td><td title="CV=2.7% | rounds=1802">787.8 µs</td><td title="CV=2.7% | rounds=1802">11.8 µs</td><td title="CV=2.7% | rounds=1802">450.1 µs</td></tr>
-<tr><td>Benchmark Tools200</td><td>ours</td><td>16.15 ms</td><td>61.9</td><td title="CV=0.4% | rounds=60">16.07 ms</td><td title="CV=0.4% | rounds=60">16.52 ms</td><td title="CV=0.4% | rounds=60">68.4 µs</td><td title="CV=0.4% | rounds=60">16.26 ms</td></tr>
-<tr><td>Benchmark Tools50</td><td>ours</td><td>3.29 ms</td><td>304.1</td><td title="CV=0.9% | rounds=295">3.24 ms</td><td title="CV=0.9% | rounds=295">3.55 ms</td><td title="CV=0.9% | rounds=295">28.7 µs</td><td title="CV=0.9% | rounds=295">3.33 ms</td></tr>
-</tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
 <h3>Performance Trend</h3>
@@ -218,17 +210,17 @@ var TREND_COLORS = [
 new Chart(document.getElementById('chart_0'), {
   type: 'bar',
   data: {
-    labels: ["Benchmark Constrained", "Benchmark Json Schema", "Benchmark List Of Dicts", "Benchmark Nested", "Benchmark Simple"],
+    labels: ["Bulk Insert", "Bulk Select", "Concurrent Tasks", "Cursor Iteration", "Execute Insert", "Large Result Fetchall", "Large Result Iteration", "Large Row Insert", "Large Row Select", "Mixed Read Write", "Single Insert Select"],
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [94665.93220569188, 101510.01035454242, 3981.096526387567, 89745.39037484609, 161718.2864291803],
+        data: [451.44480865976675, 951.8328618444316, 7.214199072463152, 17.224864989597908, 154.81797047565652, 178.58142249807284, 1.7412495342544827, 88.20579275533731, 568.877756922731, 31.6715531759014, 614.4375340542725],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
-        label: "pydantic" + ' (ops/s)',
-        data: [649084.7668231435, 5179.013803698083, 30427.994413028617, 468454.3507590881, 690478.5867226396],
+        label: "aiosqlite" + ' (ops/s)',
+        data: [434.198586889816, 885.5518151631213, 7.253701867812204, 439.38686998247243, 140.16771267658058, 175.79318772845883, 61.60863104240517, 92.65757305771065, 553.9406940852123, 29.842194232736095, 584.609172018773],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }
@@ -239,7 +231,7 @@ new Chart(document.getElementById('chart_0'), {
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'top' },
-      title: { display: true, text: 'validate — ops/s (higher is better)' }
+      title: { display: true, text: 'aiosqlite — ops/s (higher is better)' }
     },
     scales: {
       y: {
@@ -256,7 +248,7 @@ new Chart(document.getElementById('chart_0'), {
   if (!data || !data.entries || !data.entries.Benchmark) {
     section.style.display = 'none'; return;
   }
-  var filtered = filterBenchesForModule(data.entries.Benchmark, 'validate');
+  var filtered = filterBenchesForModule(data.entries.Benchmark, 'aiosqlite');
   if (!filtered.length) { section.style.display = 'none'; return; }
 
   // Collect unique zerodep bench names
@@ -298,7 +290,7 @@ new Chart(document.getElementById('chart_0'), {
         },
         title: {
           display: true,
-          text: 'validate — zerodep ops/s over time'
+          text: 'aiosqlite — zerodep ops/s over time'
         },
         tooltip: {
           callbacks: {

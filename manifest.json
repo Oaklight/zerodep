@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-09-24T06:30:59.840333+00:00",
+  "generated": "2026-09-28T00:48:37.667841+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -41,6 +41,18 @@
       "category": "crypto",
       "last_updated": "2026-04-20T23:52:13+08:00",
       "content_hash": "b09c080a243ceee4f955f5c5eb88c05ecbc022e17d0177c22d01662584e5ecb3"
+    },
+    "aiosqlite": {
+      "description": "Async wrapper for sqlite3 — dedicated worker thread, zero dependencies",
+      "files": [
+        "aiosqlite/aiosqlite.py"
+      ],
+      "version": "0.1.0",
+      "deps": [],
+      "tier": "subsystem",
+      "category": "storage",
+      "last_updated": null,
+      "content_hash": "bcdd0383b3fe9ff40df70b382d9f85f71eb545e1fb54f3418cfb3699852aa8c9"
     },
     "ansi": {
       "description": "ANSI escape code primitives for terminal styling",
@@ -179,8 +191,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-09-14T19:10:56-05:00",
-      "content_hash": "bf0527b9d00588dbe19bca5a1325c9f155f448d8c57013764911b35d232464e9"
+      "last_updated": "2026-09-27T19:35:14-05:00",
+      "content_hash": "a230ada5bc68e3151e84a55b615b4cbbb50d7c13b489e30631b1330fe2fe2a0f"
     },
     "jsonrpc": {
       "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",
@@ -287,8 +299,8 @@
       "deps": [],
       "tier": "medium",
       "category": "devtools",
-      "last_updated": "2026-09-15T03:31:09-05:00",
-      "content_hash": "e9ccd8c5f87e53ec0eee622fc34f778c004cd234acbb7b9a1748a690e6574373"
+      "last_updated": "2026-09-24T01:31:47-05:00",
+      "content_hash": "febc5d18237d8768ec7d4ae26ff962c793b4698d400856a490ab65bd72637591"
     },
     "prompt": {
       "description": "Zero-dependency interactive CLI prompts (confirm, select, text)",

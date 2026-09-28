@@ -234,10 +234,13 @@ nav:
       - 存储:
           - cache / 缓存: modules/cache.md
           - persistdict / 持久化字典: modules/persistdict.md
+          - aiosqlite / 异步 SQLite: modules/aiosqlite.md
+          - s3 / S3 存储: modules/s3.md
       - 开发工具:
           - structlog / 结构化日志: modules/structlog.md
           - vcs / VCS 版本控制: modules/vcs.md
           - depdetect / 依赖检测: modules/depdetect.md
+          - profiler / 性能分析器: modules/profiler.md
   - API 参考:
       - 网络与通信:
           - httpclient / HTTP 客户端: api/httpclient.md
@@ -292,10 +295,13 @@ nav:
       - 存储:
           - cache / 缓存: api/cache.md
           - persistdict / 持久化字典: api/persistdict.md
+          - aiosqlite / 异步 SQLite: api/aiosqlite.md
+          - s3 / S3 存储: api/s3.md
       - 开发工具:
           - structlog / 结构化日志: api/structlog.md
           - vcs / VCS 版本控制: api/vcs.md
           - depdetect / 依赖检测: api/depdetect.md
+          - profiler / 性能分析器: api/profiler.md
   - 性能测试:
       - 网络与通信:
           - httpclient / HTTP 客户端: benchmarks/httpclient.md

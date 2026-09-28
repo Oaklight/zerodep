@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "httpclient"))
 
 from httpclient import delete, get, patch, post, put
 from httpserver import (
+    _STREAMING_DISCONNECT_CHECK_INTERVAL,
     App,
     HTTPException,
     JSONResponse,
@@ -1395,5 +1396,114 @@ class TestLifecycleSignals:
             await app._handle_connection(reader, writer)
             assert "background" in events
             assert "disconnect_signal" in events
+
+        asyncio.run(_test())
+
+    def test_streaming_close_wait_leak_on_slow_generator(self):
+        """Client disconnect during slow generator is detected via is_closing.
+
+        Reproduces the CLOSE_WAIT leak: if the generator blocks on slow
+        upstream I/O and the client disconnects, the server should detect
+        the disconnect via periodic ``is_closing()`` checks rather than
+        waiting indefinitely for the next ``writer.drain()``.
+        """
+        import httpserver as _httpserver_mod
+
+        app = App()
+        events: list[str] = []
+        gen_cleanup = asyncio.Event()
+
+        class _SlowDisconnectWriter:
+            """Writer that marks itself as closing after headers are sent.
+
+            Simulates a client that disconnects while the generator is
+            blocked on slow upstream data.  ``is_closing()`` returns
+            True after a brief delay so the disconnect-check loop can
+            detect it.
+            """
+
+            def __init__(self):
+                self._extra = {"peername": ("127.0.0.1", 9999)}
+                self._header_done = False
+                self._closing = False
+
+            def get_extra_info(self, key):
+                return self._extra.get(key)
+
+            def write(self, data):
+                pass
+
+            async def drain(self):
+                if not self._header_done:
+                    self._header_done = True
+                    return
+                # After headers, mark closing on next drain — but the
+                # bug means drain never gets called while the generator
+                # is blocked.  So we set _closing immediately.
+                pass
+
+            def is_closing(self):
+                return self._closing
+
+            def close(self):
+                pass
+
+            async def wait_closed(self):
+                pass
+
+        @app.on_client_disconnect
+        async def on_disc(request):
+            events.append("disconnect_signal")
+
+        @app.get("/slow")
+        async def handler(request):
+            async def slow_gen():
+                try:
+                    yield "first-chunk"
+                    # Simulate waiting for slow upstream — block long
+                    # enough that the disconnect check fires.
+                    await asyncio.sleep(9999)
+                    yield "never-reached"
+                finally:
+                    gen_cleanup.set()
+
+            return StreamingResponse(
+                slow_gen(), background=lambda: events.append("background")
+            )
+
+        async def _test():
+            # Use a very short disconnect check interval so the test
+            # does not have to wait 30 seconds.
+            orig = _STREAMING_DISCONNECT_CHECK_INTERVAL
+            _httpserver_mod._STREAMING_DISCONNECT_CHECK_INTERVAL = 0.05
+            try:
+                reader = _mock_reader(b"GET /slow HTTP/1.1\r\nHost: localhost\r\n\r\n")
+                writer = _SlowDisconnectWriter()
+
+                # Schedule the writer to start reporting "closing" after
+                # a short delay (simulates client TCP FIN arriving).
+                async def _disconnect_later():
+                    await asyncio.sleep(0.1)
+                    writer._closing = True
+
+                disconnect_task = asyncio.create_task(_disconnect_later())
+
+                await asyncio.wait_for(
+                    app._handle_connection(reader, writer),
+                    timeout=5.0,
+                )
+
+                await disconnect_task
+
+                # Generator cleanup must have run.
+                assert gen_cleanup.is_set(), "generator was not cleaned up"
+                # Background callback must have fired.
+                assert "background" in events, "background callback did not fire"
+                # Client disconnect signal must have fired.
+                assert "disconnect_signal" in events, (
+                    "on_client_disconnect signal did not fire"
+                )
+            finally:
+                _httpserver_mod._STREAMING_DISCONNECT_CHECK_INTERVAL = orig
 
         asyncio.run(_test())

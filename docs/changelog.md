@@ -6,9 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.9.28] - 2026-09-28
+
+### New Modules
+
+- **aiosqlite** (v0.1.0): Async wrapper for Python's built-in `sqlite3` — dedicated worker thread per connection, full `sqlite3.Connection`/`sqlite3.Cursor` API mirror, convenience shortcuts (`execute_fetchall`, `execute_fetchone`, `execute_insert`). ([#180](https://github.com/Oaklight/zerodep/pull/180))
+
 ### Bug Fixes
 
+- **httpclient**: Close `StreamReader` in `StreamingResponse.aclose()` and release reader/writer references to prevent CLOSE_WAIT socket leak. Calls `feed_eof()` to unblock pending reads before cleanup. ([#178](https://github.com/Oaklight/zerodep/pull/178))
+- **httpserver**: Detect client disconnect during streaming responses to prevent CLOSE_WAIT leak. Adds periodic `is_closing()` checks via `asyncio.shield()` + `wait_for()` when the generator is blocked on slow upstream I/O. Configurable via `StreamingResponse(disconnect_check_interval=...)`. ([#179](https://github.com/Oaklight/zerodep/pull/179))
 - **jsonschema**: Preserve genuine multi-branch `anyOf`/`oneOf` unions instead of collapsing them to the first non-null branch. Previously `float | list[float] | None` silently discarded all branches but the first. Now unions with 2+ non-null branches keep the remaining branches under their original keyword (`anyOf` or `oneOf`), with the null branch stripped and `nullable: true` set. ([#173](https://github.com/Oaklight/zerodep/pull/173))
+
+### Documentation
+
+- Register `s3` module in docs index config. ([#174](https://github.com/Oaklight/zerodep/pull/174))
 
 ### Infrastructure
 

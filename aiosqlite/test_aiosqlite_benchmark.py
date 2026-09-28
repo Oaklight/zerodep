@@ -209,3 +209,227 @@ class TestExecuteInsert:
                 await db.commit()
 
         benchmark(_run_async, _bench)
+
+
+# ── Large rows (4KB payload per row) ──
+
+_LARGE_PAYLOAD = "x" * 4096
+_LARGE_ROWS = [(_LARGE_PAYLOAD,) for _ in range(500)]
+
+
+class TestLargeRowInsert:
+    def test_zerodep(self, benchmark, tmp_path):
+        db_path = str(tmp_path / "zd.db")
+        _setup_db(db_path, aiosqlite)
+
+        async def _bench():
+            async with aiosqlite.connect(db_path) as db:
+                await db.execute("DELETE FROM t")
+                await db.executemany(INSERT_ONE, _LARGE_ROWS)
+                await db.commit()
+
+        benchmark(_run_async, _bench)
+
+    def test_aiosqlite(self, benchmark, tmp_path):
+        db_path = str(tmp_path / "ref.db")
+        _setup_db(db_path, ref_aiosqlite)
+
+        async def _bench():
+            async with ref_aiosqlite.connect(db_path) as db:
+                await db.execute("DELETE FROM t")
+                await db.executemany(INSERT_ONE, _LARGE_ROWS)
+                await db.commit()
+
+        benchmark(_run_async, _bench)
+
+
+class TestLargeRowSelect:
+    def test_zerodep(self, benchmark, tmp_path):
+        db_path = str(tmp_path / "zd.db")
+        _setup_db(db_path, aiosqlite)
+        asyncio.run(_populate_large(db_path, aiosqlite))
+
+        async def _bench():
+            async with aiosqlite.connect(db_path) as db:
+                await db.execute_fetchall(SELECT_ALL)
+
+        benchmark(_run_async, _bench)
+
+    def test_aiosqlite(self, benchmark, tmp_path):
+        db_path = str(tmp_path / "ref.db")
+        _setup_db(db_path, ref_aiosqlite)
+        asyncio.run(_populate_large(db_path, ref_aiosqlite))
+
+        async def _bench():
+            async with ref_aiosqlite.connect(db_path) as db:
+                await db.execute_fetchall(SELECT_ALL)
+
+        benchmark(_run_async, _bench)
+
+
+async def _populate_large(db_path, lib):
+    async with lib.connect(db_path) as db:
+        await db.executemany(INSERT_ONE, _LARGE_ROWS)
+        await db.commit()
+
+
+# ── Large result set (10K rows) ──
+
+_ROWS_10K = [(f"val_{i}",) for i in range(10_000)]
+
+
+class TestLargeResultFetchall:
+    def _setup(self, db_path, lib):
+        async def _init():
+            async with lib.connect(db_path) as db:
+                await db.execute(CREATE_TABLE)
+                await db.executemany(INSERT_ONE, _ROWS_10K)
+                await db.commit()
+
+        asyncio.run(_init())
+
+    def test_zerodep(self, benchmark, tmp_path):
+        db_path = str(tmp_path / "zd.db")
+        self._setup(db_path, aiosqlite)
+
+        async def _bench():
+            async with aiosqlite.connect(db_path) as db:
+                await db.execute_fetchall(SELECT_ALL)
+
+        benchmark(_run_async, _bench)
+
+    def test_aiosqlite(self, benchmark, tmp_path):
+        db_path = str(tmp_path / "ref.db")
+        self._setup(db_path, ref_aiosqlite)
+
+        async def _bench():
+            async with ref_aiosqlite.connect(db_path) as db:
+                await db.execute_fetchall(SELECT_ALL)
+
+        benchmark(_run_async, _bench)
+
+
+class TestLargeResultIteration:
+    def _setup(self, db_path, lib):
+        async def _init():
+            async with lib.connect(db_path) as db:
+                await db.execute(CREATE_TABLE)
+                await db.executemany(INSERT_ONE, _ROWS_10K)
+                await db.commit()
+
+        asyncio.run(_init())
+
+    def test_zerodep(self, benchmark, tmp_path):
+        db_path = str(tmp_path / "zd.db")
+        self._setup(db_path, aiosqlite)
+
+        async def _bench():
+            async with aiosqlite.connect(db_path) as db:
+                async for _ in await db.execute(SELECT_ALL):
+                    pass
+
+        benchmark(_run_async, _bench)
+
+    def test_aiosqlite(self, benchmark, tmp_path):
+        db_path = str(tmp_path / "ref.db")
+        self._setup(db_path, ref_aiosqlite)
+
+        async def _bench():
+            async with ref_aiosqlite.connect(db_path) as db:
+                async for _ in await db.execute(SELECT_ALL):
+                    pass
+
+        benchmark(_run_async, _bench)
+
+
+# ── Concurrent async tasks (8 coroutines reading/writing) ──
+
+
+class TestConcurrentTasks:
+    TASKS = 8
+    OPS_PER_TASK = 50
+
+    def _setup(self, db_path, lib):
+        async def _init():
+            async with lib.connect(db_path) as db:
+                await db.execute(CREATE_TABLE)
+                await db.commit()
+
+        asyncio.run(_init())
+
+    def test_zerodep(self, benchmark, tmp_path):
+        db_path = str(tmp_path / "zd.db")
+        self._setup(db_path, aiosqlite)
+        n, ops = self.TASKS, self.OPS_PER_TASK
+
+        async def _bench():
+            async def _worker(tid):
+                async with aiosqlite.connect(db_path) as db:
+                    for i in range(ops):
+                        await db.execute_insert(INSERT_ONE, (f"t{tid}_v{i}",))
+                    await db.commit()
+                    await db.execute_fetchall(SELECT_ALL)
+
+            await asyncio.gather(*[_worker(t) for t in range(n)])
+
+        benchmark(_run_async, _bench)
+
+    def test_aiosqlite(self, benchmark, tmp_path):
+        db_path = str(tmp_path / "ref.db")
+        self._setup(db_path, ref_aiosqlite)
+        n, ops = self.TASKS, self.OPS_PER_TASK
+
+        async def _bench():
+            async def _worker(tid):
+                async with ref_aiosqlite.connect(db_path) as db:
+                    for i in range(ops):
+                        await db.execute_insert(INSERT_ONE, (f"t{tid}_v{i}",))
+                    await db.commit()
+                    await db.execute_fetchall(SELECT_ALL)
+
+            await asyncio.gather(*[_worker(t) for t in range(n)])
+
+        benchmark(_run_async, _bench)
+
+
+# ── Mixed read/write workload (interleaved inserts and selects) ──
+
+
+class TestMixedReadWrite:
+    N = 200
+
+    def test_zerodep(self, benchmark, tmp_path):
+        db_path = str(tmp_path / "zd.db")
+        _setup_db(db_path, aiosqlite)
+
+        async def _bench():
+            async with aiosqlite.connect(db_path) as db:
+                await db.execute("DELETE FROM t")
+                for i in range(self.N):
+                    await db.execute(INSERT_ONE, (f"v{i}",))
+                    if i % 10 == 0:
+                        await db.commit()
+                        await db.execute_fetchall(
+                            "SELECT * FROM t ORDER BY id DESC LIMIT 20"
+                        )
+                await db.commit()
+
+        benchmark(_run_async, _bench)
+
+    def test_aiosqlite(self, benchmark, tmp_path):
+        db_path = str(tmp_path / "ref.db")
+        _setup_db(db_path, ref_aiosqlite)
+
+        async def _bench():
+            async with ref_aiosqlite.connect(db_path) as db:
+                await db.execute("DELETE FROM t")
+                for i in range(self.N):
+                    await db.execute(INSERT_ONE, (f"v{i}",))
+                    if i % 10 == 0:
+                        await db.commit()
+                        await db.execute_fetchall(
+                            "SELECT * FROM t ORDER BY id DESC LIMIT 20"
+                        )
+                await db.commit()
+
+        benchmark(_run_async, _bench)

@@ -63,7 +63,7 @@ categories:
   - id: storage
     name_en: "Storage"
     name_zh: "存储"
-    modules: [cache, persistdict, s3]
+    modules: [aiosqlite, cache, persistdict, s3]
 
   - id: devtools
     name_en: "Dev Tools"
@@ -248,6 +248,12 @@ modules:
     replaces_zh: "qrcode、segno"
     desc_en: "QR Code generation with terminal rendering"
     desc_zh: "QR Code 生成与终端渲染"
+  aiosqlite:
+    benchmark: aiosqlite
+    replaces: "aiosqlite"
+    replaces_zh: "aiosqlite"
+    desc_en: "Async sqlite3 wrapper with dedicated worker thread"
+    desc_zh: "异步 sqlite3 封装（独立工作线程）"
   cache:
     benchmark: cachetools
     replaces: "cachetools, diskcache (in-memory)"

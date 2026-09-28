@@ -355,8 +355,11 @@ nav:
       - Storage:
           - cache / Cache: benchmarks/cache.md
           - persistdict / Persistent Dict: benchmarks/persistdict.md
+          - aiosqlite / Async SQLite: benchmarks/aiosqlite.md
+          - s3 / S3 Storage: benchmarks/s3.md
       - Dev Tools:
           - structlog / Structured Logging: benchmarks/structlog.md
           - vcs / VCS Wrapper: benchmarks/vcs.md
           - depdetect / Dependency Detection: benchmarks/depdetect.md
+          - profiler / Profiler: benchmarks/profiler.md
   - Changelog: changelog.md

@@ -850,10 +850,11 @@ class StreamingResponse:
     async def _aiter_fixed_length(self, chunk_size: int) -> AsyncIterator[bytes]:
         """Read a known-length response body in chunks."""
         assert self._async_reader is not None
+        reader = self._async_reader
         while self._bytes_remaining is not None and self._bytes_remaining > 0:
             to_read = min(chunk_size, self._bytes_remaining)
             data = await asyncio.wait_for(
-                self._async_reader.read(to_read),
+                reader.read(to_read),
                 timeout=self._async_timeout,
             )
             if not data:
@@ -864,9 +865,10 @@ class StreamingResponse:
     async def _aiter_until_eof(self, chunk_size: int) -> AsyncIterator[bytes]:
         """Read response body until EOF in chunks."""
         assert self._async_reader is not None
+        reader = self._async_reader
         while True:
             data = await asyncio.wait_for(
-                self._async_reader.read(chunk_size),
+                reader.read(chunk_size),
                 timeout=self._async_timeout,
             )
             if not data:

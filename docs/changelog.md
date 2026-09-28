@@ -6,9 +6,21 @@
 
 ## [未发布]
 
+## [2026.9.28] - 2026-09-28
+
+### 新增模块
+
+- **aiosqlite** (v0.1.0)：Python 内置 `sqlite3` 的异步封装 — 每个连接使用独立工作线程，完整镜像 `sqlite3.Connection`/`sqlite3.Cursor` API，提供便捷方法（`execute_fetchall`、`execute_fetchone`、`execute_insert`）。([#180](https://github.com/Oaklight/zerodep/pull/180))
+
 ### 问题修复
 
+- **httpclient**：在 `StreamingResponse.aclose()` 中关闭 `StreamReader` 并释放 reader/writer 引用，防止 CLOSE_WAIT 套接字泄漏。关闭前调用 `feed_eof()` 以解除阻塞的读取操作。([#178](https://github.com/Oaklight/zerodep/pull/178))
+- **httpserver**：在流式响应中检测客户端断开连接，防止 CLOSE_WAIT 泄漏。当生成器因慢速上游 I/O 阻塞时，通过 `asyncio.shield()` + `wait_for()` 定期检查 `is_closing()`。可通过 `StreamingResponse(disconnect_check_interval=...)` 配置检查间隔。([#179](https://github.com/Oaklight/zerodep/pull/179))
 - **jsonschema**：保留真正的多分支 `anyOf`/`oneOf` 联合类型，不再将其折叠为第一个非 null 分支。此前 `float | list[float] | None` 会静默丢弃除第一个之外的所有分支。现在含 2 个及以上非 null 分支的联合类型会在原有关键字（`anyOf` 或 `oneOf`）下保留剩余分支，同时剥离 null 分支并设置 `nullable: true`。([#173](https://github.com/Oaklight/zerodep/pull/173))
+
+### 文档
+
+- 在文档索引配置中注册 `s3` 模块。([#174](https://github.com/Oaklight/zerodep/pull/174))
 
 ### 基础设施
 

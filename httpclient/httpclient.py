@@ -949,6 +949,7 @@ class StreamingResponse:
                     self.url,
                     exc_info=True,
                 )
+            self._sync_resp = None
         if self._sync_conn is not None:
             try:
                 self._sync_conn.close()
@@ -958,6 +959,18 @@ class StreamingResponse:
                     self.url,
                     exc_info=True,
                 )
+            self._sync_conn = None
+        # Release async reader reference (unblock pending reads if possible).
+        if self._async_reader is not None:
+            try:
+                self._async_reader.feed_eof()
+            except Exception:
+                logger.debug(
+                    "failed to feed_eof async reader for %s",
+                    self.url,
+                    exc_info=True,
+                )
+            self._async_reader = None
         if self._async_writer is not None:
             try:
                 self._async_writer.close()
@@ -967,6 +980,7 @@ class StreamingResponse:
                     self.url,
                     exc_info=True,
                 )
+            self._async_writer = None
 
     async def aclose(self) -> None:
         """Close the underlying async connection."""
@@ -974,6 +988,20 @@ class StreamingResponse:
             return
         self._closed = True
         # Tier 2: best-effort observable -- active streaming resource
+        #
+        # Release the reader first: feed_eof() unblocks any pending reads
+        # so the writer close can complete cleanly.  Then drop the reference
+        # to allow GC of the transport/socket even if the writer close fails.
+        if self._async_reader is not None:
+            try:
+                self._async_reader.feed_eof()
+            except Exception:
+                logger.debug(
+                    "failed to feed_eof async reader for %s",
+                    self.url,
+                    exc_info=True,
+                )
+            self._async_reader = None
         if self._async_writer is not None:
             try:
                 self._async_writer.close()
@@ -984,6 +1012,7 @@ class StreamingResponse:
                     self.url,
                     exc_info=True,
                 )
+            self._async_writer = None
 
     def __del__(self) -> None:
         if not self._closed:

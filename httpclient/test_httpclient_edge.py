@@ -103,6 +103,9 @@ class TestStreamingCleanup:
         assert not r._closed
         r.close()
         assert r._closed
+        # Sync references released after close
+        assert r._sync_resp is None
+        assert r._sync_conn is None
 
     def test_streaming_response_context_manager_cleanup(self, httpbin_url):
         """Context manager exit should close streaming response."""
@@ -152,8 +155,13 @@ class TestAsyncStreamingCleanup:
         assert isinstance(r, StreamingResponse)
         assert not r._closed
         assert r._async_writer is not None
+        writer = r._async_writer
         await r.aclose()
         assert r._closed
+        assert writer.is_closing()
+        # References released to prevent CLOSE_WAIT
+        assert r._async_writer is None
+        assert r._async_reader is None
 
     @pytest.mark.asyncio
     async def test_async_context_manager_cleanup(self, httpbin_url):
@@ -182,6 +190,9 @@ class TestAsyncStreamingCleanup:
         r.close()
         assert r._closed
         assert writer.is_closing()
+        # References released to prevent CLOSE_WAIT
+        assert r._async_writer is None
+        assert r._async_reader is None
 
     @pytest.mark.asyncio
     async def test_del_closes_async_writer(self, httpbin_url):
@@ -198,6 +209,9 @@ class TestAsyncStreamingCleanup:
             ]
             assert r._closed
             assert writer.is_closing()
+            # References released to prevent CLOSE_WAIT
+            assert r._async_writer is None
+            assert r._async_reader is None
             assert len(resource_warnings) >= 1
             assert "Unclosed StreamingResponse" in str(resource_warnings[0].message)
 
@@ -206,9 +220,78 @@ class TestAsyncStreamingCleanup:
         """An async stream that is never iterated must still be closeable."""
         r = await async_get(f"{httpbin_url}/get", stream=True)
         assert r._async_writer is not None
+        writer = r._async_writer
         r.close()
         assert r._closed
-        assert r._async_writer.is_closing()
+        assert writer.is_closing()
+        # References released to prevent CLOSE_WAIT
+        assert r._async_writer is None
+        assert r._async_reader is None
+
+    @pytest.mark.asyncio
+    async def test_aclose_releases_reader_reference(self, httpbin_url):
+        """aclose() must release _async_reader to prevent CLOSE_WAIT."""
+        r = await async_get(f"{httpbin_url}/get", stream=True)
+        assert r._async_reader is not None
+        assert r._async_writer is not None
+        reader = r._async_reader
+        writer = r._async_writer
+        await r.aclose()
+        # Both references must be None after aclose
+        assert r._async_reader is None
+        assert r._async_writer is None
+        # Writer transport should be closing
+        assert writer.is_closing()
+        # Reader had feed_eof() called (exception_bytes is the internal
+        # flag; _eof is set regardless of buffer contents, unlike at_eof()
+        # which also requires the buffer to be empty).
+        assert reader._eof
+
+    @pytest.mark.asyncio
+    async def test_close_releases_reader_reference(self, httpbin_url):
+        """Sync close() on async response must also release _async_reader."""
+        r = await async_get(f"{httpbin_url}/get", stream=True)
+        assert r._async_reader is not None
+        reader = r._async_reader
+        r.close()
+        assert r._async_reader is None
+        assert r._async_writer is None
+        assert reader._eof
+
+    @pytest.mark.asyncio
+    async def test_del_warning_still_fires_when_not_closed(self, httpbin_url):
+        """__del__ on unclosed async stream must warn and release resources."""
+        r = await async_get(f"{httpbin_url}/get", stream=True)
+        assert not r._closed
+        reader = r._async_reader
+        writer = r._async_writer
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", ResourceWarning)
+            r.__del__()
+            resource_warnings = [
+                x for x in w if issubclass(x.category, ResourceWarning)
+            ]
+            assert r._closed
+            assert len(resource_warnings) == 1
+            assert "Unclosed StreamingResponse" in str(resource_warnings[0].message)
+            # Resources released via close()
+            assert r._async_reader is None
+            assert r._async_writer is None
+            assert writer.is_closing()
+            assert reader._eof
+
+    @pytest.mark.asyncio
+    async def test_no_warning_when_properly_closed(self, httpbin_url):
+        """No ResourceWarning when aclose() is called before __del__."""
+        r = await async_get(f"{httpbin_url}/get", stream=True)
+        await r.aclose()
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", ResourceWarning)
+            r.__del__()
+            resource_warnings = [
+                x for x in w if issubclass(x.category, ResourceWarning)
+            ]
+            assert len(resource_warnings) == 0
 
 
 # ── Timeout Behavior ────────────────────────────────────────────────────────

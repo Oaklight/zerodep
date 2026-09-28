@@ -10,8 +10,39 @@ import warnings
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(__file__))
+_this_dir = os.path.dirname(__file__)
 
+# --- Import PyPI aiosqlite as ref_aiosqlite (if available) ---
+_saved_path = sys.path[:]
+sys.path = [
+    p
+    for p in sys.path
+    if os.path.abspath(p)
+    not in (
+        os.path.abspath(_this_dir),
+        os.path.abspath(os.path.join(_this_dir, "..")),
+    )
+]
+_cached = sys.modules.pop("aiosqlite", None)
+
+try:
+    import aiosqlite as _ref
+
+    if not hasattr(_ref, "connect"):
+        raise ImportError("Not the real aiosqlite")
+    ref_aiosqlite = _ref
+except ImportError:
+    ref_aiosqlite = None  # type: ignore[assignment]
+finally:
+    sys.path = _saved_path
+    for _k in list(sys.modules):
+        if _k == "aiosqlite" or _k.startswith("aiosqlite."):
+            sys.modules.pop(_k, None)
+    if _cached is not None:
+        sys.modules["aiosqlite"] = _cached
+
+# --- Import zerodep aiosqlite ---
+sys.path.insert(0, _this_dir)
 import aiosqlite
 
 # ---------------------------------------------------------------------------
@@ -444,3 +475,176 @@ class TestRollback:
 
             row = await db.execute_fetchone("SELECT COUNT(*) FROM t")
             assert row == (0,)
+
+
+# ---------------------------------------------------------------------------
+# Cross-library comparison (zerodep vs PyPI aiosqlite)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(ref_aiosqlite is None, reason="aiosqlite not installed")
+class TestReferenceComparison:
+    @pytest.mark.asyncio
+    async def test_crud_same_results(self, tmp_path):
+        zd_path = str(tmp_path / "zd.db")
+        ref_path = str(tmp_path / "ref.db")
+
+        async with aiosqlite.connect(zd_path) as zd_db:
+            await zd_db.execute("CREATE TABLE t (k TEXT PRIMARY KEY, v TEXT)")
+            await zd_db.execute("INSERT INTO t VALUES (?, ?)", ("a", "1"))
+            await zd_db.execute("INSERT INTO t VALUES (?, ?)", ("b", "2"))
+            await zd_db.commit()
+            cur = await zd_db.execute("SELECT * FROM t ORDER BY k")
+            zd_rows = await cur.fetchall()
+
+        async with ref_aiosqlite.connect(ref_path) as ref_db:
+            await ref_db.execute("CREATE TABLE t (k TEXT PRIMARY KEY, v TEXT)")
+            await ref_db.execute("INSERT INTO t VALUES (?, ?)", ("a", "1"))
+            await ref_db.execute("INSERT INTO t VALUES (?, ?)", ("b", "2"))
+            await ref_db.commit()
+            cur = await ref_db.execute("SELECT * FROM t ORDER BY k")
+            ref_rows = await cur.fetchall()
+
+        assert zd_rows == list(ref_rows)
+
+    @pytest.mark.asyncio
+    async def test_executemany_same_rowcount(self, tmp_path):
+        zd_path = str(tmp_path / "zd.db")
+        ref_path = str(tmp_path / "ref.db")
+        rows = [(f"v{i}",) for i in range(50)]
+
+        async with aiosqlite.connect(zd_path) as zd_db:
+            await zd_db.execute("CREATE TABLE t (v TEXT)")
+            cur = await zd_db.executemany("INSERT INTO t VALUES (?)", rows)
+            zd_rowcount = cur.rowcount
+            await zd_db.commit()
+
+        async with ref_aiosqlite.connect(ref_path) as ref_db:
+            await ref_db.execute("CREATE TABLE t (v TEXT)")
+            cur = await ref_db.executemany("INSERT INTO t VALUES (?)", rows)
+            ref_rowcount = cur.rowcount
+            await ref_db.commit()
+
+        assert zd_rowcount == ref_rowcount
+
+    @pytest.mark.asyncio
+    async def test_fetchone_fetchall_same_data(self, tmp_path):
+        zd_path = str(tmp_path / "zd.db")
+        ref_path = str(tmp_path / "ref.db")
+
+        for path, lib in [(zd_path, aiosqlite), (ref_path, ref_aiosqlite)]:
+            async with lib.connect(path) as db:
+                await db.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+                await db.executemany(
+                    "INSERT INTO t (v) VALUES (?)",
+                    [(f"val_{i}",) for i in range(10)],
+                )
+                await db.commit()
+
+        async with aiosqlite.connect(zd_path) as zd_db:
+            cur = await zd_db.execute("SELECT * FROM t ORDER BY id")
+            zd_first = await cur.fetchone()
+            zd_rest = await cur.fetchall()
+
+        async with ref_aiosqlite.connect(ref_path) as ref_db:
+            cur = await ref_db.execute("SELECT * FROM t ORDER BY id")
+            ref_first = await cur.fetchone()
+            ref_rest = await cur.fetchall()
+
+        assert zd_first == ref_first
+        assert zd_rest == list(ref_rest)
+
+    @pytest.mark.asyncio
+    async def test_fetchmany_same_data(self, tmp_path):
+        zd_path = str(tmp_path / "zd.db")
+        ref_path = str(tmp_path / "ref.db")
+
+        for path, lib in [(zd_path, aiosqlite), (ref_path, ref_aiosqlite)]:
+            async with lib.connect(path) as db:
+                await db.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+                await db.executemany(
+                    "INSERT INTO t (v) VALUES (?)",
+                    [(f"val_{i}",) for i in range(10)],
+                )
+                await db.commit()
+
+        async with aiosqlite.connect(zd_path) as zd_db:
+            cur = await zd_db.execute("SELECT * FROM t ORDER BY id")
+            zd_batch = await cur.fetchmany(3)
+
+        async with ref_aiosqlite.connect(ref_path) as ref_db:
+            cur = await ref_db.execute("SELECT * FROM t ORDER BY id")
+            ref_batch = await cur.fetchmany(3)
+
+        assert zd_batch == list(ref_batch)
+
+    @pytest.mark.asyncio
+    async def test_execute_fetchall_same_data(self, tmp_path):
+        zd_path = str(tmp_path / "zd.db")
+        ref_path = str(tmp_path / "ref.db")
+
+        for path, lib in [(zd_path, aiosqlite), (ref_path, ref_aiosqlite)]:
+            async with lib.connect(path) as db:
+                await db.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+                await db.executemany(
+                    "INSERT INTO t (v) VALUES (?)",
+                    [(f"val_{i}",) for i in range(10)],
+                )
+                await db.commit()
+
+        async with aiosqlite.connect(zd_path) as zd_db:
+            zd_rows = await zd_db.execute_fetchall("SELECT * FROM t ORDER BY id")
+
+        async with ref_aiosqlite.connect(ref_path) as ref_db:
+            ref_rows = await ref_db.execute_fetchall("SELECT * FROM t ORDER BY id")
+
+        assert zd_rows == list(ref_rows)
+
+    @pytest.mark.asyncio
+    async def test_execute_insert_same_lastrowid(self, tmp_path):
+        zd_path = str(tmp_path / "zd.db")
+        ref_path = str(tmp_path / "ref.db")
+
+        async with aiosqlite.connect(zd_path) as zd_db:
+            await zd_db.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+            zd_rowid = await zd_db.execute_insert(
+                "INSERT INTO t (v) VALUES (?)", ("x",)
+            )
+            await zd_db.commit()
+
+        async with ref_aiosqlite.connect(ref_path) as ref_db:
+            await ref_db.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+            ref_result = await ref_db.execute_insert(
+                "INSERT INTO t (v) VALUES (?)", ("x",)
+            )
+            await ref_db.commit()
+
+        # PyPI returns Optional[Row] tuple e.g. (1,); zerodep returns int|None
+        ref_rowid = ref_result[0] if ref_result is not None else None
+        assert zd_rowid == ref_rowid
+
+    @pytest.mark.asyncio
+    async def test_async_iteration_same_rows(self, tmp_path):
+        zd_path = str(tmp_path / "zd.db")
+        ref_path = str(tmp_path / "ref.db")
+
+        for path, lib in [(zd_path, aiosqlite), (ref_path, ref_aiosqlite)]:
+            async with lib.connect(path) as db:
+                await db.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+                await db.executemany(
+                    "INSERT INTO t (v) VALUES (?)",
+                    [(f"val_{i}",) for i in range(20)],
+                )
+                await db.commit()
+
+        async with aiosqlite.connect(zd_path) as zd_db:
+            zd_rows = []
+            async for row in await zd_db.execute("SELECT * FROM t ORDER BY id"):
+                zd_rows.append(row)
+
+        async with ref_aiosqlite.connect(ref_path) as ref_db:
+            ref_rows = []
+            async for row in await ref_db.execute("SELECT * FROM t ORDER BY id"):
+                ref_rows.append(row)
+
+        assert zd_rows == ref_rows

@@ -515,6 +515,8 @@ class StreamingResponse:
         background: Optional callable invoked after the stream completes
             (including client disconnect).  Accepts both sync and async
             callables.  Exceptions are logged and suppressed.
+        disconnect_check_interval: Seconds between client-disconnect
+            checks while the generator is blocked.  Defaults to 30.
     """
 
     __slots__ = (
@@ -524,6 +526,7 @@ class StreamingResponse:
         "content_type",
         "background",
         "_cookie_headers",
+        "_disconnect_check_interval",
     )
 
     def __init__(
@@ -533,6 +536,7 @@ class StreamingResponse:
         headers: dict[str, str] | None = None,
         content_type: str = "application/octet-stream",
         background: Callable[[], Any] | None = None,
+        disconnect_check_interval: float | None = None,
     ):
         self._generator = generator
         self.status_code = status_code
@@ -540,6 +544,11 @@ class StreamingResponse:
         self.content_type = content_type
         self.background = background
         self._cookie_headers: list[str] = []
+        self._disconnect_check_interval = (
+            disconnect_check_interval
+            if disconnect_check_interval is not None
+            else _STREAMING_DISCONNECT_CHECK_INTERVAL
+        )
 
     def set_cookie(
         self,
@@ -640,7 +649,7 @@ class StreamingResponse:
                         chunk = await _anext_or_disconnect(
                             next_task,
                             is_closing,
-                            _STREAMING_DISCONNECT_CHECK_INTERVAL,
+                            self._disconnect_check_interval,
                         )
                     except StopAsyncIteration:
                         break

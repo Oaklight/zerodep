@@ -12,7 +12,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "httpclient"))
 
 from httpclient import delete, get, patch, post, put
 from httpserver import (
-    _STREAMING_DISCONNECT_CHECK_INTERVAL,
     App,
     HTTPException,
     JSONResponse,
@@ -1407,7 +1406,6 @@ class TestLifecycleSignals:
         the disconnect via periodic ``is_closing()`` checks rather than
         waiting indefinitely for the next ``writer.drain()``.
         """
-        import httpserver as _httpserver_mod
 
         app = App()
         events: list[str] = []
@@ -1468,42 +1466,37 @@ class TestLifecycleSignals:
                     gen_cleanup.set()
 
             return StreamingResponse(
-                slow_gen(), background=lambda: events.append("background")
+                slow_gen(),
+                background=lambda: events.append("background"),
+                disconnect_check_interval=0.05,
             )
 
         async def _test():
-            # Use a very short disconnect check interval so the test
-            # does not have to wait 30 seconds.
-            orig = _STREAMING_DISCONNECT_CHECK_INTERVAL
-            _httpserver_mod._STREAMING_DISCONNECT_CHECK_INTERVAL = 0.05
-            try:
-                reader = _mock_reader(b"GET /slow HTTP/1.1\r\nHost: localhost\r\n\r\n")
-                writer = _SlowDisconnectWriter()
+            reader = _mock_reader(b"GET /slow HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _SlowDisconnectWriter()
 
-                # Schedule the writer to start reporting "closing" after
-                # a short delay (simulates client TCP FIN arriving).
-                async def _disconnect_later():
-                    await asyncio.sleep(0.1)
-                    writer._closing = True
+            # Schedule the writer to start reporting "closing" after
+            # a short delay (simulates client TCP FIN arriving).
+            async def _disconnect_later():
+                await asyncio.sleep(0.1)
+                writer._closing = True
 
-                disconnect_task = asyncio.create_task(_disconnect_later())
+            disconnect_task = asyncio.create_task(_disconnect_later())
 
-                await asyncio.wait_for(
-                    app._handle_connection(reader, writer),
-                    timeout=5.0,
-                )
+            await asyncio.wait_for(
+                app._handle_connection(reader, writer),
+                timeout=5.0,
+            )
 
-                await disconnect_task
+            await disconnect_task
 
-                # Generator cleanup must have run.
-                assert gen_cleanup.is_set(), "generator was not cleaned up"
-                # Background callback must have fired.
-                assert "background" in events, "background callback did not fire"
-                # Client disconnect signal must have fired.
-                assert "disconnect_signal" in events, (
-                    "on_client_disconnect signal did not fire"
-                )
-            finally:
-                _httpserver_mod._STREAMING_DISCONNECT_CHECK_INTERVAL = orig
+            # Generator cleanup must have run.
+            assert gen_cleanup.is_set(), "generator was not cleaned up"
+            # Background callback must have fired.
+            assert "background" in events, "background callback did not fire"
+            # Client disconnect signal must have fired.
+            assert "disconnect_signal" in events, (
+                "on_client_disconnect signal did not fire"
+            )
 
         asyncio.run(_test())

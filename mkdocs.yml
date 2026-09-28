@@ -355,8 +355,11 @@ nav:
       - 存储:
           - cache / 缓存: benchmarks/cache.md
           - persistdict / 持久化字典: benchmarks/persistdict.md
+          - aiosqlite / 异步 SQLite: benchmarks/aiosqlite.md
+          - s3 / S3 存储: benchmarks/s3.md
       - 开发工具:
           - structlog / 结构化日志: benchmarks/structlog.md
           - vcs / VCS 版本控制: benchmarks/vcs.md
           - depdetect / 依赖检测: benchmarks/depdetect.md
+          - profiler / 性能分析器: benchmarks/profiler.md
   - 更新日志: changelog.md

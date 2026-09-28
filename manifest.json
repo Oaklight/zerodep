@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-09-28T00:48:37.667841+00:00",
+  "generated": "2026-09-28T04:51:55.683162+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -51,8 +51,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "storage",
-      "last_updated": null,
-      "content_hash": "bcdd0383b3fe9ff40df70b382d9f85f71eb545e1fb54f3418cfb3699852aa8c9"
+      "last_updated": "2026-09-27T23:43:08-05:00",
+      "content_hash": "5ccc743a9afc629507d295d3111dff3d229a2c8a604f18ad6640d0bd9d3dca40"
     },
     "ansi": {
       "description": "ANSI escape code primitives for terminal styling",
@@ -175,24 +175,24 @@
       "files": [
         "httpclient/httpclient.py"
       ],
-      "version": "0.5.0",
+      "version": "0.5.1",
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-09-09T03:59:12-05:00",
-      "content_hash": "0ad60960aabdecbc14bbef42db9439b0393f2e4c2fbedfd666e9bdd79e5e7df9"
+      "last_updated": "2026-09-27T22:50:29-05:00",
+      "content_hash": "f6f9c3a3de9a63c5acdd155c70a4405e094632c417640df6b71fa30823d23c54"
     },
     "httpserver": {
       "description": "Zero-dependency async HTTP server with decorator-based routing",
       "files": [
         "httpserver/httpserver.py"
       ],
-      "version": "0.5.0",
+      "version": "0.5.1",
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-09-27T19:35:14-05:00",
-      "content_hash": "a230ada5bc68e3151e84a55b615b4cbbb50d7c13b489e30631b1330fe2fe2a0f"
+      "last_updated": "2026-09-27T23:18:50-05:00",
+      "content_hash": "6f75c831a3ce76b61f9e7bcb016d29e25c54c07be9d06f81107726e687f36709"
     },
     "jsonrpc": {
       "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",
@@ -470,14 +470,14 @@
       "files": [
         "sse/sse.py"
       ],
-      "version": "0.3.3",
+      "version": "0.3.4",
       "deps": [
         "httpclient"
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-08-25T10:33:53-05:00",
-      "content_hash": "a5f03ab5e795737ef37b1979b2dfe2b227869df52e8d774689bd14a32821f8d3"
+      "last_updated": "2026-09-27T22:50:29-05:00",
+      "content_hash": "b75aa5d4927888e773f621d35c9a7f8e593a4ab4752c84372cc2b17afbca11b2"
     },
     "structlog": {
       "description": "Zero-dependency structured logging with pretty console output",

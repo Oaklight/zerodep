@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.3.3"
+# version = "0.3.4"
 # deps = ["httpclient"]
 # tier = "subsystem"
 # category = "network"

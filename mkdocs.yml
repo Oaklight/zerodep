@@ -234,10 +234,13 @@ nav:
       - Storage:
           - cache / Cache: modules/cache.md
           - persistdict / Persistent Dict: modules/persistdict.md
+          - aiosqlite / Async SQLite: modules/aiosqlite.md
+          - s3 / S3 Storage: modules/s3.md
       - Dev Tools:
           - structlog / Structured Logging: modules/structlog.md
           - vcs / VCS Wrapper: modules/vcs.md
           - depdetect / Dependency Detection: modules/depdetect.md
+          - profiler / Profiler: modules/profiler.md
   - API Reference:
       - Web & Networking:
           - httpclient / HTTP Client: api/httpclient.md
@@ -292,10 +295,13 @@ nav:
       - Storage:
           - cache / Cache: api/cache.md
           - persistdict / Persistent Dict: api/persistdict.md
+          - aiosqlite / Async SQLite: api/aiosqlite.md
+          - s3 / S3 Storage: api/s3.md
       - Dev Tools:
           - structlog / Structured Logging: api/structlog.md
           - vcs / VCS Wrapper: api/vcs.md
           - depdetect / Dependency Detection: api/depdetect.md
+          - profiler / Profiler: api/profiler.md
   - Benchmarks:
       - Web & Networking:
           - httpclient / HTTP Client: benchmarks/httpclient.md

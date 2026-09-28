@@ -15,6 +15,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [a2a](a2a.md) | 0.3.2 | 2026-08-25 |
 | [acp](acp.md) | 0.3.2 | 2026-08-25 |
 | [aes](aes.md) | 0.5.0 | 2026-04-20 |
+| [aiosqlite](aiosqlite.md) | 0.1.0 | 2026-09-27 |
 | [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
 | [cache](cache.md) | 0.2.4 | 2026-04-27 |
 | [cdp](cdp.md) | 0.1.1 | 2026-08-25 |
@@ -24,8 +25,8 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
-| [httpclient](httpclient.md) | 0.5.0 | 2026-09-09 |
-| [httpserver](httpserver.md) | 0.5.0 | 2026-09-14 |
+| [httpclient](httpclient.md) | 0.5.1 | 2026-09-27 |
+| [httpserver](httpserver.md) | 0.5.1 | 2026-09-27 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
 | [jsonschema](jsonschema.md) | 0.4.1 | 2026-09-23 |
 | [jsonx](jsonx.md) | 1.0.0 | 2026-06-12 |
@@ -34,7 +35,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [multipart](multipart.md) | 0.1.0 | 2026-05-16 |
 | [persistdict](persistdict.md) | 0.4.1 | 2026-04-27 |
 | [png](png.md) | 0.1.1 | 2026-04-27 |
-| [profiler](profiler.md) | 0.1.0 | 2026-09-15 |
+| [profiler](profiler.md) | 0.1.1 | 2026-09-24 |
 | [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
 | [protobuf](protobuf.md) | 0.4.4 | 2026-04-27 |
 | [qr](qr.md) | 0.3.4 | 2026-08-25 |
@@ -48,7 +49,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [skills](skills.md) | 0.4.3 | 2026-08-25 |
 | [soup](soup.md) | 0.6.0 | 2026-04-27 |
 | [sparse_search](sparse_search.md) | 0.4.0 | 2026-04-27 |
-| [sse](sse.md) | 0.3.3 | 2026-08-25 |
+| [sse](sse.md) | 0.3.4 | 2026-09-27 |
 | [structlog](structlog.md) | 0.3.0 | 2026-04-27 |
 | [synctex](synctex.md) | 0.2.0 | 2026-05-02 |
 | [tabulate](tabulate.md) | 0.1.1 | 2026-04-15 |
@@ -156,6 +157,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 
 | Module | Description | Replaces | Benchmark Against |
 |--------|-------------|----------|-------------------|
+| [aiosqlite](aiosqlite.md) | Async sqlite3 wrapper with dedicated worker thread | aiosqlite | `aiosqlite` |
 | [cache](cache.md) | In-memory cache with TTL, LRU/LFU eviction, and async support | cachetools, diskcache (in-memory) | `cachetools` |
 | [persistdict](persistdict.md) | Persistent dict with pluggable backends (JSON, SQLite) | sqlitedict, diskcache (dict) | -- |
 | [s3](s3.md) | S3-compatible storage client with AWS Signature V4 | boto3, minio, s3fs | `boto3` |

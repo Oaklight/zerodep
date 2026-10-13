@@ -63,6 +63,64 @@ SELF_CLOSING_TAGS = frozenset(
     }
 )
 
+# Legacy attributes whose values an HTML attribute selector matches ASCII
+# case-insensitively.  Source: the HTML Standard, "Case-sensitivity of
+# selectors" --
+# https://html.spec.whatwg.org/multipage/semantics-other.html#case-sensitivity-of-selectors
+# The names are stored ASCII-lowercased, and a selector's attribute name is
+# folded the same way before the membership test.  Every other attribute
+# value, and every attribute name, is matched case-sensitively.
+_ASCII_CASE_INSENSITIVE_ATTRS = frozenset(
+    {
+        "accept",
+        "accept-charset",
+        "align",
+        "alink",
+        "axis",
+        "bgcolor",
+        "charset",
+        "checked",
+        "clear",
+        "codetype",
+        "color",
+        "compact",
+        "declare",
+        "defer",
+        "dir",
+        "direction",
+        "disabled",
+        "enctype",
+        "face",
+        "frame",
+        "hreflang",
+        "http-equiv",
+        "lang",
+        "language",
+        "link",
+        "media",
+        "method",
+        "multiple",
+        "nohref",
+        "noresize",
+        "noshade",
+        "nowrap",
+        "readonly",
+        "rel",
+        "rev",
+        "rules",
+        "scope",
+        "scrolling",
+        "selected",
+        "shape",
+        "target",
+        "text",
+        "type",
+        "valign",
+        "valuetype",
+        "vlink",
+    }
+)
+
 # ── Tag ───────────────────────────────────────────────────────────────────────
 
 
@@ -433,11 +491,12 @@ class Tag:
         Unsupported attribute syntax raises ``ValueError`` instead of dropping
         the constraint, which would silently widen the match.
 
-        Attribute values are compared case-sensitively.  HTML matches the
-        legacy attribute set (``type``, ``lang``, ``dir``, ``rel``, ``method``
-        and the rest) ASCII case-insensitively and soupsieve implements that,
-        so a selector differing only in case misses matches the reference
-        finds -- it never widens one.  Tracked separately from the operators.
+        Attribute values are matched case-sensitively, except for the legacy
+        HTML attributes that attribute selectors match ASCII
+        case-insensitively (``type``, ``lang``, ``dir``, ``rel``, ``method``
+        and the rest of the HTML Standard's list; see
+        ``_ASCII_CASE_INSENSITIVE_ATTRS``).  Only ASCII case is folded, and
+        attribute names themselves stay case-sensitive.
 
         Args:
             css_selector: The CSS selector string.
@@ -916,6 +975,18 @@ def _classes_match(tag: Tag, required_classes: list[str]) -> bool:
     return all(cls in tag_classes for cls in required_classes)
 
 
+_ASCII_LOWER = str.maketrans("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")
+
+
+def _ascii_lower(value: str) -> str:
+    """Lowercase the ASCII letters in *value* and leave every other character.
+
+    The HTML Standard defines selector case-insensitivity as *ASCII*
+    case-insensitivity, so a non-ASCII letter such as ``É`` is not folded.
+    """
+    return value.translate(_ASCII_LOWER)
+
+
 def _attr_text(actual: str | list[str]) -> str:
     """Return an attribute value as one string for substring matching.
 
@@ -925,25 +996,37 @@ def _attr_text(actual: str | list[str]) -> str:
     return " ".join(actual) if isinstance(actual, list) else actual
 
 
-def _attr_operator_matches(actual: str | list[str], op: str, expected: str) -> bool:
+def _attr_operator_matches(
+    actual: str | list[str],
+    op: str,
+    expected: str,
+    *,
+    case_insensitive: bool = False,
+) -> bool:
     """Return True if *actual* satisfies the CSS attribute operator *op*.
 
     Args:
         actual: The tag's attribute value; a list for ``class``.
         op: One of ``=``, ``~=``, ``|=``, ``^=``, ``$=``, ``*=``.
         expected: The value written in the selector, unquoted.
+        case_insensitive: Fold ASCII case in both sides before comparing.
+            Set for the legacy HTML attributes whose values selectors match
+            ASCII case-insensitively (``_ASCII_CASE_INSENSITIVE_ATTRS``).
 
     Returns:
         Whether the attribute satisfies the operator.  The empty-value cases
         follow the CSS spec: ``~=``, ``^=``, ``$=`` and ``*=`` never match an
         empty *expected*.
     """
+    text = _attr_text(actual)
+    if case_insensitive:
+        text = _ascii_lower(text)
+        expected = _ascii_lower(expected)
     if op == "=":
         # Compare the serialised attribute, as the reference does.  For the
         # list-valued ``class`` that makes ``[class="btn primary"]`` match and
         # ``[class="btn"]`` not match: the single-token form is ``~=``.
-        return _attr_text(actual) == expected
-    text = _attr_text(actual)
+        return text == expected
     if op == "~=":
         return bool(expected) and expected in text.split()
     if op == "|=":
@@ -963,7 +1046,12 @@ def _selector_attrs_match(tag: Tag, attrs: list[tuple[str, str | None, str]]) ->
         actual = tag.attrs.get(attr_name)
         if actual is None:
             return False
-        if op is not None and not _attr_operator_matches(actual, op, attr_val):
+        if op is not None and not _attr_operator_matches(
+            actual,
+            op,
+            attr_val,
+            case_insensitive=_ascii_lower(attr_name) in _ASCII_CASE_INSENSITIVE_ATTRS,
+        ):
             return False
     return True
 

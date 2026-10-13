@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Infrastructure
+
+- **s3 benchmarks** now run against a SeaweedFS container instead of MinIO (abandoned upstream). CI provides the endpoint via a GitHub Actions service container and the `S3_TEST_ENDPOINT` convention, so the s3 benchmark comparison is finally published on every run.
+
 ## [2026.9.28] - 2026-09-28
 
 ### New Modules

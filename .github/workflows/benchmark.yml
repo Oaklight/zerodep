@@ -22,7 +22,7 @@ jobs:
     # step) instead of starting its own container.
     services:
       seaweedfs:
-        image: chrislusf/seaweedfs:latest
+        image: chrislusf/seaweedfs:4.48
         ports:
           - 8333:8333
         env:
@@ -84,6 +84,30 @@ jobs:
                  || true
           # Verify results were produced (pytest may exit non-zero on flaky tests)
           test -s benchmark-results.json
+
+      - name: Verify the s3 comparison ran
+        # `test -s` above only proves *some* module produced benchmarks; other
+        # modules fill the artifact even when s3 is skipped, which is exactly
+        # how the s3 report went missing before.  Assert s3 specifically.
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+
+          with open("benchmark-results.json") as fh:
+              results = json.load(fh)
+          s3 = [
+              b
+              for b in results["benchmarks"]
+              if b.get("fullname", "").startswith("s3/")
+          ]
+          if not s3:
+              sys.exit(
+                  "the s3 comparison produced no results — the S3 endpoint was "
+                  "unreachable or the benchmarks were skipped"
+              )
+          print(f"s3 benchmarks in artifact: {len(s3)}")
+          PY
 
       - name: Run readability three-way comparison
         continue-on-error: true

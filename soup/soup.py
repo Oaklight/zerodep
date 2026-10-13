@@ -436,8 +436,21 @@ class Tag:
             A list of matching ``Tag`` objects.
 
         Raises:
-            ValueError: If the selector uses attribute syntax that this parser
-                does not implement.
+            ValueError: If the selector uses attribute syntax this parser
+                cannot read.  That set is the compatibility contract for a
+                vendoring caller, because these selectors previously widened
+                the match silently instead:
+
+                - Valid CSS the reference accepts, not implemented here: the
+                  Selectors L4 case-sensitivity flags ``[attr="v" i]`` and
+                  ``[attr="v" s]``, the namespace forms ``[svg|use]``,
+                  ``[*|href]`` and ``[|href]``, and the jQuery-style
+                  ``[attr!="x"]``.
+                - Valid CSS this parser's tokeniser cannot read: a ``]``
+                  inside a quoted value, as in ``[title="a]b"]``.
+                - Rejected by the reference as well, so consistent with it:
+                  ``[=x]``, unterminated quotes such as
+                  ``[title="unterminated]``, and ``[xlink:href]``.
         """
         parts = _parse_selector(css_selector)
         candidates: list[Tag] = self._all_descendants()
@@ -619,9 +632,11 @@ _ATTR_RE = re.compile(
     re.VERBOSE,
 )
 
-# CSS attribute operators: ``=`` exact, ``~=`` whitespace-separated list,
-# ``|=`` exact or hyphen-prefixed, ``^=``/``$=``/``*=`` substring forms.
-_ATTR_OPERATORS = frozenset({"=", "~=", "|=", "^=", "$=", "*="})
+# CSS attribute operators: ``=`` exact (against the serialised attribute),
+# ``~=`` whitespace-separated list, ``|=`` exact or hyphen-prefixed,
+# ``^=``/``$=``/``*=`` substring forms.  ``_attr_operator_matches`` is the one
+# place that dispatches on them, and it rejects an operator the regex has no
+# branch for.
 
 SelectorStep = tuple[str, dict[str, Any]]
 
@@ -679,8 +694,6 @@ def _parse_attr_token(token: str) -> tuple[str, str | None, str] | None:
     op = m.group("op")
     if op is None:
         return (m.group("name"), None, "")
-    if op not in _ATTR_OPERATORS:  # pragma: no cover - regex admits no others
-        return None
     return (m.group("name"), op, _unquote(m.group("value")))
 
 
@@ -697,8 +710,11 @@ def _apply_regex_match(m: re.Match[str], compound: dict[str, Any]) -> None:
         if attr is None:
             raise ValueError(
                 f"unsupported attribute selector: {m.group('attr')} "
-                "(supported: [attr], [attr=value] with the operators "
-                "=, ~=, |=, ^=, $=, *=)"
+                "(supported: [attr] and [attr<op>value] with =, ~=, |=, ^=, "
+                '$=, *=; the Selectors L4 flags [attr="v" i] and '
+                '[attr="v" s], the namespace forms, and != are not '
+                "implemented, and a ] inside a quoted value cannot be "
+                "tokenised)"
             )
         compound.setdefault("attrs", []).append(attr)
     elif m.group("pseudo"):

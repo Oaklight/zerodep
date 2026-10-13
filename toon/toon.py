@@ -482,7 +482,14 @@ def _row_values(obj: JsonObject, nodes: _FieldTree, delimiter: str) -> list[str]
         if sub is None:
             cells.append(_encode_primitive(value, delimiter))
             continue
-        assert isinstance(value, dict)
+        if not isinstance(value, dict):
+            # _detect_fields only marks a column nested when every row holds an
+            # object there, so this is an internal invariant.  Raise rather
+            # than assert, so it survives -O.
+            raise ValueError(
+                f"Column {key!r} is marked nested but holds "
+                f"{type(value).__name__} on this row"
+            )
         cells.extend(_row_values(value, sub, delimiter))
     return cells
 

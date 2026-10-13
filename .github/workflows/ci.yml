@@ -3,8 +3,13 @@ name: CI
 on:
   push:
     branches: [master]
+  # No base-branch filter. With `branches: [master]` a pull request stacked on
+  # another branch matched no trigger at all, so it got no run and no checks --
+  # which reads as "not started" rather than "never ran", and a stacked head
+  # then needed `gh workflow run ci.yml --ref <branch>` to be verified at all.
+  # Stacked PRs are a supported workflow here (submit-workflow.md), and a
+  # stacked PR costs the same matrix as any other.
   pull_request:
-    branches: [master]
   workflow_dispatch:
 
 jobs:

@@ -13,6 +13,7 @@ import io
 import itertools
 import os
 import sys
+import uuid
 
 import pytest
 
@@ -26,40 +27,62 @@ def _import_reference(name: str):
 
     pytest's default (prepend) import mode puts each test directory on
     ``sys.path`` as it collects, and this repo ships an ``xml/`` directory
-    for the zerodep ``xml`` module.  With that directory on the path, the
-    stdlib ``xml`` package is shadowed and ``import xml.etree`` fails;
-    botocore imports ``xml.etree``, so a plain ``import boto3`` raises
-    ModuleNotFoundError here.  ``pytest.importorskip`` then turned that into
-    a silent "boto3 not installed" skip, and the s3 comparison never made it
-    into the benchmark report.  Hide the shadowing entries for the duration
-    of the import and put them back afterwards.
+    for the zerodep ``xml`` module.  With that directory on the path,
+    ``import xml`` finds ``xml/xml.py`` — a module, not a package — so
+    ``import xml.etree`` fails; botocore imports ``xml.etree``, so a plain
+    ``import boto3`` raises ModuleNotFoundError here and the whole
+    comparison was skipped as "boto3 not installed".
+
+    Hide those path entries and clear the stale ``xml`` cache for the
+    duration of the import, then restore both — the cache-restoring form
+    matches ``xml/test_xml_benchmark.py``, so the repo's own ``xml`` module
+    stays importable for the rest of the session.
     """
     shadowed = [
-        path for path in sys.path if os.path.isfile(os.path.join(path, "xml.py"))
+        (index, path)
+        for index, path in enumerate(sys.path)
+        if os.path.isfile(os.path.join(path, "xml.py"))
     ]
-    for path in shadowed:
+    for _, path in shadowed:
         sys.path.remove(path)
-    # The shadow may already be cached under the stdlib name, in which case
-    # dropping it from sys.path is not enough — the import system would hand
-    # back the cached xml.py instead of the stdlib package.
-    for key in [k for k in sys.modules if k == "xml" or k.startswith("xml.")]:
-        del sys.modules[key]
+    cached = {
+        key: sys.modules.pop(key)
+        for key in [k for k in sys.modules if k == "xml" or k.startswith("xml.")]
+    }
     try:
         return importlib.import_module(name)
     finally:
-        sys.path.extend(shadowed)
+        # Put the hidden entries back at their original positions rather than
+        # at the end, and drop whatever the import cached under the stdlib
+        # name so the previously cached modules win again.
+        for index, path in shadowed:
+            sys.path.insert(index, path)
+        for key in [k for k in sys.modules if k == "xml" or k.startswith("xml.")]:
+            del sys.modules[key]
+        sys.modules.update(cached)
 
 
-def _require_reference(name: str):
-    """Import a reference library, skipping the module if it is absent."""
+def _require_reference(name: str, attribute: str):
+    """Import a reference library, skipping only if it is genuinely absent.
+
+    A ``ModuleNotFoundError`` for the library itself means it is not
+    installed, so the module skips.  Anything else — a broken transitive
+    import inside the library — must propagate: reporting that as "not
+    installed" is exactly the swallow that hid the ``xml`` shadowing bug.
+    """
     try:
-        return _import_reference(name)
-    except ImportError:
+        module = _import_reference(name)
+    except ModuleNotFoundError as exc:
+        if exc.name != name:
+            raise
         pytest.skip(f"{name} not installed", allow_module_level=True)
+    if not hasattr(module, attribute):
+        raise ImportError(f"imported {name} has no {attribute!r} — not the real {name}")
+    return module
 
 
-boto3 = _require_reference("boto3")
-minio_mod = _require_reference("minio")
+boto3 = _require_reference("boto3", "client")
+minio_mod = _require_reference("minio", "Minio")
 
 
 # ── Cross-validation (non-benchmarked) ──
@@ -352,6 +375,11 @@ class TestBucketExists:
 
 # ── make_bucket benchmark ──
 
+# Bucket names must be unique per process: the counters restart at 0 in
+# every run, so against a server a previous run already touched the
+# "*-mk-0" names still exist and make_bucket fails with
+# BucketAlreadyOwnedByYou (dropping three benchmarks from the artifact).
+_run_id = uuid.uuid4().hex[:8]
 _zd_bucket_counter = itertools.count()
 _boto3_bucket_counter = itertools.count()
 _minio_bucket_counter = itertools.count()
@@ -360,21 +388,23 @@ _minio_bucket_counter = itertools.count()
 class TestMakeBucket:
     def test_zerodep(self, benchmark, s3_zerodep_client):
         def _make():
-            s3_zerodep_client.make_bucket(f"zd-mk-{next(_zd_bucket_counter)}")
+            s3_zerodep_client.make_bucket(f"zd-mk-{_run_id}-{next(_zd_bucket_counter)}")
 
         benchmark(_make)
 
     def test_boto3(self, benchmark, s3_boto3_client):
         def _make():
             s3_boto3_client.create_bucket(
-                Bucket=f"boto3-mk-{next(_boto3_bucket_counter)}"
+                Bucket=f"boto3-mk-{_run_id}-{next(_boto3_bucket_counter)}"
             )
 
         benchmark(_make)
 
     def test_minio(self, benchmark, s3_minio_client):
         def _make():
-            s3_minio_client.make_bucket(f"minio-mk-{next(_minio_bucket_counter)}")
+            s3_minio_client.make_bucket(
+                f"minio-mk-{_run_id}-{next(_minio_bucket_counter)}"
+            )
 
         benchmark(_make)
 

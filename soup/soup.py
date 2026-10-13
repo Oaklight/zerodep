@@ -19,6 +19,10 @@ the vast majority of real-world scraping scripts.
 Supports CSS pseudo-selectors: ``:first-child``, ``:last-child``,
 ``:only-child``, and ``:not(selector)``.
 
+Attribute selectors match the HTML Standard's legacy attribute set ASCII
+case-insensitively; soupsieve 2.10 folds only ``type``, so the two
+intentionally diverge on the rest of that set.
+
 Does NOT implement: ``.prettify()``, ``.stripped_strings``, ``.descendants``
 iterator, ``.next_sibling`` / ``.previous_sibling``, ``NavigableString`` class,
 multiple parser backends.

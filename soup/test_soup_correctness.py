@@ -571,6 +571,39 @@ class TestSelectAttributeOperators:
         for selector in ('[type*="alpha"]', '[type^="submit"]', '[type="submit"]'):
             assert len(ours.select(selector)) == len(theirs.select(selector))
 
+    def test_legacy_case_fold_boundary_is_explicit(self):
+        """Pin the boundary both ways, naming the attribute and its side.
+
+        A differential sweep against the reference should fail here first,
+        with the attribute and the side it fell on spelled out, rather than
+        somewhere unrelated: the HTML Standard's legacy names fold, the rest
+        stay case-sensitive.
+        """
+        cases = [
+            # (name, in the Standard's legacy case-insensitive set)
+            ("type", True),
+            ("lang", True),
+            ("dir", True),
+            ("rel", True),
+            ("method", True),
+            ("class", False),
+            ("id", False),
+            ("title", False),
+        ]
+        for name, in_set in cases:
+            matched = bool(
+                _ours(f'<div {name}="AbC-XyZ"></div>').select(f'[{name}="abc-xyz"]')
+            )
+            side = (
+                "inside the legacy set, so it must fold ASCII case"
+                if in_set
+                else "outside the legacy set, so it must stay case-sensitive"
+            )
+            assert matched is in_set, (
+                f"[{name}=...]: {name!r} is {side}, but select() "
+                f"{'matched' if matched else 'did not match'}"
+            )
+
     @pytest.mark.parametrize(
         "selector",
         [

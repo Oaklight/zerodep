@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-13T14:02:31.949130+00:00",
+  "generated": "2026-10-13T14:02:54.189221+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -446,11 +446,11 @@
       "files": [
         "soup/soup.py"
       ],
-      "version": "0.7.1",
+      "version": "0.8.0",
       "deps": [],
       "tier": "medium",
       "category": "text",
-      "last_updated": "2026-10-13T08:43:06-05:00",
+      "last_updated": "2026-10-13T08:52:48-05:00",
       "content_hash": "9bf6a53f5f834d9a9da0ab4cb288d7fa99eba16032e9b7b9c7840f3619fe3e4c"
     },
     "sparse_search": {

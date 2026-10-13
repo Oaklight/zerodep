@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.3.3"
+# version = "0.4.0"
 # deps = []
 # tier = "simple"
 # category = "serialization"
@@ -11,7 +11,10 @@
 Part of zerodep: https://github.com/Oaklight/zerodep
 Copyright (c) 2026 Peng Ding. MIT License.
 
-Drop-in replacement for toon_format core functionality (encode/decode).
+Drop-in replacement for toon_format core functionality (encode/decode),
+tracking the current reference (TOON 4.1): empty arrays encode as ``[]`` and
+arrays of uniform objects whose fields are themselves uniform objects use the
+nested tabular header (``[2]{n,d{x}}:``) with flattened rows.
 
 TOON is a compact, human-readable serialization format designed for LLM contexts,
 achieving 30-60% token reduction vs JSON. It combines YAML-like indentation with
@@ -369,15 +372,12 @@ def _join_values(values: list[str], delimiter: str) -> str:
 def _format_header(
     key: str | None,
     length: int,
-    fields: list[str] | None,
+    fields: str | None,
     delimiter: str,
     length_marker: str | Literal[False],
 ) -> str:
     marker = length_marker if length_marker else ""
-    fields_str = ""
-    if fields:
-        encoded = [_encode_key(f) for f in fields]
-        fields_str = "{" + delimiter.join(encoded) + "}"
+    fields_str = fields or ""
     if delimiter != _COMMA:
         length_str = f"[{marker}{length}{delimiter}]"
     else:
@@ -415,18 +415,76 @@ def _resolve_encode_opts(options: EncodeOptions | None) -> _ResolvedOpts:
     return _ResolvedOpts(indent=indent, delimiter=delim, length_marker=lm)
 
 
-def _detect_tabular(arr: list[JsonObject], delimiter: str) -> list[str] | None:
-    """Return field keys if *arr* qualifies for tabular format, else None."""
+# A (possibly nested) tabular column tree: ``(key, None)`` is a leaf column
+# holding a primitive; ``(key, subtree)`` is a nested column.
+_FieldTree = list[tuple[str, "_FieldTree | None"]]
+
+
+def _detect_fields(arr: list[JsonObject]) -> _FieldTree | None:
+    """Return the field tree if *arr* qualifies for tabular format, else None.
+
+    Every object must carry the same keys, and each key must hold a primitive
+    in all rows (a leaf column) or a sub-object in all rows that itself
+    qualifies (a nested column, rendered as ``d{x}``).  Anything else -- an
+    array value, mixed kinds, ragged keys, an empty object -- disqualifies the
+    whole array, which then falls back to the list form.
+    """
     if not arr:
         return None
     first_keys = list(arr[0].keys())
+    if not first_keys:
+        return None
     first_set = set(first_keys)
     for obj in arr:
         if set(obj.keys()) != first_set:
             return None
-        if not all(_is_primitive(v) for v in obj.values()):
+    nodes: _FieldTree = []
+    for key in first_keys:
+        values = [obj[key] for obj in arr]
+        if all(_is_primitive(v) for v in values):
+            nodes.append((key, None))
+        elif all(_is_object(v) for v in values):
+            sub = _detect_fields(values)
+            if sub is None:
+                return None
+            nodes.append((key, sub))
+        else:
             return None
-    return first_keys
+    return nodes
+
+
+def _render_fields(nodes: _FieldTree, delimiter: str) -> str:
+    """Render a field tree as a header segment, e.g. ``{n,d{x}}``."""
+    parts: list[str] = []
+    for key, sub in nodes:
+        parts.append(_encode_key(key))
+        if sub is not None:
+            parts[-1] += _render_fields(sub, delimiter)
+    return "{" + delimiter.join(parts) + "}"
+
+
+def _leaf_paths(nodes: _FieldTree) -> list[tuple[str, ...]]:
+    """Return the leaf column paths of a field tree, in row order."""
+    paths: list[tuple[str, ...]] = []
+    for key, sub in nodes:
+        if sub is None:
+            paths.append((key,))
+        else:
+            paths.extend((key,) + rest for rest in _leaf_paths(sub))
+    return paths
+
+
+def _row_values(obj: JsonObject, nodes: _FieldTree, delimiter: str) -> list[str]:
+    """Flatten one object into the encoded row cells described by *nodes*."""
+    cells: list[str] = []
+    for key, sub in nodes:
+        value = obj[key]
+        if sub is None:
+            cells.append(_encode_primitive(value, delimiter))
+            continue
+        assert isinstance(value, dict)
+        cells.extend(_row_values(value, sub, delimiter))
+    return cells
 
 
 def _enc_value(value: JsonValue, opts: _ResolvedOpts, w: _Writer, depth: int) -> None:
@@ -462,15 +520,14 @@ def _enc_array(
     arr: JsonArray, opts: _ResolvedOpts, w: _Writer, depth: int, key: str | None
 ) -> None:
     if not arr:
-        header = _format_header(key, 0, None, opts.delimiter, opts.length_marker)
-        w.push(depth, header)
+        w.push(depth, f"{_encode_key(key)}: []" if key else "[]")
         return
     if _all_primitives(arr):
         _enc_inline_prim(arr, opts, w, depth, key)
     elif _all_arrays(arr):
         _enc_array_of_arrays(arr, opts, w, depth, key)
     elif _all_objects(arr):
-        fields = _detect_tabular(arr, opts.delimiter)
+        fields = _detect_fields(arr)
         if fields:
             _enc_tabular(arr, fields, opts, w, depth, key)
         else:
@@ -510,16 +567,22 @@ def _enc_array_of_arrays(
 
 def _enc_tabular(
     arr: list[JsonObject],
-    fields: list[str],
+    fields: _FieldTree,
     opts: _ResolvedOpts,
     w: _Writer,
     depth: int,
     key: str | None,
 ) -> None:
-    header = _format_header(key, len(arr), fields, opts.delimiter, opts.length_marker)
+    header = _format_header(
+        key,
+        len(arr),
+        _render_fields(fields, opts.delimiter),
+        opts.delimiter,
+        opts.length_marker,
+    )
     w.push(depth, header)
     for obj in arr:
-        row = [_encode_primitive(obj[f], opts.delimiter) for f in fields]
+        row = _row_values(obj, fields, opts.delimiter)
         w.push(depth + 1, _join_values(row, opts.delimiter))
 
 
@@ -548,7 +611,9 @@ def _enc_list_items(
             else:
                 tf = None
                 if _all_objects(sub):
-                    tf = _detect_tabular(sub, opts.delimiter)
+                    detected = _detect_fields(sub)
+                    if detected:
+                        tf = _render_fields(detected, opts.delimiter)
                 ih = _format_header(
                     None, len(sub), tf, opts.delimiter, opts.length_marker
                 )
@@ -579,7 +644,9 @@ def _enc_obj_list_item(
         else:
             tf = None
             if _all_objects(sub):
-                tf = _detect_tabular(sub, opts.delimiter)
+                detected = _detect_fields(sub)
+                if detected:
+                    tf = _render_fields(detected, opts.delimiter)
             ih = _format_header(k0, len(sub), tf, opts.delimiter, opts.length_marker)
             w.push(depth, f"- {ih}")
             _enc_array_content(sub, opts, w, depth + 1)
@@ -597,10 +664,10 @@ def _enc_array_content(
     if not arr:
         return
     if _all_objects(arr):
-        fields = _detect_tabular(arr, opts.delimiter)
+        fields = _detect_fields(arr)
         if fields:
             for obj in arr:
-                row = [_encode_primitive(obj[f], opts.delimiter) for f in fields]
+                row = _row_values(obj, fields, opts.delimiter)
                 w.push(depth, _join_values(row, opts.delimiter))
             return
         for item in arr:
@@ -676,6 +743,8 @@ def _scan(source: str, indent_size: int, strict: bool) -> list[_Line]:
 def _parse_primitive(token: str) -> JsonValue:
     """Parse a TOON primitive token."""
     token = token.strip()
+    if token == "[]":
+        return []
     if token.startswith(_DQUOTE):
         if not token.endswith(_DQUOTE) or len(token) < 2:
             raise ToonDecodeError("Unterminated string")
@@ -712,7 +781,85 @@ def _split_kv(line: str) -> tuple[str, str]:
     return (line[:idx].strip(), line[idx + 1 :].strip())
 
 
-def _parse_header(line: str) -> tuple[str | None, int, str, list[str] | None] | None:
+def _match_brace(text: str, start: int = 0) -> int:
+    """Return the index of the ``}`` matching the ``{`` at *start*, or -1."""
+    depth = 0
+    quote = ""
+    idx = start
+    while idx < len(text):
+        ch = text[idx]
+        if quote:
+            if ch == "\\":
+                idx += 2
+                continue
+            if ch == quote:
+                quote = ""
+        elif ch in "\"'":
+            quote = ch
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return idx
+        idx += 1
+    return -1
+
+
+def _parse_fields(text: str, delimiter: str) -> _FieldTree:
+    """Parse a ``{...}`` header body into a field tree.
+
+    Understands the nested form (``name,data{x}``) so a decoded header carries
+    the column shape needed to rebuild sub-objects from flattened rows.  The
+    opening brace is located with the shared quote-aware scan, because a quoted
+    key may itself contain a brace (``"a{"{x}`` on the wire).
+    """
+    tokens: list[str] = []
+    current: list[str] = []
+    depth = 0
+    quote = ""
+    idx = 0
+    while idx < len(text):
+        ch = text[idx]
+        if quote:
+            current.append(ch)
+            if ch == "\\" and idx + 1 < len(text):
+                current.append(text[idx + 1])
+                idx += 1
+            elif ch == quote:
+                quote = ""
+        elif ch in "\"'":
+            quote = ch
+            current.append(ch)
+        elif ch == "{" or ch == "}":
+            depth += 1 if ch == "{" else -1
+            current.append(ch)
+        elif ch == delimiter and depth == 0:
+            tokens.append("".join(current))
+            current = []
+        else:
+            current.append(ch)
+        idx += 1
+    tokens.append("".join(current))
+    nodes: _FieldTree = []
+    for token in tokens:
+        token = token.strip()
+        if not token:
+            continue
+        brace = _find_unquoted(token, "{")
+        if brace != -1 and _match_brace(token, brace) == len(token) - 1:
+            nodes.append(
+                (
+                    _parse_key(token[:brace]),
+                    _parse_fields(token[brace + 1 : -1], delimiter),
+                )
+            )
+        else:
+            nodes.append((_parse_key(token), None))
+    return nodes
+
+
+def _parse_header(line: str) -> tuple[str | None, int, str, _FieldTree | None] | None:
     """Parse array header. Returns (key, length, delimiter, fields) or None."""
     line = line.strip()
     bstart = _find_unquoted(line, "[")
@@ -746,12 +893,10 @@ def _parse_header(line: str) -> tuple[str | None, int, str, list[str] | None] | 
     fields = None
     after = line[bend + 1 :].strip()
     if after.startswith("{"):
-        brace_end = _find_unquoted(after, "}")
+        brace_end = _match_brace(after)
         if brace_end == -1:
             raise ToonDecodeError("Unterminated fields segment")
-        fc = after[1:brace_end]
-        ft = _parse_delimited(fc, delimiter)
-        fields = [_parse_key(f.strip()) for f in ft]
+        fields = _parse_fields(after[1:brace_end], delimiter)
         after = after[brace_end + 1 :].strip()
     if not after.startswith(_COLON):
         return None
@@ -817,7 +962,7 @@ def _dec_array_from_hdr(
     lines: list[_Line],
     hdr_idx: int,
     hdr_depth: int,
-    hdr_info: tuple[str | None, int, str, list[str] | None],
+    hdr_info: tuple[str | None, int, str, _FieldTree | None],
     strict: bool,
 ) -> tuple[list[Any], int]:
     key, length, delimiter, fields = hdr_info
@@ -847,11 +992,25 @@ def _dec_inline_array(
     return values
 
 
+def _assemble_fields(
+    nodes: _FieldTree, values: list[JsonValue], pos: int
+) -> tuple[dict[str, JsonValue], int]:
+    """Rebuild one nested object from a flattened tabular row."""
+    obj: dict[str, JsonValue] = {}
+    for key, sub in nodes:
+        if sub is None:
+            obj[key] = values[pos] if pos < len(values) else None
+            pos += 1
+        else:
+            obj[key], pos = _assemble_fields(sub, values, pos)
+    return obj, pos
+
+
 def _dec_tabular(
     lines: list[_Line],
     start: int,
     hdr_depth: int,
-    fields: list[str],
+    fields: _FieldTree,
     delimiter: str,
     expected: int,
     strict: bool,
@@ -859,6 +1018,7 @@ def _dec_tabular(
     result: list[dict[str, Any]] = []
     i = start
     row_depth = hdr_depth + 1
+    width = len(_leaf_paths(fields))
     while i < len(lines):
         ln = lines[i]
         if ln.is_blank:
@@ -874,11 +1034,9 @@ def _dec_tabular(
             break
         tokens = _parse_delimited(ln.content, delimiter)
         values = [_parse_primitive(t) for t in tokens]
-        if strict and len(values) != len(fields):
-            raise ToonDecodeError(
-                f"Expected {len(fields)} values in row, got {len(values)}"
-            )
-        obj = {fields[j]: values[j] for j in range(min(len(fields), len(values)))}
+        if strict and len(values) != width:
+            raise ToonDecodeError(f"Expected {width} values in row, got {len(values)}")
+        obj, _ = _assemble_fields(fields, values, 0)
         result.append(obj)
         i += 1
     if strict and len(result) != expected:
@@ -928,7 +1086,7 @@ def _dec_list_item_named_array(
     lines: list[_Line],
     idx: int,
     ln: _Line,
-    hdr_info: tuple[str | None, int, str, list[str] | None],
+    hdr_info: tuple[str | None, int, str, _FieldTree | None],
     strict: bool,
 ) -> tuple[dict[str, Any], int]:
     """Decode a list item whose content starts with a named array header.
@@ -970,7 +1128,7 @@ def _dec_list_item_object(
 
 def _try_inline_subarray(
     ic: str,
-    hdr_info: tuple[str | None, int, str, list[str] | None],
+    hdr_info: tuple[str | None, int, str, _FieldTree | None],
     strict: bool,
 ) -> list[Any] | None:
     """Try to decode an inline sub-array from a keyless header.

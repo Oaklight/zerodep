@@ -1,8 +1,12 @@
 """Fixtures for s3 module tests.
 
-Provides a session-scoped MinIO Docker container and pre-configured
+Provides a session-scoped SeaweedFS Docker container and pre-configured
 S3 clients (zerodep, boto3, minio) for benchmark and integration tests.
-The container is skipped automatically when Docker is unavailable.
+
+The container is skipped automatically when Docker is unavailable.  Set
+``S3_TEST_ENDPOINT`` (plus ``S3_TEST_ACCESS_KEY`` / ``S3_TEST_SECRET_KEY``)
+to use an externally managed S3 server instead — this is how CI provides
+the endpoint.
 """
 
 from __future__ import annotations
@@ -14,7 +18,6 @@ import shutil
 import subprocess
 import sys
 import time
-from http.client import HTTPConnection
 
 import pytest
 
@@ -24,12 +27,13 @@ from s3 import S3Client
 
 # ── Constants ──
 
-_MINIO_IMAGE = "minio/minio:latest"
-_ACCESS_KEY = "minioadmin"
-_SECRET_KEY = "minioadmin"
+_SEAWEEDFS_IMAGE = "chrislusf/seaweedfs:latest"
+_S3_PORT = 8333
+_ACCESS_KEY = "admin"
+_SECRET_KEY = "secret"
 _REGION = "us-east-1"
 _BENCH_BUCKET = "bench"
-_STARTUP_TIMEOUT = 30  # seconds
+_STARTUP_TIMEOUT = 60  # seconds — `weed mini` boots master+volume+filer+s3
 
 # Deterministic test payloads
 _RNG = random.Random(42)  # noqa: S311
@@ -43,7 +47,8 @@ PAYLOADS = {
     "large": LARGE_PAYLOAD,
 }
 
-# ── Docker helpers ──
+
+# ── Server helpers ──
 
 
 def _docker_available() -> bool:
@@ -61,40 +66,88 @@ def _docker_available() -> bool:
         return False
 
 
-def _wait_for_minio(host: str, port: int, timeout: float) -> bool:
-    """Poll MinIO health endpoint until ready or timeout."""
+def _wait_for_s3(
+    endpoint: str,
+    access_key: str,
+    secret_key: str,
+    timeout: float,
+    secure: bool = False,
+) -> bool:
+    """Poll ListBuckets until the S3 gateway answers with valid creds.
+
+    SeaweedFS has no dedicated health route, so a successful authenticated
+    call is the readiness signal: a 200 proves the gateway is listening, the
+    credentials are loaded, and SigV4 verification works.
+    """
+    client = S3Client(
+        endpoint=endpoint,
+        access_key=access_key,
+        secret_key=secret_key,
+        region=_REGION,
+        secure=secure,
+        url_style="path",
+    )
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         try:
-            conn = HTTPConnection(host, port, timeout=2)
-            conn.request("GET", "/minio/health/live")
-            resp = conn.getresponse()
-            resp.read()
-            conn.close()
-            if resp.status == 200:
-                return True
-        except (OSError, ConnectionError):
-            pass
-        time.sleep(0.3)
+            client.list_buckets()
+            return True
+        except Exception:  # noqa: BLE001 — refused/403/500 all mean "not ready"
+            time.sleep(0.5)
     return False
+
+
+def _external_target() -> tuple[str, str, str] | None:
+    """Read an externally provided S3 endpoint from the environment.
+
+    Returns ``(endpoint, access_key, secret_key)`` or ``None`` when
+    ``S3_TEST_ENDPOINT`` is unset.
+    """
+    endpoint = os.environ.get("S3_TEST_ENDPOINT")
+    if not endpoint:
+        return None
+    access_key = os.environ.get("S3_TEST_ACCESS_KEY")
+    secret_key = os.environ.get("S3_TEST_SECRET_KEY")
+    if not (access_key and secret_key):
+        pytest.skip(
+            "S3_TEST_ENDPOINT is set but S3_TEST_ACCESS_KEY / "
+            "S3_TEST_SECRET_KEY are missing"
+        )
+    return endpoint, access_key, secret_key
+
+
+def _secure() -> bool:
+    """Whether to use HTTPS — benchmark default is plain HTTP."""
+    return os.environ.get("S3_TEST_SECURE", "0") != "0"
 
 
 # ── Fixtures ──
 
 
 @pytest.fixture(scope="session")
-def minio_endpoint():
-    """Start a MinIO Docker container and yield its endpoint.
+def s3_endpoint():
+    """Yield the S3 endpoint to test against.
 
-    Skips all dependent tests when Docker is unavailable.
-    The container is removed on teardown (and via atexit as safety net).
+    Uses ``S3_TEST_ENDPOINT`` when set (external server, e.g. CI).  Otherwise
+    starts a SeaweedFS Docker container, skipping all dependent tests when
+    Docker is unavailable.  The container is removed on teardown (and via
+    atexit as a safety net).
     """
+    external = _external_target()
+    if external is not None:
+        endpoint, access_key, secret_key = external
+        if not _wait_for_s3(
+            endpoint, access_key, secret_key, _STARTUP_TIMEOUT, _secure()
+        ):
+            pytest.skip(f"External S3 endpoint {endpoint} not ready in time")
+        yield endpoint
+        return
+
     if not _docker_available():
-        pytest.skip("Docker not available — skipping S3 Docker tests")
+        pytest.skip("Docker not available — set S3_TEST_ENDPOINT to use an external S3")
 
     container_id = None
     try:
-        # Start container with random port mapping
         result = subprocess.run(
             [
                 "docker",
@@ -102,21 +155,21 @@ def minio_endpoint():
                 "-d",
                 "--rm",
                 "-p",
-                "0:9000",
+                f"0:{_S3_PORT}",
                 "-e",
-                f"MINIO_ROOT_USER={_ACCESS_KEY}",
+                f"AWS_ACCESS_KEY_ID={_ACCESS_KEY}",
                 "-e",
-                f"MINIO_ROOT_PASSWORD={_SECRET_KEY}",
-                _MINIO_IMAGE,
-                "server",
-                "/data",
+                f"AWS_SECRET_ACCESS_KEY={_SECRET_KEY}",
+                "-e",
+                f"S3_BUCKET={_BENCH_BUCKET}",
+                _SEAWEEDFS_IMAGE,
             ],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=120,
         )
         if result.returncode != 0:
-            pytest.skip(f"Failed to start MinIO container: {result.stderr.strip()}")
+            pytest.skip(f"Failed to start SeaweedFS container: {result.stderr.strip()}")
 
         container_id = result.stdout.strip()
 
@@ -134,23 +187,24 @@ def minio_endpoint():
 
         # Get assigned port
         port_result = subprocess.run(
-            ["docker", "port", container_id, "9000"],
+            ["docker", "port", container_id, str(_S3_PORT)],
             capture_output=True,
             text=True,
             timeout=10,
         )
         if port_result.returncode != 0:
-            pytest.skip("Failed to get MinIO container port")
+            pytest.skip("Failed to get SeaweedFS container port")
 
         # Parse "0.0.0.0:XXXXX" or ":::XXXXX"
         port_line = port_result.stdout.strip().split("\n")[0]
         port = int(port_line.rsplit(":", 1)[1])
 
-        # Wait for MinIO to be ready
-        if not _wait_for_minio("127.0.0.1", port, _STARTUP_TIMEOUT):
-            pytest.skip("MinIO container did not become ready in time")
-
         endpoint = f"127.0.0.1:{port}"
+        if not _wait_for_s3(
+            endpoint, _ACCESS_KEY, _SECRET_KEY, _STARTUP_TIMEOUT, secure=False
+        ):
+            pytest.skip("SeaweedFS container did not become ready in time")
+
         yield endpoint
 
     finally:
@@ -163,50 +217,65 @@ def minio_endpoint():
 
 
 @pytest.fixture(scope="session")
-def s3_zerodep_client(minio_endpoint):
-    """Zerodep S3Client connected to the MinIO container."""
+def s3_credentials():
+    """Return ``(access_key, secret_key)`` for the active endpoint."""
+    external = _external_target()
+    if external is not None:
+        return external[1], external[2]
+    return _ACCESS_KEY, _SECRET_KEY
+
+
+@pytest.fixture(scope="session")
+def s3_zerodep_client(s3_endpoint, s3_credentials):
+    """Zerodep S3Client connected to the test server."""
+    access_key, secret_key = s3_credentials
     return S3Client(
-        endpoint=minio_endpoint,
-        access_key=_ACCESS_KEY,
-        secret_key=_SECRET_KEY,
+        endpoint=s3_endpoint,
+        access_key=access_key,
+        secret_key=secret_key,
         region=_REGION,
-        secure=False,
+        secure=_secure(),
         url_style="path",
     )
 
 
 @pytest.fixture(scope="session")
-def s3_boto3_client(minio_endpoint):
-    """boto3 S3 client connected to the MinIO container."""
+def s3_boto3_client(s3_endpoint, s3_credentials):
+    """boto3 S3 client connected to the test server."""
     try:
         import boto3
         from botocore.config import Config
     except ImportError:
         pytest.skip("boto3 not installed")
 
+    access_key, secret_key = s3_credentials
     return boto3.client(
         "s3",
-        endpoint_url=f"http://{minio_endpoint}",
-        aws_access_key_id=_ACCESS_KEY,
-        aws_secret_access_key=_SECRET_KEY,
+        endpoint_url=f"{'https' if _secure() else 'http'}://{s3_endpoint}",
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
         region_name=_REGION,
-        config=Config(signature_version="s3v4"),
+        config=Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "path"},
+        ),
     )
 
 
 @pytest.fixture(scope="session")
-def s3_minio_client(minio_endpoint):
-    """minio-py client connected to the MinIO container."""
+def s3_minio_client(s3_endpoint, s3_credentials):
+    """minio-py client connected to the test server."""
     try:
         from minio import Minio
     except ImportError:
         pytest.skip("minio not installed")
 
+    access_key, secret_key = s3_credentials
     return Minio(
-        minio_endpoint,
-        access_key=_ACCESS_KEY,
-        secret_key=_SECRET_KEY,
-        secure=False,
+        s3_endpoint,
+        access_key=access_key,
+        secret_key=secret_key,
+        secure=_secure(),
         region=_REGION,
     )
 

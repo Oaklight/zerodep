@@ -53,7 +53,7 @@ help:
 	@echo "  test-multipart   - Run multipart correctness tests"
 	@echo "  benchmark-multipart - Run multipart benchmarks (vs python-multipart)"
 	@echo "  test-s3          - Run s3 correctness tests"
-	@echo "  benchmark-s3     - Run s3 benchmarks (vs boto3 + minio, requires Docker)"
+	@echo "  benchmark-s3     - Run s3 benchmarks (vs boto3 + minio; uses SeaweedFS Docker or S3_TEST_ENDPOINT)"
 	@echo "  test-profiler    - Run profiler correctness tests"
 	@echo "  benchmark-profiler - Run profiler benchmarks (vs pyinstrument)"
 	@echo "  benchmark-cold-start - Run cold-start (import + first-call) benchmarks"

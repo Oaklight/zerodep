@@ -6,8 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- **soup** (v0.7.1): a comma inside a quoted attribute value was skipped outright, so a selector list such as `[title="a,b"], [title="c"]` parsed as a descendant selector and returned nothing — discarding the groups that parsed correctly. The list is now split on top-level commas only, tracking quoted strings, brackets and parentheses, and the groups are unioned in document order. An empty group (a trailing or doubled comma) raises instead of widening to every element, and an unsupported pseudo-element raises instead of silently dropping its group. ([#196](https://github.com/Oaklight/zerodep/pull/196))
+- **soup** (v0.8.0): attribute selectors now compare values in the HTML Standard's legacy attribute set (`type`, `lang`, `dir`, `rel`, `method` and 41 more) ASCII case-insensitively for `=`, `~=`, `|=`, `^=`, `$=` and `*=`. The other 45 names previously under-matched a case-differing selector. This diverges from soupsieve 2.10 on purpose — it folds `type` only — so `[lang="en"]` now matches `lang="EN"`, as it does in every browser. ([#194](https://github.com/Oaklight/zerodep/pull/194))
+- **toon** (v0.5.0): empty arrays now encode as `key: []` and never as the legacy `key[0]:` form, per spec §9.1, and an empty-string key no longer disappears when its value is an empty array. ([#195](https://github.com/Oaklight/zerodep/pull/195))
+
 ### Infrastructure
 
+- **CI** runs the test suite for pull requests into any base branch, not only `master`, so a stacked PR no longer needs a manual `workflow_dispatch` to get checks. ([#190](https://github.com/Oaklight/zerodep/pull/190))
+- **toon spec conformance gate**: the official TOON spec 4.4 fixtures (564 cases — 160 encode, 404 decode) are vendored under `toon/fixtures/`, pinned to `toon-format/spec` `v4.4.0`, and gated in CI by a ratchet baseline that can only shrink. Current standing: 350/564. Stage 1 of [#184](https://github.com/Oaklight/zerodep/issues/184). ([#195](https://github.com/Oaklight/zerodep/pull/195))
 - **s3 benchmarks** now run against a SeaweedFS container instead of MinIO (abandoned upstream). CI provides the endpoint via a GitHub Actions service container and the `S3_TEST_ENDPOINT` convention, so the s3 benchmark comparison is finally published on every run.
 
 ## [2026.9.28] - 2026-09-28

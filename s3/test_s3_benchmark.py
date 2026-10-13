@@ -1,7 +1,9 @@
 """Benchmark: zerodep s3 vs boto3 vs minio.
 
-Requires a MinIO Docker container (started automatically via conftest.py).
-Skipped when Docker is unavailable or reference libraries are not installed.
+Requires a SeaweedFS Docker container (started automatically via conftest.py),
+or an externally provided server via the ``S3_TEST_ENDPOINT`` /
+``S3_TEST_ACCESS_KEY`` / ``S3_TEST_SECRET_KEY`` environment variables.
+Skipped when neither is available, or when reference libraries are missing.
 """
 
 from __future__ import annotations

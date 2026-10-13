@@ -450,8 +450,8 @@
       "deps": [],
       "tier": "medium",
       "category": "text",
-      "last_updated": "2026-04-27T23:17:36+08:00",
-      "content_hash": "c6dc70fdc0b7f36b057b200d8745e6484696993a2f3319c8e66aeb5193e6e64e"
+      "last_updated": "2026-10-13T03:17:08-05:00",
+      "content_hash": "f6f2e312802bc038882f60bb648af6af569c3ec5d6af6dd064e427665e5f2f89"
     },
     "sparse_search": {
       "description": "Zero-dependency sparse text search with BM25 family and TF-IDF ranking",

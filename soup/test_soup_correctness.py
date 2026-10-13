@@ -803,10 +803,23 @@ class TestSelectList:
         with pytest.raises(ValueError, match="empty selector group"):
             soup.select(selector)
 
-    def test_empty_selector_keeps_its_match_all_behaviour(self):
-        # A bare empty selector is not a list, so there is no group to reject.
+    def test_empty_selector_raises(self):
+        """A whole-string empty selector raises, as the reference does.
+
+        It used to match every element: the ``if selector.strip()`` guard
+        exempted the empty string from the empty-group check, but that check
+        exists exactly because an empty selector matches everything.  The
+        decision is to raise, so match-all is no longer reachable by accident.
+
+        Note the two guards in ``_parse_selector_list`` are redundant for this
+        input: removing only the ``if not selector.strip()`` raise leaves this
+        test green, because the empty-group check then raises the same way.
+        A green run here is not coverage of that line on its own; the mutation
+        that verifies this behaviour reverts both guards together.
+        """
         soup = _ours(SELECT_LIST_HTML)
-        assert len(soup.select("")) == 4
+        with pytest.raises(ValueError, match="empty selector"):
+            soup.select("")
 
 
 # ── TestSelectUnsupportedPseudoElement ──
@@ -831,6 +844,391 @@ class TestSelectUnsupportedPseudoElement:
         soup = _ours(SELECT_LIST_HTML)
         with pytest.raises(ValueError, match="unsupported pseudo-element"):
             soup.select('[title="c"], bogus::nonsense')
+
+
+# ── TestSelectNotList ──
+
+
+NOT_LIST_HTML = (
+    '<div id="d">'
+    '<p id="t1" class="x">one</p>'
+    '<span id="t2" class="y">two</span>'
+    '<p id="t3">three</p>'
+    "</div>"
+)
+
+
+class TestSelectNotList:
+    """``:not(a, b)`` is a selector list, not a descendant combinator.
+
+    ``_split_selector_list`` refuses to split inside parentheses, but the
+    parse path then skipped the comma as an unknown character, so
+    ``:not(a, b)`` became the descendant ``:not(a b)``.  The result depended
+    on the argument order, and the ordinary "neither of these" form returned
+    nothing.  ``:not()`` now takes a comma-separated list of simple
+    selectors, matching the reference.
+    """
+
+    @staticmethod
+    def _ids(tags) -> list[str]:
+        return [tag.attrs.get("id") for tag in tags]
+
+    @pytest.mark.parametrize(
+        "selector",
+        [":not(p, span)", ":not(span, p)", ":not(.x, .y)", "p:not(.x, .y)"],
+    )
+    def test_not_list_matches_reference(self, selector):
+        ours = _ours(NOT_LIST_HTML)
+        theirs = _theirs(NOT_LIST_HTML)
+        assert self._ids(ours.select(selector)) == self._ids(theirs.select(selector))
+
+    def test_not_list_is_order_independent(self):
+        """Swapping the arguments must not change the match."""
+        soup = _ours(NOT_LIST_HTML)
+        assert self._ids(soup.select(":not(p, span)")) == ["d"]
+        assert self._ids(soup.select(":not(span, p)")) == ["d"]
+
+    def test_not_list_neither_form_matches(self):
+        """The bug row: ``:not(.x, .y)`` used to return nothing."""
+        soup = _ours(NOT_LIST_HTML)
+        assert self._ids(soup.select(":not(.x, .y)")) == ["d", "t3"]
+
+    def test_not_list_reachable_from_a_selector_list(self):
+        soup = _ours(NOT_LIST_HTML)
+        theirs = _theirs(NOT_LIST_HTML)
+        selector = "p:not(.x, .y), span"
+        assert self._ids(soup.select(selector)) == self._ids(theirs.select(selector))
+
+    def test_nested_not_still_works(self):
+        ours = _ours(NOT_LIST_HTML)
+        theirs = _theirs(NOT_LIST_HTML)
+        selector = ":not(:not(.x))"
+        assert self._ids(ours.select(selector)) == self._ids(theirs.select(selector))
+
+    @pytest.mark.parametrize(
+        "selector", [":not()", ":not(a,)", ":not(,a)", ":not(", ":not(a b)", ":not(a"]
+    )
+    def test_malformed_not_raises(self, selector):
+        soup = _ours(NOT_LIST_HTML)
+        with pytest.raises(ValueError):
+            soup.select(selector)
+
+
+# ── TestSelectCaseFlags ──
+
+FLAG_HTML = '<a id="a" type="A" class="X">x</a><a id="b" type="b" class="y">y</a>'
+
+
+class TestSelectCaseFlags:
+    """The Selectors L4 ``i`` and ``s`` case-sensitivity flags.
+
+    ``i`` forces ASCII case-insensitive matching and ``s`` forces
+    case-sensitive matching for that attribute selector, overriding the
+    legacy-set default.  Neither flag worked before: an unquoted
+    ``[type=a i]`` was read as the value ``a i`` (matching nothing) and a
+    quoted ``[class="x" i]`` raised.  The parser now reads the flag, and
+    ``s`` is the only way to opt out of the fold for the legacy set.
+    """
+
+    @staticmethod
+    def _ids(tags) -> list[str]:
+        return [tag.attrs.get("id") for tag in tags]
+
+    def test_i_flag_forces_case_insensitive(self):
+        soup = _ours(FLAG_HTML)
+        assert self._ids(soup.select("[type=a i]")) == ["a"]
+
+    def test_s_flag_forces_case_sensitive(self):
+        soup = _ours(FLAG_HTML)
+        assert self._ids(soup.select("[type=a s]")) == []
+        assert self._ids(soup.select("[type=A s]")) == ["a"]
+
+    def test_flags_are_ascii_case_insensitive(self):
+        soup = _ours(FLAG_HTML)
+        assert self._ids(soup.select("[type=a I]")) == ["a"]
+        assert self._ids(soup.select("[type=A S]")) == ["a"]
+
+    def test_s_flag_overrides_the_legacy_fold(self):
+        """``type`` folds by default, so ``s`` is the only way to opt out."""
+        soup = _ours(FLAG_HTML)
+        assert self._ids(soup.select("[type=a]")) == ["a"]
+        assert self._ids(soup.select("[type=a s]")) == []
+
+    def test_i_flag_overrides_the_case_sensitive_default(self):
+        soup = _ours(FLAG_HTML)
+        assert self._ids(soup.select('[class="x"]')) == []
+        assert self._ids(soup.select('[class="x" i]')) == ["a"]
+
+    @pytest.mark.parametrize(
+        "selector", ["[type=a i]", "[type=a s]", '[class="x" i]', '[class="x" s]']
+    )
+    def test_flags_match_reference(self, selector):
+        ours = _ours(FLAG_HTML)
+        theirs = _theirs(FLAG_HTML)
+        assert self._ids(ours.select(selector)) == self._ids(theirs.select(selector))
+
+    @pytest.mark.parametrize("selector", ["[type=a z]", "[type=a i s]", "[type=a b]"])
+    def test_unknown_or_repeated_flag_raises(self, selector):
+        soup = _ours(FLAG_HTML)
+        with pytest.raises(ValueError):
+            soup.select(selector)
+
+
+# ── TestSelectUnreadableSyntax ──
+
+
+class TestSelectUnreadableSyntax:
+    """An unreadable selector raises instead of returning a plausible answer.
+
+    The parser used to skip an unknown character (``pos += 1``), so a bare
+    ``!`` matched every element and a dangling ``>`` was dropped.  Every path
+    that cannot be read now raises ``ValueError``, the contract the
+    attribute-syntax, pseudo-element and ``|=`` work established.
+    """
+
+    @staticmethod
+    def _ids(tags) -> list[str]:
+        return [tag.attrs.get("id") for tag in tags]
+
+    @pytest.mark.parametrize("selector", ["!", "%", "a#", "a!", "#", "a.b!c"])
+    def test_unknown_character_raises(self, selector):
+        soup = _ours(SELECT_LIST_HTML)
+        with pytest.raises(ValueError, match="unreadable character"):
+            soup.select(selector)
+
+    def test_bare_unknown_character_does_not_match_all(self):
+        """The bug row: ``!`` used to return every element."""
+        soup = _ours(SELECT_LIST_HTML)
+        with pytest.raises(ValueError):
+            soup.select("!")
+
+    @pytest.mark.parametrize("selector", ["", "   ", "\t\n"])
+    def test_empty_selector_raises(self, selector):
+        soup = _ours(SELECT_LIST_HTML)
+        with pytest.raises(ValueError, match="empty selector"):
+            soup.select(selector)
+
+    @pytest.mark.parametrize("selector", [">", ">>", "a>", "a >", "> a", "div >"])
+    def test_dangling_combinator_raises(self, selector):
+        soup = _ours(SELECT_LIST_HTML)
+        with pytest.raises(ValueError, match="combinator"):
+            soup.select(selector)
+
+    def test_valid_combinators_still_work(self):
+        soup = _ours(SELECT_LIST_HTML)
+        assert self._ids(soup.select("div > a")) == ["t1", "t2", "t3"]
+        assert self._ids(soup.select("div a")) == ["t1", "t2", "t3"]
+
+    @pytest.mark.parametrize("selector", ["*", "*.x", "div > *"])
+    def test_universal_selector_matches_reference(self, selector):
+        ours = _ours(NOT_LIST_HTML)
+        theirs = _theirs(NOT_LIST_HTML)
+        assert self._ids(ours.select(selector)) == self._ids(theirs.select(selector))
+
+    def test_empty_unquoted_attribute_value_raises(self):
+        soup = _ours(SELECT_LIST_HTML)
+        with pytest.raises(ValueError):
+            soup.select("[title=]")
+
+
+# ── TestSelectUnquotedValue ──
+
+# ``class`` holds the reserved character ``=`` so the unquoted and quoted
+# forms can be told apart, and ``data-w`` starts with ``-`` to exercise the
+# ident start rule.
+UNQUOTED_VALUE_HTML = (
+    '<p id="one" class="x=y" data-v="abc" href="/x" tabindex="1">one</p>'
+    '<p id="two" data-w="-a">two</p><p id="three" class="2col">three</p>'
+)
+
+
+class TestSelectUnquotedValue:
+    """An unquoted value is a CSS ident, so reserved characters raise.
+
+    The unquoted branch used to be ``[^"'\\s\\]]+``, which excluded only
+    quotes, whitespace and ``]``.  Everything else was swallowed into the
+    value, so ``[class=x=y]`` matched ``class="x=y"`` — a plausible match for
+    syntax the reference rejects.  It is now the CSS ident grammar: reserved
+    characters make the selector unreadable and it raises.
+    """
+
+    @staticmethod
+    def _ids(tags) -> list[str]:
+        return [tag.attrs.get("id") for tag in tags]
+
+    @pytest.mark.parametrize(
+        "selector",
+        [
+            # Reserved characters swallowed into the value.
+            "[a==b]",
+            "[a=b=c]",
+            "[class==x]",
+            "[a=@b]",
+            "[a=~b]",
+            "[a=(b)]",
+            "[a=,b]",
+            "[a=<b]",
+            "[class=x=y]",
+            # Shapes that parsed as a value but are not a CSS ident.
+            "[href=/x]",
+            "[href^=/]",
+            "[href=/]",
+            "[a=1x]",
+            "[a=x.y]",
+            "[a=x!]",
+            "[tabindex=1]",
+            "[width=100]",
+            "[class=2col]",
+            "[n=1]",
+            "[a=-1]",
+            # Whitespace separates value from flag, so this is two values.
+            "[class=btn primary]",
+        ],
+    )
+    def test_reserved_character_raises(self, selector):
+        soup = _ours(UNQUOTED_VALUE_HTML)
+        with pytest.raises(ValueError):
+            soup.select(selector)
+
+    def test_reserved_character_in_value_does_not_match(self):
+        """The row that matters: ``[class=x=y]`` returned ``['one']``."""
+        soup = _ours(UNQUOTED_VALUE_HTML)
+        with pytest.raises(ValueError):
+            soup.select("[class=x=y]")
+
+    @pytest.mark.parametrize("selector", ['[class="x=y"]', "[class='x=y']"])
+    def test_quoted_value_with_reserved_character_still_matches(self, selector):
+        """The quoted branches are unchanged: ``[class="x=y"]`` is legal CSS."""
+        ours = _ours(UNQUOTED_VALUE_HTML)
+        theirs = _theirs(UNQUOTED_VALUE_HTML)
+        assert self._ids(ours.select(selector)) == ["one"]
+        assert self._ids(ours.select(selector)) == self._ids(theirs.select(selector))
+
+    @pytest.mark.parametrize(
+        "selector, expected",
+        [
+            ("[data-v=abc]", ["one"]),
+            ("[data-w=-a]", ["two"]),
+            ("[data-w=--a]", []),
+            ("[data-v=a-b]", []),
+        ],
+    )
+    def test_legal_unquoted_values_still_parse(self, selector, expected):
+        """A legal ident unquoted value parses and agrees with the reference."""
+        ours = _ours(UNQUOTED_VALUE_HTML)
+        theirs = _theirs(UNQUOTED_VALUE_HTML)
+        assert self._ids(ours.select(selector)) == expected
+        assert self._ids(ours.select(selector)) == self._ids(theirs.select(selector))
+
+    @pytest.mark.parametrize(
+        "selector", ["[data-v=1]", "[tabindex=1]", "[colspan=2]", "[width=100]"]
+    )
+    def test_numeric_unquoted_value_raises(self, selector):
+        """A digit-led value is not an ident, so it raises like the reference.
+
+        This is the tightening most likely to surprise a caller: numeric
+        unquoted values such as ``[colspan=2]`` matched on earlier revisions
+        and now raise.
+        """
+        ours = _ours(UNQUOTED_VALUE_HTML)
+        with pytest.raises(ValueError):
+            ours.select(selector)
+
+
+# ── TestSelectCompoundStructure ──
+
+COMPOUND_HTML = (
+    '<div id="d"><a id="a1" class="x">A</a><a id="a2">B</a>'
+    '<span id="t1">T</span><p id="t2">P</p><p id="t3">Q</p><b id="b1">C</b></div>'
+)
+
+
+class TestSelectCompoundStructure:
+    """One type/universal per compound, and every id is required.
+
+    ``_apply_regex_match`` wrote the tag and the id last-wins while classes,
+    attributes and pseudos accumulated, so a second type or universal token
+    replaced the first.  ``**`` therefore matched every element, the exact
+    match-all shape this parser must not produce.  The type or universal token
+    is now allowed only first and only once, and ids accumulate so ``#a1#b1``
+    requires both.
+    """
+
+    @staticmethod
+    def _ids(tags) -> list[str]:
+        return [tag.attrs.get("id") for tag in tags]
+
+    @pytest.mark.parametrize(
+        "selector",
+        [
+            "**",
+            "*a",
+            "a*",
+            "*a*",
+            ":not(p)span",
+            "a:not(p)b",
+            "p:not(.x)span",
+            ".x:not(p)a",
+            "p:first-childspan",
+        ],
+    )
+    def test_second_type_or_universal_raises(self, selector):
+        soup = _ours(COMPOUND_HTML)
+        with pytest.raises(ValueError, match="type selector"):
+            soup.select(selector)
+
+    def test_double_universal_does_not_match_everything(self):
+        """The bug row: ``**`` returned every element."""
+        soup = _ours(COMPOUND_HTML)
+        with pytest.raises(ValueError):
+            soup.select("**")
+
+    @pytest.mark.parametrize(
+        "selector", ["*", "*.x", "*#a1", "*[class]", "*:not(p)", "a.x", "a#a1"]
+    )
+    def test_universal_or_type_first_still_matches_reference(self, selector):
+        ours = _ours(COMPOUND_HTML)
+        theirs = _theirs(COMPOUND_HTML)
+        assert self._ids(ours.select(selector)) == self._ids(theirs.select(selector))
+
+    @pytest.mark.parametrize("selector", ["#a1#a2", "#t2#t3", "#a1#a2.x"])
+    def test_every_id_in_a_compound_is_required(self, selector):
+        """``#a1#a2`` is valid CSS and matches nothing, not the last id."""
+        ours = _ours(COMPOUND_HTML)
+        theirs = _theirs(COMPOUND_HTML)
+        assert self._ids(ours.select(selector)) == []
+        assert self._ids(ours.select(selector)) == self._ids(theirs.select(selector))
+
+
+# ── TestSelectNameCaseSensitivity ──
+
+
+class TestSelectNameCaseSensitivity:
+    """Names are matched case-sensitively here where the reference folds them.
+
+    HTML tag names and attribute names are case-insensitive in the reference,
+    so ``P`` matches ``<p>`` there.  This parser compares against the names
+    the HTML parser stored, which are lowercased for tags and kept verbatim
+    for attributes, so an uppercase selector misses.  The rule is in the HTML
+    Standard section the module cites; it is pre-existing and safe (a miss,
+    never a wrong match), and pinned here so a change is deliberate.
+    """
+
+    @staticmethod
+    def _ids(tags) -> list[str]:
+        return [tag.attrs.get("id") for tag in tags]
+
+    def test_tag_name_is_case_sensitive(self):
+        html = '<p id="one">x</p>'
+        ours = _ours(html).select("P")
+        theirs = _theirs(html).select("P")
+        assert self._ids(ours) == []
+        assert self._ids(theirs) == ["one"]
+
+    def test_attribute_name_is_case_sensitive(self):
+        html = '<p id="one" type="A">x</p>'
+        assert _ours(html).select("[TYPE=a]") == []
+        assert len(_theirs(html).select("[TYPE=a]")) == 1
 
 
 # ── TestSelectOne ──

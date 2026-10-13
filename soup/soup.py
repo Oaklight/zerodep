@@ -429,6 +429,12 @@ class Tag:
         Unsupported attribute syntax raises ``ValueError`` instead of dropping
         the constraint, which would silently widen the match.
 
+        Attribute values are compared case-sensitively.  HTML matches the
+        legacy attribute set (``type``, ``lang``, ``dir``, ``rel``, ``method``
+        and the rest) ASCII case-insensitively and soupsieve implements that,
+        so a selector differing only in case misses matches the reference
+        finds -- it never widens one.  Tracked separately from the operators.
+
         Args:
             css_selector: The CSS selector string.
 

@@ -6,6 +6,10 @@
 
 ## [未发布]
 
+### 基础设施
+
+- **s3 基准测试**改用 SeaweedFS 容器，替代已停止开源的 MinIO。CI 通过 GitHub Actions service container 与 `S3_TEST_ENDPOINT` 约定提供服务端，s3 基准对比数据得以在每次运行时正常发布。
+
 ## [2026.9.28] - 2026-09-28
 
 ### 新增模块

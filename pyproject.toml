@@ -70,7 +70,15 @@ bench-retry = [
     "tenacity==9.1.4",
 ]
 bench-toon = [
-    "toon-format>=0.9.0b1",
+    # Pinned to toon-format 1.0.0 (toon-python@6034550c, fixtures 4.1.2), the
+    # spec toon/ declares it implements and the commit its suite is green
+    # against. v1.1.0 (4814d77f, spec 4.2) and git main (91413d14, spec 4.4) are
+    # green as well, so this pin names the claimed level rather than the newest
+    # passing one — it exists so the reference cannot move silently under the
+    # tests (issue #183).  Raise it deliberately, with a run of
+    # toon/test_toon_correctness.py.  The spec 4.4 conformance gap that this
+    # suite does not cover is #184.
+    "toon-format @ git+https://github.com/toon-format/toon-python.git@6034550ceec432adba37480c82839d8428a80361",
 ]
 bench-tabulate = [
     "tabulate==0.10.0",

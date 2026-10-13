@@ -432,6 +432,75 @@ class TestSelectAttributeOperators:
         "form:not([id]) button",
     ]
 
+    # The HTML Standard, "Case-sensitivity of selectors": values of these
+    # attributes match ASCII case-insensitively under every attribute
+    # operator.  The list is spelled out here rather than imported from the
+    # module so the test pins the boundary independently of the code.
+    LEGACY_CI_ATTRS = [
+        "accept",
+        "accept-charset",
+        "align",
+        "alink",
+        "axis",
+        "bgcolor",
+        "charset",
+        "checked",
+        "clear",
+        "codetype",
+        "color",
+        "compact",
+        "declare",
+        "defer",
+        "dir",
+        "direction",
+        "disabled",
+        "enctype",
+        "face",
+        "frame",
+        "hreflang",
+        "http-equiv",
+        "lang",
+        "language",
+        "link",
+        "media",
+        "method",
+        "multiple",
+        "nohref",
+        "noresize",
+        "noshade",
+        "nowrap",
+        "readonly",
+        "rel",
+        "rev",
+        "rules",
+        "scope",
+        "scrolling",
+        "selected",
+        "shape",
+        "target",
+        "text",
+        "type",
+        "valign",
+        "valuetype",
+        "vlink",
+    ]
+
+    # Attributes deliberately outside the legacy set: their values stay
+    # case-sensitive.
+    CASE_SENSITIVE_ATTRS = ["class", "id", "title", "href", "data-tool"]
+
+    @staticmethod
+    def _case_selectors(name: str) -> list[str]:
+        """The same value in a different ASCII case, once per operator."""
+        return [
+            f'[{name}="abc-xyz"]',
+            f'[{name}~="abc-xyz"]',
+            f'[{name}|="abc"]',
+            f'[{name}^="abc"]',
+            f'[{name}$="xyz"]',
+            f'[{name}*="c-xy"]',
+        ]
+
     @staticmethod
     def _texts(tags) -> list[str]:
         return [tag.get_text(strip=True) for tag in tags]
@@ -457,6 +526,50 @@ class TestSelectAttributeOperators:
         tag = soup.select_one('button[class~="secondary"]')
         assert tag is not None
         assert tag.get_text(strip=True) == "B"
+
+    # ── Legacy case-insensitive attribute values (#187) ──
+
+    @pytest.mark.parametrize("name", LEGACY_CI_ATTRS)
+    def test_legacy_attribute_values_fold_ascii_case(self, name):
+        """Every operator matches a value differing only in ASCII case."""
+        soup = _ours(f'<div {name}="AbC-XyZ"></div>')
+        for selector in self._case_selectors(name):
+            assert len(soup.select(selector)) == 1, selector
+
+    @pytest.mark.parametrize("name", CASE_SENSITIVE_ATTRS)
+    def test_non_legacy_attribute_values_stay_case_sensitive(self, name):
+        soup = _ours(f'<div {name}="AbC-XyZ"></div>')
+        for selector in self._case_selectors(name):
+            assert soup.select(selector) == [], selector
+        # The exact case still matches, so the misses above are not for lack
+        # of a matchable element.
+        assert len(soup.select(f'[{name}="AbC-XyZ"]')) == 1
+
+    def test_legacy_case_fold_reproduces_the_issue_fixture(self):
+        """The four selectors from #187 now return the reference counts."""
+        html = (
+            '<div><input type="submit-alpha">'
+            '<input type="SUBMIT"><input type="submit"></div>'
+        )
+        soup = _ours(html)
+        assert len(soup.select('[type^="SUB"]')) == 3
+        assert len(soup.select('[type*="UBM"]')) == 3
+        assert len(soup.select('[type$="A"]')) == 1
+        assert len(soup.select('[type="SUBMIT"]')) == 2
+
+    def test_legacy_case_fold_is_ascii_only(self):
+        """Only ASCII case folds: ``É`` and ``é`` stay distinct."""
+        soup = _ours('<div type="ABC-É"></div>')
+        assert len(soup.select('[type="abc-É"]')) == 1
+        assert soup.select('[type="abc-é"]') == []
+
+    def test_legacy_case_fold_matches_beautifulsoup_for_type(self):
+        """Where soupsieve 2.10 also folds (``type`` alone) the counts agree."""
+        html = '<button type="Submit-Alpha"></button><button type="SUBMIT"></button>'
+        ours = _ours(html)
+        theirs = _theirs(html)
+        for selector in ('[type*="alpha"]', '[type^="submit"]', '[type="submit"]'):
+            assert len(ours.select(selector)) == len(theirs.select(selector))
 
     @pytest.mark.parametrize(
         "selector",

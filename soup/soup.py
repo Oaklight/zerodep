@@ -461,6 +461,10 @@ class Tag:
                 - Rejected by the reference as well, so consistent with it:
                   ``[=x]``, unterminated quotes such as
                   ``[title="unterminated]``, and ``[xlink:href]``.
+
+                A pseudo-element such as ``::before`` raises as well: it is
+                valid CSS the reference rejects with ``NotImplementedError``,
+                and dropping it used to make ``select`` return an empty list.
         """
         groups = _parse_selector_list(css_selector)
         candidates: list[Tag] = self._all_descendants()
@@ -811,6 +815,13 @@ def _parse_selector(selector: str) -> list[SelectorStep]:
         compound, pos = _parse_compound(selector, pos)
         if compound is not None:
             tokens.append(compound)
+        elif selector.startswith("::", pos):
+            raise ValueError(
+                f"unsupported pseudo-element: {selector[pos:]!r} "
+                "(pseudo-elements are not implemented; only the pseudo-classes "
+                ":first-child, :last-child, :only-child and :not() are "
+                "supported)"
+            )
         else:
             pos += 1  # skip unknown character to avoid infinite loop
 

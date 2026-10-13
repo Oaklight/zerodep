@@ -555,6 +555,30 @@ class TestSelectList:
         assert len(soup.select("")) == 4
 
 
+# ── TestSelectUnsupportedPseudoElement ──
+
+
+class TestSelectUnsupportedPseudoElement:
+    """A pseudo-element must raise, not silently match nothing.
+
+    ``bogus::nonsense`` used to be dropped token by token, so ``select``
+    returned ``[]`` and a selector list that contained it quietly lost that
+    group.  The reference rejects pseudo-elements, and this parser now raises
+    too, consistent with the attribute-syntax contract.
+    """
+
+    @pytest.mark.parametrize("selector", ["bogus::nonsense", "a::before", "::after"])
+    def test_pseudo_element_raises(self, selector):
+        soup = _ours(SELECT_LIST_HTML)
+        with pytest.raises(ValueError, match="unsupported pseudo-element"):
+            soup.select(selector)
+
+    def test_pseudo_element_raises_inside_a_list(self):
+        soup = _ours(SELECT_LIST_HTML)
+        with pytest.raises(ValueError, match="unsupported pseudo-element"):
+            soup.select('[title="c"], bogus::nonsense')
+
+
 # ── TestSelectOne ──
 
 

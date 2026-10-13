@@ -8,6 +8,7 @@ Skipped when neither is available, or when reference libraries are missing.
 
 from __future__ import annotations
 
+import importlib
 import io
 import itertools
 import os
@@ -19,8 +20,46 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from conftest import LARGE_PAYLOAD, MEDIUM_PAYLOAD, SMALL_PAYLOAD
 
-boto3 = pytest.importorskip("boto3", reason="boto3 not installed")
-minio_mod = pytest.importorskip("minio", reason="minio not installed")
+
+def _import_reference(name: str):
+    """Import a reference library despite the repo's ``xml/`` directory.
+
+    pytest's default (prepend) import mode puts each test directory on
+    ``sys.path`` as it collects, and this repo ships an ``xml/`` directory
+    for the zerodep ``xml`` module.  With that directory on the path, the
+    stdlib ``xml`` package is shadowed and ``import xml.etree`` fails;
+    botocore imports ``xml.etree``, so a plain ``import boto3`` raises
+    ModuleNotFoundError here.  ``pytest.importorskip`` then turned that into
+    a silent "boto3 not installed" skip, and the s3 comparison never made it
+    into the benchmark report.  Hide the shadowing entries for the duration
+    of the import and put them back afterwards.
+    """
+    shadowed = [
+        path for path in sys.path if os.path.isfile(os.path.join(path, "xml.py"))
+    ]
+    for path in shadowed:
+        sys.path.remove(path)
+    # The shadow may already be cached under the stdlib name, in which case
+    # dropping it from sys.path is not enough — the import system would hand
+    # back the cached xml.py instead of the stdlib package.
+    for key in [k for k in sys.modules if k == "xml" or k.startswith("xml.")]:
+        del sys.modules[key]
+    try:
+        return importlib.import_module(name)
+    finally:
+        sys.path.extend(shadowed)
+
+
+def _require_reference(name: str):
+    """Import a reference library, skipping the module if it is absent."""
+    try:
+        return _import_reference(name)
+    except ImportError:
+        pytest.skip(f"{name} not installed", allow_module_level=True)
+
+
+boto3 = _require_reference("boto3")
+minio_mod = _require_reference("minio")
 
 
 # ── Cross-validation (non-benchmarked) ──

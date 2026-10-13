@@ -68,7 +68,7 @@ help:
 	@echo "  clean            - Clean generated files"
 
 test:
-	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_httpclient_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py toon/test_toon_correctness.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py ansi/test_ansi_correctness.py frontmatter/test_frontmatter_correctness.py cache/test_cache_correctness.py readability/test_readability_correctness.py jsonschema/test_jsonschema_correctness.py png/test_png_correctness.py websocket/test_websocket_correctness.py cdp/test_cdp_correctness.py multipart/test_multipart_correctness.py -v
+	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_httpclient_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py toon/test_toon_correctness.py toon/test_toon_conformance.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py ansi/test_ansi_correctness.py frontmatter/test_frontmatter_correctness.py cache/test_cache_correctness.py readability/test_readability_correctness.py jsonschema/test_jsonschema_correctness.py png/test_png_correctness.py websocket/test_websocket_correctness.py cdp/test_cdp_correctness.py multipart/test_multipart_correctness.py -v
 
 test-aes:
 	pytest aes/test_aes_correctness.py -v
@@ -92,7 +92,7 @@ test-retry:
 	pytest retry/test_retry_correctness.py -v
 
 test-toon:
-	pytest toon/test_toon_correctness.py -v
+	pytest toon/test_toon_correctness.py toon/test_toon_conformance.py -v
 
 test-tabulate:
 	pytest tabulate/test_tabulate_correctness.py -v

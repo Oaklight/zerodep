@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.8.0"
+# version = "0.8.1"
 # deps = []
 # tier = "medium"
 # category = "text"
@@ -1019,8 +1019,11 @@ def _attr_operator_matches(
 
     Returns:
         Whether the attribute satisfies the operator.  The empty-value cases
-        follow the CSS spec: ``~=``, ``^=``, ``$=`` and ``*=`` never match an
-        empty *expected*.
+        follow Selectors Level 4: the empty-string exclusion applies to
+        ``~=``, ``^=``, ``$=`` and ``*=` (sections 6.1 and 6.2), so they never
+        match an empty *expected*.  ``=`` has no exclusion and matches a value
+        that is exactly empty.  ``|=`` has none either, so an empty *expected*
+        matches a value that is exactly empty or begins with ``-`` (U+002D).
     """
     text = _attr_text(actual)
     if case_insensitive:
@@ -1034,7 +1037,12 @@ def _attr_operator_matches(
     if op == "~=":
         return bool(expected) and expected in text.split()
     if op == "|=":
-        return text == expected or (bool(expected) and text.startswith(expected + "-"))
+        # No bool(expected) guard here: Selectors 6.1 defines ``|=`` as
+        # "exactly val, or beginning with val immediately followed by '-'"
+        # and gives it no empty-string exclusion, so ``[attr|=""]`` matches
+        # an exactly-empty value *and* one beginning with ``-``.  The guard
+        # belongs on ``~=``/``^=``/``$=``/``*=`` only.
+        return text == expected or text.startswith(expected + "-")
     if op == "^=":
         return bool(expected) and text.startswith(expected)
     if op == "$=":

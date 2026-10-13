@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-13T14:21:10.664330+00:00",
+  "generated": "2026-10-13T14:46:38.419178+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -446,12 +446,12 @@
       "files": [
         "soup/soup.py"
       ],
-      "version": "0.8.0",
+      "version": "0.8.1",
       "deps": [],
       "tier": "medium",
       "category": "text",
       "last_updated": "2026-10-13T08:58:26-05:00",
-      "content_hash": "9bf6a53f5f834d9a9da0ab4cb288d7fa99eba16032e9b7b9c7840f3619fe3e4c"
+      "content_hash": "dea26dae82de97fe9b760a2668e188a27274f6aeb9b91dbaabaf94bbad60efe5"
     },
     "sparse_search": {
       "description": "Zero-dependency sparse text search with BM25 family and TF-IDF ranking",
@@ -524,7 +524,7 @@
       "deps": [],
       "tier": "simple",
       "category": "serialization",
-      "last_updated": "2026-10-13T04:26:42-05:00",
+      "last_updated": "2026-10-13T08:42:56-05:00",
       "content_hash": "8971f3ad494e69f5c886d33e546f885e9760026fe8fce76e1906faffac80caa9"
     },
     "useragent": {

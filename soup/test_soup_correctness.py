@@ -413,6 +413,15 @@ class TestSelectAttributeOperators:
         'button[class*="second"]',
         'button[class^="btn"]',
         'button[class$="ary"]',
+        # the exact form against the list-valued class: '=' compares the
+        # serialised attribute, so the whole class list is the match and a
+        # single token needs '~='.  Without these rows the matrix spells '='
+        # only on plain-string attributes, which is the one combination where
+        # '=' used to disagree with the reference.
+        'button[class="btn"]',
+        'button[class="btn primary"]',
+        'button[class="btn secondary"]',
+        'button[class="btn"][type="submit"]',
         # unquoted values and the previously-working forms
         "form[action*=process_login] button",
         'form[action="x"] button',

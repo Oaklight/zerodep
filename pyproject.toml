@@ -85,6 +85,14 @@ bench-tabulate = [
 ]
 bench-soup = [
     "beautifulsoup4==4.14.3",
+    # soupsieve is what evaluates the selectors, so the parity baseline is only
+    # as stable as this pin.  Not left to float: soup's tests compare against
+    # soupsieve, and an unpinned one moves the baseline silently (the same
+    # failure mode as the toon reference in #183).  soupsieve 3.0.x requires
+    # >=3.11.5, which would drop it out of the 3.10 job entirely, so this is
+    # the newest release that installs across the whole matrix.  Raise it
+    # deliberately.
+    "soupsieve==2.10",
 ]
 bench-validate = [
     "pydantic==2.13.0",

@@ -64,12 +64,14 @@ ATTR_OPERATOR_HTML = """
 </form>
 """
 
-# Three attribute states for the empty-value rule: present and empty,
-# present and non-empty, and absent.  Only the present-and-empty state makes
-# the rule observable -- the other two return no match regardless of how the
-# operator treats an empty ``expected``.
+# Three attribute states for the empty-value rule used by the
+# TestSelectAttributeOperators rows below: present and empty, present and
+# non-empty, and absent.  ``data-dash`` and ``data-bare`` hold the two
+# ``-``-bearing values the ``|=`` empty case is defined against; ``class`` is
+# list-valued.
 ATTR_EMPTY_VALUE_HTML = (
-    '<p><b class="x" data-empty="">1</b><b class="x" data-v="a">2</b><b>3</b></p>'
+    '<p><b class="x" data-empty="">1</b><b class="x" data-v="a">2</b>'
+    '<b data-dash="-x">4</b><b data-bare="-">5</b><b>3</b></p>'
 )
 
 SELF_CLOSING_HTML = """
@@ -537,10 +539,17 @@ class TestSelectAttributeOperators:
 
     # ── Empty *expected* value for the attribute operators (#192) ──
     #
-    # The empty-value rule: ``~=``, ``^=``, ``$=`` and ``*=`` never match an
-    # empty *expected*, while ``|=`` matches an attribute value that is
-    # exactly empty.  Each operator is exercised against all three attribute
-    # states.
+    # The empty-value rule covers all six branches of the dispatcher.  The
+    # empty-string exclusion of Selectors Level 4 sections 6.1/6.2 applies to
+    # ``~=``, ``^=``, ``$=`` and ``*=``, so they never match an empty
+    # *expected*.  It applies to neither ``=` nor ``|=``: ``[attr=""]``
+    # matches an exactly-empty value, and ``[attr|=""]`` matches an
+    # exactly-empty value *or* one beginning with ``-``.  Each operator is
+    # exercised against all three attribute states.
+    #
+    # ``data-dash="-x"`` and ``data-bare="-"`` are what make the ``|=`` empty
+    # case observable: against plain ``data-v="a"`` the row reads ``[] == []``
+    # on both sides and would mask the branch.
     #
     # The present-and-empty rows expose the rule.  For the three substring
     # operators the present-and-non-empty rows fire under the same mutation
@@ -550,23 +559,34 @@ class TestSelectAttributeOperators:
     # operator, because the attribute lookup returns before the operator is
     # reached; they pin the rule's third state rather than adding catch power.
     #
+    # ``[class^=""]`` is the selector from the original report.  ``class`` is
+    # list-valued, but ``_attr_text`` joins it before any operator guard runs,
+    # so the row pins the reported symptom verbatim while exercising the same
+    # code path as ``[attr^=""]``.
+    #
     # ``~=`` is the one row whose guard is inert: ``str.split()`` with no
     # argument never yields an empty token, so ``"" in text.split()`` is false
     # for every input and dropping ``bool(expected)`` there changes nothing.
-    # The row is kept anyway so all five operators sit in one table and the
+    # The row is kept anyway so all six operators sit in one table and the
     # documented rule is visible next to the reference comparison.
     EMPTY_VALUE_CASES = [
         # (row id, selector, expected texts)
+        ('present-empty [attr=""]', '[data-empty=""]', ["1"]),
         ('present-empty [attr|=""]', '[data-empty|=""]', ["1"]),
         ('present-empty [attr~=""]', '[data-empty~=""]', []),
         ('present-empty [attr^=""]', '[data-empty^=""]', []),
         ('present-empty [attr$=""]', '[data-empty$=""]', []),
         ('present-empty [attr*=""]', '[data-empty*=""]', []),
+        ('present-nonempty [attr=""]', '[data-v=""]', []),
         ('present-nonempty [attr|=""]', '[data-v|=""]', []),
+        ('present-nonempty [attr|=""] (dash-prefixed)', '[data-dash|=""]', ["4"]),
+        ('present-nonempty [attr|=""] (bare dash)', '[data-bare|=""]', ["5"]),
         ('present-nonempty [attr~=""]', '[data-v~=""]', []),
         ('present-nonempty [attr^=""]', '[data-v^=""]', []),
         ('present-nonempty [attr$=""]', '[data-v$=""]', []),
         ('present-nonempty [attr*=""]', '[data-v*=""]', []),
+        ('present-nonempty [class^=""] (list-valued)', '[class^=""]', []),
+        ('absent [attr=""]', '[data-absent=""]', []),
         ('absent [attr|=""]', '[data-absent|=""]', []),
         ('absent [attr~=""]', '[data-absent~=""]', []),
         ('absent [attr^=""]', '[data-absent^=""]', []),

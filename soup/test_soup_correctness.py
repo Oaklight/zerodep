@@ -604,6 +604,28 @@ class TestSelectAttributeOperators:
                 f"{'matched' if matched else 'did not match'}"
             )
 
+    @pytest.mark.parametrize("name", ["lang", "align"])
+    def test_reference_does_not_fold_the_legacy_set(self, name):
+        """Enforce the intentional divergence: we fold, soupsieve 2.10 does not.
+
+        Both halves are asserted, so a soupsieve bump that starts folding the
+        legacy set, or a frozenset that loses a name, trips here with the side
+        that broke named, rather than slipping through silently.
+        """
+        html = f'<div {name}="AbCd"></div>'
+        selector = f'[{name}="abcd"]'
+        ours = _ours(html).select(selector)
+        theirs = _theirs(html).select(selector)
+        assert ours, (
+            f"[{name}=...]: our side of the boundary broke -- select() did "
+            f"not fold ASCII case"
+        )
+        assert not theirs, (
+            f"[{name}=...]: the reference side moved -- soupsieve now folds "
+            f"{name!r}, so the divergence is no longer intentional "
+            f"(re-check the HTML Standard before changing this test)"
+        )
+
     @pytest.mark.parametrize(
         "selector",
         [

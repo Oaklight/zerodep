@@ -182,7 +182,11 @@ def _resolve_base_commit() -> tuple[str, bool]:
     """
     ref = next((r for r in _BASE_REF_CANDIDATES if _has_commit(r)), None)
     if ref is None:
-        fetch = _git("fetch", "--quiet", "origin", "master")
+        # Name the destination explicitly. In a single-branch clone the
+        # configured refspec does not include master, so a bare
+        # ``git fetch origin master`` exits 0 without creating origin/master,
+        # and the gate would report a missing ref that is in fact reachable.
+        fetch = _git("fetch", "--quiet", "origin", "+master:refs/remotes/origin/master")
         if fetch.returncode != 0 or not _has_commit("origin/master"):
             raise AssertionError(
                 "cannot resolve a base ref to ratchet against: neither "
@@ -284,7 +288,9 @@ def test_no_regression_against_base() -> None:
     This is what stops a regression from being absorbed by regenerating the
     baseline: the regenerated ``failing`` set would no longer be a subset of the
     one at the branch point, and this test rejects it. It needs the base ref,
-    and it fails rather than skips when the ref cannot be resolved.
+    and it fails rather than skips when the ref cannot be resolved. A fixture
+    swap stands this check aside (the case counts no longer match), so a fixture
+    bump is a manual re-baseline, not a routine one.
     """
     base, base_baseline = _base_baseline()
     if base_baseline is None:
@@ -294,7 +300,9 @@ def test_no_regression_against_base() -> None:
     if dict(base_baseline["case_counts"]) != dict(BASELINE["case_counts"]):
         # The vendored fixture set changed, so failing IDs are not comparable
         # across the two sets and a subset check would be meaningless. This is
-        # a deliberate, visible change, not a regression to catch here.
+        # the one path where a refresh plus a regeneration could move the floor,
+        # so a fixture bump is deliberately a manual re-baseline: it must be
+        # reviewed and signed off, not produced by --update-baseline.
         return
     base_failing = frozenset(base_baseline["failing"])
     grown = sorted(BASELINE_FAILING - base_failing)

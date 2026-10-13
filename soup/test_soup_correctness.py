@@ -540,12 +540,19 @@ class TestSelectAttributeOperators:
     # The empty-value rule: ``~=``, ``^=``, ``$=`` and ``*=`` never match an
     # empty *expected*, while ``|=`` matches an attribute value that is
     # exactly empty.  Each operator is exercised against all three attribute
-    # states, because only the present-and-empty state exposes the rule: a
-    # present-and-non-empty value and an absent attribute both return no
-    # match whichever way the empty case is handled.
+    # states.
     #
-    # ``~=`` is the one row whose guard is inert: ``"" in text.split()`` is
-    # already false, so dropping ``bool(expected)`` there changes nothing.
+    # The present-and-empty rows expose the rule.  For the three substring
+    # operators the present-and-non-empty rows fire under the same mutation
+    # too, since ``"a".startswith("")``, ``str.endswith("")`` and
+    # ``"" in "a"`` are all true: an empty expected would start matching a
+    # non-empty value.  The absent rows cannot fire under any mutation of an
+    # operator, because the attribute lookup returns before the operator is
+    # reached; they pin the rule's third state rather than adding catch power.
+    #
+    # ``~=`` is the one row whose guard is inert: ``str.split()`` with no
+    # argument never yields an empty token, so ``"" in text.split()`` is false
+    # for every input and dropping ``bool(expected)`` there changes nothing.
     # The row is kept anyway so all five operators sit in one table and the
     # documented rule is visible next to the reference comparison.
     EMPTY_VALUE_CASES = [

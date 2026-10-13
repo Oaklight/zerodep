@@ -3,10 +3,23 @@
 Provides a session-scoped SeaweedFS Docker container and pre-configured
 S3 clients (zerodep, boto3, minio) for benchmark and integration tests.
 
-The container is skipped automatically when Docker is unavailable.  Set
-``S3_TEST_ENDPOINT`` (plus ``S3_TEST_ACCESS_KEY`` / ``S3_TEST_SECRET_KEY``)
-to use an externally managed S3 server instead — this is how CI provides
-the endpoint.
+Two ways to supply the server:
+
+- **External** — set ``S3_TEST_ENDPOINT`` (plus ``S3_TEST_ACCESS_KEY`` /
+  ``S3_TEST_SECRET_KEY``).  This is how CI provides the endpoint.  An
+  explicitly configured endpoint is treated as a contract: if it is not
+  reachable the tests *fail*, so a misconfigured server cannot masquerade
+  as "benchmarks skipped, everything fine".
+- **Docker** — otherwise a SeaweedFS container is started locally and the
+  tests *skip* when Docker is unavailable, which is the local-dev case.
+
+Optional ``S3_TEST_*`` overrides, matching ``test_s3_correctness.py``:
+``S3_TEST_REGION``, ``S3_TEST_URL_STYLE``, ``S3_TEST_BUCKET``,
+``S3_TEST_SECURE``.
+
+Note: ``S3_TEST_SECURE`` defaults to *false* here (the benchmark's usual
+target is a local plain-HTTP container) whereas the correctness suite
+defaults it to *true* (real backends).  Set it explicitly to override.
 """
 
 from __future__ import annotations
@@ -27,7 +40,7 @@ from s3 import S3Client
 
 # ── Constants ──
 
-_SEAWEEDFS_IMAGE = "chrislusf/seaweedfs:latest"
+_SEAWEEDFS_IMAGE = "chrislusf/seaweedfs:4.48"
 _S3_PORT = 8333
 _ACCESS_KEY = "admin"
 _SECRET_KEY = "secret"
@@ -83,9 +96,9 @@ def _wait_for_s3(
         endpoint=endpoint,
         access_key=access_key,
         secret_key=secret_key,
-        region=_REGION,
+        region=_region(),
         secure=secure,
-        url_style="path",
+        url_style=_url_style(),
     )
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -101,7 +114,8 @@ def _external_target() -> tuple[str, str, str] | None:
     """Read an externally provided S3 endpoint from the environment.
 
     Returns ``(endpoint, access_key, secret_key)`` or ``None`` when
-    ``S3_TEST_ENDPOINT`` is unset.
+    ``S3_TEST_ENDPOINT`` is unset.  An endpoint set without credentials is a
+    misconfiguration, so it fails rather than skipping.
     """
     endpoint = os.environ.get("S3_TEST_ENDPOINT")
     if not endpoint:
@@ -109,16 +123,44 @@ def _external_target() -> tuple[str, str, str] | None:
     access_key = os.environ.get("S3_TEST_ACCESS_KEY")
     secret_key = os.environ.get("S3_TEST_SECRET_KEY")
     if not (access_key and secret_key):
-        pytest.skip(
+        pytest.fail(
             "S3_TEST_ENDPOINT is set but S3_TEST_ACCESS_KEY / "
             "S3_TEST_SECRET_KEY are missing"
         )
     return endpoint, access_key, secret_key
 
 
+def _env_bool(name: str, *, default: bool) -> bool:
+    """Parse a boolean environment variable, tolerating common spellings."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() not in ("", "0", "false", "no", "off")
+
+
 def _secure() -> bool:
     """Whether to use HTTPS — benchmark default is plain HTTP."""
-    return os.environ.get("S3_TEST_SECURE", "0") != "0"
+    return _env_bool("S3_TEST_SECURE", default=False)
+
+
+def _region() -> str:
+    """S3 region — SeaweedFS ignores it but SigV4 requires a non-empty value."""
+    return os.environ.get("S3_TEST_REGION") or _REGION
+
+
+def _url_style() -> str:
+    """``"path"`` (default) or ``"virtual-host"``."""
+    return os.environ.get("S3_TEST_URL_STYLE") or "path"
+
+
+def _boto3_addressing_style() -> str:
+    """Translate ``_url_style()`` to boto3's vocabulary (``"virtual"``)."""
+    return "virtual" if _url_style() == "virtual-host" else "path"
+
+
+def _bench_bucket_name() -> str:
+    """Benchmark bucket name, overridable via ``S3_TEST_BUCKET``."""
+    return os.environ.get("S3_TEST_BUCKET") or _BENCH_BUCKET
 
 
 # ── Fixtures ──
@@ -139,7 +181,10 @@ def s3_endpoint():
         if not _wait_for_s3(
             endpoint, access_key, secret_key, _STARTUP_TIMEOUT, _secure()
         ):
-            pytest.skip(f"External S3 endpoint {endpoint} not ready in time")
+            pytest.fail(
+                f"External S3 endpoint {endpoint} did not become ready within "
+                f"{_STARTUP_TIMEOUT}s — check S3_TEST_ENDPOINT and credentials"
+            )
         yield endpoint
         return
 
@@ -161,7 +206,7 @@ def s3_endpoint():
                 "-e",
                 f"AWS_SECRET_ACCESS_KEY={_SECRET_KEY}",
                 "-e",
-                f"S3_BUCKET={_BENCH_BUCKET}",
+                f"S3_BUCKET={_bench_bucket_name()}",
                 _SEAWEEDFS_IMAGE,
             ],
             capture_output=True,
@@ -233,9 +278,9 @@ def s3_zerodep_client(s3_endpoint, s3_credentials):
         endpoint=s3_endpoint,
         access_key=access_key,
         secret_key=secret_key,
-        region=_REGION,
+        region=_region(),
         secure=_secure(),
-        url_style="path",
+        url_style=_url_style(),
     )
 
 
@@ -254,10 +299,10 @@ def s3_boto3_client(s3_endpoint, s3_credentials):
         endpoint_url=f"{'https' if _secure() else 'http'}://{s3_endpoint}",
         aws_access_key_id=access_key,
         aws_secret_access_key=secret_key,
-        region_name=_REGION,
+        region_name=_region(),
         config=Config(
             signature_version="s3v4",
-            s3={"addressing_style": "path"},
+            s3={"addressing_style": _boto3_addressing_style()},
         ),
     )
 
@@ -276,16 +321,17 @@ def s3_minio_client(s3_endpoint, s3_credentials):
         access_key=access_key,
         secret_key=secret_key,
         secure=_secure(),
-        region=_REGION,
+        region=_region(),
     )
 
 
 @pytest.fixture(scope="session")
 def s3_bench_bucket(s3_zerodep_client):
     """Create the shared benchmark bucket once per session."""
-    if not s3_zerodep_client.bucket_exists(_BENCH_BUCKET):
-        s3_zerodep_client.make_bucket(_BENCH_BUCKET)
-    return _BENCH_BUCKET
+    bucket = _bench_bucket_name()
+    if not s3_zerodep_client.bucket_exists(bucket):
+        s3_zerodep_client.make_bucket(bucket)
+    return bucket
 
 
 @pytest.fixture(scope="session")

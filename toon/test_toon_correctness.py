@@ -121,8 +121,17 @@ class TestEncodeObjects:
 
 class TestEncodeArrays:
     def test_empty_array(self):
-        assert encode([]) == "[0]:"
+        assert encode([]) == "[]"
         assert_encode_same([])
+
+    def test_empty_array_as_object_value(self):
+        assert encode({"d": []}) == "d: []"
+        assert_encode_same({"d": []})
+
+    def test_nested_tabular(self):
+        data = [{"n": "A", "d": {"x": 1}}, {"n": "B", "d": {"x": 2}}]
+        assert encode(data) == "[2]{n,d{x}}:\n  A,1\n  B,2"
+        assert_encode_same(data)
 
     def test_primitive_array(self):
         assert_encode_same([1, 2, 3])
@@ -349,6 +358,30 @@ class TestDecodeArrays:
     def test_empty_array(self):
         assert decode("[0]:") == []
 
+    def test_bare_empty_array(self):
+        assert decode("[]") == []
+
+    def test_keyed_empty_array(self):
+        assert decode("d: []") == {"d": []}
+
+    def test_nested_tabular(self):
+        toon = "[2]{n,d{x}}:\n  A,1\n  B,2"
+        assert decode(toon) == [{"n": "A", "d": {"x": 1}}, {"n": "B", "d": {"x": 2}}]
+
+    def test_nested_tabular_quoted_brace_key(self):
+        """A quoted key may itself contain a brace.
+
+        Regression: the nested segment was located with a plain ``index("{")``,
+        which found the brace inside the quoted key and left the key unterminated.
+        """
+        assert decode('[1]{"a{"{x}}:\n  1') == [{"a{": {"x": 1}}]
+        assert decode('[1]{"a{b"{x}}:\n  1') == [{"a{b": {"x": 1}}]
+
+    def test_nested_tabular_triple_nesting(self):
+        """Nested segments recurse; the closing brace must match, not just be last."""
+        assert decode("[1]{k{a{m}}}:\n  1") == [{"k": {"a": {"m": 1}}}]
+        assert decode('[1]{k{"a{"{"m}"}}}:\n  1') == [{"k": {"a{": {"m}": 1}}}]
+
     def test_tabular(self):
         toon = "[2]{id,name}:\n  1,Alice\n  2,Bob"
         assert decode(toon) == [
@@ -378,12 +411,12 @@ class TestDecodeArrays:
 class TestEncodeOptions:
     def test_tab_delimiter(self):
         result = encode([1, 2, 3], EncodeOptions(delimiter="\t"))
-        ref = _tf.encode([1, 2, 3], {"delimiter": "\t"})
+        ref = _tf.encode([1, 2, 3], delimiter="\t")
         assert result == ref
 
     def test_pipe_delimiter(self):
         result = encode([1, 2, 3], EncodeOptions(delimiter="|"))
-        ref = _tf.encode([1, 2, 3], {"delimiter": "|"})
+        ref = _tf.encode([1, 2, 3], delimiter="|")
         assert result == ref
 
     def test_length_marker(self):
@@ -442,6 +475,36 @@ class TestRoundtrip:
     )
     def test_encode_decode_roundtrip(self, data):
         assert_roundtrip(data)
+
+    @pytest.mark.parametrize(
+        "data",
+        [
+            [{"a{": {"x": 1}}],
+            [{"a{b": {"x": 1}}],
+            [{"a}": {"x": 1}}],
+            [{"a,b": {"x": 1}}],
+            [{"k": {"a": {"m": 1}}}],
+            [{"k": {"a{": {"m}": 1}}}],
+            [{"a{": {"x": 1}}, {"a{": {"x": 2}}],
+        ],
+        ids=[
+            "brace-in-key",
+            "brace-prefix-in-key",
+            "close-brace-in-key",
+            "delimiter-in-key",
+            "triple-nesting",
+            "triple-nesting-with-braces",
+            "brace-in-key-two-rows",
+        ],
+    )
+    def test_roundtrip_nested_tabular_brace_keys(self, data):
+        """Nested tabular headers survive encode/decode when keys hold metachars.
+
+        Regression for the decode failure: the header scan must treat a brace
+        inside a quoted key as data, on both the opening and the matching end.
+        """
+        assert_roundtrip(data)
+        assert_encode_same(data)
 
     @pytest.mark.parametrize(
         "data",

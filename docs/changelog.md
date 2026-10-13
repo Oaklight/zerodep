@@ -6,8 +6,16 @@
 
 ## [未发布]
 
+### 问题修复
+
+- **soup** (v0.7.1)：引号内的逗号被直接跳过，导致 `[title="a,b"], [title="c"]` 这类选择器列表被解析成后代选择器并返回空列表，连解析正常的分组也一并丢弃。现在只在顶层逗号处切分，跟踪引号、方括号与圆括号，并按文档顺序取各分组的并集。空分组（尾随或连续逗号）改为抛异常，不再扩大为匹配所有元素；不支持的伪元素同样抛异常，不再静默丢弃所在分组。([#196](https://github.com/Oaklight/zerodep/pull/196))
+- **soup** (v0.8.0)：属性选择器现在对 HTML 标准中大小写不敏感的 legacy 属性集（`type`、`lang`、`dir`、`rel`、`method` 等共 46 个名字）按 ASCII 大小写不敏感比较，作用于 `=`、`~=`、`|=`、`^=`、`$=`、`*=`。此前另外 45 个名字在大小写不同时匹配不足。这是有意与 soupsieve 2.10 分叉的——它只折叠 `type`——因此 `[lang="en"]` 现在能匹配 `lang="EN"`，与所有浏览器一致。([#194](https://github.com/Oaklight/zerodep/pull/194))
+- **toon** (v0.5.0)：空数组现在按规范 §9.1 编码为 `key: []`，不再输出 legacy 的 `key[0]:` 形式；空字符串 key 的值为空数组时不再丢失该 key。([#195](https://github.com/Oaklight/zerodep/pull/195))
+
 ### 基础设施
 
+- **CI** 现在对任意 base 分支的 pull request 运行测试套件，不再只限于 `master`，stacked PR 无需再手工 `workflow_dispatch` 才能拿到 checks。([#190](https://github.com/Oaklight/zerodep/pull/190))
+- **toon 规范一致性 gate**：官方 TOON spec 4.4 的 fixtures（564 个用例——encode 160、decode 404）已入库到 `toon/fixtures/`，钉在 `toon-format/spec` 的 `v4.4.0`，由只能收缩的 ratchet baseline 在 CI 中把关。当前进度 350/564。这是 [#184](https://github.com/Oaklight/zerodep/issues/184) 的第一阶段。([#195](https://github.com/Oaklight/zerodep/pull/195))
 - **s3 基准测试**改用 SeaweedFS 容器，替代已停止开源的 MinIO。CI 通过 GitHub Actions service container 与 `S3_TEST_ENDPOINT` 约定提供服务端，s3 基准对比数据得以在每次运行时正常发布。
 
 ## [2026.9.28] - 2026-09-28

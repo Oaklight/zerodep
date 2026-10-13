@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.7.0"
+# version = "0.7.1"
 # deps = []
 # tier = "medium"
 # category = "text"
@@ -424,7 +424,11 @@ class Tag:
         Supported patterns: ``tag``, ``.class``, ``#id``, ``[attr]``,
         ``[attr=value]`` and the other attribute operators (``~=``, ``|=``,
         ``^=``, ``$=``, ``*=``), descendant (``a b``), child (``a > b``),
-        compound (``div.cls#id``), multiple classes (``div.a.b``).
+        compound (``div.cls#id``), multiple classes (``div.a.b``), and
+        selector lists (``a, b``).  A comma separates list groups only when
+        it is outside a quoted value, outside brackets and outside
+        parentheses, so ``[title="a,b"], [title="c"]`` is the union of two
+        groups and not a descendant selector.
 
         Unsupported attribute syntax raises ``ValueError`` instead of dropping
         the constraint, which would silently widen the match.
@@ -458,9 +462,13 @@ class Tag:
                   ``[=x]``, unterminated quotes such as
                   ``[title="unterminated]``, and ``[xlink:href]``.
         """
-        parts = _parse_selector(css_selector)
+        groups = _parse_selector_list(css_selector)
         candidates: list[Tag] = self._all_descendants()
-        return [tag for tag in candidates if _selector_matches(tag, parts)]
+        return [
+            tag
+            for tag in candidates
+            if any(_selector_matches(tag, parts) for parts in groups)
+        ]
 
     def select_one(self, css_selector: str) -> Tag | None:
         """Like ``select``, but return only the first match (or ``None``).
@@ -471,9 +479,9 @@ class Tag:
         Returns:
             The first matching ``Tag``, or ``None``.
         """
-        parts = _parse_selector(css_selector)
+        groups = _parse_selector_list(css_selector)
         for tag in self._all_descendants():
-            if _selector_matches(tag, parts):
+            if any(_selector_matches(tag, parts) for parts in groups):
                 return tag
         return None
 
@@ -807,6 +815,84 @@ def _parse_selector(selector: str) -> list[SelectorStep]:
             pos += 1  # skip unknown character to avoid infinite loop
 
     return _tokens_to_steps(tokens)
+
+
+def _split_selector_list(selector: str) -> list[str]:
+    """Split a selector list on top-level commas.
+
+    A comma separates two groups only when it is outside a quoted string,
+    outside square brackets and outside parentheses.  A backslash escapes the
+    next character inside a quoted string, so ``\\"`` does not close it.
+
+    Args:
+        selector: The raw selector string, e.g. ``'[title="a,b"], [title="c"]'``.
+
+    Returns:
+        The group strings, in order.  A selector with no top-level comma comes
+        back as a single-element list, so callers keep the single-selector
+        behaviour for free.
+    """
+    groups: list[str] = []
+    start = 0
+    bracket_depth = 0
+    paren_depth = 0
+    quote = ""
+    i = 0
+    n = len(selector)
+    while i < n:
+        ch = selector[i]
+        if quote:
+            if ch == "\\" and i + 1 < n:
+                i += 2
+                continue
+            if ch == quote:
+                quote = ""
+        elif ch in "\"'":
+            quote = ch
+        elif ch == "[":
+            bracket_depth += 1
+        elif ch == "]":
+            if bracket_depth:
+                bracket_depth -= 1
+        elif ch == "(":
+            paren_depth += 1
+        elif ch == ")":
+            if paren_depth:
+                paren_depth -= 1
+        elif ch == "," and not bracket_depth and not paren_depth:
+            groups.append(selector[start:i])
+            start = i + 1
+        i += 1
+    groups.append(selector[start:])
+    return groups
+
+
+def _parse_selector_list(selector: str) -> list[list[SelectorStep]]:
+    """Parse a selector list into one step list per comma-separated group.
+
+    The caller treats the groups as a union, which is how the reference reads
+    a selector list: a tag matches when *any* group matches it.
+
+    Args:
+        selector: The raw selector string.
+
+    Returns:
+        A list with one parsed step list per group.
+
+    Raises:
+        ValueError: If a non-empty selector list contains an empty group,
+            such as a trailing comma.  An empty group parses to the match-all
+            selector, so it would silently widen the whole list.
+    """
+    groups = _split_selector_list(selector)
+    if selector.strip():
+        for group in groups:
+            if not group.strip():
+                raise ValueError(
+                    "empty selector group: a selector list cannot contain "
+                    "an empty group, which would match every element"
+                )
+    return [_parse_selector(group) for group in groups]
 
 
 def _classes_match(tag: Tag, required_classes: list[str]) -> bool:

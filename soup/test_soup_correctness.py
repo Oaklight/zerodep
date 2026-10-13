@@ -472,6 +472,89 @@ class TestSelectAttributeOperators:
             soup.select(selector)
 
 
+# ── TestSelectList ──
+
+
+SELECT_LIST_HTML = """<div>
+  <a id="t1" title="a]b">one</a>
+  <a id="t2" title="a,b">two</a>
+  <a id="t3" title="c">three</a>
+</div>"""
+
+
+class TestSelectList:
+    """A comma in a quoted attribute value must not split the selector list.
+
+    The comma used to be skipped outright, so a selector list silently became
+    a descendant selector and matched nothing at all, discarding the groups
+    that parse fine.  The splitter now tracks quoted strings, brackets and
+    parentheses, and a comma only separates groups at the top level.
+    """
+
+    @staticmethod
+    def _ids(tags) -> list[str]:
+        return [tag.attrs.get("id") for tag in tags]
+
+    @pytest.mark.parametrize(
+        "selector",
+        [
+            '[title="a,b"], [title="c"]',
+            '[title="c"], [title="a,b"]',
+            '[title="a,b"][href], [title="c"]',
+            '[title~="a,b"], [title="c"]',
+            'a, [title="c"]',
+            'div > a, [title="c"]',
+            'a:not([title="x,y"]), [title="c"]',
+            '  [title="c"]  ,  [title="a,b"]  ',
+        ],
+    )
+    def test_selector_list_matches_beautifulsoup(self, selector):
+        ours = _ours(SELECT_LIST_HTML)
+        theirs = _theirs(SELECT_LIST_HTML)
+        assert self._ids(ours.select(selector)) == self._ids(theirs.select(selector))
+
+    def test_quoted_comma_does_not_split_the_list(self):
+        """The two list cases from the issue, in both orders."""
+        soup = _ours(SELECT_LIST_HTML)
+        assert self._ids(soup.select('[title="a,b"], [title="c"]')) == ["t2", "t3"]
+        assert self._ids(soup.select('[title="c"], [title="a,b"]')) == ["t2", "t3"]
+
+    def test_quoted_comma_inside_brackets_stays_one_group(self):
+        """A comma inside ``[...]`` is not a group separator."""
+        soup = _ours(SELECT_LIST_HTML)
+        assert self._ids(soup.select('[title="a,b"][href]')) == []
+        assert self._ids(soup.select('[title="a,b"][href], [title="c"]')) == ["t3"]
+
+    def test_unbalanced_quote_is_not_swallowed(self):
+        """An unterminated quote must not eat the rest of the list silently.
+
+        Without quote tracking, ``split(",")`` would cut this into pieces and
+        the trailing group would vanish.  It now reaches the attribute parser
+        as one group and raises there.
+        """
+        soup = _ours(SELECT_LIST_HTML)
+        with pytest.raises(ValueError):
+            soup.select('[title="a,b], [title="c"]')
+
+    def test_select_one_honours_the_list(self):
+        soup = _ours(SELECT_LIST_HTML)
+        tag = soup.select_one('[title="c"], [title="a,b"]')
+        assert tag is not None
+        assert tag.attrs.get("id") == "t2"
+
+    @pytest.mark.parametrize("selector", ['[title="c"],', 'a, , [title="c"]'])
+    def test_empty_group_raises(self, selector):
+        """A trailing or doubled comma must not widen the list to everything."""
+        soup = _ours(SELECT_LIST_HTML)
+        with pytest.raises(ValueError, match="empty selector group"):
+            soup.select(selector)
+
+    def test_empty_selector_keeps_its_match_all_behaviour(self):
+        # A bare empty selector is not a list, so there is no group to reject.
+        soup = _ours(SELECT_LIST_HTML)
+        assert len(soup.select("")) == 4
+
+
 # ── TestSelectOne ──
 
 

@@ -64,6 +64,14 @@ ATTR_OPERATOR_HTML = """
 </form>
 """
 
+# Three attribute states for the empty-value rule: present and empty,
+# present and non-empty, and absent.  Only the present-and-empty state makes
+# the rule observable -- the other two return no match regardless of how the
+# operator treats an empty ``expected``.
+ATTR_EMPTY_VALUE_HTML = (
+    '<p><b class="x" data-empty="">1</b><b class="x" data-v="a">2</b><b>3</b></p>'
+)
+
 SELF_CLOSING_HTML = """
 <p>Before<br>After</p>
 <img src="pic.jpg" alt="A picture">
@@ -526,6 +534,57 @@ class TestSelectAttributeOperators:
         tag = soup.select_one('button[class~="secondary"]')
         assert tag is not None
         assert tag.get_text(strip=True) == "B"
+
+    # ── Empty *expected* value for the attribute operators (#192) ──
+    #
+    # The empty-value rule: ``~=``, ``^=``, ``$=`` and ``*=`` never match an
+    # empty *expected*, while ``|=`` matches an attribute value that is
+    # exactly empty.  Each operator is exercised against all three attribute
+    # states, because only the present-and-empty state exposes the rule: a
+    # present-and-non-empty value and an absent attribute both return no
+    # match whichever way the empty case is handled.
+    #
+    # ``~=`` is the one row whose guard is inert: ``"" in text.split()`` is
+    # already false, so dropping ``bool(expected)`` there changes nothing.
+    # The row is kept anyway so all five operators sit in one table and the
+    # documented rule is visible next to the reference comparison.
+    EMPTY_VALUE_CASES = [
+        # (row id, selector, expected texts)
+        ('present-empty [attr|=""]', '[data-empty|=""]', ["1"]),
+        ('present-empty [attr~=""]', '[data-empty~=""]', []),
+        ('present-empty [attr^=""]', '[data-empty^=""]', []),
+        ('present-empty [attr$=""]', '[data-empty$=""]', []),
+        ('present-empty [attr*=""]', '[data-empty*=""]', []),
+        ('present-nonempty [attr|=""]', '[data-v|=""]', []),
+        ('present-nonempty [attr~=""]', '[data-v~=""]', []),
+        ('present-nonempty [attr^=""]', '[data-v^=""]', []),
+        ('present-nonempty [attr$=""]', '[data-v$=""]', []),
+        ('present-nonempty [attr*=""]', '[data-v*=""]', []),
+        ('absent [attr|=""]', '[data-absent|=""]', []),
+        ('absent [attr~=""]', '[data-absent~=""]', []),
+        ('absent [attr^=""]', '[data-absent^=""]', []),
+        ('absent [attr$=""]', '[data-absent$=""]', []),
+        ('absent [attr*=""]', '[data-absent*=""]', []),
+    ]
+
+    @pytest.mark.parametrize(
+        "selector, expected",
+        [(selector, expected) for _, selector, expected in EMPTY_VALUE_CASES],
+        ids=[row_id for row_id, _, _ in EMPTY_VALUE_CASES],
+    )
+    def test_empty_expected_value(self, selector, expected):
+        """The empty *expected* rule, pinned and compared to the reference.
+
+        The documented rule is asserted directly so the row names the
+        operator and the attribute state it broke, and the reference
+        comparison keeps zerodep aligned with soupsieve 2.10.
+        """
+        ours = _ours(ATTR_EMPTY_VALUE_HTML)
+        theirs = _theirs(ATTR_EMPTY_VALUE_HTML)
+        assert self._texts(ours.select(selector)) == expected
+        assert self._texts(ours.select(selector)) == self._texts(
+            theirs.select(selector)
+        )
 
     # ── Legacy case-insensitive attribute values (#187) ──
 

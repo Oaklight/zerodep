@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-13T09:18:35.837008+00:00",
+  "generated": "2026-10-13T09:27:15.257978+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -524,8 +524,8 @@
       "deps": [],
       "tier": "simple",
       "category": "serialization",
-      "last_updated": "2026-10-13T02:48:15-05:00",
-      "content_hash": "4270cc8fb0e18dacd2273b2aeaab2e322fcf213deb1ec333e1ab7f18a42d1b4b"
+      "last_updated": "2026-10-13T04:26:42-05:00",
+      "content_hash": "eb50841613ba78418f214f6f14b128e46ff0b1c2ea5a0c679b8b65cf83ae3afb"
     },
     "useragent": {
       "description": "Lightweight User-Agent generator for Chrome/Edge with Client Hints",

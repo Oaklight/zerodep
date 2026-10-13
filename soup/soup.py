@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.6.0"
+# version = "0.7.0"
 # deps = []
 # tier = "medium"
 # category = "text"
@@ -422,14 +422,22 @@ class Tag:
         """Return all descendants matching a CSS selector (simple subset).
 
         Supported patterns: ``tag``, ``.class``, ``#id``, ``[attr]``,
-        ``[attr="value"]``, descendant (``a b``), child (``a > b``),
+        ``[attr=value]`` and the other attribute operators (``~=``, ``|=``,
+        ``^=``, ``$=``, ``*=``), descendant (``a b``), child (``a > b``),
         compound (``div.cls#id``), multiple classes (``div.a.b``).
+
+        Unsupported attribute syntax raises ``ValueError`` instead of dropping
+        the constraint, which would silently widen the match.
 
         Args:
             css_selector: The CSS selector string.
 
         Returns:
             A list of matching ``Tag`` objects.
+
+        Raises:
+            ValueError: If the selector uses attribute syntax that this parser
+                does not implement.
         """
         parts = _parse_selector(css_selector)
         candidates: list[Tag] = self._all_descendants()
@@ -602,11 +610,18 @@ _ATTR_RE = re.compile(
     r"""
     \[
     \s*(?P<name>[a-zA-Z_-][a-zA-Z0-9_-]*)
-    (?:\s*=\s*["']?(?P<value>[^"'\]]*)["']?)?
+    (?:
+        \s*(?P<op>[~|^$*]?=)\s*
+        (?P<value>"[^"]*"|'[^']*'|[^"'\]]*)
+    )?
     \s*\]
     """,
     re.VERBOSE,
 )
+
+# CSS attribute operators: ``=`` exact, ``~=`` whitespace-separated list,
+# ``|=`` exact or hyphen-prefixed, ``^=``/``$=``/``*=`` substring forms.
+_ATTR_OPERATORS = frozenset({"=", "~=", "|=", "^=", "$=", "*="})
 
 SelectorStep = tuple[str, dict[str, Any]]
 
@@ -639,6 +654,36 @@ def _tokenize_whitespace(
     return pos + 1
 
 
+def _unquote(value: str) -> str:
+    """Strip one pair of matching surrounding quotes from *value*."""
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        return value[1:-1]
+    return value
+
+
+def _parse_attr_token(token: str) -> tuple[str, str | None, str] | None:
+    """Parse an ``[attr]`` / ``[attr op value]`` selector token.
+
+    Args:
+        token: The raw ``[...]`` text as matched by ``_SIMPLE_RE``.
+
+    Returns:
+        ``(name, operator, value)`` with ``operator`` set to ``None`` for a
+        bare ``[attr]`` presence test, or ``None`` when the token uses syntax
+        this parser does not implement.  Returning ``None`` lets the caller
+        fail loudly rather than drop the constraint and widen the match.
+    """
+    m = _ATTR_RE.fullmatch(token)
+    if m is None:
+        return None
+    op = m.group("op")
+    if op is None:
+        return (m.group("name"), None, "")
+    if op not in _ATTR_OPERATORS:  # pragma: no cover - regex admits no others
+        return None
+    return (m.group("name"), op, _unquote(m.group("value")))
+
+
 def _apply_regex_match(m: re.Match[str], compound: dict[str, Any]) -> None:
     """Populate *compound* dict from a single ``_SIMPLE_RE`` match."""
     if m.group("tag"):
@@ -648,11 +693,14 @@ def _apply_regex_match(m: re.Match[str], compound: dict[str, Any]) -> None:
     elif m.group("id"):
         compound["id"] = m.group("id")[1:]
     elif m.group("attr"):
-        am = _ATTR_RE.match(m.group("attr"))
-        if am:
-            compound.setdefault("attrs", []).append(
-                (am.group("name"), am.group("value"))
+        attr = _parse_attr_token(m.group("attr"))
+        if attr is None:
+            raise ValueError(
+                f"unsupported attribute selector: {m.group('attr')} "
+                "(supported: [attr], [attr=value] with the operators "
+                "=, ~=, |=, ^=, $=, *=)"
             )
+        compound.setdefault("attrs", []).append(attr)
     elif m.group("pseudo"):
         compound.setdefault("pseudos", []).append(m.group("pseudo")[1:])
 
@@ -749,20 +797,53 @@ def _classes_match(tag: Tag, required_classes: list[str]) -> bool:
     return all(cls in tag_classes for cls in required_classes)
 
 
-def _attr_value_matches(actual: str | list[str], expected: str) -> bool:
-    """Return True if *actual* attribute value equals *expected*."""
-    if isinstance(actual, list):
-        return expected in actual
-    return actual == expected
+def _attr_text(actual: str | list[str]) -> str:
+    """Return an attribute value as one string for substring matching.
+
+    ``class`` is stored as a list, so it is joined with spaces, which is how
+    the attribute appears in the source document.
+    """
+    return " ".join(actual) if isinstance(actual, list) else actual
 
 
-def _selector_attrs_match(tag: Tag, attrs: list[tuple[str, str | None]]) -> bool:
+def _attr_operator_matches(actual: str | list[str], op: str, expected: str) -> bool:
+    """Return True if *actual* satisfies the CSS attribute operator *op*.
+
+    Args:
+        actual: The tag's attribute value; a list for ``class``.
+        op: One of ``=``, ``~=``, ``|=``, ``^=``, ``$=``, ``*=``.
+        expected: The value written in the selector, unquoted.
+
+    Returns:
+        Whether the attribute satisfies the operator.  The empty-value cases
+        follow the CSS spec: ``~=``, ``^=``, ``$=`` and ``*=`` never match an
+        empty *expected*.
+    """
+    if op == "=":
+        if isinstance(actual, list):
+            return expected in actual
+        return actual == expected
+    text = _attr_text(actual)
+    if op == "~=":
+        return bool(expected) and expected in text.split()
+    if op == "|=":
+        return text == expected or (bool(expected) and text.startswith(expected + "-"))
+    if op == "^=":
+        return bool(expected) and text.startswith(expected)
+    if op == "$=":
+        return bool(expected) and text.endswith(expected)
+    if op == "*=":
+        return bool(expected) and expected in text
+    raise ValueError(f"unsupported attribute operator: {op}")  # pragma: no cover
+
+
+def _selector_attrs_match(tag: Tag, attrs: list[tuple[str, str | None, str]]) -> bool:
     """Return True if *tag* satisfies all attribute constraints from a selector."""
-    for attr_name, attr_val in attrs:
+    for attr_name, op, attr_val in attrs:
         actual = tag.attrs.get(attr_name)
         if actual is None:
             return False
-        if attr_val is not None and not _attr_value_matches(actual, attr_val):
+        if op is not None and not _attr_operator_matches(actual, op, attr_val):
             return False
     return True
 

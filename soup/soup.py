@@ -820,9 +820,10 @@ def _attr_operator_matches(actual: str | list[str], op: str, expected: str) -> b
         empty *expected*.
     """
     if op == "=":
-        if isinstance(actual, list):
-            return expected in actual
-        return actual == expected
+        # Compare the serialised attribute, as the reference does.  For the
+        # list-valued ``class`` that makes ``[class="btn primary"]`` match and
+        # ``[class="btn"]`` not match: the single-token form is ``~=``.
+        return _attr_text(actual) == expected
     text = _attr_text(actual)
     if op == "~=":
         return bool(expected) and expected in text.split()

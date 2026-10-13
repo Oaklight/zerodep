@@ -446,12 +446,12 @@
       "files": [
         "soup/soup.py"
       ],
-      "version": "0.6.0",
+      "version": "0.7.0",
       "deps": [],
       "tier": "medium",
       "category": "text",
       "last_updated": "2026-04-27T23:17:36+08:00",
-      "content_hash": "ce1118b732c3e70d1d1daeb7d8f650af6685988a24e3ed89b0b9506fca8675ef"
+      "content_hash": "c6dc70fdc0b7f36b057b200d8745e6484696993a2f3319c8e66aeb5193e6e64e"
     },
     "sparse_search": {
       "description": "Zero-dependency sparse text search with BM25 family and TF-IDF ranking",

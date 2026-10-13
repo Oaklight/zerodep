@@ -49,6 +49,21 @@ ATTRS_HTML = """
 <input type="submit" value="Go" />
 """
 
+# Three forms whose attributes discriminate between the CSS attribute
+# operators.  A selector whose constraint gets dropped matches every button
+# here, so a wrong result is visible rather than a near miss.
+ATTR_OPERATOR_HTML = """
+<form id="form_a" action="/process_consent">
+    <button type="submit-alpha" class="btn primary">A</button>
+</form>
+<form id="form_b" action="/account/process_login">
+    <button type="submit" class="btn secondary">B</button>
+</form>
+<form>
+    <button type="submit">C</button>
+</form>
+"""
+
 SELF_CLOSING_HTML = """
 <p>Before<br>After</p>
 <img src="pic.jpg" alt="A picture">
@@ -362,6 +377,90 @@ class TestSelect:
         ours = _ours(REAL_WORLD_HTML)
         theirs = _theirs(REAL_WORLD_HTML)
         assert len(ours.select(".tool-name")) == len(theirs.select(".tool-name"))
+
+
+# ── TestSelectAttributeOperators ──
+
+
+class TestSelectAttributeOperators:
+    """Attribute operators, in both the ancestor and the target position.
+
+    The parser used to accept any ``[...]`` token but only understand
+    ``[attr]`` and ``[attr="value"]``, so ``[action*="..."]`` was dropped and
+    the compound silently degraded to its tag name.
+    """
+
+    OPERATOR_SELECTORS = [
+        # *=, ^=, $= in the ancestor position
+        'form[action*="process_login"] button',
+        'form[action^="/account"] button',
+        'form[action$="process_login"] button',
+        # *=, ^=, $= in the target position
+        'button[type*="alpha"]',
+        'button[type^="submit"]',
+        'button[type$="alpha"]',
+        # *=, ^=, $= against an id
+        'form[id*="form_"] button',
+        'form[id^="form_"] button',
+        'form[id$="a"] button',
+        # ~= and |= against a plain attribute
+        'button[type~="submit-alpha"]',
+        'button[type|="submit"]',
+        'button[type~="submit"]',
+        'button[type|="submit-"]',
+        # the operators against a list-valued class attribute
+        'button[class~="primary"]',
+        'button[class*="second"]',
+        'button[class^="btn"]',
+        'button[class$="ary"]',
+        # unquoted values and the previously-working forms
+        "form[action*=process_login] button",
+        'form[action="x"] button',
+        'form[id="form_b"] button',
+        "button[type][id]",
+        'button[type="submit"]',
+        "form > button",
+        "form:not([id]) button",
+    ]
+
+    @staticmethod
+    def _texts(tags) -> list[str]:
+        return [tag.get_text(strip=True) for tag in tags]
+
+    @pytest.mark.parametrize("selector", OPERATOR_SELECTORS)
+    def test_operator_matches_beautifulsoup(self, selector):
+        ours = _ours(ATTR_OPERATOR_HTML)
+        theirs = _theirs(ATTR_OPERATOR_HTML)
+        assert self._texts(ours.select(selector)) == self._texts(
+            theirs.select(selector)
+        )
+
+    def test_substring_operator_on_ancestor_does_not_widen(self):
+        """Regression: the dropped ``*=`` used to match all three buttons."""
+        soup = _ours(ATTR_OPERATOR_HTML)
+        matched = self._texts(soup.select('form[action*="process_login"] button'))
+        assert matched == ["B"]
+        # Dropping the constraint degrades to this wider selector.
+        assert matched != self._texts(soup.select("form button"))
+
+    def test_select_one_resolves_the_operator_too(self):
+        soup = _ours(ATTR_OPERATOR_HTML)
+        tag = soup.select_one('button[class~="secondary"]')
+        assert tag is not None
+        assert tag.get_text(strip=True) == "B"
+
+    @pytest.mark.parametrize(
+        "selector",
+        [
+            "button[type!=submit]",
+            "[=x]",
+            'button[type*="unclosed]',
+        ],
+    )
+    def test_unsupported_attribute_syntax_raises(self, selector):
+        soup = _ours(ATTR_OPERATOR_HTML)
+        with pytest.raises(ValueError, match="unsupported attribute selector"):
+            soup.select(selector)
 
 
 # ── TestSelectOne ──

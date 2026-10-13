@@ -128,6 +128,29 @@ class TestEncodeArrays:
         assert encode({"d": []}) == "d: []"
         assert_encode_same({"d": []})
 
+    def test_empty_array_as_list_item_field(self):
+        """§9.1: an empty array in object-field position is ``key: []``.
+
+        The legacy ``key[0]:`` header MUST NOT be emitted, including when the
+        empty array is the first field of a list-item object.
+        """
+        data = [{"data": [], "name": "Ada"}, {"name": "Bob", "data": []}]
+        assert encode(data) == (
+            "[2]:\n  - data: []\n    name: Ada\n  - name: Bob\n    data: []"
+        )
+        assert_encode_same(data)
+
+    def test_empty_array_nested_in_list(self):
+        """§9.1: a nested empty array keeps the canonical form in list form."""
+        data = {"a": [{"b": []}]}
+        assert encode(data) == "a[1]:\n  - b: []"
+        assert_encode_same(data)
+
+    def test_empty_array_under_empty_string_key(self):
+        """§9.1: an empty-string key still emits ``key: []``, not bare ``[]``."""
+        assert encode({"": []}) == '"": []'
+        assert_encode_same({"": []})
+
     def test_nested_tabular(self):
         data = [{"n": "A", "d": {"x": 1}}, {"n": "B", "d": {"x": 2}}]
         assert encode(data) == "[2]{n,d{x}}:\n  A,1\n  B,2"

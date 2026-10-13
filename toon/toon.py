@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.0"
+# version = "0.5.0"
 # deps = []
 # tier = "simple"
 # category = "serialization"
@@ -11,10 +11,12 @@
 Part of zerodep: https://github.com/Oaklight/zerodep
 Copyright (c) 2026 Peng Ding. MIT License.
 
-Drop-in replacement for toon_format core functionality (encode/decode),
-tracking the current reference (TOON 4.1): empty arrays encode as ``[]`` and
-arrays of uniform objects whose fields are themselves uniform objects use the
-nested tabular header (``[2]{n,d{x}}:``) with flattened rows.
+Targets the TOON 4.x encoding against the official spec 4.4 conformance
+fixtures vendored in ``toon/fixtures/spec/``. It is not yet a full drop-in
+replacement for ``toon_format``: the remaining conformance gaps are tracked
+section by section in https://github.com/Oaklight/zerodep/issues/184, and
+``toon/test_toon_conformance.py`` records the current pass level as a ratchet
+so it can only move up.
 
 TOON is a compact, human-readable serialization format designed for LLM contexts,
 achieving 30-60% token reduction vs JSON. It combines YAML-like indentation with
@@ -527,7 +529,7 @@ def _enc_array(
     arr: JsonArray, opts: _ResolvedOpts, w: _Writer, depth: int, key: str | None
 ) -> None:
     if not arr:
-        w.push(depth, f"{_encode_key(key)}: []" if key else "[]")
+        w.push(depth, f"{_encode_key(key)}: []" if key is not None else "[]")
         return
     if _all_primitives(arr):
         _enc_inline_prim(arr, opts, w, depth, key)
@@ -640,7 +642,11 @@ def _enc_obj_list_item(
         w.push(depth, f"- {_encode_key(k0)}: {_encode_primitive(v0, opts.delimiter)}")
     elif _is_array(v0):
         sub = v0
-        if _all_primitives(sub):
+        if not sub:
+            # §9.1: an empty array in object-field position is ``key: []``;
+            # the legacy ``key[0]:`` header MUST NOT be emitted.
+            w.push(depth, f"- {_encode_key(k0)}: []")
+        elif _all_primitives(sub):
             encoded = [_encode_primitive(x, opts.delimiter) for x in sub]
             joined = _join_values(encoded, opts.delimiter)
             ih = _format_header(k0, len(sub), None, opts.delimiter, opts.length_marker)

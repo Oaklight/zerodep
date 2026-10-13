@@ -5,7 +5,7 @@
     "decode": 404,
     "encode": 160
   },
-  "passing_total": 348,
+  "passing_total": 350,
   "failing": [
     "decode/arrays-nested[12]",
     "decode/arrays-nested[20]",
@@ -193,10 +193,8 @@
     "encode/arrays-objects[2]",
     "encode/arrays-objects[3]",
     "encode/arrays-objects[4]",
-    "encode/arrays-objects[5]",
     "encode/arrays-primitive[10]",
     "encode/arrays-primitive[2]",
-    "encode/arrays-primitive[3]",
     "encode/arrays-tabular[5]",
     "encode/arrays-tabular[6]",
     "encode/delimiters[6]",

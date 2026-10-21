@@ -188,7 +188,8 @@ def loads(
     """Deserialize a JSONC string to a Python object.
 
     Strips ``//``, ``#``, and ``/* */`` comments and trailing commas before
-    delegating to :func:`json.loads`.
+    delegating to :func:`json.loads`. Documents that already parse as plain
+    JSON skip the preprocessing pass entirely.
 
     Args:
         text: JSONC source string.
@@ -206,10 +207,10 @@ def loads(
     Raises:
         JSONCDecodeError: If the text is not valid JSONC.
     """
-    cleaned = _preprocess(text)
-    try:
+
+    def _decode(s: str) -> Any:
         return json.loads(
-            cleaned,
+            s,
             cls=cls,
             object_hook=object_hook,
             parse_float=parse_float,
@@ -218,6 +219,19 @@ def loads(
             object_pairs_hook=object_pairs_hook,
             **kwargs,
         )
+
+    # Fast path: JSON is a subset of JSONC, so a document that parses as
+    # plain JSON needs no preprocessing — a successful json.loads is the
+    # same answer. Only a failed parse pays for the comment scanner.
+    if isinstance(text, str):
+        try:
+            return _decode(text)
+        except json.JSONDecodeError:
+            pass
+
+    cleaned = _preprocess(text)
+    try:
+        return _decode(cleaned)
     except json.JSONDecodeError as exc:
         line, col = _remap_error_position(text, cleaned, exc.pos)
         raise JSONCDecodeError(exc.msg, text, exc.pos) from None

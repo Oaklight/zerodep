@@ -133,10 +133,10 @@ def _unescape(value: str) -> str:
     while i < len(value):
         if value[i] == _BACKSLASH:
             if i + 1 >= len(value):
-                raise ValueError("Backslash at end of string")
+                raise ToonDecodeError("Backslash at end of string")
             nxt = value[i + 1]
             if nxt not in _MAP:
-                raise ValueError(f"Invalid escape sequence: \\{nxt}")
+                raise ToonDecodeError(f"Invalid escape sequence: \\{nxt}")
             result.append(_MAP[nxt])
             i += 2
         else:

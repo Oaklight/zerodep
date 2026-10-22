@@ -395,3 +395,26 @@ class TestShutdown:
 
             assert not worker.is_alive(), "in-flight request was dropped"
             assert result.get("status") == 200
+
+    def test_shutdown_does_not_wait_for_a_silent_connection(self):
+        """A connection that has not sent a request must not hold shutdown.
+
+        TCP health probes and load-balancer checks connect and say nothing;
+        before #220 they were not registered as idle and the drain waited
+        out ``shutdown_grace_timeout`` for them.
+        """
+        app = _build_app(keep_alive_timeout=30.0, read_timeout=30.0)
+        started = 0.0
+        with _live(app):
+            sock = socket.create_connection((app.host, app.port), timeout=5)
+            # The kernel completes the handshake before the server accepts;
+            # wait until the handler task exists so the case is the one under
+            # test rather than a connection still in the accept queue.
+            deadline = time.monotonic() + 5
+            while not app._tasks and time.monotonic() < deadline:
+                time.sleep(0.01)
+            started = time.monotonic()
+        elapsed = time.monotonic() - started
+        sock.close()
+
+        assert elapsed < 2.0, f"shutdown waited {elapsed:.1f}s for a silent socket"

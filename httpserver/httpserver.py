@@ -1503,8 +1503,11 @@ class App:
                     if served and self.keep_alive and self.keep_alive_timeout > 0
                     else None
                 )
-                if idle_timeout is not None:
-                    self._idle_connections.add(writer)
+                # Waiting for a request line is idle in both cases: a reused
+                # connection waiting for its next request, and a brand-new
+                # connection that has not sent one yet.  A silent probe must
+                # not hold a shutdown for the whole grace period (#220).
+                self._idle_connections.add(writer)
                 try:
                     request_parts = await _read_request(
                         reader,
@@ -2009,12 +2012,14 @@ class App:
     def _close_idle_connections(self) -> None:
         """Close connections that are waiting for another request.
 
-        A kept-alive connection is otherwise idle until
-        ``keep_alive_timeout`` expires.  Since Python 3.12,
-        ``Server.wait_closed()`` waits for every open connection, so the
-        accepted socket would keep a graceful shutdown alive for up to the
-        idle window — or indefinitely with a long one.  In-flight requests
-        are left alone: their handler finishes and closes its own writer.
+        A connection is idle while it waits for a request line: a
+        kept-alive one until ``keep_alive_timeout`` expires, and a
+        brand-new one until ``read_timeout`` does.  Since Python 3.12,
+        ``Server.wait_closed()`` waits for every open connection, so leaving
+        either open would hold a graceful shutdown for the idle window — or
+        for ``shutdown_grace_timeout`` in the drain.  Requests that have
+        been read are not idle: their handler finishes and closes its own
+        writer.
         """
         writers = list(self._idle_connections)
         self._idle_connections.clear()

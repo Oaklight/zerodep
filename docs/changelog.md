@@ -16,6 +16,8 @@
 
 ### 问题修复
 
+- **jsonx**：`loads()` 先对原始文本直接调用 `json.loads`，只有失败时才运行注释与尾逗号扫描器——JSON 是 JSONC 的子集。对于不含注释的文档，这省去了两轮正则预处理，其开销约为解析本身的 14 倍（129 KiB 文档：65.6 ms → 4.05 ms）；真正的 JSONC 文档则多付出一次失败的解析。([#206](https://github.com/Oaklight/zerodep/issues/206), [#208](https://github.com/Oaklight/zerodep/pull/208))
+- **toon**：`decode()` 遇到非法转义序列和结尾反斜杠时抛出 `ToonDecodeError`，而不再抛出裸的 `ValueError`，与文档化的契约以及一致性门禁对 `shouldError` 用例的期望一致。九个 fixture 由失败转为通过（564 个中 350 → 359）。([#198](https://github.com/Oaklight/zerodep/issues/198), [#209](https://github.com/Oaklight/zerodep/pull/209))
 - **httpserver**：已接受但尚未发送任何请求的连接不再让关闭过程等满 `shutdown_grace_timeout`。等待请求行——无论是首个请求还是复用连接上的下一个——都算空闲，因此 TCP 健康探针或负载均衡检查会被立即关闭，而不会被当作正在处理的请求去排空。边界在于这段等待的结束：请求行一旦到达，连接就不再空闲，因此仍在上传的请求体会被排空并正常应答，而不会被中途切断。([#220](https://github.com/Oaklight/zerodep/issues/220))
 - **httpserver**：在 3.10/3.11 上，关闭服务时也会等待正在处理的请求。这两个版本上 `Server.wait_closed()` 会立即返回，此前 `_serve` 随即退出，`asyncio.run` 会在响应写到一半时取消连接处理任务；现在服务器会跟踪处理任务并最多等待 `shutdown_grace_timeout`（默认 5 秒）再取消，关闭开始后才生成的响应会带上 `Connection: close`。事件循环已关闭后再次调用 `App.shutdown()` 现在是空操作，不再抛出 `Event loop is closed`。([#216](https://github.com/Oaklight/zerodep/issues/216))
 - **httpserver**：优雅关闭不再为每个空闲客户端等满 `keep_alive_timeout`。Python 3.12 起 `Server.wait_closed()` 会等待所有打开的连接，而空闲的保持连接会一直开到空闲窗口结束——默认 5 秒，配置更长则更久。现在关闭开始时就会关闭正在等待下一个请求行的连接；正在处理的请求仍会完成。([#215](https://github.com/Oaklight/zerodep/pull/215))

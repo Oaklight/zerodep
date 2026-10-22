@@ -8,18 +8,23 @@ import pytest
 _this_dir = os.path.dirname(os.path.abspath(__file__))
 _repo_root = os.path.dirname(_this_dir)
 
+
+def _outside_repo(entry: str) -> bool:
+    """True for a ``sys.path`` entry that is not inside this repository."""
+    path = os.path.abspath(entry or os.curdir)
+    return path != _repo_root and not path.startswith(_repo_root + os.sep)
+
+
 # This module is named like the reference, and pytest's prepend import mode
 # puts ``frontmatter/`` on sys.path while collecting, so a plain
 # ``import frontmatter`` binds the repo's own file and both sides of the
-# benchmark measure the same implementation (#205).  Hide both entries while
-# importing the reference, drop any cached module, and check where the
-# reference actually came from.
+# benchmark measure the same implementation (#205).  The sibling module
+# directories (``yaml/``) are on sys.path the same way and would be picked up
+# as python-frontmatter's dependencies, so every entry inside the repository
+# is hidden for the duration of the import.  Check where the reference came
+# from afterwards: the collision must fail loudly.
 _saved_path = sys.path[:]
-sys.path = [
-    p
-    for p in sys.path
-    if os.path.abspath(p or os.curdir) not in (_this_dir, _repo_root)
-]
+sys.path = [p for p in sys.path if _outside_repo(p)]
 _cached_frontmatter = sys.modules.pop("frontmatter", None)
 # python-frontmatter imports PyYAML, which would otherwise stay cached and
 # shadow the repo's sibling ``yaml`` module for the zerodep side below.

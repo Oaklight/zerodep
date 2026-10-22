@@ -162,7 +162,7 @@ print(tabulate(data, headers=["Name", "Age"], colalign=("center", "left")))
 | 格式化速度（小） | 32.5 μs | 93.8 μs（慢 2.89x） |
 | 格式化速度（大） | 3.9 ms | 13.8 ms（慢 3.56x） |
 
-启用 `WIDE_CHARS_MODE` 后，东亚宽字符与全角字符按两列计算，组合附加符号按零宽计算——这正是 `wcwidth` 报告的宽度——因此参考实现 tabulate（安装 `wcwidth` 时使用它）与 zerodep 的结果一致。默认使用 `len(s)`，与参考实现未安装 `wcwidth` 时的行为相同。
+启用 `WIDE_CHARS_MODE` 后，东亚宽字符与全角字符按两列计算，零宽符号（组合附加符号、包围符号与格式字符）以及 Hangul 的中声/终声字母按零宽计算，而 emoji 表现序列按各个组成部分计算——ZWJ 家庭 emoji 在这里是六列，`wcwidth` 报告两列，因为它按字素簇计量。对于逐字符的宽度，两者一致。参考实现在安装 `wcwidth` 时使用它，否则使用 `len(s)`；zerodep 的默认值是 `len(s)`。
 
 **适用场景（zerodep）：** 需要快速的表格格式化和常见输出样式，且无外部依赖。
 

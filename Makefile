@@ -86,13 +86,13 @@ test-yaml:
 	pytest yaml/test_yaml_correctness.py -v
 
 test-jsonx:
-	pytest jsonx/test_jsonx_correctness.py jsonx/test_jsonx_fastpath.py -v
+	pytest jsonx/test_jsonx_correctness.py jsonx/test_jsonx_fastpath.py -v -rs
 
 test-retry:
 	pytest retry/test_retry_correctness.py -v
 
 test-toon:
-	pytest toon/test_toon_correctness.py toon/test_toon_conformance.py toon/test_toon_decode_errors.py -v
+	pytest toon/test_toon_correctness.py toon/test_toon_conformance.py toon/test_toon_decode_errors.py -v -rs
 
 test-tabulate:
 	pytest tabulate/test_tabulate_correctness.py -v

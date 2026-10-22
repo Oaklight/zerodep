@@ -29,7 +29,7 @@
 
 ### 基础设施
 
-- **`python -m pytest` 下测试套件重新可以收集**：`import qrcode` 会导入 `png`，而 `python -m` 会把仓库根目录放进 `sys.path`（`pytest` 命令行脚本不会），于是 `png/` 被当作空的 namespace package 缓存下来，png 测试自身的导入随之失败，导致整个收集过程中断（收集到 8675 个、2 个错误）。现在 png 测试模块在导入被测模块前会清除这类残留条目。完整收集为 8805 个用例，无错误。([#223](https://github.com/Oaklight/zerodep/issues/223))
+- **`python -m pytest` 下测试套件重新可以收集**：`import qrcode` 会导入 `png`，而 `python -m` 会把仓库根目录放进 `sys.path`（`pytest` 命令行脚本不会），于是 `png/` 被当作空的 namespace package 缓存下来，png 测试自身的导入随之失败，导致整个收集过程中断。现在 png 测试模块在导入被测模块前，会清除任何不属于该目录自身的 `png` 缓存条目——既包括 namespace 条目，也包括安装了 `pypng` 时 `qrcode` 绑定的真实模块。完整收集为 8805 个用例，无错误。([#223](https://github.com/Oaklight/zerodep/issues/223))
 - **dotenv 与 frontmatter 基准测试现在测量真正的参考实现**：这两个测试目录与它们对比的包同名，而 pytest 的 prepend 导入模式使它们排在 site-packages 之前，于是 `pytest.importorskip` 绑定到仓库自己的模块，报告中 `test_python_dotenv` / `test_python_frontmatter` 两列实际测的是同一个 zerodep 实现。现在两个基准在导入参考实现时会临时隐藏这些遮蔽路径并在之后恢复，同时校验被绑定的模块不在仓库内，使这类冲突直接报错而不是产出看似合理的数字。([#205](https://github.com/Oaklight/zerodep/issues/205))
 - **soup 正确性测试只在 soupsieve 是参考实现时进行比对**：测试会拿 zerodep 的结果与 soupsieve 对比，但其中两组依赖 soupsieve 2.10 才加入的行为——`^=`、`$=`、`*=` 的 Selectors 4 空值规则（#201）以及选择器列表中逗号两侧的空白（#204）。在较旧的 soupsieve（固定依赖的环境常见 2.8.x）下，这 8 个对比会在参考侧失败，尽管 zerodep 遵循规范。直接断言仍然在所有版本运行；低于 2.10 时跳过参考比对。
 - **CI** 现在对任意 base 分支的 pull request 运行测试套件，不再只限于 `master`，stacked PR 无需再手工 `workflow_dispatch` 才能拿到 checks。([#190](https://github.com/Oaklight/zerodep/pull/190))

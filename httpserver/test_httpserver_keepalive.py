@@ -30,6 +30,15 @@ def _build_app(**kwargs) -> App:
     async def close_route(request):
         return Response(body="bye", headers={"Connection": "close"})
 
+    @app.get("/close-lower")
+    async def close_lower_route(request):
+        # Header names are case-insensitive: "connection" must count too.
+        return Response(body="bye", headers={"connection": "close"})
+
+    @app.post("/echo")
+    async def echo(request):
+        return {"body": request.body.decode()}
+
     return app
 
 
@@ -209,8 +218,10 @@ class TestKeepAlive:
                     data += chunk
                 head, _, rest = data.partition(b"\r\n\r\n")
 
-                assert b"405" in head
-                assert b"Content-Length: 0" in head
+                assert b"200 OK" in head
+                # HEAD carries the header fields the GET would have sent
+                # (RFC 9110 §9.3.2), including Content-Length -- but no body.
+                assert b"Content-Length: 15" in head
                 assert rest == b"", f"HEAD wrote a body: {rest!r}"
 
                 # The next request on the same connection must not see stray
@@ -233,3 +244,92 @@ class TestKeepAlive:
             assert response.getheader("Connection").lower() == "close"
             assert conn.sock is None
             conn.close()
+
+
+class TestReadBudgets:
+    """The idle window bounds the gap *between* requests, not a request."""
+
+    def test_slow_body_on_a_reused_connection_is_served(self):
+        app = _build_app(keep_alive_timeout=0.5, read_timeout=10.0)
+        with _live(app):
+            sock = socket.create_connection((app.host, app.port), timeout=5)
+            try:
+                sock.sendall(b"GET /whoami HTTP/1.1\r\nHost: x\r\n\r\n")
+                first = _raw_exchange(sock, b"")
+                assert b"200 OK" in first
+
+                sock.sendall(
+                    b"POST /echo HTTP/1.1\r\nHost: x\r\nContent-Length: 5\r\n\r\n"
+                )
+                # Longer than keep_alive_timeout (0.5s) but well inside
+                # read_timeout (10s): the body budget must not be the idle one.
+                import time
+
+                time.sleep(1.0)
+                sock.sendall(b"hello")
+
+                data = b""
+                while b"hello" not in data:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+            finally:
+                sock.close()
+            assert b"200 OK" in data
+            assert b'"hello"' in data
+
+    def test_stalled_body_after_headers_answers_408(self):
+        app = _build_app(keep_alive_timeout=5.0, read_timeout=0.4)
+        with _live(app):
+            sock = socket.create_connection((app.host, app.port), timeout=5)
+            try:
+                sock.sendall(
+                    b"POST /echo HTTP/1.1\r\nHost: x\r\nContent-Length: 5\r\n\r\n"
+                )
+                data = b""
+                while True:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+            finally:
+                sock.close()
+            assert b"408" in data
+
+
+class TestHeadAndHeaders:
+    def test_head_response_has_no_body(self):
+        with _live(_build_app()) as app:
+            conn = http.client.HTTPConnection(app.host, app.port, timeout=5)
+            conn.request("HEAD", "/whoami")
+            response = conn.getresponse()
+            body = response.read()
+            assert response.status == 200
+            assert body == b""
+            # The connection is still framed: a following GET works.
+            second = _get(conn, "/whoami")
+            assert second.status == 200
+            second.read() == b""
+
+    def test_lowercase_connection_close_is_honoured(self):
+        with _live(_build_app()) as app:
+            sock = socket.create_connection((app.host, app.port), timeout=5)
+            try:
+                data = _raw_exchange(
+                    sock, b"GET /close-lower HTTP/1.1\r\nHost: x\r\n\r\n"
+                )
+            finally:
+                sock.close()
+            lowered = data.lower()
+            assert b"connection: close" in lowered
+            assert b"connection: keep-alive" not in lowered
+
+    def test_unknown_protocol_version_is_not_kept_alive(self):
+        with _live(_build_app()) as app:
+            sock = socket.create_connection((app.host, app.port), timeout=5)
+            try:
+                data = _raw_exchange(sock, b"GET /whoami HTTP/2.0\r\nHost: x\r\n\r\n")
+            finally:
+                sock.close()
+            assert b"connection: close" in data.lower()

@@ -51,19 +51,19 @@ print(encode(employees))
 Encode a Python value into TOON format.
 
 - **value**: Any JSON-serializable value, plus Python types (datetime, Decimal, set, Path, tuple)
-- **options**: Optional `EncodeOptions` dict with `indent`, `delimiter`
+- **options**: Optional `EncodeOptions` dict with `indent`, `delimiter`. Unknown keys raise `TypeError`.
 
 ### `decode(text, options=None)`
 
 Decode a TOON-formatted string to a Python value.
 
-- **text**: TOON-formatted string
-- **options**: Optional `DecodeOptions` dict with `indent`, `strict`
+- **text**: TOON-formatted string, or UTF-8 encoded `bytes` / `bytearray`
+- **options**: Optional `DecodeOptions` dict with `indent`, `strict`. Unknown keys raise `TypeError`.
 
 ### `ToonDecodeError`
 
 Raised when TOON decoding fails: malformed input, an invalid escape sequence,
-or a trailing backslash in a quoted value.
+a trailing backslash in a quoted value, or input that is not valid UTF-8.
 
 `ToonDecodeError` subclasses `Exception`, not `ValueError`, so
 `except ValueError` around `decode()` does not catch malformed input — catch

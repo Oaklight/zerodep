@@ -44,7 +44,7 @@ text = dumps(config, indent=2)
 
 ### `loads(text, **kwargs)`
 
-Deserialize a JSONC string to a Python object. Strips comments and trailing commas before delegating to `json.loads`; a document that is already plain JSON skips that preprocessing pass. Passing `cls` or a hook (`object_hook`, `object_pairs_hook`, `parse_float`, `parse_int`, `parse_constant`) opts out of the fast path, so the callback is never invoked on a speculative parse.
+Deserialize a JSONC string to a Python object. Strips comments and trailing commas before delegating to `json.loads`; a document that is already plain JSON skips that preprocessing pass. Passing `cls` or a hook (`object_hook`, `object_pairs_hook`, `parse_float`, `parse_int`, `parse_constant`) opts out of the fast path, so the callback is never invoked on a speculative parse. Only `str` is accepted; passing `bytes` raises `TypeError`, so decode bytes first.
 
 All keyword arguments accepted by `json.loads` are supported (`cls`, `object_hook`, `parse_float`, `parse_int`, `parse_constant`, `object_pairs_hook`).
 

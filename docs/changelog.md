@@ -12,7 +12,7 @@
 
 ### 新功能
 
-- **httpserver**（v0.6.0）：同一连接现在可以处理多个请求。HTTP/1.1 连接默认保持，除非请求或响应发送 `Connection: close`；HTTP/1.0 仅在请求要求时保持；流式响应仍然关闭连接。新增 `App(keep_alive=..., keep_alive_timeout=..., max_requests_per_connection=...)` 选项用于调整或关闭该行为，空闲的保持连接在超过 `keep_alive_timeout` 后会静默关闭，而不再返回 `408`。客户端在请求之间关闭连接也不再被当作错误请求。([#210](https://github.com/Oaklight/zerodep/issues/210))
+- **httpserver**（v0.6.0）：同一连接现在可以处理多个请求。HTTP/1.1 连接默认保持，除非请求或响应发送 `Connection: close`（按大小写不敏感匹配）；HTTP/1.0 仅在请求要求时保持；无法识别的协议版本一律关闭；流式响应仍然关闭连接。新增 `App(keep_alive=..., keep_alive_timeout=..., max_requests_per_connection=...)` 选项用于调整或关闭该行为。`keep_alive_timeout` 只约束等待下一个请求行的时间，请求头与慢速请求体仍使用完整的 `read_timeout`；空闲连接到期后静默关闭而不再返回 `408`，但请求行之后卡住的请求仍会收到 `408`。`HEAD` 交给匹配的 `GET` 路由处理，返回相同的响应头（含 `Content-Length`）但不发送响应体，保持连接的客户端不会读到残余字节。客户端在请求之间关闭连接也不再被当作错误请求。([#210](https://github.com/Oaklight/zerodep/issues/210))
 
 ### 问题修复
 

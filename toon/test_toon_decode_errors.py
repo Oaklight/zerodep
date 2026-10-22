@@ -11,7 +11,7 @@ import sys
 import pytest
 
 sys.path.insert(0, os.path.dirname(__file__))
-from toon import ToonDecodeError, decode  # noqa: E402
+from toon import DecodeOptions, ToonDecodeError, decode  # noqa: E402
 
 BAD_ESCAPES = [
     '"a\\b"',  # invalid escape in a top-level string
@@ -19,7 +19,6 @@ BAD_ESCAPES = [
     'val: "a\\uD800b"',  # lone surrogate code point
     'val: "\\u+0ab"',  # sign before hex digits
     '"a\\x": 1',  # invalid escape in a quoted key
-    'k: "a\\x"',  # non-strict mode still validates escapes
 ]
 
 
@@ -27,6 +26,12 @@ BAD_ESCAPES = [
 def test_invalid_escape_raises_toon_decode_error(text: str) -> None:
     with pytest.raises(ToonDecodeError):
         decode(text)
+
+
+def test_invalid_escape_raises_in_non_strict_mode() -> None:
+    """Strictness controls quoting and indentation, not escape validity."""
+    with pytest.raises(ToonDecodeError):
+        decode('k: "a\\x"', DecodeOptions(strict=False))
 
 
 def test_decode_error_is_not_a_value_error() -> None:

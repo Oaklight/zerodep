@@ -4,6 +4,10 @@ A zero-dependency TOON (Token-Oriented Object Notation) encoder and decoder. TOO
 
 > **Replaces:** `toon-format`
 
+This module implements **TOON 4.4** and passes all **564** official
+conformance fixtures (160 encode, 404 decode). The vendored fixture set is
+gated in CI by `toon/test_toon_conformance.py`.
+
 ## Features
 
 - **Compact encoding**: 30-60% fewer tokens than JSON
@@ -47,7 +51,7 @@ print(encode(employees))
 Encode a Python value into TOON format.
 
 - **value**: Any JSON-serializable value, plus Python types (datetime, Decimal, set, Path, tuple)
-- **options**: Optional `EncodeOptions` dict with `indent`, `delimiter`, `lengthMarker`
+- **options**: Optional `EncodeOptions` dict with `indent`, `delimiter`
 
 ### `decode(text, options=None)`
 
@@ -81,15 +85,14 @@ encode(data, EncodeOptions(delimiter="\t"))
 encode(data, EncodeOptions(delimiter="|"))
 # [3|]: 1|2|3
 
-# With length marker
-encode(data, EncodeOptions(lengthMarker="#"))
-# [#3]: 1,2,3
-
 # Custom indent
 encode({"a": {"b": 1}}, EncodeOptions(indent=4))
 # a:
 #     b: 1
 ```
+
+The pre-4.0 `lengthMarker` option is not part of TOON 4.4: encoders never
+emit `[#N]`, and passing `lengthMarker` raises `ValueError`.
 
 ## TOON Format Overview
 
@@ -138,17 +141,17 @@ user:
 | `Path` | String path |
 | `inf`, `nan` | `null` |
 | `-0.0` | `0` |
-| Callable | `null` |
+| Callable | `TypeError` (outside the data model) |
 
 ## Comparison with toon_format
 
 | Feature | zerodep TOON | toon_format |
 |---------|-------------|-------------|
-| Dependencies | None (stdlib only) | `typing-extensions` |
-| Files | Single file | 18 source files |
+| Dependencies | None (stdlib only) | None (core encode/decode) |
+| Files | Single file | 7 source files |
 | Token counting | Not included | Requires `tiktoken` |
 | CLI | Not included | Included |
 | encode/decode | Full support | Full support |
-| Encode speed | 5.3 - 695.7 us | 7.8 - 952.6 us (1.3-1.5x slower) |
-| Decode speed | 13.4 - 1,463.3 us | 15.4 - 1,559.1 us (1.1x slower) |
+| Encode speed | 6.5 - 869.8 us | 6.6 - 1,093.3 us (mean, parity) |
+| Decode speed | 12.6 - 810.8 us | 9.7 - 787.6 us (mean, parity) |
 | Token savings vs JSON | 38-71% fewer characters | Same (identical format) |

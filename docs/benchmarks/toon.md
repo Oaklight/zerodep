@@ -4,17 +4,17 @@ Apple-to-apple performance comparison between zerodep TOON and [`toon_format`](h
 
 !!! info "Test Environment"
     - **CPU:** x86_64 Linux
-    - **Python:** 3.12
-    - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
-    - **Reference:** toon_format 0.9.0b1
-    - **Last Updated:** 2026-04-15
+    - **Python:** 3.10
+    - **Tool:** pytest-benchmark (mean values reported)
+    - **Reference:** toon-format @91413d14 (spec 4.4)
+    - **Last Updated:** 2026-10-22
 
 ## Implementations
 
 | Implementation | File/Package | Description |
 |----------------|--------------|-------------|
 | **zerodep** | `toon.py` | Single-file encoder/decoder, stdlib only |
-| **toon_format** | *(reference)* | 18-file package with typing-extensions dependency |
+| **toon_format** | *(reference)* | 7-file package, no core dependencies |
 
 ## Data Sizes Tested
 
@@ -28,17 +28,17 @@ Apple-to-apple performance comparison between zerodep TOON and [`toon_format`](h
 
 | Data Size | zerodep | toon_format | Speedup |
 |-----------|---------|-------------|---------|
-| Small | 7.0 us | 9.9 us | 1.4x faster |
-| Medium | 168.8 us | 205.7 us | 1.2x faster |
-| Large | 995.4 us | 1,238.4 us | 1.2x faster |
+| Small | 6.5 us | 6.6 us | 1.0x |
+| Medium | 127.1 us | 126.7 us | 1.0x |
+| Large | 869.8 us | 1,093.3 us | 1.3x faster |
 
 ## Decode Performance (Mean)
 
 | Data Size | zerodep | toon_format | Speedup |
 |-----------|---------|-------------|---------|
-| Small | 16.3 us | 18.9 us | 1.2x faster |
-| Medium | 259.1 us | 277.3 us | 1.1x faster |
-| Large | 1,770.2 us | 1,873.0 us | 1.1x faster |
+| Small | 12.6 us | 9.7 us | 0.8x |
+| Medium | 114.5 us | 118.3 us | 1.0x |
+| Large | 810.8 us | 787.6 us | 1.0x |
 
 ## Token Efficiency (TOON vs JSON)
 
@@ -50,10 +50,10 @@ Apple-to-apple performance comparison between zerodep TOON and [`toon_format`](h
 
 ## Key Takeaways
 
-- **1.2-1.4x faster encode** -- consolidating 18 source files into a single file reduces import and dispatch overhead.
-- **1.1-1.2x faster decode** -- single-file layout eliminates cross-module function call overhead.
+- **Encode at parity to ~1.3x faster** -- the port follows the reference algorithms; the large-document difference comes from the single-file layout, not a different format.
+- **Decode at parity** -- small documents are slightly slower, medium and large documents are within noise.
 - **38-71% fewer characters than JSON** -- TOON's tabular array format and bare-key syntax achieve dramatic size reduction on structured data. Savings increase with tabular data density.
-- **Zero pip dependencies** -- zerodep uses only `re`, `math`, `dataclasses`, and `collections.abc` from the standard library.
+- **Zero pip dependencies** -- the module uses only the Python standard library.
 
 ## Run It Yourself
 

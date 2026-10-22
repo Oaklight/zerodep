@@ -1015,8 +1015,10 @@ class App:
             close; HTTP/1.0 stays open only when the client asks.  Streaming
             responses always close.  Defaults to ``True``.
         keep_alive_timeout: Seconds an idle kept-alive connection may wait for
-            the next request before the server closes it quietly.  Defaults
-            to :data:`DEFAULT_KEEP_ALIVE_TIMEOUT`.
+            the next request before the server closes it quietly.  ``0`` or a
+            negative value disables reuse, so the response never advertises a
+            connection the server will not keep.  Defaults to
+            :data:`DEFAULT_KEEP_ALIVE_TIMEOUT`.
         max_requests_per_connection: Close a connection after this many
             requests even if the client would reuse it.  Defaults to
             :data:`DEFAULT_MAX_REQUESTS_PER_CONNECTION`.
@@ -1549,6 +1551,16 @@ class App:
             logger.debug("Connection reset by %s during dispatch", client_addr)
             return False
 
+        # A HEAD response has no body (RFC 9110 §9.3.2), and 204/304 carry
+        # none either.  Writing one would leave stray bytes in the stream and
+        # poison the next request on a kept-alive connection (#210 review).
+        if isinstance(response, Response) and (
+            method == "HEAD" or response.status_code in (204, 304)
+        ):
+            response.body = b""
+            if method == "HEAD":
+                response.headers.setdefault("Content-Length", "0")
+
         keep_alive = keep_alive and not isinstance(response, StreamingResponse)
         if keep_alive and response.headers.get("Connection", "").lower() != "close":
             response.headers["Connection"] = "keep-alive"
@@ -1601,7 +1613,11 @@ class App:
         Returns:
             ``True`` when the connection should stay open.
         """
-        if not self.keep_alive or served >= self.max_requests_per_connection:
+        if (
+            not self.keep_alive
+            or self.keep_alive_timeout <= 0
+            or served >= self.max_requests_per_connection
+        ):
             return False
         tokens = {
             token.strip().lower()

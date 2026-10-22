@@ -12,7 +12,7 @@
 - **同步模式**使用标准库中的 `http.client`。
 - **异步模式**使用 `asyncio` 流，手写 HTTP/1.1 协议实现。
 - **线程安全**设计：每个请求创建独立连接。会话类内部使用锁机制。
-- **连接池** — `Client` 和 `AsyncClient` 自动池化复用 TCP 连接（无状态函数仍为每次请求创建独立连接）。
+- **连接池** — `Client`、`AsyncClient` 与模块级函数（`get()`、`async_get()` 等）通过共享连接池复用 TCP 连接；可用 `close_pools()` / `aclose_pools()` 释放。
 - **自动解压缩** — 透明解码 gzip/deflate 压缩的响应。
 - **代理支持** — HTTP 代理、HTTPS 代理（CONNECT 隧道）和 SOCKS5 代理（RFC 1928），支持用户名/密码认证。
 - **内置认证** — 开箱即用的 Basic 和 Digest 认证。
@@ -222,7 +222,7 @@ with Client(pool_size=20) as client:
 ```
 
 !!! note "无状态函数"
-    顶层函数如 `get()`、`post()` 仍然每次调用创建新连接。使用 `Client` / `AsyncClient` 以启用连接池。
+    顶层函数如 `get()`、`post()`、`async_get()` 同样通过进程级连接池复用连接：异步连接池按事件循环隔离，因为池中的数据流属于创建它的事件循环。若服务端已关闭空闲的池化连接，会在使用前被检测出来；对于 `GET`/`HEAD`/`OPTIONS`/`PUT`/`DELETE`，还会在新连接上自动重试一次。可用 `close_pools()`（同步）与 `await aclose_pools()`（异步）释放连接池——进程退出时也会自动关闭。使用 `Client` 可以按会话控制连接池大小、请求头、Cookie 与超时。
 
 ### 内容解压缩
 

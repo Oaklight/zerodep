@@ -8,6 +8,10 @@
 
 ### 新功能
 
+- **httpclient**（v0.6.0）：模块级函数现在会复用连接。`get()`、`post()` 等（以及 `async_get()` 等）共享进程级连接池，不再每次调用新建连接——针对 keep-alive 服务端实测，顺序 `get()` 从约 990 次/秒提升到约 1900 次/秒，300 次请求只用了 3 个连接。异步连接池按事件循环隔离，因为池中的数据流属于创建它的事件循环；可用 `close_pools()` / `aclose_pools()` 释放。服务端空闲时关闭的池化连接会在使用前被检测出来（socket 窥探、异步 `at_eof()`），若仍发生竞态，`GET`/`HEAD`/`OPTIONS`/`PUT`/`DELETE` 会在新连接上重试一次。连接池的键现在包含 `verify`，因此以 `verify=False` 建立的连接绝不会交给需要校验的请求。
+
+### 新功能
+
 - **httpserver**（v0.6.0）：同一连接现在可以处理多个请求。HTTP/1.1 连接默认保持，除非请求或响应发送 `Connection: close`；HTTP/1.0 仅在请求要求时保持；流式响应仍然关闭连接。新增 `App(keep_alive=..., keep_alive_timeout=..., max_requests_per_connection=...)` 选项用于调整或关闭该行为，空闲的保持连接在超过 `keep_alive_timeout` 后会静默关闭，而不再返回 `408`。客户端在请求之间关闭连接也不再被当作错误请求。([#210](https://github.com/Oaklight/zerodep/issues/210))
 
 ### 问题修复

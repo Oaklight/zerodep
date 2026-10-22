@@ -418,3 +418,60 @@ class TestShutdown:
         sock.close()
 
         assert elapsed < 2.0, f"shutdown waited {elapsed:.1f}s for a silent socket"
+
+    def test_shutdown_waits_for_a_body_that_is_still_arriving(self):
+        """A request is not idle once its request line has arrived.
+
+        Closing every writer that is merely waiting for a request line also
+        closes one that has sent its headers and part of its body, killing
+        an upload that shutdown should have drained.  The connection leaves
+        the idle set at the request line, so it finishes and answers 200.
+        """
+        body = b"hello world!!"
+        app = _build_app(keep_alive_timeout=30.0, read_timeout=30.0)
+        sock = None
+        reply: dict[str, bytes | OSError] = {}
+
+        with _live(app):
+            sock = socket.create_connection((app.host, app.port), timeout=5)
+            sock.sendall(
+                b"POST /echo HTTP/1.1\r\n"
+                b"Host: test\r\n"
+                b"Connection: close\r\n"
+                b"Content-Length: " + str(len(body)).encode() + b"\r\n\r\n" + body[:3]
+            )
+            # Wait until the handler is running and the request line has
+            # been read, which is exactly when the connection leaves the
+            # idle set.  If the fix is missing this never happens and the
+            # assertions below fail rather than hanging.
+            deadline = time.monotonic() + 5
+            while (
+                not app._tasks or app._idle_connections
+            ) and time.monotonic() < deadline:
+                time.sleep(0.01)
+
+            def finish_upload() -> None:
+                # Let shutdown begin, then send the rest of the body.
+                time.sleep(0.3)
+                try:
+                    sock.sendall(body[3:])
+                    reply["data"] = sock.recv(4096)
+                except OSError as exc:
+                    reply["error"] = exc
+
+            sender = threading.Thread(target=finish_upload, daemon=True)
+            started = time.monotonic()
+            sender.start()
+            # Leave the block now: shutdown begins while only part of the
+            # body has been written.
+        elapsed = time.monotonic() - started
+        sender.join(timeout=5)
+        assert not sender.is_alive(), "the upload never completed"
+        assert sock is not None
+        sock.close()
+
+        assert "error" not in reply, reply.get("error")
+        data = reply.get("data", b"")
+        assert data.startswith(b"HTTP/1.1 200"), data[:60]
+        assert body in data, data[-120:]
+        assert elapsed < 2.0, f"shutdown took {elapsed:.1f}s to drain the upload"

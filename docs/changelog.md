@@ -33,6 +33,7 @@
 
 ### 基础设施
 
+- **基准测试模块在缺少 `pytest-benchmark` 时跳过**：41 个 `test_*_benchmark.py` 中有 40 个直接使用 `benchmark` fixture 而未做防护，因此在未安装基准测试 extras 的环境中，每个用例都会被报告为 `fixture 'benchmark' not found` 错误而不是跳过。现在它们都会调用 `pytest.importorskip("pytest_benchmark")`。
 - **基准测试**：基准工作流现在通过 `bench-toon` 的 git pin 安装 TOON 参考实现，而不是未固定的 `git+` 安装加 `|| true`，并断言产物中存在 `toon/` 行。参考实现安装失败现在会让任务失败，而不是静默丢弃对比结果，与 `s3` 已有的保护一致。
 - **基准测试 extras 在 Python 3.11+ 上使用 Pillow 13**：针对 `bench-qr` / `bench-png` 的全部 39 条 Dependabot 安全公告（4 条严重、23 条高危、12 条中危）都在 Pillow 13.0.0 中修复。该版本要求 Python 3.11，因此钉版本按版本拆分——3.11 起用 13.0.0，3.10 用最后一个支持它的 12.3.0。仅影响基准测试的参考依赖，模块本身不依赖 Pillow。
 - **`python -m pytest` 下测试套件重新可以收集**：`import qrcode` 会导入 `png`，而 `python -m` 会把仓库根目录放进 `sys.path`（`pytest` 命令行脚本不会），于是 `png/` 被当作空的 namespace package 缓存下来，png 测试自身的导入随之失败，导致整个收集过程中断。现在 png 测试模块在导入被测模块前，会清除任何不属于该目录自身的 `png` 缓存条目——既包括 namespace 条目，也包括安装了 `pypng` 时 `qrcode` 绑定的真实模块。完整收集为 8805 个用例，无错误。([#223](https://github.com/Oaklight/zerodep/issues/223))

@@ -6,6 +6,11 @@ import sys
 
 import pytest
 
+# Every case here takes the ``benchmark`` fixture. Without the plugin
+# they would be reported as errors rather than skipped, which reads as a
+# broken tree for anyone who installed the module without the extras.
+pytest.importorskip("pytest_benchmark")
+
 # Import reference library (python-multipart) via direct path loading
 # to avoid name collision with our local multipart module.
 _HAS_REF = False

@@ -156,6 +156,15 @@ class _BadRequest(Exception):
     """Internal: malformed HTTP request from client."""
 
 
+class _IdleTimeout(asyncio.TimeoutError):
+    """No request line arrived within the keep-alive idle window.
+
+    Subclasses :class:`asyncio.TimeoutError` so callers that only care about
+    "the read timed out" keep working, while :meth:`App._handle_connection`
+    can close a reused connection quietly instead of answering ``408``.
+    """
+
+
 class _ClientDisconnected(Exception):
     """Internal: the client closed the connection between requests."""
 
@@ -809,8 +818,19 @@ async def _read_request(
     reader: asyncio.StreamReader,
     timeout: float,
     max_body_size: int,
+    *,
+    idle_timeout: float | None = None,
 ) -> tuple[str, str, str, dict[str, str], bytes, str]:
     """Read and parse an HTTP request from a stream.
+
+    Args:
+        reader: Client stream.
+        timeout: Budget for each header and body read once the request line
+            has arrived.
+        max_body_size: Largest body accepted, in bytes.
+        idle_timeout: Budget for the request line itself, used for the wait
+            between requests on a kept-alive connection. Defaults to
+            *timeout*.
 
     Returns:
         Tuple of (method, path, query_string, headers, body, version).
@@ -818,11 +838,23 @@ async def _read_request(
     Raises:
         _ClientDisconnected: If the stream ended before a request line, which
             is how a client closes a kept-alive connection.
+        _IdleTimeout: If no request line arrived within *idle_timeout*.
         _BadRequest: If the request is malformed.
-        asyncio.TimeoutError: If reading times out.
+        asyncio.TimeoutError: If reading headers or the body times out.
     """
     # -- Request line --
-    raw_line = await asyncio.wait_for(reader.readline(), timeout=timeout)
+    # The wait for the first byte is the only one bounded by the idle window:
+    # once a request has started, its headers and body get the full read
+    # budget, so a client that uploads slowly after its headers is not cut off.
+    request_line_timeout = timeout if idle_timeout is None else idle_timeout
+    try:
+        raw_line = await asyncio.wait_for(
+            reader.readline(), timeout=request_line_timeout
+        )
+    except asyncio.TimeoutError:
+        if idle_timeout is not None:
+            raise _IdleTimeout from None
+        raise
     if not raw_line:
         raise _ClientDisconnected
     request_line = raw_line.decode("latin-1").rstrip("\r\n")
@@ -1300,13 +1332,15 @@ class App:
             (matched_route, regex_match, path_existed).  *path_existed* is
             True when a route matched the path but not the HTTP method.
         """
+        # RFC 9110 §9.3.2: a server that supports GET must support HEAD.
+        method = "GET" if request.method == "HEAD" else request.method
         path_existed = False
         for route in self._routes:
             m = route.pattern.match(request.path)
             if m is None:
                 continue
             path_existed = True
-            if "*" not in route.methods and request.method not in route.methods:
+            if "*" not in route.methods and method not in route.methods:
                 continue
             return route, m, True
         return None, None, path_existed
@@ -1444,15 +1478,22 @@ class App:
 
         try:
             while True:
-                timeout = self.read_timeout if served == 0 else self.keep_alive_timeout
+                idle_timeout = (
+                    self.keep_alive_timeout
+                    if served and self.keep_alive and self.keep_alive_timeout > 0
+                    else None
+                )
                 try:
                     request_parts = await _read_request(
-                        reader, timeout, self.max_body_size
+                        reader,
+                        self.read_timeout,
+                        self.max_body_size,
+                        idle_timeout=idle_timeout,
                     )
                 except _ClientDisconnected:
                     break
                 except Exception as exc:
-                    await self._reject_read(exc, served, writer, client_addr)
+                    await self._reject_read(exc, writer, client_addr)
                     break
 
                 method, path, qs, headers, body, version = request_parts
@@ -1483,22 +1524,25 @@ class App:
     async def _reject_read(
         self,
         exc: Exception,
-        served: int,
         writer: asyncio.StreamWriter,
         client_addr: tuple,
     ) -> None:
         """Answer a failed request read, or close quietly on an idle timeout.
 
+        A timeout before the request line is an idle kept-alive connection:
+        the client simply stopped talking, so the connection closes without a
+        response. A timeout after the request line means the client started a
+        request and did not finish it, which gets a ``408``.
+
         Args:
             exc: The exception raised while reading the request.
-            served: Requests already served on this connection.
             writer: The client connection.
             client_addr: Client address for logging.
         """
+        if isinstance(exc, _IdleTimeout):
+            logger.debug("Keep-alive idle timeout from %s", client_addr)
+            return
         if isinstance(exc, asyncio.TimeoutError):
-            if served:
-                logger.debug("Keep-alive idle timeout from %s", client_addr)
-                return
             logger.debug("Request read timed out from %s", client_addr)
         elif isinstance(exc, _BadRequest):
             logger.debug("Bad request from %s: %s", client_addr, exc)
@@ -1507,6 +1551,36 @@ class App:
         elif isinstance(exc, asyncio.IncompleteReadError):
             logger.debug("Incomplete request body from %s", client_addr)
         await self._send_error_and_close(writer, _read_error_response(exc))
+
+    @staticmethod
+    def _connection_tokens(headers: dict[str, str]) -> set[str]:
+        """Connection header tokens, looked up case-insensitively.
+
+        Args:
+            headers: Response or request headers.
+
+        Returns:
+            Lower-cased token set; empty when there is no ``Connection``
+            header under any spelling.
+        """
+        tokens: set[str] = set()
+        for key, value in headers.items():
+            if key.lower() == "connection":
+                tokens.update(
+                    token.strip().lower() for token in value.split(",") if token.strip()
+                )
+        return tokens
+
+    @staticmethod
+    def _set_connection_header(headers: dict[str, str], value: str) -> None:
+        """Set ``Connection`` under its canonical spelling, dropping variants.
+
+        A caller that wrote ``headers={"connection": "close"}`` should get
+        one header that says ``close``, not two that disagree.
+        """
+        for key in [key for key in headers if key.lower() == "connection"]:
+            del headers[key]
+        headers["Connection"] = value
 
     async def _serve_one(
         self,
@@ -1557,16 +1631,18 @@ class App:
         if isinstance(response, Response) and (
             method == "HEAD" or response.status_code in (204, 304)
         ):
-            response.body = b""
             if method == "HEAD":
-                response.headers.setdefault("Content-Length", "0")
+                # Same header fields as the GET would have sent, including
+                # Content-Length, but no body (RFC 9110 §9.3.2).
+                response.headers.setdefault("Content-Length", str(len(response.body)))
+            response.body = b""
 
         keep_alive = keep_alive and not isinstance(response, StreamingResponse)
-        if keep_alive and response.headers.get("Connection", "").lower() != "close":
-            response.headers["Connection"] = "keep-alive"
+        if keep_alive and "close" not in self._connection_tokens(response.headers):
+            self._set_connection_header(response.headers, "keep-alive")
         else:
             keep_alive = False
-            response.headers["Connection"] = "close"
+            self._set_connection_header(response.headers, "close")
 
         await self._fire_signal(
             "on_response_started",
@@ -1626,7 +1702,11 @@ class App:
         }
         if "close" in tokens:
             return False
-        if version == "HTTP/1.0" and "keep-alive" not in tokens:
+        if version == "HTTP/1.0":
+            return "keep-alive" in tokens
+        if not version.startswith("HTTP/1."):
+            # Unknown or malformed protocol version: do not assume the
+            # client can frame a second response.
             return False
         return True
 

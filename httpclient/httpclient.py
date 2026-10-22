@@ -120,6 +120,11 @@ DEFAULT_POOL_IDLE_TIMEOUT = 60.0
 #: into an error.
 _RETRYABLE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "PUT", "DELETE"})
 
+# The module re-exports ``TimeoutError = HttpTimeoutError`` for backwards
+# compatibility, which shadows the builtin, so the transport-level timeout
+# classes are captured here before that alias exists.
+_TRANSPORT_TIMEOUTS = (socket.timeout, asyncio.TimeoutError)
+
 
 # ── CaseInsensitiveDict ──
 
@@ -1309,6 +1314,16 @@ class _AsyncConnectionPool:
                         pass
             self._pool.clear()
 
+    def close_all_nowait(self) -> None:
+        """Close all pooled connections without awaiting (fork child, GC)."""
+        for conns in self._pool.values():
+            for _, writer, _ in conns:
+                try:
+                    writer.close()
+                except Exception:
+                    pass
+        self._pool.clear()
+
 
 # ── Default pools for the module-level helpers ──
 #
@@ -1317,11 +1332,17 @@ class _AsyncConnectionPool:
 # (and TLS) handshake per request.  Async pools are per event loop: the pooled
 # stream readers/writers belong to the loop that created them.
 
+#: Attribute the default async pool is stored on under its event loop.  The
+#: pool is hung off the loop rather than a module-level mapping: a pool holds
+#: stream readers/writers whose transports reference the loop, so a
+#: ``WeakKeyDictionary`` keyed by the loop could never drop an entry and every
+#: ``asyncio.run()`` would leak one socket.
+_POOL_ATTR = "_httpclient_default_pool"
+
 _DEFAULT_SYNC_POOL = _SyncConnectionPool(DEFAULT_POOL_SIZE)
-_async_default_pools: weakref.WeakKeyDictionary[
-    asyncio.AbstractEventLoop, _AsyncConnectionPool
-] = weakref.WeakKeyDictionary()
-_async_pools_lock = threading.Lock()
+#: Every async pool ever created, so a forked child can drop the sockets it
+#: inherited instead of talking on its parent's connections.
+_async_pools: weakref.WeakSet[_AsyncConnectionPool] = weakref.WeakSet()
 
 
 def _default_async_pool() -> _AsyncConnectionPool:
@@ -1331,20 +1352,23 @@ def _default_async_pool() -> _AsyncConnectionPool:
         The pool owned by the current loop, created on first use.
     """
     loop = asyncio.get_running_loop()
-    with _async_pools_lock:
-        pool = _async_default_pools.get(loop)
-        if pool is None:
-            pool = _AsyncConnectionPool(DEFAULT_POOL_SIZE)
-            _async_default_pools[loop] = pool
-        return pool
+    pool = getattr(loop, _POOL_ATTR, None)
+    if pool is None:
+        pool = _AsyncConnectionPool(DEFAULT_POOL_SIZE)
+        _async_pools.add(pool)
+        try:
+            setattr(loop, _POOL_ATTR, pool)
+        except AttributeError:  # pragma: no cover - exotic loop without __dict__
+            pass
+    return pool
 
 
 def close_pools() -> None:
     """Close every connection held by the default sync pool.
 
     The module-level helpers keep connections open between calls, so a
-    long-lived process can release them explicitly (for example before
-    forking).  Connections also close at process exit.
+    long-lived process can release them explicitly.  Connections also close
+    at process exit, and a forked child drops the sockets it inherited.
     """
     _DEFAULT_SYNC_POOL.close_all()
 
@@ -1352,10 +1376,31 @@ def close_pools() -> None:
 async def aclose_pools() -> None:
     """Close the default async pool of the running event loop."""
     loop = asyncio.get_running_loop()
-    with _async_pools_lock:
-        pool = _async_default_pools.pop(loop, None)
-    if pool is not None:
-        await pool.close_all()
+    pool = getattr(loop, _POOL_ATTR, None)
+    if pool is None:
+        return
+    try:
+        delattr(loop, _POOL_ATTR)
+    except AttributeError:  # pragma: no cover - exotic loop without __dict__
+        pass
+    await pool.close_all()
+
+
+def _drop_inherited_pools() -> None:
+    """Close pooled sockets in a forked child.
+
+    A child inherits the parent's file descriptors, and an HTTP/1.1
+    connection is single-stream: using an inherited one interleaves both
+    processes' requests.  Closing them in the child makes the next request
+    open its own connection.
+    """
+    _DEFAULT_SYNC_POOL.close_all()
+    for pool in list(_async_pools):
+        pool.close_all_nowait()
+
+
+if hasattr(os, "register_at_fork"):  # pragma: no branch - POSIX only
+    os.register_at_fork(after_in_child=_drop_inherited_pools)
 
 
 # ── Transport (request execution) ──
@@ -1900,6 +1945,12 @@ def _sync_acquire_connection(
         pooled_conn = _pool.acquire(host, port, is_https, timeout, verify)
         if pooled_conn is not None:
             req_headers["Connection"] = "keep-alive"
+            # ``http.client`` fixes the socket timeout when the connection is
+            # opened, so a reused socket would otherwise keep the timeout of
+            # whoever created it and ignore the caller's budget.
+            pooled_conn.timeout = timeout
+            if pooled_conn.sock is not None:
+                pooled_conn.sock.settimeout(timeout)
             return pooled_conn, path, True
 
     # Direct connection
@@ -1909,6 +1960,33 @@ def _sync_acquire_connection(
     else:
         conn = http.client.HTTPConnection(host, port, timeout=timeout)
     return conn, path, False
+
+
+def _response_is_persistent(
+    resp_headers: dict[str, str], resp_version: int | None
+) -> bool:
+    """Whether a response may leave the connection open for another request.
+
+    HTTP/1.1 is persistent unless the response sets ``Connection: close``;
+    HTTP/1.0 is not unless the response opts in with
+    ``Connection: keep-alive`` (RFC 7230 §6.3).  Servers that speak HTTP/1.0
+    and simply close the socket are common in tests and old deployments, and
+    pooling those connections turns the next request into an EOF error.
+
+    Args:
+        resp_headers: Lower-cased response headers.
+        resp_version: Response protocol version (10 or 11), or ``None`` when
+            unknown.
+
+    Returns:
+        ``True`` when the connection can be reused.
+    """
+    connection = resp_headers.get("connection", "").lower()
+    if "close" in {token.strip() for token in connection.split(",")}:
+        return False
+    if resp_version == 10:
+        return "keep-alive" in {token.strip() for token in connection.split(",")}
+    return True
 
 
 def _sync_release_or_close(
@@ -1922,6 +2000,7 @@ def _sync_release_or_close(
     is_https: bool,
     conn: http.client.HTTPConnection,
     verify: bool = True,
+    resp_version: int | None = None,
 ) -> None:
     """Release a sync connection back to the pool or close it.
 
@@ -1940,7 +2019,7 @@ def _sync_release_or_close(
         _pool
         and not proxy
         and not stream
-        and resp_headers.get("connection", "").lower() != "close"
+        and _response_is_persistent(resp_headers, resp_version)
     ):
         _pool.release(host, port, is_https, conn, verify=verify)
     else:
@@ -1995,6 +2074,12 @@ def _wrap_sync_errors(
     """Translate low-level sync exceptions into httpclient exceptions."""
     if isinstance(exc, (HttpTimeoutError, HttpConnectionError, TooManyRedirects)):
         return exc
+    if isinstance(exc, _TRANSPORT_TIMEOUTS):
+        return HttpTimeoutError(
+            f"Request to {url} timed out after {timeout}s",
+            url=url,
+            timeout=timeout,
+        )
     if isinstance(exc, (OSError, http.client.HTTPException)):
         return HttpConnectionError(
             f"Connection to {host}:{port} failed: {exc}",
@@ -2050,6 +2135,8 @@ def _sync_request(
     while True:
         scheme, host, port, path, is_https = _parse_url(url)
         close_conn = True
+        completed = False
+        resp_version: int | None = None
         resp_headers: dict[str, str] = {}
         try:
             conn, request_path, reused = _sync_acquire_connection(
@@ -2071,8 +2158,14 @@ def _sync_request(
                 try:
                     conn.request(method, request_path, body=body, headers=req_headers)
                     resp = conn.getresponse()
+                    resp_version = resp.version
                 except (OSError, http.client.HTTPException) as exc:
-                    if not (reused and not retried and method in _RETRYABLE_METHODS):
+                    # A timeout is not a stale connection: retrying would
+                    # double the caller's wall-clock budget and could reach
+                    # the server twice.
+                    if isinstance(exc, _TRANSPORT_TIMEOUTS) or not (
+                        reused and not retried and method in _RETRYABLE_METHODS
+                    ):
                         raise
                     # The server closed a kept-alive connection between
                     # requests; repeat once on a fresh connection.
@@ -2096,6 +2189,7 @@ def _sync_request(
 
                 if _is_redirect(status, resp_headers):
                     resp.read()
+                    completed = True
                     url, method, body = _compute_redirect(
                         status,
                         method,
@@ -2133,10 +2227,15 @@ def _sync_request(
                     stream,
                     raw_set_cookies=accumulated_set_cookies,
                 )
+                completed = True
                 return result
             finally:
+                # Only a connection that finished its request/response cycle
+                # is safe to reuse: after a mid-body failure http.client still
+                # believes a response is pending, so the next caller would fail
+                # inside ``request()``.
                 _sync_release_or_close(
-                    close_conn,
+                    close_conn and completed,
                     _pool,
                     proxy,
                     stream,
@@ -2146,6 +2245,7 @@ def _sync_request(
                     is_https,
                     conn,
                     verify,
+                    resp_version,
                 )
         except Exception as exc:
             wrapped = _wrap_sync_errors(exc, host, port, url, timeout)
@@ -2160,14 +2260,15 @@ def _sync_request(
 async def _async_read_response_headers(
     reader: asyncio.StreamReader,
     timeout: float,
-) -> tuple[int, CaseInsensitiveDict, list[str]]:
+) -> tuple[int, CaseInsensitiveDict, list[str], int | None]:
     """Read HTTP status line and headers from an asyncio StreamReader.
 
     Does NOT consume the body -- the reader is left positioned at the
     start of the response body.
 
     Returns:
-        (status_code, headers_dict, raw_set_cookies).
+        (status_code, headers_dict, raw_set_cookies, version), where
+        *version* is 11 for ``HTTP/1.1`` and 10 for ``HTTP/1.0``.
     """
     # Status line: "HTTP/1.1 200 OK\r\n"
     status_line = await asyncio.wait_for(reader.readline(), timeout=timeout)
@@ -2176,6 +2277,7 @@ async def _async_read_response_headers(
     if len(parts) < 2:
         raise HttpConnectionError(f"Malformed status line: {status_str}")
     status_code = int(parts[1])
+    version = 10 if parts[0].endswith("1.0") else 11
 
     # Headers until empty line
     headers: CaseInsensitiveDict = CaseInsensitiveDict()
@@ -2193,7 +2295,7 @@ async def _async_read_response_headers(
                 raw_set_cookies.append(v_stripped)
             headers[k_stripped] = v_stripped
 
-    return status_code, headers, raw_set_cookies
+    return status_code, headers, raw_set_cookies, version
 
 
 async def _async_read_chunked_body(
@@ -2293,7 +2395,7 @@ async def _async_connect_via_proxy_tunnel(
     connect_headers += "\r\n"
     proxy_writer.write((connect_line + connect_headers).encode("latin-1"))
     await asyncio.wait_for(proxy_writer.drain(), timeout=timeout)
-    tunnel_status, _, _ = await _async_read_response_headers(proxy_reader, timeout)
+    tunnel_status, _, _, _ = await _async_read_response_headers(proxy_reader, timeout)
     if tunnel_status != 200:
         proxy_writer.close()
         # Tier 3: best-effort silent -- proxy tunnel teardown
@@ -2472,6 +2574,7 @@ async def _async_release_or_close(
     reader: asyncio.StreamReader,
     writer: asyncio.StreamWriter,
     verify: bool = True,
+    resp_version: int | None = None,
 ) -> None:
     """Release an async connection back to the pool or close it.
 
@@ -2490,7 +2593,7 @@ async def _async_release_or_close(
         _pool
         and not proxy
         and not stream
-        and resp_headers.get("connection", "").lower() != "close"
+        and _response_is_persistent(resp_headers, resp_version)
     ):
         await _pool.release(host, port, is_https, reader, writer, verify=verify)
     else:
@@ -2590,6 +2693,8 @@ async def _async_request(
             req_headers.setdefault("Connection", "keep-alive")
 
         close_writer = True
+        completed = False
+        resp_version: int | None = None
         resp_headers: dict[str, str] = {}
         try:
             try:
@@ -2610,6 +2715,7 @@ async def _async_request(
                     status,
                     resp_headers,
                     iter_set_cookies,
+                    resp_version,
                 ) = await _async_read_response_headers(reader, timeout)
             except (
                 OSError,
@@ -2620,7 +2726,12 @@ async def _async_request(
                 # ``HttpConnectionError`` covers the EOF case: a server that
                 # closed a kept-alive connection yields an empty status line,
                 # which is reported as a malformed response.
-                if not (reused and not retried and method in _RETRYABLE_METHODS):
+                if isinstance(exc, _TRANSPORT_TIMEOUTS) or not (
+                    reused and not retried and method in _RETRYABLE_METHODS
+                ):
+                    # A timeout is not a stale connection: retrying would
+                    # double the caller's wall-clock budget and could reach
+                    # the server twice.
                     raise
                 logger.debug("Retrying %s after stale pooled connection: %s", url, exc)
                 retried = True
@@ -2632,6 +2743,7 @@ async def _async_request(
 
             if _is_redirect(status, resp_headers):
                 await _async_read_body(reader, resp_headers, timeout)
+                completed = True
                 url, method, body = _compute_redirect(
                     status,
                     method,
@@ -2677,6 +2789,7 @@ async def _async_request(
             resp_body = await _async_read_body(reader, resp_headers, timeout)
             if content_encoding:
                 resp_body = _decompress_body(resp_body, content_encoding)
+            completed = True
             return Response(
                 status,
                 resp_headers,
@@ -2692,7 +2805,7 @@ async def _async_request(
             )
         finally:
             await _async_release_or_close(
-                close_writer,
+                close_writer and completed,
                 _pool,
                 proxy,
                 stream,
@@ -2703,6 +2816,7 @@ async def _async_request(
                 reader,
                 writer,
                 verify,
+                resp_version,
             )
 
 

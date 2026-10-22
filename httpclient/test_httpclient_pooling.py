@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import gc
 import socket
 import socketserver
 import threading
@@ -166,6 +167,214 @@ class TestDefaultAsyncPool:
         asyncio.run(one())
         # Pools are per loop, so the second loop opened its own connection.
         assert server.connections == 2
+
+
+class _StallingHandler(socketserver.StreamRequestHandler):
+    """Reads requests and never replies, holding the socket open.
+
+    With ``answer_first`` the first request on each connection is answered
+    normally so a connection can be pooled before the stall.
+    """
+
+    def handle(self) -> None:
+        self.server.count_connection()  # type: ignore[attr-defined]
+        first = True
+        while True:
+            request_line = self.rfile.readline()
+            if not request_line:
+                return
+            while True:
+                header = self.rfile.readline()
+                if header in (b"\r\n", b"\n", b""):
+                    break
+            if not first or not self.server.answer_first:  # type: ignore[attr-defined]
+                # Hold the connection open without answering so the caller
+                # burns its own timeout budget.
+                time.sleep(10)
+                return
+            first = False
+            self.wfile.write(
+                b"HTTP/1.1 200 OK\r\n"
+                b"Content-Length: 12\r\n"
+                b"Content-Type: application/json\r\n"
+                b"\r\n"
+                b'{"ok": true}'
+            )
+            self.wfile.flush()
+
+
+class _StallingServer(socketserver.ThreadingTCPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
+    def __init__(self, answer_first: bool = False):
+        super().__init__(("127.0.0.1", 0), _StallingHandler)
+        self.answer_first = answer_first
+        self.connections = 0
+        self._count_lock = threading.Lock()
+
+    def count_connection(self) -> None:
+        with self._count_lock:
+            self.connections += 1
+
+
+def _serve_stalling(answer_first: bool):
+    server = _StallingServer(answer_first=answer_first)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_address[1]}", server
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+        httpclient.close_pools()
+
+
+@pytest.fixture
+def stalling_url():
+    yield from _serve_stalling(answer_first=False)
+
+
+@pytest.fixture
+def stall_after_first_url():
+    yield from _serve_stalling(answer_first=True)
+
+
+class _TruncatedBodyHandler(socketserver.StreamRequestHandler):
+    """Advertises a body it does not send, then closes."""
+
+    def handle(self) -> None:
+        request_line = self.rfile.readline()
+        if not request_line:
+            return
+        while True:
+            header = self.rfile.readline()
+            if header in (b"\r\n", b"\n", b""):
+                break
+        self.wfile.write(
+            b"HTTP/1.1 200 OK\r\n"
+            b"Content-Length: 100\r\n"
+            b"Content-Type: application/json\r\n"
+            b"\r\n"
+            b'{"ok":'
+        )
+        self.wfile.flush()
+
+
+class _TruncatedBodyServer(socketserver.ThreadingTCPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
+    def __init__(self):
+        super().__init__(("127.0.0.1", 0), _TruncatedBodyHandler)
+
+
+@pytest.fixture
+def truncated_url():
+    server = _TruncatedBodyServer()
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_address[1]}", server
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+        httpclient.close_pools()
+
+
+class TestTimeouts:
+    def test_timeout_is_not_retried(self, stalling_url):
+        """A timeout must not be retried: it would double the caller's budget."""
+        url, server = stalling_url
+        started = time.monotonic()
+        with pytest.raises(Exception) as excinfo:
+            httpclient.get(url, timeout=0.3)
+        elapsed = time.monotonic() - started
+
+        assert type(excinfo.value).__name__ == "HttpTimeoutError"
+        # One attempt only, and it respected the budget.
+        assert server.connections == 1
+        assert elapsed < 2.0
+
+    def test_pooled_connection_adopts_the_callers_timeout(self, stall_after_first_url):
+        """A reused socket must honour the current call's timeout, not the first."""
+        url, server = stall_after_first_url
+        assert httpclient.get(url, timeout=5).status_code == 200
+
+        started = time.monotonic()
+        with pytest.raises(Exception) as excinfo:
+            httpclient.get(url, timeout=0.3)
+        elapsed = time.monotonic() - started
+
+        assert type(excinfo.value).__name__ == "HttpTimeoutError"
+        assert elapsed < 2.0
+        assert server.connections == 1
+
+
+class TestFailedRead:
+    def test_truncated_body_connection_is_not_pooled(self, truncated_url):
+        """A connection whose body read failed must not be reused."""
+        url, _ = truncated_url
+        with pytest.raises(Exception):
+            httpclient.get(url)
+
+        assert sum(len(v) for v in httpclient._DEFAULT_SYNC_POOL._pool.values()) == 0
+
+    def test_async_truncated_body_connection_is_not_pooled(self, truncated_url):
+        url, _ = truncated_url
+
+        async def run():
+            with pytest.raises(Exception):
+                await httpclient.async_get(url)
+            pool = httpclient._default_async_pool()
+            assert sum(len(v) for v in pool._pool.values()) == 0
+            await httpclient.aclose_pools()
+
+        asyncio.run(run())
+
+
+class TestAsyncPoolLifecycle:
+    def test_async_pools_are_released_with_their_loop(self, keep_alive_url):
+        """A closed loop's pool must not be kept alive by the module."""
+        url, _ = keep_alive_url
+        before = {id(pool) for pool in httpclient._async_pools}
+
+        async def one():
+            assert (await httpclient.async_get(url)).status_code == 200
+            # Deliberately not calling aclose_pools().
+
+        asyncio.run(one())
+        gc.collect()
+
+        # The pool attached to the finished loop was not pinned by the module
+        # registry; only pools from earlier tests may remain.
+        assert {id(pool) for pool in httpclient._async_pools} <= before
+
+    def test_async_http_1_0_response_is_not_pooled(self, httpbin_url):
+        """HTTP/1.0 without ``Connection: keep-alive`` is not persistent."""
+
+        async def run():
+            assert (await httpclient.async_get(f"{httpbin_url}/get")).status_code == 200
+            pool = httpclient._default_async_pool()
+            assert sum(len(v) for v in pool._pool.values()) == 0
+            await httpclient.aclose_pools()
+
+        asyncio.run(run())
+
+    def test_async_timeout_is_not_retried(self, stalling_url):
+        url, server = stalling_url
+        started = time.monotonic()
+
+        async def run():
+            with pytest.raises(Exception):
+                await httpclient.async_get(url, timeout=0.3)
+            await httpclient.aclose_pools()
+
+        asyncio.run(run())
+        assert server.connections == 1
+        assert time.monotonic() - started < 2.0
 
 
 class TestPoolKey:

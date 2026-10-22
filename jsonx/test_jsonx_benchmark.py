@@ -134,7 +134,11 @@ _PLAIN_LARGE = json.dumps(
 
 
 class TestLoadPlainJson:
-    """The fast path keeps jsonx within noise of stdlib ``json``."""
+    """Report jsonx and stdlib ``json`` side by side on plain JSON.
+
+    The fast path itself is pinned by ``test_jsonx_fastpath.py``; these rows
+    expose its cost on every benchmark run.
+    """
 
     def test_zerodep(self, benchmark):
         benchmark(zd_loads, _PLAIN_LARGE)

@@ -179,8 +179,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-10-22T00:27:17-05:00",
-      "content_hash": "e46c82498cca6c230f87b92308f8795f65d3bbc8cf11cef86f94442d7a68ebb6"
+      "last_updated": "2026-10-22T00:49:18-05:00",
+      "content_hash": "7000d271cc91887bd5cec1471d89b73a8df00dd52f3758bab3f0626a56ab3c6e"
     },
     "httpserver": {
       "description": "Zero-dependency async HTTP server with decorator-based routing",

@@ -28,13 +28,17 @@ from httpclient import (
 class TestConnectionPoolLifecycle:
     """Tests for pool acquire/release/eviction paths."""
 
-    def test_pool_returns_connection_after_non_streaming_request(self, httpbin_url):
-        """Non-streaming request should return connection to pool."""
+    def test_pool_skips_http_1_0_response_without_keep_alive(self, httpbin_url):
+        """An HTTP/1.0 response is persistent only when it opts in.
+
+        The local httpbin fixture speaks HTTP/1.0 and sends no
+        ``Connection: keep-alive``, so RFC 7230 §6.3 makes the response
+        non-persistent and the connection must not enter the pool.
+        """
         with Client() as c:
             c.get(f"{httpbin_url}/get")
-            # After a successful non-streaming request, pool should have a conn
             pool_entries = sum(len(v) for v in c._pool._pool.values())
-            assert pool_entries >= 1
+            assert pool_entries == 0
 
     def test_pool_discards_connection_on_close_header(self, httpbin_url):
         """Connection with 'Connection: close' header should not be pooled."""

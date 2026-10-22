@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Features
 
-- **httpserver** (v0.6.0): connections now serve more than one request. HTTP/1.1 stays alive unless the request or the response sends `Connection: close`; HTTP/1.0 stays alive only when the request asks for it; streaming responses still close. New `App(keep_alive=..., keep_alive_timeout=..., max_requests_per_connection=...)` options tune or disable it, and an idle kept-alive connection is closed quietly after `keep_alive_timeout` instead of answering `408`. A client that closes between requests is no longer reported as a bad request. ([#210](https://github.com/Oaklight/zerodep/issues/210))
+- **httpserver** (v0.6.0): connections now serve more than one request. HTTP/1.1 stays alive unless the request or the response sends `Connection: close` (matched case-insensitively); HTTP/1.0 stays alive only when the request asks for it; an unrecognised protocol version closes; streaming responses still close. New `App(keep_alive=..., keep_alive_timeout=..., max_requests_per_connection=...)` options tune or disable it. `keep_alive_timeout` bounds only the wait for the next request line, so headers and a slow body keep the full `read_timeout`; an idle connection closes quietly after it instead of answering `408`, while a request that stalls after its request line does get `408`. `HEAD` is dispatched to the matching `GET` route and answers with the same headers — `Content-Length` included — and no body, so a kept-alive client is never left with stray bytes. A client that closes between requests is no longer reported as a bad request. ([#210](https://github.com/Oaklight/zerodep/issues/210))
 
 ### Bug Fixes
 

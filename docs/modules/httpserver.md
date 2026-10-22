@@ -204,7 +204,7 @@ Main application class.
 | `keep_alive_timeout` | `float` | `5.0` | Idle seconds before a kept-alive connection is closed |
 | `max_requests_per_connection` | `int` | `100` | Close a connection after this many requests |
 
-**Connections:** HTTP/1.1 connections are kept alive unless the request sends `Connection: close` or the response sets it; HTTP/1.0 stays open only when the request asks with `Connection: keep-alive`. Streaming responses (`StreamingResponse`) always close. An idle kept-alive connection is closed quietly — no `408` — when `keep_alive_timeout` expires.
+**Connections:** HTTP/1.1 connections are kept alive unless the request sends `Connection: close` or the response sets it (the response header is matched case-insensitively); HTTP/1.0 stays open only when the request asks with `Connection: keep-alive`, and an unrecognised protocol version closes. Streaming responses (`StreamingResponse`) always close. `keep_alive_timeout` bounds only the wait for the *next request line*; once a request has started, its headers and body are read under `read_timeout`, so a slow upload is not cut off. An idle connection therefore closes quietly — no `408` — while a request that stalls after its request line still receives `408`. `HEAD` is served by the matching `GET` route (RFC 9110 §9.3.2) with the same headers, `Content-Length` included, and no body.
 
 **Routing Methods:**
 

@@ -380,6 +380,7 @@ Client(
     auth: tuple[str, str] | Auth | None = None,
     proxy: str | None = None,
     pool_size: int = 10,
+    max_total_connections: int = 100,
 )
 ```
 
@@ -399,6 +400,7 @@ AsyncClient(
     auth: tuple[str, str] | Auth | None = None,
     proxy: str | None = None,
     pool_size: int = 10,
+    max_total_connections: int = 100,
 )
 ```
 

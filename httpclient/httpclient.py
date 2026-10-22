@@ -1099,6 +1099,7 @@ class _SyncConnectionPool:
         self,
         pool_size: int = DEFAULT_POOL_SIZE,
         max_total: int = DEFAULT_MAX_TOTAL_CONNECTIONS,
+        idle_timeout: float = DEFAULT_POOL_IDLE_TIMEOUT,
     ) -> None:
         self._pool: dict[
             tuple[str, int, bool],
@@ -1106,6 +1107,7 @@ class _SyncConnectionPool:
         ] = {}
         self._pool_size = pool_size
         self._max_total = max_total
+        self._idle_timeout = idle_timeout
         self._lock = threading.Lock()
 
     def acquire(
@@ -1134,7 +1136,7 @@ class _SyncConnectionPool:
             conns = self._pool.get(key, [])
             while conns:
                 conn, timestamp = conns.pop()
-                if now - timestamp > DEFAULT_POOL_IDLE_TIMEOUT:
+                if now - timestamp > self._idle_timeout:
                     # Tier 3: best-effort silent -- stale connection eviction
                     try:
                         conn.close()
@@ -1203,7 +1205,7 @@ class _SyncConnectionPool:
         for key in list(self._pool):
             fresh = []
             for conn, timestamp in self._pool[key]:
-                if now - timestamp > DEFAULT_POOL_IDLE_TIMEOUT:
+                if now - timestamp > self._idle_timeout:
                     # Tier 3: best-effort silent -- idle expiry
                     try:
                         conn.close()
@@ -1275,6 +1277,7 @@ class _AsyncConnectionPool:
         self,
         pool_size: int = DEFAULT_POOL_SIZE,
         max_total: int = DEFAULT_MAX_TOTAL_CONNECTIONS,
+        idle_timeout: float = DEFAULT_POOL_IDLE_TIMEOUT,
     ) -> None:
         self._pool: dict[
             tuple[str, int, bool],
@@ -1288,6 +1291,7 @@ class _AsyncConnectionPool:
         ] = {}
         self._pool_size = pool_size
         self._max_total = max_total
+        self._idle_timeout = idle_timeout
         self._lock = asyncio.Lock()
 
     async def acquire(
@@ -1316,7 +1320,7 @@ class _AsyncConnectionPool:
             conns = self._pool.get(key, [])
             while conns:
                 reader, writer, timestamp = conns.pop()
-                if now - timestamp > DEFAULT_POOL_IDLE_TIMEOUT:
+                if now - timestamp > self._idle_timeout:
                     # Tier 3: best-effort silent -- stale connection eviction
                     try:
                         writer.close()
@@ -1385,7 +1389,7 @@ class _AsyncConnectionPool:
         for key in list(self._pool):
             fresh = []
             for reader, writer, timestamp in self._pool[key]:
-                if now - timestamp > DEFAULT_POOL_IDLE_TIMEOUT:
+                if now - timestamp > self._idle_timeout:
                     # Tier 3: best-effort silent -- idle expiry
                     try:
                         writer.close()
@@ -3197,6 +3201,7 @@ class Client:
         proxy: str | None = None,
         pool_size: int = DEFAULT_POOL_SIZE,
         max_total_connections: int = DEFAULT_MAX_TOTAL_CONNECTIONS,
+        pool_idle_timeout: float = DEFAULT_POOL_IDLE_TIMEOUT,
     ) -> None:
         self._base_headers = headers or {}
         self._cookies: dict[str, str] = dict(cookies) if cookies else {}
@@ -3205,7 +3210,9 @@ class Client:
         self._verify = verify
         self._auth = auth
         self._proxy = proxy
-        self._pool = _SyncConnectionPool(pool_size, max_total_connections)
+        self._pool = _SyncConnectionPool(
+            pool_size, max_total_connections, pool_idle_timeout
+        )
 
     def request(
         self,
@@ -3301,6 +3308,7 @@ class AsyncClient:
         proxy: str | None = None,
         pool_size: int = DEFAULT_POOL_SIZE,
         max_total_connections: int = DEFAULT_MAX_TOTAL_CONNECTIONS,
+        pool_idle_timeout: float = DEFAULT_POOL_IDLE_TIMEOUT,
     ) -> None:
         self._base_headers = headers or {}
         self._cookies: dict[str, str] = dict(cookies) if cookies else {}
@@ -3309,7 +3317,9 @@ class AsyncClient:
         self._verify = verify
         self._auth = auth
         self._proxy = proxy
-        self._pool = _AsyncConnectionPool(pool_size, max_total_connections)
+        self._pool = _AsyncConnectionPool(
+            pool_size, max_total_connections, pool_idle_timeout
+        )
 
     async def request(
         self,

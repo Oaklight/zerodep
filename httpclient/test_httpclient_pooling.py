@@ -525,3 +525,36 @@ class TestGlobalConnectionCap:
 
         assert "stale-host" not in {k[0] for k in pool._pool}
         assert stale.closed is True
+
+
+class TestIdleTimeoutIsConfigurable:
+    """The idle window is per client, not a module constant."""
+
+    def test_sync_pool_uses_its_own_idle_timeout(self):
+        pool = httpclient._SyncConnectionPool(pool_size=2, idle_timeout=1.0)
+        conn = _FakeConn()
+        key = ("host", 80, False, True)
+        pool._pool[key] = [(conn, time.monotonic() - 5.0)]
+
+        assert pool.acquire("host", 80, False, 1.0, True) is None
+        assert conn.closed is True
+
+    def test_async_pool_uses_its_own_idle_timeout(self):
+        pool = httpclient._AsyncConnectionPool(pool_size=2, idle_timeout=1.0)
+        writer = _FakeWriter()
+        pool._pool[("host", 80, False, True)] = [
+            (object(), writer, time.monotonic() - 5.0)
+        ]
+
+        async def run():
+            return await pool.acquire("host", 80, False, 1.0, True)
+
+        assert asyncio.run(run()) is None
+        assert writer.closed is True
+
+    def test_clients_pass_the_timeout_to_the_pool(self):
+        sync_client = httpclient.Client(pool_idle_timeout=0.25)
+        async_client = httpclient.AsyncClient(pool_idle_timeout=0.5)
+
+        assert sync_client._pool._idle_timeout == 0.25
+        assert async_client._pool._idle_timeout == 0.5

@@ -126,6 +126,54 @@ def test_wide_chars_mode_matches_the_wcwidth_reference(data, kwargs) -> None:
         _our_module.WIDE_CHARS_MODE = previous
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "café",  # combining acute
+        "élève",  # precomposed
+        "你好",  # CJK, wide
+        "\U0001f600",  # emoji, wide
+        "a​b",  # zero-width space
+        "a͏b",  # combining grapheme joiner, ccc=0
+        "क्ष",  # Devanagari virama cluster
+        "각",  # Hangul leading + medial + final jamo
+    ],
+)
+def test_zero_width_shapes_match_wcwidth(text: str) -> None:
+    """Per-character widths agree with ``wcwidth.wcswidth``."""
+    wcwidth = pytest.importorskip("wcwidth")
+    previous = _our_module.WIDE_CHARS_MODE
+    _our_module.WIDE_CHARS_MODE = True
+    try:
+        assert _our_module._visible_width(text) == wcwidth.wcswidth(text)
+    finally:
+        _our_module.WIDE_CHARS_MODE = previous
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("\U0001f468‍\U0001f469‍\U0001f467", 6),  # family, ZWJ
+        ("1️⃣", 1),  # keycap sequence
+    ],
+)
+def test_emoji_presentation_sequences_count_per_component(
+    text: str, expected: int
+) -> None:
+    """Documented divergence: ``wcwidth`` measures grapheme clusters.
+
+    A ZWJ family emoji is 2 columns under ``wcwidth`` and 6 here; a keycap
+    is 2 there and 1 here.  Pinning the per-component count keeps the
+    docstring honest.
+    """
+    previous = _our_module.WIDE_CHARS_MODE
+    _our_module.WIDE_CHARS_MODE = True
+    try:
+        assert _our_module._visible_width(text) == expected
+    finally:
+        _our_module.WIDE_CHARS_MODE = previous
+
+
 # ── Helpers ──
 
 

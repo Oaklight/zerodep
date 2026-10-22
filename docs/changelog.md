@@ -25,6 +25,7 @@
 
 ### 基础设施
 
+- **soup 正确性测试只在 soupsieve 是参考实现时进行比对**：测试会拿 zerodep 的结果与 soupsieve 对比，但其中两组依赖 soupsieve 2.10 才加入的行为——`^=`、`$=`、`*=` 的 Selectors 4 空值规则（#201）以及选择器列表中逗号两侧的空白（#204）。在较旧的 soupsieve（固定依赖的环境常见 2.8.x）下，这 8 个对比会在参考侧失败，尽管 zerodep 遵循规范。直接断言仍然在所有版本运行；低于 2.10 时跳过参考比对。
 - **CI** 现在对任意 base 分支的 pull request 运行测试套件，不再只限于 `master`，stacked PR 无需再手工 `workflow_dispatch` 才能拿到 checks。([#190](https://github.com/Oaklight/zerodep/pull/190))
 - **toon 规范一致性 gate**：官方 TOON spec 4.4 的 fixtures（564 个用例——encode 160、decode 404）已入库到 `toon/fixtures/`，钉在 `toon-format/spec` 的 `v4.4.0`，由只能收缩的 ratchet baseline 在 CI 中把关。当前进度 350/564。这是 [#184](https://github.com/Oaklight/zerodep/issues/184) 的第一阶段。([#195](https://github.com/Oaklight/zerodep/pull/195))
 - **s3 基准测试**改用 SeaweedFS 容器，替代已停止开源的 MinIO。CI 通过 GitHub Actions service container 与 `S3_TEST_ENDPOINT` 约定提供服务端，s3 基准对比数据得以在每次运行时正常发布。

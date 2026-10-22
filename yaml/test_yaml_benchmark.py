@@ -5,11 +5,6 @@ import sys
 
 import pytest
 
-# Every case here takes the ``benchmark`` fixture. Without the plugin
-# they would be reported as errors rather than skipped, which reads as a
-# broken tree for anyone who installed the module without the extras.
-pytest.importorskip("pytest_benchmark")
-
 # Our yaml.py shadows PyYAML. Import PyYAML via path manipulation.
 _this_dir = os.path.dirname(__file__)
 

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-22T19:25:44.137500+00:00",
+  "generated": "2026-10-22T21:07:47.197669+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -191,7 +191,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-10-22T14:12:46-05:00",
+      "last_updated": "2026-10-22T14:26:49-05:00",
       "content_hash": "1fc745fceabd63af1bb9dec29be12090ecb9fbc85eeff5353e34ad29e4290c7a"
     },
     "jsonrpc": {
@@ -223,12 +223,12 @@
       "files": [
         "jsonx/jsonx.py"
       ],
-      "version": "1.0.0",
+      "version": "1.0.1",
       "deps": [],
       "tier": "simple",
       "category": "serialization",
-      "last_updated": "2026-06-12T14:01:49-05:00",
-      "content_hash": "2bfc0d657c366c2e09cfcbbd433545172989f615d67debd2ca8f55284af37ddd"
+      "last_updated": "2026-10-22T15:49:08-05:00",
+      "content_hash": "a633c5a95960a362681bfd0f699a189e4617cdd76126e0427ff8145ca346c608"
     },
     "llmstxt": {
       "description": "llms.txt parser — zero dependencies, stdlib only, Python 3.10+",
@@ -524,8 +524,8 @@
       "deps": [],
       "tier": "simple",
       "category": "serialization",
-      "last_updated": "2026-10-13T08:42:56-05:00",
-      "content_hash": "8971f3ad494e69f5c886d33e546f885e9760026fe8fce76e1906faffac80caa9"
+      "last_updated": "2026-10-21T10:04:21+05:30",
+      "content_hash": "85aa22beb854832a3ede94a11500d8c56f188620e19bbcd4129f4ca6fe0bfdcc"
     },
     "useragent": {
       "description": "Lightweight User-Agent generator for Chrome/Edge with Client Hints",

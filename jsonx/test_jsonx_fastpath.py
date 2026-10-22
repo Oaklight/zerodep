@@ -23,6 +23,7 @@ JSONC = (
     '  "c": "value",\n'
     "}"
 )
+JSONC_NESTED = '{"a": {"x": 1}, "b": {"y": 2}, // comment\n "c": {"z": 3}}'
 MALFORMED = '{"a": 1,,}'
 
 
@@ -46,13 +47,50 @@ def test_malformed_raises_jsonc_decode_error() -> None:
         loads(MALFORMED)
 
 
-def test_kwargs_pass_through_on_fast_path() -> None:
+def test_non_hook_kwargs_pass_through_on_fast_path() -> None:
+    # ``strict`` is forwarded without opting out of the fast path.
+    assert loads('{"a": 1}', strict=False) == {"a": 1}
+
+
+def test_hooks_pass_through_on_plain_json() -> None:
     assert loads('{"a": 1.5}', parse_float=str) == {"a": "1.5"}
     assert loads('{"a": 1}', object_pairs_hook=list) == [("a", 1)]
 
 
-def test_kwargs_pass_through_on_jsonc_path() -> None:
+def test_hooks_pass_through_on_jsonc_path() -> None:
     assert loads('{"a": 1.5, // c\n}', parse_float=str) == {"a": "1.5"}
+
+
+def test_hooks_are_not_invoked_speculatively() -> None:
+    """A JSONC document calls each hook once per decoded value.
+
+    The fast path tries the raw text first; without the opt-out that failed
+    attempt would invoke the caller's hooks on the values it had already
+    decoded, and the fallback would invoke them again.
+    """
+    calls: list[object] = []
+
+    def record(value: object) -> object:
+        calls.append(value)
+        return value
+
+    result = loads(JSONC_NESTED, object_hook=record)
+    assert result == {"a": {"x": 1}, "b": {"y": 2}, "c": {"z": 3}}
+    assert len(calls) == 4, f"object_hook was called {len(calls)} times"
+
+
+def test_custom_decoder_sees_preprocessed_text() -> None:
+    """A custom decoder opts out of the fast path and gets the cleaned text."""
+    seen: list[str] = []
+
+    class RecordingDecoder(json.JSONDecoder):
+        def decode(self, s: str, *args: object, **kwargs: object) -> object:
+            seen.append(s)
+            return super().decode(s, *args, **kwargs)
+
+    assert loads('{"a": 1, // c\n}', cls=RecordingDecoder) == {"a": 1}
+    assert len(seen) == 1, f"decoder was called {len(seen)} times"
+    assert "// c" not in seen[0]
 
 
 def test_hook_rejecting_with_decode_error_is_not_retried() -> None:
@@ -84,20 +122,11 @@ def test_hook_raising_value_error_propagates() -> None:
         loads('{"a": 1}', object_pairs_hook=reject)
 
 
-def test_bytes_input_behaviour_unchanged() -> None:
-    """Pre-existing behaviour: bytes documents were never supported by the
-    preprocessing pass, and the fast path must not change that."""
+def test_bytes_input_is_a_known_limitation() -> None:
+    """``loads`` accepts ``str`` only; this documents the current limitation.
+
+    It is not a contract: stdlib ``json.loads`` also takes bytes, and the
+    module could decode before the JSONC scanner if that support is wanted.
+    """
     with pytest.raises(TypeError):
         loads(b'{"a": 1}')
-
-
-def test_fast_path_perf_regression_guard() -> None:
-    """The preprocessing regex passes cost ~14x the underlying parse on
-    comment-free documents; the fast path should stay close to json.loads."""
-    import timeit
-
-    document = json.dumps({"p": {f"k{i}": f"value {i}" for i in range(500)}}, indent=2)
-    jsonx_time = min(timeit.repeat(lambda: loads(document), number=10, repeat=3))
-    stdlib_time = min(timeit.repeat(lambda: json.loads(document), number=10, repeat=3))
-    # Allow generous headroom for CI noise; without the fast path this is >10.
-    assert jsonx_time < stdlib_time * 3

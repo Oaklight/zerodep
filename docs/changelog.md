@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Features
+
+- **httpserver** (v0.6.0): connections now serve more than one request. HTTP/1.1 stays alive unless the request or the response sends `Connection: close`; HTTP/1.0 stays alive only when the request asks for it; streaming responses still close. New `App(keep_alive=..., keep_alive_timeout=..., max_requests_per_connection=...)` options tune or disable it, and an idle kept-alive connection is closed quietly after `keep_alive_timeout` instead of answering `408`. A client that closes between requests is no longer reported as a bad request. ([#210](https://github.com/Oaklight/zerodep/issues/210))
+
 ### Bug Fixes
 
 - **soup** (v0.7.1): a comma inside a quoted attribute value was skipped outright, so a selector list such as `[title="a,b"], [title="c"]` parsed as a descendant selector and returned nothing — discarding the groups that parsed correctly. The list is now split on top-level commas only, tracking quoted strings, brackets and parentheses, and the groups are unioned in document order. An empty group (a trailing or doubled comma) raises instead of widening to every element, and an unsupported pseudo-element raises instead of silently dropping its group. ([#196](https://github.com/Oaklight/zerodep/pull/196))

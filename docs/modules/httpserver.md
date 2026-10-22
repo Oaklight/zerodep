@@ -192,7 +192,7 @@ async def trigger_shutdown(request):
 
 ## API Reference
 
-### `App(*, max_body_size=1048576, read_timeout=30.0)`
+### `App(*, max_body_size=1048576, read_timeout=30.0, keep_alive=True, keep_alive_timeout=5.0, max_requests_per_connection=100)`
 
 Main application class.
 
@@ -200,6 +200,11 @@ Main application class.
 |-----------|------|---------|-------------|
 | `max_body_size` | `int` | `1048576` (1 MB) | Maximum request body size in bytes |
 | `read_timeout` | `float` | `30.0` | Timeout for reading a single request |
+| `keep_alive` | `bool` | `True` | Serve multiple requests per connection |
+| `keep_alive_timeout` | `float` | `5.0` | Idle seconds before a kept-alive connection is closed |
+| `max_requests_per_connection` | `int` | `100` | Close a connection after this many requests |
+
+**Connections:** HTTP/1.1 connections are kept alive unless the request sends `Connection: close` or the response sets it; HTTP/1.0 stays open only when the request asks with `Connection: keep-alive`. Streaming responses (`StreamingResponse`) always close. An idle kept-alive connection is closed quietly — no `408` — when `keep_alive_timeout` expires.
 
 **Routing Methods:**
 

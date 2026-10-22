@@ -23,6 +23,31 @@ def _theirs(html: str) -> BeautifulSoup:
     return BeautifulSoup(html, "html.parser")
 
 
+def _soupsieve_at_least(major: int, minor: int) -> bool:
+    """Whether the installed soupsieve is new enough to be the reference.
+
+    The comparisons below encode behaviour soupsieve gained in 2.10: the
+    Selectors-4 empty-value guards on ``^=`` / ``$=`` / ``*=`` and
+    whitespace around the commas of a selector list.  An older soupsieve
+    rejects the list outright or answers differently, which fails the test
+    on the reference side even though zerodep follows the spec.
+    """
+    import soupsieve
+
+    parts = soupsieve.__version__.split(".")
+    try:
+        version = (int(parts[0]), int(parts[1]))
+    except (IndexError, ValueError):  # pragma: no cover - odd version string
+        return False
+    return version >= (major, minor)
+
+
+REFERENCE_SUPPORTS_SELECTORS_4 = pytest.mark.skipif(
+    not _soupsieve_at_least(2, 10),
+    reason="reference behaviour landed in soupsieve 2.10",
+)
+
+
 # ── Test HTML fixtures ──
 
 SIMPLE_HTML = "<html><head><title>Test</title></head><body><p>Hello</p></body></html>"
@@ -600,15 +625,25 @@ class TestSelectAttributeOperators:
         ids=[row_id for row_id, _, _ in EMPTY_VALUE_CASES],
     )
     def test_empty_expected_value(self, selector, expected):
-        """The empty *expected* rule, pinned and compared to the reference.
+        """The empty *expected* rule, asserted directly.
 
-        The documented rule is asserted directly so the row names the
-        operator and the attribute state it broke, and the reference
-        comparison keeps zerodep aligned with soupsieve 2.10.
+        Pinned so the row names the operator and the attribute state it
+        broke; the reference comparison lives in the test below and is
+        skipped when the installed soupsieve predates the rule.
         """
         ours = _ours(ATTR_EMPTY_VALUE_HTML)
-        theirs = _theirs(ATTR_EMPTY_VALUE_HTML)
         assert self._texts(ours.select(selector)) == expected
+
+    @pytest.mark.parametrize(
+        "selector, expected",
+        [(selector, expected) for _, selector, expected in EMPTY_VALUE_CASES],
+        ids=[row_id for row_id, _, _ in EMPTY_VALUE_CASES],
+    )
+    @REFERENCE_SUPPORTS_SELECTORS_4
+    def test_empty_expected_value_matches_the_reference(self, selector, expected):
+        """The same rows compared against soupsieve >= 2.10."""
+        ours = _ours(ATTR_EMPTY_VALUE_HTML)
+        theirs = _theirs(ATTR_EMPTY_VALUE_HTML)
         assert self._texts(ours.select(selector)) == self._texts(
             theirs.select(selector)
         )
@@ -762,6 +797,7 @@ class TestSelectList:
             '  [title="c"]  ,  [title="a,b"]  ',
         ],
     )
+    @REFERENCE_SUPPORTS_SELECTORS_4
     def test_selector_list_matches_beautifulsoup(self, selector):
         ours = _ours(SELECT_LIST_HTML)
         theirs = _theirs(SELECT_LIST_HTML)

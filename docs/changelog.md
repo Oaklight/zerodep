@@ -17,6 +17,8 @@
 
 ### 问题修复
 
+- **toon**（v0.6.1）：`encode()` / `decode()` 现在拒绝未知选项键并抛出 `TypeError`，因此诸如参考实现的 `indent_size` 这类移植笔误不再静默生成不同的文档。`decode()` 接受 UTF-8 编码的 `bytes` / `bytearray`，非法 UTF-8 抛出 `ToonDecodeError`；`ToonDecodeError` 的 docstring 现在明确说明它不继承 `ValueError`。
+- **jsonx**（v1.0.2）：`loads_lines()` 在传入自定义解码器或钩子时退出批量快速路径，与 `loads()` 一致：回调对每个值只执行一次，不再被试探性调用最多三次；钩子抛出的 `JSONDecodeError` 拒绝也不会被重试。`loads()` 对 `bytes` 抛出明确的 `TypeError` 说明该限制，不再泄漏正则扫描器的内部错误。
 - **toon**（v0.6.0）：列表形式现在能往返嵌套对象值。`[{'d': {}}]` 编码为 `- d:` 并能解码回来，不再丢失 `d`；子对象键不同的对象数组也能解码自身编码器的输出，不再抛错。编码器现在把列表项头部与第一个键写在同一行，与参考实现一致。([#188](https://github.com/Oaklight/zerodep/issues/188))
 - **jsonx** (v1.0.1)：`loads()` 先对原始文本直接调用 `json.loads`，只有失败时才运行注释与尾逗号扫描器——JSON 是 JSONC 的子集。对于不含注释的文档，这省去了两轮正则预处理，其开销约为解析本身的 14 倍（129 KiB 文档：65.6 ms → 4.05 ms）；真正的 JSONC 文档则多付出一次失败的解析。钩子与自定义解码器会退出快速路径，因此不会在试探性解析中被调用；当预处理没有改变文本时无需重试，失败只会报告一次——通过抛出 `JSONDecodeError` 拒绝文档的 hook 不会被再次调用，其拒绝也不会被覆盖。([#206](https://github.com/Oaklight/zerodep/issues/206), [#208](https://github.com/Oaklight/zerodep/pull/208))
 - **toon**：`decode()` 遇到非法转义序列和结尾反斜杠时抛出 `ToonDecodeError`，而不再抛出裸的 `ValueError`，与文档化的契约以及一致性门禁对 `shouldError` 用例的期望一致。九个 fixture 由失败转为通过（564 个中 350 → 359）。`ToonDecodeError` 不继承 `ValueError`，因此调用方在 `decode()` 外围的 `except ValueError` 不再捕获格式错误——这是有意的契约，`docs/modules/toon.md` 现在已明确说明。与规范之间剩余的差距是解码器静默接受了本应拒绝的输入，而非错误类型问题；它仍记录在一致性 baseline 中，并由 [#184](https://github.com/Oaklight/zerodep/issues/184) 跟踪。([#198](https://github.com/Oaklight/zerodep/issues/198), [#209](https://github.com/Oaklight/zerodep/pull/209))
@@ -31,6 +33,7 @@
 
 ### 基础设施
 
+- **基准测试**：基准工作流现在通过 `bench-toon` 的 git pin 安装 TOON 参考实现，而不是未固定的 `git+` 安装加 `|| true`，并断言产物中存在 `toon/` 行。参考实现安装失败现在会让任务失败，而不是静默丢弃对比结果，与 `s3` 已有的保护一致。
 - **基准测试 extras 在 Python 3.11+ 上使用 Pillow 13**：针对 `bench-qr` / `bench-png` 的全部 39 条 Dependabot 安全公告（4 条严重、23 条高危、12 条中危）都在 Pillow 13.0.0 中修复。该版本要求 Python 3.11，因此钉版本按版本拆分——3.11 起用 13.0.0，3.10 用最后一个支持它的 12.3.0。仅影响基准测试的参考依赖，模块本身不依赖 Pillow。
 - **`python -m pytest` 下测试套件重新可以收集**：`import qrcode` 会导入 `png`，而 `python -m` 会把仓库根目录放进 `sys.path`（`pytest` 命令行脚本不会），于是 `png/` 被当作空的 namespace package 缓存下来，png 测试自身的导入随之失败，导致整个收集过程中断。现在 png 测试模块在导入被测模块前，会清除任何不属于该目录自身的 `png` 缓存条目——既包括 namespace 条目，也包括安装了 `pypng` 时 `qrcode` 绑定的真实模块。完整收集为 8805 个用例，无错误。([#223](https://github.com/Oaklight/zerodep/issues/223))
 - **dotenv 与 frontmatter 基准测试现在测量真正的参考实现**：这两个测试目录与它们对比的包同名，而 pytest 的 prepend 导入模式使它们排在 site-packages 之前，于是 `pytest.importorskip` 绑定到仓库自己的模块，报告中 `test_python_dotenv` / `test_python_frontmatter` 两列实际测的是同一个 zerodep 实现。现在两个基准在导入参考实现时会临时隐藏这些遮蔽路径并在之后恢复，同时校验被绑定的模块不在仓库内，使这类冲突直接报错而不是产出看似合理的数字。([#205](https://github.com/Oaklight/zerodep/issues/205))

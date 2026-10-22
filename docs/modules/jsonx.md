@@ -44,7 +44,7 @@ text = dumps(config, indent=2)
 
 ### `loads(text, **kwargs)`
 
-将 JSONC 字符串反序列化为 Python 对象。先剥离注释和尾逗号，再委托给 `json.loads`；若文档本身即为合法 JSON，则跳过该预处理。传入 `cls` 或任一钩子（`object_hook`、`object_pairs_hook`、`parse_float`、`parse_int`、`parse_constant`）会退出快速路径，因此回调不会在试探性解析中被调用。
+将 JSONC 字符串反序列化为 Python 对象。先剥离注释和尾逗号，再委托给 `json.loads`；若文档本身即为合法 JSON，则跳过该预处理。传入 `cls` 或任一钩子（`object_hook`、`object_pairs_hook`、`parse_float`、`parse_int`、`parse_constant`）会退出快速路径，因此回调不会在试探性解析中被调用。仅接受 `str`；传入 `bytes` 会抛出 `TypeError`，请先解码。
 
 支持 `json.loads` 的所有关键字参数（`cls`、`object_hook`、`parse_float`、`parse_int`、`parse_constant`、`object_pairs_hook`）。
 

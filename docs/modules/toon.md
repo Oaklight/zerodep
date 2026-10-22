@@ -51,18 +51,19 @@ print(encode(employees))
 将 Python 值编码为 TOON 格式。
 
 - **value**：任何 JSON 可序列化值，以及 Python 类型（datetime、Decimal、set、Path、tuple）
-- **options**：可选的 `EncodeOptions` 字典，包含 `indent`、`delimiter`
+- **options**：可选的 `EncodeOptions` 字典，包含 `indent`、`delimiter`；未知键会抛出 `TypeError`
 
 ### `decode(text, options=None)`
 
 将 TOON 格式字符串解码为 Python 值。
 
-- **text**：TOON 格式字符串
-- **options**：可选的 `DecodeOptions` 字典，包含 `indent`、`strict`
+- **text**：TOON 格式字符串，或 UTF-8 编码的 `bytes` / `bytearray`
+- **options**：可选的 `DecodeOptions` 字典，包含 `indent`、`strict`；未知键会抛出 `TypeError`
 
 ### `ToonDecodeError`
 
-TOON 解码失败时抛出的异常：格式错误、非法转义序列，或引号值末尾的反斜杠。
+TOON 解码失败时抛出的异常：格式错误、非法转义序列、引号值末尾的反斜杠，
+或不是合法 UTF-8 的输入。
 
 `ToonDecodeError` 继承 `Exception` 而不是 `ValueError`，因此 `decode()` 外围的
 `except ValueError` 捕获不到这些错误——请捕获 `ToonDecodeError`。模块抛出的所有

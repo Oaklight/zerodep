@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "1.0.0"
+# version = "1.0.1"
 # deps = []
 # tier = "simple"
 # category = "serialization"
@@ -189,7 +189,8 @@ def loads(
 
     Strips ``//``, ``#``, and ``/* */`` comments and trailing commas before
     delegating to :func:`json.loads`. Documents that already parse as plain
-    JSON skip the preprocessing pass entirely.
+    JSON skip the preprocessing pass entirely; a custom decoder or hook opts
+    out of that fast path, so it never parses the same text twice.
 
     Hooks (``object_hook``, ``object_pairs_hook``, ``parse_float``, …) must
     not raise :class:`json.JSONDecodeError` to reject a document: that
@@ -228,7 +229,20 @@ def loads(
     # Fast path: JSON is a subset of JSONC, so a document that parses as
     # plain JSON needs no preprocessing — a successful json.loads is the
     # same answer. Only a failed parse pays for the comment scanner.
-    if isinstance(text, str):
+    #
+    # A custom decoder or a caller hook opts out: the speculative parse would
+    # otherwise invoke it on values the caller never receives, and then again
+    # on the fallback parse.  A custom decoder may also accept JSONC itself,
+    # in which case preprocessing must still run first.
+    custom_parse = (
+        cls is not None
+        or object_hook is not None
+        or object_pairs_hook is not None
+        or parse_float is not None
+        or parse_int is not None
+        or parse_constant is not None
+    )
+    if isinstance(text, str) and not custom_parse:
         try:
             return _decode(text)
         except json.JSONDecodeError as exc:

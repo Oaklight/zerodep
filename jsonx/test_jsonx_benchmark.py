@@ -1,5 +1,6 @@
 """Benchmark: zerodep jsonx (JSONC + JSONL) vs commentjson / jsonlines / ndjson."""
 
+import json
 import os
 import sys
 
@@ -122,6 +123,24 @@ class TestLoadLarge:
     @_skip_commentjson
     def test_commentjson(self, benchmark):
         benchmark(_cj.loads, LARGE)
+
+
+# ── Plain-JSON fast-path benchmarks ──
+
+_PLAIN_LARGE = json.dumps(
+    {"items": [{"id": i, "name": f"Item {i}", "value": i * 1.5} for i in range(100)]},
+    indent=2,
+)
+
+
+class TestLoadPlainJson:
+    """The fast path keeps jsonx within noise of stdlib ``json``."""
+
+    def test_zerodep(self, benchmark):
+        benchmark(zd_loads, _PLAIN_LARGE)
+
+    def test_stdlib(self, benchmark):
+        benchmark(json.loads, _PLAIN_LARGE)
 
 
 # ── Fixture data: real-world config files ──

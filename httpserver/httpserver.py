@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.5.1"
+# version = "0.6.0"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -78,6 +78,8 @@ DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 DEFAULT_MAX_BODY_SIZE = 1_048_576  # 1 MB
 DEFAULT_READ_TIMEOUT = 30.0  # seconds
+DEFAULT_KEEP_ALIVE_TIMEOUT = 5.0  # seconds between requests on one connection
+DEFAULT_MAX_REQUESTS_PER_CONNECTION = 100
 
 _STATUS_REASONS: dict[int, str] = {
     100: "Continue",
@@ -152,6 +154,10 @@ class HTTPException(Exception):
 
 class _BadRequest(Exception):
     """Internal: malformed HTTP request from client."""
+
+
+class _ClientDisconnected(Exception):
+    """Internal: the client closed the connection between requests."""
 
 
 def abort(status_code: int, message: str | None = None) -> None:
@@ -775,29 +781,55 @@ def _compile_route(
 # ── HTTP Parsing ─────────────────────────────────────────────────────────────
 
 
+def _read_error_response(exc: Exception) -> Response:
+    """Map an exception raised while reading a request to a response.
+
+    Args:
+        exc: The exception.
+
+    Returns:
+        The response to send before closing the connection.
+    """
+    if isinstance(exc, _BadRequest):
+        return Response(
+            body=str(exc),
+            status_code=400,
+            content_type="text/plain; charset=utf-8",
+        )
+    if isinstance(exc, HTTPException):
+        return JSONResponse({"error": exc.message}, status_code=exc.status_code)
+    if isinstance(exc, asyncio.TimeoutError):
+        return JSONResponse({"error": "Request Timeout"}, status_code=408)
+    if isinstance(exc, asyncio.IncompleteReadError):
+        return JSONResponse({"error": "Bad Request: incomplete body"}, status_code=400)
+    return JSONResponse({"error": "Internal Server Error"}, status_code=500)
+
+
 async def _read_request(
     reader: asyncio.StreamReader,
     timeout: float,
     max_body_size: int,
-) -> tuple[str, str, str, dict[str, str], bytes]:
+) -> tuple[str, str, str, dict[str, str], bytes, str]:
     """Read and parse an HTTP request from a stream.
 
     Returns:
-        Tuple of (method, path, query_string, headers, body).
+        Tuple of (method, path, query_string, headers, body, version).
 
     Raises:
+        _ClientDisconnected: If the stream ended before a request line, which
+            is how a client closes a kept-alive connection.
         _BadRequest: If the request is malformed.
         asyncio.TimeoutError: If reading times out.
     """
     # -- Request line --
     raw_line = await asyncio.wait_for(reader.readline(), timeout=timeout)
     if not raw_line:
-        raise _BadRequest("Empty request")
+        raise _ClientDisconnected
     request_line = raw_line.decode("latin-1").rstrip("\r\n")
     parts = request_line.split(" ", 2)
     if len(parts) != 3:
         raise _BadRequest(f"Malformed request line: {request_line!r}")
-    method, raw_url, _version = parts
+    method, raw_url, version = parts
 
     # -- URL --
     parsed = urlparse(raw_url)
@@ -827,7 +859,7 @@ async def _read_request(
     elif headers.get("transfer-encoding", "").lower() == "chunked":
         body = await _read_chunked_body(reader, timeout, max_body_size)
 
-    return method.upper(), path, query_string, headers, body
+    return method.upper(), path, query_string, headers, body, version.upper()
 
 
 async def _read_chunked_body(
@@ -978,6 +1010,16 @@ class App:
     Args:
         max_body_size: Maximum request body size in bytes.
         read_timeout: Timeout for reading a single request (seconds).
+        keep_alive: Serve more than one request per connection.  HTTP/1.1
+            connections stay open unless the client or the response asks to
+            close; HTTP/1.0 stays open only when the client asks.  Streaming
+            responses always close.  Defaults to ``True``.
+        keep_alive_timeout: Seconds an idle kept-alive connection may wait for
+            the next request before the server closes it quietly.  Defaults
+            to :data:`DEFAULT_KEEP_ALIVE_TIMEOUT`.
+        max_requests_per_connection: Close a connection after this many
+            requests even if the client would reuse it.  Defaults to
+            :data:`DEFAULT_MAX_REQUESTS_PER_CONNECTION`.
 
     Example::
 
@@ -995,6 +1037,9 @@ class App:
         *,
         max_body_size: int = DEFAULT_MAX_BODY_SIZE,
         read_timeout: float = DEFAULT_READ_TIMEOUT,
+        keep_alive: bool = True,
+        keep_alive_timeout: float = DEFAULT_KEEP_ALIVE_TIMEOUT,
+        max_requests_per_connection: int = DEFAULT_MAX_REQUESTS_PER_CONNECTION,
     ):
         self._routes: list[_Route] = []
         self._static_routes: list[tuple[str, str]] = []
@@ -1011,6 +1056,9 @@ class App:
         self._loop: asyncio.AbstractEventLoop | None = None
         self.max_body_size = max_body_size
         self.read_timeout = read_timeout
+        self.keep_alive = keep_alive
+        self.keep_alive_timeout = keep_alive_timeout
+        self.max_requests_per_connection = max_requests_per_connection
         self.port: int | None = None
         self.host: str | None = None
 
@@ -1381,55 +1429,109 @@ class App:
         reader: asyncio.StreamReader,
         writer: asyncio.StreamWriter,
     ) -> None:
-        """Handle a single client connection."""
+        """Serve requests on one connection until it closes.
+
+        A kept-alive connection is read, dispatched and written in a loop;
+        the loop ends on ``Connection: close``, an HTTP/1.0 request that did
+        not ask to stay, a streaming response, the request limit, an idle
+        timeout, or a client disconnect.
+        """
         peer = writer.get_extra_info("peername")
         client_addr = (peer[0], peer[1]) if peer else ("unknown", 0)
+        served = 0
 
         try:
-            method, path, qs, headers, body = await _read_request(
-                reader, self.read_timeout, self.max_body_size
-            )
-        except _BadRequest as exc:
-            logger.debug("Bad request from %s: %s", client_addr, exc)
-            await self._send_error_and_close(
-                writer,
-                Response(
-                    body=str(exc),
-                    status_code=400,
-                    content_type="text/plain; charset=utf-8",
-                ),
-            )
-            return
-        except HTTPException as exc:
-            await self._send_error_and_close(
-                writer,
-                JSONResponse({"error": exc.message}, status_code=exc.status_code),
-            )
-            return
-        except asyncio.TimeoutError:
-            logger.debug("Request read timed out from %s", client_addr)
-            await self._send_error_and_close(
-                writer,
-                JSONResponse({"error": "Request Timeout"}, status_code=408),
-            )
-            return
-        except asyncio.IncompleteReadError:
-            logger.debug("Incomplete request body from %s", client_addr)
-            await self._send_error_and_close(
-                writer,
-                JSONResponse(
-                    {"error": "Bad Request: incomplete body"}, status_code=400
-                ),
-            )
-            return
-        except Exception:
-            logger.debug("Failed to read request from %s", client_addr, exc_info=True)
-            await self._send_error_and_close(
-                writer,
-                JSONResponse({"error": "Internal Server Error"}, status_code=500),
-            )
-            return
+            while True:
+                timeout = self.read_timeout if served == 0 else self.keep_alive_timeout
+                try:
+                    request_parts = await _read_request(
+                        reader, timeout, self.max_body_size
+                    )
+                except _ClientDisconnected:
+                    break
+                except Exception as exc:
+                    await self._reject_read(exc, served, writer, client_addr)
+                    break
 
+                method, path, qs, headers, body, version = request_parts
+                keep_alive = self._keep_alive_requested(version, headers, served + 1)
+                served += 1
+                try:
+                    if not await self._serve_one(
+                        method,
+                        path,
+                        qs,
+                        headers,
+                        body,
+                        client_addr,
+                        writer,
+                        keep_alive,
+                    ):
+                        break
+                except Exception:
+                    logger.exception("Error writing response to %s", client_addr)
+                    break
+        finally:
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except Exception:
+                pass
+
+    async def _reject_read(
+        self,
+        exc: Exception,
+        served: int,
+        writer: asyncio.StreamWriter,
+        client_addr: tuple,
+    ) -> None:
+        """Answer a failed request read, or close quietly on an idle timeout.
+
+        Args:
+            exc: The exception raised while reading the request.
+            served: Requests already served on this connection.
+            writer: The client connection.
+            client_addr: Client address for logging.
+        """
+        if isinstance(exc, asyncio.TimeoutError):
+            if served:
+                logger.debug("Keep-alive idle timeout from %s", client_addr)
+                return
+            logger.debug("Request read timed out from %s", client_addr)
+        elif isinstance(exc, _BadRequest):
+            logger.debug("Bad request from %s: %s", client_addr, exc)
+        elif not isinstance(exc, (HTTPException, asyncio.IncompleteReadError)):
+            logger.debug("Failed to read request from %s", client_addr, exc_info=True)
+        elif isinstance(exc, asyncio.IncompleteReadError):
+            logger.debug("Incomplete request body from %s", client_addr)
+        await self._send_error_and_close(writer, _read_error_response(exc))
+
+    async def _serve_one(
+        self,
+        method: str,
+        path: str,
+        qs: str,
+        headers: dict[str, str],
+        body: bytes,
+        client_addr: tuple,
+        writer: asyncio.StreamWriter,
+        keep_alive: bool,
+    ) -> bool:
+        """Dispatch and write one request.
+
+        Args:
+            method: Request method.
+            path: Decoded request path.
+            qs: Query string.
+            headers: Lower-cased request headers.
+            body: Request body.
+            client_addr: Client address for logging.
+            writer: The client connection.
+            keep_alive: Whether the connection may be reused afterwards.
+
+        Returns:
+            ``True`` when the connection stays open for another request.
+        """
         request = Request(
             method=method,
             path=path,
@@ -1439,47 +1541,78 @@ class App:
             client_addr=client_addr,
             app=self,
         )
-
         logger.debug("%s %s from %s", method, path, client_addr)
 
         try:
-            try:
-                response = await self._dispatch(request)
-            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-                logger.debug("Connection reset by %s during dispatch", client_addr)
-                return
+            response = await self._dispatch(request)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            logger.debug("Connection reset by %s during dispatch", client_addr)
+            return False
 
+        keep_alive = keep_alive and not isinstance(response, StreamingResponse)
+        if keep_alive and response.headers.get("Connection", "").lower() != "close":
+            response.headers["Connection"] = "keep-alive"
+        else:
+            keep_alive = False
+            response.headers["Connection"] = "close"
+
+        await self._fire_signal(
+            "on_response_started",
+            self._on_response_started_handlers,
+            request,
+            response,
+        )
+
+        try:
+            await response._write(writer)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             await self._fire_signal(
-                "on_response_started",
-                self._on_response_started_handlers,
+                "on_client_disconnect",
+                self._on_client_disconnect_handlers,
                 request,
-                response,
             )
+            logger.debug("Connection reset by %s during response", client_addr)
+            return False
 
-            try:
-                await response._write(writer)
-            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-                await self._fire_signal(
-                    "on_client_disconnect",
-                    self._on_client_disconnect_handlers,
-                    request,
-                )
-                logger.debug("Connection reset by %s during response", client_addr)
-            else:
-                await self._fire_signal(
-                    "on_response_completed",
-                    self._on_response_completed_handlers,
-                    request,
-                    response,
-                )
-        except Exception:
-            logger.exception("Error writing response to %s", client_addr)
-        finally:
-            try:
-                writer.close()
-                await writer.wait_closed()
-            except Exception:
-                pass
+        await self._fire_signal(
+            "on_response_completed",
+            self._on_response_completed_handlers,
+            request,
+            response,
+        )
+        is_closing = getattr(writer, "is_closing", None)
+        if is_closing is not None and is_closing():
+            return False
+        return keep_alive
+
+    def _keep_alive_requested(
+        self,
+        version: str,
+        headers: dict[str, str],
+        served: int,
+    ) -> bool:
+        """Whether this request may be followed by another on the connection.
+
+        Args:
+            version: HTTP version from the request line.
+            headers: Lower-cased request headers.
+            served: Number of requests served including this one.
+
+        Returns:
+            ``True`` when the connection should stay open.
+        """
+        if not self.keep_alive or served >= self.max_requests_per_connection:
+            return False
+        tokens = {
+            token.strip().lower()
+            for token in headers.get("connection", "").split(",")
+            if token.strip()
+        }
+        if "close" in tokens:
+            return False
+        if version == "HTTP/1.0" and "keep-alive" not in tokens:
+            return False
+        return True
 
     # ── Server Lifecycle ─────────────────────────────────────────────────
 

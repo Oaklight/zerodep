@@ -47,7 +47,11 @@ bench-aiosqlite = [
 ]
 bench-qr = [
     "qrcode==8.2",
-    "Pillow==12.3.0",
+    # 13.0.0 fixes every advisory open against 12.x (4 critical, 23 high,
+    # 12 medium) but requires Python >= 3.11; 3.10 stays on the last
+    # release that supports it.
+    "Pillow==13.0.0; python_version >= '3.11'",
+    "Pillow==12.3.0; python_version < '3.11'",
 ]
 bench-http = [
     "httpx==0.28.1",
@@ -151,7 +155,9 @@ bench-readability = [
     "readability-lxml==0.8.4.1",
 ]
 bench-png = [
-    "Pillow==12.3.0",
+    # Split on Python version for the same reason as bench-qr.
+    "Pillow==13.0.0; python_version >= '3.11'",
+    "Pillow==12.3.0; python_version < '3.11'",
     "numpy>=1.26.0",
 ]
 bench-useragent = [

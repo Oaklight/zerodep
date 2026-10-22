@@ -31,6 +31,7 @@
 
 ### 基础设施
 
+- **基准测试 extras 在 Python 3.11+ 上使用 Pillow 13**：针对 `bench-qr` / `bench-png` 的全部 39 条 Dependabot 安全公告（4 条严重、23 条高危、12 条中危）都在 Pillow 13.0.0 中修复。该版本要求 Python 3.11，因此钉版本按版本拆分——3.11 起用 13.0.0，3.10 用最后一个支持它的 12.3.0。仅影响基准测试的参考依赖，模块本身不依赖 Pillow。
 - **`python -m pytest` 下测试套件重新可以收集**：`import qrcode` 会导入 `png`，而 `python -m` 会把仓库根目录放进 `sys.path`（`pytest` 命令行脚本不会），于是 `png/` 被当作空的 namespace package 缓存下来，png 测试自身的导入随之失败，导致整个收集过程中断。现在 png 测试模块在导入被测模块前，会清除任何不属于该目录自身的 `png` 缓存条目——既包括 namespace 条目，也包括安装了 `pypng` 时 `qrcode` 绑定的真实模块。完整收集为 8805 个用例，无错误。([#223](https://github.com/Oaklight/zerodep/issues/223))
 - **dotenv 与 frontmatter 基准测试现在测量真正的参考实现**：这两个测试目录与它们对比的包同名，而 pytest 的 prepend 导入模式使它们排在 site-packages 之前，于是 `pytest.importorskip` 绑定到仓库自己的模块，报告中 `test_python_dotenv` / `test_python_frontmatter` 两列实际测的是同一个 zerodep 实现。现在两个基准在导入参考实现时会临时隐藏这些遮蔽路径并在之后恢复，同时校验被绑定的模块不在仓库内，使这类冲突直接报错而不是产出看似合理的数字。([#205](https://github.com/Oaklight/zerodep/issues/205))
 - **tabulate 正确性测试重新不受环境影响**：参考实现在安装了 `wcwidth` 时改用它计算列宽，而 zerodep 的默认实现使用 `len(s)`。当 `wcwidth` 作为传递依赖出现时，四个 unicode/CJK 对比实际上在比较两套不同的宽度规则并因此失败。测试现在对参考实现的导入隐藏 `wcwidth`，并断言它确实保持隐藏。([#228](https://github.com/Oaklight/zerodep/issues/228))

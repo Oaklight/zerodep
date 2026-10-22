@@ -47,21 +47,45 @@ WIDE_CHARS_MODE: bool = False
 # ── CJK / visible-width helpers ──────────────────────────────────────────────
 
 
+# Categories that occupy no column of their own: combining marks (Mn),
+# enclosing marks (Me) — the keycap U+20E3 — and format characters (Cf),
+# which include the zero-width space and joiner (U+200B, U+200D) and the
+# combining grapheme joiner (U+034F).
+_ZERO_WIDTH_CATEGORIES = frozenset({"Mn", "Me", "Cf"})
+
+# Hangul medial (jungseong) and final (jongseong) jamo compose with the
+# leading jamo and add no column.
+_ZERO_WIDTH_RANGES = ((0x1160, 0x11FF), (0xD7B0, 0xD7FF))
+
+
+def _is_zero_width(ch: str) -> bool:
+    """Return True when *ch* occupies no column of its own."""
+    if unicodedata.category(ch) in _ZERO_WIDTH_CATEGORIES:
+        return True
+    cp = ord(ch)
+    return any(lo <= cp <= hi for lo, hi in _ZERO_WIDTH_RANGES)
+
+
 def _visible_width(s: str) -> int:
     """Return the visible width of *s*, counting CJK / wide chars as 2.
 
     This function respects the ``WIDE_CHARS_MODE`` flag.  When the flag is
     ``False`` (the default, matching the reference *tabulate* library),
-    width equals ``len(s)``.  When it is ``True``, East Asian wide and
-    fullwidth characters count as two columns and combining marks as zero,
-    which is what ``wcwidth`` reports.
+    width equals ``len(s)``.
+
+    When it is ``True``, East Asian wide and fullwidth characters count as
+    two columns, and zero-width marks (combining, enclosing and format
+    characters) and Hangul medial/final jamo as zero — the per-character
+    widths ``wcwidth`` reports.  Emoji presentation sequences are counted
+    per component, which is where the two can differ: a ZWJ family emoji is
+    six columns here and two under ``wcwidth`` (it measures grapheme
+    clusters), and a keycap sequence is one here and two there.
     """
     if not WIDE_CHARS_MODE:
         return len(s)
     w = 0
     for ch in s:
-        if unicodedata.combining(ch):
-            # Zero-width, as wcwidth reports: "café" is four columns.
+        if _is_zero_width(ch):
             continue
         eaw = unicodedata.east_asian_width(ch)
         if eaw in ("W", "F"):

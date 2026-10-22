@@ -65,6 +65,7 @@ __all__ = [
     "DEFAULT_USER_AGENT",
     "DEFAULT_POOL_SIZE",
     "DEFAULT_POOL_IDLE_TIMEOUT",
+    "DEFAULT_MAX_TOTAL_CONNECTIONS",
     # Exceptions
     "HttpClientError",
     "HTTPError",
@@ -114,6 +115,10 @@ DEFAULT_MAX_REDIRECTS = 10
 DEFAULT_USER_AGENT = "zerodep-http/0.1"
 DEFAULT_POOL_SIZE = 10
 DEFAULT_POOL_IDLE_TIMEOUT = 60.0
+#: Upper bound on idle connections held across *all* hosts.  ``pool_size``
+#: is per (host, port, scheme, verify) key, so a process that talks to many
+#: hosts could otherwise hold ``pool_size`` sockets for each of them.
+DEFAULT_MAX_TOTAL_CONNECTIONS = 100
 
 #: Methods a stale pooled connection may be retried with: the request is safe
 #: to repeat, so a connection the server closed between requests does not turn
@@ -1090,12 +1095,17 @@ class _SyncConnectionPool:
           ``__del__``.  The connection is never returned to the pool.
     """
 
-    def __init__(self, pool_size: int = DEFAULT_POOL_SIZE) -> None:
+    def __init__(
+        self,
+        pool_size: int = DEFAULT_POOL_SIZE,
+        max_total: int = DEFAULT_MAX_TOTAL_CONNECTIONS,
+    ) -> None:
         self._pool: dict[
             tuple[str, int, bool],
             list[tuple[http.client.HTTPConnection, float]],
         ] = {}
         self._pool_size = pool_size
+        self._max_total = max_total
         self._lock = threading.Lock()
 
     def acquire(
@@ -1169,12 +1179,65 @@ class _SyncConnectionPool:
             conns = self._pool.setdefault(key, [])
             if len(conns) < self._pool_size:
                 conns.append((conn, time.monotonic()))
+                self._sweep_locked(time.monotonic())
             else:
                 # Tier 3: best-effort silent -- pool overflow discard
                 try:
                     conn.close()
                 except Exception:
                     pass
+
+    def _sweep_locked(self, now: float) -> None:
+        """Drop expired connections and enforce the global cap.
+
+        Expiry was only checked for the key being acquired, so idle
+        connections to hosts that are no longer used stayed open until
+        ``close_all()``.  The sweep runs on release, keeps the pool bounded
+        across keys, and evicts the oldest connection first so the one just
+        returned survives.
+
+        Args:
+            now: Current monotonic time.  The caller holds the lock.
+        """
+        total = 0
+        for key in list(self._pool):
+            fresh = []
+            for conn, timestamp in self._pool[key]:
+                if now - timestamp > DEFAULT_POOL_IDLE_TIMEOUT:
+                    # Tier 3: best-effort silent -- idle expiry
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                else:
+                    fresh.append((conn, timestamp))
+            if fresh:
+                self._pool[key] = fresh
+                total += len(fresh)
+            else:
+                del self._pool[key]
+
+        while total > self._max_total:
+            oldest_key: Any = None
+            oldest_index = 0
+            oldest_ts = float("inf")
+            for key, conns in self._pool.items():
+                for index, (_, timestamp) in enumerate(conns):
+                    if timestamp < oldest_ts:
+                        oldest_ts = timestamp
+                        oldest_key = key
+                        oldest_index = index
+            if oldest_key is None:
+                return
+            conn, _ = self._pool[oldest_key].pop(oldest_index)
+            if not self._pool[oldest_key]:
+                del self._pool[oldest_key]
+            # Tier 3: best-effort silent -- global cap eviction
+            try:
+                conn.close()
+            except Exception:
+                pass
+            total -= 1
 
     def close_all(self) -> None:
         """Close all pooled connections."""
@@ -1208,7 +1271,11 @@ class _AsyncConnectionPool:
           the pool.
     """
 
-    def __init__(self, pool_size: int = DEFAULT_POOL_SIZE) -> None:
+    def __init__(
+        self,
+        pool_size: int = DEFAULT_POOL_SIZE,
+        max_total: int = DEFAULT_MAX_TOTAL_CONNECTIONS,
+    ) -> None:
         self._pool: dict[
             tuple[str, int, bool],
             list[
@@ -1220,6 +1287,7 @@ class _AsyncConnectionPool:
             ],
         ] = {}
         self._pool_size = pool_size
+        self._max_total = max_total
         self._lock = asyncio.Lock()
 
     async def acquire(
@@ -1293,6 +1361,7 @@ class _AsyncConnectionPool:
             conns = self._pool.setdefault(key, [])
             if len(conns) < self._pool_size:
                 conns.append((reader, writer, time.monotonic()))
+                await self._sweep_locked(time.monotonic())
             else:
                 # Tier 3: best-effort silent -- pool overflow discard
                 try:
@@ -1300,6 +1369,59 @@ class _AsyncConnectionPool:
                     await writer.wait_closed()
                 except Exception:
                     pass
+
+    async def _sweep_locked(self, now: float) -> None:
+        """Drop expired connections and enforce the global cap.
+
+        See :meth:`_SyncConnectionPool._sweep_locked`; the async pool needs
+        the same bound because ``pool_size`` is per key, so many hosts would
+        otherwise pin one socket each with no way to release them short of
+        ``close_all()``.
+
+        Args:
+            now: Current monotonic time.  The caller holds the lock.
+        """
+        total = 0
+        for key in list(self._pool):
+            fresh = []
+            for reader, writer, timestamp in self._pool[key]:
+                if now - timestamp > DEFAULT_POOL_IDLE_TIMEOUT:
+                    # Tier 3: best-effort silent -- idle expiry
+                    try:
+                        writer.close()
+                        await writer.wait_closed()
+                    except Exception:
+                        pass
+                else:
+                    fresh.append((reader, writer, timestamp))
+            if fresh:
+                self._pool[key] = fresh
+                total += len(fresh)
+            else:
+                del self._pool[key]
+
+        while total > self._max_total:
+            oldest_key: Any = None
+            oldest_index = 0
+            oldest_ts = float("inf")
+            for key, conns in self._pool.items():
+                for index, (_, _, timestamp) in enumerate(conns):
+                    if timestamp < oldest_ts:
+                        oldest_ts = timestamp
+                        oldest_key = key
+                        oldest_index = index
+            if oldest_key is None:
+                return
+            _, writer, _ = self._pool[oldest_key].pop(oldest_index)
+            if not self._pool[oldest_key]:
+                del self._pool[oldest_key]
+            # Tier 3: best-effort silent -- global cap eviction
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except Exception:
+                pass
+            total -= 1
 
     async def close_all(self) -> None:
         """Close all pooled connections."""
@@ -3074,6 +3196,7 @@ class Client:
         auth: tuple[str, str] | Auth | None = None,
         proxy: str | None = None,
         pool_size: int = DEFAULT_POOL_SIZE,
+        max_total_connections: int = DEFAULT_MAX_TOTAL_CONNECTIONS,
     ) -> None:
         self._base_headers = headers or {}
         self._cookies: dict[str, str] = dict(cookies) if cookies else {}
@@ -3082,7 +3205,7 @@ class Client:
         self._verify = verify
         self._auth = auth
         self._proxy = proxy
-        self._pool = _SyncConnectionPool(pool_size)
+        self._pool = _SyncConnectionPool(pool_size, max_total_connections)
 
     def request(
         self,
@@ -3177,6 +3300,7 @@ class AsyncClient:
         auth: tuple[str, str] | Auth | None = None,
         proxy: str | None = None,
         pool_size: int = DEFAULT_POOL_SIZE,
+        max_total_connections: int = DEFAULT_MAX_TOTAL_CONNECTIONS,
     ) -> None:
         self._base_headers = headers or {}
         self._cookies: dict[str, str] = dict(cookies) if cookies else {}
@@ -3185,7 +3309,7 @@ class AsyncClient:
         self._verify = verify
         self._auth = auth
         self._proxy = proxy
-        self._pool = _AsyncConnectionPool(pool_size)
+        self._pool = _AsyncConnectionPool(pool_size, max_total_connections)
 
     async def request(
         self,

@@ -440,3 +440,88 @@ class TestServerClosesWithoutHeader:
 
         asyncio.run(run())
         assert server.connections >= 2
+
+
+class _FakeConn:
+    """Connection stub that records ``close()``."""
+
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class _FakeWriter:
+    """Stream-writer stub that records ``close()``."""
+
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+    async def wait_closed(self) -> None:
+        return None
+
+
+class TestGlobalConnectionCap:
+    """``pool_size`` is per host, so idle sockets are also capped globally."""
+
+    def test_sync_pool_evicts_oldest_beyond_the_cap(self):
+        pool = httpclient._SyncConnectionPool(pool_size=5, max_total=2)
+        conns = [_FakeConn() for _ in range(3)]
+
+        for index, conn in enumerate(conns):
+            pool.release(f"host-{index}", 80, False, conn, verify=True)
+
+        assert sum(len(v) for v in pool._pool.values()) == 2
+        assert conns[0].closed is True
+        assert conns[1].closed is False
+        assert conns[2].closed is False
+
+    def test_sync_release_sweeps_expired_entries_of_other_hosts(self):
+        pool = httpclient._SyncConnectionPool(pool_size=5, max_total=10)
+        stale = _FakeConn()
+        key = ("stale-host", 80, False, True)
+        pool._pool[key] = [(stale, time.monotonic() - 10_000)]
+
+        fresh = _FakeConn()
+        pool.release("fresh-host", 80, False, fresh, verify=True)
+
+        assert "stale-host" not in {k[0] for k in pool._pool}
+        assert stale.closed is True
+        assert sum(len(v) for v in pool._pool.values()) == 1
+
+    def test_async_pool_evicts_oldest_beyond_the_cap(self):
+        pool = httpclient._AsyncConnectionPool(pool_size=5, max_total=2)
+        writers = [_FakeWriter() for _ in range(3)]
+
+        async def run():
+            for index, writer in enumerate(writers):
+                await pool.release(
+                    f"host-{index}", 80, False, object(), writer, verify=True
+                )
+
+        asyncio.run(run())
+
+        assert sum(len(v) for v in pool._pool.values()) == 2
+        assert writers[0].closed is True
+        assert writers[2].closed is False
+
+    def test_async_release_sweeps_expired_entries_of_other_hosts(self):
+        pool = httpclient._AsyncConnectionPool(pool_size=5, max_total=10)
+        stale = _FakeWriter()
+        pool._pool[("stale-host", 80, False, True)] = [
+            (object(), stale, time.monotonic() - 10_000)
+        ]
+
+        async def run():
+            await pool.release(
+                "fresh-host", 80, False, object(), _FakeWriter(), verify=True
+            )
+
+        asyncio.run(run())
+
+        assert "stale-host" not in {k[0] for k in pool._pool}
+        assert stale.closed is True

@@ -16,6 +16,7 @@
 
 ### 问题修复
 
+- **httpclient**：套接字超时现在抛出 `HttpTimeoutError` 而不是 `HttpConnectionError` —— 模块为向后兼容提供的 `TimeoutError = HttpTimeoutError` 别名遮蔽了内置异常，使通用的 `OSError` 分支先被命中。超时也不再重试，因为重试会让调用者的实际耗时翻倍，还可能让同一个请求到达服务端两次；复用连接采用当次调用的超时；读取响应体中途失败的连接会被关闭，而不是把半消费的连接放回池中；HTTP/1.0 响应只有在带有 `Connection: keep-alive` 时才入池（RFC 7230 §6.3）。异步默认连接池改为挂在事件循环上，因此循环结束后连接池可被回收，不再每次 `asyncio.run()` 泄漏一个套接字；fork 出的子进程会丢弃继承的套接字。([#212](https://github.com/Oaklight/zerodep/issues/212), [#213](https://github.com/Oaklight/zerodep/pull/213))
 - **soup** (v0.7.1)：引号内的逗号被直接跳过，导致 `[title="a,b"], [title="c"]` 这类选择器列表被解析成后代选择器并返回空列表，连解析正常的分组也一并丢弃。现在只在顶层逗号处切分，跟踪引号、方括号与圆括号，并按文档顺序取各分组的并集。空分组（尾随或连续逗号）改为抛异常，不再扩大为匹配所有元素；不支持的伪元素同样抛异常，不再静默丢弃所在分组。([#196](https://github.com/Oaklight/zerodep/pull/196))
 - **soup** (v0.8.0)：属性选择器现在对 HTML 标准中大小写不敏感的 legacy 属性集（`type`、`lang`、`dir`、`rel`、`method` 等共 46 个名字）按 ASCII 大小写不敏感比较，作用于 `=`、`~=`、`|=`、`^=`、`$=`、`*=`。此前另外 45 个名字在大小写不同时匹配不足。这是有意与 soupsieve 2.10 分叉的——它只折叠 `type`——因此 `[lang="en"]` 现在能匹配 `lang="EN"`，与所有浏览器一致。([#194](https://github.com/Oaklight/zerodep/pull/194))
 - **soup** (v0.8.1)：`[attr|=""]` 现在既能匹配恰好为空的值，也能匹配以 `-` 开头的值。Selectors Level 4 §6.1 对 `|=` 的定义中不含空字符串排除——与同一节的 `~=` 以及 §6.2 的 `^=`、`$=`、`*=` 都不同，后四者各自带有排除规则——此前的行为属于匹配不足。([#201](https://github.com/Oaklight/zerodep/pull/201))

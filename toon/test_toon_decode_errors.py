@@ -13,14 +13,13 @@ import pytest
 sys.path.insert(0, os.path.dirname(__file__))
 from toon import ToonDecodeError, decode  # noqa: E402
 
-
 BAD_ESCAPES = [
-    '"a\\b"',            # invalid escape in a top-level string
-    'val: "a\\u00b"',    # truncated unicode escape
+    '"a\\b"',  # invalid escape in a top-level string
+    'val: "a\\u00b"',  # truncated unicode escape
     'val: "a\\uD800b"',  # lone surrogate code point
-    'val: "\\u+0ab"',    # sign before hex digits
-    '"a\\x": 1',         # invalid escape in a quoted key
-    'k: "a\\x"',         # non-strict mode still validates escapes
+    'val: "\\u+0ab"',  # sign before hex digits
+    '"a\\x": 1',  # invalid escape in a quoted key
+    'k: "a\\x"',  # non-strict mode still validates escapes
 ]
 
 

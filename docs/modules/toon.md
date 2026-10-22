@@ -4,6 +4,10 @@
 
 > **可替代:** `toon-format`
 
+本模块实现 **TOON 4.4**，并通过全部 **564** 个官方一致性 fixture
+（编码 160 个、解码 404 个）。随仓库附带的 fixture 集由
+`toon/test_toon_conformance.py` 在 CI 中门禁。
+
 ## 特性
 
 - **紧凑编码**：比 JSON 减少 30-60% 的 Token
@@ -47,7 +51,7 @@ print(encode(employees))
 将 Python 值编码为 TOON 格式。
 
 - **value**：任何 JSON 可序列化值，以及 Python 类型（datetime、Decimal、set、Path、tuple）
-- **options**：可选的 `EncodeOptions` 字典，包含 `indent`、`delimiter`、`lengthMarker`
+- **options**：可选的 `EncodeOptions` 字典，包含 `indent`、`delimiter`
 
 ### `decode(text, options=None)`
 
@@ -79,15 +83,14 @@ encode(data, EncodeOptions(delimiter="\t"))
 encode(data, EncodeOptions(delimiter="|"))
 # [3|]: 1|2|3
 
-# 带长度标记
-encode(data, EncodeOptions(lengthMarker="#"))
-# [#3]: 1,2,3
-
 # 自定义缩进
 encode({"a": {"b": 1}}, EncodeOptions(indent=4))
 # a:
 #     b: 1
 ```
+
+4.0 之前的 `lengthMarker` 选项不属于 TOON 4.4：编码器不再输出 `[#N]`，
+传入 `lengthMarker` 会抛出 `ValueError`。
 
 ## TOON 格式概览
 
@@ -136,17 +139,17 @@ user:
 | `Path` | 字符串路径 |
 | `inf`、`nan` | `null` |
 | `-0.0` | `0` |
-| 可调用对象 | `null` |
+| 可调用对象 | `TypeError`（超出数据模型） |
 
 ## 与 toon_format 的对比
 
 | 特性 | zerodep TOON | toon_format |
 |------|-------------|-------------|
-| 依赖 | 无（仅标准库） | `typing-extensions` |
-| 文件数 | 单文件 | 18 个源文件 |
+| 依赖 | 无（仅标准库） | 无（核心编码/解码） |
+| 文件数 | 单文件 | 7 个源文件 |
 | Token 计数 | 不包含 | 需要 `tiktoken` |
 | CLI | 不包含 | 包含 |
 | 编码/解码 | 完整支持 | 完整支持 |
-| 编码速度 | 5.3 - 695.7 μs | 7.8 - 952.6 μs（慢 1.3-1.5x） |
-| 解码速度 | 13.4 - 1,463.3 μs | 15.4 - 1,559.1 μs（慢约 1.1x） |
+| 编码速度 | 6.5 - 869.8 μs | 6.6 - 1,093.3 μs（均值，基本持平） |
+| 解码速度 | 12.6 - 810.8 μs | 9.7 - 787.6 μs（均值，基本持平） |
 | 相比 JSON 节省 | 减少 38-71% 字符 | 相同（格式一致） |

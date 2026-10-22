@@ -8,6 +8,7 @@
 
 ### 新功能
 
+- **toon**（v0.6.0）：模块现已完整实现 TOON 4.4，编码器与解码器基于参考实现算法重写。全部 564 个官方一致性 fixture 通过（此前为 359/564），`toon/conformance_baseline.json` 已清空；`bench-toon` 升级到 `toon-python@91413d14`（spec 4.4）。规范移除了 4.0 之前的 `lengthMarker` 选项：编码器不再输出 `[#N]`，解码器拒绝该形式，传入该选项会抛出 `ValueError`。([#184](https://github.com/Oaklight/zerodep/issues/184))
 - **httpclient**（v0.6.0）：模块级函数现在会复用连接。`get()`、`post()` 等（以及 `async_get()` 等）共享进程级连接池，不再每次调用新建连接——针对 keep-alive 服务端实测，顺序 `get()` 从约 990 次/秒提升到约 1900 次/秒，300 次请求只用了 3 个连接。异步连接池按事件循环隔离，因为池中的数据流属于创建它的事件循环；可用 `close_pools()` / `aclose_pools()` 释放。服务端空闲时关闭的池化连接会在使用前被检测出来（socket 窥探、异步 `at_eof()`），若仍发生竞态，`GET`/`HEAD`/`OPTIONS`/`PUT`/`DELETE` 会在新连接上重试一次。连接池的键现在包含 `verify`，因此以 `verify=False` 建立的连接绝不会交给需要校验的请求。空闲套接字还有全局上限：所有主机合计最多保留 `DEFAULT_MAX_TOTAL_CONNECTIONS`（100）个，超出时优先关闭最旧的连接；空闲超过连接池超时的条目会在下一次归还时清理，因此即使访问大量主机也不会每个主机各占一个套接字。上限与空闲时间都按客户端配置（`max_total_connections`、`pool_idle_timeout`）。
 
 ### 新功能
@@ -16,6 +17,7 @@
 
 ### 问题修复
 
+- **toon**（v0.6.0）：列表形式现在能往返嵌套对象值。`[{'d': {}}]` 编码为 `- d:` 并能解码回来，不再丢失 `d`；子对象键不同的对象数组也能解码自身编码器的输出，不再抛错。编码器现在把列表项头部与第一个键写在同一行，与参考实现一致。([#188](https://github.com/Oaklight/zerodep/issues/188))
 - **jsonx** (v1.0.1)：`loads()` 先对原始文本直接调用 `json.loads`，只有失败时才运行注释与尾逗号扫描器——JSON 是 JSONC 的子集。对于不含注释的文档，这省去了两轮正则预处理，其开销约为解析本身的 14 倍（129 KiB 文档：65.6 ms → 4.05 ms）；真正的 JSONC 文档则多付出一次失败的解析。钩子与自定义解码器会退出快速路径，因此不会在试探性解析中被调用；当预处理没有改变文本时无需重试，失败只会报告一次——通过抛出 `JSONDecodeError` 拒绝文档的 hook 不会被再次调用，其拒绝也不会被覆盖。([#206](https://github.com/Oaklight/zerodep/issues/206), [#208](https://github.com/Oaklight/zerodep/pull/208))
 - **toon**：`decode()` 遇到非法转义序列和结尾反斜杠时抛出 `ToonDecodeError`，而不再抛出裸的 `ValueError`，与文档化的契约以及一致性门禁对 `shouldError` 用例的期望一致。九个 fixture 由失败转为通过（564 个中 350 → 359）。`ToonDecodeError` 不继承 `ValueError`，因此调用方在 `decode()` 外围的 `except ValueError` 不再捕获格式错误——这是有意的契约，`docs/modules/toon.md` 现在已明确说明。与规范之间剩余的差距是解码器静默接受了本应拒绝的输入，而非错误类型问题；它仍记录在一致性 baseline 中，并由 [#184](https://github.com/Oaklight/zerodep/issues/184) 跟踪。([#198](https://github.com/Oaklight/zerodep/issues/198), [#209](https://github.com/Oaklight/zerodep/pull/209))
 - **httpserver**：已接受但尚未发送任何请求的连接不再让关闭过程等满 `shutdown_grace_timeout`。等待请求行——无论是首个请求还是复用连接上的下一个——都算空闲，因此 TCP 健康探针或负载均衡检查会被立即关闭，而不会被当作正在处理的请求去排空。边界在于这段等待的结束：请求行一旦到达，连接就不再空闲，因此仍在上传的请求体会被排空并正常应答，而不会被中途切断。([#220](https://github.com/Oaklight/zerodep/issues/220))

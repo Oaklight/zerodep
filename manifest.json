@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-22T21:57:52.455236+00:00",
+  "generated": "2026-10-22T22:18:08.486512+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -223,12 +223,12 @@
       "files": [
         "jsonx/jsonx.py"
       ],
-      "version": "1.0.1",
+      "version": "1.0.2",
       "deps": [],
       "tier": "simple",
       "category": "serialization",
-      "last_updated": "2026-10-22T16:08:36-05:00",
-      "content_hash": "a633c5a95960a362681bfd0f699a189e4617cdd76126e0427ff8145ca346c608"
+      "last_updated": "2026-10-22T17:17:12-05:00",
+      "content_hash": "d4b4feddd59d0e17ad9a3392583c5c9a85ea1665fcd7e89e800a2bdf9ebbb154"
     },
     "llmstxt": {
       "description": "llms.txt parser — zero dependencies, stdlib only, Python 3.10+",
@@ -520,12 +520,12 @@
       "files": [
         "toon/toon.py"
       ],
-      "version": "0.6.0",
+      "version": "0.6.1",
       "deps": [],
       "tier": "simple",
       "category": "serialization",
-      "last_updated": "2026-10-21T10:04:21+05:30",
-      "content_hash": "c57f2b39b488d53ed1df611334e8f268d848a6412750a320f1770006b4dbf318"
+      "last_updated": "2026-10-22T17:17:16-05:00",
+      "content_hash": "30fdd3be769ed34c7391b406726e39f23f010b567a34bdf96dfe762ab07c1bf0"
     },
     "useragent": {
       "description": "Lightweight User-Agent generator for Chrome/Edge with Client Hints",

@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.5.0"
+# version = "0.6.0"
 # deps = []
 # tier = "simple"
 # category = "serialization"
@@ -11,16 +11,18 @@
 Part of zerodep: https://github.com/Oaklight/zerodep
 Copyright (c) 2026 Peng Ding. MIT License.
 
-Targets the TOON 4.x encoding against the official spec 4.4 conformance
-fixtures vendored in ``toon/fixtures/spec/``. It is not yet a full drop-in
-replacement for ``toon_format``: the remaining conformance gaps are tracked
-section by section in https://github.com/Oaklight/zerodep/issues/184, and
-``toon/test_toon_conformance.py`` records the current pass level as a ratchet
-so it can only move up.
+Implements the TOON 4.4 specification. The official conformance fixtures
+(564 cases: 160 encode, 404 decode) are vendored in ``toon/fixtures/spec/``
+and gated by ``toon/test_toon_conformance.py``.
 
-TOON is a compact, human-readable serialization format designed for LLM contexts,
-achieving 30-60% token reduction vs JSON. It combines YAML-like indentation with
-CSV-like tabular arrays.
+The encoder and decoder follow the TOON reference implementation,
+`toon-format/toon-python <https://github.com/toon-format/toon-python>`_
+(MIT License, commit ``91413d14``), adapted to this module's single-file,
+standard-library-only form and public API.
+
+TOON is a compact, human-readable serialization format designed for LLM
+contexts, achieving 30-60% token reduction vs JSON. It combines YAML-like
+indentation with CSV-like tabular arrays.
 
 Example::
 
@@ -32,14 +34,18 @@ Example::
 
 from __future__ import annotations
 
+import dataclasses
 import math
 import re
-from collections.abc import Mapping
+import sys
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
+from enum import Enum
 from pathlib import PurePath
-from typing import Any, Literal, TypedDict, TypeGuard, Union
+from typing import Any, TypeAlias, TypedDict, Union
+from uuid import UUID
 
 __all__ = [
     # Type aliases
@@ -71,12 +77,13 @@ class EncodeOptions(TypedDict, total=False):
     Attributes:
         indent: Number of spaces per indentation level (default: 2).
         delimiter: Delimiter character for arrays (default: ",").
-        lengthMarker: Marker to prefix array lengths (default: False).
+
+    The pre-4.0 ``lengthMarker`` option was removed by the specification;
+    passing it raises :class:`ValueError` so callers notice the change.
     """
 
     indent: int
     delimiter: str
-    lengthMarker: Union[Literal["#"], Literal[False]]
 
 
 class DecodeOptions(TypedDict, total=False):
@@ -84,7 +91,7 @@ class DecodeOptions(TypedDict, total=False):
 
     Attributes:
         indent: Number of spaces per indentation level (default: 2).
-        strict: Enable strict validation (default: True).
+        strict: Enforce every check of specification §14 (default: True).
     """
 
     indent: int
@@ -92,1172 +99,105 @@ class DecodeOptions(TypedDict, total=False):
 
 
 class ToonDecodeError(Exception):
-    """Error raised when TOON decoding fails."""
-
-
-# ── Constants ─────────────────────────────────────────────────────────────────
-
-_COMMA = ","
-_COLON = ":"
-_PIPE = "|"
-_TAB = "\t"
-_BACKSLASH = "\\"
-_DQUOTE = '"'
-_LIST_PREFIX = "- "
-
-_DELIMITERS: dict[str, str] = {"comma": _COMMA, "tab": _TAB, "pipe": _PIPE}
-
-_NUMERIC_RE = re.compile(r"^-?\d+(?:\.\d+)?(?:e[+-]?\d+)?$", re.IGNORECASE)
-_OCTAL_RE = re.compile(r"^0\d+$")
-_VALID_KEY_RE = re.compile(r"^[A-Za-z_][\w.]*$")
-
-# ── String utilities ──────────────────────────────────────────────────────────
-
-
-def _escape(value: str) -> str:
-    """Escape special characters for TOON encoding."""
-    return (
-        value.replace(_BACKSLASH, _BACKSLASH + _BACKSLASH)
-        .replace(_DQUOTE, _BACKSLASH + _DQUOTE)
-        .replace("\n", _BACKSLASH + "n")
-        .replace("\r", _BACKSLASH + "r")
-        .replace("\t", _BACKSLASH + "t")
-    )
-
-
-def _unescape(value: str) -> str:
-    """Process escape sequences in a TOON string."""
-    _MAP = {"n": "\n", "r": "\r", "t": "\t", "\\": "\\", '"': '"'}
-    result: list[str] = []
-    i = 0
-    while i < len(value):
-        if value[i] == _BACKSLASH:
-            if i + 1 >= len(value):
-                raise ToonDecodeError("Backslash at end of string")
-            nxt = value[i + 1]
-            if nxt not in _MAP:
-                raise ToonDecodeError(f"Invalid escape sequence: \\{nxt}")
-            result.append(_MAP[nxt])
-            i += 2
-        else:
-            result.append(value[i])
-            i += 1
-    return "".join(result)
-
-
-def _iter_unquoted(line: str, start: int = 0):
-    """Iterate chars yielding (index, char, is_quoted)."""
-    in_q = False
-    i = start
-    while i < len(line):
-        ch = line[i]
-        if ch == _DQUOTE:
-            yield (i, ch, in_q)
-            in_q = not in_q
-        elif ch == _BACKSLASH and i + 1 < len(line) and in_q:
-            yield (i, ch, True)
-            i += 1
-            if i < len(line):
-                yield (i, line[i], True)
-        else:
-            yield (i, ch, in_q)
-        i += 1
-
-
-def _find_unquoted(line: str, target: str, start: int = 0) -> int:
-    """Find first unquoted occurrence of *target* char, or -1."""
-    for i, ch, is_q in _iter_unquoted(line, start):
-        if ch == target and not is_q:
-            return i
-    return -1
-
-
-def _find_first_unquoted(
-    line: str, chars: list[str], start: int = 0
-) -> tuple[int, str]:
-    """Find first unquoted occurrence of any char in *chars*."""
-    s = set(chars)
-    for i, ch, is_q in _iter_unquoted(line, start):
-        if ch in s and not is_q:
-            return (i, ch)
-    return (-1, "")
-
-
-def _parse_delimited(line: str, delimiter: str) -> list[str]:
-    """Split *line* on unquoted *delimiter*, respecting quotes."""
-    tokens: list[str] = []
-    cur: list[str] = []
-    for _i, ch, is_q in _iter_unquoted(line):
-        if ch == delimiter and not is_q:
-            tokens.append("".join(cur))
-            cur = []
-        else:
-            cur.append(ch)
-    if cur or tokens:
-        tokens.append("".join(cur))
-    return tokens
-
-
-# ── Validation helpers ────────────────────────────────────────────────────────
-
-
-def _is_bool_or_null(token: str) -> bool:
-    return token in ("true", "false", "null")
-
-
-def _is_numeric_literal(token: str) -> bool:
-    if not token:
-        return False
-    start = 1 if token.startswith("-") else 0
-    if start >= len(token):
-        return False
-    if len(token) > start + 1 and token[start] == "0" and token[start + 1] != ".":
-        return False
-    try:
-        n = float(token)
-        return math.isfinite(n)
-    except ValueError:
-        return False
-
-
-def _is_numeric_like(value: str) -> bool:
-    return bool(_NUMERIC_RE.match(value) or _OCTAL_RE.match(value))
-
-
-def _valid_unquoted_key(key: str) -> bool:
-    return bool(key and _VALID_KEY_RE.match(key))
-
-
-def _safe_unquoted(value: str, delimiter: str = _COMMA) -> bool:
-    """Check if string can be encoded without quotes."""
-    if not value or value != value.strip():
-        return False
-    if _is_bool_or_null(value) or _is_numeric_like(value):
-        return False
-    if ":" in value or '"' in value or "\\" in value:
-        return False
-    if re.search(r"[\[\]{}]", value):
-        return False
-    if re.search(r"[\n\r\t]", value):
-        return False
-    if delimiter in value:
-        return False
-    if value.startswith("-"):
-        return False
-    return True
-
-
-# ── Type guards ───────────────────────────────────────────────────────────────
-
-
-def _is_primitive(value: Any) -> TypeGuard[JsonPrimitive]:
-    return value is None or isinstance(value, (str, int, float, bool))
-
-
-def _is_array(value: Any) -> TypeGuard[JsonArray]:
-    return isinstance(value, list)
-
-
-def _is_object(value: Any) -> TypeGuard[JsonObject]:
-    return isinstance(value, dict)
-
-
-def _all_primitives(arr: list[Any]) -> bool:
-    return all(_is_primitive(x) for x in arr)
-
-
-def _all_arrays(arr: list[Any]) -> bool:
-    return all(_is_array(x) for x in arr)
-
-
-def _all_objects(arr: list[Any]) -> bool:
-    return all(_is_object(x) for x in arr)
-
-
-# ── Value normalization ───────────────────────────────────────────────────────
-
-
-def _normalize_float(value: float | Decimal) -> JsonValue:
-    """Normalize a float or Decimal to a JSON-compatible value."""
-    if isinstance(value, Decimal):
-        return None if not value.is_finite() else float(value)
-    if not math.isfinite(value):
-        return None
-    if value == 0.0 and math.copysign(1.0, value) == -1.0:
-        return 0
-    return value
-
-
-def _normalize_collection(value: list | tuple | set | frozenset) -> list:
-    """Normalize a sequence or set to a JSON-compatible list."""
-    if isinstance(value, (set, frozenset)):
-        try:
-            return [_normalize(x) for x in sorted(value)]
-        except TypeError:
-            return [_normalize(x) for x in sorted(value, key=repr)]
-    return [_normalize(x) for x in value]
-
-
-def _normalize(value: Any) -> JsonValue:
-    """Normalize Python value to JSON-compatible type."""
-    if value is None or isinstance(value, (bool, str)):
-        return value
-    if isinstance(value, int):
-        return value
-    if isinstance(value, (float, Decimal)):
-        return _normalize_float(value)
-    if isinstance(value, PurePath):
-        return str(value)
-    if isinstance(value, (datetime, date)):
-        return value.isoformat()
-    if isinstance(value, (list, tuple, set, frozenset)):
-        return _normalize_collection(value)
-    if isinstance(value, Mapping):
-        return {str(k): _normalize(v) for k, v in value.items()}
-    return None
-
-
-# ── Line writer ───────────────────────────────────────────────────────────────
-
-
-class _Writer:
-    __slots__ = ("_lines", "_indent_str", "_cache")
-
-    def __init__(self, indent: int) -> None:
-        self._lines: list[str] = []
-        self._indent_str = " " * max(indent, 1)
-        self._cache: dict[int, str] = {0: ""}
-
-    def push(self, depth: int, content: str) -> None:
-        if depth not in self._cache:
-            self._cache[depth] = self._indent_str * depth
-        self._lines.append(self._cache[depth] + content)
-
-    def to_string(self) -> str:
-        return "\n".join(self._lines)
-
-
-# ── Encoding primitives ──────────────────────────────────────────────────────
-
-
-def _encode_string(value: str, delimiter: str = _COMMA) -> str:
-    if _safe_unquoted(value, delimiter):
-        return value
-    return f'"{_escape(value)}"'
-
-
-def _encode_primitive(value: JsonPrimitive, delimiter: str = _COMMA) -> str:
-    if value is None:
-        return "null"
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, int):
-        return str(value)
-    if isinstance(value, float):
-        s = str(value)
-        if "e" in s or "E" in s:
-            s = format(Decimal(str(value)), "f")
-        return s
-    return _encode_string(value, delimiter)
-
-
-def _encode_key(key: str) -> str:
-    if _valid_unquoted_key(key):
-        return key
-    return f'"{_escape(key)}"'
-
-
-def _join_values(values: list[str], delimiter: str) -> str:
-    return delimiter.join(values)
-
-
-def _format_header(
-    key: str | None,
-    length: int,
-    fields: str | None,
-    delimiter: str,
-    length_marker: str | Literal[False],
-) -> str:
-    marker = length_marker if length_marker else ""
-    fields_str = fields or ""
-    if delimiter != _COMMA:
-        length_str = f"[{marker}{length}{delimiter}]"
-    else:
-        length_str = f"[{marker}{length}]"
-    if key:
-        return f"{_encode_key(key)}{length_str}{fields_str}:"
-    return f"{length_str}{fields_str}:"
-
-
-# ── Encoder ───────────────────────────────────────────────────────────────────
-
-
-class _ResolvedOpts:
-    __slots__ = ("indent", "delimiter", "length_marker")
+    """Error raised when TOON decoding fails.
+
+    Attributes:
+        msg: The unformatted error message.
+        line: 1-based line number of the offending line, or ``None`` when the
+            error is not tied to a line.
+        source: The offending line as written, or ``None``.
+    """
+
+    msg: str
+    line: int | None
+    source: str | None
 
     def __init__(
+        self, msg: str, line: int | None = None, source: str | None = None
+    ) -> None:
+        self.msg = msg
+        self.line = line
+        self.source = source
+        super().__init__(f"line {line}: {msg}" if line is not None else msg)
+
+    def __reduce__(
         self,
-        indent: int = 2,
-        delimiter: str = ",",
-        length_marker: str | Literal[False] = False,
-    ):
-        self.indent = indent
-        self.delimiter = delimiter
-        self.length_marker = length_marker
+    ) -> tuple[type[ToonDecodeError], tuple[str, int | None, str | None]]:
+        return type(self), (self.msg, self.line, self.source)
 
 
-def _resolve_encode_opts(options: EncodeOptions | None) -> _ResolvedOpts:
-    if options is None:
-        return _ResolvedOpts()
-    indent = options.get("indent", 2)
-    delim = options.get("delimiter", _COMMA)
-    lm = options.get("lengthMarker", False)
-    if delim in _DELIMITERS:
-        delim = _DELIMITERS[delim]
-    return _ResolvedOpts(indent=indent, delimiter=delim, length_marker=lm)
+# ── Option validation ─────────────────────────────────────────────────────────
 
 
-# A (possibly nested) tabular column tree: ``(key, None)`` is a leaf column
-# holding a primitive; ``(key, subtree)`` is a nested column.
-_FieldTree = list[tuple[str, "_FieldTree | None"]]
-
-
-def _detect_fields(arr: list[JsonObject]) -> _FieldTree | None:
-    """Return the field tree if *arr* qualifies for tabular format, else None.
-
-    Every object must carry the same keys, and each key must hold a primitive
-    in all rows (a leaf column) or a sub-object in all rows that itself
-    qualifies (a nested column, rendered as ``d{x}``).  Anything else -- an
-    array value, mixed kinds, ragged keys, an empty object -- disqualifies the
-    whole array, which then falls back to the list form.
-    """
-    if not arr:
-        return None
-    first_keys = list(arr[0].keys())
-    if not first_keys:
-        return None
-    first_set = set(first_keys)
-    for obj in arr:
-        if set(obj.keys()) != first_set:
-            return None
-    nodes: _FieldTree = []
-    for key in first_keys:
-        values = [obj[key] for obj in arr]
-        if all(_is_primitive(v) for v in values):
-            nodes.append((key, None))
-        elif all(_is_object(v) for v in values):
-            sub = _detect_fields(values)
-            if sub is None:
-                return None
-            nodes.append((key, sub))
-        else:
-            return None
-    return nodes
-
-
-def _render_fields(nodes: _FieldTree, delimiter: str) -> str:
-    """Render a field tree as a header segment, e.g. ``{n,d{x}}``."""
-    parts: list[str] = []
-    for key, sub in nodes:
-        parts.append(_encode_key(key))
-        if sub is not None:
-            parts[-1] += _render_fields(sub, delimiter)
-    return "{" + delimiter.join(parts) + "}"
-
-
-def _leaf_paths(nodes: _FieldTree) -> list[tuple[str, ...]]:
-    """Return the leaf column paths of a field tree, in row order."""
-    paths: list[tuple[str, ...]] = []
-    for key, sub in nodes:
-        if sub is None:
-            paths.append((key,))
-        else:
-            paths.extend((key,) + rest for rest in _leaf_paths(sub))
-    return paths
-
-
-def _row_values(obj: JsonObject, nodes: _FieldTree, delimiter: str) -> list[str]:
-    """Flatten one object into the encoded row cells described by *nodes*."""
-    cells: list[str] = []
-    for key, sub in nodes:
-        value = obj[key]
-        if sub is None:
-            cells.append(_encode_primitive(value, delimiter))
-            continue
-        if not isinstance(value, dict):
-            # _detect_fields only marks a column nested when every row holds an
-            # object there, so this is an internal invariant.  Raise rather
-            # than assert, so it survives -O.
-            raise ValueError(
-                f"Column {key!r} is marked nested but holds "
-                f"{type(value).__name__} on this row"
-            )
-        cells.extend(_row_values(value, sub, delimiter))
-    return cells
-
-
-def _enc_value(value: JsonValue, opts: _ResolvedOpts, w: _Writer, depth: int) -> None:
-    if _is_primitive(value):
-        w.push(depth, _encode_primitive(value, opts.delimiter))
-    elif _is_array(value):
-        _enc_array(value, opts, w, depth, None)
-    elif _is_object(value):
-        _enc_object(value, opts, w, depth, None)
-
-
-def _enc_object(
-    obj: JsonObject, opts: _ResolvedOpts, w: _Writer, depth: int, key: str | None
-) -> None:
-    if key:
-        w.push(depth, f"{_encode_key(key)}:")
-    for k, v in obj.items():
-        _enc_kv(k, v, opts, w, depth if not key else depth + 1)
-
-
-def _enc_kv(
-    key: str, value: JsonValue, opts: _ResolvedOpts, w: _Writer, depth: int
-) -> None:
-    if _is_primitive(value):
-        w.push(depth, f"{_encode_key(key)}: {_encode_primitive(value, opts.delimiter)}")
-    elif _is_array(value):
-        _enc_array(value, opts, w, depth, key)
-    elif _is_object(value):
-        _enc_object(value, opts, w, depth, key)
-
-
-def _enc_array(
-    arr: JsonArray, opts: _ResolvedOpts, w: _Writer, depth: int, key: str | None
-) -> None:
-    if not arr:
-        w.push(depth, f"{_encode_key(key)}: []" if key is not None else "[]")
-        return
-    if _all_primitives(arr):
-        _enc_inline_prim(arr, opts, w, depth, key)
-    elif _all_arrays(arr):
-        _enc_array_of_arrays(arr, opts, w, depth, key)
-    elif _all_objects(arr):
-        fields = _detect_fields(arr)
-        if fields:
-            _enc_tabular(arr, fields, opts, w, depth, key)
-        else:
-            _enc_list_items(arr, opts, w, depth, key)
-    else:
-        _enc_list_items(arr, opts, w, depth, key)
-
-
-def _enc_inline_prim(
-    arr: JsonArray, opts: _ResolvedOpts, w: _Writer, depth: int, key: str | None
-) -> None:
-    encoded = [_encode_primitive(x, opts.delimiter) for x in arr]
-    joined = _join_values(encoded, opts.delimiter)
-    header = _format_header(key, len(arr), None, opts.delimiter, opts.length_marker)
-    w.push(depth, f"{header} {joined}")
-
-
-def _enc_array_of_arrays(
-    arr: JsonArray, opts: _ResolvedOpts, w: _Writer, depth: int, key: str | None
-) -> None:
-    header = _format_header(key, len(arr), None, opts.delimiter, opts.length_marker)
-    w.push(depth, header)
-    for item in arr:
-        if _all_primitives(item):
-            encoded = [_encode_primitive(v, opts.delimiter) for v in item]
-            joined = _join_values(encoded, opts.delimiter)
-            ih = _format_header(
-                None, len(item), None, opts.delimiter, opts.length_marker
-            )
-            line = f"- {ih}"
-            if joined:
-                line += f" {joined}"
-            w.push(depth + 1, line)
-        else:
-            _enc_array(item, opts, w, depth + 1, None)
-
-
-def _enc_tabular(
-    arr: list[JsonObject],
-    fields: _FieldTree,
-    opts: _ResolvedOpts,
-    w: _Writer,
-    depth: int,
-    key: str | None,
-) -> None:
-    header = _format_header(
-        key,
-        len(arr),
-        _render_fields(fields, opts.delimiter),
-        opts.delimiter,
-        opts.length_marker,
-    )
-    w.push(depth, header)
-    for obj in arr:
-        row = _row_values(obj, fields, opts.delimiter)
-        w.push(depth + 1, _join_values(row, opts.delimiter))
-
-
-def _enc_list_items(
-    arr: JsonArray, opts: _ResolvedOpts, w: _Writer, depth: int, key: str | None
-) -> None:
-    header = _format_header(key, len(arr), None, opts.delimiter, opts.length_marker)
-    w.push(depth, header)
-    for item in arr:
-        if _is_primitive(item):
-            w.push(depth + 1, f"- {_encode_primitive(item, opts.delimiter)}")
-        elif _is_object(item):
-            _enc_obj_list_item(item, opts, w, depth + 1)
-        elif _is_array(item):
-            sub = item
-            if _all_primitives(sub):
-                encoded = [_encode_primitive(v, opts.delimiter) for v in sub]
-                joined = _join_values(encoded, opts.delimiter)
-                ih = _format_header(
-                    None, len(sub), None, opts.delimiter, opts.length_marker
-                )
-                line = f"- {ih}"
-                if joined:
-                    line += f" {joined}"
-                w.push(depth + 1, line)
-            else:
-                tf = None
-                if _all_objects(sub):
-                    detected = _detect_fields(sub)
-                    if detected:
-                        tf = _render_fields(detected, opts.delimiter)
-                ih = _format_header(
-                    None, len(sub), tf, opts.delimiter, opts.length_marker
-                )
-                w.push(depth + 1, f"- {ih}")
-                _enc_array_content(sub, opts, w, depth + 2)
-
-
-def _enc_obj_list_item(
-    obj: JsonObject, opts: _ResolvedOpts, w: _Writer, depth: int
-) -> None:
-    items = list(obj.items())
-    if not items:
-        w.push(depth, "-")
-        return
-    k0, v0 = items[0]
-    if _is_primitive(v0):
-        w.push(depth, f"- {_encode_key(k0)}: {_encode_primitive(v0, opts.delimiter)}")
-    elif _is_array(v0):
-        sub = v0
-        if not sub:
-            # §9.1: an empty array in object-field position is ``key: []``;
-            # the legacy ``key[0]:`` header MUST NOT be emitted.
-            w.push(depth, f"- {_encode_key(k0)}: []")
-        elif _all_primitives(sub):
-            encoded = [_encode_primitive(x, opts.delimiter) for x in sub]
-            joined = _join_values(encoded, opts.delimiter)
-            ih = _format_header(k0, len(sub), None, opts.delimiter, opts.length_marker)
-            line = f"- {ih}"
-            if joined:
-                line += f" {joined}"
-            w.push(depth, line)
-        else:
-            tf = None
-            if _all_objects(sub):
-                detected = _detect_fields(sub)
-                if detected:
-                    tf = _render_fields(detected, opts.delimiter)
-            ih = _format_header(k0, len(sub), tf, opts.delimiter, opts.length_marker)
-            w.push(depth, f"- {ih}")
-            _enc_array_content(sub, opts, w, depth + 1)
-    else:
-        w.push(depth, "-")
-        _enc_kv(k0, v0, opts, w, depth + 1)
-    for k, v in items[1:]:
-        _enc_kv(k, v, opts, w, depth + 1)
-
-
-def _enc_array_content(
-    arr: JsonArray, opts: _ResolvedOpts, w: _Writer, depth: int
-) -> None:
-    """Write array body (header already written)."""
-    if not arr:
-        return
-    if _all_objects(arr):
-        fields = _detect_fields(arr)
-        if fields:
-            for obj in arr:
-                row = _row_values(obj, fields, opts.delimiter)
-                w.push(depth, _join_values(row, opts.delimiter))
-            return
-        for item in arr:
-            _enc_obj_list_item(item, opts, w, depth)
-        return
-    for item in arr:
-        if _is_primitive(item):
-            w.push(depth, f"- {_encode_primitive(item, opts.delimiter)}")
-        elif _is_object(item):
-            _enc_obj_list_item(item, opts, w, depth)
-        elif _is_array(item):
-            _enc_array(item, opts, w, depth, None)
-
-
-# ── Scanner ───────────────────────────────────────────────────────────────────
-
-
-@dataclass
-class _Line:
-    raw: str
-    depth: int
-    indent: int
-    content: str
-    line_num: int
-
-    @property
-    def is_blank(self) -> bool:
-        return not self.content.strip()
-
-
-def _validate_indent(raw: str, indent: int, indent_size: int, line_num: int) -> None:
-    """Check indentation in strict mode: no tabs, indent is a multiple of size."""
-    ws_end = 0
-    while ws_end < len(raw) and raw[ws_end] in (" ", "\t"):
-        ws_end += 1
-    if "\t" in raw[:ws_end]:
-        raise ToonDecodeError(f"Line {line_num}: Tabs not allowed in indentation")
-    if indent > 0 and indent % indent_size != 0:
-        raise ToonDecodeError(
-            f"Line {line_num}: Indent must be multiple of {indent_size}, got {indent}"
-        )
-
-
-def _scan(source: str, indent_size: int, strict: bool) -> list[_Line]:
-    """Scan source text into structured lines with depth info."""
-    if not source.strip():
-        return []
-    lines: list[_Line] = []
-    for i, raw in enumerate(source.split("\n")):
-        num = i + 1
-        indent = 0
-        while indent < len(raw) and raw[indent] == " ":
-            indent += 1
-        content = raw[indent:]
-        depth = indent // indent_size if indent_size > 0 else 0
-        if strict and content.strip():
-            _validate_indent(raw, indent, indent_size, num)
-        lines.append(
-            _Line(
-                raw=raw,
-                depth=depth,
-                indent=indent,
-                content=content.strip(),
-                line_num=num,
-            )
-        )
-    return lines
-
-
-# ── Decoder ───────────────────────────────────────────────────────────────────
-
-
-def _parse_primitive(token: str) -> JsonValue:
-    """Parse a TOON primitive token."""
-    token = token.strip()
-    if token == "[]":
-        return []
-    if token.startswith(_DQUOTE):
-        if not token.endswith(_DQUOTE) or len(token) < 2:
-            raise ToonDecodeError("Unterminated string")
-        return _unescape(token[1:-1])
-    if _is_bool_or_null(token):
-        if token == "true":
-            return True
-        if token == "false":
-            return False
-        return None
-    if token and _is_numeric_literal(token):
-        try:
-            if "." not in token and "e" not in token.lower():
-                return int(token)
-            return float(token)
-        except ValueError:
-            pass
-    return token
-
-
-def _parse_key(key_str: str) -> str:
-    key_str = key_str.strip()
-    if key_str.startswith(_DQUOTE):
-        if not key_str.endswith(_DQUOTE) or len(key_str) < 2:
-            raise ToonDecodeError("Unterminated quoted key")
-        return _unescape(key_str[1:-1])
-    return key_str
-
-
-def _split_kv(line: str) -> tuple[str, str]:
-    idx = _find_unquoted(line, _COLON)
-    if idx == -1:
-        raise ToonDecodeError("Missing colon after key")
-    return (line[:idx].strip(), line[idx + 1 :].strip())
-
-
-def _match_brace(text: str, start: int = 0) -> int:
-    """Return the index of the ``}`` matching the ``{`` at *start*, or -1."""
-    depth = 0
-    quote = ""
-    idx = start
-    while idx < len(text):
-        ch = text[idx]
-        if quote:
-            if ch == "\\":
-                idx += 2
-                continue
-            if ch == quote:
-                quote = ""
-        elif ch in "\"'":
-            quote = ch
-        elif ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                return idx
-        idx += 1
-    return -1
-
-
-def _parse_fields(text: str, delimiter: str) -> _FieldTree:
-    """Parse a ``{...}`` header body into a field tree.
-
-    Understands the nested form (``name,data{x}``) so a decoded header carries
-    the column shape needed to rebuild sub-objects from flattened rows.  The
-    opening brace is located with the shared quote-aware scan, because a quoted
-    key may itself contain a brace (``"a{"{x}`` on the wire).
-    """
-    tokens: list[str] = []
-    current: list[str] = []
-    depth = 0
-    quote = ""
-    idx = 0
-    while idx < len(text):
-        ch = text[idx]
-        if quote:
-            current.append(ch)
-            if ch == "\\" and idx + 1 < len(text):
-                current.append(text[idx + 1])
-                idx += 1
-            elif ch == quote:
-                quote = ""
-        elif ch in "\"'":
-            quote = ch
-            current.append(ch)
-        elif ch == "{" or ch == "}":
-            depth += 1 if ch == "{" else -1
-            current.append(ch)
-        elif ch == delimiter and depth == 0:
-            tokens.append("".join(current))
-            current = []
-        else:
-            current.append(ch)
-        idx += 1
-    tokens.append("".join(current))
-    nodes: _FieldTree = []
-    for token in tokens:
-        token = token.strip()
-        if not token:
-            continue
-        brace = _find_unquoted(token, "{")
-        if brace != -1 and _match_brace(token, brace) == len(token) - 1:
-            nodes.append(
-                (
-                    _parse_key(token[:brace]),
-                    _parse_fields(token[brace + 1 : -1], delimiter),
-                )
-            )
-        else:
-            nodes.append((_parse_key(token), None))
-    return nodes
-
-
-def _parse_header(line: str) -> tuple[str | None, int, str, _FieldTree | None] | None:
-    """Parse array header. Returns (key, length, delimiter, fields) or None."""
-    line = line.strip()
-    bstart = _find_unquoted(line, "[")
-    if bstart == -1:
-        return None
-    key = None
-    if bstart > 0:
-        kp = line[:bstart].strip()
-        key = _parse_key(kp) if kp else None
-    bend = _find_unquoted(line, "]", bstart)
-    if bend == -1:
-        return None
-    bc = line[bstart + 1 : bend]
-    if bc.startswith("#"):
-        bc = bc[1:]
-    delimiter = _COMMA
-    length_str = bc
-    if bc.endswith(_TAB):
-        delimiter = _TAB
-        length_str = bc[:-1]
-    elif bc.endswith(_PIPE):
-        delimiter = _PIPE
-        length_str = bc[:-1]
-    elif bc.endswith(_COMMA):
-        delimiter = _COMMA
-        length_str = bc[:-1]
-    try:
-        length = int(length_str)
-    except ValueError:
-        return None
-    fields = None
-    after = line[bend + 1 :].strip()
-    if after.startswith("{"):
-        brace_end = _match_brace(after)
-        if brace_end == -1:
-            raise ToonDecodeError("Unterminated fields segment")
-        fields = _parse_fields(after[1:brace_end], delimiter)
-        after = after[brace_end + 1 :].strip()
-    if not after.startswith(_COLON):
-        return None
-    return (key, length, delimiter, fields)
-
-
-def _is_row_line(line: str, delimiter: str) -> bool:
-    pos, ch = _find_first_unquoted(line, [delimiter, _COLON])
-    if pos == -1:
-        return True
-    return ch == delimiter
-
-
-def _dec_kv_value(
-    lines: list[_Line], i: int, ln: _Line, vs: str, strict: bool
-) -> tuple[Any, int]:
-    """Decode the value side of a key-value pair, returning (value, next_index)."""
-    if vs:
-        return _parse_primitive(vs), i + 1
-    # Empty value → nested object; skip children after decoding
-    child = _dec_object(lines, i + 1, ln.depth, strict)
-    j = i + 1
-    while j < len(lines) and lines[j].depth > ln.depth:
-        j += 1
-    return child, j
-
-
-def _dec_object(
-    lines: list[_Line], start: int, parent_depth: int, strict: bool
-) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    i = start
-    expected = parent_depth if start == 0 else parent_depth + 1
-    while i < len(lines):
-        ln = lines[i]
-        if ln.is_blank:
-            i += 1
-            continue
-        if ln.depth < expected:
-            break
-        if ln.depth > expected:
-            i += 1
-            continue
-        hdr = _parse_header(ln.content)
-        if hdr is not None and hdr[0] is not None:
-            arr_val, next_i = _dec_array_from_hdr(lines, i, ln.depth, hdr, strict)
-            result[hdr[0]] = arr_val
-            i = next_i
-            continue
-        try:
-            ks, vs = _split_kv(ln.content)
-        except ToonDecodeError:
-            if strict:
-                raise
-            i += 1
-            continue
-        key = _parse_key(ks)
-        result[key], i = _dec_kv_value(lines, i, ln, vs, strict)
-    return result
-
-
-def _dec_array_from_hdr(
-    lines: list[_Line],
-    hdr_idx: int,
-    hdr_depth: int,
-    hdr_info: tuple[str | None, int, str, _FieldTree | None],
-    strict: bool,
-) -> tuple[list[Any], int]:
-    key, length, delimiter, fields = hdr_info
-    hdr_line = lines[hdr_idx].content
-    try:
-        _, inline = _split_kv(hdr_line)
-    except ToonDecodeError:
-        inline = ""
-    if inline or (not fields and length == 0):
-        return (_dec_inline_array(inline, delimiter, length, strict), hdr_idx + 1)
-    if fields is not None:
-        return _dec_tabular(
-            lines, hdr_idx + 1, hdr_depth, fields, delimiter, length, strict
-        )
-    return _dec_list_array(lines, hdr_idx + 1, hdr_depth, delimiter, length, strict)
-
-
-def _dec_inline_array(
-    content: str, delimiter: str, expected: int, strict: bool
-) -> list[Any]:
-    if not content and expected == 0:
-        return []
-    tokens = _parse_delimited(content, delimiter)
-    values = [_parse_primitive(t) for t in tokens]
-    if strict and len(values) != expected:
-        raise ToonDecodeError(f"Expected {expected} values, got {len(values)}")
-    return values
-
-
-def _assemble_fields(
-    nodes: _FieldTree, values: list[JsonValue], pos: int
-) -> tuple[dict[str, JsonValue], int]:
-    """Rebuild one nested object from a flattened tabular row."""
-    obj: dict[str, JsonValue] = {}
-    for key, sub in nodes:
-        if sub is None:
-            obj[key] = values[pos] if pos < len(values) else None
-            pos += 1
-        else:
-            obj[key], pos = _assemble_fields(sub, values, pos)
-    return obj, pos
-
-
-def _dec_tabular(
-    lines: list[_Line],
-    start: int,
-    hdr_depth: int,
-    fields: _FieldTree,
-    delimiter: str,
-    expected: int,
-    strict: bool,
-) -> tuple[list[dict[str, Any]], int]:
-    result: list[dict[str, Any]] = []
-    i = start
-    row_depth = hdr_depth + 1
-    width = len(_leaf_paths(fields))
-    while i < len(lines):
-        ln = lines[i]
-        if ln.is_blank:
-            if strict:
-                if ln.depth >= row_depth:
-                    raise ToonDecodeError("Blank lines not allowed inside arrays")
-                break
-            i += 1
-            continue
-        if ln.depth < row_depth or ln.depth > row_depth:
-            break
-        if not _is_row_line(ln.content, delimiter):
-            break
-        tokens = _parse_delimited(ln.content, delimiter)
-        values = [_parse_primitive(t) for t in tokens]
-        if strict and len(values) != width:
-            raise ToonDecodeError(f"Expected {width} values in row, got {len(values)}")
-        obj, _ = _assemble_fields(fields, values, 0)
-        result.append(obj)
-        i += 1
-    if strict and len(result) != expected:
-        raise ToonDecodeError(f"Expected {expected} rows, got {len(result)}")
-    return result, i
-
-
-def _dec_sibling_fields(
-    lines: list[_Line],
-    start: int,
-    target_depth: int,
-    obj: dict[str, Any],
-    strict: bool,
-) -> int:
-    """Read consecutive sibling key-value lines at *target_depth* into *obj*.
-
-    Returns the index of the first line that is no longer a sibling field.
-    """
-    i = start
-    while i < len(lines) and lines[i].depth == target_depth:
-        fl = lines[i]
-        if fl.is_blank:
-            i += 1
-            continue
-        fh = _parse_header(fl.content)
-        if fh is not None and fh[0] is not None:
-            fv, i = _dec_array_from_hdr(lines, i, fl.depth, fh, strict)
-            obj[fh[0]] = fv
-            continue
-        try:
-            fks, fvs = _split_kv(fl.content)
-        except ToonDecodeError:
-            break
-        fk = _parse_key(fks)
-        if not fvs:
-            obj[fk] = _dec_object(lines, i + 1, fl.depth, strict)
-            i += 1
-            while i < len(lines) and lines[i].depth > fl.depth:
-                i += 1
-        else:
-            obj[fk] = _parse_primitive(fvs)
-            i += 1
-    return i
-
-
-def _dec_list_item_named_array(
-    lines: list[_Line],
-    idx: int,
-    ln: _Line,
-    hdr_info: tuple[str | None, int, str, _FieldTree | None],
-    strict: bool,
-) -> tuple[dict[str, Any], int]:
-    """Decode a list item whose content starts with a named array header.
-
-    Returns the decoded object and the next line index.
-    """
-    item_obj: dict[str, Any] = {}
-    arr_val, next_i = _dec_array_from_hdr(lines, idx, ln.depth, hdr_info, strict)
-    item_obj[hdr_info[0]] = arr_val  # type: ignore[index]
-    next_i = _dec_sibling_fields(lines, next_i, ln.depth + 1, item_obj, strict)
-    return item_obj, next_i
-
-
-def _dec_list_item_object(
-    lines: list[_Line],
-    idx: int,
-    ln: _Line,
-    ic: str,
-    strict: bool,
-) -> tuple[dict[str, Any], int]:
-    """Decode a list item whose content is a key-value pair.
-
-    Returns the decoded object and the next line index.
-    """
-    ks, vs = _split_kv(ic)
-    obj_item: dict[str, Any] = {}
-    key = _parse_key(ks)
-    if not vs:
-        obj_item[key] = _dec_object(lines, idx + 1, ln.depth + 1, strict)
-        i = idx + 1
-        while i < len(lines) and lines[i].depth > ln.depth + 1:
-            i += 1
-    else:
-        obj_item[key] = _parse_primitive(vs)
-        i = idx + 1
-    i = _dec_sibling_fields(lines, i, ln.depth + 1, obj_item, strict)
-    return obj_item, i
-
-
-def _try_inline_subarray(
-    ic: str,
-    hdr_info: tuple[str | None, int, str, _FieldTree | None],
-    strict: bool,
-) -> list[Any] | None:
-    """Try to decode an inline sub-array from a keyless header.
-
-    Returns the decoded list if the header has no key and contains inline data,
-    otherwise returns None.
-    """
-    ikey, ilen, idelim, _ifields = hdr_info
-    if ikey is not None:
-        return None
-    ci = ic.find(_COLON)
-    if ci == -1:
-        return None
-    ip = ic[ci + 1 :].strip()
-    if not ip and ilen != 0:
-        return None
-    return _dec_inline_array(ip, idelim, ilen, strict)
-
-
-def _dec_one_list_item(
-    lines: list[_Line],
-    idx: int,
-    ln: _Line,
-    ic: str,
-    strict: bool,
-) -> tuple[Any, int]:
-    """Decode a single ``- ...`` list item.
-
-    Returns (decoded_value, next_line_index).
-    """
-    ih = _parse_header(ic)
-    if ih is not None:
-        inline = _try_inline_subarray(ic, ih, strict)
-        if inline is not None:
-            return inline, idx + 1
-        if ih[0] is not None:
-            return _dec_list_item_named_array(lines, idx, ln, ih, strict)
-    try:
-        return _dec_list_item_object(lines, idx, ln, ic, strict)
-    except ToonDecodeError:
-        return ({} if not ic else _parse_primitive(ic)), idx + 1
-
-
-def _dec_list_array(
-    lines: list[_Line],
-    start: int,
-    hdr_depth: int,
-    delimiter: str,
-    expected: int,
-    strict: bool,
-) -> tuple[list[Any], int]:
-    result: list[Any] = []
-    i = start
-    item_depth = hdr_depth + 1
-    while i < len(lines):
-        ln = lines[i]
-        if ln.is_blank:
-            if strict and ln.depth >= item_depth:
-                raise ToonDecodeError("Blank lines not allowed inside arrays")
-            if strict:
-                break
-            i += 1
-            continue
-        if ln.depth < item_depth:
-            break
-        content = ln.content
-        if not content.startswith("-"):
-            break
-        ic = content[2:].strip() if len(content) > 2 else ""
-        item, i = _dec_one_list_item(lines, i, ln, ic, strict)
-        result.append(item)
-    if strict and len(result) != expected:
-        raise ToonDecodeError(f"Expected {expected} items, got {len(result)}")
-    return result, i
+def _check_indent_size(indent: int) -> None:
+    """Validate the ``indent`` option (§12)."""
+    if isinstance(indent, bool) or not isinstance(indent, int):
+        raise TypeError(f"indent must be an int, not {type(indent).__name__}")
+    if indent < 1:
+        raise ValueError(f"indent must be at least 1, got {indent}")
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
 
 def encode(value: Any, options: EncodeOptions | None = None) -> str:
-    """Encode a Python value into TOON format.
+    """Serialize a Python value to a TOON document.
 
     Args:
-        value: The value to encode (must be JSON-serializable or a supported
-            Python type such as datetime, Decimal, set, Path).
-        options: Optional encoding options (indent, delimiter, lengthMarker).
+        value: The value to encode. Mappings, sequences, strings, numbers,
+            booleans and ``None`` map onto the JSON data model; dates, UUIDs,
+            paths, enums and dataclasses are converted following §3.
+        options: Optional encoding options (``indent``, ``delimiter``).
 
     Returns:
-        TOON-formatted string.
+        The TOON document, without a trailing newline.
+
+    Raises:
+        TypeError: A value or mapping key cannot be encoded.
+        ValueError: An option is invalid, a string contains an unpaired
+            surrogate, a mapping has colliding keys, or the value is nested
+            too deeply or contains a reference cycle.
 
     Examples::
 
         encode({"name": "Alice", "age": 30})
         # 'name: Alice\nage: 30'
-        encode([{"id": 1, "name": "A"}, {"id": 2, "name": "B"}])
-        # '[2,]{id,name}:\n  1,A\n  2,B'
+        encode([1, 2, 3], EncodeOptions(delimiter="\t"))
+        # '[3\t]: 1\t2\t3'
     """
-    normalized = _normalize(value)
-    opts = _resolve_encode_opts(options)
-    w = _Writer(opts.indent)
-    _enc_value(normalized, opts, w, 0)
-    return w.to_string()
+    opts: Any = options or {}
+    if opts.get("lengthMarker", False):
+        raise ValueError(
+            "lengthMarker was removed in TOON 4.4; re-encode without the option"
+        )
+    indent = opts.get("indent", 2)
+    delimiter = opts.get("delimiter", ",")
+    _check_indent_size(indent)
+    if delimiter not in DELIMITERS:
+        raise ValueError(f"delimiter must be ',', '\\t', or '|', got {delimiter!r}")
+    return _encode_document(
+        value,
+        indent_size=indent,
+        delimiter=delimiter,
+        default=None,
+        sort_keys=False,
+    )
 
 
 def decode(text: str, options: DecodeOptions | None = None) -> Any:
-    """Decode a TOON-formatted string to a Python value.
+    """Deserialize a TOON document to a Python value.
 
     Args:
         text: TOON-formatted string.
-        options: Optional decoding options (indent, strict).
+        options: Optional decoding options (``indent``, ``strict``).
 
     Returns:
         Decoded Python value.
 
     Raises:
         ToonDecodeError: If the input is malformed.
+        TypeError: If ``text`` is not a string, or ``indent`` is not an int.
+        ValueError: If ``indent`` is less than one.
 
     Examples::
 
@@ -1266,29 +206,1118 @@ def decode(text: str, options: DecodeOptions | None = None) -> Any:
         decode("[3]: 1,2,3")
         # [1, 2, 3]
     """
-    indent = 2
-    strict = True
-    if options is not None:
-        indent = options.get("indent", 2)
-        strict = options.get("strict", True)
+    if not isinstance(text, str):
+        raise TypeError(f"text must be str, not {type(text).__name__}")
+    opts: Any = options or {}
+    indent = opts.get("indent", 2)
+    strict = opts.get("strict", True)
+    _check_indent_size(indent)
+    return _decode_document(
+        text,
+        indent_size=indent,
+        strict=strict,
+        parse_int=None,
+        parse_float=None,
+        object_hook=None,
+        object_pairs_hook=None,
+    )
+
+
+# ── Lexical rules (§2, §4, §7) ────────────────────────────────────────────────
+
+COMMA = ","
+TAB = "\t"
+PIPE = "|"
+DELIMITERS = (COMMA, TAB, PIPE)
+
+# §7.3: keys and field names that may be written without quotes. ASCII only:
+# Python's `\w` would also accept letters such as "é" (issue #65).
+_UNQUOTED_KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_.]*")
+
+# §7.2: strings that look numeric must be quoted. This is wider than the
+# decoder grammar on purpose: "05" and "+1" are quoted too.
+_NUMERIC_LIKE = re.compile(r"[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?")
+
+# §4: the only unquoted tokens that decode as numbers. Leading zeros in the
+# integer part ("05", "-007") are excluded, so those tokens stay strings.
+_NUMBER = re.compile(r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?")
+
+# Characters that force quoting wherever they appear in a string (§7.2).
+_STRUCTURAL = re.compile(r'[:"\\\[\]{}\x00-\x1f]')
+
+_ESCAPES = {"\\": "\\\\", '"': '\\"', "\n": "\\n", "\r": "\\r", "\t": "\\t"}
+_NEEDS_ESCAPE = re.compile(r'[\\"\x00-\x1f]')
+
+_CANONICAL_MIN = Decimal("1e-6")
+_CANONICAL_MAX = Decimal("1e21")
+
+
+def is_number_token(token: str) -> bool:
+    """Return whether an unquoted token decodes as a number (§4)."""
+    return _NUMBER.fullmatch(token) is not None
+
+
+def _escape_char(match: re.Match[str]) -> str:
+    char = match.group()
+    return _ESCAPES.get(char) or f"\\u{ord(char):04x}"
+
+
+def quote(value: str) -> str:
+    """Return ``value`` as a quoted token, escaped per §7.1."""
+    return '"' + _NEEDS_ESCAPE.sub(_escape_char, value) + '"'
+
+
+def _needs_quotes(value: str, delimiter: str) -> bool:
+    return (
+        not value
+        or value[0] in " \t-#"
+        or value[-1] in " \t"
+        or value in ("true", "false", "null")
+        or delimiter in value
+        or _STRUCTURAL.search(value) is not None
+        or _NUMERIC_LIKE.fullmatch(value) is not None
+    )
+
+
+def encode_string(value: str, delimiter: str) -> str:
+    """Encode a string value, quoting it only when §7.2 requires it."""
+    return quote(value) if _needs_quotes(value, delimiter) else value
+
+
+def encode_key(key: str) -> str:
+    """Encode an object key, entry key, or field name (§7.3)."""
+    return key if _UNQUOTED_KEY.fullmatch(key) else quote(key)
+
+
+def format_decimal(value: Decimal) -> str:
+    """Format a finite decimal in the canonical number form of §2.
+
+    Magnitudes in ``[1e-6, 1e21)`` use plain decimal notation without
+    trailing zeros. Other magnitudes use JSON exponent notation with a
+    lowercase ``e`` and an explicit exponent sign.
+    """
+    if not value:
+        return "0"
+    magnitude = abs(value)
+    if _CANONICAL_MIN <= magnitude < _CANONICAL_MAX:
+        text = f"{value:f}"
+        if "." in text:
+            text = text.rstrip("0").rstrip(".")
+        return text
+    # Decimal.normalize() would round to the context precision, so strip
+    # trailing zeros by hand to keep every significant digit.
+    sign, digits, exponent = value.as_tuple()
+    assert isinstance(exponent, int)
+    mantissa = "".join(map(str, digits)).rstrip("0")
+    exponent += len(digits) - 1
+    if len(mantissa) > 1:
+        mantissa = f"{mantissa[0]}.{mantissa[1:]}"
+    exponent_sign = "+" if exponent >= 0 else "-"
+    return f"{'-' if sign else ''}{mantissa}e{exponent_sign}{abs(exponent)}"
+
+
+def format_float(value: float) -> str:
+    """Format a finite float in the canonical number form of §2.
+
+    ``repr`` yields the shortest digit string that round-trips, so the output
+    decodes back to the same float. Integral floats of 2**53 and beyond are
+    written with their exact digits instead: they decode as ``int``, and the
+    shortest digits would not equal the float (``float(2**60) == 2**60`` but
+    ``1152921504606847000 != 2**60``).
+    """
+    if value.is_integer() and abs(value) < 1e21:
+        return str(int(value))
+    return format_decimal(Decimal(repr(value)))
+
+
+# ── Encoder (§1, §3, §8-§10) ─────────────────────────────────────────────────
+
+Json: TypeAlias = (
+    "bool | int | float | Decimal | str | list[Json] | dict[str, Json] | None"
+)
+
+# An ordered field list: each field is a leaf (``None``) or a nested field group.
+Shape: TypeAlias = "tuple[tuple[str, Shape | None], ...]"
+
+_SURROGATE = re.compile("[\ud800-\udfff]")
+
+
+def _encode_document(
+    obj: Any,
+    *,
+    indent_size: int,
+    delimiter: str,
+    default: Callable[[Any], Any] | None,
+    sort_keys: bool,
+) -> str:
+    """Encode ``obj`` as a TOON document. Options are already validated."""
     try:
-        lines = _scan(text, indent, strict)
-    except ToonDecodeError:
-        raise
-    non_blank = [ln for ln in lines if not ln.is_blank]
-    if not non_blank:
-        return {}
-    first = non_blank[0]
-    hdr = _parse_header(first.content)
-    if hdr is not None and hdr[0] is None:
-        arr, _ = _dec_array_from_hdr(
-            lines, 0 if lines[0] == first else lines.index(first), 0, hdr, strict
-        )
-        return arr
-    if len(non_blank) == 1:
+        value = _Normalizer(default, sort_keys).normalize(obj)
+        encoder = _Encoder(indent_size, delimiter)
+        encoder.root(value)
+    except RecursionError:
+        raise ValueError("Object is nested too deeply to encode") from None
+    return "\n".join(encoder.lines)
+
+
+# --------------------------------------------------------------------------
+# Normalization (§3)
+# --------------------------------------------------------------------------
+
+
+def _check_string(value: str) -> str:
+    if _SURROGATE.search(value):
+        # §3: an unpaired surrogate has no TOON representation.
+        raise ValueError(f"String contains an unpaired surrogate: {value!r}")
+    return value
+
+
+class _Normalizer:
+    def __init__(self, default: Callable[[Any], Any] | None, sort_keys: bool) -> None:
+        self.default = default
+        self.sort_keys = sort_keys
+        self.active: set[int] = set()
+
+    def normalize(self, value: Any) -> Json:
+        cls = type(value)
+        if cls is str:
+            return _check_string(value)
+        if value is None or cls is bool or cls is int:
+            return value  # type: ignore[no-any-return]
+        if cls is float:
+            return value if math.isfinite(value) else None
+        if cls is dict or cls is list or cls is tuple:
+            return self._container(value)
+        return self._other(value)
+
+    def _container(self, value: Any) -> Json:
+        marker = id(value)
+        if marker in self.active:
+            raise ValueError("Circular reference detected")
+        self.active.add(marker)
         try:
-            _split_kv(first.content)
-        except ToonDecodeError:
-            if hdr is None:
-                return _parse_primitive(first.content)
-    return _dec_object(lines, 0, 0, strict)
+            if isinstance(value, Mapping):
+                return self._mapping(value)
+            items = value
+            if isinstance(value, (set, frozenset)):
+                items = _sorted_members(value)
+            return [self.normalize(item) for item in items]
+        finally:
+            self.active.discard(marker)
+
+    def _mapping(self, value: Mapping[Any, Any]) -> dict[str, Json]:
+        pairs = [(_convert_key(key), item) for key, item in value.items()]
+        if self.sort_keys:
+            pairs.sort(key=lambda pair: pair[0])
+        result: dict[str, Json] = {}
+        for key, item in pairs:
+            # Keys such as 1 and "1" collide once converted; keeping one value
+            # would lose data, and a duplicate key is invalid TOON (§14).
+            if key in result:
+                raise ValueError(f"Duplicate key after conversion: {key!r}")
+            result[key] = self.normalize(item)
+        return result
+
+    def _other(self, value: Any) -> Json:
+        # Order matters: bool before int, str/int subclasses (StrEnum, IntEnum)
+        # before Enum, datetime before date.
+        if isinstance(value, str):
+            return _check_string(str.__str__(value))
+        if isinstance(value, bool):
+            return bool(value)
+        if isinstance(value, int):
+            return int(value)
+        if isinstance(value, float):
+            number = float(value)
+            return number if math.isfinite(number) else None
+        if isinstance(value, Decimal):
+            return value if value.is_finite() else None
+        if isinstance(value, (Mapping, list, tuple, set, frozenset)):
+            return self._container(value)
+        if isinstance(value, (datetime, date, time)):
+            return value.isoformat()
+        if isinstance(value, (UUID, PurePath)):
+            return str(value)
+        if isinstance(value, Enum):
+            return self._converted(value, value.value)
+        if dataclasses.is_dataclass(value) and not isinstance(value, type):
+            fields = {
+                field.name: getattr(value, field.name)
+                for field in dataclasses.fields(value)
+            }
+            return self._converted(value, fields)
+        # attrs classes are recognized without importing attrs (§3).
+        attributes = getattr(type(value), "__attrs_attrs__", None)
+        if attributes is not None:
+            fields = {field.name: getattr(value, field.name) for field in attributes}
+            return self._converted(value, fields)
+        pydantic = sys.modules.get("pydantic")
+        if pydantic is not None and isinstance(value, pydantic.BaseModel):
+            return self._converted(value, value.model_dump(mode="json"))
+        if self.default is not None:
+            return self._converted(value, self.default(value))
+        raise TypeError(
+            f"Object of type {type(value).__name__} is not TOON serializable"
+        )
+
+    def _converted(self, original: Any, replacement: Any) -> Json:
+        """Normalize ``replacement``, which must not lead back to ``original``."""
+        marker = id(original)
+        if marker in self.active:
+            raise ValueError("Circular reference detected")
+        self.active.add(marker)
+        try:
+            return self.normalize(replacement)
+        finally:
+            self.active.discard(marker)
+
+
+def _sorted_members(value: set[Any] | frozenset[Any]) -> list[Any]:
+    """Order set members deterministically (Appendix E.6)."""
+    try:
+        return sorted(value)
+    except TypeError:
+        return sorted(value, key=repr)
+
+
+def _convert_key(key: Any) -> str:
+    """Coerce a mapping key to a string, following :func:`json.dumps`."""
+    if isinstance(key, str):
+        return _check_string(str.__str__(key))
+    if key is None or isinstance(key, bool):
+        return "null" if key is None else ("true" if key else "false")
+    if isinstance(key, int):
+        return str(int(key))
+    if isinstance(key, float):
+        if math.isfinite(key):
+            return format_float(key)
+        return "NaN" if math.isnan(key) else ("Infinity" if key > 0 else "-Infinity")
+    raise TypeError(
+        f"Keys must be str, int, float, bool or None, not {type(key).__name__}"
+    )
+
+
+# --------------------------------------------------------------------------
+# Form detection (§9.3, §9.5)
+# --------------------------------------------------------------------------
+
+
+def _is_primitive(value: Json) -> bool:
+    return not isinstance(value, (dict, list))
+
+
+def _shape(objects: list[Json]) -> Shape | None:
+    """Return the shared field list of ``objects``, or ``None`` if they are not uniform.
+
+    Objects are uniform when all are non-empty objects with the same set of
+    keys and every column is uniform-primitive or nested-uniform (§9.3).
+    """
+    first = objects[0]
+    if not isinstance(first, dict) or not first:
+        return None
+    keys = first.keys()
+    for obj in objects:
+        if not isinstance(obj, dict) or len(obj) != len(keys) or obj.keys() != keys:
+            return None
+    fields: list[tuple[str, Shape | None]] = []
+    for key in keys:
+        column = [obj[key] for obj in objects if isinstance(obj, dict)]
+        if all(map(_is_primitive, column)):
+            fields.append((key, None))
+            continue
+        nested = _shape(column)
+        if nested is None:
+            return None
+        fields.append((key, nested))
+    return tuple(fields)
+
+
+def _keyed_shape(obj: dict[str, Json]) -> Shape | None:
+    """Field list for the keyed tabular form of an object (§9.5)."""
+    if len(obj) < 2:
+        return None
+    return _shape(list(obj.values()))
+
+
+def _leaves(obj: Json, shape: Shape) -> Iterator[Json]:
+    """Yield the leaf values of ``obj`` in depth-first header order."""
+    assert isinstance(obj, dict)
+    for key, nested in shape:
+        if nested is None:
+            yield obj[key]
+        else:
+            yield from _leaves(obj[key], nested)
+
+
+# --------------------------------------------------------------------------
+# Rendering
+# --------------------------------------------------------------------------
+
+
+class _Encoder:
+    def __init__(self, indent_size: int, delimiter: str) -> None:
+        self.unit = " " * indent_size
+        self.delimiter = delimiter
+        # §11.1: every header declares the document delimiter; comma is implicit.
+        self.symbol = "" if delimiter == "," else delimiter
+        self.lines: list[str] = []
+
+    def emit(self, depth: int, text: str) -> None:
+        self.lines.append(self.unit * depth + text)
+
+    def root(self, value: Json) -> None:
+        if isinstance(value, dict):
+            shape = _keyed_shape(value)
+            if shape is not None:
+                self.keyed("", value, shape, 0)
+            else:
+                self.fields(value, 0)  # an empty object is an empty document (§8)
+        elif isinstance(value, list):
+            if value:
+                self.array("", value, 0, tabular=True)
+            else:
+                self.emit(0, "[]")
+        elif isinstance(value, str) and value.startswith("\ufeff"):
+            self.emit(0, quote(value))  # unquoted, it would read as a BOM (§7.2, §12)
+        else:
+            self.emit(0, self.primitive(value))
+
+    def primitive(self, value: Json) -> str:
+        if value is None:
+            return "null"
+        if value is True:
+            return "true"
+        if value is False:
+            return "false"
+        if isinstance(value, int):
+            return str(value)
+        if isinstance(value, float):
+            return format_float(value)
+        if isinstance(value, Decimal):
+            return format_decimal(value)
+        assert isinstance(value, str)
+        return encode_string(value, self.delimiter)
+
+    def join(self, values: Iterator[Json] | list[Json]) -> str:
+        return self.delimiter.join(map(self.primitive, values))
+
+    def field_list(self, shape: Shape) -> str:
+        entries = (
+            encode_key(key) + ("" if nested is None else self.field_list(nested))
+            for key, nested in shape
+        )
+        return "{" + self.delimiter.join(entries) + "}"
+
+    def fields(self, obj: dict[str, Json], depth: int) -> None:
+        for key, value in obj.items():
+            self.field(encode_key(key), value, depth)
+
+    def field(self, key: str, value: Json, depth: int) -> None:
+        """Emit one object field; ``key`` is already encoded (§8)."""
+        if isinstance(value, dict):
+            shape = _keyed_shape(value)
+            if shape is not None:
+                self.keyed(key, value, shape, depth)
+            else:
+                self.emit(depth, key + ":")
+                self.fields(value, depth + 1)
+        elif isinstance(value, list):
+            if value:
+                self.array(key, value, depth, tabular=True)
+            else:
+                self.emit(depth, key + ": []")
+        else:
+            self.emit(depth, f"{key}: {self.primitive(value)}")
+
+    def array(
+        self, prefix: str, array: list[Json], depth: int, *, tabular: bool
+    ) -> None:
+        """Emit a non-empty array whose header starts with ``prefix``.
+
+        ``tabular`` is false for a keyless array that is itself a list item,
+        where a field list is not allowed (§9.4).
+        """
+        head = f"{prefix}[{len(array)}{self.symbol}]"
+        if all(map(_is_primitive, array)):
+            self.emit(depth, f"{head}: {self.join(array)}")  # §9.1
+            return
+        shape = _shape(array) if tabular else None
+        if shape is not None:
+            self.emit(depth, f"{head}{self.field_list(shape)}:")  # §9.3
+            for element in array:
+                self.emit(depth + 1, self.join(_leaves(element, shape)))
+            return
+        self.emit(depth, head + ":")  # §9.2, §9.4
+        for element in array:
+            self.item(element, depth + 1)
+
+    def keyed(self, key: str, obj: dict[str, Json], shape: Shape, depth: int) -> None:
+        """Emit an object of uniform objects in keyed tabular form (§9.5)."""
+        self.emit(depth, f"{key}[{len(obj)}:{self.symbol}]{self.field_list(shape)}:")
+        for entry, value in obj.items():
+            self.emit(
+                depth + 1, f"{encode_key(entry)}: {self.join(_leaves(value, shape))}"
+            )
+
+    def item(self, value: Json, depth: int) -> None:
+        """Emit one list item at ``depth`` (§9.4, §10)."""
+        if isinstance(value, dict):
+            if not value:
+                self.emit(depth, "-")
+                return
+            # The object's fields stand at depth + 1; the first one moves onto
+            # the hyphen line, so whatever scope it opens lands at depth + 2.
+            first = len(self.lines)
+            self.fields(value, depth + 1)
+            indent = self.unit * depth
+            self.lines[first] = (
+                indent + "- " + self.lines[first][len(indent + self.unit) :]
+            )
+        elif isinstance(value, list):
+            if value:
+                self.array("- ", value, depth, tabular=False)
+            else:
+                self.emit(depth, f"- [0{self.symbol}]:")  # never "- []" (§9.2)
+        else:
+            self.emit(depth, "- " + self.primitive(value))
+
+
+# ── Decoder (§5, §6, §9, §12, §14) ───────────────────────────────────────────
+
+ObjectHook: TypeAlias = Callable[[dict[str, Any]], Any]
+PairsHook: TypeAlias = Callable[[list[tuple[str, Any]]], Any]
+
+# A parsed field list: each field is a leaf (``None``) or a nested field group.
+Fields: TypeAlias = "tuple[tuple[str, Fields | None], ...]"
+
+_BRACKET = re.compile(r"\[(0|[1-9][0-9]*)(:?)([\t|]?)\]")
+_QUOTED = re.compile(r'"(?:[^"\\]|\\.)*"', re.DOTALL)
+_HEX4 = re.compile(r"[0-9A-Fa-f]{4}")
+_SIMPLE_ESCAPES = {"\\": "\\", '"': '"', "n": "\n", "r": "\r", "t": "\t"}
+
+
+def _decode_document(
+    text: str,
+    *,
+    indent_size: int,
+    strict: bool,
+    parse_int: Callable[[str], Any] | None,
+    parse_float: Callable[[str], Any] | None,
+    object_hook: ObjectHook | None,
+    object_pairs_hook: PairsHook | None,
+) -> Any:
+    """Decode a TOON document. Options are already validated."""
+    lines = _split_lines(text, indent_size, strict)
+    parser = _Parser(
+        lines, strict, parse_int, parse_float, object_hook, object_pairs_hook
+    )
+    try:
+        return parser.document()
+    except RecursionError:
+        raise ToonDecodeError("Document is nested too deeply to decode") from None
+
+
+# --------------------------------------------------------------------------
+# Lines (§5.1, §12)
+# --------------------------------------------------------------------------
+
+
+@dataclass(slots=True)
+class _Line:
+    number: int
+    """1-based line number in the original document."""
+    depth: int
+    content: str
+    """The line without indentation and trailing spaces."""
+    source: str
+    """The line as written, for error messages."""
+    blank_before: int | None
+    """Number of the first blank line directly above this one, if any."""
+
+
+def _split_lines(text: str, indent_size: int, strict: bool) -> list[_Line]:
+    if text.startswith("\ufeff"):
+        text = text[1:]  # byte-order mark (§12)
+    lines: list[_Line] = []
+    blank: int | None = None
+    for number, source in enumerate(text.split("\n"), 1):
+        if source.endswith("\r"):
+            source = source[:-1]  # CRLF input (§12)
+        stripped = source.lstrip(" ")
+        if stripped.startswith("#"):
+            continue  # comment line (§5.1); lines are adjacent across it
+        content = stripped.rstrip(" ")
+        # Tabs make a line blank only where they may indent it (§14.4).
+        if not content or (not strict and not content.strip(" \t")):
+            blank = blank or number
+            continue
+        spaces = len(source) - len(stripped)
+        if content[0] == "\t":
+            if strict:
+                raise ToonDecodeError(
+                    "Tabs are not allowed in indentation", number, source
+                )
+            # Non-strict: a tab counts as one level, spaces as usual (§14.4).
+            run = len(content) - len(content.lstrip(" \t"))
+            spaces += content.count(" ", 0, run)
+            depth = content.count("\t", 0, run) + spaces // indent_size
+            content = content[run:]
+        else:
+            if strict and spaces % indent_size:
+                raise ToonDecodeError(
+                    f"Indentation of {spaces} spaces is not a multiple of "
+                    f"{indent_size}",
+                    number,
+                    source,
+                )
+            depth = spaces // indent_size
+        lines.append(_Line(number, depth, content, source, blank))
+        blank = None
+    return lines
+
+
+# --------------------------------------------------------------------------
+# Line classes (§5.2)
+# --------------------------------------------------------------------------
+
+
+@dataclass(slots=True)
+class _Header:
+    key: str | None
+    length: int
+    keyed: bool
+    delimiter: str
+    fields: Fields | None
+    rest: str
+    """Inline content after the colon, trimmed."""
+
+
+@dataclass(slots=True)
+class _KeyValue:
+    key: str
+    rest: str
+
+
+@dataclass(slots=True)
+class _Scalar:
+    token: str
+
+
+def _is_list_item(content: str) -> bool:
+    return content == "-" or content.startswith("- ")
+
+
+def _quoted_end(text: str, start: int) -> int:
+    """Index just past the quoted token at ``start``, or -1 if it is unterminated."""
+    match = _QUOTED.match(text, start)
+    return match.end() if match else -1
+
+
+def _find_unquoted(text: str, char: str, start: int = 0) -> int:
+    """Index of the first ``char`` outside double quotes, or -1."""
+    if '"' not in text:
+        return text.find(char, start)
+    in_quotes = False
+    i, n = start, len(text)
+    while i < n:
+        c = text[i]
+        if in_quotes:
+            if c == "\\":
+                i += 1
+            elif c == '"':
+                in_quotes = False
+        elif c == '"':
+            in_quotes = True
+        elif c == char:
+            return i
+        i += 1
+    return -1
+
+
+def _split(text: str, delimiter: str) -> list[str]:
+    """Split on unquoted delimiters and trim each token (§11.2, Appendix B.3)."""
+    if '"' not in text:
+        return [token.strip(" ") for token in text.split(delimiter)]
+    tokens: list[str] = []
+    in_quotes = False
+    start = i = 0
+    n = len(text)
+    while i < n:
+        c = text[i]
+        if in_quotes:
+            if c == "\\":
+                i += 1
+            elif c == '"':
+                in_quotes = False
+        elif c == '"':
+            in_quotes = True
+        elif c == delimiter:
+            tokens.append(text[start:i].strip(" "))
+            start = i + 1
+        i += 1
+    tokens.append(text[start:].strip(" "))
+    return tokens
+
+
+def _leaf_count(fields: Fields) -> int:
+    return sum(1 if nested is None else _leaf_count(nested) for _, nested in fields)
+
+
+# --------------------------------------------------------------------------
+# Parser
+# --------------------------------------------------------------------------
+
+
+class _Parser:
+    def __init__(
+        self,
+        lines: list[_Line],
+        strict: bool,
+        parse_int: Callable[[str], Any] | None,
+        parse_float: Callable[[str], Any] | None,
+        object_hook: ObjectHook | None,
+        object_pairs_hook: PairsHook | None,
+    ) -> None:
+        self.lines = lines
+        self.pos = 0
+        self.strict = strict
+        self.parse_int = parse_int or int
+        self.parse_float = parse_float
+        self.object_hook = object_hook
+        self.object_pairs_hook = object_pairs_hook
+        # Number of enclosing header scopes that have consumed their first
+        # item, row, or entry: a blank line inside any of them is a header span.
+        self.spans = 0
+
+    # -- infrastructure -----------------------------------------------------
+
+    def error(self, msg: str, line: _Line) -> ToonDecodeError:
+        return ToonDecodeError(msg, line.number, line.source)
+
+    def peek(self) -> _Line | None:
+        return self.lines[self.pos] if self.pos < len(self.lines) else None
+
+    def take(self) -> _Line:
+        line = self.lines[self.pos]
+        if line.blank_before is not None and self.spans and self.strict:
+            raise ToonDecodeError(
+                "Blank line inside an array or keyed object", line.blank_before, ""
+            )
+        self.pos += 1
+        return line
+
+    def finish(self, obj: dict[str, Any]) -> Any:
+        """Apply the object hooks to a fully decoded object."""
+        if self.object_pairs_hook is not None:
+            return self.object_pairs_hook(list(obj.items()))
+        if self.object_hook is not None:
+            return self.object_hook(obj)
+        return obj
+
+    def assign(self, obj: dict[str, Any], key: str, value: Any, line: _Line) -> None:
+        if self.strict and key in obj:
+            raise self.error(f"Duplicate key {key!r}", line)
+        # Non-strict: last write wins (§14.4); like json.loads, the key keeps
+        # the position of its first occurrence.
+        obj[key] = value
+
+    def scope_depth(self, expected: int) -> int:
+        """Content depth of a scope; non-strict mode tolerates a deeper first line."""
+        line = self.peek()
+        if line is not None and not self.strict and line.depth > expected:
+            return line.depth
+        return expected
+
+    # -- tokens (§4, §7) ----------------------------------------------------
+
+    def unescape(self, body: str, line: _Line) -> str:
+        if "\\" not in body:
+            return body
+        parts: list[str] = []
+        i = 0
+        while (j := body.find("\\", i)) >= 0:
+            parts.append(body[i:j])
+            c = body[j + 1] if j + 1 < len(body) else ""
+            if c in _SIMPLE_ESCAPES:
+                parts.append(_SIMPLE_ESCAPES[c])
+                i = j + 2
+            elif c == "u" and _HEX4.fullmatch(body, j + 2, j + 6):
+                code = int(body[j + 2 : j + 6], 16)
+                if 0xD800 <= code <= 0xDFFF:
+                    raise self.error(f"Surrogate escape \\u{body[j + 2 : j + 6]}", line)
+                parts.append(chr(code))
+                i = j + 6
+            else:
+                raise self.error(f"Invalid escape sequence {body[j : j + 6]!r}", line)
+        parts.append(body[i:])
+        return "".join(parts)
+
+    def quoted(self, token: str, line: _Line) -> str:
+        """Decode a token that starts with a quote (§7.4 quoted-token boundary)."""
+        end = _quoted_end(token, 0)
+        if end < 0:
+            raise self.error("Unterminated string", line)
+        if end != len(token):
+            raise self.error("Unexpected characters after closing quote", line)
+        return self.unescape(token[1:-1], line)
+
+    def key(self, token: str, line: _Line) -> str:
+        token = token.strip(" ")
+        return self.quoted(token, line) if token.startswith('"') else token
+
+    def primitive(self, token: str, line: _Line) -> Any:
+        if not token:
+            return ""
+        if token[0] == '"':
+            return self.quoted(token, line)
+        if token == "true":
+            return True
+        if token == "false":
+            return False
+        if token == "null":
+            return None
+        if is_number_token(token):
+            return self.number(token, line)
+        return token
+
+    def number(self, token: str, line: _Line) -> Any:
+        if "." not in token and "e" not in token and "E" not in token:
+            try:
+                return self.parse_int(token)
+            except ValueError as exc:
+                raise self.error(str(exc), line) from None
+        if self.parse_float is not None:
+            return self.parse_float(token)
+        value = float(token)
+        if math.isinf(value):
+            raise self.error(f"Number {token} is out of range", line)
+        return value or 0.0  # -0 decodes to 0 (§4)
+
+    def values(self, text: str, delimiter: str, line: _Line) -> list[Any]:
+        """Decode a delimited cell sequence; empty text is zero cells (§11.2)."""
+        if not text:
+            return []
+        return [self.primitive(token, line) for token in _split(text, delimiter)]
+
+    # -- headers (§6) -------------------------------------------------------
+
+    def classify(self, content: str, line: _Line) -> _Header | _KeyValue | _Scalar:
+        """Classify a line body as a header, a key-value line, or a scalar (§5.2)."""
+        colon = _find_unquoted(content, ":")
+        if content.startswith('"'):
+            end = _quoted_end(content, 0)
+            if end < 0:
+                raise self.error("Unterminated string", line)
+            if colon >= 0 and content.startswith("[", end):
+                return self.header(content, end, line)
+            after = content[end:].lstrip(" ")
+            if not after:
+                return _Scalar(content)
+            if after[0] != ":":
+                raise self.error("Unexpected characters after closing quote", line)
+            return _KeyValue(self.quoted(content[:end], line), after[1:].strip(" "))
+        bracket = _find_unquoted(content, "[")
+        if 0 <= bracket < colon:
+            return self.header(content, bracket, line)
+        if colon >= 0:
+            return _KeyValue(
+                content[:colon].strip(" "), content[colon + 1 :].strip(" ")
+            )
+        return _Scalar(content)
+
+    def header(self, content: str, bracket: int, line: _Line) -> _Header:
+        """Parse a header whose bracket segment starts at ``bracket`` (§6)."""
+        match = _BRACKET.match(content, bracket)
+        if match is None:
+            raise self.error("Malformed bracket segment", line)
+        if content[bracket - 1 : bracket] in (" ", "\t"):  # SP and HTAB only (§1.2)
+            raise self.error("Whitespace between a key and its bracket segment", line)
+        delimiter = match.group(3) or ","
+        pos = match.end()
+        fields = None
+        if content.startswith("{", pos):
+            fields, pos = self.field_list(content, pos, delimiter, line)
+        if not content.startswith(":", pos):
+            raise self.error("Expected ':' after the array header", line)
+        rest = content[pos + 1 :].strip(" ")
+        keyed = bool(match.group(2))
+        if keyed and fields is None:
+            raise self.error("A keyed header requires a field list", line)
+        if fields is not None and rest:
+            raise self.error(
+                "Unexpected content after a header with a field list", line
+            )
+        key_text = content[:bracket]
+        key = self.key(key_text, line) if key_text else None
+        return _Header(key, int(match.group(1)), keyed, delimiter, fields, rest)
+
+    @staticmethod
+    def _skip_spaces(text: str, pos: int) -> int:
+        n = len(text)
+        while pos < n and text[pos] == " ":
+            pos += 1
+        return pos
+
+    def _field_name(self, text: str, pos: int, line: _Line) -> tuple[str, int]:
+        """Parse one field name at ``pos``; return it and the index past it."""
+        if text.startswith('"', pos):
+            end = _quoted_end(text, pos)
+            if end < 0:
+                raise self.error("Unterminated field name", line)
+            return self.unescape(text[pos + 1 : end - 1], line), end
+        start, n = pos, len(text)
+        while pos < n and text[pos] not in "{},|\t":
+            if text[pos] == '"':
+                end = _quoted_end(text, pos)
+                pos = end if end >= 0 else n
+            else:
+                pos += 1
+        name = text[start:pos].strip(" ")
+        if not name:
+            raise self.error("Empty field name in field list", line)
+        return name, pos
+
+    def _nested_fields(
+        self, text: str, pos: int, delimiter: str, line: _Line
+    ) -> tuple[Fields | None, int]:
+        """Parse an optional ``{...}`` directly after a field name."""
+        if not text.startswith("{", pos):
+            return None, pos
+        if text[pos - 1] == " ":
+            raise self.error(
+                "Whitespace between a field name and its nested field group", line
+            )
+        nested, pos = self.field_list(text, pos, delimiter, line)
+        return nested, self._skip_spaces(text, pos)
+
+    def field_list(
+        self, text: str, pos: int, delimiter: str, line: _Line
+    ) -> tuple[Fields, int]:
+        """Parse the ``{...}`` at ``pos``; return the fields and the index past it."""
+        fields: list[tuple[str, Fields | None]] = []
+        seen: set[str] = set()
+        n = len(text)
+        pos = self._skip_spaces(text, pos + 1)
+        while True:
+            name, pos = self._field_name(text, pos, line)
+            pos = self._skip_spaces(text, pos)
+            nested, pos = self._nested_fields(text, pos, delimiter, line)
+            if name in seen and self.strict:
+                raise self.error(f"Duplicate field name {name!r}", line)
+            seen.add(name)
+            fields.append((name, nested))
+            if pos >= n:
+                raise self.error("Unmatched '{' in field list", line)
+            separator = text[pos]
+            pos += 1
+            if separator == "}":
+                return tuple(fields), pos
+            if separator != delimiter:
+                if separator in DELIMITERS:
+                    raise self.error(
+                        "Field list delimiter does not match the bracket segment", line
+                    )
+                raise self.error("Malformed field list", line)
+
+    # -- document (§5) ------------------------------------------------------
+
+    def document(self) -> Any:
+        first = self.peek()
+        if first is None:
+            return self.finish({})  # empty document (§5)
+        if first.depth > 0:
+            raise self.over_indented(first)  # an indented first line (§5, §8)
+        if first.content == "[]":
+            self.take()
+            self.end_of_root()
+            return []
+        kind = self.classify(first.content, first)
+        if isinstance(kind, _Header) and kind.key is None:
+            self.take()
+            value = self.header_value(kind, first, 1)
+            self.end_of_root()
+            return value
+        if isinstance(kind, _Scalar) and len(self.lines) == 1:
+            self.take()
+            return self.primitive(first.content, first)
+        return self.finish(self.object_body(0, {}, -1))
+
+    def end_of_root(self) -> None:
+        """A root array or keyed object spans the whole document (§5)."""
+        line = self.peek()
+        if line is not None:
+            raise self.error("Unexpected content after the root value", line)
+
+    # -- objects (§8) -------------------------------------------------------
+
+    def object_body(
+        self, depth: int, obj: dict[str, Any], parent: int
+    ) -> dict[str, Any]:
+        """Parse the fields at ``depth`` of an object opened at ``parent`` (§8)."""
+        while (line := self.peek()) is not None and line.depth > parent:
+            if line.depth != depth:
+                raise self.over_indented(line)
+            self.take()
+            self.field(line, obj, depth)
+        return obj
+
+    def over_indented(self, line: _Line) -> ToonDecodeError:
+        """A line deeper than its scope that no line opened (§8, §14.2)."""
+        return self.error("Unexpected indentation", line)
+
+    def field(self, line: _Line, obj: dict[str, Any], depth: int) -> None:
+        kind = self.classify(line.content, line)
+        if isinstance(kind, _Header):
+            if kind.key is None:
+                raise self.error(
+                    "A header without a key is only valid at the root", line
+                )
+            self.assign(obj, kind.key, self.header_value(kind, line, depth + 1), line)
+            return
+        if isinstance(kind, _Scalar):
+            raise self.error("Expected 'key: value'", line)
+        self.assign(obj, kind.key, self.field_value(kind.rest, line, depth), line)
+
+    def field_value(self, rest: str, line: _Line, depth: int) -> Any:
+        """Decode what follows ``key:`` for a field standing at ``depth``."""
+        if rest:
+            return [] if rest == "[]" else self.primitive(rest, line)
+        child = self.peek()
+        if child is None or child.depth <= depth:
+            return self.finish({})
+        if self.strict and child.depth != depth + 1:
+            raise self.error("Indentation jumps more than one level", child)
+        return self.finish(self.object_body(child.depth, {}, depth))
+
+    # -- arrays and keyed objects (§9, §10) ---------------------------------
+
+    def header_value(self, header: _Header, line: _Line, depth: int) -> Any:
+        """Decode the value a header opens; ``depth`` is its content depth."""
+        if header.keyed:
+            return self.entries(header, line, self.scope_depth(depth), depth - 1)
+        if header.fields is not None:
+            return self.rows(header, line, self.scope_depth(depth), depth - 1)
+        if header.rest:
+            values = self.values(header.rest, header.delimiter, line)
+            self.check_count(len(values), header, line)
+            return values
+        return self.items(header, line, self.scope_depth(depth), depth - 1)
+
+    def check_count(self, count: int, header: _Header, line: _Line) -> None:
+        if self.strict and count != header.length:
+            raise self.error(f"Declared length {header.length} but found {count}", line)
+
+    def check_width(self, cells: list[Any], fields: Fields, line: _Line) -> None:
+        width = _leaf_count(fields)
+        if len(cells) != width:
+            raise self.error(f"Expected {width} values but found {len(cells)}", line)
+
+    def items(self, header: _Header, line: _Line, depth: int, parent: int) -> list[Any]:
+        """Parse the list items of an array in list form (§9.2, §9.4)."""
+        items: list[Any] = []
+        started = False
+        try:
+            while (item := self.peek()) and item.depth > parent:
+                if item.depth != depth:
+                    raise self.over_indented(item)
+                if not _is_list_item(item.content):
+                    break
+                self.take()
+                if not started:
+                    self.spans += 1
+                    started = True
+                items.append(self.item(item, depth))
+        finally:
+            self.spans -= started
+        self.check_count(len(items), header, line)
+        return items
+
+    def item(self, line: _Line, depth: int) -> Any:
+        """Decode one list item at ``depth`` (§9.4, §10)."""
+        rest = line.content[2:].strip(" ")
+        if not rest:
+            return self.finish({})
+        if rest == "[]":
+            return []
+        kind = self.classify(rest, line)
+        if isinstance(kind, _Scalar):
+            return self.primitive(rest, line)
+        if isinstance(kind, _Header) and kind.key is None:
+            if kind.fields is not None:
+                raise self.error(
+                    "A header with a field list cannot be a list item", line
+                )
+            return self.header_value(kind, line, depth + 1)
+        # An object whose first field sits on the hyphen line at depth + 1.
+        obj: dict[str, Any] = {}
+        if isinstance(kind, _Header):
+            assert kind.key is not None
+            obj[kind.key] = self.header_value(kind, line, depth + 2)
+        else:
+            obj[kind.key] = self.field_value(kind.rest, line, depth + 1)
+        return self.finish(self.object_body(depth + 1, obj, depth))
+
+    def rows(self, header: _Header, line: _Line, depth: int, parent: int) -> list[Any]:
+        """Parse the rows of a tabular array (§9.3)."""
+        assert header.fields is not None
+        delimiter = header.delimiter
+        rows: list[Any] = []
+        started = False
+        try:
+            while (row := self.peek()) and row.depth > parent:
+                if row.depth != depth:
+                    raise self.over_indented(row)
+                colon = _find_unquoted(row.content, ":")
+                if colon >= 0:
+                    split = _find_unquoted(row.content, delimiter)
+                    if split < 0 or colon < split:
+                        break  # a key-value line ends the rows
+                self.take()
+                if not started:
+                    self.spans += 1
+                    started = True
+                cells = self.values(row.content, delimiter, row)
+                self.check_width(cells, header.fields, row)
+                rows.append(self.materialize(header.fields, iter(cells)))
+        finally:
+            self.spans -= started
+        self.check_count(len(rows), header, line)
+        return rows
+
+    def entries(self, header: _Header, line: _Line, depth: int, parent: int) -> Any:
+        """Parse the entry rows of a keyed tabular object (§9.5)."""
+        assert header.fields is not None
+        obj: dict[str, Any] = {}
+        count = 0
+        try:
+            while (entry := self.peek()) and entry.depth > parent:
+                if entry.depth != depth:
+                    raise self.over_indented(entry)
+                self.take()
+                if not count:
+                    self.spans += 1
+                count += 1
+                colon = _find_unquoted(entry.content, ":")
+                if colon < 0:
+                    raise self.error("Expected 'key: values' entry row", entry)
+                key = self.key(entry.content[:colon], entry)
+                cells = self.values(
+                    entry.content[colon + 1 :].strip(" "), header.delimiter, entry
+                )
+                self.check_width(cells, header.fields, entry)
+                self.assign(
+                    obj, key, self.materialize(header.fields, iter(cells)), entry
+                )
+        finally:
+            self.spans -= bool(count)
+        self.check_count(count, header, line)
+        return self.finish(obj)
+
+    def materialize(self, fields: Fields, cells: Iterator[Any]) -> Any:
+        """Build one object from row cells, walking the field list depth-first."""
+        obj: dict[str, Any] = {}
+        for name, nested in fields:
+            obj[name] = (
+                next(cells) if nested is None else self.materialize(nested, cells)
+            )
+        return self.finish(obj)

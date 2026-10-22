@@ -238,9 +238,10 @@ class TestNormalization:
         assert "-0" not in result
         assert "val: 0" in result
 
-    def test_callable_to_null(self):
-        result = encode(lambda x: x)
-        assert result == "null"
+    def test_callable_rejected(self):
+        """A value outside the JSON data model is an error, like json.dumps."""
+        with pytest.raises(TypeError):
+            encode(lambda x: x)
 
     def test_empty_set(self):
         data = {"empty": set()}
@@ -442,9 +443,10 @@ class TestEncodeOptions:
         ref = _tf.encode([1, 2, 3], delimiter="|")
         assert result == ref
 
-    def test_length_marker(self):
-        result = encode([1, 2, 3], EncodeOptions(lengthMarker="#"))
-        assert "[#3]:" in result
+    def test_length_marker_removed(self):
+        """TOON 4.4 removed the [#N] marker; emitting it would be invalid."""
+        with pytest.raises(ValueError, match="lengthMarker"):
+            encode([1, 2, 3], EncodeOptions(lengthMarker="#"))
 
     def test_custom_indent(self):
         data = {"parent": {"child": 1}}
@@ -547,6 +549,25 @@ class TestRoundtrip:
         ref_decoded = _tf.decode(ref_encoded)
         our_decoded = decode(our_encoded)
         assert our_decoded == ref_decoded
+
+
+# ── Test: list form with nested object values (#188) ──
+
+
+class TestListFormNestedObjects:
+    @pytest.mark.parametrize(
+        "data",
+        [
+            [{"d": {}}],
+            [{"d": {"x": 1}}, {"d": {"y": 2}}],
+        ],
+        ids=["empty-nested-object", "differently-keyed-subobjects"],
+    )
+    def test_matches_reference_and_roundtrips(self, data):
+        encoded = encode(data)
+        assert encoded == _tf.encode(data)
+        assert "- d:" in encoded
+        assert decode(encoded) == data
 
 
 # ── Test: error handling ──

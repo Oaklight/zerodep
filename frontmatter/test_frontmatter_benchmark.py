@@ -5,6 +5,11 @@ import sys
 
 import pytest
 
+# Every case here takes the ``benchmark`` fixture. Without the plugin
+# they would be reported as errors rather than skipped, which reads as a
+# broken tree for anyone who installed the module without the extras.
+pytest.importorskip("pytest_benchmark")
+
 _this_dir = os.path.dirname(os.path.abspath(__file__))
 _repo_root = os.path.dirname(_this_dir)
 

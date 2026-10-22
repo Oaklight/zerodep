@@ -12,6 +12,11 @@ import json
 
 import pytest
 
+# Every case here takes the ``benchmark`` fixture. Without the plugin
+# they would be reported as errors rather than skipped, which reads as a
+# broken tree for anyone who installed the module without the extras.
+pytest.importorskip("pytest_benchmark")
+
 from websocket import WebSocketClient
 
 # ── Test data (pre-built at module level) ──────────────────────────────────

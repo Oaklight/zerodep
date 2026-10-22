@@ -51,6 +51,7 @@ finally:
         sys.modules.pop("wcwidth", None)
 
 sys.path.insert(0, _this_dir)
+import tabulate as _our_module  # noqa: E402
 from tabulate import tabulate as our_tabulate  # noqa: E402
 
 
@@ -63,6 +64,66 @@ def test_reference_width_mode_is_len() -> None:
     rather than two implementations.
     """
     assert getattr(_ref_tabulate_mod, "wcwidth", None) is None
+
+
+def _reference_using_wcwidth():
+    """Import the reference again with ``wcwidth`` visible.
+
+    The module-level import hides ``wcwidth`` so that both sides use
+    ``len(s)``; this reproduces the configuration a user of the reference
+    has, where it detects wide characters automatically.  Skips when
+    ``wcwidth`` is not installed.
+    """
+    pytest.importorskip("wcwidth")
+    saved_path = sys.path[:]
+    saved_tabulate = sys.modules.pop("tabulate", None)
+    try:
+        sys.path = [
+            p
+            for p in sys.path
+            if os.path.abspath(p or os.curdir)
+            not in (
+                os.path.abspath(_this_dir),
+                os.path.abspath(os.path.join(_this_dir, "..")),
+            )
+        ]
+        import tabulate as ref
+
+        return ref
+    finally:
+        sys.path = saved_path
+        sys.modules.pop("tabulate", None)
+        if saved_tabulate is not None:
+            sys.modules["tabulate"] = saved_tabulate
+
+
+@pytest.mark.parametrize(
+    ("data", "kwargs"),
+    [
+        ([["café", 1], ["élève", 2]], {}),
+        ([["你好", 1], ["世界", 2]], {"headers": ["Text", "Num"]}),
+        ([["东京Tokyo", 1], ["NYC", 2]], {"headers": ["City", "ID"]}),
+        ([["\U0001f600", "smile"]], {}),
+    ],
+)
+def test_wide_chars_mode_matches_the_wcwidth_reference(data, kwargs) -> None:
+    """``WIDE_CHARS_MODE`` reproduces what the reference does with wcwidth.
+
+    Hiding ``wcwidth`` above makes the default-mode comparison
+    environment-independent, but it also means nothing else exercises the
+    wide-character width path.  This pins it against the configuration the
+    reference has when the package is installed.
+    """
+    ref = _reference_using_wcwidth()
+    if getattr(ref, "wcwidth", None) is None:
+        pytest.skip("the reference did not import wcwidth")
+
+    previous = _our_module.WIDE_CHARS_MODE
+    _our_module.WIDE_CHARS_MODE = True
+    try:
+        assert _our_module.tabulate(data, **kwargs) == ref.tabulate(data, **kwargs)
+    finally:
+        _our_module.WIDE_CHARS_MODE = previous
 
 
 # ── Helpers ──

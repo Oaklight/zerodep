@@ -5,13 +5,51 @@ import sys
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(__file__))
+_this_dir = os.path.dirname(os.path.abspath(__file__))
+_repo_root = os.path.dirname(_this_dir)
+
+# This module is named like the reference, and pytest's prepend import mode
+# puts ``frontmatter/`` on sys.path while collecting, so a plain
+# ``import frontmatter`` binds the repo's own file and both sides of the
+# benchmark measure the same implementation (#205).  Hide both entries while
+# importing the reference, drop any cached module, and check where the
+# reference actually came from.
+_saved_path = sys.path[:]
+sys.path = [
+    p
+    for p in sys.path
+    if os.path.abspath(p or os.curdir) not in (_this_dir, _repo_root)
+]
+_cached_frontmatter = sys.modules.pop("frontmatter", None)
+# python-frontmatter imports PyYAML, which would otherwise stay cached and
+# shadow the repo's sibling ``yaml`` module for the zerodep side below.
+_cached_yaml = sys.modules.pop("yaml", None)
+try:
+    import frontmatter as pfm
+except ModuleNotFoundError:
+    pytest.skip("python-frontmatter not installed", allow_module_level=True)
+else:
+    _ref_file = os.path.abspath(getattr(pfm, "__file__", "") or "")
+    if not _ref_file or _ref_file.startswith(_repo_root + os.sep):
+        raise RuntimeError(
+            "the benchmark imported the repo's own frontmatter module as the "
+            "reference; the comparison would measure one implementation twice"
+        )
+    if not hasattr(pfm, "loads"):
+        raise RuntimeError("Not the real python-frontmatter")
+finally:
+    sys.path = _saved_path
+    sys.modules.pop("frontmatter", None)
+    if _cached_frontmatter is not None:
+        sys.modules["frontmatter"] = _cached_frontmatter
+    sys.modules.pop("yaml", None)
+    if _cached_yaml is not None:
+        sys.modules["yaml"] = _cached_yaml
+
+sys.path.insert(0, _this_dir)
 
 from frontmatter import dumps as zd_dumps
 from frontmatter import loads as zd_loads
-
-pfm = pytest.importorskip("frontmatter", reason="python-frontmatter not installed")
-
 
 # ── Test data ──
 

@@ -6,11 +6,43 @@ import sys
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(__file__))
+_this_dir = os.path.dirname(os.path.abspath(__file__))
+_repo_root = os.path.dirname(_this_dir)
+
+# This module is named like the reference, and pytest's prepend import mode
+# puts ``dotenv/`` on sys.path while collecting, so a plain ``import dotenv``
+# binds the repo's own file and both sides of the benchmark measure the same
+# implementation (#205).  Hide both entries while importing the reference,
+# drop any cached module, and check where the reference actually came from.
+_saved_path = sys.path[:]
+sys.path = [
+    p
+    for p in sys.path
+    if os.path.abspath(p or os.curdir) not in (_this_dir, _repo_root)
+]
+_cached_dotenv = sys.modules.pop("dotenv", None)
+try:
+    import dotenv as ref_dotenv
+except ModuleNotFoundError:
+    pytest.skip("python-dotenv not installed", allow_module_level=True)
+else:
+    _ref_file = os.path.abspath(getattr(ref_dotenv, "__file__", "") or "")
+    if not _ref_file or _ref_file.startswith(_repo_root + os.sep):
+        raise RuntimeError(
+            "the benchmark imported the repo's own dotenv module as the "
+            "reference; the comparison would measure one implementation twice"
+        )
+    if not hasattr(ref_dotenv, "dotenv_values"):
+        raise RuntimeError("Not the real python-dotenv")
+finally:
+    sys.path = _saved_path
+    sys.modules.pop("dotenv", None)
+    if _cached_dotenv is not None:
+        sys.modules["dotenv"] = _cached_dotenv
+
+sys.path.insert(0, _this_dir)
 
 from dotenv import dotenv_values as zd_dotenv_values
-
-ref_dotenv = pytest.importorskip("dotenv", reason="python-dotenv not installed")
 
 # ── Test data ──
 

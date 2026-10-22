@@ -12,7 +12,7 @@ Zero-dependency synchronous and asynchronous HTTP/1.1 REST client built entirely
 - **Sync mode** uses `http.client` from the standard library.
 - **Async mode** uses `asyncio` streams with a hand-written HTTP/1.1 protocol implementation.
 - **Thread-safe** by design: each request creates its own connection. Session classes use locks internally.
-- **Connection pooling** — `Client` and `AsyncClient` automatically pool and reuse TCP connections (stateless functions still create one-off connections).
+- **Connection pooling** — `Client`, `AsyncClient` and the module-level helpers (`get()`, `async_get()`, …) reuse TCP connections through a shared pool; `close_pools()` / `aclose_pools()` release them.
 - **Auto decompression** — transparently decodes gzip/deflate responses.
 - **Proxy support** — HTTP proxy, HTTPS proxy with CONNECT tunneling, and SOCKS5 proxy (RFC 1928) with username/password auth.
 - **Built-in auth** — Basic and Digest authentication out of the box.
@@ -222,7 +222,18 @@ with Client(pool_size=20) as client:
 ```
 
 !!! note "Stateless Functions"
-    Top-level functions like `get()`, `post()` still create a new connection per call. Use `Client` / `AsyncClient` for connection pooling.
+    Top-level functions like `get()`, `post()` and `async_get()` reuse connections through a process-wide pool as well: the async pool is per event loop, because pooled streams belong to the loop that created them. A stale pooled connection (the server closed it while it sat idle) is detected before use, or the request is retried once on a fresh connection for `GET`/`HEAD`/`OPTIONS`/`PUT`/`DELETE`. Release the pools with `close_pools()` (sync) and `await aclose_pools()` (async) — connections also close at process exit.
+
+```python
+from httpclient import get, close_pools
+
+for page in range(10):
+    r = get(f"https://api.example.com/items?page={page}")  # one connection
+
+close_pools()
+```
+
+`Client` remains the way to control pool size, headers, cookies, and timeouts per session.
 
 ### Content Decompression
 

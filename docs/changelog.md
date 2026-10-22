@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Features
 
+- **httpclient** (v0.6.0): the module-level helpers now reuse connections. `get()`, `post()` and friends (`async_get()`, …) share a process-wide pool instead of opening a connection per call — measured against the keep-alive server, sequential `get()` went from ~990 to ~1900 requests/s with three connections for 300 requests. Async pools are per event loop, since pooled streams belong to the loop that created them. `close_pools()` / `aclose_pools()` release them. A pooled connection the server closed while idle is detected before use (socket peek, async `at_eof()`), and `GET`/`HEAD`/`OPTIONS`/`PUT`/`DELETE` are retried once on a fresh connection if the race is lost. The pool key now includes `verify`, so a connection built with `verify=False` is never handed to a verifying request.
+
+### Features
+
 - **httpserver** (v0.6.0): connections now serve more than one request. HTTP/1.1 stays alive unless the request or the response sends `Connection: close`; HTTP/1.0 stays alive only when the request asks for it; streaming responses still close. New `App(keep_alive=..., keep_alive_timeout=..., max_requests_per_connection=...)` options tune or disable it, and an idle kept-alive connection is closed quietly after `keep_alive_timeout` instead of answering `408`. A client that closes between requests is no longer reported as a bad request. ([#210](https://github.com/Oaklight/zerodep/issues/210))
 
 ### Bug Fixes

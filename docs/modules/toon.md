@@ -58,7 +58,11 @@ print(encode(employees))
 
 ### `ToonDecodeError`
 
-TOON 解码失败时抛出的异常。
+TOON 解码失败时抛出的异常：格式错误、非法转义序列，或引号值末尾的反斜杠。
+
+`ToonDecodeError` 继承 `Exception` 而不是 `ValueError`，因此 `decode()` 外围的
+`except ValueError` 捕获不到这些错误——请捕获 `ToonDecodeError`。模块抛出的所有
+解码失败都是该类型。
 
 ## 编码选项
 

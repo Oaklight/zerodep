@@ -192,7 +192,7 @@ async def trigger_shutdown(request):
 
 ## API 参考
 
-### `App(*, max_body_size=1048576, read_timeout=30.0)`
+### `App(*, max_body_size=1048576, read_timeout=30.0, keep_alive=True, keep_alive_timeout=5.0, max_requests_per_connection=100)`
 
 主应用类。
 
@@ -200,6 +200,11 @@ async def trigger_shutdown(request):
 |------|------|--------|------|
 | `max_body_size` | `int` | `1048576`（1 MB） | 请求体最大字节数 |
 | `read_timeout` | `float` | `30.0` | 单次请求读取超时（秒） |
+| `keep_alive` | `bool` | `True` | 在同一连接上处理多个请求 |
+| `keep_alive_timeout` | `float` | `5.0` | 保持连接空闲多久后静默关闭 |
+| `max_requests_per_connection` | `int` | `100` | 单个连接处理多少个请求后关闭 |
+
+**连接行为：** HTTP/1.1 连接默认保持，除非请求发送 `Connection: close` 或响应设置了该头；HTTP/1.0 仅在请求带有 `Connection: keep-alive` 时保持。流式响应（`StreamingResponse`）总是关闭连接。保持连接空闲超过 `keep_alive_timeout` 时会静默关闭——不会返回 `408`。
 
 **路由方法：**
 

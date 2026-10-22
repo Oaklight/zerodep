@@ -6,6 +6,10 @@
 
 ## [未发布]
 
+### 新功能
+
+- **httpserver**（v0.6.0）：同一连接现在可以处理多个请求。HTTP/1.1 连接默认保持，除非请求或响应发送 `Connection: close`；HTTP/1.0 仅在请求要求时保持；流式响应仍然关闭连接。新增 `App(keep_alive=..., keep_alive_timeout=..., max_requests_per_connection=...)` 选项用于调整或关闭该行为，空闲的保持连接在超过 `keep_alive_timeout` 后会静默关闭，而不再返回 `408`。客户端在请求之间关闭连接也不再被当作错误请求。([#210](https://github.com/Oaklight/zerodep/issues/210))
+
 ### 问题修复
 
 - **soup** (v0.7.1)：引号内的逗号被直接跳过，导致 `[title="a,b"], [title="c"]` 这类选择器列表被解析成后代选择器并返回空列表，连解析正常的分组也一并丢弃。现在只在顶层逗号处切分，跟踪引号、方括号与圆括号，并按文档顺序取各分组的并集。空分组（尾随或连续逗号）改为抛异常，不再扩大为匹配所有元素；不支持的伪元素同样抛异常，不再静默丢弃所在分组。([#196](https://github.com/Oaklight/zerodep/pull/196))

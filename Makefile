@@ -8,7 +8,7 @@ help:
 	@echo "  test-http        - Run HTTP correctness tests"
 	@echo "  test-dotenv      - Run dotenv correctness tests"
 	@echo "  test-yaml        - Run YAML correctness tests"
-	@echo "  test-jsonc       - Run JSONC correctness tests"
+	@echo "  test-jsonx       - Run JSONX correctness tests"
 	@echo "  test-retry       - Run retry correctness tests"
 	@echo "  test-toon        - Run TOON correctness tests"
 	@echo "  test-tabulate    - Run tabulate correctness tests"
@@ -22,7 +22,7 @@ help:
 	@echo "  benchmark-http   - Run HTTP benchmarks"
 	@echo "  benchmark-dotenv - Run dotenv benchmarks"
 	@echo "  benchmark-yaml   - Run YAML benchmarks"
-	@echo "  benchmark-jsonc  - Run JSONC benchmarks"
+	@echo "  benchmark-jsonx  - Run JSONX benchmarks"
 	@echo "  benchmark-retry  - Run retry benchmarks"
 	@echo "  benchmark-toon   - Run TOON benchmarks"
 	@echo "  benchmark-tabulate - Run tabulate benchmarks"
@@ -68,7 +68,7 @@ help:
 	@echo "  clean            - Clean generated files"
 
 test:
-	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_httpclient_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonc/test_jsonc_correctness.py retry/test_retry_correctness.py toon/test_toon_correctness.py toon/test_toon_conformance.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py ansi/test_ansi_correctness.py frontmatter/test_frontmatter_correctness.py cache/test_cache_correctness.py readability/test_readability_correctness.py jsonschema/test_jsonschema_correctness.py png/test_png_correctness.py websocket/test_websocket_correctness.py cdp/test_cdp_correctness.py multipart/test_multipart_correctness.py -v
+	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_httpclient_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonx/test_jsonx_correctness.py jsonx/test_jsonx_fastpath.py retry/test_retry_correctness.py toon/test_toon_correctness.py toon/test_toon_conformance.py toon/test_toon_decode_errors.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py ansi/test_ansi_correctness.py frontmatter/test_frontmatter_correctness.py cache/test_cache_correctness.py readability/test_readability_correctness.py jsonschema/test_jsonschema_correctness.py png/test_png_correctness.py websocket/test_websocket_correctness.py cdp/test_cdp_correctness.py multipart/test_multipart_correctness.py -v
 
 test-aes:
 	pytest aes/test_aes_correctness.py -v
@@ -85,14 +85,14 @@ test-dotenv:
 test-yaml:
 	pytest yaml/test_yaml_correctness.py -v
 
-test-jsonc:
-	pytest jsonc/test_jsonc_correctness.py -v
+test-jsonx:
+	pytest jsonx/test_jsonx_correctness.py jsonx/test_jsonx_fastpath.py -v
 
 test-retry:
 	pytest retry/test_retry_correctness.py -v
 
 test-toon:
-	pytest toon/test_toon_correctness.py toon/test_toon_conformance.py -v
+	pytest toon/test_toon_correctness.py toon/test_toon_conformance.py toon/test_toon_decode_errors.py -v
 
 test-tabulate:
 	pytest tabulate/test_tabulate_correctness.py -v
@@ -110,7 +110,7 @@ test-markdown:
 	pytest markdown/test_markdown_correctness.py -v
 
 benchmark:
-	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_httpclient_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonc/test_jsonc_benchmark.py retry/test_retry_benchmark.py toon/test_toon_benchmark.py tabulate/test_tabulate_benchmark.py soup/test_soup_benchmark.py validate/test_validate_benchmark.py markdown/test_markdown_benchmark.py diff/test_diff_benchmark.py frontmatter/test_frontmatter_benchmark.py cache/test_cache_benchmark.py readability/test_readability_benchmark.py jsonschema/test_jsonschema_benchmark.py png/test_png_benchmark.py websocket/test_websocket_benchmark.py cdp/test_cdp_benchmark.py multipart/test_multipart_benchmark.py -v
+	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_httpclient_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonx/test_jsonx_benchmark.py retry/test_retry_benchmark.py toon/test_toon_benchmark.py tabulate/test_tabulate_benchmark.py soup/test_soup_benchmark.py validate/test_validate_benchmark.py markdown/test_markdown_benchmark.py diff/test_diff_benchmark.py frontmatter/test_frontmatter_benchmark.py cache/test_cache_benchmark.py readability/test_readability_benchmark.py jsonschema/test_jsonschema_benchmark.py png/test_png_benchmark.py websocket/test_websocket_benchmark.py cdp/test_cdp_benchmark.py multipart/test_multipart_benchmark.py -v
 
 benchmark-aes:
 	pytest aes/test_aes_benchmark.py -v
@@ -127,8 +127,8 @@ benchmark-dotenv:
 benchmark-yaml:
 	pytest yaml/test_yaml_benchmark.py -v
 
-benchmark-jsonc:
-	pytest jsonc/test_jsonc_benchmark.py -v
+benchmark-jsonx:
+	pytest jsonx/test_jsonx_benchmark.py -v
 
 benchmark-retry:
 	pytest retry/test_retry_benchmark.py -v

@@ -13,11 +13,10 @@ import pytest
 sys.path.insert(0, os.path.dirname(__file__))
 from jsonx import JSONCDecodeError, loads  # noqa: E402
 
-
 PLAIN = '{"a": 1, "b": [true, null, 1.5], "c": "has // and # and ,} inside"}'
 JSONC = (
     "// leading comment\n"
-    '{\n'
+    "{\n"
     '  "a": 1, # line comment\n'
     '  "b": [true, null,], /* block\n'
     "comment */\n"
@@ -38,9 +37,7 @@ def test_jsonc_still_parses() -> None:
 def test_fast_path_matches_preprocessed_result() -> None:
     """A plain-JSON document must parse identically with and without the
     preprocessing pass (JSON is a subset of JSONC, so the answers agree)."""
-    document = json.dumps(
-        {"p": {f"k{i}": f"value {i}" for i in range(50)}}, indent=2
-    )
+    document = json.dumps({"p": {f"k{i}": f"value {i}" for i in range(50)}}, indent=2)
     assert loads(document) == json.loads(document)
 
 
@@ -70,12 +67,8 @@ def test_fast_path_perf_regression_guard() -> None:
     comment-free documents; the fast path should stay close to json.loads."""
     import timeit
 
-    document = json.dumps(
-        {"p": {f"k{i}": f"value {i}" for i in range(500)}}, indent=2
-    )
+    document = json.dumps({"p": {f"k{i}": f"value {i}" for i in range(500)}}, indent=2)
     jsonx_time = min(timeit.repeat(lambda: loads(document), number=10, repeat=3))
-    stdlib_time = min(
-        timeit.repeat(lambda: json.loads(document), number=10, repeat=3)
-    )
+    stdlib_time = min(timeit.repeat(lambda: json.loads(document), number=10, repeat=3))
     # Allow generous headroom for CI noise; without the fast path this is >10.
     assert jsonx_time < stdlib_time * 3

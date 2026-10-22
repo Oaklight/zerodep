@@ -2615,7 +2615,11 @@ async def _async_request(
                 OSError,
                 asyncio.IncompleteReadError,
                 http.client.HTTPException,
+                HttpConnectionError,
             ) as exc:
+                # ``HttpConnectionError`` covers the EOF case: a server that
+                # closed a kept-alive connection yields an empty status line,
+                # which is reported as a malformed response.
                 if not (reused and not retried and method in _RETRYABLE_METHODS):
                     raise
                 logger.debug("Retrying %s after stale pooled connection: %s", url, exc)

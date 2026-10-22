@@ -51,6 +51,44 @@ class _KeepAliveHandler(socketserver.StreamRequestHandler):
             self.wfile.flush()
 
 
+class _ClosingServer(socketserver.ThreadingTCPServer):
+    """HTTP/1.1-ish server that answers once and closes without saying so."""
+
+    daemon_threads = True
+    allow_reuse_address = True
+
+    def __init__(self):
+        super().__init__(("127.0.0.1", 0), _ClosingHandler)
+        self.connections = 0
+        self._count_lock = threading.Lock()
+
+    def count_connection(self) -> None:
+        with self._count_lock:
+            self.connections += 1
+
+
+class _ClosingHandler(socketserver.StreamRequestHandler):
+    def handle(self) -> None:
+        self.server.count_connection()  # type: ignore[attr-defined]
+        request_line = self.rfile.readline()
+        if not request_line:
+            return
+        while True:
+            header = self.rfile.readline()
+            if header in (b"\r\n", b"\n", b""):
+                break
+        self.wfile.write(
+            b"HTTP/1.1 200 OK\r\n"
+            b"Content-Length: 12\r\n"
+            b"Content-Type: application/json\r\n"
+            b"\r\n"
+            b'{"ok": true}'
+        )
+        self.wfile.flush()
+        # No ``Connection: close`` header: the client has to notice the dead
+        # socket itself, by peeking or by retrying after EOF.
+
+
 @pytest.fixture
 def keep_alive_url():
     server = _KeepAliveServer()
@@ -159,3 +197,37 @@ class TestPoolKey:
             is conn
         )
         conn.close()
+
+
+@pytest.fixture
+def closing_url():
+    server = _ClosingServer()
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_address[1]}", server
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+        httpclient.close_pools()
+
+
+class TestServerClosesWithoutHeader:
+    def test_sync_request_after_close_succeeds(self, closing_url):
+        url, server = closing_url
+        assert httpclient.get(url).status_code == 200
+        # The pooled connection is dead but never advertised itself as such.
+        assert httpclient.get(url).status_code == 200
+        assert server.connections >= 2
+
+    def test_async_request_after_close_succeeds(self, closing_url):
+        url, server = closing_url
+
+        async def run():
+            assert (await httpclient.async_get(url)).status_code == 200
+            assert (await httpclient.async_get(url)).status_code == 200
+            await httpclient.aclose_pools()
+
+        asyncio.run(run())
+        assert server.connections >= 2

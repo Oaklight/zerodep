@@ -8,7 +8,7 @@ import http.client
 import socket
 import threading
 
-from httpserver import App, StreamingResponse
+from httpserver import App, Response, StreamingResponse
 
 
 def _build_app(**kwargs) -> App:
@@ -25,6 +25,10 @@ def _build_app(**kwargs) -> App:
             yield "chunk"
 
         return StreamingResponse(generate(), content_type="text/plain")
+
+    @app.get("/close")
+    async def close_route(request):
+        return Response(body="bye", headers={"Connection": "close"})
 
     return app
 
@@ -182,3 +186,50 @@ class TestKeepAlive:
                 assert b"200 OK" in data
             # The context manager closes the socket; the server's next read
             # sees EOF and simply ends the connection.
+
+    def test_response_close_header_closes(self):
+        with _live(_build_app()) as app:
+            conn = http.client.HTTPConnection(app.host, app.port, timeout=5)
+            response = _get(conn, "/close")
+            response.read()
+
+            assert response.getheader("Connection").lower() == "close"
+            assert conn.sock is None
+            conn.close()
+
+    def test_head_has_no_body_and_keeps_the_connection_clean(self):
+        with _live(_build_app()) as app:
+            with socket.create_connection((app.host, app.port), timeout=5) as sock:
+                sock.sendall(b"HEAD /whoami HTTP/1.1\r\nHost: localhost\r\n\r\n")
+                data = b""
+                while b"\r\n\r\n" not in data:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+                head, _, rest = data.partition(b"\r\n\r\n")
+
+                assert b"405" in head
+                assert b"Content-Length: 0" in head
+                assert rest == b"", f"HEAD wrote a body: {rest!r}"
+
+                # The next request on the same connection must not see stray
+                # bytes from the HEAD response (#210 review).
+                sock.sendall(b"GET /whoami HTTP/1.1\r\nHost: localhost\r\n\r\n")
+                follow_up = b""
+                while b'{"port"' not in follow_up:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    follow_up += chunk
+                assert follow_up.startswith(b"HTTP/1.1 200")
+
+    def test_zero_keep_alive_timeout_does_not_advertise_reuse(self):
+        with _live(_build_app(keep_alive_timeout=0)) as app:
+            conn = http.client.HTTPConnection(app.host, app.port, timeout=5)
+            response = _get(conn, "/whoami")
+            response.read()
+
+            assert response.getheader("Connection").lower() == "close"
+            assert conn.sock is None
+            conn.close()

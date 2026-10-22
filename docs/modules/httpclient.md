@@ -222,7 +222,7 @@ with Client(pool_size=20) as client:
 ```
 
 !!! note "Stateless Functions"
-    Top-level functions like `get()`, `post()` and `async_get()` reuse connections through a process-wide pool as well: the async pool is per event loop, because pooled streams belong to the loop that created them. A stale pooled connection (the server closed it while it sat idle) is detected before use, or the request is retried once on a fresh connection for `GET`/`HEAD`/`OPTIONS`/`PUT`/`DELETE`. Release the pools with `close_pools()` (sync) and `await aclose_pools()` (async) — connections also close at process exit.
+    Top-level functions like `get()`, `post()` and `async_get()` reuse connections through a process-wide pool as well: the async pool is per event loop, because pooled streams belong to the loop that created them. A stale pooled connection (the server closed it while it sat idle) is detected before use, or the request is retried once on a fresh connection for `GET`/`HEAD`/`OPTIONS`/`PUT`/`DELETE`. A reused connection always takes the current call's timeout. Only a completed request/response cycle is pooled: a request that fails mid-body closes its connection instead of handing a half-consumed stream to the next caller. An HTTP/1.0 response is pooled only when it sends `Connection: keep-alive`, since HTTP/1.0 is non-persistent by default. **Timeouts are never retried** — a retry would double your wall-clock budget and could reach the server twice — and a transport timeout raises `HttpTimeoutError`. Release the pools with `close_pools()` (sync) and `await aclose_pools()` (async) — connections also close at process exit, and a forked child drops the sockets it inherited.
 
 ```python
 from httpclient import get, close_pools

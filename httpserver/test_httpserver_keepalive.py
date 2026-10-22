@@ -7,6 +7,7 @@ import contextlib
 import http.client
 import socket
 import threading
+import time
 
 from httpserver import App, Response, StreamingResponse
 
@@ -39,6 +40,11 @@ def _build_app(**kwargs) -> App:
     async def echo(request):
         return {"body": request.body.decode()}
 
+    @app.get("/slow")
+    async def slow(request):
+        await asyncio.sleep(1.0)
+        return {"done": True}
+
     return app
 
 
@@ -58,6 +64,12 @@ def _live(app: App):
             ready.set()
             async with server:
                 await app._shutdown_event.wait()
+                # Mirror App._serve: stop accepting, wake idle connections,
+                # then let in-flight requests finish (needed before 3.12,
+                # where Server.wait_closed() does not wait for them).
+                server.close()
+                app._close_idle_connections()
+                await app._drain_connection_tasks()
 
         asyncio.run(_start())
 
@@ -343,8 +355,6 @@ class TestShutdown:
         so an idle connection would otherwise hold shutdown for the whole
         ``keep_alive_timeout`` window.
         """
-        import time
-
         app = _build_app(keep_alive_timeout=30.0)
         started = 0.0
         with _live(app):
@@ -356,3 +366,32 @@ class TestShutdown:
         conn.close()
 
         assert elapsed < 2.0, f"shutdown waited {elapsed:.1f}s for an idle connection"
+
+    def test_in_flight_request_finishes_during_shutdown(self):
+        """A request already being handled must not be dropped (#216).
+
+        ``Server.wait_closed()`` only waits for connections on Python 3.12+;
+        on 3.10/3.11 the handler task would be cancelled by ``asyncio.run``
+        as soon as the shutdown event is set.
+        """
+        app = _build_app(keep_alive_timeout=30.0)
+        result: dict[str, object] = {}
+
+        def call() -> None:
+            conn = http.client.HTTPConnection(app.host, app.port, timeout=10)
+            try:
+                response = _get(conn, "/slow")
+                result["status"] = response.status
+                result["body"] = response.read()
+            finally:
+                conn.close()
+
+        with _live(app):
+            worker = threading.Thread(target=call)
+            worker.start()
+            time.sleep(0.25)  # let the handler enter its sleep
+            app.shutdown()
+            worker.join(timeout=5)
+
+            assert not worker.is_alive(), "in-flight request was dropped"
+            assert result.get("status") == 200

@@ -80,6 +80,7 @@ DEFAULT_MAX_BODY_SIZE = 1_048_576  # 1 MB
 DEFAULT_READ_TIMEOUT = 30.0  # seconds
 DEFAULT_KEEP_ALIVE_TIMEOUT = 5.0  # seconds between requests on one connection
 DEFAULT_MAX_REQUESTS_PER_CONNECTION = 100
+DEFAULT_SHUTDOWN_GRACE_TIMEOUT = 5.0  # seconds to let in-flight requests finish
 
 _STATUS_REASONS: dict[int, str] = {
     100: "Continue",
@@ -1054,6 +1055,11 @@ class App:
         max_requests_per_connection: Close a connection after this many
             requests even if the client would reuse it.  Defaults to
             :data:`DEFAULT_MAX_REQUESTS_PER_CONNECTION`.
+        shutdown_grace_timeout: Seconds a shutdown waits for requests that
+            are already being handled before cancelling them.  On Python
+            3.12+ ``Server.wait_closed()`` provides the same guarantee, but
+            it returns immediately on 3.10/3.11, where the wait is needed.
+            Defaults to :data:`DEFAULT_SHUTDOWN_GRACE_TIMEOUT`.
 
     Example::
 
@@ -1074,6 +1080,7 @@ class App:
         keep_alive: bool = True,
         keep_alive_timeout: float = DEFAULT_KEEP_ALIVE_TIMEOUT,
         max_requests_per_connection: int = DEFAULT_MAX_REQUESTS_PER_CONNECTION,
+        shutdown_grace_timeout: float = DEFAULT_SHUTDOWN_GRACE_TIMEOUT,
     ):
         self._routes: list[_Route] = []
         self._static_routes: list[tuple[str, str]] = []
@@ -1098,6 +1105,11 @@ class App:
         self.keep_alive = keep_alive
         self.keep_alive_timeout = keep_alive_timeout
         self.max_requests_per_connection = max_requests_per_connection
+        self.shutdown_grace_timeout = shutdown_grace_timeout
+        #: Connection handlers still running, so a shutdown can wait for a
+        #: request that is already being handled (see
+        #: :meth:`_drain_connection_tasks`).
+        self._tasks: set[asyncio.Task[Any]] = set()
         self.port: int | None = None
         self.host: str | None = None
 
@@ -1480,6 +1492,9 @@ class App:
         peer = writer.get_extra_info("peername")
         client_addr = (peer[0], peer[1]) if peer else ("unknown", 0)
         served = 0
+        task = asyncio.current_task()
+        if task is not None:
+            self._tasks.add(task)
 
         try:
             while True:
@@ -1524,6 +1539,8 @@ class App:
                     logger.exception("Error writing response to %s", client_addr)
                     break
         finally:
+            if task is not None:
+                self._tasks.discard(task)
             try:
                 writer.close()
                 await writer.wait_closed()
@@ -1645,6 +1662,15 @@ class App:
                 # Content-Length, but no body (RFC 9110 §9.3.2).
                 response.headers.setdefault("Content-Length", str(len(response.body)))
             response.body = b""
+
+        # A request that is already being handled still gets its response, but
+        # the connection must not be reused after shutdown has begun.
+        if (
+            keep_alive
+            and self._shutdown_event is not None
+            and self._shutdown_event.is_set()
+        ):
+            keep_alive = False
 
         keep_alive = keep_alive and not isinstance(response, StreamingResponse)
         if keep_alive and "close" not in self._connection_tokens(response.headers):
@@ -1863,9 +1889,16 @@ class App:
             async with server:
                 await self._shutdown_event.wait()
                 logger.info("Shutting down server")
+                # Stop accepting first, then let in-flight requests finish.
+                # On 3.12+ ``wait_closed()`` waits for connections; on
+                # 3.10/3.11 it returns immediately, so the drain is what
+                # keeps the handler tasks from being cancelled by
+                # ``asyncio.run``.
+                server.close()
                 self._close_idle_connections()
                 if self._socket_path:
                     self._cleanup_socket()
+                await self._drain_connection_tasks()
         finally:
             # Run shutdown hooks after server stops accepting connections
             await self._run_shutdown_hooks()
@@ -1948,6 +1981,31 @@ class App:
             except OSError:
                 pass
 
+    async def _drain_connection_tasks(self) -> None:
+        """Wait for connection handlers that are still serving a request.
+
+        Idle kept-alive connections have already been closed, and a request
+        that completes after shutdown started is answered with
+        ``Connection: close``, so every remaining task is finishing an
+        in-flight request (or about to observe the closed socket).  The wait
+        is bounded by ``shutdown_grace_timeout``; anything still running is
+        cancelled, because an unresponsive client must not block exit.
+        """
+        current = asyncio.current_task()
+        tasks = [
+            task for task in self._tasks if task is not current and not task.done()
+        ]
+        if not tasks:
+            return
+        _done, pending = await asyncio.wait(tasks, timeout=self.shutdown_grace_timeout)
+        for task in pending:
+            logger.warning(
+                "Cancelling a connection handler that outlived the shutdown "
+                "grace period (%.1fs)",
+                self.shutdown_grace_timeout,
+            )
+            task.cancel()
+
     def _close_idle_connections(self) -> None:
         """Close connections that are waiting for another request.
 
@@ -1971,12 +2029,22 @@ class App:
 
         Safe to call from any thread or from a request handler.
         """
-        if self._shutdown_event is not None and self._loop is not None:
+        if self._shutdown_event is None or self._loop is None:
+            return
+        if self._loop.is_closed():
+            # Already stopped; a repeated shutdown is a no-op rather than an
+            # ``Event loop is closed`` error from ``call_soon_threadsafe``.
+            return
+        try:
             self._loop.call_soon_threadsafe(self._shutdown_event.set)
             # Wake idle kept-alive connections so a host that waits for them
             # (``Server.wait_closed()`` on 3.12+) is not held up by the idle
             # window.  ``_serve`` does the same for signal-driven shutdowns.
             self._loop.call_soon_threadsafe(self._close_idle_connections)
+        except RuntimeError:  # pragma: no cover - loop closed mid-call
+            # The loop can finish between the ``is_closed()`` check and the
+            # call when shutdown races the server thread's exit.
+            pass
 
 
 # ── Handler Invocation ───────────────────────────────────────────────────────

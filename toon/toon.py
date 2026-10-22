@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.6.0"
+# version = "0.6.1"
 # deps = []
 # tier = "simple"
 # category = "serialization"
@@ -101,6 +101,10 @@ class DecodeOptions(TypedDict, total=False):
 class ToonDecodeError(Exception):
     """Error raised when TOON decoding fails.
 
+    Unlike :class:`json.JSONDecodeError`, this is not a :class:`ValueError`
+    subclass: ``except ValueError`` does not catch decode failures, so catch
+    ``ToonDecodeError`` instead.  This is the module's public contract.
+
     Attributes:
         msg: The unformatted error message.
         line: 1-based line number of the offending line, or ``None`` when the
@@ -148,12 +152,14 @@ def encode(value: Any, options: EncodeOptions | None = None) -> str:
             booleans and ``None`` map onto the JSON data model; dates, UUIDs,
             paths, enums and dataclasses are converted following §3.
         options: Optional encoding options (``indent``, ``delimiter``).
+            Unknown keys raise :class:`TypeError` rather than being ignored.
 
     Returns:
         The TOON document, without a trailing newline.
 
     Raises:
-        TypeError: A value or mapping key cannot be encoded.
+        TypeError: A value or mapping key cannot be encoded, or an unknown
+            option was supplied.
         ValueError: An option is invalid, a string contains an unpaired
             surrogate, a mapping has colliding keys, or the value is nested
             too deeply or contains a reference cycle.
@@ -170,6 +176,10 @@ def encode(value: Any, options: EncodeOptions | None = None) -> str:
         raise ValueError(
             "lengthMarker was removed in TOON 4.4; re-encode without the option"
         )
+    unknown = set(opts) - {"indent", "delimiter", "lengthMarker"}
+    if unknown:
+        names = ", ".join(sorted(repr(name) for name in unknown))
+        raise TypeError(f"unknown encode option(s): {names}")
     indent = opts.get("indent", 2)
     delimiter = opts.get("delimiter", ",")
     _check_indent_size(indent)
@@ -184,19 +194,21 @@ def encode(value: Any, options: EncodeOptions | None = None) -> str:
     )
 
 
-def decode(text: str, options: DecodeOptions | None = None) -> Any:
+def decode(text: str | bytes | bytearray, options: DecodeOptions | None = None) -> Any:
     """Deserialize a TOON document to a Python value.
 
     Args:
-        text: TOON-formatted string.
+        text: TOON-formatted string, or UTF-8 encoded bytes.
         options: Optional decoding options (``indent``, ``strict``).
+            Unknown keys raise :class:`TypeError` rather than being ignored.
 
     Returns:
         Decoded Python value.
 
     Raises:
-        ToonDecodeError: If the input is malformed.
-        TypeError: If ``text`` is not a string, or ``indent`` is not an int.
+        ToonDecodeError: If the input is malformed or is not valid UTF-8.
+        TypeError: If ``text`` is not str/bytes/bytearray, an option is
+            unknown, or ``indent`` is not an int.
         ValueError: If ``indent`` is less than one.
 
     Examples::
@@ -206,14 +218,29 @@ def decode(text: str, options: DecodeOptions | None = None) -> Any:
         decode("[3]: 1,2,3")
         # [1, 2, 3]
     """
-    if not isinstance(text, str):
-        raise TypeError(f"text must be str, not {type(text).__name__}")
+    if isinstance(text, (bytes, bytearray)):
+        try:
+            document = bytes(text).decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ToonDecodeError(
+                f"Invalid UTF-8: {exc.reason} at byte {exc.start}"
+            ) from None
+    elif isinstance(text, str):
+        document = text
+    else:
+        raise TypeError(
+            f"text must be str, bytes or bytearray, not {type(text).__name__}"
+        )
     opts: Any = options or {}
+    unknown = set(opts) - {"indent", "strict"}
+    if unknown:
+        names = ", ".join(sorted(repr(name) for name in unknown))
+        raise TypeError(f"unknown decode option(s): {names}")
     indent = opts.get("indent", 2)
     strict = opts.get("strict", True)
     _check_indent_size(indent)
     return _decode_document(
-        text,
+        document,
         indent_size=indent,
         strict=strict,
         parse_int=None,

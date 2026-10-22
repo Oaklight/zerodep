@@ -454,6 +454,11 @@ class TestEncodeOptions:
         lines = result.split("\n")
         assert lines[1].startswith("    ")
 
+    def test_unknown_encode_option_rejected(self):
+        """A typo such as the reference's ``indent_size`` must not be ignored."""
+        with pytest.raises(TypeError, match="indent_size"):
+            encode([1, 2, 3], {"indent_size": 4})
+
 
 # ── Test: decode options ──
 
@@ -471,6 +476,18 @@ class TestDecodeOptions:
         toon = "user:\n   id: 1"
         result = decode(toon, DecodeOptions(indent=3))
         assert result == {"user": {"id": 1}}
+
+    def test_unknown_decode_option_rejected(self):
+        with pytest.raises(TypeError, match="strcit"):
+            decode("a: 1", {"strcit": False})
+
+    def test_bytes_input(self):
+        assert decode(b"a: 1") == {"a": 1}
+        assert decode(bytearray(b"[2]: 1,2")) == [1, 2]
+
+    def test_invalid_utf8_rejected(self):
+        with pytest.raises(ToonDecodeError, match="Invalid UTF-8"):
+            decode(b"a: \xff")
 
 
 # ── Test: roundtrip ──

@@ -235,8 +235,9 @@ with a reference library:
 3. No workflow YAML changes needed — the dynamic extraction picks it up
    automatically.
 
-Exception: `bench-toon` is installed from git (not PyPI) and is handled
-separately in each workflow.
+Exception: `bench-toon` is pinned to a git commit (not a PyPI release) and
+is installed in its own required step in each workflow, so a failed pin
+fails the job instead of silently skipping the comparison.
 
 ## Escalation
 

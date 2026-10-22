@@ -41,9 +41,9 @@ jobs:
       - name: Install test and reference libraries
         continue-on-error: true
         run: |
-          # Extract all bench-* extra names from pyproject.toml and install them
-          # bench-toon is excluded because toon_format >= 0.9.0b1 is only available
-          # from git, not PyPI — it is installed separately below.
+          # Extract all bench-* extra names from pyproject.toml and install them.
+          # bench-toon is excluded here because its git pin must fail loudly;
+          # it is installed in its own required step below.
           BENCH_EXTRAS=$(python -c "
           import tomllib, pathlib
           data = tomllib.loads(pathlib.Path('pyproject.toml').read_text())
@@ -53,8 +53,15 @@ jobs:
           ")
           echo "Installing extras: $BENCH_EXTRAS"
           pip install ".[$BENCH_EXTRAS]"
-          # toon_format pre-release only available from git
-          pip install "toon_format @ git+https://github.com/toon-format/toon-python.git" || true
+
+      - name: Install the TOON reference at its pinned commit
+        # Required, not best-effort: without toon_format the toon benchmarks
+        # skip and the artifact silently loses those rows.  Installing the
+        # bench-toon extra keeps this identical to the lint-test job and to
+        # the pin in pyproject.toml (#183).
+        run: |
+          pip install -e ".[bench-toon]"
+          python -c "import toon_format; print('toon_format', toon_format.__version__)"
 
       - uses: actions/setup-node@v4
         with:
@@ -107,6 +114,29 @@ jobs:
                   "unreachable or the benchmarks were skipped"
               )
           print(f"s3 benchmarks in artifact: {len(s3)}")
+          PY
+
+      - name: Verify the toon comparison ran
+        # Same hole the s3 guard closed: a missing pinned reference skips the
+        # module while the rest of the artifact still looks healthy.
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+
+          with open("benchmark-results.json") as fh:
+              results = json.load(fh)
+          toon = [
+              b
+              for b in results["benchmarks"]
+              if b.get("fullname", "").startswith("toon/")
+          ]
+          if not toon:
+              sys.exit(
+                  "the toon comparison produced no results — the pinned "
+                  "reference was not installed or the benchmarks were skipped"
+              )
+          print(f"toon benchmarks in artifact: {len(toon)}")
           PY
 
       - name: Run readability three-way comparison

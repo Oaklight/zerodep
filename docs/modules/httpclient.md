@@ -222,7 +222,7 @@ with Client(pool_size=20) as client:
 ```
 
 !!! note "无状态函数"
-    顶层函数如 `get()`、`post()`、`async_get()` 同样通过进程级连接池复用连接：异步连接池按事件循环隔离，因为池中的数据流属于创建它的事件循环。若服务端已关闭空闲的池化连接，会在使用前被检测出来；对于 `GET`/`HEAD`/`OPTIONS`/`PUT`/`DELETE`，还会在新连接上自动重试一次。复用连接始终采用当次调用的超时。只有完整走完请求/响应周期的连接才会回到池中：读取响应体中途失败的连接会被关闭，而不是把半消费的数据流交给下一个调用者。HTTP/1.0 响应只有在带有 `Connection: keep-alive` 时才会入池，因为 HTTP/1.0 默认非持久连接。**超时永不重试**——重试会让实际耗时翻倍，还可能让同一个请求到达服务端两次——传输层超时抛出 `HttpTimeoutError`。可用 `close_pools()`（同步）与 `await aclose_pools()`（异步）释放连接池——进程退出时也会自动关闭，fork 出的子进程会丢弃继承来的套接字。使用 `Client` 可以按会话控制连接池大小、请求头、Cookie 与超时。
+    顶层函数如 `get()`、`post()`、`async_get()` 同样通过进程级连接池复用连接：异步连接池按事件循环隔离，因为池中的数据流属于创建它的事件循环。若服务端已关闭空闲的池化连接，会在使用前被检测出来；对于 `GET`/`HEAD`/`OPTIONS`/`PUT`/`DELETE`，还会在新连接上自动重试一次。复用连接始终采用当次调用的超时。只有完整走完请求/响应周期的连接才会回到池中：读取响应体中途失败的连接会被关闭，而不是把半消费的数据流交给下一个调用者。HTTP/1.0 响应只有在带有 `Connection: keep-alive` 时才会入池，因为 HTTP/1.0 默认非持久连接。**超时永不重试**——重试会让实际耗时翻倍，还可能让同一个请求到达服务端两次——传输层超时抛出 `HttpTimeoutError`。可用 `close_pools()`（同步）与 `await aclose_pools()`（异步）释放连接池——进程退出时也会自动关闭，fork 出的子进程会丢弃继承来的套接字。空闲套接字有全局上限：所有主机合计最多保留 `DEFAULT_MAX_TOTAL_CONNECTIONS`（100）个，超出时优先关闭最旧的连接；空闲超过 `DEFAULT_POOL_IDLE_TIMEOUT` 的条目会在下一次归还连接时被清理。可用 `Client(max_total_connections=...)` / `AsyncClient(max_total_connections=...)` 调整上限。使用 `Client` 可以按会话控制连接池大小、请求头、Cookie 与超时。
 
 ### 内容解压缩
 

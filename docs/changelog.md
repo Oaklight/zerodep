@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Infrastructure
 
+- **soup correctness tests use soupsieve only where it is the reference**: the suite compares zerodep's results with soupsieve, but two groups encode behaviour soupsieve gained in 2.10 — the Selectors-4 empty-value guards on `^=`, `$=`, `*=` (#201) and whitespace around selector-list commas (#204). With an older soupsieve (2.8.x is common in pinned environments) those 8 comparisons failed on the reference side even though zerodep follows the spec. The direct assertions still run everywhere; the reference comparisons are skipped below 2.10.
 - **CI** runs the test suite for pull requests into any base branch, not only `master`, so a stacked PR no longer needs a manual `workflow_dispatch` to get checks. ([#190](https://github.com/Oaklight/zerodep/pull/190))
 - **toon spec conformance gate**: the official TOON spec 4.4 fixtures (564 cases — 160 encode, 404 decode) are vendored under `toon/fixtures/`, pinned to `toon-format/spec` `v4.4.0`, and gated in CI by a ratchet baseline that can only shrink. Current standing: 350/564. Stage 1 of [#184](https://github.com/Oaklight/zerodep/issues/184). ([#195](https://github.com/Oaklight/zerodep/pull/195))
 - **s3 benchmarks** now run against a SeaweedFS container instead of MinIO (abandoned upstream). CI provides the endpoint via a GitHub Actions service container and the `S3_TEST_ENDPOINT` convention, so the s3 benchmark comparison is finally published on every run.

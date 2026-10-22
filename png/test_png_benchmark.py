@@ -14,12 +14,16 @@ import pytest
 sys.path.insert(0, os.path.dirname(__file__))
 
 # The reference ``qrcode`` package imports ``png``.  When the repository root
-# is on sys.path — as it is under ``python -m pytest`` — that import binds
-# this test directory as a namespace package and caches it, which would hide
-# ``png/png.py`` below (#223).  Drop such an entry before importing ours.
-_stale_png = sys.modules.get("png")
-if _stale_png is not None and getattr(_stale_png, "__file__", None) is None:
-    del sys.modules["png"]
+# is on sys.path — as it is under ``python -m pytest`` — that binds this test
+# directory as a namespace package; with pypng installed it binds that
+# package's ``png.py`` instead.  Either way the entry is cached and would
+# hide ``png/png.py`` below (#223), so keep only this directory's module.
+_here = os.path.dirname(os.path.abspath(__file__))
+_png_module = sys.modules.get("png")
+if _png_module is not None:
+    _png_file = os.path.abspath(getattr(_png_module, "__file__", "") or os.devnull)
+    if not _png_file.startswith(_here + os.sep):
+        del sys.modules["png"]
 
 from png import (
     Image,

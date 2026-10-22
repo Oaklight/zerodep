@@ -821,6 +821,7 @@ async def _read_request(
     max_body_size: int,
     *,
     idle_timeout: float | None = None,
+    on_request_start: Callable[[], None] | None = None,
 ) -> tuple[str, str, str, dict[str, str], bytes, str]:
     """Read and parse an HTTP request from a stream.
 
@@ -832,6 +833,11 @@ async def _read_request(
         idle_timeout: Budget for the request line itself, used for the wait
             between requests on a kept-alive connection. Defaults to
             *timeout*.
+        on_request_start: Called once, as soon as a non-empty request line
+            has arrived. :meth:`App._handle_connection` uses it to stop
+            treating the connection as idle the moment a request begins,
+            so shutdown drains a request that is still arriving instead of
+            closing it mid-upload.
 
     Returns:
         Tuple of (method, path, query_string, headers, body, version).
@@ -858,6 +864,10 @@ async def _read_request(
         raise
     if not raw_line:
         raise _ClientDisconnected
+    # The request has started: it is no longer an idle connection, and a
+    # shutdown from here on waits for it (up to the grace period).
+    if on_request_start is not None:
+        on_request_start()
     request_line = raw_line.decode("latin-1").rstrip("\r\n")
     parts = request_line.split(" ", 2)
     if len(parts) != 3:
@@ -1503,10 +1513,12 @@ class App:
                     if served and self.keep_alive and self.keep_alive_timeout > 0
                     else None
                 )
-                # Waiting for a request line is idle in both cases: a reused
-                # connection waiting for its next request, and a brand-new
-                # connection that has not sent one yet.  A silent probe must
-                # not hold a shutdown for the whole grace period (#220).
+                # A connection is idle until a request line arrives: a probe
+                # that says nothing, a half-sent line, and a socket still
+                # sitting in the accept queue must not hold a shutdown for
+                # the whole grace period (#220).  Once the request line is
+                # in it leaves the set (``on_request_start``), so a body
+                # that is still uploading is drained, not cut off.
                 self._idle_connections.add(writer)
                 try:
                     request_parts = await _read_request(
@@ -1514,6 +1526,7 @@ class App:
                         self.read_timeout,
                         self.max_body_size,
                         idle_timeout=idle_timeout,
+                        on_request_start=lambda: self._idle_connections.discard(writer),
                     )
                 except _ClientDisconnected:
                     break

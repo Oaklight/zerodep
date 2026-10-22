@@ -333,3 +333,26 @@ class TestHeadAndHeaders:
             finally:
                 sock.close()
             assert b"connection: close" in data.lower()
+
+
+class TestShutdown:
+    def test_shutdown_does_not_wait_for_an_idle_connection(self):
+        """A kept-alive idle client must not delay a graceful shutdown.
+
+        ``Server.wait_closed()`` waits for open connections on Python 3.12+,
+        so an idle connection would otherwise hold shutdown for the whole
+        ``keep_alive_timeout`` window.
+        """
+        import time
+
+        app = _build_app(keep_alive_timeout=30.0)
+        started = 0.0
+        with _live(app):
+            conn = http.client.HTTPConnection(app.host, app.port, timeout=5)
+            _get(conn, "/whoami").read()
+            # The connection is idle and kept alive on the server side.
+            started = time.monotonic()
+        elapsed = time.monotonic() - started
+        conn.close()
+
+        assert elapsed < 2.0, f"shutdown waited {elapsed:.1f}s for an idle connection"

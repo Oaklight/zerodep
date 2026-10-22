@@ -1088,6 +1088,11 @@ class App:
         self._server: asyncio.Server | None = None
         self._shutdown_event: asyncio.Event | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
+        #: Connections currently waiting for their next request line.  A
+        #: graceful shutdown closes these so ``Server.wait_closed()`` does
+        #: not have to wait out ``keep_alive_timeout`` for every idle client
+        #: (Python 3.12+ waits for all connections).
+        self._idle_connections: set[asyncio.StreamWriter] = set()
         self.max_body_size = max_body_size
         self.read_timeout = read_timeout
         self.keep_alive = keep_alive
@@ -1483,6 +1488,8 @@ class App:
                     if served and self.keep_alive and self.keep_alive_timeout > 0
                     else None
                 )
+                if idle_timeout is not None:
+                    self._idle_connections.add(writer)
                 try:
                     request_parts = await _read_request(
                         reader,
@@ -1495,6 +1502,8 @@ class App:
                 except Exception as exc:
                     await self._reject_read(exc, writer, client_addr)
                     break
+                finally:
+                    self._idle_connections.discard(writer)
 
                 method, path, qs, headers, body, version = request_parts
                 keep_alive = self._keep_alive_requested(version, headers, served + 1)
@@ -1854,6 +1863,7 @@ class App:
             async with server:
                 await self._shutdown_event.wait()
                 logger.info("Shutting down server")
+                self._close_idle_connections()
                 if self._socket_path:
                     self._cleanup_socket()
         finally:
@@ -1938,6 +1948,24 @@ class App:
             except OSError:
                 pass
 
+    def _close_idle_connections(self) -> None:
+        """Close connections that are waiting for another request.
+
+        A kept-alive connection is otherwise idle until
+        ``keep_alive_timeout`` expires.  Since Python 3.12,
+        ``Server.wait_closed()`` waits for every open connection, so the
+        accepted socket would keep a graceful shutdown alive for up to the
+        idle window — or indefinitely with a long one.  In-flight requests
+        are left alone: their handler finishes and closes its own writer.
+        """
+        writers = list(self._idle_connections)
+        self._idle_connections.clear()
+        for writer in writers:
+            try:
+                writer.close()
+            except Exception:  # pragma: no cover - already closed
+                pass
+
     def shutdown(self) -> None:
         """Request a graceful server shutdown.
 
@@ -1945,6 +1973,10 @@ class App:
         """
         if self._shutdown_event is not None and self._loop is not None:
             self._loop.call_soon_threadsafe(self._shutdown_event.set)
+            # Wake idle kept-alive connections so a host that waits for them
+            # (``Server.wait_closed()`` on 3.12+) is not held up by the idle
+            # window.  ``_serve`` does the same for signal-driven shutdowns.
+            self._loop.call_soon_threadsafe(self._close_idle_connections)
 
 
 # ── Handler Invocation ───────────────────────────────────────────────────────

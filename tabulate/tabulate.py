@@ -52,12 +52,17 @@ def _visible_width(s: str) -> int:
 
     This function respects the ``WIDE_CHARS_MODE`` flag.  When the flag is
     ``False`` (the default, matching the reference *tabulate* library),
-    width equals ``len(s)``.
+    width equals ``len(s)``.  When it is ``True``, East Asian wide and
+    fullwidth characters count as two columns and combining marks as zero,
+    which is what ``wcwidth`` reports.
     """
     if not WIDE_CHARS_MODE:
         return len(s)
     w = 0
     for ch in s:
+        if unicodedata.combining(ch):
+            # Zero-width, as wcwidth reports: "café" is four columns.
+            continue
         eaw = unicodedata.east_asian_width(ch)
         if eaw in ("W", "F"):
             w += 2

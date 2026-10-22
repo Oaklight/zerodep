@@ -14,6 +14,14 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+# The reference ``qrcode`` package imports ``png``.  When the repository root
+# is on sys.path — as it is under ``python -m pytest`` — that import binds
+# this test directory as a namespace package and caches it, which would hide
+# ``png/png.py`` below (#223).  Drop such an entry before importing ours.
+_stale_png = sys.modules.get("png")
+if _stale_png is not None and getattr(_stale_png, "__file__", None) is None:
+    del sys.modules["png"]
+
 from png import (
     DecodeError,
     EncodeError,

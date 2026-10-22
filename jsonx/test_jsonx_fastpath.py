@@ -55,6 +55,35 @@ def test_kwargs_pass_through_on_jsonc_path() -> None:
     assert loads('{"a": 1.5, // c\n}', parse_float=str) == {"a": "1.5"}
 
 
+def test_hook_rejecting_with_decode_error_is_not_retried() -> None:
+    """A hook's ``JSONDecodeError`` must not be overridden by the fallback.
+
+    ``json.JSONDecodeError`` is the syntax-error signal, so a hook raising
+    it looks like a bad document.  The fast path must not preprocess and
+    parse the same text again: the retry would call the hook a second time
+    and swallow its refusal.
+    """
+    calls: list[list[tuple[str, object]]] = []
+
+    def reject(pairs: list[tuple[str, object]]) -> object:
+        calls.append(pairs)
+        raise json.JSONDecodeError("hook says no", "", 0)
+
+    with pytest.raises(JSONCDecodeError) as excinfo:
+        loads('{"a": 1}', object_pairs_hook=reject)
+
+    assert "hook says no" in str(excinfo.value)
+    assert len(calls) == 1, f"hook was called {len(calls)} times"
+
+
+def test_hook_raising_value_error_propagates() -> None:
+    def reject(pairs: list[tuple[str, object]]) -> object:
+        raise ValueError("hook says no")
+
+    with pytest.raises(ValueError, match="hook says no"):
+        loads('{"a": 1}', object_pairs_hook=reject)
+
+
 def test_bytes_input_behaviour_unchanged() -> None:
     """Pre-existing behaviour: bytes documents were never supported by the
     preprocessing pass, and the fast path must not change that."""

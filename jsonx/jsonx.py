@@ -191,6 +191,11 @@ def loads(
     delegating to :func:`json.loads`. Documents that already parse as plain
     JSON skip the preprocessing pass entirely.
 
+    Hooks (``object_hook``, ``object_pairs_hook``, ``parse_float``, …) must
+    not raise :class:`json.JSONDecodeError` to reject a document: that
+    exception is the syntax-error signal, so a hook raising it is
+    indistinguishable from a parse failure. Raise ``ValueError`` instead.
+
     Args:
         text: JSONC source string.
         cls: Custom JSON decoder class.
@@ -226,10 +231,18 @@ def loads(
     if isinstance(text, str):
         try:
             return _decode(text)
-        except json.JSONDecodeError:
-            pass
+        except json.JSONDecodeError as exc:
+            cleaned = _preprocess(text)
+            if cleaned == text:
+                # Nothing JSONC to strip, so a retry would parse the same
+                # document and call the caller's hooks a second time.  A
+                # hook may raise JSONDecodeError to reject a document; do
+                # not let the retry override that refusal.  Report the
+                # failure exactly as the pre-fast-path code did.
+                raise JSONCDecodeError(exc.msg, text, exc.pos) from None
+    else:
+        cleaned = _preprocess(text)
 
-    cleaned = _preprocess(text)
     try:
         return _decode(cleaned)
     except json.JSONDecodeError as exc:

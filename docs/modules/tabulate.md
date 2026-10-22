@@ -157,10 +157,12 @@ Format tabular data as a pretty-printed text table.
 | Dependencies | None (stdlib only) | None |
 | Files | Single file | Package (multiple files) |
 | Table formats | 7 (plain, simple, grid, pipe, orgtbl, pretty, github) | 20+ |
-| CJK support | Yes (via `WIDE_CHARS_MODE`) | Yes |
+| CJK support | Yes (via `WIDE_CHARS_MODE`) | Yes (`wcwidth` when installed) |
 | Multiline cells | No | Yes |
 | Format speed (small) | 32.5 us | 93.8 us (2.89x slower) |
 | Format speed (large) | 3.9 ms | 13.8 ms (3.56x slower) |
+
+With `WIDE_CHARS_MODE` enabled, East Asian wide and fullwidth characters count as two columns and combining marks as zero — the widths `wcwidth` reports — so the reference tabulate (which uses `wcwidth` when it is installed) and zerodep then agree. The default is `len(s)`, which is what the reference uses when `wcwidth` is absent.
 
 **When to use zerodep:** You need fast table formatting with common output styles and zero dependencies.
 

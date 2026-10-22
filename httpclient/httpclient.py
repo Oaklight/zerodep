@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.5.1"
+# version = "0.6.0"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -45,12 +45,14 @@ import http.cookies
 import json as _json
 import logging
 import os
+import select
 import socket
 import ssl
 import struct
 import threading
 import time
 import warnings
+import weakref
 import zlib
 from collections.abc import AsyncIterator, Iterator
 from typing import IO, Any
@@ -98,6 +100,9 @@ __all__ = [
     # Client classes
     "Client",
     "AsyncClient",
+    # Default pool lifecycle
+    "close_pools",
+    "aclose_pools",
 ]
 
 # ── Constants / Defaults ──
@@ -109,6 +114,11 @@ DEFAULT_MAX_REDIRECTS = 10
 DEFAULT_USER_AGENT = "zerodep-http/0.1"
 DEFAULT_POOL_SIZE = 10
 DEFAULT_POOL_IDLE_TIMEOUT = 60.0
+
+#: Methods a stale pooled connection may be retried with: the request is safe
+#: to repeat, so a connection the server closed between requests does not turn
+#: into an error.
+_RETRYABLE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "PUT", "DELETE"})
 
 
 # ── CaseInsensitiveDict ──
@@ -1032,6 +1042,31 @@ class StreamingResponse:
 # ── Connection Pools (Sync + Async) ──
 
 
+def _socket_peer_closed(sock: object) -> bool:
+    """Whether a kept-alive socket was closed by the peer.
+
+    A remote FIN leaves the local socket usable-looking (``fileno()`` stays
+    valid), so a pooled connection can be dead without this check.  A TLS
+    socket cannot be peeked without de-framing, so it reports "not closed" and
+    relies on the request retry instead.
+
+    Args:
+        sock: The socket behind a pooled connection.
+
+    Returns:
+        ``True`` when the peer has hung up.
+    """
+    if isinstance(sock, ssl.SSLSocket):
+        return False
+    try:
+        readable, _, _ = select.select([sock], [], [], 0)
+        if not readable:
+            return False
+        return sock.recv(1, socket.MSG_PEEK) == b""  # type: ignore[attr-defined]
+    except (OSError, ValueError, TypeError):
+        return True
+
+
 class _SyncConnectionPool:
     """Thread-safe connection pool for sync HTTP connections.
 
@@ -1078,7 +1113,7 @@ class _SyncConnectionPool:
         Returns:
             A reusable connection or None.
         """
-        key = (host, port, is_https)
+        key = (host, port, is_https, verify)
         now = time.monotonic()
         with self._lock:
             conns = self._pool.get(key, [])
@@ -1091,7 +1126,11 @@ class _SyncConnectionPool:
                     except Exception:
                         pass
                     continue
-                if conn.sock is not None and conn.sock.fileno() != -1:
+                if (
+                    conn.sock is not None
+                    and conn.sock.fileno() != -1
+                    and not _socket_peer_closed(conn.sock)
+                ):
                     return conn
                 # Tier 3: best-effort silent -- dead connection eviction
                 try:
@@ -1106,6 +1145,8 @@ class _SyncConnectionPool:
         port: int,
         is_https: bool,
         conn: http.client.HTTPConnection,
+        *,
+        verify: bool = True,
     ) -> None:
         """Return a connection to the pool.
 
@@ -1114,8 +1155,11 @@ class _SyncConnectionPool:
             port: Target port.
             is_https: Whether the connection uses TLS.
             conn: The connection to return.
+            verify: Whether the connection verifies TLS certificates.  It is
+                part of the key so a connection built with ``verify=False``
+                is never handed to a verifying request.
         """
-        key = (host, port, is_https)
+        key = (host, port, is_https, verify)
         with self._lock:
             conns = self._pool.setdefault(key, [])
             if len(conns) < self._pool_size:
@@ -1193,7 +1237,7 @@ class _AsyncConnectionPool:
         Returns:
             A (reader, writer) tuple or None.
         """
-        key = (host, port, is_https)
+        key = (host, port, is_https, verify)
         now = time.monotonic()
         async with self._lock:
             conns = self._pool.get(key, [])
@@ -1224,6 +1268,8 @@ class _AsyncConnectionPool:
         is_https: bool,
         reader: asyncio.StreamReader,
         writer: asyncio.StreamWriter,
+        *,
+        verify: bool = True,
     ) -> None:
         """Return a connection to the pool.
 
@@ -1233,8 +1279,11 @@ class _AsyncConnectionPool:
             is_https: Whether the connection uses TLS.
             reader: The stream reader.
             writer: The stream writer.
+            verify: Whether the connection verifies TLS certificates.  It is
+                part of the key so an unverified connection is never handed to
+                a verifying request.
         """
-        key = (host, port, is_https)
+        key = (host, port, is_https, verify)
         async with self._lock:
             conns = self._pool.setdefault(key, [])
             if len(conns) < self._pool_size:
@@ -1259,6 +1308,54 @@ class _AsyncConnectionPool:
                     except Exception:
                         pass
             self._pool.clear()
+
+
+# ── Default pools for the module-level helpers ──
+#
+# ``get()``/``post()``/``async_get()`` and friends reuse connections through a
+# process-wide pool, so a script that calls them in a loop no longer pays a TCP
+# (and TLS) handshake per request.  Async pools are per event loop: the pooled
+# stream readers/writers belong to the loop that created them.
+
+_DEFAULT_SYNC_POOL = _SyncConnectionPool(DEFAULT_POOL_SIZE)
+_async_default_pools: weakref.WeakKeyDictionary[
+    asyncio.AbstractEventLoop, _AsyncConnectionPool
+] = weakref.WeakKeyDictionary()
+_async_pools_lock = threading.Lock()
+
+
+def _default_async_pool() -> _AsyncConnectionPool:
+    """Return the default pool for the running event loop.
+
+    Returns:
+        The pool owned by the current loop, created on first use.
+    """
+    loop = asyncio.get_running_loop()
+    with _async_pools_lock:
+        pool = _async_default_pools.get(loop)
+        if pool is None:
+            pool = _AsyncConnectionPool(DEFAULT_POOL_SIZE)
+            _async_default_pools[loop] = pool
+        return pool
+
+
+def close_pools() -> None:
+    """Close every connection held by the default sync pool.
+
+    The module-level helpers keep connections open between calls, so a
+    long-lived process can release them explicitly (for example before
+    forking).  Connections also close at process exit.
+    """
+    _DEFAULT_SYNC_POOL.close_all()
+
+
+async def aclose_pools() -> None:
+    """Close the default async pool of the running event loop."""
+    loop = asyncio.get_running_loop()
+    with _async_pools_lock:
+        pool = _async_default_pools.pop(loop, None)
+    if pool is not None:
+        await pool.close_all()
 
 
 # ── Transport (request execution) ──
@@ -1779,26 +1876,31 @@ def _sync_acquire_connection(
     _pool: _SyncConnectionPool | None,
     req_headers: dict[str, str],
     url: str,
-) -> tuple[http.client.HTTPConnection, str]:
+) -> tuple[http.client.HTTPConnection, str, bool]:
     """Acquire a sync HTTP connection via proxy, pool, or direct creation.
 
     Returns:
-        (connection, request_path).
+        (connection, request_path, reused) -- *reused* is True when the
+        connection came from the pool and may therefore be stale.
     """
     if proxy:
         if _is_socks_proxy(proxy):
-            return _sync_connect_via_socks5(
-                host, port, path, is_https, timeout, verify, proxy
+            return (
+                *_sync_connect_via_socks5(
+                    host, port, path, is_https, timeout, verify, proxy
+                ),
+                False,
             )
-        return _sync_connect_via_proxy(
+        conn, request_path = _sync_connect_via_proxy(
             host, port, path, is_https, timeout, verify, proxy, req_headers, url
         )
+        return conn, request_path, False
 
     if _pool:
         pooled_conn = _pool.acquire(host, port, is_https, timeout, verify)
         if pooled_conn is not None:
             req_headers["Connection"] = "keep-alive"
-            return pooled_conn, path
+            return pooled_conn, path, True
 
     # Direct connection
     if is_https:
@@ -1806,7 +1908,7 @@ def _sync_acquire_connection(
         conn = http.client.HTTPSConnection(host, port, timeout=timeout, context=ctx)
     else:
         conn = http.client.HTTPConnection(host, port, timeout=timeout)
-    return conn, path
+    return conn, path, False
 
 
 def _sync_release_or_close(
@@ -1819,6 +1921,7 @@ def _sync_release_or_close(
     port: int,
     is_https: bool,
     conn: http.client.HTTPConnection,
+    verify: bool = True,
 ) -> None:
     """Release a sync connection back to the pool or close it.
 
@@ -1839,7 +1942,7 @@ def _sync_release_or_close(
         and not stream
         and resp_headers.get("connection", "").lower() != "close"
     ):
-        _pool.release(host, port, is_https, conn)
+        _pool.release(host, port, is_https, conn, verify=verify)
     else:
         conn.close()
 
@@ -1923,7 +2026,7 @@ def _sync_request(
     auth: tuple[str, str] | Auth | None = None,
     proxy: str | None = None,
     cookies: dict[str, str] | None = None,
-    _pool: _SyncConnectionPool | None = None,
+    _pool: _SyncConnectionPool | None = _DEFAULT_SYNC_POOL,
 ) -> Response | StreamingResponse:
     """Perform a synchronous HTTP request.
 
@@ -1941,13 +2044,15 @@ def _sync_request(
 
     redirects = 0
     _digest_attempted = False
+    retried = False
+    pool = _pool
     accumulated_set_cookies: list[str] = []
     while True:
         scheme, host, port, path, is_https = _parse_url(url)
         close_conn = True
         resp_headers: dict[str, str] = {}
         try:
-            conn, request_path = _sync_acquire_connection(
+            conn, request_path, reused = _sync_acquire_connection(
                 host,
                 port,
                 path,
@@ -1955,16 +2060,33 @@ def _sync_request(
                 timeout,
                 verify,
                 proxy,
-                _pool,
+                pool,
                 req_headers,
                 url,
             )
-            if _pool and not proxy:
+            if pool and not proxy:
                 req_headers.setdefault("Connection", "keep-alive")
 
             try:
-                conn.request(method, request_path, body=body, headers=req_headers)
-                resp = conn.getresponse()
+                try:
+                    conn.request(method, request_path, body=body, headers=req_headers)
+                    resp = conn.getresponse()
+                except (OSError, http.client.HTTPException) as exc:
+                    if not (reused and not retried and method in _RETRYABLE_METHODS):
+                        raise
+                    # The server closed a kept-alive connection between
+                    # requests; repeat once on a fresh connection.
+                    logger.debug(
+                        "Retrying %s after stale pooled connection: %s", url, exc
+                    )
+                    retried = True
+                    pool = None
+                    close_conn = False
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                    continue
                 raw_headers = resp.getheaders()
                 accumulated_set_cookies.extend(
                     v for k, v in raw_headers if k.lower() == "set-cookie"
@@ -2023,6 +2145,7 @@ def _sync_request(
                     port,
                     is_https,
                     conn,
+                    verify,
                 )
         except Exception as exc:
             wrapped = _wrap_sync_errors(exc, host, port, url, timeout)
@@ -2247,13 +2370,14 @@ async def _async_acquire_connection(
     _pool: _AsyncConnectionPool | None,
     req_headers: dict[str, str],
     url: str,
-) -> tuple[asyncio.StreamReader, asyncio.StreamWriter, str]:
+) -> tuple[asyncio.StreamReader, asyncio.StreamWriter, str, bool]:
     """Acquire an async connection via proxy, pool, or direct creation.
 
     Wraps connection errors into HttpConnectionError / HttpTimeoutError.
 
     Returns:
-        (reader, writer, request_path).
+        (reader, writer, request_path, reused) -- *reused* is True when the
+        connection came from the pool and may therefore be stale.
     """
     try:
         if proxy:
@@ -2261,7 +2385,7 @@ async def _async_acquire_connection(
                 reader, writer = await _async_connect_via_socks5(
                     host, port, timeout, verify, is_https, proxy
                 )
-                return reader, writer, path
+                return reader, writer, path, False
             if not is_https:
                 proxy_host, proxy_port, proxy_user, proxy_pass = _parse_proxy(proxy)
                 reader, writer = await asyncio.wait_for(
@@ -2272,18 +2396,18 @@ async def _async_acquire_connection(
                     req_headers["Proxy-Authorization"] = _proxy_auth_header(
                         proxy_user, proxy_pass
                     )
-                return reader, writer, url
+                return reader, writer, url, False
             reader, writer = await _async_connect_via_proxy_tunnel(
                 host, port, timeout, verify, proxy
             )
-            return reader, writer, path
+            return reader, writer, path, False
 
         if _pool:
             result = await _pool.acquire(host, port, is_https, timeout, verify)
             if result is not None:
                 reader, writer = result
                 req_headers["Connection"] = "keep-alive"
-                return reader, writer, path
+                return reader, writer, path, True
 
         # Direct connection
         ctx = _make_ssl_context(verify) if is_https else None
@@ -2291,7 +2415,7 @@ async def _async_acquire_connection(
             asyncio.open_connection(host, port, ssl=ctx),
             timeout=timeout,
         )
-        return reader, writer, path
+        return reader, writer, path, False
     except asyncio.TimeoutError:
         msg = f"Connection to {host}:{port} timed out after {timeout}s"
         raise HttpTimeoutError(msg, url=url, timeout=timeout)
@@ -2347,6 +2471,7 @@ async def _async_release_or_close(
     is_https: bool,
     reader: asyncio.StreamReader,
     writer: asyncio.StreamWriter,
+    verify: bool = True,
 ) -> None:
     """Release an async connection back to the pool or close it.
 
@@ -2367,7 +2492,7 @@ async def _async_release_or_close(
         and not stream
         and resp_headers.get("connection", "").lower() != "close"
     ):
-        await _pool.release(host, port, is_https, reader, writer)
+        await _pool.release(host, port, is_https, reader, writer, verify=verify)
     else:
         writer.close()
         # Tier 3: best-effort silent -- wait_closed on direct close
@@ -2452,35 +2577,53 @@ async def _async_request(
 
     redirects = 0
     _digest_attempted = False
+    retried = False
+    pool = _pool
     accumulated_set_cookies: list[str] = []
     while True:
         scheme, host, port, path, is_https = _parse_url(url)
 
-        reader, writer, request_path = await _async_acquire_connection(
-            host, port, path, is_https, timeout, verify, proxy, _pool, req_headers, url
+        reader, writer, request_path, reused = await _async_acquire_connection(
+            host, port, path, is_https, timeout, verify, proxy, pool, req_headers, url
         )
-        if _pool and not proxy:
+        if pool and not proxy:
             req_headers.setdefault("Connection", "keep-alive")
 
         close_writer = True
         resp_headers: dict[str, str] = {}
         try:
-            raw_request = _build_raw_http_request(
-                method,
-                request_path,
-                host,
-                req_headers,
-                use_pool=bool(_pool),
-                use_proxy=bool(proxy),
-            )
-            writer.write(raw_request)
-            if body:
-                writer.write(body)
-            await asyncio.wait_for(writer.drain(), timeout=timeout)
+            try:
+                raw_request = _build_raw_http_request(
+                    method,
+                    request_path,
+                    host,
+                    req_headers,
+                    use_pool=bool(pool),
+                    use_proxy=bool(proxy),
+                )
+                writer.write(raw_request)
+                if body:
+                    writer.write(body)
+                await asyncio.wait_for(writer.drain(), timeout=timeout)
 
-            status, resp_headers, iter_set_cookies = await _async_read_response_headers(
-                reader, timeout
-            )
+                (
+                    status,
+                    resp_headers,
+                    iter_set_cookies,
+                ) = await _async_read_response_headers(reader, timeout)
+            except (
+                OSError,
+                asyncio.IncompleteReadError,
+                http.client.HTTPException,
+            ) as exc:
+                if not (reused and not retried and method in _RETRYABLE_METHODS):
+                    raise
+                logger.debug("Retrying %s after stale pooled connection: %s", url, exc)
+                retried = True
+                pool = None
+                close_writer = False
+                await _async_close_writer_silent(writer)
+                continue
             accumulated_set_cookies.extend(iter_set_cookies)
 
             if _is_redirect(status, resp_headers):
@@ -2555,6 +2698,7 @@ async def _async_request(
                 is_https,
                 reader,
                 writer,
+                verify,
             )
 
 
@@ -2741,36 +2885,43 @@ def options(url: str, **kwargs: Any) -> Response | StreamingResponse:
 
 async def async_get(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async GET request."""
+    kwargs.setdefault("_pool", _default_async_pool())
     return await _async_request("GET", url, **kwargs)
 
 
 async def async_post(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async POST request."""
+    kwargs.setdefault("_pool", _default_async_pool())
     return await _async_request("POST", url, **kwargs)
 
 
 async def async_put(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async PUT request."""
+    kwargs.setdefault("_pool", _default_async_pool())
     return await _async_request("PUT", url, **kwargs)
 
 
 async def async_patch(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async PATCH request."""
+    kwargs.setdefault("_pool", _default_async_pool())
     return await _async_request("PATCH", url, **kwargs)
 
 
 async def async_delete(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async DELETE request."""
+    kwargs.setdefault("_pool", _default_async_pool())
     return await _async_request("DELETE", url, **kwargs)
 
 
 async def async_head(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async HEAD request."""
+    kwargs.setdefault("_pool", _default_async_pool())
     return await _async_request("HEAD", url, **kwargs)
 
 
 async def async_options(url: str, **kwargs: Any) -> Response | StreamingResponse:
     """Send an async OPTIONS request."""
+    kwargs.setdefault("_pool", _default_async_pool())
     return await _async_request("OPTIONS", url, **kwargs)
 
 

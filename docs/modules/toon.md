@@ -58,7 +58,13 @@ Decode a TOON-formatted string to a Python value.
 
 ### `ToonDecodeError`
 
-Raised when TOON decoding fails.
+Raised when TOON decoding fails: malformed input, an invalid escape sequence,
+or a trailing backslash in a quoted value.
+
+`ToonDecodeError` subclasses `Exception`, not `ValueError`, so
+`except ValueError` around `decode()` does not catch malformed input — catch
+`ToonDecodeError` instead. Every decode failure the module raises is this
+type.
 
 ## Encoding Options
 

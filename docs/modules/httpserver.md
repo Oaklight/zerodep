@@ -204,7 +204,7 @@ async def trigger_shutdown(request):
 | `keep_alive_timeout` | `float` | `5.0` | 保持连接空闲多久后静默关闭 |
 | `max_requests_per_connection` | `int` | `100` | 单个连接处理多少个请求后关闭 |
 
-**连接行为：** HTTP/1.1 连接默认保持，除非请求发送 `Connection: close` 或响应设置了该头（响应头按大小写不敏感匹配）；HTTP/1.0 仅在请求带有 `Connection: keep-alive` 时保持，无法识别的协议版本一律关闭。流式响应（`StreamingResponse`）总是关闭连接。`keep_alive_timeout` 只约束等待*下一个请求行*的时间；请求一旦开始，其头部与请求体按 `read_timeout` 读取，因此慢速上传不会被中断。空闲连接到期时静默关闭——不会返回 `408`；而请求行之后才卡住的请求仍会收到 `408`。`HEAD` 由匹配的 `GET` 路由处理（RFC 9110 §9.3.2），返回与 `GET` 相同的响应头（含 `Content-Length`），但不发送响应体。
+**连接行为：** HTTP/1.1 连接默认保持，除非请求发送 `Connection: close` 或响应设置了该头（响应头按大小写不敏感匹配）；HTTP/1.0 仅在请求带有 `Connection: keep-alive` 时保持，无法识别的协议版本一律关闭。流式响应（`StreamingResponse`）总是关闭连接。`keep_alive_timeout` 只约束等待*下一个请求行*的时间；请求一旦开始，其头部与请求体按 `read_timeout` 读取，因此慢速上传不会被中断。空闲连接到期时静默关闭——不会返回 `408`；而请求行之后才卡住的请求仍会收到 `408`。`HEAD` 由匹配的 `GET` 路由处理（RFC 9110 §9.3.2），返回与 `GET` 相同的响应头（含 `Content-Length`），但不发送响应体。关闭服务时，正在等待下一个请求行的连接会立即被关闭——否则 `Server.wait_closed()`（Python 3.12 起会等待所有打开的连接）会让关闭过程一直等到空闲窗口结束。正在处理的请求不受影响。
 
 **路由方法：**
 

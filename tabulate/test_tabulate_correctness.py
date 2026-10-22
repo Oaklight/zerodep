@@ -22,6 +22,16 @@ sys.path = [
 
 _cached_tabulate = sys.modules.pop("tabulate", None)
 
+# The reference switches to ``wcwidth`` for column widths when it is
+# installed, while this module's default is ``len(s)`` (``WIDE_CHARS_MODE``
+# is opt-in).  Hide ``wcwidth`` from the reference import — ``None`` in
+# ``sys.modules`` makes the import fail cleanly — so both sides compute
+# widths the same way regardless of the environment.  Without this the
+# unicode/CJK cases differ as soon as ``wcwidth`` is a transitive dependency.
+_cached_wcwidth = sys.modules.get("wcwidth")
+_cached_wcwidth_present = "wcwidth" in sys.modules
+sys.modules["wcwidth"] = None  # type: ignore[assignment]
+
 try:
     import tabulate as _ref_tabulate_mod
 
@@ -35,9 +45,25 @@ finally:
     sys.modules.pop("tabulate", None)
     if _cached_tabulate is not None:
         sys.modules["tabulate"] = _cached_tabulate
+    if _cached_wcwidth_present:
+        sys.modules["wcwidth"] = _cached_wcwidth  # type: ignore[assignment]
+    else:
+        sys.modules.pop("wcwidth", None)
 
 sys.path.insert(0, _this_dir)
 from tabulate import tabulate as our_tabulate  # noqa: E402
+
+
+def test_reference_width_mode_is_len() -> None:
+    """The comparisons below assume the reference counts ``len(s)``.
+
+    Our default is ``len(s)``; the reference switches to ``wcwidth`` when
+    that package is importable.  If this fails, the guard above stopped
+    working and the unicode/CJK cases compare two different width rules
+    rather than two implementations.
+    """
+    assert getattr(_ref_tabulate_mod, "wcwidth", None) is None
+
 
 # ── Helpers ──
 

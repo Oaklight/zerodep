@@ -55,7 +55,7 @@ class TestConnectionPoolLifecycle:
         # Create a mock connection via real HTTPConnection (not connected)
         conn = http.client.HTTPConnection("127.0.0.1", 9999, timeout=1)
         # Manually insert with an old timestamp
-        key = ("127.0.0.1", 9999, False)
+        key = ("127.0.0.1", 9999, False, True)
         pool._pool[key] = [(conn, time.monotonic() - 9999)]
 
         # acquire should evict the stale connection
@@ -77,7 +77,7 @@ class TestConnectionPoolLifecycle:
         pool.release("127.0.0.1", 9999, False, conn2)
 
         # Pool size is 1, so only one should be stored
-        key = ("127.0.0.1", 9999, False)
+        key = ("127.0.0.1", 9999, False, True)
         assert len(pool._pool[key]) == 1
 
     def test_close_all_empties_pool(self, httpbin_url):

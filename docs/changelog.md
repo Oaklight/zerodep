@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.10.23.1] - 2026-10-23
+
 ### Features
 
 - **cli**: installs now record `zerodep.lock.json` next to the vendored files, with the resolved source ref, each module's version and upstream hash, the sha256 of every installed file, and whether the module was requested or pulled in as a dependency. `add` writes it, `update` refreshes it, and `--no-lock` opts out. ([#249](https://github.com/Oaklight/zerodep/issues/249))

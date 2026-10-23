@@ -37,9 +37,9 @@ jobs:
       - name: Install reference libraries for cross-validation
         continue-on-error: true
         run: |
-          # Dynamically extract all bench-* extras from pyproject.toml
-          # (bench-toon is installed in its own required step below, so a
-          # failure to fetch the pinned reference cannot be dropped here)
+          # Dynamically extract all bench-* extras from pyproject.toml.
+          # The TOON reference is not an extra (PyPI forbids the direct URL
+          # in published metadata); it is installed in its own required step.
           pip install tomli
           BENCH_EXTRAS=$(python -c "
           try:
@@ -51,7 +51,7 @@ jobs:
           import pathlib
           data = tomllib.loads(pathlib.Path('pyproject.toml').read_text())
           extras = [k for k in data['project']['optional-dependencies']
-                    if k.startswith('bench-') and k != 'bench-toon']
+                    if k.startswith('bench-')]
           print(','.join(extras))
           ")
           echo "Bench extras: $(echo "$BENCH_EXTRAS" | tr ',' ' ')"
@@ -68,10 +68,11 @@ jobs:
       - name: Install the TOON reference at its pinned commit
         # Required, not best-effort: with toon_format absent the toon
         # comparisons skip and the job reports success having compared nothing
-        # (issue #183). The pin lives in the bench-toon extra so a local
-        # `pip install -e ".[dev]"` matches what runs here.
+        # (issue #183). The pin lives in requirements-bench-toon.txt, not in a
+        # pyproject extra, because PyPI rejects direct URLs in published
+        # metadata.
         run: |
-          pip install -e ".[bench-toon]"
+          pip install -r requirements-bench-toon.txt
           python -c "import toon_format; print('toon_format', toon_format.__version__)"
       - name: Run correctness tests
         run: pytest --ignore-glob="*/test_*_benchmark.py" -v -rs

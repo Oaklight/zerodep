@@ -1,0 +1,13 @@
+# Reference implementation for the TOON comparison (spec 4.4).
+#
+# Pinned to toon-python@91413d14, the level toon/ implements: both the
+# reference comparison suite and the vendored 4.4 conformance fixtures
+# (564/564) are green against it (#184). Raise it deliberately, with a run
+# of toon/test_toon_correctness.py and toon/test_toon_conformance.py — the
+# pin exists so the reference cannot move silently under the tests (#183).
+#
+# This lives here rather than in a pyproject extra because PyPI rejects
+# direct URLs in published metadata: a `bench-toon` extra made every sdist
+# unuploadable. CI installs this file in its own required step, so a failed
+# pin fails the job instead of silently skipping the comparison.
+toon-format @ git+https://github.com/toon-format/toon-python.git@91413d1499c3d87496a932459aaa1cf9fc76c7f5

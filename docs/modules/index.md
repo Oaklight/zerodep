@@ -25,11 +25,11 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
-| [httpclient](httpclient.md) | 0.5.1 | 2026-09-27 |
-| [httpserver](httpserver.md) | 0.5.1 | 2026-09-27 |
+| [httpclient](httpclient.md) | 0.6.0 | 2026-10-22 |
+| [httpserver](httpserver.md) | 0.6.0 | 2026-10-22 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
 | [jsonschema](jsonschema.md) | 0.4.1 | 2026-09-23 |
-| [jsonx](jsonx.md) | 1.0.0 | 2026-06-12 |
+| [jsonx](jsonx.md) | 1.0.2 | 2026-10-22 |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
 | [multipart](multipart.md) | 0.1.0 | 2026-05-16 |
@@ -45,15 +45,16 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [runner](runner.md) | 0.3.1 | 2026-04-15 |
 | [s3](s3.md) | 0.2.0 | 2026-07-03 |
 | [scheduler](scheduler.md) | 0.3.1 | 2026-04-15 |
+| [semantic_search](semantic_search.md) | 0.1.0 | — |
 | [semver](semver.md) | 0.4.1 | 2026-04-27 |
 | [skills](skills.md) | 0.4.3 | 2026-08-25 |
-| [soup](soup.md) | 0.6.0 | 2026-04-27 |
+| [soup](soup.md) | 0.9.0 | 2026-10-13 |
 | [sparse_search](sparse_search.md) | 0.4.0 | 2026-04-27 |
 | [sse](sse.md) | 0.3.4 | 2026-09-27 |
 | [structlog](structlog.md) | 0.3.0 | 2026-04-27 |
 | [synctex](synctex.md) | 0.2.0 | 2026-05-02 |
-| [tabulate](tabulate.md) | 0.1.1 | 2026-04-15 |
-| [toon](toon.md) | 0.3.3 | 2026-04-27 |
+| [tabulate](tabulate.md) | 0.1.1 | 2026-10-22 |
+| [toon](toon.md) | 0.6.1 | 2026-10-22 |
 | [useragent](useragent.md) | 0.1.0 | 2026-05-02 |
 | [validate](validate.md) | 0.7.1 | 2026-09-06 |
 | [vcs](vcs.md) | 0.3.1 | 2026-08-25 |
@@ -114,6 +115,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [readability](readability.md) | Article content extractor ported from Mozilla Readability.js | readability-lxml, newspaper3k, trafilatura | `readability-lxml` |
 | [diff](diff.md) | Unified diff parser, patch apply/reverse, three-way merge | unidiff, patch | `unidiff` |
 | [sparse_search](sparse_search.md) | BM25/BM25+/BM25L/BM25F + TF-IDF full-text search with Bayesian calibration, RRF fusion, MMR diversity | rank-bm25, bm25s, whoosh | `rank-bm25` |
+| [semantic_search](semantic_search.md) | Dense vector search with Flat/IVF/LSH indices, SQ8 quantization, embedding API helpers, RRF fusion, MMR diversity | faiss-cpu, hnswlib, annoy | `faiss-cpu` |
 | [synctex](synctex.md) | SyncTeX inverse-search parser (PDF position → source location) | -- | -- |
 
 ### Configuration

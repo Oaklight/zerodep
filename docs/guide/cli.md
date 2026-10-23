@@ -80,7 +80,18 @@ zerodep add scheduler -y
 
 # Overwrite existing files without prompting
 zerodep add scheduler -f
+
+# Do not write zerodep.lock.json
+zerodep add scheduler --no-lock
 ```
+
+Every install is recorded in `zerodep.lock.json` next to the copied files (see
+[Source pinning and the lock file](#source-pinning-and-the-lock-file)).
+
+`add` refuses to overwrite a file whose content differs from what the lock
+recorded, or — for an install made before the lock existed — from upstream.
+`--force` replaces it anyway. Files pulled in as dependencies are recorded
+with `"requested": false`.
 
 **Confirmation prompt** — by default, `add` shows a plan and asks for confirmation:
 
@@ -94,28 +105,106 @@ Continue? [Y/n]
 
 ### `zerodep update <module> [...]`
 
-Re-fetch and overwrite existing module files. Equivalent to `add --force --yes`.
+Update installed modules to the current source ref. Each module is compared
+against `zerodep.lock.json`, so a local edit is never overwritten silently.
 
 ```bash
+# Update one module (dependencies that upstream added are pulled in)
 zerodep update sse
+
+# Update everything that needs attention
+zerodep update --all
+
+# Preview the changes without writing anything
+zerodep update --all --diff
+
+# CI gate: exit 1 if anything needs attention
+zerodep update --all --check
+
+# Overwrite locally modified or unverified modules
+zerodep update sse --force
+
+# Update without recording the result in the lock
+zerodep update sse --no-lock
 ```
+
+| State | Meaning | `update` without `--force` |
+|-------|---------|----------------------------|
+| `up-to-date` | installed content matches the lock and upstream | nothing to do |
+| `outdated` | upstream changed, local file untouched | overwritten |
+| `locally-modified` | local bytes differ from the lock | **skipped**, exit 1 |
+| `conflict` | upstream changed *and* the file was edited | **skipped**, exit 1 |
+| `missing` | a recorded file was deleted | reinstalled |
+| `unverified` | no lock record and content differs from upstream | **skipped**, exit 1 |
+| `upstream-removed` | the module is no longer published | **skipped**, warning |
+
+Skipped modules make the command exit 1, so a CI job cannot mistake a refused
+update for a successful one. `--diff` is read-only and still prints the diff
+for skipped modules, so `--force` is a decision you can inspect first.
+
+#### Migrating a lock-less install
+
+Before this lock existed, installs had no baseline, and an older copy cannot
+be told apart from an older copy that was also edited. Those files are
+therefore reported as `unverified` and are not updated automatically — `add`
+and `update` both refuse without `--force`. The one-time migration is:
+
+```bash
+zerodep status                  # see what is unverified
+zerodep update sse --diff       # inspect the change per module
+zerodep update sse --force      # adopt upstream content, record the lock
+# or, accepting that every unverified module is rewritten:
+zerodep update --all --force
+```
+
+After that the lock exists and later updates only replace files that still
+match the recorded bytes.
+
+### `zerodep status`
+
+Show every installed module with its installed version, latest version, and
+state (the same states as `update`).
+
+```bash
+$ zerodep status
+Module      Installed  Latest  State
+----------  ---------  ------  ----------------
+httpclient  0.6.1      0.6.1   up-to-date
+jsonx       1.0.0      1.0.2   outdated
+yaml        0.3.1      0.3.1   locally-modified
+```
+
+```bash
+zerodep status --json         # machine-readable rows plus a state count
+zerodep status --exit-code    # exit 1 unless everything is up-to-date
+```
+
+`status` also warns about dependencies that are not installed. Modules placed
+in the vendor directory by hand are listed too, even when the lock does not
+mention them.
 
 ### `zerodep outdated`
 
-Check local zerodep files for upstream content changes. Compares the content hash of each local file against the manifest, ignoring metadata-only changes (version bumps).
+List local zerodep files and how they compare with upstream. Uses the same
+state vocabulary as `status`; with a lock it distinguishes an upstream change
+from a local edit, and without one it reports any difference as `unverified`.
 
 ```bash
 $ zerodep outdated
 Module  Local Ver  Latest Ver  Status
-------  ---------  ----------  ----------
-semver  0.3.0      0.4.0       up-to-date
-yaml    0.3.0      0.4.0       outdated
+------  ---------  ----------  ----------------
+semver  0.3.0      0.4.0       unverified
+yaml    0.3.1      0.3.1       up-to-date
 ```
 
-- **up-to-date** — the file content is identical to upstream (metadata may differ)
-- **outdated** — the file has substantive upstream changes
+- **up-to-date** — the content is identical to upstream (metadata may differ)
+- **unverified** — no lock record, and the content differs from upstream; it
+  may be old, edited, or both
+- **outdated** / **locally-modified** / **conflict** / **missing** /
+  **upstream-removed** — as documented under `update`
 
-Only files found in the current directory are checked; modules not present locally are silently skipped.
+Use `--json` for machine-readable output and `--exit-code` to fail when any
+module is not up to date. Only files in the target directory are considered.
 
 ### `zerodep version-check`
 
@@ -282,11 +371,16 @@ zerodep 2026.4.11
 | Option | Description |
 |--------|-------------|
 | `--offline` | Use only cached files, no network access |
-| `--local` | Use local `manifest.json` instead of fetching from remote |
+| `--local` | Use local `manifest.json` and module sources instead of fetching from remote |
+| `--ref <ref>` | Install from a release tag, branch, or commit (default: the latest release, cached for one hour) |
+
+Global options must appear before the subcommand: `zerodep --ref master add sse`.
 
 ## Network Behavior
 
-The CLI fetches files using a multi-source fallback chain:
+The CLI fetches files from the resolved source ref (by default the latest
+published release, not the moving `master` branch) using a multi-source
+fallback chain:
 
 ```
 GitHub raw → jsDelivr CDN → Fastly CDN → local cache
@@ -298,7 +392,37 @@ GitHub raw → jsDelivr CDN → Fastly CDN → local cache
 4. If all fail, use locally cached copy (with a warning)
 5. With `--offline`, skip network entirely and use cache only
 
-Fetched files are cached at `~/.zerodep/cache/` for offline use.
+Fetched files are cached at `~/.zerodep/cache/` for offline use, per ref.
+Each file's content hash is checked against the manifest before anything is
+written; a mismatch aborts the whole operation, so a partial install is never
+left behind.
+
+## Source pinning and the lock file
+
+`zerodep add` writes `zerodep.lock.json` next to the installed modules. It
+records the source repository and the exact ref the files came from, each
+module's version and upstream content hash, the sha256 of every installed
+file, and whether the module was requested explicitly or pulled in as a
+dependency.
+
+```json
+{
+  "lock_version": 1,
+  "source": {"repo": "Oaklight/zerodep", "ref": "v2026.10.23"},
+  "modules": {
+    "sse": {
+      "version": "0.4.1",
+      "upstream_hash": "b7937446…",
+      "requested": true,
+      "files": {"sse.py": "3f216fb3…"}
+    }
+  }
+}
+```
+
+Commit the lock file with the vendored modules. It is what lets `update`
+distinguish "upstream moved" from "I edited this file", and it pins the ref
+your project was actually installed from. Pass `--no-lock` to opt out.
 
 ## Dependency Resolution
 

@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Features
+
+- **cli**: installs now record `zerodep.lock.json` next to the vendored files, with the resolved source ref, each module's version and upstream hash, the sha256 of every installed file, and whether the module was requested or pulled in as a dependency. `add` writes it, `update` refreshes it, and `--no-lock` opts out. ([#249](https://github.com/Oaklight/zerodep/issues/249))
+- **cli**: `update` no longer overwrites blindly. It distinguishes `up-to-date`, `outdated`, `locally-modified`, `conflict`, `missing`, `unverified` and `upstream-removed`; modules it will not touch are reported and make the command exit 1. New `--diff` previews the changes, `--check` is a CI gate, and `--force` overwrites a local edit on purpose. ([#250](https://github.com/Oaklight/zerodep/issues/250))
+- **cli**: new `zerodep status` command lists every installed module with its installed version, latest version and state, with `--json` and `--exit-code` for automation.
+- **cli**: `add`, `update` and `status` install from the latest published release (cached for an hour) instead of the moving `master` branch; the global `--ref` selects a tag, branch, or commit. Every fetched file is verified against the manifest's content hash before anything is written. ([#251](https://github.com/Oaklight/zerodep/issues/251))
+- **cli**: `outdated` uses the same state vocabulary as `status`, so a local edit is no longer reported as an upstream change.
+
+### Changed
+
+- **cli**: a lock is only ever written from bytes that match upstream. On a legacy install without a lock, files that differ are reported as `unverified` and are not updated by `update --all`; the one-time migration is `zerodep update --all --force` (or per module: `update <module> --diff`, then `update <module> --force`). This prevents an existing local edit from being adopted as the baseline and later overwritten.
+- **manifest**: module entries now include `primary_file`, the file their `content_hash` describes.
+
 ### Infrastructure
 
 - **packaging**: the `bench-toon` reference moved from a `pyproject.toml` extra to `requirements-bench-toon.txt`. PyPI rejects direct URLs in published metadata, so the extra made every sdist unuploadable; the lint-test and benchmark jobs now install the pinned file in their required step. The release workflow also builds the PyPI artifact from the new tag and requests `actions: write`, so the benchmark cascade can dispatch.

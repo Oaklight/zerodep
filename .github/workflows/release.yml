@@ -62,15 +62,13 @@ jobs:
           echo "republish=${REPUBLISH}" >> "$GITHUB_OUTPUT"
           echo "Release version: ${VER} (republish=${REPUBLISH})"
 
-      - name: Check module versions
+      - name: Release checks
         if: steps.version.outputs.republish != 'true'
         run: |
-          python -m zerodep version-check --strict
-
-      - name: Regenerate manifest
-        if: steps.version.outputs.republish != 'true'
-        run: |
-          python -m zerodep manifest
+          # Same code path maintainers run locally; a failing check here
+          # means the tree is not taggable (unbumped module, stale manifest,
+          # version mismatch, stale docs index, uncommitted changes).
+          python -m zerodep release-check
 
       - name: Bump project version
         if: steps.version.outputs.republish != 'true'

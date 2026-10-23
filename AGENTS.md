@@ -64,6 +64,7 @@ zerodep update <module>          # Update existing module files
 zerodep bump [modules...]        # Bump module versions (--patch|--minor|--major)
 zerodep version-check            # Detect modules modified since declared version
 zerodep version-check --strict   # Same, but exit 1 if any need bumping
+zerodep release-check           # Run every pre-release check (reused by CI)
 
 # Manifest & dependencies
 zerodep manifest                 # Regenerate manifest.json from source

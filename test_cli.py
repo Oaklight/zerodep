@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -603,3 +605,112 @@ def test_write_files_verifies_everything_before_writing(tmp_path: Path, monkeypa
         )
     # The valid first file must not be written when a later one is rejected.
     assert not (tmp_path / "yaml.py").exists()
+
+
+# ── release-check ──
+
+
+def _make_release_repo(tmp_path: Path) -> Path:
+    """Build a minimal repo that ``release-check`` can inspect."""
+    real_cli = Path(__file__).parent / "zerodep.py"
+    shutil.copy2(real_cli, tmp_path / "zerodep.py")
+    version = re.search(
+        r'^__version__ = "([^"]+)"',
+        real_cli.read_text(encoding="utf-8"),
+        re.MULTILINE,
+    ).group(1)
+    (tmp_path / "pyproject.toml").write_text(
+        f'[project]\nname = "zerodep"\nversion = "{version}"\n', encoding="utf-8"
+    )
+    module_dir = tmp_path / "demo"
+    module_dir.mkdir()
+    (module_dir / "demo.py").write_text(
+        '# /// zerodep\n# version = "0.1.0"\n# deps = []\n# tier = "medium"\n'
+        '# category = "text"\n# ///\n\nVALUE = 1\n',
+        encoding="utf-8",
+    )
+    r = subprocess.run(
+        [sys.executable, str(tmp_path / "zerodep.py"), "--local", "manifest"],
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+    )
+    assert r.returncode == 0, r.stderr
+    return tmp_path
+
+
+def _run_release_check(repo: Path, *extra: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, str(repo / "zerodep.py"), "release-check", *extra],
+        capture_output=True,
+        text=True,
+        cwd=repo,
+    )
+
+
+def test_release_check_passes_on_a_consistent_tree(tmp_path: Path):
+    repo = _make_release_repo(tmp_path)
+    r = _run_release_check(repo, "--allow-dirty")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "release-check passed" in r.stdout
+    assert "docs worktrees are not mounted" in r.stdout
+
+
+def test_release_check_fails_on_a_stale_manifest(tmp_path: Path):
+    repo = _make_release_repo(tmp_path)
+    (repo / "demo" / "demo.py").write_text(
+        (repo / "demo" / "demo.py").read_text(encoding="utf-8") + "\nVALUE = 2\n",
+        encoding="utf-8",
+    )
+    r = _run_release_check(repo, "--allow-dirty")
+    assert r.returncode == 1
+    assert "manifest.json is stale" in r.stdout
+
+
+def test_release_check_fails_on_a_version_mismatch(tmp_path: Path):
+    repo = _make_release_repo(tmp_path)
+    (repo / "pyproject.toml").write_text(
+        '[project]\nname = "zerodep"\nversion = "2020.1.1"\n', encoding="utf-8"
+    )
+    r = _run_release_check(repo, "--allow-dirty")
+    assert r.returncode == 1
+    assert "pyproject.toml has 2020.1.1" in r.stdout
+
+
+def test_release_check_fails_on_a_non_calver_version(tmp_path: Path):
+    repo = _make_release_repo(tmp_path)
+    cli = (repo / "zerodep.py").read_text(encoding="utf-8")
+    (repo / "zerodep.py").write_text(
+        re.sub(
+            r'^__version__ = "[^"]+"',
+            '__version__ = "0.1.0"',
+            cli,
+            count=1,
+            flags=re.MULTILINE,
+        ),
+        encoding="utf-8",
+    )
+    (repo / "pyproject.toml").write_text(
+        '[project]\nname = "zerodep"\nversion = "0.1.0"\n', encoding="utf-8"
+    )
+    r = _run_release_check(repo, "--allow-dirty")
+    assert r.returncode == 1
+    assert "is not CalVer" in r.stdout
+
+
+def test_release_check_reports_uncommitted_tracked_changes(tmp_path: Path):
+    repo = _make_release_repo(tmp_path)
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(["git", "add", "-A"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "init"],
+        cwd=repo,
+        check=True,
+    )
+    (repo / "demo" / "demo.py").write_text(
+        (repo / "demo" / "demo.py").read_text(encoding="utf-8") + "\nVALUE = 3\n",
+        encoding="utf-8",
+    )
+    r = _run_release_check(repo)
+    assert r.returncode == 1
+    assert "tracked file(s) uncommitted" in r.stdout

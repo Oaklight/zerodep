@@ -12,6 +12,10 @@
 - **cli**：`add` 与 `update` 新增 `--dry-run`；`list` 新增 `--category` 与 `--json`；新增 `zerodep search <term> [...]`，搜索名称、描述、分类、层级和依赖。([#252](https://github.com/Oaklight/zerodep/issues/252))
 - **cli**：`zerodep release-check` 现在还检查模块源码是否只导入标准库与同项目模块（`except ImportError` 或 `sys.version_info` 分支下的导入视为可选）、frontmatter 的 `deps` 是否与实际同项目导入一致、每个需要参考实现的 benchmark 是否有 `bench-*` extra、每个测试文件是否已接入 Makefile。`--with-lint` 运行 pre-commit 钩子，`--with-tests [a,b]` 运行指定模块或全部正确性测试。([#258](https://github.com/Oaklight/zerodep/issues/258))
 
+### 基础设施
+
+- **基准测试**：`bench-persistdict` 与 `dev` extra 不再安装 `sqlitedict`。它存在尚未修复的高危反序列化漏洞（CVE-2024-35515 / GHSA-g4r7-86gm-pgqc）且已不再维护；手动安装 sqlitedict 后，使用进程内可信数据的对比仍会运行。
+
 ## [2026.10.23.2] - 2026-10-23
 
 ### 新功能

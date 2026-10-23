@@ -6,8 +6,14 @@ zerodep persistdict（JSON 和 SQLite 后端）与标准库 [`shelve`](https://d
     - **CPU:** x86_64 Linux
     - **Python:** 3.12
     - **工具:** pytest-benchmark 5.2.3（报告均值）
-    - **对标库:** sqlitedict 2.1.0
+    - **对标库:** sqlitedict 2.1.0（可选，见下）
     - **最后更新:** 2026-04-21
+
+!!! warning "sqlitedict 需手动安装"
+    `sqlitedict` 存在尚未修复的反序列化漏洞
+    （[CVE-2024-35515](https://nvd.nist.gov/vuln/detail/CVE-2024-35515)），
+    因此 `bench-persistdict` 与 `dev` extra 都不再安装它。该 benchmark 使用
+    进程内可信数据；只有在手动安装 sqlitedict 后，相关用例才会运行。
 
 ## 实现对比
 
@@ -78,6 +84,9 @@ zerodep persistdict（JSON 和 SQLite 后端）与标准库 [`shelve`](https://d
 ## 自行运行
 
 ```bash
+# sqlitedict 需手动安装：它存在尚未修复的反序列化漏洞
+# （CVE-2024-35515），因此不再由任何 extra 安装。装上它才会运行对比，
+# 否则相关用例跳过。
 pip install pytest pytest-benchmark sqlitedict
 pytest persistdict/test_persistdict_benchmark.py --benchmark-only -v
 ```

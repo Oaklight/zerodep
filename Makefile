@@ -2,7 +2,7 @@
 
 help:
 	@echo "Available targets:"
-	@echo "  test             - Run all module tests (excludes benchmarks)"
+	@echo "  test             - Run all module tests (needs dev extras; excludes benchmarks)"
 	@echo "  test-aes         - Run AES correctness tests"
 	@echo "  test-qr          - Run QR correctness tests"
 	@echo "  test-http        - Run HTTP correctness tests"

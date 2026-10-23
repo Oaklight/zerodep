@@ -8,7 +8,7 @@
 
 ### 新功能
 
-- **CLI**：新增 `zerodep release-check`，一条命令完成发布前检查——模块版本与声明 tag 是否一致、manifest 是否最新、`pyproject.toml` 与 `zerodep.py` 的 CalVer 版本是否一致、生成的文档模块索引（在挂载了 docs worktree 时）以及工作区是否干净。Release 工作流改为调用该命令，不再在 YAML 中重复这些步骤，因此本地检查与 CI 不会出现偏差。
+- **CLI**：新增 `zerodep release-check`，一条命令完成发布前检查——模块版本与声明 tag 是否一致、manifest 是否最新、`pyproject.toml` 与 `zerodep.py` 的 CalVer 版本是否一致、生成的文档模块索引（在挂载了 docs worktree 时）以及工作区是否干净。`--version X` 还会校验即将打出的版本号（必须是 CalVer 且尚未打 tag）。manifest 检查只比较描述源码树的字段，忽略由提交时间产生的 `generated` / `last_updated`。Release 工作流改为调用该命令，不再在 YAML 中重复这些步骤，因此本地检查与 CI 不会出现偏差。
 
 ### 基础设施
 

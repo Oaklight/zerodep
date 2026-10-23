@@ -232,6 +232,10 @@ release-check passed
 
 迭代过程中可使用 `--allow-dirty` 跳过工作区检查。
 
+使用 `--version X` 可额外校验即将打出的版本号：必须是 CalVer（`YYYY.M.D` / `YYYY.M.D.N`），且 `vX` tag 尚不存在。Release 工作流会传入它计算出的版本号，因此手动触发时传入任意版本字符串会在这里失败，而不会打出一个名不副实的 tag。
+
+manifest 检查只比较描述源码树的字段（`files`、`version`、`content_hash`、`deps`、`tier`、`category`、`description`），忽略 `generated` 与每个模块的 `last_updated`——它们来自提交时间戳，在历史被压缩或重写时会变化。注意：未挂载 docs worktree 时会跳过 `docs-index` 检查（CI 中即是如此），因此文档门禁只在维护者本地运行。
+
 ### `zerodep bump`
 
 自动检测变更模块并 bump 其 frontmatter 版本号。默认执行 patch bump；可使用 `--minor` 或 `--major` 进行更大幅度的版本递增。

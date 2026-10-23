@@ -651,6 +651,159 @@ class TestPersistenceQuantized:
         assert loaded.doc_count == 10
 
 
+class TestQuantizedSearch:
+    """SQ8 quantization must be used by search, not just persisted."""
+
+    def _separable_index(self, **kwargs):
+        idx = SemanticIndex(dim=4, quantize=True, **kwargs)
+        axes = [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+        for i, vec in enumerate(axes):
+            idx.add(f"d{i}", vector=vec)
+        idx.build_index()
+        return idx
+
+    def test_build_releases_full_precision_vectors(self):
+        idx = self._separable_index()
+        assert idx._vectors_encoded is True
+        assert len(idx._vectors) == 0
+        assert idx._sq8_data is not None
+
+    def test_flat_returns_the_nearest_document(self):
+        idx = self._separable_index()
+        results = idx.search(vector=[0.9, 0.1, 0.0, 0.0], top_k=1)
+        assert results[0].doc_id == "d0"
+
+    def test_flat_preserves_full_ordering_on_separable_data(self):
+        idx = self._separable_index()
+        results = idx.search(vector=[0.9, 0.05, 0.05, 0.0], top_k=3)
+        assert [r.doc_id for r in results] == ["d0", "d1", "d2"]
+
+    def test_euclidean_metric(self):
+        idx = SemanticIndex(dim=3, metric="euclidean", quantize=True)
+        idx.add("near", vector=[0.0, 0.0, 0.0])
+        idx.add("far", vector=[10.0, 0.0, 0.0])
+        idx.build_index()
+        results = idx.search(vector=[0.5, 0.0, 0.0], top_k=1)
+        assert results[0].doc_id == "near"
+
+    def test_inner_product_metric(self):
+        idx = SemanticIndex(dim=3, metric="inner_product", quantize=True)
+        idx.add("aligned", vector=[1.0, 0.0, 0.0])
+        idx.add("orthogonal", vector=[0.0, 1.0, 0.0])
+        idx.build_index()
+        results = idx.search(vector=[2.0, 0.0, 0.0], top_k=1)
+        assert results[0].doc_id == "aligned"
+
+    def test_recall_against_exact_search(self):
+        vectors = _make_vectors(200, 16, seed=7)
+        query = _make_vectors(1, 16, seed=99)[0]
+        exact = SemanticIndex(dim=16, index_type="flat")
+        quantized = SemanticIndex(dim=16, index_type="flat", quantize=True)
+        for i, vec in enumerate(vectors):
+            exact.add(f"d{i}", vector=vec)
+            quantized.add(f"d{i}", vector=vec)
+        quantized.build_index()
+
+        want = {r.doc_id for r in exact.search(vector=query, top_k=10)}
+        got = {r.doc_id for r in quantized.search(vector=query, top_k=10)}
+        assert len(want & got) / len(want) >= 0.8
+
+    def test_ivf_and_lsh_search_from_quantized_data(self):
+        vectors = _make_vectors(120, 8, seed=11)
+        query = _make_vectors(1, 8, seed=5)[0]
+        for index_type in ("ivf", "lsh"):
+            idx = SemanticIndex(dim=8, index_type=index_type, quantize=True)
+            for i, vec in enumerate(vectors):
+                idx.add(f"d{i}", vector=vec)
+            idx.build_index()
+            assert idx._vectors_encoded is True
+            results = idx.search(vector=query, top_k=3)
+            assert len(results) == 3
+
+    def test_add_after_build_materializes_and_search_still_works(self):
+        idx = self._separable_index(metric="euclidean")
+        idx.add("d4", vector=[0.0, 0.0, 0.0, 2.0])
+        assert idx._vectors_encoded is False
+        assert len(idx._vectors) == 5 * 4
+        idx.build_index()
+        results = idx.search(vector=[0.0, 0.0, 0.0, 2.0], top_k=1)
+        assert results[0].doc_id == "d4"
+
+    def test_remove_after_build_materializes(self):
+        idx = self._separable_index()
+        idx.remove("d1")
+        assert idx._vectors_encoded is False
+        idx.build_index()
+        results = idx.search(vector=[0.0, 1.0, 0.0, 0.0], top_k=1)
+        assert "d1" not in [r.doc_id for r in results]
+
+    def test_json_roundtrip_searches_from_quantized_storage(self, tmp_path):
+        idx = self._separable_index()
+        path = str(tmp_path / "q.json")
+        idx.save(path)
+
+        import json
+
+        with open(path, encoding="utf-8") as f:
+            payload = json.load(f)
+        assert payload["vectors_b64"] == ""
+        assert payload["quantization"] is not None
+
+        loaded = SemanticIndex.load(path)
+        assert loaded._vectors_encoded is True
+        results = loaded.search(vector=[0.9, 0.1, 0.0, 0.0], top_k=1)
+        assert results[0].doc_id == "d0"
+
+    def test_sqlite_roundtrip_searches_from_quantized_storage(self, tmp_path):
+        idx = self._separable_index()
+        path = str(tmp_path / "q.db")
+        idx.save(path)
+
+        import sqlite3
+
+        conn = sqlite3.connect(path)
+        try:
+            rows = conn.execute("SELECT COUNT(*) FROM vectors").fetchone()[0]
+        finally:
+            conn.close()
+        assert rows == 0
+
+        loaded = SemanticIndex.load(path)
+        assert loaded._vectors_encoded is True
+        results = loaded.search(vector=[0.0, 0.0, 0.9, 0.1], top_k=1)
+        assert results[0].doc_id == "d2"
+
+    def test_quantized_json_is_smaller(self, tmp_path):
+        vectors = _make_vectors(100, 32, seed=3)
+        plain = SemanticIndex(dim=32, index_type="flat")
+        quantized = SemanticIndex(dim=32, index_type="flat", quantize=True)
+        for i, vec in enumerate(vectors):
+            plain.add(f"d{i}", vector=vec)
+            quantized.add(f"d{i}", vector=vec)
+        quantized.build_index()
+
+        plain_path = str(tmp_path / "plain.json")
+        quant_path = str(tmp_path / "quant.json")
+        plain.save(plain_path)
+        quantized.save(quant_path)
+
+        import os
+
+        assert os.path.getsize(quant_path) < os.path.getsize(plain_path) / 2
+
+    def test_rebuilding_quantized_flat_index_stays_correct(self):
+        idx = self._separable_index()
+        idx.build_index()
+        idx.build_index()
+        results = idx.search(vector=[0.0, 0.0, 0.0, 1.0], top_k=1)
+        assert results[0].doc_id == "d3"
+
+
 # ---------------------------------------------------------------------------
 # Dynamic Operations
 # ---------------------------------------------------------------------------

@@ -254,6 +254,123 @@ def _dequantize_sq8_single(
     return [min_vals[j] + data[base + j] * step_vals[j] for j in range(dim)]
 
 
+def _dequantize_sq8_all(
+    data: bytes,
+    min_vals: array.array[float],
+    step_vals: array.array[float],
+    dim: int,
+    n: int,
+) -> array.array[float]:
+    """Dequantize every stored vector back into a flat float32 array.
+
+    Args:
+        data: Quantized byte buffer.
+        min_vals: Per-dimension minimum values.
+        step_vals: Per-dimension step sizes.
+        dim: Dimensionality.
+        n: Number of vectors.
+
+    Returns:
+        Flat float32 array holding *n* reconstructed vectors.
+    """
+    out = array.array("f")
+    for i in range(n):
+        base = i * dim
+        for j in range(dim):
+            out.append(min_vals[j] + data[base + j] * step_vals[j])
+    return out
+
+
+def _sq8_norms(
+    data: bytes,
+    min_vals: array.array[float],
+    step_vals: array.array[float],
+    dim: int,
+    n: int,
+) -> array.array[float]:
+    """Precompute the L2 norm of each dequantized vector.
+
+    Cosine distance needs the candidate norm because quantization does not
+    preserve unit length.
+
+    Args:
+        data: Quantized byte buffer.
+        min_vals: Per-dimension minimum values.
+        step_vals: Per-dimension step sizes.
+        dim: Dimensionality.
+        n: Number of vectors.
+
+    Returns:
+        Float32 array of *n* norms.
+    """
+    norms = array.array("f")
+    for i in range(n):
+        base = i * dim
+        acc = 0.0
+        for j in range(dim):
+            v = min_vals[j] + data[base + j] * step_vals[j]
+            acc += v * v
+        norms.append(math.sqrt(acc))
+    return norms
+
+
+def _sq8_distance_factory(
+    metric: str,
+    data: bytes,
+    min_vals: array.array[float],
+    step_vals: array.array[float],
+    norms: array.array[float],
+) -> Callable[[array.array[float], list[float], int, int], float]:
+    """Build a distance function that reads vectors from SQ8 data.
+
+    The returned callable keeps the ``(vectors, query, dim, offset)``
+    signature of the full-precision distance functions so the index
+    implementations can use it unchanged: *vectors* is ignored and the
+    stored vector is reconstructed from the quantized buffer instead.
+    """
+
+    def _sq8_cosine(
+        vectors: array.array[float],
+        query: list[float],
+        dim: int,
+        offset: int,
+    ) -> float:
+        dot = 0.0
+        for j in range(dim):
+            dot += (min_vals[j] + data[offset + j] * step_vals[j]) * query[j]
+        norm = norms[offset // dim]
+        return 1.0 - dot / norm if norm > 0.0 else 1.0
+
+    def _sq8_euclidean(
+        vectors: array.array[float],
+        query: list[float],
+        dim: int,
+        offset: int,
+    ) -> float:
+        acc = 0.0
+        for j in range(dim):
+            d = (min_vals[j] + data[offset + j] * step_vals[j]) - query[j]
+            acc += d * d
+        return math.sqrt(acc)
+
+    def _sq8_inner_product(
+        vectors: array.array[float],
+        query: list[float],
+        dim: int,
+        offset: int,
+    ) -> float:
+        dot = 0.0
+        for j in range(dim):
+            dot += (min_vals[j] + data[offset + j] * step_vals[j]) * query[j]
+        return -dot
+
+    if metric == "cosine":
+        return _sq8_cosine
+    if metric == "euclidean":
+        return _sq8_euclidean
+    return _sq8_inner_product
+
+
 # ---------------------------------------------------------------------------
 # Language Detection
 # ---------------------------------------------------------------------------
@@ -484,6 +601,8 @@ class _FlatIndex:
         dist_fn: Callable[[array.array[float], list[float], int, int], float],
         n_docs: int,
         top_k: int,
+        sq8_dist: Callable[[array.array[float], list[float], int, int], float]
+        | None = None,
     ) -> list[tuple[int, float]]:
         """Return top_k nearest (index, distance) pairs.
 
@@ -494,11 +613,14 @@ class _FlatIndex:
             dist_fn: Distance function.
             n_docs: Number of stored vectors.
             top_k: Number of results.
+            sq8_dist: Optional distance function reading quantized storage;
+                when given it replaces *dist_fn* for candidate distances.
 
         Returns:
             List of (vector_index, distance) sorted by ascending distance.
         """
-        dists = [(i, dist_fn(vectors, query, dim, i * dim)) for i in range(n_docs)]
+        cand_dist = sq8_dist or dist_fn
+        dists = [(i, cand_dist(vectors, query, dim, i * dim)) for i in range(n_docs)]
         return heapq.nsmallest(top_k, dists, key=lambda x: x[1])
 
     def to_dict(self) -> dict[str, Any]:
@@ -687,6 +809,8 @@ class _IVFIndex:
         dist_fn: Callable[[array.array[float], list[float], int, int], float],
         n_docs: int,
         top_k: int,
+        sq8_dist: Callable[[array.array[float], list[float], int, int], float]
+        | None = None,
     ) -> list[tuple[int, float]]:
         """Search using nprobe nearest clusters.
 
@@ -697,6 +821,8 @@ class _IVFIndex:
             dist_fn: Distance function.
             n_docs: Number of vectors.
             top_k: Number of results.
+            sq8_dist: Optional distance function reading quantized storage;
+                when given it replaces *dist_fn* for candidate distances.
 
         Returns:
             List of (vector_index, distance) sorted by ascending distance.
@@ -709,10 +835,11 @@ class _IVFIndex:
         nprobe = min(self._nprobe, self._actual_k)
         nearest_clusters = heapq.nsmallest(nprobe, centroid_dists, key=lambda x: x[1])
 
+        cand_dist = sq8_dist or dist_fn
         candidates: list[tuple[int, float]] = []
         for ci, _ in nearest_clusters:
             for idx in self._inverted_lists.get(ci, []):
-                d = dist_fn(vectors, query, dim, idx * dim)
+                d = cand_dist(vectors, query, dim, idx * dim)
                 candidates.append((idx, d))
 
         return heapq.nsmallest(top_k, candidates, key=lambda x: x[1])
@@ -844,6 +971,8 @@ class _LSHIndex:
         dist_fn: Callable[[array.array[float], list[float], int, int], float],
         n_docs: int,
         top_k: int,
+        sq8_dist: Callable[[array.array[float], list[float], int, int], float]
+        | None = None,
     ) -> list[tuple[int, float]]:
         """Search by hashing query and collecting candidates.
 
@@ -856,6 +985,8 @@ class _LSHIndex:
             dist_fn: Distance function.
             n_docs: Number of vectors.
             top_k: Number of results.
+            sq8_dist: Optional distance function reading quantized storage;
+                when given it replaces *dist_fn* for candidate distances.
 
         Returns:
             List of (vector_index, distance) sorted by ascending distance.
@@ -869,9 +1000,12 @@ class _LSHIndex:
 
         if len(candidates) < top_k:
             flat = _FlatIndex()
-            return flat.search(query, vectors, dim, dist_fn, n_docs, top_k)
+            return flat.search(
+                query, vectors, dim, dist_fn, n_docs, top_k, sq8_dist=sq8_dist
+            )
 
-        dists = [(idx, dist_fn(vectors, query, dim, idx * dim)) for idx in candidates]
+        cand_dist = sq8_dist or dist_fn
+        dists = [(idx, cand_dist(vectors, query, dim, idx * dim)) for idx in candidates]
         return heapq.nsmallest(top_k, dists, key=lambda x: x[1])
 
     def to_dict(self) -> dict[str, Any]:
@@ -920,10 +1054,13 @@ class SemanticIndex:
             ``"inner_product"``.
         index_type: Index type. One of ``"flat"``, ``"ivf"``, ``"lsh"``.
         embed: Optional embedding function ``list[str] -> list[list[float]]``.
-        quantize: If ``True``, compute SQ8 scalar quantization data
-            on :meth:`build_index`.  Quantized vectors are persisted
-            alongside full-precision vectors for compact storage.
-            Search always uses full-precision vectors for accuracy.
+        quantize: If ``True``, :meth:`build_index` compresses the stored
+            vectors to SQ8 (one byte per dimension) and releases the
+            float32 copy; searches then approximate distances from the
+            quantized data (typically ~1% recall loss) and the serialized
+            index is about 4x smaller. Mutating the index
+            (``add``/``update``/``delete``) reconstructs the float copy;
+            the next build re-quantizes it.
         **index_params: Index-specific parameters. For ``"ivf"``:
             ``n_clusters`` (default 64), ``nprobe`` (default 4).
             For ``"lsh"``: ``n_tables`` (default 8), ``n_hash_funcs``
@@ -972,6 +1109,8 @@ class SemanticIndex:
         self._sq8_data: bytes | None = None
         self._sq8_min: array.array[float] | None = None
         self._sq8_step: array.array[float] | None = None
+        self._sq8_norms: array.array[float] | None = None
+        self._vectors_encoded: bool = False
 
     # -- properties ----------------------------------------------------------
 
@@ -1158,7 +1297,13 @@ class SemanticIndex:
         n_docs = len(self._doc_ids)
         fetch_k = min(top_k * 4, n_docs) if filters else top_k
         raw = self._index_impl.search(
-            query, self._vectors, self._dim, self._dist_fn, n_docs, fetch_k
+            query,
+            self._vectors,
+            self._dim,
+            self._dist_fn,
+            n_docs,
+            fetch_k,
+            sq8_dist=self._quantized_distance(),
         )
 
         results: list[Result] = []
@@ -1188,12 +1333,17 @@ class SemanticIndex:
         indices this must be called after adding all documents and before
         searching (though :meth:`search` will auto-build if needed).
 
-        Also computes SQ8 quantization data when *quantize* is enabled.
+        When *quantize* is enabled this also computes the SQ8 data and
+        releases the full-precision vector array; searches compare against
+        the quantized vectors instead.
         """
         n_docs = len(self._doc_ids)
         if n_docs == 0:
             self._index_dirty = False
             return
+
+        if self._vectors_encoded:
+            self._materialize_vectors()
 
         if self._index_type == "ivf":
             impl = self._index_impl
@@ -1208,6 +1358,17 @@ class SemanticIndex:
             self._sq8_data, self._sq8_min, self._sq8_step = _quantize_sq8(
                 self._vectors, self._dim, n_docs
             )
+            self._sq8_norms = _sq8_norms(
+                self._sq8_data, self._sq8_min, self._sq8_step, self._dim, n_docs
+            )
+            self._vectors = array.array("f")
+            self._vectors_encoded = True
+        else:
+            self._sq8_data = None
+            self._sq8_min = None
+            self._sq8_step = None
+            self._sq8_norms = None
+            self._vectors_encoded = False
 
         self._index_dirty = False
 
@@ -1304,6 +1465,7 @@ class SemanticIndex:
     ) -> None:
         """Insert a document into internal storage."""
         vec = self._resolve_vector(vector, text)
+        self._materialize_vectors()
 
         idx = len(self._doc_ids)
         self._doc_ids.append(doc_id)
@@ -1314,6 +1476,7 @@ class SemanticIndex:
 
     def _delete(self, doc_id: str) -> None:
         """Delete a document using swap-and-pop for O(1) removal."""
+        self._materialize_vectors()
         idx = self._doc_id_to_idx[doc_id]
         last_idx = len(self._doc_ids) - 1
 
@@ -1338,6 +1501,68 @@ class SemanticIndex:
         self._index_dirty = True
 
     # -- internal: index construction ----------------------------------------
+
+    def _quantized_distance(
+        self,
+    ) -> Callable[[array.array[float], list[float], int, int], float] | None:
+        """Return a distance function over SQ8 storage, if it is active."""
+        if (
+            not self._vectors_encoded
+            or self._sq8_data is None
+            or self._sq8_min is None
+            or self._sq8_step is None
+        ):
+            return None
+        if self._sq8_norms is None:
+            self._sq8_norms = _sq8_norms(
+                self._sq8_data,
+                self._sq8_min,
+                self._sq8_step,
+                self._dim,
+                len(self._doc_ids),
+            )
+        return _sq8_distance_factory(
+            self._metric,
+            self._sq8_data,
+            self._sq8_min,
+            self._sq8_step,
+            self._sq8_norms,
+        )
+
+    def _materialize_vectors(self) -> None:
+        """Rebuild full-precision vectors from SQ8 storage.
+
+        Adding or deleting a document mutates the float array in place, so a
+        quantized index first reconstructs it.  The quantized copy is dropped;
+        the next :meth:`build_index` call re-quantizes the updated data.
+        """
+        if not self._vectors_encoded:
+            return
+        if self._sq8_data is None or self._sq8_min is None or self._sq8_step is None:
+            self._vectors_encoded = False
+            return
+
+        vectors = _dequantize_sq8_all(
+            self._sq8_data,
+            self._sq8_min,
+            self._sq8_step,
+            self._dim,
+            len(self._doc_ids),
+        )
+        if self._metric == "cosine":
+            for i in range(len(self._doc_ids)):
+                base = i * self._dim
+                norm = math.sqrt(sum(v * v for v in vectors[base : base + self._dim]))
+                if norm > 0.0:
+                    for j in range(self._dim):
+                        vectors[base + j] /= norm
+
+        self._vectors = vectors
+        self._sq8_data = None
+        self._sq8_min = None
+        self._sq8_step = None
+        self._sq8_norms = None
+        self._vectors_encoded = False
 
     def _create_index_impl(self) -> _FlatIndex | _IVFIndex | _LSHIndex:
         """Create the internal index implementation from config."""
@@ -1468,6 +1693,8 @@ class SemanticIndex:
             instance._sq8_min.frombytes(base64.b64decode(quant["min_vals_b64"]))
             instance._sq8_step = array.array("f")
             instance._sq8_step.frombytes(base64.b64decode(quant["step_vals_b64"]))
+            if len(instance._vectors) == 0:
+                instance._vectors_encoded = True
 
         return instance
 
@@ -1543,12 +1770,13 @@ class SemanticIndex:
                     ),
                 )
 
-                start = i * bpv
-                vec_bytes = all_bytes[start : start + bpv]
-                cur.execute(
-                    "INSERT INTO vectors (idx, data) VALUES (?, ?)",
-                    (i, vec_bytes),
-                )
+                if not self._vectors_encoded:
+                    start = i * bpv
+                    vec_bytes = all_bytes[start : start + bpv]
+                    cur.execute(
+                        "INSERT INTO vectors (idx, data) VALUES (?, ?)",
+                        (i, vec_bytes),
+                    )
 
             if not self._index_dirty:
                 idx_dict = self._index_impl.to_dict()
@@ -1655,6 +1883,8 @@ class SemanticIndex:
                 instance._sq8_min.frombytes(base64.b64decode(config["sq8_min_b64"]))
                 instance._sq8_step = array.array("f")
                 instance._sq8_step.frombytes(base64.b64decode(config["sq8_step_b64"]))
+                if len(instance._vectors) == 0:
+                    instance._vectors_encoded = True
 
             return instance
         finally:

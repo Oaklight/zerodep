@@ -54,7 +54,7 @@ import time
 import warnings
 import weakref
 import zlib
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Iterator
 from typing import IO, Any
 from urllib.parse import quote, urlencode, urlparse
 
@@ -129,17 +129,6 @@ _RETRYABLE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "PUT", "DELETE"})
 # compatibility, which shadows the builtin, so the transport-level timeout
 # classes are captured here before that alias exists.
 _TRANSPORT_TIMEOUTS = (socket.timeout, asyncio.TimeoutError)
-
-# Called with a milestone name and the seconds elapsed since the request
-# started, on a monotonic clock.  Milestones are ``"request_started"``,
-# ``"headers_received"`` and ``"body_complete"``.
-TimingHook = Callable[[str, float], None]
-
-
-def _emit_timing(on_timing: TimingHook | None, start: float, event: str) -> None:
-    """Call *on_timing* with *event* and the elapsed seconds, if installed."""
-    if on_timing is not None:
-        on_timing(event, time.perf_counter() - start)
 
 
 # ── CaseInsensitiveDict ──
@@ -694,9 +683,6 @@ class StreamingResponse:
         "_closed",
         "_raw_set_cookies",
         "_cookies",
-        "_on_timing",
-        "_timing_start",
-        "_timing_done",
     )
 
     status_code: int
@@ -715,9 +701,6 @@ class StreamingResponse:
     _closed: bool
     _raw_set_cookies: list[str]
     _cookies: dict[str, str] | None
-    _on_timing: TimingHook | None
-    _timing_start: float
-    _timing_done: bool
 
     def __init__(self) -> None:
         raise TypeError("Use _from_sync() or _from_async()")
@@ -732,8 +715,6 @@ class StreamingResponse:
         conn: http.client.HTTPConnection,
         content_encoding: str = "",
         raw_set_cookies: list[str] | None = None,
-        on_timing: TimingHook | None = None,
-        timing_start: float = 0.0,
     ) -> "StreamingResponse":
         obj = object.__new__(cls)
         obj.status_code = status_code
@@ -754,9 +735,6 @@ class StreamingResponse:
         obj._closed = False
         obj._raw_set_cookies = raw_set_cookies or []
         obj._cookies = None
-        obj._on_timing = on_timing
-        obj._timing_start = timing_start
-        obj._timing_done = False
         return obj
 
     @classmethod
@@ -772,8 +750,6 @@ class StreamingResponse:
         timeout: float,
         content_encoding: str = "",
         raw_set_cookies: list[str] | None = None,
-        on_timing: TimingHook | None = None,
-        timing_start: float = 0.0,
     ) -> "StreamingResponse":
         obj = object.__new__(cls)
         obj.status_code = status_code
@@ -794,22 +770,7 @@ class StreamingResponse:
         obj._closed = False
         obj._raw_set_cookies = raw_set_cookies or []
         obj._cookies = None
-        obj._on_timing = on_timing
-        obj._timing_start = timing_start
-        obj._timing_done = False
         return obj
-
-    def _fire_body_complete(self) -> None:
-        """Report the ``body_complete`` milestone once, when a hook is set."""
-        # Read defensively: a response built outside ``_from_sync`` /
-        # ``_from_async`` does not carry the timing attributes.
-        on_timing = getattr(self, "_on_timing", None)
-        if on_timing is None or getattr(self, "_timing_done", False):
-            return
-        self._timing_done = True
-        on_timing(
-            "body_complete", time.perf_counter() - getattr(self, "_timing_start", 0.0)
-        )
 
     @property
     def ok(self) -> bool:
@@ -848,7 +809,6 @@ class StreamingResponse:
                     yield remaining
         except (OSError, http.client.HTTPException) as exc:
             raise HttpConnectionError(str(exc)) from exc
-        self._fire_body_complete()
 
     def iter_lines(self) -> Iterator[str]:
         """Yield response body line by line (decoded)."""
@@ -894,7 +854,6 @@ class StreamingResponse:
             )
         except OSError as exc:
             raise HttpConnectionError(str(exc)) from exc
-        self._fire_body_complete()
 
     async def _select_raw_iterator(self, chunk_size: int) -> AsyncIterator[bytes]:
         """Select and yield from the appropriate raw byte iterator."""
@@ -2201,8 +2160,6 @@ def _build_sync_response(
     conn: http.client.HTTPConnection,
     stream: bool,
     raw_set_cookies: list[str] | None = None,
-    on_timing: TimingHook | None = None,
-    timing_start: float = 0.0,
 ) -> tuple[Response | StreamingResponse, bool]:
     """Build a final sync response (streaming or buffered).
 
@@ -2219,12 +2176,9 @@ def _build_sync_response(
             conn,
             content_encoding=content_encoding,
             raw_set_cookies=raw_set_cookies,
-            on_timing=on_timing,
-            timing_start=timing_start,
         ), False
 
     resp_body = resp.read()
-    _emit_timing(on_timing, timing_start, "body_complete")
     if content_encoding:
         resp_body = _decompress_body(resp_body, content_encoding)
     return Response(
@@ -2283,7 +2237,6 @@ def _sync_request(
     auth: tuple[str, str] | Auth | None = None,
     proxy: str | None = None,
     cookies: dict[str, str] | None = None,
-    on_timing: TimingHook | None = None,
     _pool: _SyncConnectionPool | None = _DEFAULT_SYNC_POOL,
 ) -> Response | StreamingResponse:
     """Perform a synchronous HTTP request.
@@ -2296,9 +2249,6 @@ def _sync_request(
            c. Handle redirects / digest auth / response construction
            d. Connection lifecycle (pool release or close)
     """
-    timing_start = time.perf_counter()
-    if on_timing is not None:
-        on_timing("request_started", 0.0)
     url, body, req_headers, auth_obj = _prepare_request(
         method, url, headers, data, json, files, params, auth, cookies
     )
@@ -2335,7 +2285,6 @@ def _sync_request(
                     conn.request(method, request_path, body=body, headers=req_headers)
                     resp = conn.getresponse()
                     resp_version = resp.version
-                    _emit_timing(on_timing, timing_start, "headers_received")
                 except (OSError, http.client.HTTPException) as exc:
                     # A timeout is not a stale connection: retrying would
                     # double the caller's wall-clock budget and could reach
@@ -2403,8 +2352,6 @@ def _sync_request(
                     conn,
                     stream,
                     raw_set_cookies=accumulated_set_cookies,
-                    on_timing=on_timing,
-                    timing_start=timing_start,
                 )
                 completed = True
                 return result
@@ -2801,8 +2748,6 @@ def _build_async_streaming_response(
     writer: asyncio.StreamWriter,
     timeout: float,
     raw_set_cookies: list[str] | None = None,
-    on_timing: TimingHook | None = None,
-    timing_start: float = 0.0,
 ) -> StreamingResponse:
     """Build an async StreamingResponse from response metadata."""
     content_encoding = resp_headers.get("content-encoding", "")
@@ -2821,8 +2766,6 @@ def _build_async_streaming_response(
         timeout,
         content_encoding=content_encoding,
         raw_set_cookies=raw_set_cookies,
-        on_timing=on_timing,
-        timing_start=timing_start,
     )
 
 
@@ -2845,7 +2788,6 @@ async def _async_request(
     auth: tuple[str, str] | Auth | None = None,
     proxy: str | None = None,
     cookies: dict[str, str] | None = None,
-    on_timing: TimingHook | None = None,
     _pool: _AsyncConnectionPool | None = None,
 ) -> Response | StreamingResponse:
     """Perform an asynchronous HTTP request using asyncio streams.
@@ -2858,9 +2800,6 @@ async def _async_request(
            c. Handle redirects / digest auth / response construction
            d. Connection lifecycle (pool release or close)
     """
-    timing_start = time.perf_counter()
-    if on_timing is not None:
-        on_timing("request_started", 0.0)
     url, body, req_headers, auth_obj = _prepare_request(
         method, url, headers, data, json, files, params, auth, cookies
     )
@@ -2904,7 +2843,6 @@ async def _async_request(
                     iter_set_cookies,
                     resp_version,
                 ) = await _async_read_response_headers(reader, timeout)
-                _emit_timing(on_timing, timing_start, "headers_received")
             except (
                 OSError,
                 asyncio.IncompleteReadError,
@@ -2971,13 +2909,10 @@ async def _async_request(
                     writer,
                     timeout,
                     raw_set_cookies=accumulated_set_cookies,
-                    on_timing=on_timing,
-                    timing_start=timing_start,
                 )
 
             content_encoding = resp_headers.get("content-encoding", "")
             resp_body = await _async_read_body(reader, resp_headers, timeout)
-            _emit_timing(on_timing, timing_start, "body_complete")
             if content_encoding:
                 resp_body = _decompress_body(resp_body, content_encoding)
             completed = True

@@ -6,6 +6,10 @@
 
 ## [未发布]
 
+### 基础设施
+
+- **发布**：`release.yml` 现在是唯一的 PyPI 发布者。独立的 `pypi.yml` 已无法发布（trusted publisher 绑定在 `release.yml` 上），其 `release: published` 触发只会产生红色运行。重新发布上传失败的版本时，用 `workflow_dispatch` 传入该明确 `version`：工作流检测到已存在的 tag 后跳过 manifest 更新、提交、打 tag、创建 release 和基准测试，只运行 PyPI 作业，并先查询 PyPI，版本已存在时什么也不做。
+
 ## [2026.10.23.1] - 2026-10-23
 
 ### 新功能

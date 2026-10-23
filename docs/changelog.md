@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Features
 
-- **CLI**: `zerodep release-check` runs the pre-release checks in one command — module versions against their declared tags, manifest freshness, CalVer consistency between `pyproject.toml` and `zerodep.py`, the generated docs module index (when the docs worktrees are mounted) and a clean working tree. The Release workflow now calls it instead of repeating the steps in YAML, so the local check and CI cannot drift apart.
+- **CLI**: `zerodep release-check` runs the pre-release checks in one command — module versions against their declared tags, manifest freshness, CalVer consistency between `pyproject.toml` and `zerodep.py`, the generated docs module index (when the docs worktrees are mounted) and a clean working tree. `--version X` also validates the version that will be tagged (CalVer and not already tagged). The manifest check compares the fields describing the source tree and ignores the commit-derived `generated` / `last_updated` timestamps. The Release workflow now calls it instead of repeating the steps in YAML, so the local check and CI cannot drift apart.
 
 ### Infrastructure
 

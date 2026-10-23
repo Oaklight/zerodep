@@ -256,6 +256,18 @@ release-check passed
 
 Use `--allow-dirty` to skip the working-tree check while iterating.
 
+Use `--version X` to validate the version that will be tagged: it must be CalVer
+(`YYYY.M.D` / `YYYY.M.D.N`) and no `vX` tag may exist yet. The Release workflow
+passes the version it computed, so a manual dispatch with an arbitrary version
+string fails here instead of producing a mislabelled tag.
+
+The manifest check compares the fields that describe the source tree (`files`,
+`version`, `content_hash`, `deps`, `tier`, `category`, `description`) and
+ignores `generated` and each module's `last_updated`, which are commit
+timestamps and change when history is squashed or rewritten. Note that
+`docs-index` is skipped when the docs worktrees are not mounted, which is the
+case in CI — the docs gate runs for maintainers locally.
+
 ### `zerodep bump`
 
 Auto-detect changed modules and bump their frontmatter versions. By default performs a patch bump; use `--minor` or `--major` for larger increments.

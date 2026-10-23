@@ -9,10 +9,7 @@ on:
         default: ""
 
 permissions:
-  contents: write
-  # The release job dispatches benchmark.yml; GITHUB_TOKEN needs this or
-  # `gh workflow run` fails and the cascade is silently skipped.
-  actions: write
+  contents: read
 
 jobs:
   quality:
@@ -26,6 +23,8 @@ jobs:
 
   release:
     needs: quality
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -90,13 +89,20 @@ jobs:
             --title "v${VER}" \
             --generate-notes
 
+  benchmark:
+    needs: release
+    permissions:
+      actions: write
+    runs-on: ubuntu-latest
+    steps:
       - name: Trigger benchmark
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VER="${{ steps.version.outputs.version }}"
+          VER="${{ needs.release.outputs.version }}"
           # No fallback: the cascade used to fail silently on a missing
-          # actions: write scope, so a red benchmark never appeared.
+          # actions: write scope, so a red benchmark never appeared. Its own
+          # job, so a transient API failure cannot skip the PyPI publish.
           gh workflow run benchmark.yml --ref "v${VER}"
 
   pypi:

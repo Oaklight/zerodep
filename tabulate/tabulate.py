@@ -47,11 +47,12 @@ WIDE_CHARS_MODE: bool = False
 # ── CJK / visible-width helpers ──────────────────────────────────────────────
 
 
-# Categories that occupy no column of their own: combining marks (Mn),
-# enclosing marks (Me) — the keycap U+20E3 — and format characters (Cf),
-# which include the zero-width space and joiner (U+200B, U+200D) and the
-# combining grapheme joiner (U+034F).
-_ZERO_WIDTH_CATEGORIES = frozenset({"Mn", "Me", "Cf"})
+# Categories that occupy no column of their own: nonspacing marks (Mn),
+# spacing combining marks (Mc) — the Indic vowel signs — enclosing marks
+# (Me, the keycap U+20E3) and format characters (Cf), which include the
+# zero-width space and joiner (U+200B, U+200D) and the combining grapheme
+# joiner (U+034F).  Per-character ``wcwidth`` reports 0 for all of them.
+_ZERO_WIDTH_CATEGORIES = frozenset({"Mn", "Mc", "Me", "Cf"})
 
 # Hangul medial (jungseong) and final (jongseong) jamo compose with the
 # leading jamo and add no column.
@@ -74,12 +75,13 @@ def _visible_width(s: str) -> int:
     width equals ``len(s)``.
 
     When it is ``True``, East Asian wide and fullwidth characters count as
-    two columns, and zero-width marks (combining, enclosing and format
-    characters) and Hangul medial/final jamo as zero — the per-character
-    widths ``wcwidth`` reports.  Emoji presentation sequences are counted
-    per component, which is where the two can differ: a ZWJ family emoji is
-    six columns here and two under ``wcwidth`` (it measures grapheme
-    clusters), and a keycap sequence is one here and two there.
+    two columns, and zero-width marks (nonspacing, spacing combining,
+    enclosing and format characters) and Hangul medial/final jamo as zero —
+    the per-character widths ``wcwidth`` reports.  Clusters are counted per
+    component, which is where the two can differ: a ZWJ family emoji is six
+    columns here and two under ``wcwidth``, a keycap sequence is one here
+    and two there, and Devanagari (``हिन्दी``) is three
+    here where ``wcswidth`` measures the cluster as four.
     """
     if not WIDE_CHARS_MODE:
         return len(s)

@@ -137,15 +137,24 @@ def test_wide_chars_mode_matches_the_wcwidth_reference(data, kwargs) -> None:
         "a͏b",  # combining grapheme joiner, ccc=0
         "क्ष",  # Devanagari virama cluster
         "각",  # Hangul leading + medial + final jamo
+        "हिन्दी",  # Hindi, spacing vowel signs
+        "বাংলা",  # Bengali
+        "தமிழ்",  # Tamil
     ],
 )
-def test_zero_width_shapes_match_wcwidth(text: str) -> None:
-    """Per-character widths agree with ``wcwidth.wcswidth``."""
+def test_zero_width_shapes_match_wcwidth_per_character(text: str) -> None:
+    """Per-character widths agree with ``wcwidth.wcwidth``.
+
+    ``wcswidth()`` measures grapheme clusters — it reports four columns for
+    हिन्दी — while this module counts per component; the
+    per-character sum is the reference that matches.
+    """
     wcwidth = pytest.importorskip("wcwidth")
     previous = _our_module.WIDE_CHARS_MODE
     _our_module.WIDE_CHARS_MODE = True
     try:
-        assert _our_module._visible_width(text) == wcwidth.wcswidth(text)
+        expected = sum(wcwidth.wcwidth(ch) for ch in text)
+        assert _our_module._visible_width(text) == expected
     finally:
         _our_module.WIDE_CHARS_MODE = previous
 

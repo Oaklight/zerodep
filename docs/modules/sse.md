@@ -142,13 +142,21 @@ async def events(request):
         yield encode_event("line 1\nline 2", id="2")
         yield encode_comment("heartbeat")
 
-    return StreamingResponse(stream(), content_type="text/event-stream")
+    return StreamingResponse(
+        stream(),
+        content_type="text/event-stream",
+        disconnect_on_eof=True,
+    )
 ```
 
 `encode_event` returns one complete block, including the terminating blank
 line that dispatches it. `encode_comment` produces a comment block for
 heartbeats. Both are pure functions with no network dependency, so they work
 with any streaming response (or any `write()` call).
+
+EventSource clients never half-close, so `disconnect_on_eof=True` lets the
+server tear the generator down when a client vanishes while the stream is
+blocked; see [httpserver](httpserver.md) for the trade-off.
 
 ### Reconnection Configuration
 

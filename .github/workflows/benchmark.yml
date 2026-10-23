@@ -42,13 +42,13 @@ jobs:
         continue-on-error: true
         run: |
           # Extract all bench-* extra names from pyproject.toml and install them.
-          # bench-toon is excluded here because its git pin must fail loudly;
-          # it is installed in its own required step below.
+          # The TOON reference is not an extra (PyPI forbids the direct URL in
+          # published metadata); it is installed in its own required step.
           BENCH_EXTRAS=$(python -c "
           import tomllib, pathlib
           data = tomllib.loads(pathlib.Path('pyproject.toml').read_text())
           extras = [k for k in data['project']['optional-dependencies']
-                    if k.startswith('bench-') and k != 'bench-toon']
+                    if k.startswith('bench-')]
           print(','.join(['test'] + extras))
           ")
           echo "Installing extras: $BENCH_EXTRAS"
@@ -56,11 +56,10 @@ jobs:
 
       - name: Install the TOON reference at its pinned commit
         # Required, not best-effort: without toon_format the toon benchmarks
-        # skip and the artifact silently loses those rows.  Installing the
-        # bench-toon extra keeps this identical to the lint-test job and to
-        # the pin in pyproject.toml (#183).
+        # skip and the artifact silently loses those rows. The pin lives in
+        # requirements-bench-toon.txt, shared with the lint-test job (#183).
         run: |
-          pip install -e ".[bench-toon]"
+          pip install -r requirements-bench-toon.txt
           python -c "import toon_format; print('toon_format', toon_format.__version__)"
 
       - uses: actions/setup-node@v4

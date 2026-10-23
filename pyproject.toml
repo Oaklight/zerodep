@@ -73,15 +73,6 @@ bench-structlog = [
 bench-retry = [
     "tenacity==9.1.4",
 ]
-bench-toon = [
-    # Pinned to toon-python@91413d14 (spec 4.4), the level toon/ now
-    # implements: both the reference comparison suite and the vendored spec
-    # 4.4 conformance fixtures (564/564) are green against it (#184).  Raise
-    # it deliberately, with a run of toon/test_toon_correctness.py and
-    # toon/test_toon_conformance.py — the pin exists so the reference cannot
-    # move silently under the tests (#183).
-    "toon-format @ git+https://github.com/toon-format/toon-python.git@91413d1499c3d87496a932459aaa1cf9fc76c7f5",
-]
 bench-tabulate = [
     "tabulate==0.10.0",
 ]
@@ -202,7 +193,7 @@ dev = [
     "complexipy==5.6.1",
     "build>=1.2.2.post1",
     "twine>=6.1.0",
-    "zerodep[test,bench-aes,bench-aiosqlite,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonx,bench-structlog,bench-retry,bench-toon,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-persistdict,bench-runner,bench-readability,bench-png,bench-useragent,bench-httpserver,bench-websocket,bench-cdp,bench-multipart,bench-s3,bench-ratelimit,bench-jsonschema,bench-profiler,bench-semantic_search]"
+    "zerodep[test,bench-aes,bench-aiosqlite,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonx,bench-structlog,bench-retry,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-persistdict,bench-runner,bench-readability,bench-png,bench-useragent,bench-httpserver,bench-websocket,bench-cdp,bench-multipart,bench-s3,bench-ratelimit,bench-jsonschema,bench-profiler,bench-semantic_search]"
 ]
 
 [tool.pytest.ini_options]

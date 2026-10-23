@@ -39,6 +39,9 @@ conda activate zerodep
 # Install in dev mode with test dependencies
 pip install -e ".[dev]"
 
+# TOON benchmarks compare against a git-pinned reference (not on PyPI)
+pip install -r requirements-bench-toon.txt
+
 # Install pre-commit hooks
 pre-commit install
 ```
@@ -237,7 +240,10 @@ with a reference library:
 
 Exception: `bench-toon` is pinned to a git commit (not a PyPI release) and
 is installed in its own required step in each workflow, so a failed pin
-fails the job instead of silently skipping the comparison.
+fails the job instead of silently skipping the comparison. The pin lives in
+`requirements-bench-toon.txt`, not in a `pyproject.toml` extra: PyPI rejects
+direct URLs in published metadata, and an extra made every sdist
+unuploadable. Do not move it back into `pyproject.toml`.
 
 ## Escalation
 

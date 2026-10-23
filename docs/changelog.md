@@ -38,6 +38,7 @@
 
 ### 基础设施
 
+- **Makefile**：`sse` 一直没有对应目标，`make test` 会静默跳过它的 67 个测试，而 CI 中直接调用的 `pytest` 却会运行。现在新增 `make test-sse` 与 `make benchmark-sse`，两者都已加入 `test`/`benchmark` 聚合目标，并由 `-rs` 报告跳过原因。httpclient 与 httpserver 文档页也已交叉链接到 `sse`，分别对应事件流消费与服务端编码。([#242](https://github.com/Oaklight/zerodep/issues/242))
 - **基准测试模块在缺少 `pytest-benchmark` 时跳过**：41 个 `test_*_benchmark.py` 中有 40 个直接使用 `benchmark` fixture 而未做防护，因此在未安装基准测试 extras 的环境中，每个用例都会被报告为 `fixture 'benchmark' not found` 错误而不是跳过。现在它们都会调用 `pytest.importorskip("pytest_benchmark")`。
 - **基准测试**：基准工作流现在通过 `bench-toon` 的 git pin 安装 TOON 参考实现，而不是未固定的 `git+` 安装加 `|| true`，并断言产物中存在 `toon/` 行。参考实现安装失败现在会让任务失败，而不是静默丢弃对比结果，与 `s3` 已有的保护一致。
 - **基准测试 extras 在 Python 3.11+ 上使用 Pillow 13**：针对 `bench-qr` / `bench-png` 的全部 39 条 Dependabot 安全公告（4 条严重、23 条高危、12 条中危）都在 Pillow 13.0.0 中修复。该版本要求 Python 3.11，因此钉版本按版本拆分——3.11 起用 13.0.0，3.10 用最后一个支持它的 12.3.0。仅影响基准测试的参考依赖，模块本身不依赖 Pillow。

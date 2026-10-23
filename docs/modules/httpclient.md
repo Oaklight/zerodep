@@ -196,6 +196,19 @@ async with await async_get("https://httpbin.org/get", stream=True) as r:
 
 流式响应体若在达到声明的 `Content-Length` 之前结束，属于错误：`iter_bytes()`、`iter_lines()`、`read()` 及其异步版本会抛出 `HttpConnectionError`，而不是返回截断的响应体，且不会报告 `body_complete`。本身不携带响应体的响应——`HEAD` 请求以及 `204`/`304` 状态——不受影响。
 
+对于 `text/event-stream` 响应，交给 [`sse`](sse.md) 解析线格式，不要自己按行切分：
+
+```python
+from httpclient import get
+from sse import EventSource
+
+with get("https://example.com/events", stream=True) as r:
+    for event in EventSource(r.iter_lines()):
+        print(event.event, event.data)
+```
+
+`EventSource` 负责 `event`/`data`/`id`/`retry` 字段、多行 data、注释、BOM 与空行分发规则；`sse.connect()` 在其上增加自动重连与 `Last-Event-ID` 跟踪。同一模块的 `encode_event()` 则用于构建服务端。
+
 ### 禁用 TLS 验证
 
 ```python

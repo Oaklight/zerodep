@@ -106,15 +106,19 @@ def sync_handler(request):
 
 ```python
 from httpserver import StreamingResponse
+from sse import encode_comment, encode_event
 
 @app.get("/events")
 async def events(request):
     async def generate():
-        for i in range(5):
-            yield f"data: event {i}\n\n"
+        yield encode_event("hello", event="greeting", id="1")
+        yield encode_comment("heartbeat")
+        yield encode_event("bye", id="2")
 
     return StreamingResponse(generate(), content_type="text/event-stream")
 ```
+
+`encode_event()` 生成一个完整的事件块——多行载荷每行一个 `data:` 字段，并包含用于分发的结尾空行。对于单行载荷，手写 `f"data: {value}\n\n"` 也可以，但载荷中含空行时会把一个事件拆成两个。`encode_comment()` 生成客户端会忽略的心跳注释。两者都在 [`sse`](sse.md) 中，该模块同时提供客户端部分（`EventSource`、`connect`）。
 
 ### 静态文件
 

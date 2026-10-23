@@ -543,6 +543,14 @@ class StreamingResponse:
             callables.  Exceptions are logged and suppressed.
         disconnect_check_interval: Seconds between client-disconnect
             checks while the generator is blocked.  Defaults to 30.
+        disconnect_on_eof: Treat the client's read-side EOF as a disconnect
+            while the generator is blocked.  TCP cannot distinguish a
+            half-close, where the client shut down its write side but is
+            still reading -- legal, and what the request reader reports as
+            EOF -- from a dropped connection.  Off by default so
+            half-closing clients keep receiving the stream; enable it when
+            clients never half-close (browsers and common HTTP libraries)
+            to tear down a generator whose upstream never yields again.
     """
 
     __slots__ = (
@@ -553,6 +561,7 @@ class StreamingResponse:
         "background",
         "_cookie_headers",
         "_disconnect_check_interval",
+        "_disconnect_on_eof",
     )
 
     def __init__(
@@ -563,6 +572,7 @@ class StreamingResponse:
         content_type: str = "application/octet-stream",
         background: Callable[[], Any] | None = None,
         disconnect_check_interval: float | None = None,
+        disconnect_on_eof: bool = False,
     ):
         self._generator = generator
         self.status_code = status_code
@@ -570,6 +580,7 @@ class StreamingResponse:
         self.content_type = content_type
         self.background = background
         self._cookie_headers: list[str] = []
+        self._disconnect_on_eof = disconnect_on_eof
         self._disconnect_check_interval = (
             disconnect_check_interval
             if disconnect_check_interval is not None
@@ -661,7 +672,11 @@ class StreamingResponse:
         try:
             aiter = self._generator.__aiter__()
             is_closing = getattr(writer, "is_closing", None)
-            at_eof = getattr(reader, "at_eof", None) if reader is not None else None
+            at_eof = (
+                getattr(reader, "at_eof", None)
+                if reader is not None and self._disconnect_on_eof
+                else None
+            )
 
             def disconnected() -> bool:
                 """Whether the peer is gone, per the writer or the read side.
@@ -978,27 +993,28 @@ async def _anext_or_disconnect(
     peer gone, cancels the pending ``__anext__`` task and raises
     ``BrokenPipeError`` so the caller can clean up the generator.
 
-    The check must consider the read side as well as the writer: after a
-    peer FIN, ``writer.is_closing()`` can stay false while
-    ``reader.at_eof()`` turns true.
+    The predicate may include the read side: after a peer FIN,
+    ``writer.is_closing()`` can stay false while ``reader.at_eof()`` turns
+    true.  Callers decide whether EOF counts, because a half-close (client
+    stops sending, keeps reading) looks identical on the wire.
 
     If the task completes normally the chunk value is returned.  If it
     raises ``StopAsyncIteration`` (generator exhausted) that exception
     propagates to the caller unchanged.
     """
     while True:
-        try:
-            return await asyncio.wait_for(asyncio.shield(next_task), timeout=interval)
-        except asyncio.TimeoutError:
-            if is_disconnected():
-                next_task.cancel()
-                try:
-                    await next_task
-                except (asyncio.CancelledError, StopAsyncIteration, Exception):
-                    pass
-                raise BrokenPipeError("client disconnected (detected)")
-            # Generator is still working on the next chunk; keep waiting.
-            continue
+        done, _ = await asyncio.wait({next_task}, timeout=interval)
+        if done:
+            # Propagates StopAsyncIteration to the caller unchanged.
+            return next_task.result()
+        if is_disconnected():
+            next_task.cancel()
+            try:
+                await next_task
+            except (asyncio.CancelledError, StopAsyncIteration, Exception):
+                pass
+            raise BrokenPipeError("client disconnected (detected)")
+        # Generator is still working on the next chunk; keep waiting.
 
 
 def _http_date(timestamp: float | None = None) -> str:

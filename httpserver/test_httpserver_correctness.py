@@ -1206,6 +1206,7 @@ class TestLifecycleSignals:
                 gen(),
                 content_type="text/event-stream",
                 disconnect_check_interval=0.2,
+                disconnect_on_eof=True,
             )
 
         async def _test():
@@ -1218,6 +1219,38 @@ class TestLifecycleSignals:
         elapsed = asyncio.run(_test())
         assert finalized == [True]
         assert elapsed < 2.0
+
+    def test_half_close_keeps_streaming_by_default(self):
+        """A half-closing client keeps reading, so the stream must continue.
+
+        EOF on the request reader is also what a legitimate half-close
+        looks like, so it is not treated as a disconnect unless the
+        response opts in.
+        """
+        app = App()
+
+        @app.get("/events")
+        async def handler(request):
+            async def gen():
+                for i in range(3):
+                    yield f"data: {i}\n\n"
+                    await asyncio.sleep(0.05)
+
+            return StreamingResponse(
+                gen(),
+                content_type="text/event-stream",
+                disconnect_check_interval=0.01,
+            )
+
+        async def _test():
+            reader = _mock_reader(b"GET /events HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _TrackingWriter()
+            await app._handle_connection(reader, writer)
+            return bytes(writer.data)
+
+        data = asyncio.run(_test())
+        assert b"data: 2" in data
+        assert data.endswith(b"0\r\n\r\n")
 
     def test_sync_handlers_supported(self):
         """Sync signal handlers work correctly."""

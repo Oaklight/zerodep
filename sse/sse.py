@@ -205,10 +205,10 @@ def encode_event(
         The event block, ready to write to a ``text/event-stream`` response.
 
     Raises:
-        TypeError: If ``data``, ``event``, ``id`` or ``retry`` has the wrong
-            type.
+        TypeError: If ``data``, ``event`` or ``id`` is not ``str``.
         ValueError: If ``event``/``id`` contains a line break, ``id``
-            contains NUL, or ``retry`` is not a non-negative integer.
+            contains NUL, or ``retry`` is not a non-negative integer
+            (bool, float, string and negative values are rejected).
 
     Example::
 

@@ -1,29 +1,38 @@
 # /// zerodep
-# version = "0.3.4"
+# version = "0.4.0"
 # deps = ["httpclient"]
 # tier = "subsystem"
 # category = "network"
 # note = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
 # ///
-"""Zero-dependency SSE (Server-Sent Events) client.
+"""Zero-dependency SSE (Server-Sent Events) client and event encoder.
 
 Part of zerodep: https://github.com/Oaklight/zerodep
 Copyright (c) 2026 Peng Ding. MIT License.
 
-Provides three abstraction layers:
+Provides four abstraction layers:
 
-1. **Low-level parser** (``EventSource`` / ``AsyncEventSource``):
+1. **Wire-format encoder** (``encode_event`` / ``encode_comment``):
+   Format events for any ``text/event-stream`` response. No network
+   dependency.
+
+2. **Low-level parser** (``EventSource`` / ``AsyncEventSource``):
    Parse any ``Iterable[str]`` or ``AsyncIterable[str]`` of lines into
    ``SSEEvent`` objects. No network dependency.
 
-2. **High-level client** (``SSEClient`` / ``AsyncSSEClient``):
+3. **High-level client** (``SSEClient`` / ``AsyncSSEClient``):
    Open a streaming HTTP GET, parse SSE events, and auto-reconnect
    on connection loss. Requires sibling ``httpclient`` module.
 
-3. **Convenience functions** (``connect`` / ``async_connect``):
+4. **Convenience functions** (``connect`` / ``async_connect``):
    Shorthand for creating ``SSEClient`` / ``AsyncSSEClient``.
 
 Usage::
+
+    # Server side (format events for any text/event-stream response)
+    from sse import encode_event
+
+    yield encode_event("hello", event="greeting")
 
     # High-level (auto-connect + reconnect)
     from sse import connect, async_connect
@@ -61,6 +70,9 @@ __all__ = [
     "DEFAULT_TIMEOUT",
     # Data classes
     "SSEEvent",
+    # Wire-format encoder
+    "encode_event",
+    "encode_comment",
     # Low-level parsers
     "EventSource",
     "AsyncEventSource",
@@ -146,6 +158,87 @@ class SSEEvent:
     def __repr__(self) -> str:
         d = self.data[:50] + "..." if len(self.data) > 50 else self.data
         return f"<SSEEvent event={self.event!r} data={d!r} id={self.id!r}>"
+
+
+# ── Wire-format encoder (no network dependency) ──
+
+
+def _field(name: str, value: str) -> str:
+    """Format one SSE field, omitting the space only for an empty value."""
+    return f"{name}:" if not value else f"{name}: {value}"
+
+
+def _check_single_line(name: str, value: str) -> None:
+    if "\n" in value or "\r" in value:
+        raise ValueError(f"SSE {name} must not contain a line break")
+
+
+def encode_event(
+    data: str = "",
+    *,
+    event: str | None = None,
+    id: str | None = None,
+    retry: int | None = None,
+) -> str:
+    """Format one SSE event, including its terminating blank line.
+
+    Args:
+        data: Event payload. Line breaks (``\\n``, ``\\r\\n`` or ``\\r``) are
+            normalized to ``\\n`` and each line becomes its own ``data:``
+            field. An empty payload still emits one ``data:`` field so the
+            event dispatches.
+        event: Optional event type. ``None`` omits the field, so the client
+            uses ``"message"``.
+        id: Optional event ID. Must not contain NUL or a line break. Pass
+            ``""`` to reset the client's last event ID.
+        retry: Optional reconnection interval in milliseconds. Must be a
+            non-negative integer.
+
+    Returns:
+        The event block, ready to write to a ``text/event-stream`` response.
+
+    Raises:
+        ValueError: If ``event``/``id`` contains a line break, ``id``
+            contains NUL, or ``retry`` is not a non-negative integer.
+
+    Example::
+
+        encode_event("hello", event="greeting", id="1")
+        # 'event: greeting\\nid: 1\\ndata: hello\\n\\n'
+    """
+    lines: list[str] = []
+    if event is not None:
+        _check_single_line("event", event)
+        lines.append(_field("event", event))
+    if id is not None:
+        _check_single_line("id", id)
+        if "\0" in id:
+            raise ValueError("SSE id must not contain NUL")
+        lines.append(_field("id", id))
+    if retry is not None:
+        if isinstance(retry, bool) or not isinstance(retry, int) or retry < 0:
+            raise ValueError("SSE retry must be a non-negative integer")
+        lines.append(f"retry: {retry}")
+    normalized = data.replace("\r\n", "\n").replace("\r", "\n")
+    lines.extend(_field("data", line) for line in normalized.split("\n"))
+    return "\n".join(lines) + "\n\n"
+
+
+def encode_comment(text: str = "") -> str:
+    """Format an SSE comment block, useful as a keepalive.
+
+    Args:
+        text: Optional comment text. Clients ignore it; a bare ``":"`` line
+            is the usual heartbeat.
+
+    Returns:
+        The comment block, including the terminating blank line.
+
+    Raises:
+        ValueError: If ``text`` contains a line break.
+    """
+    _check_single_line("comment", text)
+    return (":" if not text else f": {text}") + "\n\n"
 
 
 # ── Core parser ──

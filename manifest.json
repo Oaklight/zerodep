@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-23T02:28:13.259414+00:00",
+  "generated": "2026-10-23T04:38:16.914593+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -478,18 +478,18 @@
       "content_hash": "9da4fd5f87bd0f9c7d21c4af5ff0c52353a08ae222f39c7c7a14f316a96a6e31"
     },
     "sse": {
-      "description": "Zero-dependency SSE (Server-Sent Events) client",
+      "description": "Zero-dependency SSE (Server-Sent Events) client and event encoder",
       "files": [
         "sse/sse.py"
       ],
-      "version": "0.3.4",
+      "version": "0.4.0",
       "deps": [
         "httpclient"
       ],
       "tier": "subsystem",
       "category": "network",
       "last_updated": "2026-09-27T23:51:59-05:00",
-      "content_hash": "b75aa5d4927888e773f621d35c9a7f8e593a4ab4752c84372cc2b17afbca11b2"
+      "content_hash": "cf9c45e8fb976dfa01eedb3070f77b5a03fb41cbf37e457d25b86c4ef9e2d7e6"
     },
     "structlog": {
       "description": "Zero-dependency structured logging with pretty console output",
@@ -524,7 +524,7 @@
       "deps": [],
       "tier": "medium",
       "category": "terminal",
-      "last_updated": "2026-10-22T19:36:28-05:00",
+      "last_updated": "2026-10-22T21:28:28-05:00",
       "content_hash": "d8a5646d6854d738e1b6213dc8bd5ffd28803d8a96f02f0e83113c82ed34e2b7"
     },
     "toon": {

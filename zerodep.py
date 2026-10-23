@@ -1990,6 +1990,178 @@ def cmd_version_check(args: argparse.Namespace) -> None:
         _ok("all modules up-to-date")
 
 
+def _read_declared_version(repo_root: Path) -> str | None:
+    """Return the project version declared in ``pyproject.toml``, if any."""
+    pyproject = repo_root / "pyproject.toml"
+    if not pyproject.exists():
+        return None
+    m = re.search(
+        r'^version\s*=\s*"([^"]+)"',
+        pyproject.read_text(encoding="utf-8"),
+        re.MULTILINE,
+    )
+    return m.group(1) if m else None
+
+
+_CALVER_RE = re.compile(r"^\d{4}\.\d{1,2}\.\d{1,2}(?:\.\d+)?$")
+
+
+def _run_docs_index_check(repo_root: Path) -> tuple[str, str]:
+    """Run the module-index generator in check mode.
+
+    Returns:
+        ``(status, detail)`` where status is ``"ok"``, ``"fail"`` or ``"skip"``.
+    """
+    script = repo_root / "_scripts" / "generate_module_index.py"
+    out_en = repo_root / "docs_en" / "docs" / "modules" / "index.md"
+    out_zh = repo_root / "docs_zh" / "docs" / "modules" / "index.md"
+    if not script.exists() or not out_en.exists() or not out_zh.exists():
+        return "skip", "docs worktrees are not mounted"
+    proc = subprocess.run(
+        [sys.executable, str(script), "--check"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode == 0:
+        return "ok", "docs module index matches the manifest"
+    detail = (proc.stdout + proc.stderr).strip().splitlines()
+    return "fail", (
+        detail[-1] if detail else "docs module index is stale; run make docs-index"
+    )
+
+
+def _working_tree_status(repo_root: Path) -> tuple[str, str]:
+    """Report tracked modifications in the working tree."""
+    try:
+        proc = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return "skip", "git is not available"
+    if proc.returncode != 0:
+        return "skip", "not a git checkout"
+    changed = [line for line in proc.stdout.splitlines() if line.strip()]
+    if changed:
+        return "fail", f"{len(changed)} tracked file(s) uncommitted: " + ", ".join(
+            line[3:] for line in changed[:5]
+        ) + (" …" if len(changed) > 5 else "")
+    return "ok", "no uncommitted tracked changes"
+
+
+def cmd_release_check(args: argparse.Namespace) -> None:
+    """Run the checks that must pass before a release is tagged."""
+    repo_root = Path(__file__).resolve().parent
+    results: list[tuple[str, str, str]] = []
+
+    modules = _scan_modules(repo_root)
+    if not modules:
+        _die("no modules found")
+    status_map = _find_changed_modules(repo_root, modules)
+    stale = sorted(
+        name for name, status in status_map.items() if status in ("modified", "new")
+    )
+    if stale:
+        results.append(
+            (
+                "module-versions",
+                "fail",
+                f"{len(stale)} module(s) need a bump: {', '.join(stale)}",
+            )
+        )
+    else:
+        results.append(
+            (
+                "module-versions",
+                "ok",
+                f"{len(modules)} modules match their declared versions",
+            )
+        )
+
+    manifest_path = repo_root / MANIFEST_PATH
+    if not manifest_path.exists():
+        results.append(
+            ("manifest", "fail", f"{MANIFEST_PATH} is missing; run make manifest")
+        )
+    else:
+        try:
+            on_disk = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            results.append(
+                ("manifest", "fail", f"{MANIFEST_PATH} is unreadable: {exc}")
+            )
+        else:
+            expected = _generate_manifest(repo_root)
+            on_disk.pop("generated", None)
+            expected.pop("generated", None)
+            if on_disk == expected:
+                results.append(
+                    ("manifest", "ok", f"{MANIFEST_PATH} matches the source tree")
+                )
+            else:
+                results.append(
+                    (
+                        "manifest",
+                        "fail",
+                        f"{MANIFEST_PATH} is stale; run make manifest",
+                    )
+                )
+
+    project_version = _read_declared_version(repo_root)
+    if project_version is None:
+        results.append(
+            ("project-version", "fail", "pyproject.toml declares no version")
+        )
+    elif project_version != __version__:
+        results.append(
+            (
+                "project-version",
+                "fail",
+                f"pyproject.toml has {project_version}, zerodep.py has {__version__}",
+            )
+        )
+    elif not _CALVER_RE.match(project_version):
+        results.append(
+            (
+                "project-version",
+                "fail",
+                f"{project_version} is not CalVer (YYYY.M.D or YYYY.M.D.N)",
+            )
+        )
+    else:
+        results.append(
+            (
+                "project-version",
+                "ok",
+                f"{project_version} is CalVer and matches zerodep.py",
+            )
+        )
+
+    results.append(("docs-index", *_run_docs_index_check(repo_root)))
+
+    if getattr(args, "allow_dirty", False):
+        results.append(("working-tree", "skip", "--allow-dirty"))
+    else:
+        results.append(("working-tree", *_working_tree_status(repo_root)))
+
+    headers = ("Check", "Result", "Detail")
+    widths = [max(len(headers[i]), *(len(r[i]) for r in results)) for i in range(3)]
+    fmt = "  ".join(f"{{:<{w}}}" for w in widths)
+    print(fmt.format(*headers))
+    print(fmt.format(*("-" * w for w in widths)))
+    for row in results:
+        print(fmt.format(*row))
+
+    failed = [name for name, status, _ in results if status == "fail"]
+    if failed:
+        _warn(f"{len(failed)} release check(s) failed: {', '.join(failed)}")
+        sys.exit(1)
+    _ok("release-check passed")
+
+
 def cmd_dep_graph(args: argparse.Namespace) -> None:
     """Show module dependency relationships."""
     repo_root = Path(__file__).resolve().parent
@@ -2182,6 +2354,7 @@ def main(argv: list[str] | None = None) -> None:
               zerodep bump --minor yaml      Bump a specific module (minor)
               zerodep manifest               Regenerate manifest.json
               zerodep version-check          Check for modules needing a bump
+              zerodep release-check          Run the pre-release checks
               zerodep dep-graph              Show all module dependencies
               zerodep dep-graph yaml         Show dependencies for yaml module
               zerodep dep-check              Test changed modules + dependents
@@ -2376,6 +2549,17 @@ def main(argv: list[str] | None = None) -> None:
         help="exit with code 1 if any module needs a bump",
     )
 
+    # release-check
+    p_rcheck = sub.add_parser(
+        "release-check",
+        help="run the pre-release checks (versions, manifest, docs index, tree)",
+    )
+    p_rcheck.add_argument(
+        "--allow-dirty",
+        action="store_true",
+        help="skip the uncommitted-changes check",
+    )
+
     # dep-graph
     p_depgraph = sub.add_parser("dep-graph", help="show module dependency graph")
     p_depgraph.add_argument(
@@ -2417,6 +2601,7 @@ def main(argv: list[str] | None = None) -> None:
         "outdated": cmd_outdated,
         "manifest": cmd_manifest,
         "version-check": cmd_version_check,
+        "release-check": cmd_release_check,
         "dep-graph": cmd_dep_graph,
         "dep-check": cmd_dep_check,
         "version": cmd_version,

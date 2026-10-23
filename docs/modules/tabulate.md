@@ -162,7 +162,7 @@ Format tabular data as a pretty-printed text table.
 | Format speed (small) | 32.5 us | 93.8 us (2.89x slower) |
 | Format speed (large) | 3.9 ms | 13.8 ms (3.56x slower) |
 
-With `WIDE_CHARS_MODE` enabled, East Asian wide and fullwidth characters count as two columns, zero-width marks (combining, enclosing and format characters) and Hangul medial/final jamo as zero, and emoji presentation sequences per component — a ZWJ family emoji is six columns here where `wcwidth` reports two, because it measures grapheme clusters. For per-character widths the two agree. The reference uses `wcwidth` when it is installed and `len(s)` otherwise; the default here is `len(s)`.
+With `WIDE_CHARS_MODE` enabled, East Asian wide and fullwidth characters count as two columns, zero-width marks (nonspacing, spacing combining, enclosing and format characters) and Hangul medial/final jamo as zero, and clusters per component — a ZWJ family emoji is six columns here where `wcwidth` reports two, and Hindi हिन्दी is three where `wcswidth` measures the cluster as four. For per-character widths the two agree. The reference uses `wcwidth` when it is installed and `len(s)` otherwise; the default here is `len(s)`.
 
 **When to use zerodep:** You need fast table formatting with common output styles and zero dependencies.
 

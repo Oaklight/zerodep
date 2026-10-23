@@ -6,6 +6,7 @@ Usage::
     python zerodep.py info <module>         # module details + deps
     python zerodep.py add <module> [...]    # copy modules to cwd
     python zerodep.py update --all          # update all outdated modules
+    python zerodep.py status                # installed modules + local state
     python zerodep.py outdated              # check local files for updates
     python zerodep.py outdated --json       # machine-readable output
     python zerodep.py manifest              # regenerate manifest.json
@@ -19,6 +20,7 @@ __version__ = "2026.10.23"
 
 import argparse
 import ast
+import difflib
 import hashlib
 import json
 import re
@@ -26,6 +28,7 @@ import shutil
 import subprocess
 import sys
 import textwrap
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -36,15 +39,23 @@ from pathlib import Path
 REPO_OWNER = "Oaklight"
 REPO_NAME = "zerodep"
 BRANCH = "master"
-
-_SOURCES = [
-    f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/{BRANCH}/{{path}}",
-    f"https://cdn.jsdelivr.net/gh/{REPO_OWNER}/{REPO_NAME}@{BRANCH}/{{path}}",
-    f"https://fastly.jsdelivr.net/gh/{REPO_OWNER}/{REPO_NAME}@{BRANCH}/{{path}}",
-]
+RELEASES_API = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest"
 
 CACHE_DIR = Path.home() / ".zerodep" / "cache"
 MANIFEST_PATH = "manifest.json"
+LOCK_FILENAME = "zerodep.lock.json"
+LOCK_VERSION = 1
+LATEST_RELEASE_TTL = 3600  # seconds
+
+
+def _sources_for(ref: str) -> list[str]:
+    """Return fetch URLs for *ref* (a tag, branch, or commit)."""
+    return [
+        f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/{ref}/{{path}}",
+        f"https://cdn.jsdelivr.net/gh/{REPO_OWNER}/{REPO_NAME}@{ref}/{{path}}",
+        f"https://fastly.jsdelivr.net/gh/{REPO_OWNER}/{REPO_NAME}@{ref}/{{path}}",
+    ]
+
 
 # Modules where the directory name != file name (multi-file or renamed)
 # Discovered automatically during manifest generation.
@@ -60,15 +71,26 @@ def _fetch_url(url: str, timeout: int = 15) -> bytes:
         return resp.read()
 
 
-def _fetch_with_fallback(path: str, *, offline: bool = False) -> bytes:
+def _ref_cache_dir(ref: str) -> Path:
+    """Return the cache directory for *ref*, safe for the filesystem."""
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", ref)
+    if not safe or safe in {".", ".."}:
+        safe = "default"
+    return CACHE_DIR / "refs" / safe
+
+
+def _fetch_with_fallback(
+    path: str, *, offline: bool = False, ref: str | None = None
+) -> bytes:
     """Try sources in order, cache result, fall back to cache."""
-    cache_file = CACHE_DIR / path
+    ref = ref or BRANCH
+    cache_file = _ref_cache_dir(ref) / path
     if offline:
         if cache_file.exists():
             return cache_file.read_bytes()
         _die(f"offline mode: {path!r} not found in cache ({cache_file})")
 
-    for src in _SOURCES:
+    for src in _sources_for(ref):
         url = src.format(path=path)
         try:
             data = _fetch_url(url)
@@ -84,13 +106,61 @@ def _fetch_with_fallback(path: str, *, offline: bool = False) -> bytes:
         return cache_file.read_bytes()
 
     _die(
-        f"could not fetch {path!r} from any source and no cache exists.\n"
+        f"could not fetch {path!r} at {ref!r} from any source and no cache exists.\n"
         "  Check your network or use --offline with a populated cache."
     )
     return b""  # unreachable, for type checker
 
 
-def _load_manifest(*, offline: bool = False, local: bool = False) -> dict:
+def _resolve_ref(
+    explicit: str | None, *, offline: bool = False, local: bool = False
+) -> str:
+    """Resolve the source ref: explicit flag, latest release, or CLI tag.
+
+    Installed CLIs pin to the latest published release (cached for an hour)
+    instead of the mutable ``master`` branch.  Contributors running from a
+    checkout can still pass ``--ref master`` or ``--local``.
+    """
+    if explicit:
+        return explicit
+    if local:
+        # A checkout uses its own manifest and files; no release lookup.
+        return BRANCH
+    cache = CACHE_DIR / "latest_release.json"
+    cached: str | None = None
+    if cache.exists():
+        try:
+            payload = json.loads(cache.read_text())
+            cached = payload.get("tag")
+            age = time.time() - float(payload.get("fetched", 0))
+            if cached and age < LATEST_RELEASE_TTL:
+                return cached
+        except (OSError, ValueError):
+            cached = None
+    if not offline:
+        try:
+            payload = json.loads(_fetch_url(RELEASES_API))
+            tag = payload.get("tag_name")
+            if tag:
+                cache.parent.mkdir(parents=True, exist_ok=True)
+                cache.write_text(json.dumps({"tag": tag, "fetched": time.time()}))
+                return tag
+        except (urllib.error.URLError, OSError, TimeoutError, ValueError):
+            pass
+    if cached:
+        _warn(f"could not confirm the latest release; using cached {cached}")
+        return cached
+    if not offline:
+        _warn(f"could not resolve the latest release; using v{__version__}")
+    return f"v{__version__}"
+
+
+def _load_manifest(
+    *,
+    offline: bool = False,
+    local: bool = False,
+    ref: str | None = None,
+) -> dict:
     """Load manifest.json from network/cache or local file."""
     if local:
         # Use local manifest.json in repo root
@@ -102,7 +172,7 @@ def _load_manifest(*, offline: bool = False, local: bool = False) -> dict:
             )
         return json.loads(local_path.read_text())
 
-    data = _fetch_with_fallback(MANIFEST_PATH, offline=offline)
+    data = _fetch_with_fallback(MANIFEST_PATH, offline=offline, ref=ref)
     return json.loads(data)
 
 
@@ -580,12 +650,322 @@ def _resolve_dir(args: argparse.Namespace) -> str:
     return "."
 
 
+# ── Lock file ──
+
+STATE_UP_TO_DATE = "up-to-date"
+STATE_OUTDATED = "outdated"
+STATE_MODIFIED = "locally-modified"
+STATE_CONFLICT = "conflict"
+STATE_MISSING = "missing"
+STATE_REMOVED = "upstream-removed"
+STATE_UNVERIFIED = "unverified"
+
+
+def _sha256_text(text: str) -> str:
+    """Return the SHA-256 of the exact bytes written for a module file."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _lock_path(target: Path) -> Path:
+    return target / LOCK_FILENAME
+
+
+def _load_lock(target: Path) -> dict | None:
+    """Load ``zerodep.lock.json`` from *target*, or None when absent."""
+    path = _lock_path(target)
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        _die(f"cannot read {path}: {exc}")
+    if not isinstance(data, dict) or data.get("lock_version") != LOCK_VERSION:
+        _die(
+            f"unsupported lock file {path} "
+            f"(expected lock_version {LOCK_VERSION}); delete it and reinstall"
+        )
+    data.setdefault("modules", {})
+    return data
+
+
+def _save_lock(target: Path, lock: dict) -> None:
+    """Write the lock atomically."""
+    lock["source"] = {
+        "repo": f"{REPO_OWNER}/{REPO_NAME}",
+        "ref": lock.get("source", {}).get("ref", BRANCH),
+    }
+    path = _lock_path(target)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(lock, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    tmp.replace(path)
+
+
+def _module_local_paths(mod_name: str, manifest: dict, target: Path) -> dict[str, Path]:
+    """Map module-relative names to existing local paths (flat or nested)."""
+    found: dict[str, Path] = {}
+    for rel in manifest["modules"].get(mod_name, {}).get("files", []):
+        filename = Path(rel).name
+        for candidate in (target / filename, target / mod_name / filename):
+            if candidate.exists():
+                found[filename] = candidate
+                break
+    return found
+
+
+def _bootstrap_entries(manifest: dict, target: Path) -> dict:
+    """Build lock entries from modules already present in *target*.
+
+    A lock may only record bytes that provably came from upstream, so a
+    module is adopted only when its content matches the manifest exactly.
+    Anything else -- an older copy, a locally patched copy, or an older copy
+    that was also patched -- is left untracked: ``status`` reports it as
+    ``unverified`` and ``update`` will not overwrite it without ``--force``.
+    """
+    entries: dict[str, dict] = {}
+    modules = manifest["modules"]
+    for mod_name, mod in sorted(modules.items()):
+        paths = _module_local_paths(mod_name, manifest, target)
+        if not paths:
+            continue
+        files: dict[str, str] = {}
+        primary_text: str | None = None
+        for filename, path in paths.items():
+            try:
+                text = path.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            files[path.relative_to(target).as_posix()] = _sha256_text(text)
+            if _is_primary_file(filename, mod):
+                primary_text = text
+        if not files or primary_text is None:
+            continue
+        if _content_hash_from_string(primary_text) != mod.get("content_hash"):
+            continue
+        entries[mod_name] = {
+            "version": mod.get("version", "?"),
+            "upstream_hash": mod.get("content_hash"),
+            "requested": True,
+            "files": files,
+        }
+    return entries
+
+
+def _state_rows(lock: dict | None, manifest: dict, target: Path) -> list[dict]:
+    """Return per-module state rows, with or without a lock file."""
+    if lock is None:
+        return _state_rows_untracked(manifest, target)
+
+    tracked = lock.get("modules", {})
+    rows = _tracked_state_rows(tracked, manifest, target)
+    # Modules the lock does not cover (legacy or deliberately unadopted
+    # installs) stay visible through the version heuristic.
+    rows.extend(_state_rows_untracked(manifest, target, skip=set(tracked)))
+    return sorted(rows, key=lambda row: row["name"])
+
+
+def _tracked_state_rows(tracked: dict, manifest: dict, target: Path) -> list[dict]:
+    """Return state rows for the modules recorded in the lock."""
+    modules = manifest["modules"]
+    rows: list[dict] = []
+    for name, entry in sorted(tracked.items()):
+        latest = modules.get(name, {})
+        files = entry.get("files", {})
+        missing = False
+        modified = False
+        for rel, recorded in files.items():
+            path = target / rel
+            if not path.exists():
+                missing = True
+                continue
+            try:
+                current = _sha256_text(path.read_text(encoding="utf-8"))
+            except OSError:
+                missing = True
+                continue
+            if current != recorded:
+                modified = True
+        latest_hash = latest.get("content_hash")
+        upstream = bool(latest_hash) and latest_hash != entry.get("upstream_hash")
+        if name not in modules:
+            state = STATE_REMOVED
+        elif missing:
+            state = STATE_MISSING
+        elif upstream and modified:
+            state = STATE_CONFLICT
+        elif upstream:
+            state = STATE_OUTDATED
+        elif modified:
+            state = STATE_MODIFIED
+        else:
+            state = STATE_UP_TO_DATE
+        missing_deps = [dep for dep in latest.get("deps", []) if dep not in tracked]
+        rows.append(
+            {
+                "name": name,
+                "installed_version": entry.get("version"),
+                "latest_version": latest.get("version"),
+                "state": state,
+                "requested": entry.get("requested", True),
+                "tracked": True,
+                "missing_deps": missing_deps,
+            }
+        )
+    return rows
+
+
+def _is_primary_file(name: str, mod: dict) -> bool:
+    """Return whether *name* is the module's primary (frontmatter) file.
+
+    A module's ``content_hash`` covers only its primary file, so secondary
+    files must not be compared against it.
+    """
+    primary = mod.get("primary_file")
+    return not primary or Path(primary).name == Path(name).name
+
+
+def _state_rows_untracked(
+    manifest: dict, target: Path, *, skip: set[str] | None = None
+) -> list[dict]:
+    """Infer states by scanning *target* when no lock exists.
+
+    Modules whose content matches upstream are up to date. Anything else is
+    reported as ``unverified``: without a recorded baseline an older copy
+    cannot be told apart from a locally edited one, so it is never called
+    ``outdated`` (which would invite a silent overwrite). Modules named in
+    *skip* are already covered by the lock and are left out.
+    """
+    modules = manifest["modules"]
+    rows: list[dict] = []
+    for name, mod in sorted(modules.items()):
+        if skip and name in skip:
+            continue
+        paths = _module_local_paths(name, manifest, target)
+        if not paths:
+            continue
+        local_ver = "?"
+        differs = False
+        for filename, path in paths.items():
+            if not _is_primary_file(filename, mod):
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            meta = _extract_frontmatter(text)
+            local_ver = str(meta.get("version", local_ver))
+            if _content_hash_from_string(text) != mod.get("content_hash"):
+                differs = True
+        upstream_ver = mod.get("version", "?")
+        state = STATE_UNVERIFIED if differs else STATE_UP_TO_DATE
+        present = {n for n in modules if _module_local_paths(n, manifest, target)}
+        missing_deps = [d for d in mod.get("deps", []) if d not in present]
+        rows.append(
+            {
+                "name": name,
+                "installed_version": local_ver,
+                "latest_version": upstream_ver,
+                "state": state,
+                "requested": True,
+                "tracked": False,
+                "missing_deps": missing_deps,
+            }
+        )
+    return rows
+
+
+def _verify_payload(
+    remote_path: str, text: str, mod: dict, ref: str, *, local: bool = False
+) -> None:
+    """Abort when a file does not match the manifest hash."""
+    expected = mod.get("content_hash")
+    if not expected or not _is_primary_file(remote_path, mod):
+        return
+    actual = _content_hash_from_string(text)
+    if actual != expected:
+        hint = " (local checkout is stale; run 'zerodep manifest')" if local else ""
+        _die(
+            f"integrity check failed for {remote_path} at {ref}: "
+            f"expected {expected[:12]}…, got {actual[:12]}…{hint}"
+        )
+
+
+def _find_tracked_conflicts(
+    file_plan: list[tuple[str, str, Path]],
+    manifest: dict,
+    tracked: dict,
+    target: Path,
+) -> list[Path]:
+    """Return destinations whose bytes differ from the recorded baseline.
+
+    Tracked modules are compared byte-for-byte against their recorded hash.
+    For untracked modules (legacy installs without a lock) there is no
+    baseline, so any file whose primary content differs from upstream is
+    treated as an edit: an old file cannot be told apart from an old file
+    that was also patched.
+    """
+    conflicts: list[Path] = []
+    modules = manifest["modules"]
+    for mod_name, _remote, dest in file_plan:
+        if not dest.exists():
+            continue
+        text = dest.read_text(encoding="utf-8")
+        entry = tracked.get(mod_name)
+        if entry:
+            rel = dest.relative_to(target).as_posix()
+            recorded = entry.get("files", {}).get(rel)
+            if recorded and _sha256_text(text) != recorded:
+                conflicts.append(dest)
+            continue
+        upstream = modules.get(mod_name, {})
+        if not _is_primary_file(Path(dest).name, upstream):
+            continue
+        if _content_hash_from_string(text) == upstream.get("content_hash"):
+            continue
+        # Without a recorded baseline an older file is indistinguishable from
+        # an older file that was also edited, so any difference is a conflict.
+        conflicts.append(dest)
+    return conflicts
+
+
+def _record_modules(
+    lock: dict | None,
+    manifest: dict,
+    writes: dict[str, dict[str, str]],
+    *,
+    requested: set[str],
+    ref: str,
+    target: Path,
+) -> None:
+    """Write or update the lock after installing *writes*."""
+    if lock is None:
+        lock = {
+            "lock_version": LOCK_VERSION,
+            "generated_by": f"zerodep {__version__}",
+            "source": {"repo": f"{REPO_OWNER}/{REPO_NAME}", "ref": ref},
+            "modules": _bootstrap_entries(manifest, target),
+        }
+        # Modules written by this run are recorded below, not adopted.
+        for name in writes:
+            lock["modules"].pop(name, None)
+    modules_data = manifest["modules"]
+    for name, files in writes.items():
+        entry = lock["modules"].get(name, {})
+        entry["version"] = modules_data[name].get("version")
+        entry["upstream_hash"] = modules_data[name].get("content_hash")
+        entry["files"] = files
+        entry["requested"] = bool(entry.get("requested")) or name in requested
+        lock["modules"][name] = entry
+    lock["source"] = {"repo": f"{REPO_OWNER}/{REPO_NAME}", "ref": ref}
+    _save_lock(target, lock)
+
+
 # ── Commands ──
 
 
 def cmd_list(args: argparse.Namespace) -> None:
     """List available modules."""
-    manifest = _load_manifest(offline=args.offline, local=args.local)
+    manifest = _load_manifest(offline=args.offline, local=args.local, ref=args.ref)
     modules = manifest["modules"]
 
     if not modules:
@@ -670,7 +1050,7 @@ def cmd_list(args: argparse.Namespace) -> None:
 
 def cmd_info(args: argparse.Namespace) -> None:
     """Show module details."""
-    manifest = _load_manifest(offline=args.offline, local=args.local)
+    manifest = _load_manifest(offline=args.offline, local=args.local, ref=args.ref)
     modules = manifest["modules"]
     name = args.module
 
@@ -698,8 +1078,8 @@ def cmd_info(args: argparse.Namespace) -> None:
 
 
 def cmd_add(args: argparse.Namespace) -> None:
-    """Copy module files to target directory."""
-    manifest = _load_manifest(offline=args.offline, local=args.local)
+    """Copy module files to target directory and record them in the lock."""
+    manifest = _load_manifest(offline=args.offline, local=args.local, ref=args.ref)
 
     # Handle replaced modules: rewrite old names to their replacements
     rewritten: list[str] = []
@@ -714,102 +1094,392 @@ def cmd_add(args: argparse.Namespace) -> None:
         else:
             rewritten.append(mod)
     args.modules = rewritten
+    requested = set(rewritten)
 
     # Resolve dependencies
     to_copy = _resolve_deps(args.modules, manifest, no_deps=args.no_deps)
+    modules_data = manifest["modules"]
 
     # Determine target directory
     target = Path(_resolve_dir(args)).resolve()
+    lock = _load_lock(target)
+    tracked = (lock or {}).get("modules", {})
 
-    # Build file list
-    file_plan: list[tuple[str, Path]] = []  # (remote_path, local_dest)
-    modules_data = manifest["modules"]
-
-    for mod_name in to_copy:
-        mod = modules_data[mod_name]
-        for remote_path in mod.get("files", []):
-            filename = Path(remote_path).name
-            if args.nested:
-                dest = target / mod_name / filename
-            else:
-                dest = target / filename
-            file_plan.append((remote_path, dest))
-
+    # Build file list, preserving the layout of already tracked modules
+    file_plan = _plan_files(to_copy, manifest, target, nested=args.nested, lock=lock)
     if not file_plan:
         _ok("Nothing to copy.")
         return
 
-    # Show plan
-    if not args.yes:
-        _ok("Will copy:")
-        for remote, dest in file_plan:
-            mod_name = remote.split("/")[0]
-            label = mod_name
-            if mod_name not in args.modules:
-                label += " (dependency)"
-            if dest.is_relative_to(Path.cwd()):
-                rel_dest = dest.relative_to(Path.cwd())
-            else:
-                rel_dest = dest
-            _ok(f"  {Path(remote).name:<25s} -> {rel_dest}  [{label}]")
-        _ok(f"Target: {target}")
-
-        # Check for existing files
-        existing = [dest for _, dest in file_plan if dest.exists()]
-        if existing:
-            _warn(f"{len(existing)} file(s) will be overwritten")
-
-        if not args.force:
-            answer = input("Continue? [Y/n] ").strip().lower()
-            if answer and answer != "y":
-                _ok("Aborted.")
-                return
-
-    # Fetch and copy
-    repo_root = Path(__file__).resolve().parent
-    copied = 0
-    for remote_path, dest in file_plan:
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        # Try local first (if running from repo)
-        local_file = repo_root / remote_path
-        if local_file.exists():
-            data = local_file.read_bytes()
-        else:
-            data = _fetch_with_fallback(remote_path, offline=args.offline)
-        # Replace generic note with module-specific note
-        mod_name = remote_path.split("/")[0]
-        text = data.decode("utf-8")
-        generic = (
-            "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
+    # Refuse to clobber files that were modified after the last install.
+    conflicts = _find_tracked_conflicts(file_plan, manifest, tracked, target)
+    if conflicts and not args.force:
+        listing = "\n".join(f"  {p}" for p in conflicts)
+        _die(
+            "refusing to overwrite file(s) that differ from upstream:\n"
+            f"{listing}\n"
+            "  They may hold local edits. Use --force to replace them, or "
+            "move your changes aside first."
         )
-        specific = f"Install/update via `zerodep add {mod_name}`"
-        text = text.replace(generic, specific)
-        dest.write_text(text, encoding="utf-8")
-        copied += 1
 
-    _ok(f"Copied {copied} file(s) to {target}")
+    if not _confirm_add_plan(
+        file_plan, requested, target, yes=args.yes, force=args.force
+    ):
+        return
+
+    writes = _write_files(
+        file_plan,
+        modules_data,
+        target,
+        offline=args.offline,
+        ref=args.ref,
+        local=args.local,
+    )
+    if not args.no_lock:
+        _record_modules(
+            lock, manifest, writes, requested=requested, ref=args.ref, target=target
+        )
+
+    _ok(f"Copied {sum(len(f) for f in writes.values())} file(s) to {target}")
 
 
-def cmd_update(args: argparse.Namespace) -> None:
-    """Update existing module files (alias for add --force --yes)."""
-    resolved = _resolve_dir(args)
+def _confirm_add_plan(
+    file_plan: list[tuple[str, str, Path]],
+    requested: set[str],
+    target: Path,
+    *,
+    yes: bool,
+    force: bool,
+) -> bool:
+    """Print the copy plan and ask for confirmation; False means abort."""
+    if yes:
+        return True
+    _ok("Will copy:")
+    for mod_name, remote, dest in file_plan:
+        label = mod_name if mod_name in requested else f"{mod_name} (dependency)"
+        right = Path.cwd()
+        shown = dest.relative_to(right) if dest.is_relative_to(right) else dest
+        _ok(f"  {Path(remote).name:<25s} -> {shown}  [{label}]")
+    _ok(f"Target: {target}")
+
+    existing = [dest for _, _, dest in file_plan if dest.exists()]
+    if existing:
+        _warn(f"{len(existing)} file(s) will be overwritten")
+    if force:
+        return True
+    answer = input("Continue? [Y/n] ").strip().lower()
+    if answer and answer != "y":
+        _ok("Aborted.")
+        return False
+    return True
+
+
+def _select_update_candidates(
+    args: argparse.Namespace,
+    rows: dict[str, dict],
+    lock: dict | None,
+    manifest: dict,
+) -> tuple[list[str], list[str]]:
+    """Split the selected modules into update candidates and skipped ones."""
     if args.update_all:
         if args.modules:
             _die("cannot use --all together with explicit module names")
-        manifest = _load_manifest(local=args.local, offline=args.offline)
-        scan_dir = Path(resolved).resolve()
-        rows = _scan_outdated(manifest, scan_dir)
-        outdated = [r[0] for r in rows if r[3] == "outdated"]
-        if not outdated:
-            _ok("All modules are up-to-date.")
-            return
-        args.modules = outdated
-    elif not args.modules:
-        _die("provide module names or use --all")
-    args.dir = resolved
-    args.force = True
-    args.yes = True
-    cmd_add(args)
+        attention = {n for n, r in rows.items() if r["state"] != STATE_UP_TO_DATE}
+        selected = (
+            sorted(set(lock["modules"]) | attention) if lock else sorted(attention)
+        )
+    else:
+        if not args.modules:
+            _die("provide module names or use --all")
+        selected = _resolve_deps(args.modules, manifest, no_deps=args.no_deps)
+
+    # A module can disappear from the index after it was installed; skip it
+    # instead of failing the whole update, and let `status` report it.
+    removed = [n for n in selected if n not in manifest["modules"]]
+    for name in removed:
+        _warn(f"{name}: no longer published upstream; skipping")
+    selected = [n for n in selected if n in manifest["modules"]]
+
+    # Pull in dependencies that upstream added since the install.
+    if not args.no_deps:
+        selected = _resolve_deps(selected, manifest)
+
+    candidates: list[str] = []
+    skipped: list[str] = []
+    for name in selected:
+        row = rows.get(name)
+        if row is None:
+            # Not installed yet: treat an explicit name as an install request.
+            row = {
+                "name": name,
+                "installed_version": None,
+                "latest_version": manifest["modules"].get(name, {}).get("version"),
+                "state": STATE_MISSING,
+            }
+            rows[name] = row
+        if row["state"] == STATE_UP_TO_DATE:
+            continue
+        if row["state"] in (STATE_MODIFIED, STATE_CONFLICT, STATE_UNVERIFIED) and (
+            not args.force
+        ):
+            skipped.append(name)
+            continue
+        candidates.append(name)
+    return candidates, skipped
+
+
+def _print_update_diff(
+    file_plan: list[tuple[str, str, Path]],
+    modules_data: dict,
+    *,
+    offline: bool,
+    ref: str,
+    local: bool,
+) -> None:
+    """Write unified diffs for *file_plan* without touching the filesystem."""
+    for name, remote, dest in file_plan:
+        old = dest.read_text(encoding="utf-8") if dest.exists() else ""
+        new = _prepare_file(
+            remote, modules_data[name], offline=offline, ref=ref, local=local
+        )
+        sys.stdout.writelines(
+            difflib.unified_diff(
+                old.splitlines(keepends=True),
+                new.splitlines(keepends=True),
+                fromfile=str(dest),
+                tofile=f"{dest} (upstream {ref})",
+            )
+        )
+
+
+def cmd_update(args: argparse.Namespace) -> None:
+    """Update modules, skipping anything modified locally."""
+    target = Path(_resolve_dir(args)).resolve()
+    manifest = _load_manifest(offline=args.offline, local=args.local, ref=args.ref)
+    modules_data = manifest["modules"]
+    lock = _load_lock(target)
+    rows = {r["name"]: r for r in _state_rows(lock, manifest, target)}
+
+    candidates, skipped = _select_update_candidates(args, rows, lock, manifest)
+    for name in skipped:
+        state = rows[name]["state"]
+        hint = (
+            "run again with --force to adopt the upstream content"
+            if state == STATE_UNVERIFIED
+            else "use --force to overwrite"
+        )
+        _warn(f"{name}: skipped ({state}); {hint}")
+
+    # Diffs are read-only, so preview everything that differs, including the
+    # modules an update would currently refuse to touch.
+    if args.diff:
+        preview = [n for n in dict.fromkeys(candidates + skipped)]
+        _print_update_diff(
+            _plan_files(preview, manifest, target, nested=args.nested, lock=lock),
+            modules_data,
+            offline=args.offline,
+            ref=args.ref,
+            local=args.local,
+        )
+        return
+
+    if not candidates:
+        if skipped:
+            sys.exit(1)
+        _ok("All modules are up-to-date.")
+        return
+
+    file_plan = _plan_files(candidates, manifest, target, nested=args.nested, lock=lock)
+
+    if args.check:
+        for name in candidates:
+            row = rows[name]
+            print(
+                f"{name}: {row['state']} "
+                f"{row['installed_version'] or '—'} -> {row['latest_version'] or '—'}"
+            )
+        sys.exit(1)
+
+    writes = _write_files(
+        file_plan,
+        modules_data,
+        target,
+        offline=args.offline,
+        ref=args.ref,
+        local=args.local,
+    )
+    for name in candidates:
+        row = rows[name]
+        print(
+            f"{name}: {row['installed_version'] or '—'} -> "
+            f"{row['latest_version'] or '—'}  updated"
+        )
+
+    if not args.no_lock:
+        # Updating a module that was already installed keeps its status; a
+        # module named on the command line counts as explicitly requested.
+        installed = {n for n, r in rows.items() if r.get("installed_version")}
+        _record_modules(
+            lock,
+            manifest,
+            writes,
+            requested=installed | set(args.modules),
+            ref=args.ref,
+            target=target,
+        )
+
+    _ok(f"Updated {len(writes)} module(s).")
+    if skipped:
+        sys.exit(1)
+
+
+def cmd_status(args: argparse.Namespace) -> None:
+    """Show installed modules, versions, and whether they changed locally."""
+    target = Path(_resolve_dir(args)).resolve()
+    manifest = _load_manifest(offline=args.offline, local=args.local, ref=args.ref)
+    lock = _load_lock(target)
+    rows = _state_rows(lock, manifest, target)
+
+    if args.json_output:
+        counts: dict[str, int] = {}
+        for row in rows:
+            counts[row["state"]] = counts.get(row["state"], 0) + 1
+        print(json.dumps({"modules": rows, "counts": counts, "lock": lock is not None}))
+    elif not rows:
+        _ok(f"No zerodep modules found in {target}.")
+    else:
+        headers = ("Module", "Installed", "Latest", "State")
+        data = [
+            (
+                r["name"],
+                r["installed_version"] or "—",
+                r["latest_version"] or "—",
+                r["state"],
+            )
+            for r in rows
+        ]
+        widths = [max(len(headers[i]), *(len(d[i]) for d in data)) for i in range(4)]
+        fmt = "  ".join(f"{{:<{w}}}" for w in widths)
+        print(fmt.format(*headers))
+        print(fmt.format(*("-" * w for w in widths)))
+        for d in data:
+            print(fmt.format(*d))
+        for row in rows:
+            for dep in row["missing_deps"]:
+                _warn(f"{row['name']} depends on {dep}, which is not installed")
+        if lock is None:
+            _warn(
+                "no zerodep.lock.json; states are inferred from file content "
+                "(run 'zerodep add <module>' to record a baseline)"
+            )
+
+    if args.exit_code and any(
+        r["state"] != STATE_UP_TO_DATE or r["missing_deps"] for r in rows
+    ):
+        sys.exit(1)
+
+
+def _plan_module_files(
+    mod_name: str,
+    manifest: dict,
+    target: Path,
+    *,
+    nested: bool,
+    lock_entry: dict | None = None,
+) -> list[tuple[str, Path]]:
+    """Return ``(remote_path, destination)`` pairs for one module."""
+    plan: list[tuple[str, Path]] = []
+    tracked_files = (lock_entry or {}).get("files", {})
+    for remote in manifest["modules"][mod_name].get("files", []):
+        filename = Path(remote).name
+        rel = next(
+            (r for r in tracked_files if Path(r).name == filename),
+            None,
+        )
+        if rel:
+            dest = target / rel
+        else:
+            dest = target / mod_name / filename if nested else target / filename
+        plan.append((remote, dest))
+    return plan
+
+
+def _plan_files(
+    names: list[str],
+    manifest: dict,
+    target: Path,
+    *,
+    nested: bool,
+    lock: dict | None,
+) -> list[tuple[str, str, Path]]:
+    """Return ``(module, remote_path, destination)`` triples for *names*."""
+    tracked = (lock or {}).get("modules", {})
+    plan: list[tuple[str, str, Path]] = []
+    for name in names:
+        for remote, dest in _plan_module_files(
+            name, manifest, target, nested=nested, lock_entry=tracked.get(name)
+        ):
+            plan.append((name, remote, dest))
+    return plan
+
+
+def _prepare_file(
+    remote_path: str,
+    mod: dict,
+    *,
+    offline: bool,
+    ref: str,
+    local: bool,
+) -> str:
+    """Fetch, verify, and prepare a module file for writing.
+
+    The returned text has the install note rewritten. A checkout is only
+    used as the source for ``--local`` runs; otherwise the resolved *ref* is
+    fetched, so the lock never records provenance the bytes do not have.
+    Local files are hash-checked too: a stale manifest is an error, not a
+    silent bypass.
+    """
+    local_file = Path(__file__).resolve().parent / remote_path
+    if local and local_file.exists():
+        text = local_file.read_text(encoding="utf-8")
+        _verify_payload(remote_path, text, mod, ref, local=True)
+    else:
+        data = _fetch_with_fallback(remote_path, offline=offline, ref=ref)
+        text = data.decode("utf-8")
+        _verify_payload(remote_path, text, mod, ref)
+    mod_name = remote_path.split("/")[0]
+    generic = "Install/update via: https://zerodep.readthedocs.io/en/latest/guide/cli/"
+    return text.replace(generic, f"Install/update via `zerodep add {mod_name}`")
+
+
+def _write_files(
+    file_plan: list[tuple[str, str, Path]],
+    modules_data: dict,
+    target: Path,
+    *,
+    offline: bool,
+    ref: str,
+    local: bool,
+) -> dict[str, dict[str, str]]:
+    """Fetch and verify every file, then write them all.
+
+    Nothing is written when any payload fails verification, so a rejected
+    file cannot leave the module half-installed.
+    """
+    prepared: list[tuple[str, Path, str]] = []
+    for name, remote, dest in file_plan:
+        text = _prepare_file(
+            remote, modules_data[name], offline=offline, ref=ref, local=local
+        )
+        prepared.append((name, dest, text))
+
+    writes: dict[str, dict[str, str]] = {}
+    for name, dest, text in prepared:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(text, encoding="utf-8")
+        rel = dest.relative_to(target).as_posix()
+        writes.setdefault(name, {})[rel] = _sha256_text(text)
+    return writes
 
 
 def cmd_manifest(args: argparse.Namespace) -> None:
@@ -984,9 +1654,24 @@ def _scan_outdated(manifest: dict, scan_dir: Path) -> list[tuple[str, str, str, 
 
 def cmd_outdated(args: argparse.Namespace) -> None:
     """Check local zerodep files against the upstream manifest for changes."""
-    manifest = _load_manifest(local=args.local, offline=args.offline)
+    manifest = _load_manifest(local=args.local, offline=args.offline, ref=args.ref)
     scan_dir = Path(_resolve_dir(args)).resolve()
-    rows = _scan_outdated(manifest, scan_dir)
+    lock = _load_lock(scan_dir)
+    rows = [
+        (
+            r["name"],
+            r["installed_version"] or "—",
+            r["latest_version"] or "—",
+            r["state"],
+        )
+        for r in _state_rows(lock, manifest, scan_dir)
+    ]
+    # Renamed modules are not tracked by the lock; keep reporting them.
+    rows.extend(
+        row
+        for row in _scan_outdated(manifest, scan_dir)
+        if row[3].startswith("renamed")
+    )
 
     if not rows:
         if args.json_output:
@@ -1483,6 +2168,9 @@ def main(argv: list[str] | None = None) -> None:
               zerodep add sse retry -d lib/  Copy sse + httpclient + retry to lib/
               zerodep add sse --nested       Copy into sse/ and httpclient/ subdirs
               zerodep add sse --no-deps      Copy only sse.py, skip httpclient
+              zerodep status                 Show installed modules and state
+              zerodep update --diff          Preview upstream changes
+              zerodep --ref master add sse  Install from a branch or commit
               zerodep new mymodule           Scaffold a new module
               zerodep bump                   Auto-bump changed module versions
               zerodep bump --minor yaml      Bump a specific module (minor)
@@ -1503,6 +2191,12 @@ def main(argv: list[str] | None = None) -> None:
         "--local",
         action="store_true",
         help="use local manifest.json instead of fetching from remote",
+    )
+    parser.add_argument(
+        "--ref",
+        default=None,
+        help="source ref: release tag, branch, or commit "
+        "(default: latest release, cached for 1h)",
     )
 
     sub = parser.add_subparsers(dest="command")
@@ -1531,6 +2225,11 @@ def main(argv: list[str] | None = None) -> None:
     p_add.add_argument(
         "-f", "--force", action="store_true", help="overwrite without prompt"
     )
+    p_add.add_argument(
+        "--no-lock",
+        action="store_true",
+        help="do not write zerodep.lock.json",
+    )
 
     # update
     p_update = sub.add_parser("update", help="update existing modules")
@@ -1552,6 +2251,49 @@ def main(argv: list[str] | None = None) -> None:
         dest="update_all",
         action="store_true",
         help="update all outdated modules",
+    )
+    p_update.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="also overwrite locally modified files",
+    )
+    p_update.add_argument(
+        "--diff",
+        action="store_true",
+        help="show the changes without writing anything",
+    )
+    p_update.add_argument(
+        "--check",
+        action="store_true",
+        help="exit 1 when any selected module needs attention",
+    )
+    p_update.add_argument(
+        "--no-lock",
+        action="store_true",
+        help="do not write zerodep.lock.json",
+    )
+
+    # status
+    p_status = sub.add_parser(
+        "status", help="show installed modules and whether they changed locally"
+    )
+    p_status.add_argument(
+        "-d",
+        "--dir",
+        default=None,
+        help="target directory (default: from pyproject.toml or .)",
+    )
+    p_status.add_argument(
+        "--json",
+        dest="json_output",
+        action="store_true",
+        help="output JSON instead of table",
+    )
+    p_status.add_argument(
+        "--exit-code",
+        action="store_true",
+        help="exit 1 when any module is not up-to-date",
     )
 
     # new
@@ -1651,11 +2393,19 @@ def main(argv: list[str] | None = None) -> None:
         parser.print_help()
         sys.exit(0)
 
+    # Only commands that read the remote index need a resolvable ref; the
+    # repo-maintenance commands must work offline and without network latency.
+    if args.command in {"list", "info", "add", "update", "status", "outdated"}:
+        args.ref = _resolve_ref(args.ref, offline=args.offline, local=args.local)
+    else:
+        args.ref = args.ref or BRANCH
+
     commands = {
         "list": cmd_list,
         "info": cmd_info,
         "add": cmd_add,
         "update": cmd_update,
+        "status": cmd_status,
         "new": cmd_new,
         "bump": cmd_bump,
         "outdated": cmd_outdated,

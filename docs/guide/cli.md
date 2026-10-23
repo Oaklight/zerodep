@@ -211,6 +211,27 @@ $ zerodep version-check --strict
 # 全部最新时退出 0，有模块需要 bump 时退出 1
 ```
 
+### `zerodep release-check`
+
+执行打发布 tag 前必须通过的全部检查：模块版本是否与已声明的版本 tag 一致、manifest 是否最新、`pyproject.toml` 与 `zerodep.py` 的 CalVer 版本是否一致、生成的文档模块索引（在挂载了 docs worktree 时）以及工作区是否干净。任一检查失败都会以退出码 1 结束。
+
+Release 工作流调用的正是同一条命令，因此本地检查与 CI 不会出现偏差。
+
+```bash
+$ zerodep release-check
+Check            Result  Detail
+---------------  ------  ---------------------------------------------
+module-versions  ok      49 modules match their declared versions
+manifest         ok      manifest.json matches the source tree
+project-version  ok      2026.10.23.1 is CalVer and matches zerodep.py
+docs-index       ok      docs module index matches the manifest
+working-tree     ok      no uncommitted tracked changes
+
+release-check passed
+```
+
+迭代过程中可使用 `--allow-dirty` 跳过工作区检查。
+
 ### `zerodep bump`
 
 自动检测变更模块并 bump 其 frontmatter 版本号。默认执行 patch bump；可使用 `--minor` 或 `--major` 进行更大幅度的版本递增。

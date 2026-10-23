@@ -14,6 +14,7 @@
 
 ### 新功能
 
+- **CLI**：新增 `zerodep release-check`，一条命令完成发布前检查——模块版本与声明 tag 是否一致、manifest 是否最新、`pyproject.toml` 与 `zerodep.py` 的 CalVer 版本是否一致、生成的文档模块索引（在挂载了 docs worktree 时）以及工作区是否干净。Release 工作流改为调用该命令，不再在 YAML 中重复这些步骤，因此本地检查与 CI 不会出现偏差。
 - **cli**：安装时会在模块文件旁记录 `zerodep.lock.json`，包含解析出的源版本、每个模块的版本与上游哈希、每个已安装文件的 sha256，以及该模块是显式请求还是作为依赖拉取。`add` 负责写入，`update` 负责刷新，`--no-lock` 可关闭。([#249](https://github.com/Oaklight/zerodep/issues/249))
 - **cli**：`update` 不再盲目覆盖。它会区分 `up-to-date`、`outdated`、`locally-modified`、`conflict`、`missing`、`unverified` 和 `upstream-removed`；不会改动的模块会被报告出来，并让命令以 1 退出。新增 `--diff` 预览改动、`--check` 作为 CI 门禁、`--force` 明确覆盖本地修改。([#250](https://github.com/Oaklight/zerodep/issues/250))
 - **cli**：新增 `zerodep status` 命令，列出每个已安装模块的安装版本、最新版本和状态，支持 `--json` 与 `--exit-code`。

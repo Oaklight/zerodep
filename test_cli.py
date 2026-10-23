@@ -698,6 +698,49 @@ def test_release_check_fails_on_a_non_calver_version(tmp_path: Path):
     assert "is not CalVer" in r.stdout
 
 
+def test_release_check_ignores_timestamp_drift(tmp_path: Path):
+    repo = _make_release_repo(tmp_path)
+    manifest = json.loads((repo / "manifest.json").read_text(encoding="utf-8"))
+    for entry in manifest["modules"].values():
+        entry["last_updated"] = "2000-01-01T00:00:00+00:00"
+    manifest["generated"] = "2000-01-01T00:00:00+00:00"
+    (repo / "manifest.json").write_text(
+        json.dumps(manifest, indent=2), encoding="utf-8"
+    )
+    r = _run_release_check(repo, "--allow-dirty")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "manifest.json matches the source tree" in r.stdout
+
+
+def test_release_check_accepts_a_calver_release_version(tmp_path: Path):
+    repo = _make_release_repo(tmp_path)
+    r = _run_release_check(repo, "--allow-dirty", "--version", "2030.1.2")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "v2030.1.2 is free to tag" in r.stdout
+
+
+def test_release_check_rejects_a_non_calver_release_version(tmp_path: Path):
+    repo = _make_release_repo(tmp_path)
+    r = _run_release_check(repo, "--allow-dirty", "--version", "1.0")
+    assert r.returncode == 1
+    assert "1.0 is not CalVer" in r.stdout
+
+
+def test_release_check_rejects_an_existing_tag(tmp_path: Path):
+    repo = _make_release_repo(tmp_path)
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(["git", "add", "-A"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "init"],
+        cwd=repo,
+        check=True,
+    )
+    subprocess.run(["git", "tag", "v2030.1.2"], cwd=repo, check=True)
+    r = _run_release_check(repo, "--version", "2030.1.2")
+    assert r.returncode == 1
+    assert "tag v2030.1.2 already exists" in r.stdout
+
+
 def test_release_check_reports_uncommitted_tracked_changes(tmp_path: Path):
     repo = _make_release_repo(tmp_path)
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)

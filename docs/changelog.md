@@ -6,6 +6,10 @@
 
 ## [未发布]
 
+### 基础设施
+
+- **打包**：`bench-toon` 参考实现从 `pyproject.toml` 的 extra 移到 `requirements-bench-toon.txt`。PyPI 不接受已发布元数据中的直接 URL，导致每次 sdist 上传都被拒绝；lint-test 与 benchmark 作业现在在各自的必需步骤中安装该固定版本文件。发布工作流也改为从新 tag 构建 PyPI 产物，并申请 `actions: write`，让基准测试级联能够真正触发。
+
 ## [2026.10.23] - 2026-10-23
 
 ### 新功能

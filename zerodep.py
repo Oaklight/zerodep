@@ -2844,6 +2844,19 @@ def _run_tests_check(repo_root: Path, modules: dict, selection: str) -> tuple[st
 def cmd_release_check(args: argparse.Namespace) -> None:
     """Run the checks that must pass before a release is tagged."""
     repo_root = Path(__file__).resolve().parent
+    if not any(
+        (repo_root / marker).exists()
+        for marker in ("pyproject.toml", MANIFEST_PATH, ".git")
+    ):
+        # Installed from a wheel or sdist, every importable module in
+        # site-packages looks like a catalog entry and the check reports
+        # hundreds of unrelated modules. Refuse instead of guessing.
+        _die(
+            "release-check inspects the zerodep source tree, but this CLI is "
+            f"running from {repo_root}, which is an installed package.\n"
+            "  Run it from a checkout: cd /path/to/zerodep && "
+            "python -m zerodep release-check"
+        )
     results: list[tuple[str, str, str]] = []
 
     modules = _scan_modules(repo_root)

@@ -656,6 +656,15 @@ def test_release_check_passes_on_a_consistent_tree(tmp_path: Path):
     assert "docs worktrees are not mounted" in r.stdout
 
 
+def test_release_check_refuses_to_run_outside_a_checkout(tmp_path: Path):
+    """An installed CLI must not treat site-packages as the catalog."""
+    shutil.copy2(Path(__file__).parent / "zerodep.py", tmp_path / "zerodep.py")
+    r = _run_release_check(tmp_path, "--allow-dirty")
+    assert r.returncode == 1
+    assert "release-check inspects the zerodep source tree" in r.stderr
+    assert "python -m zerodep release-check" in r.stderr
+
+
 def test_release_check_fails_on_a_stale_manifest(tmp_path: Path):
     repo = _make_release_repo(tmp_path)
     (repo / "demo" / "demo.py").write_text(

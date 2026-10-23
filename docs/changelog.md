@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Infrastructure
+
+- **packaging**: the `bench-toon` reference moved from a `pyproject.toml` extra to `requirements-bench-toon.txt`. PyPI rejects direct URLs in published metadata, so the extra made every sdist unuploadable; the lint-test and benchmark jobs now install the pinned file in their required step. The release workflow also builds the PyPI artifact from the new tag and requests `actions: write`, so the benchmark cascade can dispatch.
+
 ## [2026.10.23] - 2026-10-23
 
 ### Features

@@ -220,6 +220,8 @@ Frozen dataclass representing a single Server-Sent Event.
 
 Sync SSE parser wrapping any `Iterable[str]` of lines.
 
+Lines must be split on CR/LF only, as `httpclient.iter_lines()` does. Python's `str.splitlines()` also splits on U+2028, U+2029, U+0085, VT and FF, which the event-stream format treats as ordinary data — feeding its output to the parser silently truncates payloads that contain them.
+
 **Parameters:**
 
 | Name | Type | Description |

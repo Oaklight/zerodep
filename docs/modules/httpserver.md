@@ -118,7 +118,9 @@ async def events(request):
     return StreamingResponse(generate(), content_type="text/event-stream")
 ```
 
-`encode_event()` produces one complete block — multi-line payloads become one `data:` field per line, and the terminating blank line that dispatches the event is included. Writing `f"data: {value}\n\n"` by hand works for single-line payloads, but a value containing a blank line splits one event into two. `encode_comment()` emits heartbeat comments that clients ignore. Both live in [`sse`](sse.md), which also provides the client side (`EventSource`, `connect`).
+`encode_event()` produces one complete block — multi-line payloads become one `data:` field per line, and the terminating blank line that dispatches the event is included. Writing `f"data: {value}\n\n"` by hand works only while the value has no line breaks: the first one ends the event, so the client dispatches the prefix and silently drops the rest. `encode_comment()` emits heartbeat comments that clients ignore. Both live in [`sse`](sse.md), which also provides the client side (`EventSource`, `connect`).
+
+A client disconnect is noticed between yields and, while the generator is blocked, at the next `disconnect_check_interval` (default 30 s); the generator's `finally` then runs.
 
 ### Static Files
 

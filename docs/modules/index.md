@@ -25,8 +25,8 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
-| [httpclient](httpclient.md) | 0.6.0 | 2026-10-22 |
-| [httpserver](httpserver.md) | 0.6.0 | 2026-10-22 |
+| [httpclient](httpclient.md) | 0.6.1 | 2026-10-23 |
+| [httpserver](httpserver.md) | 0.6.1 | 2026-10-23 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
 | [jsonschema](jsonschema.md) | 0.4.1 | 2026-09-23 |
 | [jsonx](jsonx.md) | 1.0.2 | 2026-10-22 |
@@ -50,7 +50,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [skills](skills.md) | 0.4.3 | 2026-08-25 |
 | [soup](soup.md) | 0.9.0 | 2026-10-13 |
 | [sparse_search](sparse_search.md) | 0.4.0 | 2026-04-27 |
-| [sse](sse.md) | 0.4.0 | 2026-09-27 |
+| [sse](sse.md) | 0.4.1 | 2026-10-23 |
 | [structlog](structlog.md) | 0.3.0 | 2026-04-27 |
 | [synctex](synctex.md) | 0.2.0 | 2026-05-02 |
 | [tabulate](tabulate.md) | 0.1.2 | 2026-10-22 |

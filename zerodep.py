@@ -7,6 +7,8 @@ Usage::
     python zerodep.py add <module> [...]    # copy modules to cwd
     python zerodep.py update --all          # update all outdated modules
     python zerodep.py status                # installed modules + local state
+    python zerodep.py remove <module>       # remove installed module files
+    python zerodep.py search <term>         # search module names and descriptions
     python zerodep.py outdated              # check local files for updates
     python zerodep.py outdated --json       # machine-readable output
     python zerodep.py manifest              # regenerate manifest.json
@@ -773,8 +775,8 @@ def _tracked_state_rows(tracked: dict, manifest: dict, target: Path) -> list[dic
         missing = False
         modified = False
         for rel, recorded in files.items():
-            path = target / rel
-            if not path.exists():
+            path = _safe_target_path(target, rel)
+            if path is None or not path.exists():
                 missing = True
                 continue
             try:
@@ -964,13 +966,52 @@ def _record_modules(
 # ── Commands ──
 
 
+def _module_summary(name: str, mod: dict) -> dict:
+    """Return the machine-readable view of one module."""
+    return {
+        "name": name,
+        "version": mod.get("version", "?"),
+        "tier": mod.get("tier", ""),
+        "category": mod.get("category", ""),
+        "description": mod.get("description", ""),
+        "deps": list(mod.get("deps", [])),
+    }
+
+
 def cmd_list(args: argparse.Namespace) -> None:
-    """List available modules."""
+    """List available modules, optionally filtered by category."""
     manifest = _load_manifest(offline=args.offline, local=args.local, ref=args.ref)
     modules = manifest["modules"]
+    category = args.category
+
+    if category is not None:
+        known = sorted({m.get("category", "") for m in modules.values()} - {""})
+        if category not in known:
+            _die(
+                f"unknown category: {category!r}. "
+                f"Available: {', '.join(known) or '(none)'}"
+            )
+        modules = {n: m for n, m in modules.items() if m.get("category") == category}
+
+    if args.json_output:
+        print(
+            json.dumps(
+                {
+                    "modules": [
+                        _module_summary(n, m) for n, m in sorted(modules.items())
+                    ],
+                    "count": len(modules),
+                    "category": category,
+                }
+            )
+        )
+        return
 
     if not modules:
-        _ok("No modules found.")
+        if category is not None:
+            _ok(f"No modules in category {category!r}.")
+        else:
+            _ok("No modules found.")
         return
 
     # Canonical category display order
@@ -1049,6 +1090,50 @@ def cmd_list(args: argparse.Namespace) -> None:
     _ok(f"\n  {len(modules)} modules available ({cats_shown} categories)")
 
 
+def cmd_search(args: argparse.Namespace) -> None:
+    """Search modules by name, description, category, tier, or dependency."""
+    manifest = _load_manifest(offline=args.offline, local=args.local, ref=args.ref)
+    terms = [term.lower() for term in args.terms]
+    hits: dict[str, dict] = {}
+    for name, mod in sorted(manifest["modules"].items()):
+        fields = [
+            name,
+            mod.get("description", ""),
+            mod.get("category", ""),
+            mod.get("tier", ""),
+            *mod.get("deps", []),
+        ]
+        haystack = " ".join(fields).lower()
+        if all(term in haystack for term in terms):
+            hits[name] = mod
+
+    if args.json_output:
+        print(
+            json.dumps(
+                {
+                    "modules": [_module_summary(n, m) for n, m in hits.items()],
+                    "count": len(hits),
+                    "terms": args.terms,
+                }
+            )
+        )
+        return
+
+    if not hits:
+        _ok(f"No modules match {' '.join(args.terms)!r}.")
+        return
+
+    name_w = max(len(n) for n in hits)
+    ver_w = max(len(m.get("version", "")) for m in hits.values())
+    for name in hits:
+        mod = hits[name]
+        _ok(
+            f"  {name:<{name_w}}  {mod.get('version', '?'):<{ver_w}}  "
+            f"{mod.get('description', '')}"
+        )
+    _ok(f"\n  {len(hits)} module(s) matched")
+
+
 def cmd_info(args: argparse.Namespace) -> None:
     """Show module details."""
     manifest = _load_manifest(offline=args.offline, local=args.local, ref=args.ref)
@@ -1123,6 +1208,11 @@ def cmd_add(args: argparse.Namespace) -> None:
             "move your changes aside first."
         )
 
+    if args.dry_run:
+        _print_add_plan(file_plan, requested, target)
+        _ok(f"Would copy {len(file_plan)} file(s) (dry run)")
+        return
+
     if not _confirm_add_plan(
         file_plan, requested, target, yes=args.yes, force=args.force
     ):
@@ -1144,6 +1234,25 @@ def cmd_add(args: argparse.Namespace) -> None:
     _ok(f"Copied {sum(len(f) for f in writes.values())} file(s) to {target}")
 
 
+def _print_add_plan(
+    file_plan: list[tuple[str, str, Path]],
+    requested: set[str],
+    target: Path,
+) -> None:
+    """Print the copy plan."""
+    _ok("Will copy:")
+    for mod_name, remote, dest in file_plan:
+        label = mod_name if mod_name in requested else f"{mod_name} (dependency)"
+        cwd = Path.cwd()
+        shown = dest.relative_to(cwd) if dest.is_relative_to(cwd) else dest
+        _ok(f"  {Path(remote).name:<25s} -> {shown}  [{label}]")
+    _ok(f"Target: {target}")
+
+    existing = [dest for _, _, dest in file_plan if dest.exists()]
+    if existing:
+        _warn(f"{len(existing)} file(s) will be overwritten")
+
+
 def _confirm_add_plan(
     file_plan: list[tuple[str, str, Path]],
     requested: set[str],
@@ -1155,17 +1264,7 @@ def _confirm_add_plan(
     """Print the copy plan and ask for confirmation; False means abort."""
     if yes:
         return True
-    _ok("Will copy:")
-    for mod_name, remote, dest in file_plan:
-        label = mod_name if mod_name in requested else f"{mod_name} (dependency)"
-        right = Path.cwd()
-        shown = dest.relative_to(right) if dest.is_relative_to(right) else dest
-        _ok(f"  {Path(remote).name:<25s} -> {shown}  [{label}]")
-    _ok(f"Target: {target}")
-
-    existing = [dest for _, _, dest in file_plan if dest.exists()]
-    if existing:
-        _warn(f"{len(existing)} file(s) will be overwritten")
+    _print_add_plan(file_plan, requested, target)
     if force:
         return True
     answer = input("Continue? [Y/n] ").strip().lower()
@@ -1304,6 +1403,16 @@ def cmd_update(args: argparse.Namespace) -> None:
         _ok("All modules are up-to-date.")
         return
 
+    if args.dry_run:
+        for name in candidates:
+            row = rows[name]
+            print(
+                f"{name}: {row['installed_version'] or '—'} -> "
+                f"{row['latest_version'] or '—'}  would update"
+            )
+        _ok(f"Would update {len(candidates)} module(s) (dry run)")
+        return
+
     file_plan = _plan_files(candidates, manifest, target, nested=args.nested, lock=lock)
 
     writes = _write_files(
@@ -1385,6 +1494,228 @@ def cmd_status(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
+def _unused_dependencies(lock: dict | None, modules: dict) -> list[str]:
+    """Return non-requested modules no longer reachable from a requested one."""
+    if not lock:
+        return []
+    tracked = lock.get("modules", {})
+    needed: set[str] = set()
+    stack = [name for name, entry in tracked.items() if entry.get("requested", True)]
+    while stack:
+        name = stack.pop()
+        if name in needed:
+            continue
+        needed.add(name)
+        for dep in modules.get(name, {}).get("deps", []):
+            if dep in tracked:
+                stack.append(dep)
+    return sorted(name for name in tracked if name not in needed)
+
+
+def _projected_lock(lock: dict | None, removed: set[str]) -> dict | None:
+    """Return *lock* with *removed* modules dropped, without mutating it."""
+    if lock is None:
+        return None
+    modules = {
+        name: entry
+        for name, entry in lock.get("modules", {}).items()
+        if name not in removed
+    }
+    return {**lock, "modules": modules}
+
+
+def _plan_removals(
+    names: list[str],
+    tracked: dict,
+    manifest: dict,
+    target: Path,
+) -> tuple[list[tuple[str, Path]], list[Path], list[str]]:
+    """Resolve the files to delete for *names*.
+
+    Returns ``(plan, modified, unknown)`` where *modified* lists tracked files
+    whose bytes no longer match the lock, and *unknown* names that are neither
+    tracked nor present in the manifest layout.
+    """
+    plan: list[tuple[str, Path]] = []
+    modified: list[Path] = []
+    unknown: list[str] = []
+    for name in dict.fromkeys(names):
+        entry = tracked.get(name)
+        if entry is not None:
+            for rel, recorded in sorted(entry.get("files", {}).items()):
+                path = _safe_target_path(target, rel)
+                if path is None:
+                    _die(f"lock entry for {name!r} points outside {target}: {rel}")
+                if not path.exists():
+                    continue
+                plan.append((name, path))
+                try:
+                    current = _sha256_text(path.read_text(encoding="utf-8"))
+                except OSError:
+                    modified.append(path)
+                    continue
+                if current != recorded:
+                    modified.append(path)
+            continue
+        # Untracked (legacy or hand-placed): fall back to the manifest layout.
+        # Without a baseline, compare against upstream; a difference may be an
+        # edit or an old copy, and either way it is not safe to delete silently.
+        paths = _module_local_paths(name, manifest, target)
+        if not paths:
+            unknown.append(name)
+            continue
+        mod = manifest["modules"].get(name, {})
+        for filename, path in paths.items():
+            plan.append((name, path))
+            if not _is_primary_file(filename, mod):
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except OSError:
+                modified.append(path)
+                continue
+            if _content_hash_from_string(text) != mod.get("content_hash"):
+                modified.append(path)
+    return plan, modified, unknown
+
+
+def _prune_lock_entries(
+    lock: dict | None, plan: list[tuple[str, Path]], target: Path
+) -> None:
+    """Drop removed modules from the lock and save it.
+
+    A module is dropped only when every planned file is actually gone, so a
+    partial removal leaves the lock describing what is still on disk.
+    """
+    if lock is None:
+        return
+    by_module: dict[str, list[Path]] = {}
+    for name, path in plan:
+        by_module.setdefault(name, []).append(path)
+    for name, paths in by_module.items():
+        if all(not path.exists() for path in paths):
+            lock["modules"].pop(name, None)
+    _save_lock(target, lock)
+
+
+def cmd_remove(args: argparse.Namespace) -> None:
+    """Remove installed module files and keep the lock consistent."""
+    manifest = _load_manifest(offline=args.offline, local=args.local, ref=args.ref)
+    modules_data = manifest["modules"]
+    target = Path(_resolve_dir(args)).resolve()
+    lock = _load_lock(target)
+    tracked = (lock or {}).get("modules", {})
+
+    plan, modified, unknown = _plan_removals(args.modules, tracked, manifest, target)
+    if unknown:
+        _die(
+            "not installed here: "
+            + ", ".join(unknown)
+            + " (check the target directory or 'zerodep status')"
+        )
+    if not plan:
+        _ok("Nothing to remove.")
+        return
+    if modified and not args.force and not args.dry_run:
+        listing = "\n".join(f"  {p}" for p in modified)
+        _die(
+            "refusing to delete locally modified file(s):\n"
+            f"{listing}\n"
+            "  Use --force if the edits should be discarded."
+        )
+
+    names = list(dict.fromkeys(name for name, _ in plan))
+    rel_paths = [path.relative_to(target).as_posix() for _, path in plan]
+    projected = _projected_lock(lock, set(names))
+    unused = _unused_dependencies(projected, modules_data)
+    remaining = set((projected or {}).get("modules", {}))
+    dependents = sorted(
+        other
+        for other in remaining
+        if set(modules_data.get(other, {}).get("deps", [])) & set(names)
+    )
+    if dependents:
+        _warn(
+            f"{', '.join(names)} is still required by {', '.join(dependents)}; "
+            "those modules will fail to import"
+        )
+
+    if args.dry_run:
+        if args.json_output:
+            print(
+                json.dumps(
+                    {
+                        "removed": names,
+                        "files": rel_paths,
+                        "unused_dependencies": unused,
+                        "dry_run": True,
+                    }
+                )
+            )
+            return
+        for name, path in plan:
+            note = " (locally modified)" if path in modified else ""
+            _ok(f"  would remove {path.relative_to(target).as_posix()}  [{name}]{note}")
+        for dep in unused:
+            _ok(f"  unused dependency: {dep}")
+        _ok(f"Would remove {len(plan)} file(s) from {len(names)} module(s) (dry run)")
+        return
+
+    if args.json_output and not (args.yes or args.force):
+        _die("--json needs --yes (or --force) to delete files")
+
+    if not args.yes and not args.force:
+        _ok("Will remove:")
+        for name, path in plan:
+            _ok(f"  {path.relative_to(target).as_posix()}  [{name}]")
+        answer = input("Continue? [y/N] ").strip().lower()
+        if answer not in ("y", "yes"):
+            _ok("Aborted.")
+            return
+
+    failures: list[str] = []
+    for _name, path in plan:
+        try:
+            path.unlink()
+        except OSError as exc:
+            failures.append(f"{path}: {exc}")
+
+    _prune_lock_entries(lock, plan, target)
+    if lock is None:
+        _warn("no zerodep.lock.json; files removed without a recorded baseline")
+
+    if args.json_output:
+        print(
+            json.dumps(
+                {
+                    "removed": names,
+                    "files": rel_paths,
+                    "unused_dependencies": unused,
+                    "dry_run": False,
+                }
+            )
+        )
+        return
+
+    if failures:
+        _die("could not remove:\n" + "\n".join(f"  {line}" for line in failures))
+
+    _ok(f"Removed {len(plan)} file(s) from {len(names)} module(s).")
+    for dep in unused:
+        _warn(f"unused dependency: {dep} (zerodep remove {dep})")
+
+
+def _safe_target_path(target: Path, rel: str) -> Path | None:
+    """Resolve *rel* under *target*, or None when it escapes the directory."""
+    base = target.resolve()
+    candidate = (base / rel).resolve()
+    try:
+        candidate.relative_to(base)
+    except ValueError:
+        return None
+    return candidate
+
+
 def _plan_module_files(
     mod_name: str,
     manifest: dict,
@@ -1403,7 +1734,9 @@ def _plan_module_files(
             None,
         )
         if rel:
-            dest = target / rel
+            dest = _safe_target_path(target, rel)
+            if dest is None:
+                _die(f"lock file path escapes {target}: {rel}")
         else:
             dest = target / mod_name / filename if nested else target / filename
         plan.append((remote, dest))
@@ -2077,6 +2410,437 @@ def _working_tree_status(repo_root: Path) -> tuple[str, str]:
     return "ok", "no uncommitted tracked changes"
 
 
+# ── Release-check helpers ──
+
+_BENCH_EXTRA_ALIASES = {"httpclient": "bench-http", "sparse_search": "bench-search"}
+# Benchmarks that intentionally live outside the aggregate `make benchmark`.
+_BENCHMARKS_OUTSIDE_AGGREGATE = {"test_cold_start.py": "benchmark-cold-start"}
+_OPTIONAL_IMPORT_HANDLERS = {
+    "ImportError",
+    "ModuleNotFoundError",
+    "Exception",
+    "BaseException",
+}
+
+
+def _mentions_version_info(test: ast.AST) -> bool:
+    """Return True when an ``if`` test looks at ``sys.version_info``."""
+    return any(
+        (isinstance(node, ast.Attribute) and node.attr == "version_info")
+        or (isinstance(node, ast.Name) and node.id == "version_info")
+        for node in ast.walk(test)
+    )
+
+
+def _handler_catches_import_error(handler: ast.ExceptHandler) -> bool:
+    """Return True for ``except ImportError`` and friends."""
+    if handler.type is None:
+        return True
+    types = handler.type.elts if isinstance(handler.type, ast.Tuple) else [handler.type]
+    return any(
+        (isinstance(node, ast.Name) and node.id in _OPTIONAL_IMPORT_HANDLERS)
+        or (isinstance(node, ast.Attribute) and node.attr in _OPTIONAL_IMPORT_HANDLERS)
+        for node in types
+    )
+
+
+def _handler_reraises(handler: ast.ExceptHandler) -> bool:
+    """Return True when the handler re-raises, i.e. failure is fatal."""
+    return any(isinstance(node, ast.Raise) for node in ast.walk(handler))
+
+
+def _mentions_type_checking(test: ast.AST) -> bool:
+    """Return True when an ``if`` tests ``TYPE_CHECKING``."""
+    return any(
+        (isinstance(node, ast.Attribute) and node.attr == "TYPE_CHECKING")
+        or (isinstance(node, ast.Name) and node.id == "TYPE_CHECKING")
+        for node in ast.walk(test)
+    )
+
+
+def _version_gate_body_is_legacy(test: ast.AST) -> bool:
+    """Return True when the ``if`` body targets *older* Python versions."""
+    if not isinstance(test, ast.Compare) or not _mentions_version_info(test):
+        return False
+    return any(isinstance(op, (ast.Lt, ast.LtE, ast.NotEq)) for op in test.ops)
+
+
+def _conditional_import_modes(test: ast.AST, opt: bool) -> tuple[bool, bool] | None:
+    """Return ``(body_optional, else_optional)`` for import-relevant ``if``s.
+
+    ``None`` means the ``if`` carries no optionality information. A
+    ``TYPE_CHECKING`` block is never a runtime dependency; for a
+    ``sys.version_info`` gate, the branch for the running interpreter is a
+    real dependency and the older-Python fallback is a compatibility shim.
+    """
+    if _mentions_type_checking(test):
+        return True, True
+    if _mentions_version_info(test):
+        if _version_gate_body_is_legacy(test):
+            return True, opt
+        return opt, True
+    return None
+
+
+def _dynamic_import_name(node: ast.Call) -> str | None:
+    """Return the constant module name of an ``importlib``/``__import__`` call."""
+    func = node.func
+    dynamic = (
+        isinstance(func, ast.Name)
+        and func.id == "__import__"
+        or isinstance(func, ast.Attribute)
+        and func.attr == "import_module"
+        and isinstance(func.value, ast.Name)
+        and func.value.id == "importlib"
+    )
+    if not dynamic or not node.args:
+        return None
+    first = node.args[0]
+    if isinstance(first, ast.Constant) and isinstance(first.value, str):
+        return first.value.split(".")[0]
+    return None
+
+
+def _parse_imports(source: str) -> tuple[set[str], set[str]]:
+    """Return ``(hard, optional)`` top-level imports of *source*.
+
+    An import is optional when it sits under ``except ImportError`` or under a
+    ``sys.version_info`` branch: the module still works without it.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set(), set()
+
+    hard: set[str] = set()
+    optional: set[str] = set()
+
+    def add(node: ast.AST, bucket: set[str]) -> None:
+        if isinstance(node, ast.Import):
+            bucket.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+            bucket.add(node.module.split(".")[0])
+
+    def walk(node: ast.AST, opt: bool) -> None:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            add(node, optional if opt else hard)
+            return
+        if isinstance(node, ast.Call):
+            name = _dynamic_import_name(node)
+            if name:
+                (optional if opt else hard).add(name)
+        if isinstance(node, ast.Try):
+            guarded = any(
+                _handler_catches_import_error(handler)
+                and not _handler_reraises(handler)
+                for handler in node.handlers
+            )
+            for stmt in node.body:
+                walk(stmt, opt or guarded)
+            for stmt in node.orelse + node.finalbody:
+                walk(stmt, opt)
+            for handler in node.handlers:
+                for stmt in handler.body:
+                    walk(stmt, opt)
+            return
+        if isinstance(node, ast.If):
+            modes = _conditional_import_modes(node.test, opt)
+            if modes is not None:
+                for stmt in node.body:
+                    walk(stmt, modes[0])
+                for stmt in node.orelse:
+                    walk(stmt, modes[1])
+                return
+        for child in ast.iter_child_nodes(node):
+            walk(child, opt)
+
+    walk(tree, False)
+    return hard, optional
+
+
+def _module_imports(repo_root: Path, mod: dict) -> set[str]:
+    """Return the top-level imports across every file of one module."""
+    found: set[str] = set()
+    for rel in mod.get("files", []):
+        try:
+            source = (repo_root / rel).read_text(encoding="utf-8")
+        except OSError:
+            continue
+        hard, optional = _parse_imports(source)
+        found |= hard | optional
+    return found
+
+
+def _stdlib_names() -> set[str]:
+    return set(getattr(sys, "stdlib_module_names", frozenset()))
+
+
+def _run_stdlib_check(repo_root: Path, modules: dict) -> tuple[str, str]:
+    """Every module source must import only the stdlib and sibling modules."""
+    stdlib = _stdlib_names()
+    allowed = set(modules) | set(_REPLACED_BY)
+    violations: list[str] = []
+    notes: list[str] = []
+    for name, mod in sorted(modules.items()):
+        for rel in mod.get("files", []):
+            try:
+                source = (repo_root / rel).read_text(encoding="utf-8")
+            except OSError:
+                continue
+            hard, optional = _parse_imports(source)
+            bad = hard - stdlib - allowed
+            if bad:
+                violations.append(f"{rel}: {', '.join(sorted(bad))}")
+            extra = optional - stdlib - allowed
+            if extra:
+                notes.append(f"{rel}: {', '.join(sorted(extra))}")
+    if violations:
+        return (
+            "fail",
+            f"{len(violations)} file(s) import third-party code: "
+            + "; ".join(violations[:3]),
+        )
+    detail = f"{len(modules)} module(s) import only the stdlib and siblings"
+    if notes:
+        detail += f" (optional: {'; '.join(notes[:2])})"
+    return "ok", detail
+
+
+def _run_dependency_check(repo_root: Path, modules: dict) -> tuple[str, str]:
+    """Frontmatter deps must match the sibling modules actually imported."""
+    names = set(modules) - _stdlib_names()
+    problems: list[str] = []
+    for name, mod in sorted(modules.items()):
+        imported = _module_imports(repo_root, mod)
+        actual = (imported & names) - {name}
+        declared = set(mod.get("deps", [])) - {name}
+        undeclared = actual - declared
+        unused = declared - actual
+        if undeclared:
+            problems.append(
+                f"{name} imports {', '.join(sorted(undeclared))} undeclared"
+            )
+        if unused:
+            problems.append(f"{name} declares unimported {', '.join(sorted(unused))}")
+    if problems:
+        return "fail", "; ".join(problems[:4])
+    return "ok", "frontmatter deps match the sibling imports"
+
+
+def _pyproject_extras(repo_root: Path) -> set[str]:
+    """Return the names of ``[project.optional-dependencies]`` extras."""
+    try:
+        text = (repo_root / "pyproject.toml").read_text(encoding="utf-8")
+    except OSError:
+        return set()
+    section = re.search(
+        r"\[project\.optional-dependencies\](.*?)(?=\n\[|\Z)", text, re.S
+    )
+    if not section:
+        return set()
+    return set(re.findall(r"^([A-Za-z0-9_-]+)\s*=\s*\[", section.group(1), re.M))
+
+
+def _run_bench_extra_check(repo_root: Path, modules: dict) -> tuple[str, str]:
+    """Benchmarks with a reference library need an extra that installs it."""
+    extras = _pyproject_extras(repo_root)
+    module_names = set(modules)
+    stdlib = _stdlib_names()
+    toon_pin = ""
+    pin_file = repo_root / "requirements-bench-toon.txt"
+    if pin_file.exists():
+        toon_pin = pin_file.read_text(encoding="utf-8")
+
+    missing: list[str] = []
+    benchmarks = sorted(repo_root.glob("*/test_*_benchmark.py"))
+    for bench in benchmarks:
+        name = bench.parent.name
+        try:
+            source = bench.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        hard, _optional = _parse_imports(source)
+        third_party = hard - stdlib - module_names - {"pytest", "pytest_benchmark"}
+        if not third_party:
+            continue
+        extra = _BENCH_EXTRA_ALIASES.get(name, f"bench-{name}")
+        if extra in extras:
+            continue
+        if name == "toon" and "toon-format" in toon_pin:
+            continue
+        missing.append(f"{name} ({', '.join(sorted(third_party))})")
+
+    bench_modules = {bench.parent.name for bench in benchmarks}
+    reverse_alias = {extra: name for name, extra in _BENCH_EXTRA_ALIASES.items()}
+    stale = []
+    for extra in sorted(extras):
+        if not extra.startswith("bench-"):
+            continue
+        name = reverse_alias.get(extra, extra.removeprefix("bench-"))
+        if name not in bench_modules:
+            stale.append(extra)
+
+    if missing or stale:
+        parts = []
+        if missing:
+            parts.append("no extra for " + "; ".join(missing))
+        if stale:
+            parts.append("extra without a benchmark: " + ", ".join(stale))
+        return "fail", "; ".join(parts)
+    return "ok", f"{len(extras)} bench-* extra(s) match the benchmarks"
+
+
+def _makefile_recipes(repo_root: Path) -> tuple[dict[str, set[str]], set[str]]:
+    """Map each Makefile target to the test files its recipe mentions.
+
+    Targets whose recipe builds the file list from make variables are returned
+    in the second set: their contents cannot be checked statically.
+    """
+    try:
+        lines = (repo_root / "Makefile").read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return {}, set()
+    recipes: dict[str, set[str]] = {}
+    dynamic: set[str] = set()
+    current: list[str] = []
+    for line in lines:
+        if line and not line[0].isspace():
+            lhs = line.split(":", 1)[0].strip() if ":" in line else ""
+            # Multi-target rules (`test lint: ...`) and double-colon rules.
+            current = [
+                token
+                for token in lhs.split()
+                if re.fullmatch(r"[A-Za-z0-9_.-]+", token)
+            ]
+            continue
+        if not current or not line.strip():
+            continue
+        variables = set(re.findall(r"\$[({]([A-Za-z0-9_]+)[)}]", line))
+        if variables - {"PYTEST", "PYTHON"}:
+            dynamic.update(current)
+            continue
+        for target in current:
+            recipes.setdefault(target, set()).update(
+                token
+                for token in line.split()
+                if token.endswith(".py") and "test_" in token
+            )
+    return recipes, dynamic
+
+
+def _run_makefile_wiring_check(repo_root: Path) -> tuple[str, str]:
+    """Every test file must be reachable from the Makefile."""
+    recipes, dynamic = _makefile_recipes(repo_root)
+    if not recipes and not dynamic:
+        return "skip", "no Makefile found"
+    if {"test", "benchmark"} & dynamic:
+        return "skip", "make test/benchmark is assembled from make variables"
+
+    actual = {
+        path.relative_to(repo_root).as_posix()
+        for pattern in ("*/test_*.py", "test_*.py")
+        for path in repo_root.glob(pattern)
+        if "__pycache__" not in path.parts
+    }
+    benchmarks = {path for path in actual if path.endswith("_benchmark.py")}
+    special = set(_BENCHMARKS_OUTSIDE_AGGREGATE) & actual
+    correctness = actual - benchmarks - special
+
+    in_test = recipes.get("test", set())
+    in_bench = recipes.get("benchmark", set())
+
+    problems: list[str] = []
+    missing_tests = sorted(correctness - in_test)
+    if missing_tests:
+        problems.append(f"not in make test: {', '.join(missing_tests)}")
+    missing_bench = sorted(benchmarks - in_bench)
+    if missing_bench:
+        problems.append(f"not in make benchmark: {', '.join(missing_bench)}")
+    for name, target in _BENCHMARKS_OUTSIDE_AGGREGATE.items():
+        if name in actual and name not in recipes.get(target, set()):
+            problems.append(f"{name} is not in make {target}")
+    stale = sorted((in_test | in_bench) - actual)
+    if stale:
+        problems.append(f"listed but absent: {', '.join(stale)}")
+
+    if problems:
+        return "fail", "; ".join(problems)
+    return "ok", (
+        f"{len(correctness)} test(s) in make test, "
+        f"{len(benchmarks)} benchmark(s) in make benchmark"
+    )
+
+
+def _run_command_check(
+    cmd: list[str],
+    cwd: Path,
+    *,
+    ok_detail: str,
+    fail_detail: str,
+) -> tuple[str, str]:
+    """Run *cmd* and turn its result into a check row."""
+    try:
+        proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+    except FileNotFoundError:
+        return "fail", f"{cmd[0]} is not installed"
+    if proc.returncode == 0:
+        return "ok", ok_detail
+    tail = (proc.stdout + proc.stderr).strip().splitlines()[-20:]
+    if tail:
+        print("\n".join(tail), file=sys.stderr)
+    last = tail[-1] if tail else f"exit {proc.returncode}"
+    return "fail", f"{fail_detail}: {last}"
+
+
+def _run_lint_check(repo_root: Path) -> tuple[str, str]:
+    """Delegate linting to pre-commit, the same hooks CI runs."""
+    return _run_command_check(
+        ["pre-commit", "run", "--all-files"],
+        repo_root,
+        ok_detail="pre-commit hooks pass",
+        fail_detail="pre-commit hooks failed",
+    )
+
+
+def _run_tests_check(repo_root: Path, modules: dict, selection: str) -> tuple[str, str]:
+    """Run correctness tests, optionally limited to comma-separated modules."""
+    if selection:
+        names = [part.strip() for part in selection.split(",") if part.strip()]
+        unknown = [name for name in names if name not in modules]
+        if unknown:
+            return "fail", f"unknown module(s): {', '.join(unknown)}"
+        files: list[Path] = []
+        untested: list[str] = []
+        for name in names:
+            found = sorted(
+                path
+                for path in (repo_root / name).glob("test_*.py")
+                if not path.name.endswith("_benchmark.py")
+            )
+            if not found:
+                untested.append(name)
+            files.extend(found)
+        if untested:
+            return "fail", f"no correctness tests for: {', '.join(untested)}"
+        detail = f"{len(files)} test file(s) for {', '.join(names)}"
+    else:
+        files = sorted(
+            path
+            for pattern in ("*/test_*.py", "test_*.py")
+            for path in repo_root.glob(pattern)
+            if not path.name.endswith("_benchmark.py")
+            and path.name not in _BENCHMARKS_OUTSIDE_AGGREGATE
+        )
+        detail = f"{len(files)} correctness test file(s)"
+
+    return _run_command_check(
+        [sys.executable, "-m", "pytest", *map(str, files), "-q", "-rs"],
+        repo_root,
+        ok_detail=f"{detail} passed",
+        fail_detail="tests failed",
+    )
+
+
 def cmd_release_check(args: argparse.Namespace) -> None:
     """Run the checks that must pass before a release is tagged."""
     repo_root = Path(__file__).resolve().parent
@@ -2198,7 +2962,18 @@ def cmd_release_check(args: argparse.Namespace) -> None:
                     ("release-version", "ok", f"v{requested} is free to tag")
                 )
 
+    results.append(("stdlib-imports", *_run_stdlib_check(repo_root, modules)))
+    results.append(("dependencies", *_run_dependency_check(repo_root, modules)))
+    results.append(("benchmark-extras", *_run_bench_extra_check(repo_root, modules)))
+    results.append(("makefile-wiring", *_run_makefile_wiring_check(repo_root)))
     results.append(("docs-index", *_run_docs_index_check(repo_root)))
+
+    if getattr(args, "with_lint", False):
+        results.append(("lint", *_run_lint_check(repo_root)))
+    if getattr(args, "with_tests", None) is not None:
+        results.append(
+            ("tests", *_run_tests_check(repo_root, modules, args.with_tests))
+        )
 
     if getattr(args, "allow_dirty", False):
         results.append(("working-tree", "skip", "--allow-dirty"))
@@ -2405,6 +3180,10 @@ def main(argv: list[str] | None = None) -> None:
               zerodep add sse --nested       Copy into sse/ and httpclient/ subdirs
               zerodep add sse --no-deps      Copy only sse.py, skip httpclient
               zerodep status                 Show installed modules and state
+              zerodep remove sse             Remove a module and update the lock
+              zerodep list --category text   List modules in one category
+              zerodep search http            Search names and descriptions
+              zerodep add sse --dry-run      Show what would be copied
               zerodep update --diff          Preview upstream changes
               zerodep --ref master add sse  Install from a branch or commit
               zerodep new mymodule           Scaffold a new module
@@ -2439,7 +3218,54 @@ def main(argv: list[str] | None = None) -> None:
     sub = parser.add_subparsers(dest="command")
 
     # list
-    sub.add_parser("list", help="list available modules")
+    p_list = sub.add_parser("list", help="list available modules")
+    p_list.add_argument(
+        "--category", default=None, help="only show modules in this category"
+    )
+    p_list.add_argument(
+        "--json",
+        dest="json_output",
+        action="store_true",
+        help="output JSON instead of a table",
+    )
+
+    # search
+    p_search = sub.add_parser(
+        "search", help="search modules by name, description, or metadata"
+    )
+    p_search.add_argument("terms", nargs="+", help="terms; all must match")
+    p_search.add_argument(
+        "--json",
+        dest="json_output",
+        action="store_true",
+        help="output JSON instead of a table",
+    )
+
+    # remove
+    p_remove = sub.add_parser("remove", help="remove installed modules")
+    p_remove.add_argument("modules", nargs="+", help="module names to remove")
+    p_remove.add_argument(
+        "-d",
+        "--dir",
+        default=None,
+        help="target directory (default: from pyproject.toml or .)",
+    )
+    p_remove.add_argument("-y", "--yes", action="store_true", help="skip confirmation")
+    p_remove.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="delete files that were modified locally",
+    )
+    p_remove.add_argument(
+        "--dry-run", action="store_true", help="show what would be removed"
+    )
+    p_remove.add_argument(
+        "--json",
+        dest="json_output",
+        action="store_true",
+        help="output JSON instead of a table",
+    )
 
     # info
     p_info = sub.add_parser("info", help="show module details")
@@ -2466,6 +3292,9 @@ def main(argv: list[str] | None = None) -> None:
         "--no-lock",
         action="store_true",
         help="do not write zerodep.lock.json",
+    )
+    p_add.add_argument(
+        "--dry-run", action="store_true", help="show the plan without copying"
     )
 
     # update
@@ -2509,6 +3338,9 @@ def main(argv: list[str] | None = None) -> None:
         "--no-lock",
         action="store_true",
         help="do not write zerodep.lock.json",
+    )
+    p_update.add_argument(
+        "--dry-run", action="store_true", help="show what would be updated"
     )
 
     # status
@@ -2610,7 +3442,7 @@ def main(argv: list[str] | None = None) -> None:
     # release-check
     p_rcheck = sub.add_parser(
         "release-check",
-        help="run the pre-release checks (versions, manifest, docs index, tree)",
+        help="run the pre-release checks (versions, manifest, deps, docs index, tree)",
     )
     p_rcheck.add_argument(
         "--allow-dirty",
@@ -2621,6 +3453,20 @@ def main(argv: list[str] | None = None) -> None:
         "--version",
         default=None,
         help="version that will be tagged; must be CalVer and not already tagged",
+    )
+    p_rcheck.add_argument(
+        "--with-lint",
+        action="store_true",
+        help="also run the pre-commit hooks",
+    )
+    p_rcheck.add_argument(
+        "--with-tests",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="MODULES",
+        help="also run tests; MODULES is an optional comma-separated list "
+        "(default: every module)",
     )
 
     # dep-graph
@@ -2648,16 +3494,27 @@ def main(argv: list[str] | None = None) -> None:
 
     # Only commands that read the remote index need a resolvable ref; the
     # repo-maintenance commands must work offline and without network latency.
-    if args.command in {"list", "info", "add", "update", "status", "outdated"}:
+    if args.command in {
+        "list",
+        "search",
+        "info",
+        "add",
+        "update",
+        "remove",
+        "status",
+        "outdated",
+    }:
         args.ref = _resolve_ref(args.ref, offline=args.offline, local=args.local)
     else:
         args.ref = args.ref or BRANCH
 
     commands = {
         "list": cmd_list,
+        "search": cmd_search,
         "info": cmd_info,
         "add": cmd_add,
         "update": cmd_update,
+        "remove": cmd_remove,
         "status": cmd_status,
         "new": cmd_new,
         "bump": cmd_bump,

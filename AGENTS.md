@@ -59,12 +59,17 @@ zerodep info <module>            # Show module metadata (version, deps, tier)
 zerodep new <name> --category <cat> --tier <tier>  # Scaffold new module
 zerodep add <module> [module...] # Copy module files to target directory
 zerodep update <module>          # Update existing module files
+zerodep remove <module>          # Remove installed modules and update the lock
+zerodep status                   # Installed modules, versions and local state
+zerodep search <term>            # Search names, descriptions and metadata
 
 # Version & release
 zerodep bump [modules...]        # Bump module versions (--patch|--minor|--major)
 zerodep version-check            # Detect modules modified since declared version
 zerodep version-check --strict   # Same, but exit 1 if any need bumping
-zerodep release-check           # Run every pre-release check (reused by CI)
+zerodep release-check            # Run every pre-release check (reused by CI)
+zerodep release-check --with-lint                  # ... plus pre-commit
+zerodep release-check --with-tests httpclient,sse  # ... plus tests for modules
 
 # Manifest & dependencies
 zerodep manifest                 # Regenerate manifest.json from source

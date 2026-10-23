@@ -124,7 +124,7 @@ async def events(request):
 
 `encode_event()` produces one complete block — multi-line payloads become one `data:` field per line, and the terminating blank line that dispatches the event is included. Writing `f"data: {value}\n\n"` by hand works only while the value has no line breaks: the first one ends the event, so the client dispatches the prefix and silently drops the rest. `encode_comment()` emits heartbeat comments that clients ignore. Both live in [`sse`](sse.md), which also provides the client side (`EventSource`, `connect`).
 
-A client disconnect is noticed between yields. While the generator is blocked, it is noticed at the next `disconnect_check_interval` (default 30 s) when `disconnect_on_eof=True` is set; that option treats read-side EOF as a disconnect, which is also what a legitimate half-close looks like, so it stays off unless the client never half-closes (browsers and common HTTP clients do not). The generator's `finally` then runs.
+A client disconnect is noticed at three points: a failed write (`BrokenPipeError`, for example after a reset) ends the stream; between yields the loop also checks `writer.is_closing()`, which can stay false for a peer FIN until a write fails; and while the generator is blocked, `disconnect_check_interval` (default 30 s) checks it too. `disconnect_on_eof=True` adds read-side EOF to those checks, which is also what a legitimate half-close looks like, so it stays off unless the client never half-closes (browsers and common HTTP clients do not). The generator's `finally` then runs.
 
 ### Static Files
 

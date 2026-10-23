@@ -6,6 +6,8 @@
 
 ## [未发布]
 
+## [2026.10.23] - 2026-10-23
+
 ### 新功能
 
 - **sse**（v0.4.0）：模块现在既能消费事件流，也能生成事件流。`encode_event()` 由 `data`、`event`、`id`、`retry` 格式化一个 `text/event-stream` 块：多行数据每行生成一个 `data:` 字段，CRLF 与 CR 会被归一化；`event` 或 `id` 含换行、`id` 含 NUL、`retry` 为负数或非整数时抛出 `ValueError`。`encode_comment()` 生成心跳注释块。两者都是无网络依赖的纯函数，可直接配合 `httpserver.StreamingResponse` 或其他流式传输使用。([#241](https://github.com/Oaklight/zerodep/issues/241))
@@ -13,8 +15,6 @@
 - **httpclient**（v0.6.0）：模块级函数现在会复用连接。`get()`、`post()` 等（以及 `async_get()` 等）共享进程级连接池，不再每次调用新建连接——针对 keep-alive 服务端实测，顺序 `get()` 从约 990 次/秒提升到约 1900 次/秒，300 次请求只用了 3 个连接。异步连接池按事件循环隔离，因为池中的数据流属于创建它的事件循环；可用 `close_pools()` / `aclose_pools()` 释放。服务端空闲时关闭的池化连接会在使用前被检测出来（socket 窥探、异步 `at_eof()`），若仍发生竞态，`GET`/`HEAD`/`OPTIONS`/`PUT`/`DELETE` 会在新连接上重试一次。连接池的键现在包含 `verify`，因此以 `verify=False` 建立的连接绝不会交给需要校验的请求。空闲套接字还有全局上限：所有主机合计最多保留 `DEFAULT_MAX_TOTAL_CONNECTIONS`（100）个，超出时优先关闭最旧的连接；空闲超过连接池超时的条目会在下一次归还时清理，因此即使访问大量主机也不会每个主机各占一个套接字。上限与空闲时间都按客户端配置（`max_total_connections`、`pool_idle_timeout`）。
 - **httpclient**：`on_timing` 以 `(event, elapsed)` 形式报告请求里程碑——`request_started`、`headers_received`（首字节时间）与 `body_complete`——耗时以单调时钟计量。模块级函数与 `Client` / `AsyncClient` 均可接受该回调；流式响应在响应体被消费时而非流打开时报告 `body_complete`，重定向会为每一跳报告 `headers_received`。([#172](https://github.com/Oaklight/zerodep/issues/172))
 - **semantic_search**（v0.1.0）：新增零依赖稠密向量检索模块。Flat、IVF 与 LSH 三种索引共用 cosine、euclidean 与 inner_product 度量；文本查询通过任意 `list[str] -> list[list[float]]` 可调用对象完成，并内置 OpenAI、Cohere、Voyage 与 Jina 适配器。文档可附带 JSON 元数据用于检索时过滤，索引支持 JSON 与 SQLite 持久化，`rrf()` / `mmr()` 覆盖混合重排。`quantize=True` 在构建时把向量压缩为 SQ8 并释放 float32 副本，检索距离由量化数据重建，内存占用约为原来的四分之一。([#171](https://github.com/Oaklight/zerodep/pull/171))
-
-### 新功能
 
 - **httpserver**（v0.6.0）：同一连接现在可以处理多个请求。HTTP/1.1 连接默认保持，除非请求或响应发送 `Connection: close`（按大小写不敏感匹配）；HTTP/1.0 仅在请求要求时保持；无法识别的协议版本一律关闭；流式响应仍然关闭连接。新增 `App(keep_alive=..., keep_alive_timeout=..., max_requests_per_connection=...)` 选项用于调整或关闭该行为。`keep_alive_timeout` 只约束等待下一个请求行的时间，请求头与慢速请求体仍使用完整的 `read_timeout`；空闲连接到期后静默关闭而不再返回 `408`，但请求行之后卡住的请求仍会收到 `408`。`HEAD` 交给匹配的 `GET` 路由处理，返回相同的响应头（含 `Content-Length`）但不发送响应体，保持连接的客户端不会读到残余字节。客户端在请求之间关闭连接也不再被当作错误请求。([#210](https://github.com/Oaklight/zerodep/issues/210))
 

@@ -3,6 +3,11 @@
 Measures write, read, iterate, and mixed workload throughput for
 the JSON and SQLite backends, compared against stdlib shelve and
 the popular sqlitedict library.
+
+sqlitedict is optional and deliberately not installed by any extra: it has an
+unpatched deserialization advisory (CVE-2024-35515), and the comparison only
+needs trusted, in-process data. Install it explicitly to include those cases;
+otherwise they skip.
 """
 
 import os

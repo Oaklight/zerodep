@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [2026.10.23.3] - 2026-10-23
+
 ### 新功能
 
 - **cli**：`zerodep remove <module>` 删除已跟踪文件、移除锁文件条目，提示因此变为无用的依赖，并在仍有其他已安装模块需要它时发出警告。与锁文件记录不一致的文件需要 `--force` 才会删除；支持 `--dry-run` 与 `--json`。([#252](https://github.com/Oaklight/zerodep/issues/252))

@@ -663,6 +663,11 @@ def _make_decompressor(encoding: str) -> zlib._Decompress | None:
 # ── Streaming Response (state machine) ──
 
 
+def _response_has_body(method: str, status: int) -> bool:
+    """Whether a response to *method* may carry a message body."""
+    return method.upper() != "HEAD" and status not in (204, 304)
+
+
 class StreamingResponse:
     """HTTP streaming response -- holds the connection open.
 
@@ -691,6 +696,7 @@ class StreamingResponse:
         "_is_chunked",
         "_content_length",
         "_bytes_remaining",
+        "_sync_received",
         "_closed",
         "_raw_set_cookies",
         "_cookies",
@@ -712,6 +718,7 @@ class StreamingResponse:
     _is_chunked: bool
     _content_length: int | None
     _bytes_remaining: int | None
+    _sync_received: int
     _closed: bool
     _raw_set_cookies: list[str]
     _cookies: dict[str, str] | None
@@ -734,6 +741,7 @@ class StreamingResponse:
         raw_set_cookies: list[str] | None = None,
         on_timing: TimingHook | None = None,
         timing_start: float = 0.0,
+        expect_body: bool = True,
     ) -> "StreamingResponse":
         obj = object.__new__(cls)
         obj.status_code = status_code
@@ -748,9 +756,17 @@ class StreamingResponse:
         obj._async_reader = None
         obj._async_writer = None
         obj._async_timeout = None
-        obj._is_chunked = False
-        obj._content_length = None
-        obj._bytes_remaining = None
+        chunked = "chunked" in headers.get("transfer-encoding", "").lower()
+        content_length = None
+        if expect_body and not chunked and headers.get("content-length") is not None:
+            try:
+                content_length = int(headers["content-length"])
+            except ValueError:
+                content_length = None
+        obj._is_chunked = chunked
+        obj._content_length = content_length
+        obj._bytes_remaining = content_length
+        obj._sync_received = 0
         obj._closed = False
         obj._raw_set_cookies = raw_set_cookies or []
         obj._cookies = None
@@ -774,6 +790,7 @@ class StreamingResponse:
         raw_set_cookies: list[str] | None = None,
         on_timing: TimingHook | None = None,
         timing_start: float = 0.0,
+        expect_body: bool = True,
     ) -> "StreamingResponse":
         obj = object.__new__(cls)
         obj.status_code = status_code
@@ -788,9 +805,12 @@ class StreamingResponse:
         obj._async_reader = reader
         obj._async_writer = writer
         obj._async_timeout = timeout
+        if not expect_body:
+            content_length = None
         obj._is_chunked = is_chunked
         obj._content_length = content_length
         obj._bytes_remaining = content_length
+        obj._sync_received = 0
         obj._closed = False
         obj._raw_set_cookies = raw_set_cookies or []
         obj._cookies = None
@@ -839,6 +859,7 @@ class StreamingResponse:
                 chunk = self._sync_resp.read(chunk_size)
                 if not chunk:
                     break
+                self._sync_received = getattr(self, "_sync_received", 0) + len(chunk)
                 if self._decompressor:
                     chunk = self._decompressor.decompress(chunk)
                 yield chunk
@@ -848,6 +869,12 @@ class StreamingResponse:
                     yield remaining
         except (OSError, http.client.HTTPException) as exc:
             raise HttpConnectionError(str(exc)) from exc
+        received = getattr(self, "_sync_received", 0)
+        if self._content_length is not None and received < self._content_length:
+            raise HttpConnectionError(
+                f"Response body ended after {received} of "
+                f"{self._content_length} bytes for {self.url}"
+            )
         self._fire_body_complete()
 
     def iter_lines(self) -> Iterator[str]:
@@ -919,7 +946,11 @@ class StreamingResponse:
                 timeout=self._async_timeout,
             )
             if not data:
-                break
+                raise HttpConnectionError(
+                    f"Response body ended after "
+                    f"{self._content_length - self._bytes_remaining} of "
+                    f"{self._content_length} bytes for {self.url}"
+                )
             self._bytes_remaining -= len(data)
             yield data
 
@@ -2200,6 +2231,7 @@ def _build_sync_response(
     resp: http.client.HTTPResponse,
     conn: http.client.HTTPConnection,
     stream: bool,
+    method: str = "GET",
     raw_set_cookies: list[str] | None = None,
     on_timing: TimingHook | None = None,
     timing_start: float = 0.0,
@@ -2221,6 +2253,7 @@ def _build_sync_response(
             raw_set_cookies=raw_set_cookies,
             on_timing=on_timing,
             timing_start=timing_start,
+            expect_body=_response_has_body(method, status),
         ), False
 
     resp_body = resp.read()
@@ -2402,6 +2435,7 @@ def _sync_request(
                     resp,
                     conn,
                     stream,
+                    method,
                     raw_set_cookies=accumulated_set_cookies,
                     on_timing=on_timing,
                     timing_start=timing_start,
@@ -2800,6 +2834,7 @@ def _build_async_streaming_response(
     reader: asyncio.StreamReader,
     writer: asyncio.StreamWriter,
     timeout: float,
+    method: str = "GET",
     raw_set_cookies: list[str] | None = None,
     on_timing: TimingHook | None = None,
     timing_start: float = 0.0,
@@ -2823,6 +2858,7 @@ def _build_async_streaming_response(
         raw_set_cookies=raw_set_cookies,
         on_timing=on_timing,
         timing_start=timing_start,
+        expect_body=_response_has_body(method, status),
     )
 
 
@@ -2970,6 +3006,7 @@ async def _async_request(
                     reader,
                     writer,
                     timeout,
+                    method,
                     raw_set_cookies=accumulated_set_cookies,
                     on_timing=on_timing,
                     timing_start=timing_start,

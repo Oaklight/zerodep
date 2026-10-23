@@ -28,6 +28,14 @@ zerodep list
 列出所有可用模块及其版本和描述。
 
 ```bash
+# 只看一个分类
+zerodep list --category serialization
+
+# 机器可读输出
+zerodep list --json
+```
+
+```bash
 $ zerodep list
   Module      Version  Description
   ----------  -----    ----------------------------------------
@@ -39,6 +47,22 @@ $ zerodep list
   ...
 
   20 modules available
+```
+
+### `zerodep search <term> [...]`
+
+在模块名称、描述、分类、层级和依赖中搜索；所有关键词都要命中，不区分大小写。
+
+```bash
+$ zerodep search http
+  httpclient  0.6.1  Zero-dependency sync + async HTTP REST client
+  httpserver  0.6.1  Zero-dependency async HTTP server with decorator-based routing
+  sse         0.4.1  Zero-dependency SSE (Server-Sent Events) client and event encoder
+
+  3 module(s) matched
+
+# 供脚本使用
+zerodep search http --json
 ```
 
 ### `zerodep info <module>`
@@ -83,6 +107,9 @@ zerodep add scheduler -f
 
 # 不写入 zerodep.lock.json
 zerodep add scheduler --no-lock
+
+# 只显示计划，不拷贝任何文件
+zerodep add sse --dry-run
 ```
 
 每次安装都会在拷贝文件旁记录 `zerodep.lock.json`（见[源版本锁定与锁文件](#源版本锁定与锁文件)）。
@@ -121,6 +148,9 @@ zerodep update sse --force
 
 # 不把结果写入锁文件
 zerodep update sse --no-lock
+
+# 只显示将要更新的内容，不写入
+zerodep update --all --dry-run
 ```
 
 | 状态 | 含义 | 不加 `--force` 时 `update` 的行为 |
@@ -169,6 +199,26 @@ zerodep status --exit-code    # 只要存在非最新状态就退出 1
 
 `status` 还会提示未安装的依赖。手工放进 vendor 目录、锁文件里没有记录的模块同样会被列出。
 
+### `zerodep remove <module> [...]`
+
+删除已安装模块的文件并同步更新锁文件。仅因它而被拉取的依赖会被建议移除；仍被它需要的依赖会被提示。
+
+```bash
+# 先看会删除什么
+zerodep remove sse --dry-run
+
+# 直接删除，跳过确认
+zerodep remove sse -y
+
+# 删除被本地修改过的模块
+zerodep remove sse --force
+
+# 机器可读结果
+zerodep remove sse -y --json
+```
+
+`remove` 默认拒绝删除与锁文件记录不一致的已跟踪文件（需要 `--force`），并在仍被其他已安装模块依赖时给出警告。`--json` 需要配合 `--yes`（或 `--force`），因为它无法交互确认。
+
 ### `zerodep outdated`
 
 列出本地 zerodep 文件及其与上游的对比结果。状态词与 `status` 相同；有锁文件时能区分上游变更和本地修改，没有锁文件时任何内容差异都报告为 `unverified`。
@@ -213,7 +263,7 @@ $ zerodep version-check --strict
 
 ### `zerodep release-check`
 
-执行打发布 tag 前必须通过的全部检查：模块版本是否与已声明的版本 tag 一致、manifest 是否最新、`pyproject.toml` 与 `zerodep.py` 的 CalVer 版本是否一致、生成的文档模块索引（在挂载了 docs worktree 时）以及工作区是否干净。任一检查失败都会以退出码 1 结束。
+执行打发布 tag 前必须通过的全部检查：模块版本是否与已声明的版本 tag 一致、manifest 是否最新、`pyproject.toml` 与 `zerodep.py` 的 CalVer 版本是否一致、模块源码是否只导入标准库与同项目模块、frontmatter 的 `deps` 是否与实际同项目导入一致、每个需要参考实现的 benchmark 是否有对应的 `bench-*` extra、每个测试文件是否已接入 Makefile、生成的文档模块索引（在挂载了 docs worktree 时）以及工作区是否干净。任一检查失败都会以退出码 1 结束。
 
 Release 工作流调用的正是同一条命令，因此本地检查与 CI 不会出现偏差。
 
@@ -231,6 +281,19 @@ release-check passed
 ```
 
 迭代过程中可使用 `--allow-dirty` 跳过工作区检查。
+
+两项可选检查不重复实现，而是委托给项目自身的工具：
+
+```bash
+# 运行 pre-commit 钩子（ruff、ruff-format、ty、complexipy）
+zerodep release-check --with-lint
+
+# 只测试指定模块（逗号分隔）
+zerodep release-check --with-tests httpclient,httpserver
+
+# 运行全部正确性测试
+zerodep release-check --with-tests
+```
 
 使用 `--version X` 可额外校验即将打出的版本号：必须是 CalVer（`YYYY.M.D` / `YYYY.M.D.N`），且 `vX` tag 尚不存在。Release 工作流会传入它计算出的版本号，因此手动触发时传入任意版本字符串会在这里失败，而不会打出一个名不副实的 tag。
 

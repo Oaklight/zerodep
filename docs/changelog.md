@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+### 新功能
+
+- **cli**：`zerodep remove <module>` 删除已跟踪文件、移除锁文件条目，提示因此变为无用的依赖，并在仍有其他已安装模块需要它时发出警告。与锁文件记录不一致的文件需要 `--force` 才会删除；支持 `--dry-run` 与 `--json`。([#252](https://github.com/Oaklight/zerodep/issues/252))
+- **cli**：`add` 与 `update` 新增 `--dry-run`；`list` 新增 `--category` 与 `--json`；新增 `zerodep search <term> [...]`，搜索名称、描述、分类、层级和依赖。([#252](https://github.com/Oaklight/zerodep/issues/252))
+- **cli**：`zerodep release-check` 现在还检查模块源码是否只导入标准库与同项目模块（`except ImportError` 或 `sys.version_info` 分支下的导入视为可选）、frontmatter 的 `deps` 是否与实际同项目导入一致、每个需要参考实现的 benchmark 是否有 `bench-*` extra、每个测试文件是否已接入 Makefile。`--with-lint` 运行 pre-commit 钩子，`--with-tests [a,b]` 运行指定模块或全部正确性测试。([#258](https://github.com/Oaklight/zerodep/issues/258))
+
 ## [2026.10.23.2] - 2026-10-23
 
 ### 新功能

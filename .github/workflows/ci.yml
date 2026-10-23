@@ -33,5 +33,6 @@ jobs:
       - name: Run the pre-release checks
         # The same command the Release workflow runs before tagging. Lint and
         # tests already have their own jobs, so --with-lint/--with-tests stay
-        # off here.
-        run: python -m zerodep release-check --allow-dirty
+        # off here. A fresh checkout is clean, so the working-tree check is a
+        # real gate rather than noise.
+        run: python -m zerodep release-check

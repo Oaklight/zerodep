@@ -1,12 +1,12 @@
-# SSE 客户端
+# SSE 客户端与事件编码器
 
-零依赖的 Server-Sent Events (SSE) 客户端，W3C 标准解析、自动重连、同步 + 异步双模式，仅标准库，Python 3.10+。
+零依赖的 Server-Sent Events (SSE) 客户端与事件编码器，W3C 标准解析、自动重连、同步 + 异步双模式，仅标准库，Python 3.10+。
 
 > **可替代:** `sseclient-py`、`aiohttp-sse-client`、`httpx-sse`
 
 ## 概述
 
-SSE 模块提供完整的 [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) 流消费客户端。采用三层架构设计，你可以只使用解析器，也可以使用完整的自动重连客户端。
+SSE 模块提供完整的 [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) 流消费客户端和线格式编码器。采用四层架构设计，你可以只使用编码器、只使用解析器，也可以使用完整的自动重连客户端。
 
 | 文件 | 说明 | 依赖 |
 |------|------|------|
@@ -17,7 +17,8 @@ SSE 模块提供完整的 [Server-Sent Events](https://html.spec.whatwg.org/mult
 ## 功能特性
 
 - **W3C 标准解析** —— 支持 `event`、`data`、`id`、`retry` 字段，注释忽略，BOM 剥离，多行 data 合并
-- **三层抽象** —— 独立解析器、迭代器包装、完整 HTTP 客户端
+- **服务端编码** —— `encode_event` / `encode_comment` 生成符合规范的 `text/event-stream` 块（多行 data、CRLF 归一化、NUL/换行校验）
+- **四层抽象** —— 事件编码器、独立解析器、迭代器包装、完整 HTTP 客户端
 - **自动重连** —— 可配置重试间隔、最大重试次数和 Last-Event-ID 跟踪
 - **同步 + 异步** —— `EventSource` / `AsyncEventSource` 和 `SSEClient` / `AsyncSSEClient`
 - **204 = 停止** —— 服务器返回 HTTP 204 表示优雅终止流
@@ -124,6 +125,28 @@ with get("https://api.example.com/events", stream=True) as r:
         print(event.data)
 ```
 
+### 服务端编码（配合 httpserver）
+
+```python
+import asyncio
+from httpserver import App, StreamingResponse
+from sse import encode_comment, encode_event
+
+app = App()
+
+@app.get("/events")
+async def events(request):
+    async def stream():
+        yield encode_event("hello", event="greeting", id="1")
+        await asyncio.sleep(1)
+        yield encode_event("line 1\nline 2", id="2")
+        yield encode_comment("heartbeat")
+
+    return StreamingResponse(stream(), content_type="text/event-stream")
+```
+
+`encode_event` 返回完整的事件块（含触发分发的结尾空行）；`encode_comment` 生成用于心跳的注释块。两者都是无网络依赖的纯函数，可用于任何流式响应（或直接传给 `write()`）。
+
 ### 重连配置
 
 ```python
@@ -153,6 +176,27 @@ with connect(
 8. 超过 `max_retries` 抛出 `SSEConnectionError`
 
 ## API 参考
+
+### `encode_event(data="", *, event=None, id=None, retry=None)`
+
+为 `text/event-stream` 响应格式化一个 SSE 事件块。
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `data` | `str` | `""` | 载荷；换行会被归一化，每行生成一个 `data:` 字段 |
+| `event` | `str \| None` | `None` | 事件类型；省略时客户端视为 `message` |
+| `id` | `str \| None` | `None` | 事件 ID；不得包含 NUL 或换行 |
+| `retry` | `int \| None` | `None` | 重连间隔（毫秒，非负整数） |
+
+返回含结尾空行的完整事件块。`event`/`id` 含换行、`id` 含 NUL 或 `retry` 非法时抛出 `ValueError`。
+
+---
+
+### `encode_comment(text="")`
+
+格式化注释块（客户端忽略）用于心跳。返回含结尾空行的完整块。
+
+---
 
 ### `SSEEvent`
 
@@ -242,13 +286,14 @@ with connect(
 |------|-------------|-----------|
 | 依赖 | 无（仅标准库） | httpx |
 | 独立解析器 | 有（`EventSource`） | 无（需要 `httpx.Response`） |
+| 服务端编码 | 有（`encode_event`） | 无 |
 | 自动重连 | 有 | 无 |
 | Last-Event-ID 跟踪 | 有 | 无 |
 | 同步 + 异步 | 有 | 有 |
 | 204 优雅停止 | 有 | 无 |
 | W3C 解析 | 有 | 有 |
 | 解析速度 | ~1.5 ms / 1000 事件 | ~1.4 ms / 1000 事件 |
-| 实现 | 单文件（~380 行） | 包（多文件） |
+| 实现 | 单文件（~700 行） | 包（多文件） |
 
 **何时使用 zerodep：** 你需要一个自包含的 SSE 客户端，具备自动重连和零依赖，或者需要一个不与任何 HTTP 库耦合的独立解析器。
 

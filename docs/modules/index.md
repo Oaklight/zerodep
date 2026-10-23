@@ -50,7 +50,7 @@ title: 模块概览
 | [skills](skills.md) | 0.4.3 | 2026-08-25 |
 | [soup](soup.md) | 0.9.0 | 2026-10-13 |
 | [sparse_search](sparse_search.md) | 0.4.0 | 2026-04-27 |
-| [sse](sse.md) | 0.3.4 | 2026-09-27 |
+| [sse](sse.md) | 0.4.0 | 2026-09-27 |
 | [structlog](structlog.md) | 0.3.0 | 2026-04-27 |
 | [synctex](synctex.md) | 0.2.0 | 2026-05-02 |
 | [tabulate](tabulate.md) | 0.1.2 | 2026-10-22 |
@@ -69,7 +69,7 @@ title: 模块概览
 | 模块 | 描述 | 可替代 | 性能对标 |
 |--------|-------------|----------|-------------------|
 | [httpclient](httpclient.md) | 同步 + 异步 REST 客户端（连接池、代理、认证） | requests、httpx、urllib3、aiohttp（客户端部分） | `httpx` |
-| [sse](sse.md) | Server-Sent Events 客户端（自动重连） | sseclient-py、aiohttp-sse-client、httpx-sse | `httpx-sse` |
+| [sse](sse.md) | Server-Sent Events 客户端与事件编码器（自动重连） | sseclient-py、aiohttp-sse-client、httpx-sse | `httpx-sse` |
 | [httpserver](httpserver.md) | 异步 HTTP 服务器（装饰器路由、流式响应、静态文件） | flask（轻量场景）、microdot、bottle、starlette（基础场景）、aiohttp（服务端部分） | `flask / microdot / bottle` |
 | [useragent](useragent.md) | 轻量级 Chrome/Edge User-Agent 生成器（含 Client Hints） | fake-useragent、ua-generator、user-agents | `ua-generator` |
 | [websocket](websocket.md) | RFC 6455 WebSocket 客户端（同步 + 异步） | websocket-client、websockets | `websockets` |

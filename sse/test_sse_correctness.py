@@ -19,6 +19,8 @@ from sse import (
     _SSEParser,
     async_connect,
     connect,
+    encode_comment,
+    encode_event,
 )
 
 # ── Helpers ──
@@ -61,6 +63,63 @@ class TestSSEEvent:
         e = SSEEvent(data="x" * 100)
         r = repr(e)
         assert "..." in r
+
+
+# ── Encoder tests ──
+
+
+class TestEncodeEvent:
+    def test_basic(self):
+        assert encode_event("hello") == "data: hello\n\n"
+
+    def test_multiline_data(self):
+        assert encode_event("a\nb") == "data: a\ndata: b\n\n"
+
+    def test_crlf_and_cr_are_normalized(self):
+        assert encode_event("a\r\nb\rc") == "data: a\ndata: b\ndata: c\n\n"
+
+    def test_event_id_and_retry(self):
+        assert encode_event("x", event="update", id="42", retry=1000) == (
+            "event: update\nid: 42\nretry: 1000\ndata: x\n\n"
+        )
+
+    def test_empty_data_still_dispatches(self):
+        assert encode_event() == "data:\n\n"
+        assert list(EventSource(encode_event().splitlines())) == [SSEEvent(data="")]
+
+    def test_trailing_newline_is_preserved(self):
+        assert encode_event("a\n") == "data: a\ndata:\n\n"
+
+    def test_round_trip(self):
+        block = encode_event("line1\nline2", event="update", id="7", retry=1500)
+        assert list(EventSource(block.splitlines())) == [
+            SSEEvent(event="update", data="line1\nline2", id="7", retry=1500)
+        ]
+
+    def test_id_with_nul_is_rejected(self):
+        with pytest.raises(ValueError, match="NUL"):
+            encode_event("x", id="a\0b")
+
+    def test_line_breaks_in_event_or_id_are_rejected(self):
+        with pytest.raises(ValueError, match="line break"):
+            encode_event("x", event="a\nb")
+        with pytest.raises(ValueError, match="line break"):
+            encode_event("x", id="a\rb")
+
+    def test_invalid_retry_is_rejected(self):
+        with pytest.raises(ValueError, match="non-negative integer"):
+            encode_event("x", retry=-1)
+        with pytest.raises(ValueError, match="non-negative integer"):
+            encode_event("x", retry=True)  # type: ignore[arg-type]
+
+    def test_comment_is_a_heartbeat(self):
+        assert encode_comment("ping") == ": ping\n\n"
+        assert encode_comment() == ":\n\n"
+        assert list(EventSource(encode_comment("ping").splitlines())) == []
+
+    def test_comment_with_line_break_is_rejected(self):
+        with pytest.raises(ValueError, match="line break"):
+            encode_comment("a\nb")
 
 
 # ── _SSEParser tests ──

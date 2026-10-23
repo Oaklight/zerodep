@@ -15,3 +15,23 @@ on:
 jobs:
   ci:
     uses: ./.github/workflows/lint-test.yml
+
+  release-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Required: module-versions compares each module against its
+          # declared version tag. A shallow clone has no tags, so the check
+          # would classify everything as up to date and check nothing.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run the pre-release checks
+        # The same command the Release workflow runs before tagging. Lint and
+        # tests already have their own jobs, so --with-lint/--with-tests stay
+        # off here.
+        run: python -m zerodep release-check --allow-dirty

@@ -125,24 +125,24 @@ td { white-space: nowrap; }
 <h1>toon</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 8873cd3 | Commit: 8873cd32 | 2026-10-23T17:21:15.441720+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-10-23T17:21:15.441720+00:00"></span></p>
+<p class="meta">Version: 93d0229 | Commit: 93d0229b | 2026-10-23T18:08:04.819243+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-10-23T18:08:04.819243+00:00"></span></p>
 <h2>toon</h2>
 <h3>Standalone benchmarks</h3>
 <div class="table-wrap"><table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>decode_large_ours</td><td>Decode</td><td>983.5 µs</td><td>1.0K</td><td title="CV=7.5% | rounds=845">945.1 µs</td><td title="CV=7.5% | rounds=845">2.03 ms</td><td title="CV=7.5% | rounds=845">73.4 µs</td><td title="CV=7.5% | rounds=845">1.02 ms</td></tr>
-<tr><td>decode_large_ref</td><td>Decode</td><td>956.2 µs</td><td>1.0K</td><td title="CV=2.6% | rounds=912">920.8 µs</td><td title="CV=2.6% | rounds=912">1.22 ms</td><td title="CV=2.6% | rounds=912">25.1 µs</td><td title="CV=2.6% | rounds=912">994.8 µs</td></tr>
-<tr><td>decode_medium_ours</td><td>Decode</td><td>143.3 µs</td><td>7.0K</td><td title="CV=21.5% | rounds=4847">133.4 µs</td><td title="CV=21.5% | rounds=4847">695.0 µs</td><td title="CV=21.5% | rounds=4847">30.7 µs</td><td title="CV=21.5% | rounds=4847">154.8 µs</td></tr>
-<tr><td>decode_medium_ref</td><td>Decode</td><td>133.7 µs</td><td>7.5K</td><td title="CV=4.6% | rounds=4784">128.6 µs</td><td title="CV=4.6% | rounds=4784">220.6 µs</td><td title="CV=4.6% | rounds=4784">6.2 µs</td><td title="CV=4.6% | rounds=4784">145.7 µs</td></tr>
-<tr><td>decode_small_ours</td><td>Decode</td><td>12.4 µs</td><td>80.6K</td><td title="CV=15.0% | rounds=23186">11.8 µs</td><td title="CV=15.0% | rounds=23186">102.3 µs</td><td title="CV=15.0% | rounds=23186">1.9 µs</td><td title="CV=15.0% | rounds=23186">12.8 µs</td></tr>
-<tr><td>decode_small_ref</td><td>Decode</td><td>12.0 µs</td><td>83.1K</td><td title="CV=13.1% | rounds=14094">11.5 µs</td><td title="CV=13.1% | rounds=14094">60.4 µs</td><td title="CV=13.1% | rounds=14094">1.6 µs</td><td title="CV=13.1% | rounds=14094">12.2 µs</td></tr>
-<tr><td>encode_large_ours</td><td>Encode</td><td>1.13 ms</td><td>885.2</td><td title="CV=3.3% | rounds=408">1.11 ms</td><td title="CV=3.3% | rounds=408">1.54 ms</td><td title="CV=3.3% | rounds=408">37.6 µs</td><td title="CV=3.3% | rounds=408">1.17 ms</td></tr>
-<tr><td>encode_large_ref</td><td>Encode</td><td>1.12 ms</td><td>895.0</td><td title="CV=2.2% | rounds=806">1.10 ms</td><td title="CV=2.2% | rounds=806">1.58 ms</td><td title="CV=2.2% | rounds=806">24.9 µs</td><td title="CV=2.2% | rounds=806">1.14 ms</td></tr>
-<tr><td>encode_medium_ours</td><td>Encode</td><td>187.6 µs</td><td>5.3K</td><td title="CV=4.9% | rounds=3797">181.4 µs</td><td title="CV=4.9% | rounds=3797">407.9 µs</td><td title="CV=4.9% | rounds=3797">9.3 µs</td><td title="CV=4.9% | rounds=3797">199.4 µs</td></tr>
-<tr><td>encode_medium_ref</td><td>Encode</td><td>187.1 µs</td><td>5.3K</td><td title="CV=4.3% | rounds=4371">180.1 µs</td><td title="CV=4.3% | rounds=4371">333.0 µs</td><td title="CV=4.3% | rounds=4371">8.1 µs</td><td title="CV=4.3% | rounds=4371">199.2 µs</td></tr>
-<tr><td>encode_small_ours</td><td>Encode</td><td>8.6 µs</td><td>115.6K</td><td title="CV=21.1% | rounds=23647">8.1 µs</td><td title="CV=21.1% | rounds=23647">98.5 µs</td><td title="CV=21.1% | rounds=23647">1.8 µs</td><td title="CV=21.1% | rounds=23647">8.8 µs</td></tr>
-<tr><td>encode_small_ref</td><td>Encode</td><td>8.3 µs</td><td>120.1K</td><td title="CV=18.4% | rounds=31221">7.9 µs</td><td title="CV=18.4% | rounds=31221">46.2 µs</td><td title="CV=18.4% | rounds=31221">1.5 µs</td><td title="CV=18.4% | rounds=31221">8.4 µs</td></tr>
+<tr><td>decode_large_ours</td><td>Decode</td><td>675.0 µs</td><td>1.5K</td><td title="CV=1.3% | rounds=486">661.2 µs</td><td title="CV=1.3% | rounds=486">770.8 µs</td><td title="CV=1.3% | rounds=486">8.9 µs</td><td title="CV=1.3% | rounds=486">684.5 µs</td></tr>
+<tr><td>decode_large_ref</td><td>Decode</td><td>652.6 µs</td><td>1.5K</td><td title="CV=2.6% | rounds=1263">636.1 µs</td><td title="CV=2.6% | rounds=1263">940.2 µs</td><td title="CV=2.6% | rounds=1263">17.2 µs</td><td title="CV=2.6% | rounds=1263">671.7 µs</td></tr>
+<tr><td>decode_medium_ours</td><td>Decode</td><td>95.4 µs</td><td>10.5K</td><td title="CV=3.5% | rounds=6148">91.9 µs</td><td title="CV=3.5% | rounds=6148">155.9 µs</td><td title="CV=3.5% | rounds=6148">3.4 µs</td><td title="CV=3.5% | rounds=6148">101.8 µs</td></tr>
+<tr><td>decode_medium_ref</td><td>Decode</td><td>95.3 µs</td><td>10.5K</td><td title="CV=4.3% | rounds=5145">92.5 µs</td><td title="CV=4.3% | rounds=5145">176.0 µs</td><td title="CV=4.3% | rounds=5145">4.1 µs</td><td title="CV=4.3% | rounds=5145">101.4 µs</td></tr>
+<tr><td>decode_small_ours</td><td>Decode</td><td>9.3 µs</td><td>107.3K</td><td title="CV=10.3% | rounds=26311">8.9 µs</td><td title="CV=10.3% | rounds=26311">59.1 µs</td><td title="CV=10.3% | rounds=26311">955.0 ns</td><td title="CV=10.3% | rounds=26311">9.4 µs</td></tr>
+<tr><td>decode_small_ref</td><td>Decode</td><td>9.0 µs</td><td>110.8K</td><td title="CV=10.6% | rounds=16210">8.6 µs</td><td title="CV=10.6% | rounds=16210">53.1 µs</td><td title="CV=10.6% | rounds=16210">959.5 ns</td><td title="CV=10.6% | rounds=16210">9.1 µs</td></tr>
+<tr><td>encode_large_ours</td><td>Encode</td><td>835.2 µs</td><td>1.2K</td><td title="CV=1.7% | rounds=1011">817.5 µs</td><td title="CV=1.7% | rounds=1011">1.17 ms</td><td title="CV=1.7% | rounds=1011">14.0 µs</td><td title="CV=1.7% | rounds=1011">850.3 µs</td></tr>
+<tr><td>encode_large_ref</td><td>Encode</td><td>821.3 µs</td><td>1.2K</td><td title="CV=1.7% | rounds=1133">803.8 µs</td><td title="CV=1.7% | rounds=1133">1.05 ms</td><td title="CV=1.7% | rounds=1133">13.6 µs</td><td title="CV=1.7% | rounds=1133">840.3 µs</td></tr>
+<tr><td>encode_medium_ours</td><td>Encode</td><td>138.1 µs</td><td>7.2K</td><td title="CV=3.4% | rounds=4504">134.4 µs</td><td title="CV=3.4% | rounds=4504">224.4 µs</td><td title="CV=3.4% | rounds=4504">4.7 µs</td><td title="CV=3.4% | rounds=4504">144.9 µs</td></tr>
+<tr><td>encode_medium_ref</td><td>Encode</td><td>135.5 µs</td><td>7.4K</td><td title="CV=3.1% | rounds=5591">132.0 µs</td><td title="CV=3.1% | rounds=5591">212.2 µs</td><td title="CV=3.1% | rounds=5591">4.2 µs</td><td title="CV=3.1% | rounds=5591">142.2 µs</td></tr>
+<tr><td>encode_small_ours</td><td>Encode</td><td>6.6 µs</td><td>151.6K</td><td title="CV=10.5% | rounds=25088">6.3 µs</td><td title="CV=10.5% | rounds=25088">29.6 µs</td><td title="CV=10.5% | rounds=25088">689.9 ns</td><td title="CV=10.5% | rounds=25088">6.7 µs</td></tr>
+<tr><td>encode_small_ref</td><td>Encode</td><td>6.3 µs</td><td>158.5K</td><td title="CV=11.7% | rounds=29968">6.0 µs</td><td title="CV=11.7% | rounds=29968">49.5 µs</td><td title="CV=11.7% | rounds=29968">737.2 ns</td><td title="CV=11.7% | rounds=29968">6.4 µs</td></tr>
 </tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">

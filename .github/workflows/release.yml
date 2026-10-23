@@ -103,7 +103,9 @@ jobs:
           # No fallback: the cascade used to fail silently on a missing
           # actions: write scope, so a red benchmark never appeared. Its own
           # job, so a transient API failure cannot skip the PyPI publish.
-          gh workflow run benchmark.yml --ref "v${VER}"
+          # -R is required: this job has no checkout, so gh cannot infer
+          # the repository from a working tree.
+          gh workflow run benchmark.yml --ref "v${VER}" -R "$GITHUB_REPOSITORY"
 
   pypi:
     needs: release

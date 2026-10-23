@@ -16,6 +16,10 @@ permissions:
 
 jobs:
   quality:
+    # The reusable workflow only reads the repository; do not hand it (or
+    # the caller) write scopes.
+    permissions:
+      contents: read
     uses: ./.github/workflows/lint-test.yml
     with:
       python-versions: '["3.12"]'
@@ -91,7 +95,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VER="${{ steps.version.outputs.version }}"
-          gh workflow run benchmark.yml --ref "v${VER}" || echo "::warning::Benchmark trigger failed"
+          # No fallback: the cascade used to fail silently on a missing
+          # actions: write scope, so a red benchmark never appeared.
+          gh workflow run benchmark.yml --ref "v${VER}"
 
   pypi:
     needs: release

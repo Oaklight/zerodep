@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-23T04:38:16.914593+00:00",
+  "generated": "2026-10-23T07:43:53.404255+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -175,24 +175,24 @@
       "files": [
         "httpclient/httpclient.py"
       ],
-      "version": "0.6.0",
+      "version": "0.6.1",
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-10-22T21:07:10-05:00",
-      "content_hash": "888104fbc5bd46a138baeb45b051ff829c88eec837dfe273d78f296800b18316"
+      "last_updated": "2026-10-23T02:43:27-05:00",
+      "content_hash": "0ca30195bf729aea7be56c40868f254904032f3755d74d3f8044f57e234180e2"
     },
     "httpserver": {
       "description": "Zero-dependency async HTTP server with decorator-based routing",
       "files": [
         "httpserver/httpserver.py"
       ],
-      "version": "0.6.0",
+      "version": "0.6.1",
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-10-22T14:26:49-05:00",
-      "content_hash": "1fc745fceabd63af1bb9dec29be12090ecb9fbc85eeff5353e34ad29e4290c7a"
+      "last_updated": "2026-10-23T02:43:33-05:00",
+      "content_hash": "6e63ce597515e84cc91954740e6e36a979307a065082b137d6bb0470036db3f2"
     },
     "jsonrpc": {
       "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",
@@ -482,14 +482,14 @@
       "files": [
         "sse/sse.py"
       ],
-      "version": "0.4.0",
+      "version": "0.4.1",
       "deps": [
         "httpclient"
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-09-27T23:51:59-05:00",
-      "content_hash": "cf9c45e8fb976dfa01eedb3070f77b5a03fb41cbf37e457d25b86c4ef9e2d7e6"
+      "last_updated": "2026-10-23T02:43:39-05:00",
+      "content_hash": "65243915de1d2d2f42f8c4ee57aa54f11acd0ee13701c6f4e64d51814fb5e535"
     },
     "structlog": {
       "description": "Zero-dependency structured logging with pretty console output",

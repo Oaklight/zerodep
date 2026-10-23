@@ -63,6 +63,7 @@ plugins:
             - ../ansi
             - ../scheduler
             - ../sparse_search
+            - ../semantic_search
             - ../frontmatter
             - ../config
             - ../cache
@@ -108,6 +109,7 @@ plugins:
             - ansi
             - scheduler
             - sparse_search
+            - semantic_search
             - frontmatter
             - config
             - cache
@@ -213,6 +215,7 @@ nav:
           - readability / 正文提取器: modules/readability.md
           - diff / Diff 差异工具: modules/diff.md
           - sparse_search / 稀疏搜索: modules/sparse_search.md
+          - semantic_search / 语义搜索: modules/semantic_search.md
           - synctex / SyncTeX 解析器: modules/synctex.md
       - 配置:
           - dotenv / Dotenv 环境变量: modules/dotenv.md
@@ -274,6 +277,7 @@ nav:
           - readability / 正文提取器: api/readability.md
           - diff / Diff 差异工具: api/diff.md
           - sparse_search / 稀疏搜索: api/sparse_search.md
+          - semantic_search / 语义搜索: api/semantic_search.md
           - synctex / SyncTeX 解析器: api/synctex.md
       - 配置:
           - dotenv / Dotenv 环境变量: api/dotenv.md

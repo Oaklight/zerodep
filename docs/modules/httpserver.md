@@ -289,7 +289,7 @@ Convenience response that serializes `data` to JSON.
 
 ---
 
-### `StreamingResponse(generator, status_code=200, headers=None, content_type=None)`
+### `StreamingResponse(generator, status_code=200, headers=None, content_type=None, disconnect_check_interval=None, disconnect_on_eof=False)`
 
 Streaming response using chunked transfer encoding.
 
@@ -297,6 +297,8 @@ Streaming response using chunked transfer encoding.
 |-----------|------|-------------|
 | `generator` | `AsyncIterator[str \| bytes]` | Async generator yielding response chunks |
 | `content_type` | `str \| None` | For SSE, use `"text/event-stream"` |
+| `disconnect_check_interval` | `float \| None` | Seconds between disconnect checks while the generator is blocked (default 30) |
+| `disconnect_on_eof` | `bool` | Treat read-side EOF as a disconnect while blocked. Off by default because a half-closing client is still reading |
 
 ---
 

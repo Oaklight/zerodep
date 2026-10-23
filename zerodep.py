@@ -352,7 +352,14 @@ def _git_last_updated(filepath: Path, repo_root: Path) -> str | None:
             timeout=5,
         )
         ts = result.stdout.strip()
-        return ts if ts else None
+        if not ts:
+            return None
+        # Git emits UTC as "Z" in some versions and "+00:00" in others;
+        # canonicalize so regenerating the manifest is reproducible.
+        try:
+            return datetime.fromisoformat(ts.replace("Z", "+00:00")).isoformat()
+        except ValueError:
+            return ts
     except (subprocess.SubprocessError, FileNotFoundError):
         return None
 

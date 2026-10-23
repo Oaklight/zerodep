@@ -757,3 +757,302 @@ def test_release_check_reports_uncommitted_tracked_changes(tmp_path: Path):
     r = _run_release_check(repo)
     assert r.returncode == 1
     assert "tracked file(s) uncommitted" in r.stdout
+
+
+# ── lifecycle: list filters, search, dry-run, remove ──
+
+
+def test_list_category_filters_and_json(tmp_path: Path):
+    r = run_cli("list", "--category", "serialization", "--json")
+    assert r.returncode == 0, r.stderr
+    data = json.loads(r.stdout)
+    assert data["category"] == "serialization"
+    assert data["count"] == len(data["modules"]) > 0
+    assert {m["category"] for m in data["modules"]} == {"serialization"}
+
+
+def test_list_unknown_category_errors():
+    r = run_cli("list", "--category", "nope")
+    assert r.returncode == 1
+    assert "unknown category" in r.stderr
+
+
+def test_search_matches_name_description_and_deps():
+    r = run_cli("search", "http", "--json")
+    assert r.returncode == 0, r.stderr
+    names = {m["name"] for m in json.loads(r.stdout)["modules"]}
+    assert {"httpclient", "httpserver"} <= names
+
+    r = run_cli("search", "sse", "--json")
+    assert {m["name"] for m in json.loads(r.stdout)["modules"]} == {"sse"}
+
+    r = run_cli("search", "no-such-term-anywhere")
+    assert r.returncode == 0
+    assert "No modules match" in r.stdout
+
+
+def test_add_dry_run_writes_nothing(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    r = run_cli("add", "yaml", "--dry-run", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert "Would copy 1 file(s)" in r.stdout
+    assert list(vendor.iterdir()) == []
+
+
+def test_update_dry_run_writes_nothing(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    lock = _read_lock(vendor)
+    lock["modules"]["yaml"]["upstream_hash"] = "0" * 64
+    _write_lock(vendor, lock)
+    before = (vendor / "yaml.py").read_text(encoding="utf-8")
+
+    r = run_cli("update", "--all", "--dry-run", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert "would update" in r.stdout
+    assert (vendor / "yaml.py").read_text(encoding="utf-8") == before
+    r = run_cli("status", "--json", "-d", str(vendor))
+    assert json.loads(r.stdout)["modules"][0]["state"] == "outdated"
+
+
+def test_remove_deletes_files_and_lock_entry(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "sse")
+    r = run_cli("remove", "sse", "-y", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert not (vendor / "sse.py").exists()
+    assert (vendor / "httpclient.py").exists()
+    lock = _read_lock(vendor)
+    assert "sse" not in lock["modules"]
+    assert "httpclient" in lock["modules"]
+    assert "unused dependency: httpclient" in r.stderr
+
+
+def test_remove_dry_run_writes_nothing(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    r = run_cli("remove", "yaml", "--dry-run", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert (vendor / "yaml.py").exists()
+    assert "yaml" in _read_lock(vendor)["modules"]
+
+
+def test_remove_refuses_modified_without_force(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    with (vendor / "yaml.py").open("a", encoding="utf-8") as fh:
+        fh.write("# local patch\n")
+    r = run_cli("remove", "yaml", "-y", "-d", str(vendor))
+    assert r.returncode == 1
+    assert "locally modified" in r.stderr
+    assert (vendor / "yaml.py").exists()
+
+    r = run_cli("remove", "yaml", "--force", "--json", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert json.loads(r.stdout)["removed"] == ["yaml"]
+    assert not (vendor / "yaml.py").exists()
+
+
+def test_remove_warns_about_remaining_dependents(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "sse")
+    r = run_cli("remove", "httpclient", "-y", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert "still required by sse" in r.stderr
+
+
+def test_remove_json_needs_yes(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    r = run_cli("remove", "yaml", "--json", "-d", str(vendor))
+    assert r.returncode == 1
+    assert "needs --yes" in r.stderr
+    assert (vendor / "yaml.py").exists()
+
+
+def test_remove_unknown_module_errors(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    r = run_cli("remove", "notinstalled", "-y", "-d", str(vendor))
+    assert r.returncode == 1
+    assert "not installed here" in r.stderr
+
+
+# ── release-check helpers ──
+
+
+def test_parse_imports_separates_optional_from_hard():
+    zerodep = _import_cli()
+    source = """
+import os
+import hard_dep
+try:
+    import optional_dep
+except ImportError:
+    optional_dep = None
+import sys
+if sys.version_info >= (3, 11):
+    from tomllib import loads
+else:
+    from tomli import loads
+"""
+    hard, optional = zerodep._parse_imports(source)
+    # A sys.version_info branch: the running-interpreter branch is real, the
+    # older-Python fallback is a compatibility shim.
+    assert hard == {"os", "hard_dep", "sys", "tomllib"}
+    assert optional == {"optional_dep", "tomli"}
+
+
+def test_parse_imports_rejects_bypasses():
+    zerodep = _import_cli()
+    source = """
+try:
+    import fatal_dep
+except Exception:
+    raise
+if TYPE_CHECKING:
+    import pandas
+if sys.version_info >= (3, 11):
+    import numpy
+else:
+    import legacy_dep
+import importlib
+importlib.import_module("scipy.stats")
+"""
+    hard, optional = zerodep._parse_imports(source)
+    assert hard == {"fatal_dep", "numpy", "scipy", "importlib"}
+    assert optional == {"pandas", "legacy_dep"}
+
+
+def test_makefile_recipes_map_targets_to_tests(tmp_path: Path):
+    zerodep = _import_cli()
+    makefile = tmp_path / "Makefile"
+    makefile.write_text(
+        "test:\n"
+        "\t$(PYTEST) a/test_a_correctness.py b/test_b_edge.py -v\n"
+        "\n"
+        "benchmark:\n"
+        "\t$(PYTEST) a/test_a_benchmark.py -v\n"
+        "help:\n"
+        "\t@echo test_x.py\n",
+        encoding="utf-8",
+    )
+    recipes, dynamic = zerodep._makefile_recipes(tmp_path)
+    assert recipes["test"] == {
+        "a/test_a_correctness.py",
+        "b/test_b_edge.py",
+    }
+    assert recipes["benchmark"] == {"a/test_a_benchmark.py"}
+    assert dynamic == set()
+
+
+def test_makefile_recipes_handle_multi_targets_and_variables(tmp_path: Path):
+    zerodep = _import_cli()
+    makefile = tmp_path / "Makefile"
+    makefile.write_text(
+        "test lint:: a/test_a.py\n"
+        "\t$(PYTEST) a/test_a.py -v\n"
+        "checked:\n"
+        "\t$(PYTEST) $(TESTS) -v\n",
+        encoding="utf-8",
+    )
+    recipes, dynamic = zerodep._makefile_recipes(tmp_path)
+    assert recipes["test"] == {"a/test_a.py"}
+    assert recipes["lint"] == {"a/test_a.py"}
+    assert dynamic == {"checked"}
+
+
+def test_stdlib_check_flags_hard_third_party_import(tmp_path: Path):
+    zerodep = _import_cli()
+    (tmp_path / "mymod").mkdir()
+    (tmp_path / "mymod" / "mymod.py").write_text(
+        "import os\ntry:\n    import requests\nexcept ImportError:\n    pass\n"
+        "import yaml_dep\n",
+        encoding="utf-8",
+    )
+    modules = {"mymod": {"files": ["mymod/mymod.py"]}}
+    status, detail = zerodep._run_stdlib_check(tmp_path, modules)
+    assert status == "fail"
+    assert "yaml_dep" in detail
+    assert "requests" not in detail  # optional imports are allowed
+
+
+def test_dependency_check_flags_undeclared_sibling(tmp_path: Path):
+    zerodep = _import_cli()
+    for name in ("alpha", "beta"):
+        (tmp_path / name).mkdir()
+    (tmp_path / "alpha" / "alpha.py").write_text(
+        "from beta import helper\n", encoding="utf-8"
+    )
+    (tmp_path / "beta" / "beta.py").write_text("helper = 1\n", encoding="utf-8")
+    modules = {
+        "alpha": {"files": ["alpha/alpha.py"], "deps": []},
+        "beta": {"files": ["beta/beta.py"], "deps": []},
+    }
+    status, detail = zerodep._run_dependency_check(tmp_path, modules)
+    assert status == "fail"
+    assert "alpha imports beta undeclared" in detail
+
+    modules["alpha"]["deps"] = ["beta"]
+    status, detail = zerodep._run_dependency_check(tmp_path, modules)
+    assert status == "ok", detail
+
+
+def test_tests_check_rejects_unknown_module():
+    zerodep = _import_cli()
+    status, detail = zerodep._run_tests_check(
+        Path(__file__).parent, {"yaml": {}}, "nope"
+    )
+    assert status == "fail"
+    assert "unknown module" in detail
+
+
+def test_remove_refuses_untracked_edit(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    (vendor / "yaml.py").write_text(
+        (Path(__file__).parent / "yaml" / "yaml.py").read_text(encoding="utf-8")
+        + "# local patch\n",
+        encoding="utf-8",
+    )
+    r = run_cli("remove", "yaml", "-y", "-d", str(vendor))
+    assert r.returncode == 1
+    assert "locally modified" in r.stderr
+    assert (vendor / "yaml.py").exists()
+
+    r = run_cli("remove", "yaml", "-y", "--force", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert not (vendor / "yaml.py").exists()
+
+
+def test_remove_rejects_lock_path_escaping_target(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    outside = tmp_path / "outside.py"
+    outside.write_text("keep me\n", encoding="utf-8")
+    lock = _read_lock(vendor)
+    lock["modules"]["evil"] = {
+        "version": "0.1.0",
+        "upstream_hash": None,
+        "requested": True,
+        "files": {"../outside.py": "0" * 64},
+    }
+    _write_lock(vendor, lock)
+
+    r = run_cli("remove", "evil", "-y", "-d", str(vendor))
+    assert r.returncode == 1
+    assert "points outside" in r.stderr
+    assert outside.exists()
+
+
+def test_release_check_reports_new_checks():
+    r = run_cli("release-check", "--allow-dirty")
+    assert r.returncode == 0, r.stderr
+    for row in (
+        "stdlib-imports",
+        "dependencies",
+        "benchmark-extras",
+        "makefile-wiring",
+    ):
+        assert row in r.stdout

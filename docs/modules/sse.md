@@ -1,12 +1,12 @@
-# SSE Client
+# SSE Client and Event Encoder
 
-Zero-dependency Server-Sent Events (SSE) client with W3C-compliant parsing, auto-reconnection, and sync+async support -- stdlib only, Python 3.10+.
+Zero-dependency Server-Sent Events (SSE) client and event encoder with W3C-compliant parsing, auto-reconnection, and sync+async support -- stdlib only, Python 3.10+.
 
 > **Replaces:** `sseclient-py`, `aiohttp-sse-client`, `httpx-sse`
 
 ## Overview
 
-The SSE module provides a complete client for consuming [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) streams. It is designed in three layers so you can use just the parser or the full auto-reconnecting client.
+The SSE module provides a complete client for consuming [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) streams and a wire-format encoder for producing them. It is designed in four layers so you can use just the encoder, just the parser, or the full auto-reconnecting client.
 
 | File | Description | Dependencies |
 |------|-------------|--------------|
@@ -17,7 +17,8 @@ The high-level client (`SSEClient` / `AsyncSSEClient`) additionally uses the sib
 ## Features
 
 - **W3C-compliant parsing** -- handles `event`, `data`, `id`, `retry` fields, comments, BOM stripping, and multi-line data
-- **Three abstraction layers** -- standalone parser, iterator wrapper, full HTTP client
+- **Server-side encoding** -- `encode_event` / `encode_comment` produce spec-correct `text/event-stream` blocks (multi-line data, CRLF normalization, NUL/line-break validation)
+- **Four abstraction layers** -- encoder, standalone parser, iterator wrapper, full HTTP client
 - **Auto-reconnection** -- configurable retry interval, max retries, and Last-Event-ID tracking
 - **Sync + async** -- `EventSource` / `AsyncEventSource` and `SSEClient` / `AsyncSSEClient`
 - **204 = stop** -- server returns HTTP 204 to signal graceful stream termination
@@ -124,6 +125,31 @@ with get("https://api.example.com/events", stream=True) as r:
         print(event.data)
 ```
 
+### Server-Side Encoding (with httpserver)
+
+```python
+import asyncio
+from httpserver import App, StreamingResponse
+from sse import encode_comment, encode_event
+
+app = App()
+
+@app.get("/events")
+async def events(request):
+    async def stream():
+        yield encode_event("hello", event="greeting", id="1")
+        await asyncio.sleep(1)
+        yield encode_event("line 1\nline 2", id="2")
+        yield encode_comment("heartbeat")
+
+    return StreamingResponse(stream(), content_type="text/event-stream")
+```
+
+`encode_event` returns one complete block, including the terminating blank
+line that dispatches it. `encode_comment` produces a comment block for
+heartbeats. Both are pure functions with no network dependency, so they work
+with any streaming response (or any `write()` call).
+
 ### Reconnection Configuration
 
 ```python
@@ -153,6 +179,29 @@ The high-level client (`SSEClient` / `AsyncSSEClient`) automatically reconnects 
 8. Exceeding `max_retries` raises `SSEConnectionError`
 
 ## API Reference
+
+### `encode_event(data="", *, event=None, id=None, retry=None)`
+
+Format one SSE event block for a `text/event-stream` response.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `data` | `str` | `""` | Payload; line breaks are normalized and each line becomes a `data:` field |
+| `event` | `str \| None` | `None` | Event type; omitted means `message` |
+| `id` | `str \| None` | `None` | Event ID; must not contain NUL or a line break |
+| `retry` | `int \| None` | `None` | Reconnection interval in milliseconds (non-negative) |
+
+Returns the block including the terminating blank line. Raises `ValueError`
+for a line break in `event`/`id`, NUL in `id`, or an invalid `retry`.
+
+---
+
+### `encode_comment(text="")`
+
+Format a comment block (ignored by clients) for heartbeats. Returns the block
+including the terminating blank line.
+
+---
 
 ### `SSEEvent`
 
@@ -242,13 +291,14 @@ Same parameters as `SSEClient`. Uses `async for` and `await close()`.
 |---------|-------------|-----------|
 | Dependencies | None (stdlib only) | httpx |
 | Standalone parser | Yes (`EventSource`) | No (requires `httpx.Response`) |
+| Server-side encoding | Yes (`encode_event`) | No |
 | Auto-reconnection | Yes (built-in) | No |
 | Last-Event-ID tracking | Yes | No |
 | Sync + async | Yes | Yes |
 | 204 graceful stop | Yes | No |
 | W3C parsing | Yes | Yes |
 | Parsing speed | ~1.5 ms / 1000 events | ~1.4 ms / 1000 events |
-| Implementation | Single file (~380 lines) | Package (multiple files) |
+| Implementation | Single file (~700 lines) | Package (multiple files) |
 
 **When to use zerodep:** You need a self-contained SSE client with auto-reconnection and zero dependencies, or you want a standalone parser without coupling to any HTTP library.
 

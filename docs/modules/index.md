@@ -50,7 +50,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [skills](skills.md) | 0.4.3 | 2026-08-25 |
 | [soup](soup.md) | 0.9.0 | 2026-10-13 |
 | [sparse_search](sparse_search.md) | 0.4.0 | 2026-04-27 |
-| [sse](sse.md) | 0.3.4 | 2026-09-27 |
+| [sse](sse.md) | 0.4.0 | 2026-09-27 |
 | [structlog](structlog.md) | 0.3.0 | 2026-04-27 |
 | [synctex](synctex.md) | 0.2.0 | 2026-05-02 |
 | [tabulate](tabulate.md) | 0.1.2 | 2026-10-22 |
@@ -69,7 +69,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | Module | Description | Replaces | Benchmark Against |
 |--------|-------------|----------|-------------------|
 | [httpclient](httpclient.md) | Sync + async REST client with connection pooling, proxy, and auth | requests, httpx, urllib3, aiohttp (client) | `httpx` |
-| [sse](sse.md) | Server-Sent Events client with auto-reconnect | sseclient-py, aiohttp-sse-client, httpx-sse | `httpx-sse` |
+| [sse](sse.md) | Server-Sent Events client and event encoder with auto-reconnect | sseclient-py, aiohttp-sse-client, httpx-sse | `httpx-sse` |
 | [httpserver](httpserver.md) | Async HTTP server with decorator-based routing, streaming, and static files | flask (lightweight), microdot, bottle, starlette (basic), aiohttp (server) | `flask / microdot / bottle` |
 | [useragent](useragent.md) | Lightweight Chrome/Edge User-Agent generator with Client Hints | fake-useragent, ua-generator, user-agents | `ua-generator` |
 | [websocket](websocket.md) | RFC 6455 WebSocket client with sync + async support | websocket-client, websockets | `websockets` |

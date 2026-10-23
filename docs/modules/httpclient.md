@@ -196,6 +196,19 @@ async with await async_get("https://httpbin.org/get", stream=True) as r:
 
 A streamed body that ends before its `Content-Length` is an error: `iter_bytes()`, `iter_lines()`, `read()` and their async equivalents raise `HttpConnectionError` rather than returning the short body, and `body_complete` is not reported for it. Responses that carry no body — `HEAD` requests and `204`/`304` statuses — are exempt.
 
+For `text/event-stream` responses, let [`sse`](sse.md) parse the wire format instead of splitting lines by hand:
+
+```python
+from httpclient import get
+from sse import EventSource
+
+with get("https://example.com/events", stream=True) as r:
+    for event in EventSource(r.iter_lines()):
+        print(event.event, event.data)
+```
+
+`EventSource` handles the `event`/`data`/`id`/`retry` fields, multi-line data, comments, the BOM and the blank-line dispatch rule; `sse.connect()` adds auto-reconnection and `Last-Event-ID` tracking on top. The same module's `encode_event()` builds the server side.
+
 ### Disabling TLS Verification
 
 ```python

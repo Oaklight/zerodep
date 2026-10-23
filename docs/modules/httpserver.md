@@ -106,15 +106,19 @@ def sync_handler(request):
 
 ```python
 from httpserver import StreamingResponse
+from sse import encode_comment, encode_event
 
 @app.get("/events")
 async def events(request):
     async def generate():
-        for i in range(5):
-            yield f"data: event {i}\n\n"
+        yield encode_event("hello", event="greeting", id="1")
+        yield encode_comment("heartbeat")
+        yield encode_event("bye", id="2")
 
     return StreamingResponse(generate(), content_type="text/event-stream")
 ```
+
+`encode_event()` produces one complete block — multi-line payloads become one `data:` field per line, and the terminating blank line that dispatches the event is included. Writing `f"data: {value}\n\n"` by hand works for single-line payloads, but a value containing a blank line splits one event into two. `encode_comment()` emits heartbeat comments that clients ignore. Both live in [`sse`](sse.md), which also provides the client side (`EventSource`, `connect`).
 
 ### Static Files
 

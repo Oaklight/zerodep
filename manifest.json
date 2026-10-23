@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-23T02:19:26.101725+00:00",
+  "generated": "2026-10-23T02:28:13.259414+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -423,8 +423,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "text",
-      "last_updated": null,
-      "content_hash": "cbd2c82e7969bc7a74caebb60b6806690bd505c08a1393ea31f22afaae81c735"
+      "last_updated": "2026-10-22T21:18:10-05:00",
+      "content_hash": "a2fe58bc7b4c640e1bca7e06bd630bbf32295e4dda99d8e310b3530e4ce35740"
     },
     "semver": {
       "description": "PEP 440 version parser and comparator -- zero dependencies, stdlib only",
@@ -520,7 +520,7 @@
       "files": [
         "tabulate/tabulate.py"
       ],
-      "version": "0.1.1",
+      "version": "0.1.2",
       "deps": [],
       "tier": "medium",
       "category": "terminal",

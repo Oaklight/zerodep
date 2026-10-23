@@ -194,6 +194,8 @@ async with await async_get("https://httpbin.org/get", stream=True) as r:
         await process(chunk)
 ```
 
+流式响应体若在达到声明的 `Content-Length` 之前结束，属于错误：`iter_bytes()`、`iter_lines()`、`read()` 及其异步版本会抛出 `HttpConnectionError`，而不是返回截断的响应体，且不会报告 `body_complete`。本身不携带响应体的响应——`HEAD` 请求以及 `204`/`304` 状态——不受影响。
+
 ### 禁用 TLS 验证
 
 ```python

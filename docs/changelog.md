@@ -18,6 +18,8 @@
 
 ### 问题修复
 
+- **httpclient**：流式响应体若在达到声明的 `Content-Length` 之前结束，现在会抛出 `HttpConnectionError`，而不再把截断的响应体当作完整内容返回。对于定长响应，`iter_bytes()`、`iter_lines()`、`read()` 及其异步版本会统计已接收字节，在对端提前关闭时失败，且截断的响应体不会报告 `body_complete`。本身不携带响应体的响应——`HEAD` 请求以及 `204`/`304` 状态——不受影响。([#236](https://github.com/Oaklight/zerodep/issues/236))
+
 - **toon**（v0.6.1）：`encode()` / `decode()` 现在拒绝未知选项键并抛出 `TypeError`，因此诸如参考实现的 `indent_size` 这类移植笔误不再静默生成不同的文档。`decode()` 接受 UTF-8 编码的 `bytes` / `bytearray`，非法 UTF-8 抛出 `ToonDecodeError`；`ToonDecodeError` 的 docstring 现在明确说明它不继承 `ValueError`。
 - **jsonx**（v1.0.2）：`loads_lines()` 在传入自定义解码器或钩子时退出批量快速路径，与 `loads()` 一致：回调对每个值只执行一次，不再被试探性调用最多三次；钩子抛出的 `JSONDecodeError` 拒绝也不会被重试。`loads()` 对 `bytes` 抛出明确的 `TypeError` 说明该限制，不再泄漏正则扫描器的内部错误。
 - **toon**（v0.6.0）：列表形式现在能往返嵌套对象值。`[{'d': {}}]` 编码为 `- d:` 并能解码回来，不再丢失 `d`；子对象键不同的对象数组也能解码自身编码器的输出，不再抛错。编码器现在把列表项头部与第一个键写在同一行，与参考实现一致。([#188](https://github.com/Oaklight/zerodep/issues/188))

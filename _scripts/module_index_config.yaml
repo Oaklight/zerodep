@@ -85,8 +85,8 @@ modules:
     benchmark: httpx-sse
     replaces: "sseclient-py, aiohttp-sse-client, httpx-sse"
     replaces_zh: "sseclient-py、aiohttp-sse-client、httpx-sse"
-    desc_en: "Server-Sent Events client with auto-reconnect"
-    desc_zh: "Server-Sent Events 客户端（自动重连）"
+    desc_en: "Server-Sent Events client and event encoder with auto-reconnect"
+    desc_zh: "Server-Sent Events 客户端与事件编码器（自动重连）"
   jsonrpc:
     benchmark: jsonrpcserver
     replaces: "jsonrpclib, jsonrpcserver, python-jsonrpc"

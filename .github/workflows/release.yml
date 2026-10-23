@@ -138,22 +138,59 @@ jobs:
           # previous version.
           ref: v${{ needs.release.outputs.version }}
 
+      - name: Verify the tag matches the requested version
+        run: |
+          VER="${{ needs.release.outputs.version }}"
+          GOT=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          if [ "$GOT" != "$VER" ]; then
+            echo "::error::Tag v${VER} contains project version ${GOT}"
+            exit 1
+          fi
+
       - name: Check whether this version is already on PyPI
         id: pypi
         run: |
           VER="${{ needs.release.outputs.version }}"
-          if curl -fsS "https://pypi.org/pypi/zerodep/${VER}/json" > /dev/null; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::zerodep ${VER} is already on PyPI; nothing to publish"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
+          # Only 404 means "not published". A 5xx or DNS blip must fail the
+          # job, not send it down the upload path where PyPI rejects a
+          # duplicate and turns a no-op re-run red.
+          CODE=$(curl -sS -o "$RUNNER_TEMP/pypi.json" -w '%{http_code}' \
+            "https://pypi.org/pypi/zerodep/${VER}/json" || true)
+          case "$CODE" in
+            200)
+              FILES=$(python3 -c "import json, sys; print(len(json.load(open(sys.argv[1]))['urls']))" "$RUNNER_TEMP/pypi.json" 2>/dev/null || true)
+              if ! [[ "$FILES" =~ ^[0-9]+$ ]]; then
+                echo "::error::cannot read the file list for zerodep ${VER} from PyPI"
+                exit 1
+              fi
+              if [ "$FILES" -lt 2 ]; then
+                echo "::error::zerodep ${VER} exists on PyPI with only ${FILES} file(s); publish a new version instead of re-running"
+                exit 1
+              fi
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              echo "::notice::zerodep ${VER} is already on PyPI; nothing to publish"
+              ;;
+            404)
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::PyPI lookup for zerodep ${VER} failed with HTTP ${CODE:-none}"
+              exit 1
+              ;;
+          esac
 
       - name: Check for CLI changes
         id: check
         run: |
           if [ "${{ steps.pypi.outputs.exists }}" = "true" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "${{ needs.release.outputs.republish }}" = "true" ]; then
+            # An explicit re-publish request is authoritative: the version is
+            # not on PyPI, so build it even when the diff heuristic would say
+            # the CLI did not change.
+            echo "changed=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           CURRENT_TAG="v${{ needs.release.outputs.version }}"

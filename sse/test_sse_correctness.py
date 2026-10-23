@@ -85,16 +85,42 @@ class TestEncodeEvent:
 
     def test_empty_data_still_dispatches(self):
         assert encode_event() == "data:\n\n"
-        assert list(EventSource(encode_event().splitlines())) == [SSEEvent(data="")]
+        assert list(EventSource(encode_event().split("\n"))) == [SSEEvent(data="")]
 
     def test_trailing_newline_is_preserved(self):
         assert encode_event("a\n") == "data: a\ndata:\n\n"
 
     def test_round_trip(self):
         block = encode_event("line1\nline2", event="update", id="7", retry=1500)
-        assert list(EventSource(block.splitlines())) == [
+        assert list(EventSource(block.split("\n"))) == [
             SSEEvent(event="update", data="line1\nline2", id="7", retry=1500)
         ]
+
+    def test_round_trip_survives_unicode_line_separators(self):
+        # U+2028 is data, not a line terminator (WHATWG 9.2.6).
+        # Splitting on str.splitlines() would silently drop what follows.
+        payload = "a\u2028b\x85c"
+        events = list(EventSource(encode_event(payload).split("\n")))
+        assert events == [SSEEvent(data=payload)]
+
+    def test_empty_id_resets_and_retry_zero_is_emitted(self):
+        assert encode_event("x", id="") == "id:\ndata: x\n\n"
+        assert encode_event("x", retry=0) == "retry: 0\ndata: x\n\n"
+
+    def test_data_cannot_inject_fields(self):
+        for payload in ("a\nretry: 1", "a\rretry: 1", "a\nevent: x"):
+            events = list(EventSource(encode_event(payload).split("\n")))
+            assert events == [SSEEvent(data=payload.replace("\r", "\n"))]
+
+    def test_non_str_arguments_raise_type_error(self):
+        with pytest.raises(TypeError, match="data must be str"):
+            encode_event(None)  # type: ignore[arg-type]
+        with pytest.raises(TypeError, match="data must be str"):
+            encode_event(b"ab")  # type: ignore[arg-type]
+        with pytest.raises(TypeError, match="event must be str"):
+            encode_event("x", event=123)  # type: ignore[arg-type]
+        with pytest.raises(TypeError, match="id must be str"):
+            encode_event("x", id=123)  # type: ignore[arg-type]
 
     def test_id_with_nul_is_rejected(self):
         with pytest.raises(ValueError, match="NUL"):
@@ -115,7 +141,7 @@ class TestEncodeEvent:
     def test_comment_is_a_heartbeat(self):
         assert encode_comment("ping") == ": ping\n\n"
         assert encode_comment() == ":\n\n"
-        assert list(EventSource(encode_comment("ping").splitlines())) == []
+        assert list(EventSource(encode_comment("ping").split("\n"))) == []
 
     def test_comment_with_line_break_is_rejected(self):
         with pytest.raises(ValueError, match="line break"):

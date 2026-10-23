@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.0"
+# version = "0.4.1"
 # deps = ["httpclient"]
 # tier = "subsystem"
 # category = "network"
@@ -29,10 +29,15 @@ Provides four abstraction layers:
 
 Usage::
 
-    # Server side (format events for any text/event-stream response)
-    from sse import encode_event
+    # Server side (format events for a text/event-stream response)
+    from sse import encode_comment, encode_event
 
-    yield encode_event("hello", event="greeting")
+    async def stream():
+        yield encode_event("hello", event="greeting")
+        yield encode_comment("heartbeat")
+
+    # with httpserver:
+    # StreamingResponse(stream(), content_type="text/event-stream")
 
     # High-level (auto-connect + reconnect)
     from sse import connect, async_connect
@@ -169,6 +174,8 @@ def _field(name: str, value: str) -> str:
 
 
 def _check_single_line(name: str, value: str) -> None:
+    if not isinstance(value, str):
+        raise TypeError(f"SSE {name} must be str, not {type(value).__name__}")
     if "\n" in value or "\r" in value:
         raise ValueError(f"SSE {name} must not contain a line break")
 
@@ -198,14 +205,18 @@ def encode_event(
         The event block, ready to write to a ``text/event-stream`` response.
 
     Raises:
+        TypeError: If ``data``, ``event``, ``id`` or ``retry`` has the wrong
+            type.
         ValueError: If ``event``/``id`` contains a line break, ``id``
             contains NUL, or ``retry`` is not a non-negative integer.
 
     Example::
 
         encode_event("hello", event="greeting", id="1")
-        # 'event: greeting\\nid: 1\\ndata: hello\\n\\n'
+        # 'event: greeting\nid: 1\ndata: hello\n\n'
     """
+    if not isinstance(data, str):
+        raise TypeError(f"SSE data must be str, not {type(data).__name__}")
     lines: list[str] = []
     if event is not None:
         _check_single_line("event", event)

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-23T07:56:16.312152+00:00",
+  "generated": "2026-10-23T08:03:38.518747+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -117,7 +117,7 @@
       "deps": [],
       "tier": "medium",
       "category": "devtools",
-      "last_updated": "2026-04-15T14:33:44Z",
+      "last_updated": "2026-04-15T14:33:44+00:00",
       "content_hash": "085c6beded889dfd577738ac05e05b5ce092e62f81dd7e80bdfa8dcbe1471162"
     },
     "diff": {
@@ -129,7 +129,7 @@
       "deps": [],
       "tier": "simple",
       "category": "devtools",
-      "last_updated": "2026-04-15T09:45:45Z",
+      "last_updated": "2026-04-15T09:45:45+00:00",
       "content_hash": "32d978f21594cfa95b80a7bb155b294d0ade288588163e59812fa8376093a577"
     },
     "dotenv": {
@@ -239,7 +239,7 @@
       "deps": [],
       "tier": "simple",
       "category": "protocol",
-      "last_updated": "2026-04-27T19:31:53Z",
+      "last_updated": "2026-04-27T19:31:53+00:00",
       "content_hash": "e68f0aa5558b55f608180104e689f7fb623a1c1dec5ed5b63b11864bf2d52d69"
     },
     "markdown": {
@@ -251,7 +251,7 @@
       "deps": [],
       "tier": "medium",
       "category": "text",
-      "last_updated": "2026-04-27T19:31:53Z",
+      "last_updated": "2026-04-27T19:31:53+00:00",
       "content_hash": "994c0166db9726b626d6f0b2c20979ac28e20fddb7eacd28793aaa01500eb1da"
     },
     "multipart": {
@@ -287,7 +287,7 @@
       "deps": [],
       "tier": "medium",
       "category": "image",
-      "last_updated": "2026-04-27T19:31:53Z",
+      "last_updated": "2026-04-27T19:31:53+00:00",
       "content_hash": "a69b7f4a781e5bd8b8ac558c34b068800ee9e3042c28bf7c1e4a10bf672827e4"
     },
     "profiler": {
@@ -323,7 +323,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "serialization",
-      "last_updated": "2026-04-27T19:31:53Z",
+      "last_updated": "2026-04-27T19:31:53+00:00",
       "content_hash": "73b7b33609328df497b8d8639233e94f2c3bd4c46cbe7d9dbacfce51f1ebc700"
     },
     "qr": {
@@ -387,7 +387,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "process",
-      "last_updated": "2026-04-15T09:45:45Z",
+      "last_updated": "2026-04-15T09:45:45+00:00",
       "content_hash": "b4864085c534273da7734f69bcbda528ba1c073774db099d146afb32e632bf79"
     },
     "s3": {
@@ -411,7 +411,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "process",
-      "last_updated": "2026-04-15T09:45:45Z",
+      "last_updated": "2026-04-15T09:45:45+00:00",
       "content_hash": "fe2d6d5a1037a99e48102f5e5d983e706decca2b1616de31d804d9ef333752ea"
     },
     "semantic_search": {

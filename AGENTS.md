@@ -227,7 +227,9 @@ Lint and test logic lives in a single **reusable workflow**
   complexipy) — same hooks as local development.
 - **Test job**: matrix across Python versions, dynamically installs
   `bench-*` reference libraries from `pyproject.toml`.
-- `ci.yml` calls `lint-test.yml` with the default 4-version matrix.
+- `ci.yml` calls `lint-test.yml` with the default 4-version matrix, plus a
+  separate `release-check` job that runs `zerodep release-check` with full git
+  history, so pre-release invariants fail on the PR instead of at tag time.
 - `release.yml` calls `lint-test.yml` with `["3.12"]` only as a quality
   gate, then runs release-specific steps.
 - Benchmark workflow is cascade-triggered via `gh workflow run` from

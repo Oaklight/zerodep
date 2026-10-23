@@ -20,6 +20,9 @@
 
 ### 问题修复
 
+- **httpclient**（v0.6.1）：同步 `stream=True` 响应体现在会边到达边产出。`iter_bytes()` 原先用 `read(4096)`，该调用会等到缓冲区填满或流结束才返回，因此每 0.4 秒一个的 23 字节 SSE 事件要等到 2.0 秒才一起到达 `EventSource`——心跳、`Last-Event-ID` 重连与逐 token 输出全部被阻塞。`read1()` 返回传输层当前已有的数据，与本来就按块读取的异步路径一致。
+- **httpserver**（v0.6.1）：阻塞在 `await` 中的流式生成器现在会在客户端断开时停止。对端 FIN 之后 `writer.is_closing()` 可能仍为 false，而 `reader.at_eof()` 已为 true，因此周期性检查只能等生成器自己的定时器结束——实测为 5 秒——套接字一直停留在 CLOSE_WAIT。现在检查同时参考读取端；能及时 yield 的生成器不受影响。
+- **sse**（v0.4.1）：当 `data`、`event` 或 `id` 不是字符串时，`encode_event()` 抛出指明参数名的 `TypeError`，不再在格式化过程中抛出 `AttributeError` 或提示 bytes-like object 的错误。文档也说明行源只能按 CR/LF 切分：`str.splitlines()` 还会在 U+2028、U+2029、U+0085、VT 与 FF 处分行，而事件流格式把这些字符视为数据，导致载荷被静默截断。
 - **httpclient**：流式响应体若在达到声明的 `Content-Length` 之前结束，现在会抛出 `HttpConnectionError`，而不再把截断的响应体当作完整内容返回。对于定长响应，`iter_bytes()`、`iter_lines()`、`read()` 及其异步版本会统计已接收字节，在对端提前关闭时失败，且截断的响应体不会报告 `body_complete`。本身不携带响应体的响应——`HEAD` 请求以及 `204`/`304` 状态——不受影响。([#236](https://github.com/Oaklight/zerodep/issues/236))
 
 - **toon**（v0.6.1）：`encode()` / `decode()` 现在拒绝未知选项键并抛出 `TypeError`，因此诸如参考实现的 `indent_size` 这类移植笔误不再静默生成不同的文档。`decode()` 接受 UTF-8 编码的 `bytes` / `bytearray`，非法 UTF-8 抛出 `ToonDecodeError`；`ToonDecodeError` 的 docstring 现在明确说明它不继承 `ValueError`。
@@ -38,6 +41,7 @@
 
 ### 基础设施
 
+- **Makefile**：`make test` 与 `make benchmark` 现在覆盖全部模块——73 个测试文件与 42 个基准测试。此前手工维护的聚合列表漏掉了 24 个模块（包括 `httpserver` 与 `s3`），而帮助文本承诺的是“所有模块”；`make test` 也会传入 `-rs`，让跳过原因可见。CI 直接运行 `pytest`，因此不受影响，但 `AGENTS.md` 所述的本地门禁并不完整。
 - **Makefile**：`sse` 一直没有对应目标，`make test` 会静默跳过它的 67 个测试，而 CI 中直接调用的 `pytest` 却会运行。现在新增 `make test-sse` 与 `make benchmark-sse`，两者都已加入 `test`/`benchmark` 聚合目标，并由 `-rs` 报告跳过原因。httpclient 与 httpserver 文档页也已交叉链接到 `sse`，分别对应事件流消费与服务端编码。([#242](https://github.com/Oaklight/zerodep/issues/242))
 - **基准测试模块在缺少 `pytest-benchmark` 时跳过**：41 个 `test_*_benchmark.py` 中有 40 个直接使用 `benchmark` fixture 而未做防护，因此在未安装基准测试 extras 的环境中，每个用例都会被报告为 `fixture 'benchmark' not found` 错误而不是跳过。现在它们都会调用 `pytest.importorskip("pytest_benchmark")`。
 - **基准测试**：基准工作流现在通过 `bench-toon` 的 git pin 安装 TOON 参考实现，而不是未固定的 `git+` 安装加 `|| true`，并断言产物中存在 `toon/` 行。参考实现安装失败现在会让任务失败，而不是静默丢弃对比结果，与 `s3` 已有的保护一致。

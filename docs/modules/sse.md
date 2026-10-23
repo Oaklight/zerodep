@@ -215,6 +215,8 @@ with connect(
 
 同步 SSE 解析器，包装任意 `Iterable[str]` 行源。
 
+行必须只按 CR/LF 切分，`httpclient.iter_lines()` 就是这样做的。Python 的 `str.splitlines()` 还会在 U+2028、U+2029、U+0085、VT 与 FF 处分行，而事件流格式把这些字符当作普通数据——把它切分的结果交给解析器，会让包含这些字符的载荷被静默截断。
+
 **参数：**
 
 | 参数名 | 类型 | 说明 |

@@ -10,6 +10,9 @@ on:
 
 permissions:
   contents: write
+  # The release job dispatches benchmark.yml; GITHUB_TOKEN needs this or
+  # `gh workflow run` fails and the cascade is silently skipped.
+  actions: write
 
 jobs:
   quality:
@@ -100,6 +103,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Build the tree the release commit/tag points at. Without the ref,
+          # checkout uses the dispatch SHA, so the artifact carries the
+          # previous version.
+          ref: v${{ needs.release.outputs.version }}
 
       - name: Check for CLI changes
         id: check

@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **cli**: `add` and `update` gain `--dry-run`; `list` gains `--category` and `--json`; new `zerodep search <term> [...]` covers names, descriptions, categories, tiers, and dependencies. ([#252](https://github.com/Oaklight/zerodep/issues/252))
 - **cli**: `zerodep release-check` now also verifies that module sources import only the stdlib and sibling modules (imports under `except ImportError` or a `sys.version_info` branch are treated as optional), that frontmatter `deps` match the sibling imports, that every benchmark with a reference library has a `bench-*` extra, and that every test file is wired into the Makefile. `--with-lint` runs the pre-commit hooks and `--with-tests [a,b]` runs correctness tests for the named modules or all of them. ([#258](https://github.com/Oaklight/zerodep/issues/258))
 
+### Infrastructure
+
+- **benchmarks**: `sqlitedict` is no longer installed by the `bench-persistdict` or `dev` extras. It has an unpatched high-severity deserialization advisory (CVE-2024-35515 / GHSA-g4r7-86gm-pgqc) and is unmaintained; the comparison still runs, using trusted in-process data, when you install sqlitedict explicitly.
+
 ## [2026.10.23.2] - 2026-10-23
 
 ### Features

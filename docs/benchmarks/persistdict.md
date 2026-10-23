@@ -6,8 +6,15 @@ Performance comparison between zerodep persistdict (JSON and SQLite backends), s
     - **CPU:** x86_64 Linux
     - **Python:** 3.12
     - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
-    - **Reference:** sqlitedict 2.1.0
+    - **Reference:** sqlitedict 2.1.0 (opt-in, see below)
     - **Last Updated:** 2026-04-21
+
+!!! warning "sqlitedict is opt-in"
+    `sqlitedict` has an unpatched deserialization advisory
+    ([CVE-2024-35515](https://nvd.nist.gov/vuln/detail/CVE-2024-35515)), so it is
+    no longer installed by the `bench-persistdict` extra or the `dev` extra.
+    The benchmark uses trusted in-process data and skips its sqlitedict cases
+    unless you install it explicitly.
 
 ## Implementations
 
@@ -78,6 +85,9 @@ Performance comparison between zerodep persistdict (JSON and SQLite backends), s
 ## Run It Yourself
 
 ```bash
+# sqlitedict is opt-in: it carries an unpatched deserialization advisory
+# (CVE-2024-35515), so no extra installs it. Add it back to include the
+# comparison; otherwise those cases skip.
 pip install pytest pytest-benchmark sqlitedict
 pytest persistdict/test_persistdict_benchmark.py --benchmark-only -v
 ```

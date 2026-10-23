@@ -235,6 +235,33 @@ close_pools()
 
 `Client` remains the way to control pool size, headers, cookies, and timeouts per session.
 
+### Request Timing
+
+`get()`, `post()` and the other helpers — and `Client` / `AsyncClient` — accept
+`on_timing`, a callable invoked with `(event, elapsed)`, where `elapsed` is the
+number of seconds since the request started, measured on a monotonic clock.
+
+| event | when |
+|-------|------|
+| `request_started` | the call begins; `elapsed` is `0.0` |
+| `headers_received` | response headers have arrived (time to first byte) |
+| `body_complete` | the body has been read; with `stream=True` this fires when the body is consumed (`read()`, `iter_bytes()`, …), not when the stream is opened |
+
+Redirects report `headers_received` for each hop. DNS, TCP, TLS, server
+queueing, and network transfer are aggregated into the elapsed times; the hook
+is not called at all when it is omitted.
+
+```python
+import httpclient
+
+events = []
+r = httpclient.get(
+    "https://api.example.com/data",
+    on_timing=lambda event, elapsed: events.append((event, elapsed)),
+)
+# [("request_started", 0.0), ("headers_received", 0.08), ("body_complete", 0.31)]
+```
+
 ### Content Decompression
 
 Responses compressed with gzip or deflate are automatically decompressed. The `Accept-Encoding: gzip, deflate` header is sent by default.

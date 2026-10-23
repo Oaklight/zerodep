@@ -2,7 +2,7 @@
 
 help:
 	@echo "Available targets:"
-	@echo "  test             - Run correctness tests for all modules"
+	@echo "  test             - Run all module tests (excludes benchmarks)"
 	@echo "  test-aes         - Run AES correctness tests"
 	@echo "  test-qr          - Run QR correctness tests"
 	@echo "  test-http        - Run HTTP correctness tests"
@@ -17,7 +17,7 @@ help:
 	@echo "  test-validate    - Run validate correctness tests"
 	@echo "  test-markdown    - Run markdown correctness tests"
 	@echo "  test-sse         - Run SSE correctness tests"
-	@echo "  benchmark        - Run benchmarks for all modules"
+	@echo "  benchmark        - Run all module benchmarks"
 	@echo "  benchmark-aes    - Run AES benchmarks"
 	@echo "  benchmark-qr     - Run QR benchmarks"
 	@echo "  benchmark-http   - Run HTTP benchmarks"
@@ -72,7 +72,7 @@ help:
 	@echo "  clean            - Clean generated files"
 
 test:
-	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_httpclient_correctness.py sse/test_sse_correctness.py sse/test_sse_inject.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonx/test_jsonx_correctness.py jsonx/test_jsonx_fastpath.py retry/test_retry_correctness.py toon/test_toon_correctness.py toon/test_toon_conformance.py toon/test_toon_decode_errors.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py ansi/test_ansi_correctness.py frontmatter/test_frontmatter_correctness.py cache/test_cache_correctness.py readability/test_readability_correctness.py jsonschema/test_jsonschema_correctness.py png/test_png_correctness.py websocket/test_websocket_correctness.py cdp/test_cdp_correctness.py multipart/test_multipart_correctness.py -v
+	pytest a2a/test_a2a_correctness.py acp/test_acp_correctness.py aes/test_aes_correctness.py aiosqlite/test_aiosqlite_correctness.py ansi/test_ansi_correctness.py cache/test_cache_correctness.py cdp/test_cdp_correctness.py config/test_config_correctness.py config/test_config_edge.py config/test_config_inject.py depdetect/test_depdetect_correctness.py diff/test_diff_correctness.py dotenv/test_dotenv_correctness.py filelock/test_filelock_correctness.py frontmatter/test_frontmatter_correctness.py httpclient/test_httpclient_correctness.py httpclient/test_httpclient_edge.py httpclient/test_httpclient_pooling.py httpclient/test_httpclient_streaming.py httpclient/test_httpclient_timing.py httpclient/test_httpclient_truncated.py httpserver/test_httpserver_correctness.py httpserver/test_httpserver_keepalive.py httpserver/test_httpserver_tls.py httpserver/test_httpserver_unix_socket.py jsonrpc/test_jsonrpc_correctness.py jsonschema/test_jsonschema_correctness.py jsonx/test_jsonx_correctness.py jsonx/test_jsonx_fastpath.py llmstxt/test_llmstxt_correctness.py markdown/test_markdown_correctness.py multipart/test_multipart_correctness.py multipart/test_multipart_memory.py persistdict/test_persistdict_correctness.py png/test_png_correctness.py profiler/test_profiler_correctness.py prompt/test_prompt_correctness.py protobuf/test_protobuf_correctness.py protobuf/test_protobuf_memory.py qr/test_qr_correctness.py qr/test_qr_render.py ratelimit/test_ratelimit_correctness.py readability/test_readability_correctness.py readability/test_readability_memory.py retry/test_retry_correctness.py runner/test_runner_correctness.py runner/test_runner_edge.py s3/test_s3_correctness.py scheduler/test_scheduler_correctness.py scheduler/test_scheduler_edge.py semantic_search/test_semantic_search_correctness.py semver/test_semver_correctness.py skills/test_skills_correctness.py soup/test_soup_correctness.py soup/test_soup_memory.py sparse_search/test_sparse_search_correctness.py sse/test_sse_correctness.py sse/test_sse_inject.py structlog/test_structlog_correctness.py synctex/test_synctex_correctness.py tabulate/test_tabulate_correctness.py toon/test_toon_conformance.py toon/test_toon_correctness.py toon/test_toon_decode_errors.py useragent/test_useragent_correctness.py validate/test_validate_correctness.py vcs/test_vcs_correctness.py vcs/test_vcs_inject.py websocket/test_websocket_correctness.py xml/test_xml_correctness.py xml/test_xml_memory.py yaml/test_yaml_correctness.py yaml/test_yaml_memory.py -v -rs
 
 test-aes:
 	pytest aes/test_aes_correctness.py -v
@@ -117,7 +117,7 @@ test-markdown:
 	pytest markdown/test_markdown_correctness.py -v
 
 benchmark:
-	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_httpclient_benchmark.py sse/test_sse_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonx/test_jsonx_benchmark.py retry/test_retry_benchmark.py toon/test_toon_benchmark.py tabulate/test_tabulate_benchmark.py soup/test_soup_benchmark.py validate/test_validate_benchmark.py markdown/test_markdown_benchmark.py diff/test_diff_benchmark.py frontmatter/test_frontmatter_benchmark.py cache/test_cache_benchmark.py readability/test_readability_benchmark.py jsonschema/test_jsonschema_benchmark.py png/test_png_benchmark.py websocket/test_websocket_benchmark.py cdp/test_cdp_benchmark.py multipart/test_multipart_benchmark.py -v
+	pytest a2a/test_a2a_benchmark.py acp/test_acp_benchmark.py aes/test_aes_benchmark.py aiosqlite/test_aiosqlite_benchmark.py cache/test_cache_benchmark.py cdp/test_cdp_benchmark.py config/test_config_benchmark.py diff/test_diff_benchmark.py dotenv/test_dotenv_benchmark.py frontmatter/test_frontmatter_benchmark.py httpclient/test_httpclient_benchmark.py httpserver/test_httpserver_benchmark.py jsonrpc/test_jsonrpc_benchmark.py jsonschema/test_jsonschema_benchmark.py jsonx/test_jsonx_benchmark.py llmstxt/test_llmstxt_benchmark.py markdown/test_markdown_benchmark.py multipart/test_multipart_benchmark.py persistdict/test_persistdict_benchmark.py png/test_png_benchmark.py profiler/test_profiler_benchmark.py protobuf/test_protobuf_benchmark.py qr/test_qr_benchmark.py ratelimit/test_ratelimit_benchmark.py readability/test_readability_benchmark.py retry/test_retry_benchmark.py runner/test_runner_benchmark.py s3/test_s3_benchmark.py scheduler/test_scheduler_benchmark.py semantic_search/test_semantic_search_benchmark.py semver/test_semver_benchmark.py soup/test_soup_benchmark.py sparse_search/test_sparse_search_benchmark.py sse/test_sse_benchmark.py structlog/test_structlog_benchmark.py tabulate/test_tabulate_benchmark.py toon/test_toon_benchmark.py useragent/test_useragent_benchmark.py validate/test_validate_benchmark.py websocket/test_websocket_benchmark.py xml/test_xml_benchmark.py yaml/test_yaml_benchmark.py -v
 
 benchmark-aes:
 	pytest aes/test_aes_benchmark.py -v

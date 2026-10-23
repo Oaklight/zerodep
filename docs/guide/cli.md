@@ -28,6 +28,14 @@ zerodep list
 List all available modules with version and description.
 
 ```bash
+# Only one category
+zerodep list --category serialization
+
+# Machine-readable
+zerodep list --json
+```
+
+```bash
 $ zerodep list
   Module      Version  Description
   ----------  -----    ----------------------------------------
@@ -39,6 +47,23 @@ $ zerodep list
   ...
 
   20 modules available
+```
+
+### `zerodep search <term> [...]`
+
+Search module names, descriptions, categories, tiers, and dependencies. All
+terms must match, case-insensitively.
+
+```bash
+$ zerodep search http
+  httpclient  0.6.1  Zero-dependency sync + async HTTP REST client
+  httpserver  0.6.1  Zero-dependency async HTTP server with decorator-based routing
+  sse         0.4.1  Zero-dependency SSE (Server-Sent Events) client and event encoder
+
+  3 module(s) matched
+
+# JSON for scripts
+zerodep search http --json
 ```
 
 ### `zerodep info <module>`
@@ -83,6 +108,9 @@ zerodep add scheduler -f
 
 # Do not write zerodep.lock.json
 zerodep add scheduler --no-lock
+
+# Show the plan without copying anything
+zerodep add sse --dry-run
 ```
 
 Every install is recorded in `zerodep.lock.json` next to the copied files (see
@@ -126,6 +154,9 @@ zerodep update sse --force
 
 # Update without recording the result in the lock
 zerodep update sse --no-lock
+
+# Show what would be updated, without writing
+zerodep update --all --dry-run
 ```
 
 | State | Meaning | `update` without `--force` |
@@ -183,6 +214,31 @@ zerodep status --exit-code    # exit 1 unless everything is up-to-date
 in the vendor directory by hand are listed too, even when the lock does not
 mention them.
 
+### `zerodep remove <module> [...]`
+
+Delete the files of an installed module and update the lock. Dependencies that
+were only pulled in for it are suggested for removal; dependencies the module
+still needs are reported.
+
+```bash
+# Show what would be deleted
+zerodep remove sse --dry-run
+
+# Delete, skipping the prompt
+zerodep remove sse -y
+
+# Delete a module whose files were edited locally
+zerodep remove sse --force
+
+# Machine-readable result
+zerodep remove sse -y --json
+```
+
+`remove` refuses to delete a tracked file whose bytes differ from the lock
+unless `--force` is given, and warns when another installed module still
+depends on what is being removed. `--json` requires `--yes` (or `--force`)
+because it cannot prompt.
+
 ### `zerodep outdated`
 
 List local zerodep files and how they compare with upstream. Uses the same
@@ -234,7 +290,10 @@ $ zerodep version-check --strict
 
 Run every check that must hold before a release is tagged: module versions
 against their declared version tags, manifest freshness, CalVer consistency
-between `pyproject.toml` and `zerodep.py`, the generated docs module index
+between `pyproject.toml` and `zerodep.py`, that module sources import only the
+stdlib and sibling modules, that frontmatter `deps` match the sibling imports,
+that every benchmark with a reference library has a `bench-*` extra, that
+every test file is wired into the Makefile, the generated docs module index
 (when the docs worktrees are mounted) and a clean working tree. Any failure
 exits with code 1.
 
@@ -255,6 +314,20 @@ release-check passed
 ```
 
 Use `--allow-dirty` to skip the working-tree check while iterating.
+
+Two opt-in checks delegate to the project's own tooling instead of
+reimplementing it:
+
+```bash
+# Run the pre-commit hooks (ruff, ruff-format, ty, complexipy)
+zerodep release-check --with-lint
+
+# Run correctness tests for specific modules (comma-separated)
+zerodep release-check --with-tests httpclient,httpserver
+
+# Run every correctness test
+zerodep release-check --with-tests
+```
 
 Use `--version X` to validate the version that will be tagged: it must be CalVer
 (`YYYY.M.D` / `YYYY.M.D.N`) and no `vX` tag may exist yet. The Release workflow

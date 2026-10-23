@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.6.0"
+# version = "0.6.1"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -851,12 +851,25 @@ class StreamingResponse:
     # ── Sync iteration ──
 
     def iter_bytes(self, chunk_size: int = 4096) -> Iterator[bytes]:
-        """Yield response body in chunks."""
+        """Yield response body in chunks as soon as they arrive.
+
+        Uses ``read1()`` when the underlying response provides it, so a
+        chunked body is yielded per HTTP chunk instead of being accumulated
+        until ``chunk_size`` bytes are available.  This matters for
+        long-lived streams (SSE, LLM token streams): ``read(n)`` on a
+        buffered response blocks until ``n`` bytes or EOF, which delays every
+        event until the stream closes or fills the buffer.
+        """
         if self._sync_resp is None:
             raise RuntimeError("iter_bytes() on async response")
+        read1 = getattr(self._sync_resp, "read1", None)
         try:
             while True:
-                chunk = self._sync_resp.read(chunk_size)
+                chunk = (
+                    read1(chunk_size)
+                    if read1 is not None
+                    else self._sync_resp.read(chunk_size)
+                )
                 if not chunk:
                     break
                 self._sync_received = getattr(self, "_sync_received", 0) + len(chunk)

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-23T07:43:53.404255+00:00",
+  "generated": "2026-10-23T07:56:16.312152+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -191,8 +191,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-10-23T02:43:33-05:00",
-      "content_hash": "6e63ce597515e84cc91954740e6e36a979307a065082b137d6bb0470036db3f2"
+      "last_updated": "2026-10-23T02:56:09-05:00",
+      "content_hash": "cecfbef158f6acea196a55ac4ca17e20ef3ed8de7dbcf1136d11fc88a59c15a9"
     },
     "jsonrpc": {
       "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",
@@ -488,8 +488,8 @@
       ],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-10-23T02:43:39-05:00",
-      "content_hash": "65243915de1d2d2f42f8c4ee57aa54f11acd0ee13701c6f4e64d51814fb5e535"
+      "last_updated": "2026-10-23T02:56:09-05:00",
+      "content_hash": "b793744684933d6494436a2934fdb30691b8f39ee004037bddac3c09833fef0d"
     },
     "structlog": {
       "description": "Zero-dependency structured logging with pretty console output",

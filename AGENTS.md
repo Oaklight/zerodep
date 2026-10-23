@@ -225,7 +225,13 @@ Lint and test logic lives in a single **reusable workflow**
 - `release.yml` calls `lint-test.yml` with `["3.12"]` only as a quality
   gate, then runs release-specific steps.
 - Benchmark workflow is cascade-triggered via `gh workflow run` from
-  `release.yml`. PyPI publish runs inline as a job within `release.yml`.
+  `release.yml`. PyPI publish runs inline as a job within `release.yml`; it
+  is the only publisher (there is no separate `pypi.yml`), and it skips
+  versions already present on PyPI.
+- To re-publish a release whose upload failed, run `release.yml` with an
+  explicit `version` whose tag already exists: the workflow detects the tag,
+  skips the manifest bump, commit, tag, and benchmark, and runs only the PyPI
+  job at that tag.
 
 ### Reference library management
 

@@ -28,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      republish: ${{ steps.version.outputs.republish }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,28 +46,41 @@ jobs:
           else
             VER="$(date +%Y.%-m.%-d)"
           fi
+          REPUBLISH=false
           if git tag -l "v${VER}" | grep -q .; then
-            echo "::error::Tag v${VER} already exists"
-            exit 1
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              # An explicit version whose tag exists means "re-run the
+              # publish for this release", not "cut a new one".
+              REPUBLISH=true
+              echo "Tag v${VER} already exists; publishing it to PyPI only"
+            else
+              echo "::error::Tag v${VER} already exists (pass an explicit version to re-publish)"
+              exit 1
+            fi
           fi
           echo "version=${VER}" >> "$GITHUB_OUTPUT"
-          echo "Release version: ${VER}"
+          echo "republish=${REPUBLISH}" >> "$GITHUB_OUTPUT"
+          echo "Release version: ${VER} (republish=${REPUBLISH})"
 
       - name: Check module versions
+        if: steps.version.outputs.republish != 'true'
         run: |
           python -m zerodep version-check --strict
 
       - name: Regenerate manifest
+        if: steps.version.outputs.republish != 'true'
         run: |
           python -m zerodep manifest
 
       - name: Bump project version
+        if: steps.version.outputs.republish != 'true'
         run: |
           VER="${{ steps.version.outputs.version }}"
           sed -i "s/^version = .*/version = \"${VER}\"/" pyproject.toml
           sed -i "s/^__version__ = .*/__version__ = \"${VER}\"/" zerodep.py
 
       - name: Commit and tag
+        if: steps.version.outputs.republish != 'true'
         run: |
           VER="${{ steps.version.outputs.version }}"
           git config user.name "github-actions[bot]"
@@ -81,6 +95,7 @@ jobs:
           git push origin master --tags
 
       - name: Create GitHub Release
+        if: steps.version.outputs.republish != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -91,6 +106,7 @@ jobs:
 
   benchmark:
     needs: release
+    if: needs.release.outputs.republish != 'true'
     permissions:
       actions: write
     runs-on: ubuntu-latest
@@ -122,9 +138,24 @@ jobs:
           # previous version.
           ref: v${{ needs.release.outputs.version }}
 
+      - name: Check whether this version is already on PyPI
+        id: pypi
+        run: |
+          VER="${{ needs.release.outputs.version }}"
+          if curl -fsS "https://pypi.org/pypi/zerodep/${VER}/json" > /dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::zerodep ${VER} is already on PyPI; nothing to publish"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Check for CLI changes
         id: check
         run: |
+          if [ "${{ steps.pypi.outputs.exists }}" = "true" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           CURRENT_TAG="v${{ needs.release.outputs.version }}"
           PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | grep -v "^${CURRENT_TAG}$" | head -1)
 

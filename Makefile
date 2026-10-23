@@ -1,4 +1,4 @@
-.PHONY: all test benchmark lint fmt clean help manifest version-check dep-graph dep-check docs-index docs-index-check test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi test-frontmatter benchmark-frontmatter test-cache benchmark-cache test-readability benchmark-readability benchmark-readability-compare test-jsonschema benchmark-jsonschema test-png benchmark-png test-httpserver benchmark-httpserver test-websocket benchmark-websocket test-cdp benchmark-cdp test-multipart benchmark-multipart test-s3 benchmark-s3 test-profiler benchmark-profiler benchmark-cold-start test-semantic_search benchmark-semantic_search
+.PHONY: all test benchmark lint fmt clean help manifest version-check dep-graph dep-check docs-index docs-index-check test-tabulate benchmark-tabulate test-soup benchmark-soup test-prompt test-validate benchmark-validate test-markdown benchmark-markdown test-diff benchmark-diff test-vcs test-ansi test-frontmatter benchmark-frontmatter test-cache benchmark-cache test-readability benchmark-readability benchmark-readability-compare test-jsonschema benchmark-jsonschema test-png benchmark-png test-httpserver benchmark-httpserver test-websocket benchmark-websocket test-cdp benchmark-cdp test-multipart benchmark-multipart test-s3 benchmark-s3 test-profiler benchmark-profiler benchmark-cold-start test-semantic_search benchmark-semantic_search test-sse benchmark-sse
 
 help:
 	@echo "Available targets:"
@@ -16,6 +16,7 @@ help:
 	@echo "  test-prompt      - Run prompt correctness tests"
 	@echo "  test-validate    - Run validate correctness tests"
 	@echo "  test-markdown    - Run markdown correctness tests"
+	@echo "  test-sse         - Run SSE correctness tests"
 	@echo "  benchmark        - Run benchmarks for all modules"
 	@echo "  benchmark-aes    - Run AES benchmarks"
 	@echo "  benchmark-qr     - Run QR benchmarks"
@@ -29,6 +30,7 @@ help:
 	@echo "  benchmark-soup   - Run soup benchmarks"
 	@echo "  benchmark-validate - Run validate benchmarks"
 	@echo "  benchmark-markdown - Run markdown benchmarks"
+	@echo "  benchmark-sse    - Run SSE benchmarks (vs httpx-sse)"
 	@echo "  test-diff        - Run diff correctness tests"
 	@echo "  benchmark-diff   - Run diff benchmarks"
 	@echo "  test-vcs         - Run VCS correctness tests"
@@ -70,7 +72,7 @@ help:
 	@echo "  clean            - Clean generated files"
 
 test:
-	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_httpclient_correctness.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonx/test_jsonx_correctness.py jsonx/test_jsonx_fastpath.py retry/test_retry_correctness.py toon/test_toon_correctness.py toon/test_toon_conformance.py toon/test_toon_decode_errors.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py ansi/test_ansi_correctness.py frontmatter/test_frontmatter_correctness.py cache/test_cache_correctness.py readability/test_readability_correctness.py jsonschema/test_jsonschema_correctness.py png/test_png_correctness.py websocket/test_websocket_correctness.py cdp/test_cdp_correctness.py multipart/test_multipart_correctness.py -v
+	pytest aes/test_aes_correctness.py qr/test_qr_correctness.py httpclient/test_httpclient_correctness.py sse/test_sse_correctness.py sse/test_sse_inject.py dotenv/test_dotenv_correctness.py yaml/test_yaml_correctness.py jsonx/test_jsonx_correctness.py jsonx/test_jsonx_fastpath.py retry/test_retry_correctness.py toon/test_toon_correctness.py toon/test_toon_conformance.py toon/test_toon_decode_errors.py tabulate/test_tabulate_correctness.py soup/test_soup_correctness.py prompt/test_prompt_correctness.py validate/test_validate_correctness.py markdown/test_markdown_correctness.py diff/test_diff_correctness.py vcs/test_vcs_correctness.py ansi/test_ansi_correctness.py frontmatter/test_frontmatter_correctness.py cache/test_cache_correctness.py readability/test_readability_correctness.py jsonschema/test_jsonschema_correctness.py png/test_png_correctness.py websocket/test_websocket_correctness.py cdp/test_cdp_correctness.py multipart/test_multipart_correctness.py -v
 
 test-aes:
 	pytest aes/test_aes_correctness.py -v
@@ -80,6 +82,9 @@ test-qr:
 
 test-http:
 	pytest httpclient/test_httpclient_correctness.py -v
+
+test-sse:
+	pytest sse/test_sse_correctness.py sse/test_sse_inject.py -v -rs
 
 test-dotenv:
 	pytest dotenv/test_dotenv_correctness.py -v
@@ -112,7 +117,7 @@ test-markdown:
 	pytest markdown/test_markdown_correctness.py -v
 
 benchmark:
-	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_httpclient_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonx/test_jsonx_benchmark.py retry/test_retry_benchmark.py toon/test_toon_benchmark.py tabulate/test_tabulate_benchmark.py soup/test_soup_benchmark.py validate/test_validate_benchmark.py markdown/test_markdown_benchmark.py diff/test_diff_benchmark.py frontmatter/test_frontmatter_benchmark.py cache/test_cache_benchmark.py readability/test_readability_benchmark.py jsonschema/test_jsonschema_benchmark.py png/test_png_benchmark.py websocket/test_websocket_benchmark.py cdp/test_cdp_benchmark.py multipart/test_multipart_benchmark.py -v
+	pytest aes/test_aes_benchmark.py qr/test_qr_benchmark.py httpclient/test_httpclient_benchmark.py sse/test_sse_benchmark.py dotenv/test_dotenv_benchmark.py yaml/test_yaml_benchmark.py jsonx/test_jsonx_benchmark.py retry/test_retry_benchmark.py toon/test_toon_benchmark.py tabulate/test_tabulate_benchmark.py soup/test_soup_benchmark.py validate/test_validate_benchmark.py markdown/test_markdown_benchmark.py diff/test_diff_benchmark.py frontmatter/test_frontmatter_benchmark.py cache/test_cache_benchmark.py readability/test_readability_benchmark.py jsonschema/test_jsonschema_benchmark.py png/test_png_benchmark.py websocket/test_websocket_benchmark.py cdp/test_cdp_benchmark.py multipart/test_multipart_benchmark.py -v
 
 benchmark-aes:
 	pytest aes/test_aes_benchmark.py -v
@@ -122,6 +127,9 @@ benchmark-qr:
 
 benchmark-http:
 	pytest httpclient/test_httpclient_benchmark.py -v
+
+benchmark-sse:
+	pytest sse/test_sse_benchmark.py -v
 
 benchmark-dotenv:
 	pytest dotenv/test_dotenv_benchmark.py -v

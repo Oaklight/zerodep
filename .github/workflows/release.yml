@@ -68,7 +68,7 @@ jobs:
           # Same code path maintainers run locally; a failing check here
           # means the tree is not taggable (unbumped module, stale manifest,
           # version mismatch, stale docs index, uncommitted changes).
-          python -m zerodep release-check
+          python -m zerodep release-check --version "${{ steps.version.outputs.version }}"
 
       - name: Bump project version
         if: steps.version.outputs.republish != 'true'

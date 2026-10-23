@@ -2005,6 +2005,31 @@ def _read_declared_version(repo_root: Path) -> str | None:
 
 _CALVER_RE = re.compile(r"^\d{4}\.\d{1,2}\.\d{1,2}(?:\.\d+)?$")
 
+# Fields that describe the source tree. ``last_updated`` per module and the
+# top-level ``generated`` come from commit timestamps, so a squashed or
+# rewritten history changes them without the manifest being stale.
+_MANIFEST_SOURCE_FIELDS = (
+    "description",
+    "files",
+    "primary_file",
+    "version",
+    "deps",
+    "tier",
+    "category",
+    "content_hash",
+)
+
+
+def _manifest_source_view(manifest: dict) -> dict[str, dict]:
+    """Return only the manifest fields that describe the source tree."""
+    view: dict[str, dict] = {}
+    for name, entry in manifest.get("modules", {}).items():
+        if not isinstance(entry, dict):
+            view[name] = entry
+            continue
+        view[name] = {key: entry.get(key) for key in _MANIFEST_SOURCE_FIELDS}
+    return view
+
 
 def _run_docs_index_check(repo_root: Path) -> tuple[str, str]:
     """Run the module-index generator in check mode.
@@ -2095,9 +2120,11 @@ def cmd_release_check(args: argparse.Namespace) -> None:
             )
         else:
             expected = _generate_manifest(repo_root)
-            on_disk.pop("generated", None)
-            expected.pop("generated", None)
-            if on_disk == expected:
+            same_layout = on_disk.get("version") == expected.get("version")
+            same_modules = _manifest_source_view(on_disk) == _manifest_source_view(
+                expected
+            )
+            if same_layout and same_modules:
                 results.append(
                     ("manifest", "ok", f"{MANIFEST_PATH} matches the source tree")
                 )
@@ -2139,6 +2166,37 @@ def cmd_release_check(args: argparse.Namespace) -> None:
                 f"{project_version} is CalVer and matches zerodep.py",
             )
         )
+
+    requested = getattr(args, "version", None)
+    if requested is not None:
+        if not _CALVER_RE.match(requested):
+            results.append(
+                (
+                    "release-version",
+                    "fail",
+                    f"{requested} is not CalVer (YYYY.M.D or YYYY.M.D.N)",
+                )
+            )
+        else:
+            tags = subprocess.run(
+                ["git", "tag", "-l", f"v{requested}"],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+            )
+            if tags.returncode == 0 and tags.stdout.strip():
+                results.append(
+                    (
+                        "release-version",
+                        "fail",
+                        f"tag v{requested} already exists; re-run with an "
+                        f"existing version to republish instead",
+                    )
+                )
+            else:
+                results.append(
+                    ("release-version", "ok", f"v{requested} is free to tag")
+                )
 
     results.append(("docs-index", *_run_docs_index_check(repo_root)))
 
@@ -2558,6 +2616,11 @@ def main(argv: list[str] | None = None) -> None:
         "--allow-dirty",
         action="store_true",
         help="skip the uncommitted-changes check",
+    )
+    p_rcheck.add_argument(
+        "--version",
+        default=None,
+        help="version that will be tagged; must be CalVer and not already tagged",
     )
 
     # dep-graph

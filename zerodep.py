@@ -569,16 +569,15 @@ def _extract_docstring_first_line(source: str) -> str | None:
 
 
 def _generate_manifest(repo_root: Path) -> dict:
-    """Generate the full manifest dict."""
-    modules = _scan_modules(repo_root)
-    # Strip internal-only keys before serialization
-    cleaned = {}
-    for name, mod in modules.items():
-        cleaned[name] = {k: v for k, v in mod.items() if k != "primary_file"}
+    """Generate the full manifest dict.
+
+    ``primary_file`` is published because ``content_hash`` covers that file
+    only; consumers need it to know which file the hash describes.
+    """
     return {
         "version": "1",
         "generated": datetime.now(timezone.utc).isoformat(),
-        "modules": cleaned,
+        "modules": _scan_modules(repo_root),
     }
 
 
@@ -818,7 +817,9 @@ def _is_primary_file(name: str, mod: dict) -> bool:
     """Return whether *name* is the module's primary (frontmatter) file.
 
     A module's ``content_hash`` covers only its primary file, so secondary
-    files must not be compared against it.
+    files must not be compared against it. Manifests older than the
+    ``primary_file`` field cannot say which file that is; every file is then
+    verified, which is correct for the single-file modules they describe.
     """
     primary = mod.get("primary_file")
     return not primary or Path(primary).name == Path(name).name
@@ -836,6 +837,7 @@ def _state_rows_untracked(
     *skip* are already covered by the lock and are left out.
     """
     modules = manifest["modules"]
+    present = {n for n in modules if _module_local_paths(n, manifest, target)}
     rows: list[dict] = []
     for name, mod in sorted(modules.items()):
         if skip and name in skip:
@@ -858,7 +860,6 @@ def _state_rows_untracked(
                 differs = True
         upstream_ver = mod.get("version", "?")
         state = STATE_UNVERIFIED if differs else STATE_UP_TO_DATE
-        present = {n for n in modules if _module_local_paths(n, manifest, target)}
         missing_deps = [d for d in mod.get("deps", []) if d not in present]
         rows.append(
             {
@@ -1179,8 +1180,8 @@ def _select_update_candidates(
     rows: dict[str, dict],
     lock: dict | None,
     manifest: dict,
-) -> tuple[list[str], list[str]]:
-    """Split the selected modules into update candidates and skipped ones."""
+) -> tuple[list[str], list[str], list[str]]:
+    """Split the selection into candidates, skipped modules, and removed ones."""
     if args.update_all:
         if args.modules:
             _die("cannot use --all together with explicit module names")
@@ -1225,7 +1226,7 @@ def _select_update_candidates(
             skipped.append(name)
             continue
         candidates.append(name)
-    return candidates, skipped
+    return candidates, skipped, removed
 
 
 def _print_update_diff(
@@ -1260,7 +1261,7 @@ def cmd_update(args: argparse.Namespace) -> None:
     lock = _load_lock(target)
     rows = {r["name"]: r for r in _state_rows(lock, manifest, target)}
 
-    candidates, skipped = _select_update_candidates(args, rows, lock, manifest)
+    candidates, skipped, removed = _select_update_candidates(args, rows, lock, manifest)
     for name in skipped:
         state = rows[name]["state"]
         hint = (
@@ -1283,22 +1284,27 @@ def cmd_update(args: argparse.Namespace) -> None:
         )
         return
 
-    if not candidates:
-        if skipped:
-            sys.exit(1)
-        _ok("All modules are up-to-date.")
-        return
-
-    file_plan = _plan_files(candidates, manifest, target, nested=args.nested, lock=lock)
-
     if args.check:
+        if not (candidates or skipped or removed):
+            _ok("All modules are up-to-date.")
+            return
         for name in candidates:
             row = rows[name]
             print(
                 f"{name}: {row['state']} "
                 f"{row['installed_version'] or '—'} -> {row['latest_version'] or '—'}"
             )
+        for name in removed:
+            print(f"{name}: {STATE_REMOVED}")
         sys.exit(1)
+
+    if not candidates:
+        if skipped or removed:
+            sys.exit(1)
+        _ok("All modules are up-to-date.")
+        return
+
+    file_plan = _plan_files(candidates, manifest, target, nested=args.nested, lock=lock)
 
     writes = _write_files(
         file_plan,

@@ -497,10 +497,13 @@ def test_select_update_candidates_pulls_in_missing_dependencies():
     }
     lock = {"modules": {"yaml": {}}}
     args = argparse.Namespace(update_all=True, modules=[], no_deps=False, force=False)
-    candidates, skipped = zerodep._select_update_candidates(args, rows, lock, manifest)
+    candidates, skipped, removed = zerodep._select_update_candidates(
+        args, rows, lock, manifest
+    )
     assert "httpclient" in candidates
     assert "yaml" not in candidates  # already up to date
     assert skipped == []
+    assert removed == []
 
 
 def test_status_exit_code_flags_missing_dependencies(tmp_path: Path):
@@ -542,8 +545,12 @@ def test_update_reports_upstream_removed_module(tmp_path: Path):
     assert rows["ghost"]["state"] == "upstream-removed"
 
     r = run_cli("update", "--all", "-d", str(vendor))
-    assert r.returncode == 0, r.stderr
+    assert r.returncode == 1
     assert "no longer published upstream" in r.stderr
+
+    r = run_cli("update", "--all", "--check", "-d", str(vendor))
+    assert r.returncode == 1
+    assert "ghost: upstream-removed" in r.stdout
 
 
 def test_update_no_lock_leaves_lock_alone(tmp_path: Path):

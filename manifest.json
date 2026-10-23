@@ -1,12 +1,13 @@
 {
   "version": "1",
-  "generated": "2026-10-23T15:22:46.085724+00:00",
+  "generated": "2026-10-23T16:36:07.556746+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
       "files": [
         "a2a/a2a.py"
       ],
+      "primary_file": "a2a/a2a.py",
       "version": "0.3.2",
       "deps": [
         "jsonrpc"
@@ -21,6 +22,7 @@
       "files": [
         "acp/acp.py"
       ],
+      "primary_file": "acp/acp.py",
       "version": "0.3.2",
       "deps": [
         "jsonrpc"
@@ -35,6 +37,7 @@
       "files": [
         "aes/aes.py"
       ],
+      "primary_file": "aes/aes.py",
       "version": "0.5.0",
       "deps": [],
       "tier": "medium",
@@ -47,6 +50,7 @@
       "files": [
         "aiosqlite/aiosqlite.py"
       ],
+      "primary_file": "aiosqlite/aiosqlite.py",
       "version": "0.1.0",
       "deps": [],
       "tier": "subsystem",
@@ -59,6 +63,7 @@
       "files": [
         "ansi/ansi.py"
       ],
+      "primary_file": "ansi/ansi.py",
       "version": "0.3.0",
       "deps": [],
       "tier": "simple",
@@ -71,6 +76,7 @@
       "files": [
         "cache/cache.py"
       ],
+      "primary_file": "cache/cache.py",
       "version": "0.2.4",
       "deps": [],
       "tier": "subsystem",
@@ -83,6 +89,7 @@
       "files": [
         "cdp/cdp.py"
       ],
+      "primary_file": "cdp/cdp.py",
       "version": "0.1.1",
       "deps": [
         "websocket"
@@ -97,6 +104,7 @@
       "files": [
         "config/config.py"
       ],
+      "primary_file": "config/config.py",
       "version": "0.3.2",
       "deps": [
         "dotenv",
@@ -113,6 +121,7 @@
       "files": [
         "depdetect/depdetect.py"
       ],
+      "primary_file": "depdetect/depdetect.py",
       "version": "0.4.3",
       "deps": [],
       "tier": "medium",
@@ -125,6 +134,7 @@
       "files": [
         "diff/diff.py"
       ],
+      "primary_file": "diff/diff.py",
       "version": "0.3.1",
       "deps": [],
       "tier": "simple",
@@ -137,6 +147,7 @@
       "files": [
         "dotenv/dotenv.py"
       ],
+      "primary_file": "dotenv/dotenv.py",
       "version": "0.3.1",
       "deps": [],
       "tier": "simple",
@@ -149,6 +160,7 @@
       "files": [
         "filelock/filelock.py"
       ],
+      "primary_file": "filelock/filelock.py",
       "version": "0.3.0",
       "deps": [],
       "tier": "simple",
@@ -161,6 +173,7 @@
       "files": [
         "frontmatter/frontmatter.py"
       ],
+      "primary_file": "frontmatter/frontmatter.py",
       "version": "0.3.0",
       "deps": [
         "yaml"
@@ -175,6 +188,7 @@
       "files": [
         "httpclient/httpclient.py"
       ],
+      "primary_file": "httpclient/httpclient.py",
       "version": "0.6.1",
       "deps": [],
       "tier": "subsystem",
@@ -187,6 +201,7 @@
       "files": [
         "httpserver/httpserver.py"
       ],
+      "primary_file": "httpserver/httpserver.py",
       "version": "0.6.1",
       "deps": [],
       "tier": "subsystem",
@@ -199,6 +214,7 @@
       "files": [
         "jsonrpc/jsonrpc.py"
       ],
+      "primary_file": "jsonrpc/jsonrpc.py",
       "version": "0.3.0",
       "deps": [],
       "tier": "medium",
@@ -211,6 +227,7 @@
       "files": [
         "jsonschema/jsonschema.py"
       ],
+      "primary_file": "jsonschema/jsonschema.py",
       "version": "0.4.1",
       "deps": [],
       "tier": "subsystem",
@@ -223,6 +240,7 @@
       "files": [
         "jsonx/jsonx.py"
       ],
+      "primary_file": "jsonx/jsonx.py",
       "version": "1.0.2",
       "deps": [],
       "tier": "simple",
@@ -235,6 +253,7 @@
       "files": [
         "llmstxt/llmstxt.py"
       ],
+      "primary_file": "llmstxt/llmstxt.py",
       "version": "0.1.1",
       "deps": [],
       "tier": "simple",
@@ -247,6 +266,7 @@
       "files": [
         "markdown/markdown.py"
       ],
+      "primary_file": "markdown/markdown.py",
       "version": "0.4.1",
       "deps": [],
       "tier": "medium",
@@ -259,6 +279,7 @@
       "files": [
         "multipart/multipart.py"
       ],
+      "primary_file": "multipart/multipart.py",
       "version": "0.1.0",
       "deps": [],
       "tier": "medium",
@@ -271,6 +292,7 @@
       "files": [
         "persistdict/persistdict.py"
       ],
+      "primary_file": "persistdict/persistdict.py",
       "version": "0.4.1",
       "deps": [],
       "tier": "medium",
@@ -283,6 +305,7 @@
       "files": [
         "png/png.py"
       ],
+      "primary_file": "png/png.py",
       "version": "0.1.1",
       "deps": [],
       "tier": "medium",
@@ -295,6 +318,7 @@
       "files": [
         "profiler/profiler.py"
       ],
+      "primary_file": "profiler/profiler.py",
       "version": "0.1.1",
       "deps": [],
       "tier": "medium",
@@ -307,6 +331,7 @@
       "files": [
         "prompt/prompt.py"
       ],
+      "primary_file": "prompt/prompt.py",
       "version": "0.2.0",
       "deps": [],
       "tier": "simple",
@@ -319,6 +344,7 @@
       "files": [
         "protobuf/protobuf.py"
       ],
+      "primary_file": "protobuf/protobuf.py",
       "version": "0.4.4",
       "deps": [],
       "tier": "subsystem",
@@ -331,6 +357,7 @@
       "files": [
         "qr/qr.py"
       ],
+      "primary_file": "qr/qr.py",
       "version": "0.3.4",
       "deps": [
         "png"
@@ -345,6 +372,7 @@
       "files": [
         "ratelimit/ratelimit.py"
       ],
+      "primary_file": "ratelimit/ratelimit.py",
       "version": "0.2.0",
       "deps": [],
       "tier": "subsystem",
@@ -357,6 +385,7 @@
       "files": [
         "readability/readability.py"
       ],
+      "primary_file": "readability/readability.py",
       "version": "0.2.1",
       "deps": [
         "soup"
@@ -371,6 +400,7 @@
       "files": [
         "retry/retry.py"
       ],
+      "primary_file": "retry/retry.py",
       "version": "0.3.1",
       "deps": [],
       "tier": "simple",
@@ -383,6 +413,7 @@
       "files": [
         "runner/runner.py"
       ],
+      "primary_file": "runner/runner.py",
       "version": "0.3.1",
       "deps": [],
       "tier": "subsystem",
@@ -395,6 +426,7 @@
       "files": [
         "s3/s3.py"
       ],
+      "primary_file": "s3/s3.py",
       "version": "0.2.0",
       "deps": [],
       "tier": "subsystem",
@@ -407,6 +439,7 @@
       "files": [
         "scheduler/scheduler.py"
       ],
+      "primary_file": "scheduler/scheduler.py",
       "version": "0.3.1",
       "deps": [],
       "tier": "subsystem",
@@ -419,6 +452,7 @@
       "files": [
         "semantic_search/semantic_search.py"
       ],
+      "primary_file": "semantic_search/semantic_search.py",
       "version": "0.1.0",
       "deps": [],
       "tier": "subsystem",
@@ -431,6 +465,7 @@
       "files": [
         "semver/semver.py"
       ],
+      "primary_file": "semver/semver.py",
       "version": "0.4.1",
       "deps": [],
       "tier": "simple",
@@ -443,6 +478,7 @@
       "files": [
         "skills/skills.py"
       ],
+      "primary_file": "skills/skills.py",
       "version": "0.4.3",
       "deps": [
         "frontmatter",
@@ -458,6 +494,7 @@
       "files": [
         "soup/soup.py"
       ],
+      "primary_file": "soup/soup.py",
       "version": "0.9.0",
       "deps": [],
       "tier": "medium",
@@ -470,6 +507,7 @@
       "files": [
         "sparse_search/sparse_search.py"
       ],
+      "primary_file": "sparse_search/sparse_search.py",
       "version": "0.4.0",
       "deps": [],
       "tier": "medium",
@@ -482,6 +520,7 @@
       "files": [
         "sse/sse.py"
       ],
+      "primary_file": "sse/sse.py",
       "version": "0.4.1",
       "deps": [
         "httpclient"
@@ -496,6 +535,7 @@
       "files": [
         "structlog/structlog.py"
       ],
+      "primary_file": "structlog/structlog.py",
       "version": "0.3.0",
       "deps": [],
       "tier": "medium",
@@ -508,6 +548,7 @@
       "files": [
         "synctex/synctex.py"
       ],
+      "primary_file": "synctex/synctex.py",
       "version": "0.2.0",
       "deps": [],
       "tier": "simple",
@@ -520,6 +561,7 @@
       "files": [
         "tabulate/tabulate.py"
       ],
+      "primary_file": "tabulate/tabulate.py",
       "version": "0.1.2",
       "deps": [],
       "tier": "medium",
@@ -532,6 +574,7 @@
       "files": [
         "toon/toon.py"
       ],
+      "primary_file": "toon/toon.py",
       "version": "0.6.1",
       "deps": [],
       "tier": "simple",
@@ -544,6 +587,7 @@
       "files": [
         "useragent/useragent.py"
       ],
+      "primary_file": "useragent/useragent.py",
       "version": "0.1.0",
       "deps": [],
       "tier": "simple",
@@ -556,6 +600,7 @@
       "files": [
         "validate/validate.py"
       ],
+      "primary_file": "validate/validate.py",
       "version": "0.7.1",
       "deps": [],
       "tier": "medium",
@@ -568,6 +613,7 @@
       "files": [
         "vcs/vcs.py"
       ],
+      "primary_file": "vcs/vcs.py",
       "version": "0.3.1",
       "deps": [
         "diff"
@@ -582,6 +628,7 @@
       "files": [
         "websocket/websocket.py"
       ],
+      "primary_file": "websocket/websocket.py",
       "version": "0.1.0",
       "deps": [],
       "tier": "medium",
@@ -594,6 +641,7 @@
       "files": [
         "xml/xml.py"
       ],
+      "primary_file": "xml/xml.py",
       "version": "0.3.1",
       "deps": [],
       "tier": "medium",
@@ -606,6 +654,7 @@
       "files": [
         "yaml/yaml.py"
       ],
+      "primary_file": "yaml/yaml.py",
       "version": "0.3.1",
       "deps": [],
       "tier": "subsystem",

@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.10.23.3] - 2026-10-23
+
 ### Features
 
 - **cli**: `zerodep remove <module>` deletes tracked files, drops the lock entry, suggests dependencies that became unused, and warns when another installed module still needs what is being removed. It refuses to delete a file that differs from the lock without `--force`, and supports `--dry-run` and `--json`. ([#252](https://github.com/Oaklight/zerodep/issues/252))

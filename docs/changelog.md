@@ -6,6 +6,19 @@
 
 ## [未发布]
 
+### 新功能
+
+- **cli**：安装时会在模块文件旁记录 `zerodep.lock.json`，包含解析出的源版本、每个模块的版本与上游哈希、每个已安装文件的 sha256，以及该模块是显式请求还是作为依赖拉取。`add` 负责写入，`update` 负责刷新，`--no-lock` 可关闭。([#249](https://github.com/Oaklight/zerodep/issues/249))
+- **cli**：`update` 不再盲目覆盖。它会区分 `up-to-date`、`outdated`、`locally-modified`、`conflict`、`missing`、`unverified` 和 `upstream-removed`；不会改动的模块会被报告出来，并让命令以 1 退出。新增 `--diff` 预览改动、`--check` 作为 CI 门禁、`--force` 明确覆盖本地修改。([#250](https://github.com/Oaklight/zerodep/issues/250))
+- **cli**：新增 `zerodep status` 命令，列出每个已安装模块的安装版本、最新版本和状态，支持 `--json` 与 `--exit-code`。
+- **cli**：`add`、`update`、`status` 改为从最新 release 安装（缓存一小时），而不再使用会移动的 `master` 分支；全局 `--ref` 可指定 tag、分支或提交。写入任何文件之前，都会用 manifest 的内容哈希校验。([#251](https://github.com/Oaklight/zerodep/issues/251))
+- **cli**：`outdated` 与 `status` 使用同一套状态词，本地修改不再被误报为上游变更。
+
+### 变更
+
+- **cli**：锁文件只会记录与上游字节一致的内容。对于没有锁文件的旧安装，内容不一致的文件会报告为 `unverified`，`update --all` 不会自动更新它们；一次性迁移方式是 `zerodep update --all --force`（或逐模块：`update <module> --diff`，再 `update <module> --force`）。这样可以避免把已有的本地修改当作基线记录、之后被覆盖。
+- **manifest**：模块条目新增 `primary_file`，标明 `content_hash` 对应的文件。
+
 ### 基础设施
 
 - **打包**：`bench-toon` 参考实现从 `pyproject.toml` 的 extra 移到 `requirements-bench-toon.txt`。PyPI 不接受已发布元数据中的直接 URL，导致每次 sdist 上传都被拒绝；lint-test 与 benchmark 作业现在在各自的必需步骤中安装该固定版本文件。发布工作流也改为从新 tag 构建 PyPI 产物，并申请 `actions: write`，让基准测试级联能够真正触发。

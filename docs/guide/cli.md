@@ -80,7 +80,14 @@ zerodep add scheduler -y
 
 # 覆盖已有文件，不提示
 zerodep add scheduler -f
+
+# 不写入 zerodep.lock.json
+zerodep add scheduler --no-lock
 ```
+
+每次安装都会在拷贝文件旁记录 `zerodep.lock.json`（见[源版本锁定与锁文件](#源版本锁定与锁文件)）。
+
+`add` 会拒绝覆盖与锁文件记录不一致的文件；对于锁文件出现之前的旧安装，则拒绝覆盖与上游不一致的文件。加 `--force` 才会替换。作为依赖拉取的模块会以 `"requested": false` 记录。
 
 **确认提示** — 默认情况下，`add` 会显示执行计划并请求确认：
 
@@ -94,28 +101,91 @@ Continue? [Y/n]
 
 ### `zerodep update <module> [...]`
 
-重新获取并覆盖已有模块文件。等同于 `add --force --yes`。
+将已安装的模块更新到当前源版本。每个模块都会与 `zerodep.lock.json` 对比，因此本地修改不会被静默覆盖。
 
 ```bash
+# 更新单个模块（会自动拉取上游新增的依赖）
 zerodep update sse
+
+# 更新所有需要处理的模块
+zerodep update --all
+
+# 只预览改动，不写任何文件
+zerodep update --all --diff
+
+# CI 门禁：有需要处理的模块时退出 1
+zerodep update --all --check
+
+# 覆盖本地修改或未验证的模块
+zerodep update sse --force
+
+# 不把结果写入锁文件
+zerodep update sse --no-lock
 ```
+
+| 状态 | 含义 | 不加 `--force` 时 `update` 的行为 |
+|------|------|-----------------------------------|
+| `up-to-date` | 安装内容与锁文件和上游都一致 | 无需处理 |
+| `outdated` | 上游有变更，本地文件未被修改 | 覆盖更新 |
+| `locally-modified` | 本地内容与锁文件记录不同 | **跳过**，退出 1 |
+| `conflict` | 上游有变更，且本地文件被修改 | **跳过**，退出 1 |
+| `missing` | 锁文件记录的文件被删除 | 重新安装 |
+| `unverified` | 无锁文件记录，且内容与上游不同 | **跳过**，退出 1 |
+| `upstream-removed` | 该模块已不再发布 | **跳过**，给出警告 |
+
+只要有模块被跳过，命令就以 1 退出，CI 不会把"拒绝更新"误判为成功。`--diff` 只读，并且仍会为被跳过的模块输出 diff，因此执行 `--force` 前可以先看清楚地改了什么。
+
+#### 迁移没有锁文件的旧安装
+
+锁文件出现之前，安装没有基线，旧副本与"旧副本且被本地修改过"无法区分。因此这类文件一律报告为 `unverified`，不会自动更新——`add` 和 `update` 都必须加 `--force`。一次性迁移步骤：
+
+```bash
+zerodep status                  # 查看哪些模块是 unverified
+zerodep update sse --diff       # 逐个查看改动
+zerodep update sse --force      # 采用上游内容并写入锁文件
+# 或者接受所有 unverified 模块都被重写：
+zerodep update --all --force
+```
+
+之后锁文件存在，后续更新只会替换仍与记录一致的文件。
+
+### `zerodep status`
+
+列出所有已安装模块的安装版本、最新版本和状态（与 `update` 使用同一套状态）。
+
+```bash
+$ zerodep status
+Module      Installed  Latest  State
+----------  ---------  ------  ----------------
+httpclient  0.6.1      0.6.1   up-to-date
+jsonx       1.0.0      1.0.2   outdated
+yaml        0.3.1      0.3.1   locally-modified
+```
+
+```bash
+zerodep status --json         # 机器可读输出，并附带各状态计数
+zerodep status --exit-code    # 只要存在非最新状态就退出 1
+```
+
+`status` 还会提示未安装的依赖。手工放进 vendor 目录、锁文件里没有记录的模块同样会被列出。
 
 ### `zerodep outdated`
 
-检查本地 zerodep 文件是否有上游内容变更。将每个本地文件的内容哈希与 manifest 对比，忽略仅元数据变更（如版本号更新）。
+列出本地 zerodep 文件及其与上游的对比结果。状态词与 `status` 相同；有锁文件时能区分上游变更和本地修改，没有锁文件时任何内容差异都报告为 `unverified`。
 
 ```bash
 $ zerodep outdated
 Module  Local Ver  Latest Ver  Status
-------  ---------  ----------  ----------
-semver  0.3.0      0.4.0       up-to-date
-yaml    0.3.0      0.4.0       outdated
+------  ---------  ----------  ----------------
+semver  0.3.0      0.4.0       unverified
+yaml    0.3.1      0.3.1       up-to-date
 ```
 
-- **up-to-date** — 文件内容与上游一致（元数据可能不同）
-- **outdated** — 文件有实质性的上游内容变更
+- **up-to-date** — 内容与上游一致（元数据可能不同）
+- **unverified** — 没有锁文件记录且内容与上游不同；可能只是旧版本，也可能被修改过，或两者兼有
+- **outdated** / **locally-modified** / **conflict** / **missing** / **upstream-removed** — 含义见 `update` 一节
 
-仅检查当前目录中存在的文件；本地不存在的模块会被跳过。
+`--json` 输出机器可读结果，`--exit-code` 在任何模块非最新时以 1 退出。只检查目标目录中存在的文件。
 
 ### `zerodep version-check`
 
@@ -282,11 +352,14 @@ zerodep 2026.4.11
 | 选项 | 说明 |
 |------|------|
 | `--offline` | 仅使用缓存文件，不访问网络 |
-| `--local` | 使用本地 `manifest.json`，不从远程获取 |
+| `--local` | 使用本地 `manifest.json` 和模块源码，不从远程获取 |
+| `--ref <ref>` | 从指定的 release tag、分支或提交安装（默认：最新 release，缓存一小时） |
+
+全局选项必须写在子命令之前：`zerodep --ref master add sse`。
 
 ## 网络行为
 
-CLI 使用多源回退链获取文件：
+CLI 从解析出的源版本（默认是最新 release，而不是会移动的 `master` 分支）使用多源回退链获取文件：
 
 ```
 GitHub raw → jsDelivr CDN → Fastly CDN → 本地缓存
@@ -298,7 +371,28 @@ GitHub raw → jsDelivr CDN → Fastly CDN → 本地缓存
 4. 如果全部失败，使用本地缓存（会发出警告）
 5. 使用 `--offline` 时完全跳过网络，仅使用缓存
 
-获取的文件缓存在 `~/.zerodep/cache/`，供离线使用。
+获取的文件按 ref 缓存在 `~/.zerodep/cache/`，供离线使用。写入任何文件之前，都会用 manifest 校验其内容哈希；校验失败会中止整个操作，不会留下半安装的模块。
+
+## 源版本锁定与锁文件
+
+`zerodep add` 会在安装目录旁写入 `zerodep.lock.json`，记录源仓库与确切 ref、每个模块的版本和上游内容哈希、每个已安装文件的 sha256，以及该模块是显式请求的还是作为依赖拉取的。
+
+```json
+{
+  "lock_version": 1,
+  "source": {"repo": "Oaklight/zerodep", "ref": "v2026.10.23"},
+  "modules": {
+    "sse": {
+      "version": "0.4.1",
+      "upstream_hash": "b7937446…",
+      "requested": true,
+      "files": {"sse.py": "3f216fb3…"}
+    }
+  }
+}
+```
+
+请把锁文件与 vendor 的模块一起提交。它让 `update` 能区分"上游变了"和"我改过这个文件"，也固定了项目实际安装的来源版本。使用 `--no-lock` 可以关闭。
 
 ## 依赖解析
 

@@ -45,7 +45,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [runner](runner.md) | 0.3.1 | 2026-04-15 |
 | [s3](s3.md) | 0.2.0 | 2026-07-03 |
 | [scheduler](scheduler.md) | 0.3.1 | 2026-04-15 |
-| [semantic_search](semantic_search.md) | 0.1.0 | — |
+| [semantic_search](semantic_search.md) | 0.1.0 | 2026-10-22 |
 | [semver](semver.md) | 0.4.1 | 2026-04-27 |
 | [skills](skills.md) | 0.4.3 | 2026-08-25 |
 | [soup](soup.md) | 0.9.0 | 2026-10-13 |
@@ -53,7 +53,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [sse](sse.md) | 0.3.4 | 2026-09-27 |
 | [structlog](structlog.md) | 0.3.0 | 2026-04-27 |
 | [synctex](synctex.md) | 0.2.0 | 2026-05-02 |
-| [tabulate](tabulate.md) | 0.1.1 | 2026-10-22 |
+| [tabulate](tabulate.md) | 0.1.2 | 2026-10-22 |
 | [toon](toon.md) | 0.6.1 | 2026-10-22 |
 | [useragent](useragent.md) | 0.1.0 | 2026-05-02 |
 | [validate](validate.md) | 0.7.1 | 2026-09-06 |

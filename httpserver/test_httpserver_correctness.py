@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import sys
+import time
 
 import pytest
 
@@ -1181,6 +1182,42 @@ class TestLifecycleSignals:
             assert events == ["disconnect"]
 
         asyncio.run(_test())
+
+    def test_blocked_generator_stops_on_client_eof(self):
+        """A client FIN is detected while the generator is blocked.
+
+        ``writer.is_closing()`` can stay false after the peer closes, so
+        the periodic check must also consult the reader's EOF.  Without
+        it the generator sleeps to completion and the connection lingers.
+        """
+        app = App()
+        finalized = []
+
+        @app.get("/events")
+        async def handler(request):
+            async def gen():
+                try:
+                    yield "data: 1\n\n"
+                    await asyncio.sleep(5)
+                finally:
+                    finalized.append(True)
+
+            return StreamingResponse(
+                gen(),
+                content_type="text/event-stream",
+                disconnect_check_interval=0.2,
+            )
+
+        async def _test():
+            reader = _mock_reader(b"GET /events HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _TrackingWriter()
+            started = time.monotonic()
+            await app._handle_connection(reader, writer)
+            return time.monotonic() - started
+
+        elapsed = asyncio.run(_test())
+        assert finalized == [True]
+        assert elapsed < 2.0
 
     def test_sync_handlers_supported(self):
         """Sync signal handlers work correctly."""

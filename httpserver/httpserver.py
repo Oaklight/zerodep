@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.6.0"
+# version = "0.6.1"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -471,8 +471,18 @@ class Response:
             domain=domain,
         )
 
-    async def _write(self, writer: asyncio.StreamWriter) -> None:
-        """Serialize and write the full HTTP response."""
+    async def _write(
+        self,
+        writer: asyncio.StreamWriter,
+        reader: asyncio.StreamReader | None = None,
+    ) -> None:
+        """Serialize and write the full HTTP response.
+
+        Args:
+            writer: Transport to write to.
+            reader: Unused here; accepted so the dispatch site can pass the
+                request reader uniformly to streaming responses.
+        """
         reason = _STATUS_REASONS.get(self.status_code, "Unknown")
         self.headers.setdefault("Content-Length", str(len(self.body)))
         self.headers.setdefault("Content-Type", "text/plain; charset=utf-8")
@@ -608,7 +618,11 @@ class StreamingResponse:
             domain=domain,
         )
 
-    async def _write(self, writer: asyncio.StreamWriter) -> None:
+    async def _write(
+        self,
+        writer: asyncio.StreamWriter,
+        reader: asyncio.StreamReader | None = None,
+    ) -> None:
         """Write status line, headers, then stream the body.
 
         Raises ``BrokenPipeError``, ``ConnectionResetError``, or
@@ -616,6 +630,13 @@ class StreamingResponse:
         (``_handle_connection``) is responsible for handling these.
         Generator cleanup and the background callback still run via
         the ``finally`` block before the exception propagates.
+
+        Args:
+            writer: Transport to write the response to.
+            reader: Request reader, when available.  A client that closes
+                its side of the connection leaves ``writer.is_closing()``
+                false on some platforms, but ``reader.at_eof()`` turns true;
+                streaming uses both to tear down a blocked generator.
         """
         reason = _STATUS_REASONS.get(self.status_code, "Unknown")
         is_sse = self.content_type.startswith("text/event-stream")
@@ -640,6 +661,18 @@ class StreamingResponse:
         try:
             aiter = self._generator.__aiter__()
             is_closing = getattr(writer, "is_closing", None)
+            at_eof = getattr(reader, "at_eof", None) if reader is not None else None
+
+            def disconnected() -> bool:
+                """Whether the peer is gone, per the writer or the read side.
+
+                ``is_closing()`` stays false on some platforms after the
+                peer sends FIN, while ``at_eof()`` turns true.
+                """
+                if is_closing is not None and is_closing():
+                    return True
+                return at_eof is not None and at_eof()
+
             while True:
                 # Detect client disconnect between generator yields.
                 # When the generator blocks on slow upstream I/O (e.g.
@@ -652,9 +685,9 @@ class StreamingResponse:
                     raise BrokenPipeError("client disconnected (detected)")
 
                 next_coro = aiter.__anext__()
-                if is_closing is None:
-                    # Writer has no is_closing (e.g. mock) — fall back
-                    # to plain await without disconnect detection.
+                if is_closing is None and at_eof is None:
+                    # Writer and reader cannot report a disconnect (mock) —
+                    # fall back to plain await.
                     try:
                         chunk = await next_coro
                     except StopAsyncIteration:
@@ -664,7 +697,7 @@ class StreamingResponse:
                     try:
                         chunk = await _anext_or_disconnect(
                             next_task,
-                            is_closing,
+                            disconnected,
                             self._disconnect_check_interval,
                         )
                     except StopAsyncIteration:
@@ -936,14 +969,18 @@ async def _read_chunked_body(
 
 async def _anext_or_disconnect(
     next_task: asyncio.Task[Any],
-    is_closing: Callable[[], bool],
+    is_disconnected: Callable[[], bool],
     interval: float,
 ) -> Any:
     """Await *next_task* while periodically checking for client disconnect.
 
-    Polls ``is_closing()`` every *interval* seconds.  If the writer is
-    closing, cancels the pending ``__anext__`` task and raises
+    Polls *is_disconnected* every *interval* seconds.  If it reports the
+    peer gone, cancels the pending ``__anext__`` task and raises
     ``BrokenPipeError`` so the caller can clean up the generator.
+
+    The check must consider the read side as well as the writer: after a
+    peer FIN, ``writer.is_closing()`` can stay false while
+    ``reader.at_eof()`` turns true.
 
     If the task completes normally the chunk value is returned.  If it
     raises ``StopAsyncIteration`` (generator exhausted) that exception
@@ -953,7 +990,7 @@ async def _anext_or_disconnect(
         try:
             return await asyncio.wait_for(asyncio.shield(next_task), timeout=interval)
         except asyncio.TimeoutError:
-            if is_closing():
+            if is_disconnected():
                 next_task.cancel()
                 try:
                     await next_task
@@ -1549,6 +1586,7 @@ class App:
                         client_addr,
                         writer,
                         keep_alive,
+                        reader,
                     ):
                         break
                 except Exception:
@@ -1634,6 +1672,7 @@ class App:
         client_addr: tuple,
         writer: asyncio.StreamWriter,
         keep_alive: bool,
+        reader: asyncio.StreamReader | None = None,
     ) -> bool:
         """Dispatch and write one request.
 
@@ -1646,6 +1685,8 @@ class App:
             client_addr: Client address for logging.
             writer: The client connection.
             keep_alive: Whether the connection may be reused afterwards.
+            reader: Request reader, used to detect a peer FIN while a
+                streaming generator is blocked.
 
         Returns:
             ``True`` when the connection stays open for another request.
@@ -1703,7 +1744,7 @@ class App:
         )
 
         try:
-            await response._write(writer)
+            await response._write(writer, reader)
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             await self._fire_signal(
                 "on_client_disconnect",

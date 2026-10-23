@@ -289,7 +289,7 @@ async def trigger_shutdown(request):
 
 ---
 
-### `StreamingResponse(generator, status_code=200, headers=None, content_type=None)`
+### `StreamingResponse(generator, status_code=200, headers=None, content_type=None, disconnect_check_interval=None, disconnect_on_eof=False)`
 
 使用 chunked 传输编码的流式响应。
 
@@ -297,6 +297,8 @@ async def trigger_shutdown(request):
 |------|------|------|
 | `generator` | `AsyncIterator[str \| bytes]` | 产生响应块的异步生成器 |
 | `content_type` | `str \| None` | SSE 场景使用 `"text/event-stream"` |
+| `disconnect_check_interval` | `float \| None` | 生成器阻塞时检查断开的间隔秒数（默认 30） |
+| `disconnect_on_eof` | `bool` | 阻塞期间把读取端 EOF 视为断开。默认关闭，因为半关闭的客户端仍在读取 |
 
 ---
 

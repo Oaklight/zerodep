@@ -115,12 +115,16 @@ async def events(request):
         yield encode_comment("heartbeat")
         yield encode_event("bye", id="2")
 
-    return StreamingResponse(generate(), content_type="text/event-stream")
+    return StreamingResponse(
+        generate(),
+        content_type="text/event-stream",
+        disconnect_on_eof=True,
+    )
 ```
 
 `encode_event()` 生成一个完整的事件块——多行载荷每行一个 `data:` 字段，并包含用于分发的结尾空行。手写 `f"data: {value}\n\n"` 只在载荷不含换行时可用：第一个换行就会结束事件，客户端只分发前缀，其余内容被静默丢弃。`encode_comment()` 生成客户端会忽略的心跳注释。两者都在 [`sse`](sse.md) 中，该模块同时提供客户端部分（`EventSource`、`connect`）。
 
-客户端断开会在两次 yield 之间被发现；若生成器处于阻塞状态，则在下一个 `disconnect_check_interval`（默认 30 秒）检查点被发现，随后执行生成器的 `finally`。
+客户端断开会在两次 yield 之间被发现。若生成器处于阻塞状态，只有在设置 `disconnect_on_eof=True` 时，才会在下一个 `disconnect_check_interval`（默认 30 秒）检查点被发现；该选项把读取端 EOF 视为断开，而合法的半关闭看起来完全一样，因此默认关闭——浏览器与常见 HTTP 客户端不会半关闭。随后执行生成器的 `finally`。
 
 ### 静态文件
 

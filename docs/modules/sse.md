@@ -142,10 +142,16 @@ async def events(request):
         yield encode_event("line 1\nline 2", id="2")
         yield encode_comment("heartbeat")
 
-    return StreamingResponse(stream(), content_type="text/event-stream")
+    return StreamingResponse(
+        stream(),
+        content_type="text/event-stream",
+        disconnect_on_eof=True,
+    )
 ```
 
 `encode_event` 返回完整的事件块（含触发分发的结尾空行）；`encode_comment` 生成用于心跳的注释块。两者都是无网络依赖的纯函数，可用于任何流式响应（或直接传给 `write()`）。
+
+EventSource 客户端不会半关闭，因此 `disconnect_on_eof=True` 让服务器在客户端消失且流处于阻塞状态时拆除生成器；权衡见 [httpserver](httpserver.md)。
 
 ### 重连配置
 

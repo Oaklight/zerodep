@@ -21,7 +21,7 @@
 ### 问题修复
 
 - **httpclient**（v0.6.1）：同步 `stream=True` 响应体现在会边到达边产出。`iter_bytes()` 原先用 `read(4096)`，该调用会等到缓冲区填满或流结束才返回，因此每 0.4 秒一个的 23 字节 SSE 事件要等到 2.0 秒才一起到达 `EventSource`——心跳、`Last-Event-ID` 重连与逐 token 输出全部被阻塞。`read1()` 返回传输层当前已有的数据，与本来就按块读取的异步路径一致。
-- **httpserver**（v0.6.1）：阻塞在 `await` 中的流式生成器现在会在客户端断开时停止。对端 FIN 之后 `writer.is_closing()` 可能仍为 false，而 `reader.at_eof()` 已为 true，因此周期性检查只能等生成器自己的定时器结束——实测为 5 秒——套接字一直停留在 CLOSE_WAIT。现在检查同时参考读取端；能及时 yield 的生成器不受影响。
+- **httpserver**（v0.6.1）：阻塞在 `await` 中的流式生成器现在可以在客户端断开时停止。对端 FIN 之后 `writer.is_closing()` 可能仍为 false，而 `reader.at_eof()` 已为 true，因此周期性检查只能等生成器自己的定时器结束——实测为 5 秒——套接字一直停留在 CLOSE_WAIT。`StreamingResponse(disconnect_on_eof=True)` 让检查同时参考读取端。由于 EOF 与合法的半关闭（客户端停止发送但仍继续读取）在协议上无法区分，该选项默认关闭；仅对不会半关闭的客户端（浏览器与常见 HTTP 库）启用。能及时 yield 的生成器不受影响。
 - **sse**（v0.4.1）：当 `data`、`event` 或 `id` 不是字符串时，`encode_event()` 抛出指明参数名的 `TypeError`，不再在格式化过程中抛出 `AttributeError` 或提示 bytes-like object 的错误。文档也说明行源只能按 CR/LF 切分：`str.splitlines()` 还会在 U+2028、U+2029、U+0085、VT 与 FF 处分行，而事件流格式把这些字符视为数据，导致载荷被静默截断。
 - **httpclient**：流式响应体若在达到声明的 `Content-Length` 之前结束，现在会抛出 `HttpConnectionError`，而不再把截断的响应体当作完整内容返回。对于定长响应，`iter_bytes()`、`iter_lines()`、`read()` 及其异步版本会统计已接收字节，在对端提前关闭时失败，且截断的响应体不会报告 `body_complete`。本身不携带响应体的响应——`HEAD` 请求以及 `204`/`304` 状态——不受影响。([#236](https://github.com/Oaklight/zerodep/issues/236))
 

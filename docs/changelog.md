@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Infrastructure
+
+- **release**: `release.yml` is now the only PyPI publisher. The separate `pypi.yml` could no longer publish (the trusted publisher is bound to `release.yml`) and its `release: published` trigger only produced red runs. Re-publishing a version whose upload failed is a `workflow_dispatch` with that explicit `version`: the workflow detects the existing tag, skips the manifest bump, commit, tag, release, and benchmark, and runs only the PyPI job, which first checks PyPI and does nothing if the version is already there.
+
 ## [2026.10.23.1] - 2026-10-23
 
 ### Features

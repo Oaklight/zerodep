@@ -7,6 +7,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 CLI = str(Path(__file__).parent / "zerodep.py")
 
 
@@ -144,3 +146,453 @@ def test_update_all_with_modules_errors():
     r = run_cli("update", "--all", "yaml")
     assert r.returncode == 1
     assert "cannot use --all" in r.stderr
+
+
+# ── lock file + status ──
+
+
+def _install(vendor: Path, *modules: str) -> None:
+    vendor.mkdir(exist_ok=True)
+    r = run_cli("add", *modules, "-d", str(vendor), "-y")
+    assert r.returncode == 0, r.stderr
+
+
+def _read_lock(vendor: Path) -> dict:
+    return json.loads((vendor / "zerodep.lock.json").read_text(encoding="utf-8"))
+
+
+def _write_lock(vendor: Path, data: dict) -> None:
+    (vendor / "zerodep.lock.json").write_text(
+        json.dumps(data, indent=2, sort_keys=True), encoding="utf-8"
+    )
+
+
+FAKE_OLD_YAML = '# /// zerodep\n# version = "0.0.1"\n# deps = []\n# ///\npass\n'
+
+
+def test_add_writes_lock_and_marks_dependencies(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "sse")
+    lock = _read_lock(vendor)
+    assert lock["lock_version"] == 1
+    assert lock["source"]["ref"] == "master"
+    assert lock["modules"]["sse"]["requested"] is True
+    assert lock["modules"]["httpclient"]["requested"] is False
+    recorded = lock["modules"]["sse"]["files"]["sse.py"]
+    assert len(recorded) == 64
+
+
+def test_add_no_lock_skips_lock_file(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    r = run_cli("add", "yaml", "-d", str(vendor), "-y", "--no-lock")
+    assert r.returncode == 0, r.stderr
+    assert not (vendor / "zerodep.lock.json").exists()
+
+
+def test_status_json_reports_tracked_state(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    r = run_cli("status", "--json", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    data = json.loads(r.stdout)
+    assert data["lock"] is True
+    row = data["modules"][0]
+    assert row["name"] == "yaml"
+    assert row["state"] == "up-to-date"
+    assert row["tracked"] is True
+
+
+def test_status_without_lock_reports_unverified(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    (vendor / "yaml.py").write_text(
+        (Path(__file__).parent / "yaml" / "yaml.py").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    r = run_cli("status", "--json", "-d", str(vendor))
+    data = json.loads(r.stdout)
+    assert data["lock"] is False
+    assert data["modules"][0]["state"] == "up-to-date"
+    with (vendor / "yaml.py").open("a", encoding="utf-8") as fh:
+        fh.write("# local patch\n")
+    r = run_cli("status", "--json", "--exit-code", "-d", str(vendor))
+    assert r.returncode == 1
+    data = json.loads(r.stdout)
+    # No baseline: an edited file is indistinguishable from an old one.
+    assert data["modules"][0]["state"] == "unverified"
+
+
+def test_add_refuses_to_clobber_tracked_edit(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    with (vendor / "yaml.py").open("a", encoding="utf-8") as fh:
+        fh.write("# local patch\n")
+    r = run_cli("add", "yaml", "-d", str(vendor), "-y")
+    assert r.returncode == 1
+    assert "differ from upstream" in r.stderr
+    assert "# local patch" in (vendor / "yaml.py").read_text(encoding="utf-8")
+    r = run_cli("add", "yaml", "-d", str(vendor), "-y", "--force")
+    assert r.returncode == 0, r.stderr
+    assert "# local patch" not in (vendor / "yaml.py").read_text(encoding="utf-8")
+
+
+def test_add_refuses_to_clobber_untracked_edit(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    (vendor / "yaml.py").write_text(
+        (Path(__file__).parent / "yaml" / "yaml.py").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    with (vendor / "yaml.py").open("a", encoding="utf-8") as fh:
+        fh.write("# local patch\n")
+    r = run_cli("add", "yaml", "-d", str(vendor), "-y")
+    assert r.returncode == 1
+    assert "differ from upstream" in r.stderr
+
+
+def test_add_refuses_older_untracked_edit(tmp_path: Path):
+    # Without a baseline an old file and an old+edited file look the same, so
+    # the older version must not be used as permission to overwrite.
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    (vendor / "yaml.py").write_text(FAKE_OLD_YAML + "# local patch\n", encoding="utf-8")
+    r = run_cli("add", "yaml", "-d", str(vendor), "-y")
+    assert r.returncode == 1
+    assert "differ from upstream" in r.stderr
+    assert "# local patch" in (vendor / "yaml.py").read_text(encoding="utf-8")
+
+
+def test_update_skips_locally_modified_and_exits_one(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    with (vendor / "yaml.py").open("a", encoding="utf-8") as fh:
+        fh.write("# local patch\n")
+
+    r = run_cli("update", "--all", "-d", str(vendor))
+    assert r.returncode == 1
+    assert "skipped (locally-modified)" in r.stderr
+    assert "# local patch" in (vendor / "yaml.py").read_text(encoding="utf-8")
+
+
+def test_update_force_overwrites_local_edit(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    with (vendor / "yaml.py").open("a", encoding="utf-8") as fh:
+        fh.write("# local patch\n")
+    lock = _read_lock(vendor)
+    lock["modules"]["yaml"]["upstream_hash"] = "0" * 64
+    lock["modules"]["yaml"]["version"] = "0.0.1"
+    _write_lock(vendor, lock)
+
+    r = run_cli("update", "--all", "--force", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert "# local patch" not in (vendor / "yaml.py").read_text(encoding="utf-8")
+    r = run_cli("status", "--json", "-d", str(vendor))
+    assert json.loads(r.stdout)["modules"][0]["state"] == "up-to-date"
+
+
+def test_update_diff_writes_nothing(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    (vendor / "yaml.py").write_text(FAKE_OLD_YAML, encoding="utf-8")
+    r = run_cli("update", "yaml", "--diff", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert "---" in r.stdout and "+++" in r.stdout
+    assert (vendor / "yaml.py").read_text(encoding="utf-8") == FAKE_OLD_YAML
+    assert not (vendor / "zerodep.lock.json").exists()
+
+
+def test_update_check_flags_unverified_legacy_module(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    (vendor / "yaml.py").write_text(FAKE_OLD_YAML, encoding="utf-8")
+    r = run_cli("update", "yaml", "--check", "-d", str(vendor))
+    assert r.returncode == 1
+    assert "skipped (unverified)" in r.stderr
+    assert (vendor / "yaml.py").read_text(encoding="utf-8") == FAKE_OLD_YAML
+
+
+def test_update_records_lock_for_untracked_module(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    (vendor / "yaml.py").write_text(FAKE_OLD_YAML, encoding="utf-8")
+    r = run_cli("update", "yaml", "--force", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    lock = _read_lock(vendor)
+    assert "yaml" in lock["modules"]
+    assert lock["modules"]["yaml"]["requested"] is True
+    r = run_cli("status", "--json", "-d", str(vendor))
+    assert json.loads(r.stdout)["modules"][0]["state"] == "up-to-date"
+
+
+# ── integrity + ref resolution (unit) ──
+
+
+def _import_cli():
+    import zerodep
+
+    return zerodep
+
+
+def test_integrity_check_rejects_tampered_payload():
+    zerodep = _import_cli()
+    mod = zerodep._load_manifest(local=True)["modules"]["yaml"]
+    try:
+        zerodep._verify_payload("yaml/yaml.py", "tampered", mod, "master")
+    except SystemExit as exc:  # _die exits with status 1
+        assert exc.code == 1
+    else:  # pragma: no cover - explicit failure path
+        raise AssertionError("tampered payload was accepted")
+
+
+def test_integrity_check_accepts_matching_payload():
+    zerodep = _import_cli()
+    manifest = zerodep._load_manifest(local=True)
+    mod = manifest["modules"]["yaml"]
+    text = (Path(__file__).parent / "yaml" / "yaml.py").read_text(encoding="utf-8")
+    zerodep._verify_payload("yaml/yaml.py", text, mod, "master")
+
+
+def test_resolve_ref_prefers_explicit_and_local():
+    zerodep = _import_cli()
+    assert zerodep._resolve_ref("v1.2.3") == "v1.2.3"
+    assert zerodep._resolve_ref(None, local=True) == zerodep.BRANCH
+
+
+def test_resolve_ref_uses_and_caches_latest_release(tmp_path: Path, monkeypatch):
+    zerodep = _import_cli()
+    monkeypatch.setattr(zerodep, "CACHE_DIR", tmp_path)
+    calls = []
+
+    def fake_fetch(url: str, timeout: int = 15) -> bytes:
+        calls.append(url)
+        return b'{"tag_name": "v2099.1.2"}'
+
+    monkeypatch.setattr(zerodep, "_fetch_url", fake_fetch)
+    assert zerodep._resolve_ref(None) == "v2099.1.2"
+    assert len(calls) == 1
+
+    def boom(url: str, timeout: int = 15) -> bytes:  # pragma: no cover
+        raise AssertionError("release lookup should be cached")
+
+    monkeypatch.setattr(zerodep, "_fetch_url", boom)
+    assert zerodep._resolve_ref(None) == "v2099.1.2"
+
+
+def test_integrity_check_skips_secondary_files():
+    # content_hash covers the primary file only; secondary files must not be
+    # compared against it or every multi-file module would fail to install.
+    zerodep = _import_cli()
+    mod = {"primary_file": "foo/foo.py", "content_hash": "0" * 64}
+    zerodep._verify_payload("foo/helper.py", "not the hash", mod, "master")
+
+
+def test_ref_cache_dir_is_filesystem_safe():
+    zerodep = _import_cli()
+    for ref in ("..", ".", "../../etc", "v2026.10.23"):
+        path = zerodep._ref_cache_dir(ref)
+        assert path.parent == zerodep.CACHE_DIR / "refs"
+        assert path.name not in {"", ".", ".."}
+
+
+# ── lock bootstrap of legacy installs ──
+
+
+def _copy_clean(vendor: Path, module: str) -> None:
+    vendor.mkdir(exist_ok=True)
+    (vendor / f"{module}.py").write_text(
+        (Path(__file__).parent / module / f"{module}.py").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
+
+def _status_rows(vendor: Path) -> dict[str, dict]:
+    r = run_cli("status", "--json", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    return {row["name"]: row for row in json.loads(r.stdout)["modules"]}
+
+
+def test_bootstrap_adopts_clean_legacy_module(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _copy_clean(vendor, "yaml")
+    r = run_cli("add", "sse", "-d", str(vendor), "-y")
+    assert r.returncode == 0, r.stderr
+    lock = _read_lock(vendor)
+    assert "yaml" in lock["modules"]
+    assert lock["modules"]["yaml"]["requested"] is True
+    assert _status_rows(vendor)["yaml"]["state"] == "up-to-date"
+
+
+def test_bootstrap_never_adopts_an_edited_file(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _copy_clean(vendor, "yaml")
+    with (vendor / "yaml.py").open("a", encoding="utf-8") as fh:
+        fh.write("# local patch\n")
+    r = run_cli("add", "sse", "-d", str(vendor), "-y")
+    assert r.returncode == 0, r.stderr
+    lock = _read_lock(vendor)
+    assert "yaml" not in lock["modules"]
+    row = _status_rows(vendor)["yaml"]
+    assert row["state"] == "unverified"
+    assert row["tracked"] is False
+
+    # --all must not silently overwrite a file it never adopted.
+    r = run_cli("update", "--all", "-d", str(vendor))
+    assert r.returncode == 1
+    assert "skipped (unverified)" in r.stderr
+    assert "# local patch" in (vendor / "yaml.py").read_text(encoding="utf-8")
+
+
+def test_bootstrap_leaves_old_version_untracked(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    (vendor / "yaml.py").write_text(FAKE_OLD_YAML, encoding="utf-8")
+    r = run_cli("add", "sse", "-d", str(vendor), "-y")
+    assert r.returncode == 0, r.stderr
+    assert "yaml" not in _read_lock(vendor)["modules"]
+    assert _status_rows(vendor)["yaml"]["state"] == "unverified"
+
+    # An older copy may also be an edited copy; require --force to replace it.
+    r = run_cli("update", "--all", "-d", str(vendor))
+    assert r.returncode == 1
+    assert (vendor / "yaml.py").read_text(encoding="utf-8") == FAKE_OLD_YAML
+
+    r = run_cli("update", "yaml", "--force", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert _status_rows(vendor)["yaml"]["state"] == "up-to-date"
+
+
+# ── review follow-ups: dependency growth, local integrity, removals ──
+
+
+def test_select_update_candidates_pulls_in_missing_dependencies():
+    import argparse
+
+    zerodep = _import_cli()
+    manifest = {
+        "modules": {
+            "yaml": {
+                "version": "1.0.0",
+                "content_hash": "a" * 64,
+                "deps": ["httpclient"],
+                "files": ["yaml/yaml.py"],
+            },
+            "httpclient": {
+                "version": "1.0.0",
+                "content_hash": "b" * 64,
+                "deps": [],
+                "files": ["httpclient/httpclient.py"],
+            },
+        }
+    }
+    rows = {
+        "yaml": {
+            "name": "yaml",
+            "state": "up-to-date",
+            "installed_version": "1.0.0",
+            "latest_version": "1.0.0",
+            "missing_deps": ["httpclient"],
+        }
+    }
+    lock = {"modules": {"yaml": {}}}
+    args = argparse.Namespace(update_all=True, modules=[], no_deps=False, force=False)
+    candidates, skipped = zerodep._select_update_candidates(args, rows, lock, manifest)
+    assert "httpclient" in candidates
+    assert "yaml" not in candidates  # already up to date
+    assert skipped == []
+
+
+def test_status_exit_code_flags_missing_dependencies(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    r = run_cli("add", "sse", "--no-deps", "-d", str(vendor), "-y")
+    assert r.returncode == 0, r.stderr
+    r = run_cli("status", "--exit-code", "-d", str(vendor))
+    assert r.returncode == 1
+    assert "depends on httpclient" in r.stderr
+
+
+def test_local_checkout_payload_is_verified(tmp_path: Path, monkeypatch):
+    zerodep = _import_cli()
+    mod = {"primary_file": "yaml/yaml.py", "content_hash": "0" * 64}
+    try:
+        zerodep._verify_payload("yaml/yaml.py", "tampered", mod, "master", local=True)
+    except SystemExit as exc:
+        assert exc.code == 1
+    else:  # pragma: no cover - explicit failure path
+        raise AssertionError("a tampered local checkout was accepted")
+
+
+def test_update_reports_upstream_removed_module(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    lock = _read_lock(vendor)
+    lock["modules"]["ghost"] = {
+        "version": "0.1.0",
+        "upstream_hash": None,
+        "requested": True,
+        "files": {"ghost.py": "0" * 64},
+    }
+    _write_lock(vendor, lock)
+    (vendor / "ghost.py").write_text("# /// zerodep\n# ///\npass\n", encoding="utf-8")
+
+    r = run_cli("status", "--json", "-d", str(vendor))
+    rows = {row["name"]: row for row in json.loads(r.stdout)["modules"]}
+    assert rows["ghost"]["state"] == "upstream-removed"
+
+    r = run_cli("update", "--all", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert "no longer published upstream" in r.stderr
+
+
+def test_update_no_lock_leaves_lock_alone(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    (vendor / "yaml.py").write_text(FAKE_OLD_YAML, encoding="utf-8")
+    r = run_cli("update", "yaml", "--force", "--no-lock", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert not (vendor / "zerodep.lock.json").exists()
+
+
+def test_prepare_file_only_reads_checkout_with_local(monkeypatch):
+    zerodep = _import_cli()
+    mod = zerodep._load_manifest(local=True)["modules"]["yaml"]
+    seen: list[str] = []
+
+    def fake_fetch(path: str, *, offline: bool = False, ref: str | None = None):
+        seen.append(ref or "")
+        return (Path(__file__).parent / "yaml" / "yaml.py").read_bytes()
+
+    monkeypatch.setattr(zerodep, "_fetch_with_fallback", fake_fetch)
+    text = zerodep._prepare_file(
+        "yaml/yaml.py", mod, offline=False, ref="vTEST", local=False
+    )
+    assert seen == ["vTEST"]  # --ref provenance is not faked from the checkout
+    assert "zerodep add yaml" in text
+
+
+def test_write_files_verifies_everything_before_writing(tmp_path: Path, monkeypatch):
+    zerodep = _import_cli()
+    manifest = zerodep._load_manifest(local=True)
+    yaml_text = (Path(__file__).parent / "yaml" / "yaml.py").read_text(encoding="utf-8")
+
+    def fake_fetch(path: str, *, offline: bool = False, ref: str | None = None):
+        return (yaml_text if path == "yaml/yaml.py" else "tampered").encode()
+
+    monkeypatch.setattr(zerodep, "_fetch_with_fallback", fake_fetch)
+    plan = [
+        ("yaml", "yaml/yaml.py", tmp_path / "yaml.py"),
+        ("sse", "sse/sse.py", tmp_path / "sse.py"),
+    ]
+    with pytest.raises(SystemExit):
+        zerodep._write_files(
+            plan,
+            manifest["modules"],
+            tmp_path,
+            offline=False,
+            ref="vTEST",
+            local=False,
+        )
+    # The valid first file must not be written when a later one is rejected.
+    assert not (tmp_path / "yaml.py").exists()

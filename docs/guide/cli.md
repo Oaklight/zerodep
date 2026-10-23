@@ -230,6 +230,32 @@ $ zerodep version-check --strict
 # exits 0 if all up-to-date, 1 if any module needs a bump
 ```
 
+### `zerodep release-check`
+
+Run every check that must hold before a release is tagged: module versions
+against their declared version tags, manifest freshness, CalVer consistency
+between `pyproject.toml` and `zerodep.py`, the generated docs module index
+(when the docs worktrees are mounted) and a clean working tree. Any failure
+exits with code 1.
+
+The Release workflow calls this same command, so the local check and CI cannot
+drift apart.
+
+```bash
+$ zerodep release-check
+Check            Result  Detail
+---------------  ------  ---------------------------------------------
+module-versions  ok      49 modules match their declared versions
+manifest         ok      manifest.json matches the source tree
+project-version  ok      2026.10.23.1 is CalVer and matches zerodep.py
+docs-index       ok      docs module index matches the manifest
+working-tree     ok      no uncommitted tracked changes
+
+release-check passed
+```
+
+Use `--allow-dirty` to skip the working-tree check while iterating.
+
 ### `zerodep bump`
 
 Auto-detect changed modules and bump their frontmatter versions. By default performs a patch bump; use `--minor` or `--major` for larger increments.

@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Features
 
+- **CLI**: `zerodep release-check` runs the pre-release checks in one command — module versions against their declared tags, manifest freshness, CalVer consistency between `pyproject.toml` and `zerodep.py`, the generated docs module index (when the docs worktrees are mounted) and a clean working tree. The Release workflow now calls it instead of repeating the steps in YAML, so the local check and CI cannot drift apart.
 - **cli**: installs now record `zerodep.lock.json` next to the vendored files, with the resolved source ref, each module's version and upstream hash, the sha256 of every installed file, and whether the module was requested or pulled in as a dependency. `add` writes it, `update` refreshes it, and `--no-lock` opts out. ([#249](https://github.com/Oaklight/zerodep/issues/249))
 - **cli**: `update` no longer overwrites blindly. It distinguishes `up-to-date`, `outdated`, `locally-modified`, `conflict`, `missing`, `unverified` and `upstream-removed`; modules it will not touch are reported and make the command exit 1. New `--diff` previews the changes, `--check` is a CI gate, and `--force` overwrites a local edit on purpose. ([#250](https://github.com/Oaklight/zerodep/issues/250))
 - **cli**: new `zerodep status` command lists every installed module with its installed version, latest version and state, with `--json` and `--exit-code` for automation.

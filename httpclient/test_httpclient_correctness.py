@@ -2,6 +2,7 @@
 
 import asyncio
 import io
+import json
 import os
 import sys
 import time
@@ -851,6 +852,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from httpclient import (
     _build_raw_http_request,
     _merge_headers,
+    _prepare_body,
     _prepare_request,
 )
 
@@ -1402,3 +1404,30 @@ class TestStreamingResponseCookies:
         ) as r:
             assert r.cookies["stream"] == "yes"
             await r.aread()
+
+
+class TestJSONBodyNonFinite:
+    """NaN/Infinity cannot be transmitted; the body is refused, not sent."""
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+    def test_top_level_non_finite_is_rejected(self, value):
+        with pytest.raises(ValueError, match="not valid JSON"):
+            _prepare_body(json=value, data=None, files=None)
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf")])
+    def test_nested_non_finite_is_rejected(self, value):
+        with pytest.raises(ValueError, match="not valid JSON"):
+            _prepare_body(json={"a": [1.0, value]}, data=None, files=None)
+
+    def test_finite_payload_round_trips(self):
+        body, content_type = _prepare_body(
+            json={"a": 0.5, "b": [1, 2]}, data=None, files=None
+        )
+        assert content_type == "application/json"
+        assert json.loads(body) == {"a": 0.5, "b": [1, 2]}
+
+    def test_request_path_raises_before_connecting(self):
+        """The failure happens while building the body, not mid-request."""
+        client = Client()
+        with pytest.raises(ValueError, match="not valid JSON"):
+            client.post("http://127.0.0.1:9/", json={"x": float("nan")})

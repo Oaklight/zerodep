@@ -78,6 +78,23 @@ class TestResponse:
         r = JSONResponse({"msg": "你好"})
         assert "你好" in r.body.decode("utf-8")
 
+    def test_json_response_rejects_non_finite_floats(self):
+        """NaN/Infinity are not valid JSON; refuse to emit them."""
+        for value in (float("nan"), float("inf"), float("-inf")):
+            with pytest.raises(ValueError, match="JSON compliant"):
+                JSONResponse({"x": value})
+            with pytest.raises(ValueError, match="JSON compliant"):
+                JSONResponse([1.0, {"nested": value}])
+
+    def test_json_response_allow_nan_opt_in(self):
+        """Callers who really want Python's constants can opt in."""
+        r = JSONResponse({"x": float("nan")}, allow_nan=True)
+        assert b"NaN" in r.body
+
+    def test_json_response_finite_floats_unchanged(self):
+        r = JSONResponse({"a": 0.5, "b": -0.0, "c": 1e308})
+        assert json.loads(r.body) == {"a": 0.5, "b": -0.0, "c": 1e308}
+
 
 class TestCoerceResponse:
     """Handler return value coercion."""

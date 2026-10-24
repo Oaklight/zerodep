@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-24T16:31:46.307427+00:00",
+  "generated": "2026-10-24T18:43:17.600065+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -14,8 +14,8 @@
       ],
       "tier": "subsystem",
       "category": "protocol",
-      "last_updated": "2026-10-24T11:26:07-05:00",
-      "content_hash": "da15ce1ac7c6cf5d46a7d725b6079e7d347f04e12dd86761fbcdc6125b52760b"
+      "last_updated": "2026-10-24T11:36:28-05:00",
+      "content_hash": "85f5813abe9829621cd44071f47035425e0b7e197ad9bcdac34bac7b3c3c66e8"
     },
     "acp": {
       "description": "ACP (Agent Client Protocol) -- Zero-dependency Python implementation",
@@ -245,7 +245,7 @@
       "deps": [],
       "tier": "simple",
       "category": "serialization",
-      "last_updated": "2026-10-24T11:26:07-05:00",
+      "last_updated": "2026-10-24T11:32:21-05:00",
       "content_hash": "b9ac4f5cbb2fbccac06eef1f2bfa35e98553df649c9a5735f00c317eae919625"
     },
     "llmstxt": {

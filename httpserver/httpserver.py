@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.6.1"
+# version = "0.6.2"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -504,10 +504,24 @@ class Response:
 class JSONResponse(Response):
     """Response serialized as JSON.
 
+    Non-finite floats (``NaN``, ``Infinity``) are rejected rather than
+    written: they are not valid JSON, and a server that emits them hands
+    clients a body ``JSON.parse`` and Go's ``encoding/json`` refuse. Starlette
+    makes the same choice. Pass ``allow_nan=True`` to emit Python's
+    non-standard constants anyway; an application that wants ``null`` for
+    non-finite values should sanitize the payload before building the
+    response.
+
     Args:
         data: Python object to serialize.
         status_code: HTTP status code.
         headers: Extra response headers.
+        allow_nan: Emit ``NaN`` / ``Infinity`` instead of raising
+            :class:`ValueError`. Defaults to ``False``.
+
+    Raises:
+        ValueError: If *data* contains a non-finite float and
+            *allow_nan* is ``False``.
     """
 
     def __init__(
@@ -515,8 +529,12 @@ class JSONResponse(Response):
         data: Any,
         status_code: int = 200,
         headers: dict[str, str] | None = None,
+        *,
+        allow_nan: bool = False,
     ):
-        body = _json.dumps(data, ensure_ascii=False).encode("utf-8")
+        body = _json.dumps(data, ensure_ascii=False, allow_nan=allow_nan).encode(
+            "utf-8"
+        )
         super().__init__(
             body=body,
             status_code=status_code,

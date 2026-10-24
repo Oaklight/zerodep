@@ -360,8 +360,18 @@ zerodep version-check        # still resolves to the checkout above
 ```
 
 `manifest.json` is the marker because it *is* the catalog — a directory that
-merely contains a `pyproject.toml` is some other project. Outside a catalog the
-command refuses instead of guessing:
+merely contains a `pyproject.toml` is some other project. The name alone is not
+enough either, since browser extensions, PWAs and npm packages all ship one: a
+candidate counts only if the file parses as a zerodep manifest and at least one
+module it lists exists on disk. A stray copy above your project therefore never
+captures a command that runs below it, which also means `zerodep manifest`
+cannot rewrite someone else's `manifest.json`.
+
+The one exception is a checkout that has no catalog yet: the CLI plus a
+`pyproject.toml` naming `zerodep` counts, so `zerodep manifest` can create the
+file it is asked for. It still refuses to write an empty catalog.
+
+Outside a catalog the command refuses instead of guessing:
 
 ```
 error: version-check inspects the zerodep source tree, but no manifest.json is

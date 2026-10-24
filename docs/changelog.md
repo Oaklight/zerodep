@@ -8,11 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Bug Fixes
 
-- **cli**: the commands that read module sources — `manifest`, `bump`, `new`, `version-check`, `dep-graph`, `dep-check` — now resolve the catalog the same way `release-check` does instead of scanning whichever directory the CLI was installed into. With a wheel that is `site-packages`, where every package looks like a zerodep module: `version-check` reported `PIL`, `aiohttp` and every other installed package as needing a version bump, so `--strict` consumers were permanently red. The catalog is now the checkout containing `manifest.json` above the current directory, falling back to the one beside the CLI; outside a catalog the command refuses instead of guessing, and `pyproject.toml` alone no longer passes as a catalog.
+- **cli**: the commands that read module sources — `manifest`, `bump`, `new`, `version-check`, `dep-graph`, `dep-check` — now resolve the catalog the same way `release-check` does instead of scanning whichever directory the CLI was installed into. With a wheel that is `site-packages`, where every package looks like a zerodep module: `version-check` reported `PIL`, `aiohttp` and every other installed package as needing a version bump, so `--strict` consumers were permanently red. The catalog is now the checkout containing a zerodep `manifest.json` above the current directory, falling back to the one beside the CLI; outside a catalog the command refuses instead of guessing, and `pyproject.toml` alone no longer passes as a catalog. A `manifest.json` that is not a zerodep catalog — a browser extension's, or a stray copy of ours whose modules are not on disk — is never mistaken for one, so `zerodep manifest` cannot overwrite it.
 
 ### Enhancements
 
 - **cli**: with an installed CLI, running a catalog command from inside a checkout — `cd ~/projects/zerodep && zerodep release-check` — now inspects that checkout instead of being refused. When the CLI belongs to a different checkout than the current directory, the command says which tree it used.
+- **cli**: `zerodep manifest` creates the catalog again in a checkout that has none, and refuses to write an empty one. `--local` no longer tells an installed CLI to run `zerodep manifest` — advice that pointed at a different tree — and says that `--local` needs a checkout instead.
 
 ## [2026.10.23.3] - 2026-10-23
 

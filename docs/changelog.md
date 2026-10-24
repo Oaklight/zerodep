@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.10.24] - 2026-10-24
+
 ### Bug Fixes
 
 - **transport**: `jsonrpc.write_message` and `semantic_search`'s embedding request now refuse `NaN` / `Infinity` instead of putting them on the wire. These were the last two permissive JSON senders once `httpclient`, `httpserver`, `jsonx`, `a2a` and `cdp` were made strict; local stores and log lines stay permissive by design.

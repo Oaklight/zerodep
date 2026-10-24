@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import sys
+import threading
 import time
 
 import pytest
@@ -974,6 +975,102 @@ class TestResponseSetCookie:
         assert len(set_cookie_headers) >= 1
         header = set_cookie_headers[0].lower()
         assert "max-age=0" in header
+
+
+def _serve(app):
+    """Run *app* on its own loop in a thread; yields the base URL."""
+    ready = threading.Event()
+    state = {}
+
+    def _run():
+        async def _start():
+            app._shutdown_event = asyncio.Event()
+            server = await asyncio.start_server(app._handle_connection, "127.0.0.1", 0)
+            app._server = server
+            addr = server.sockets[0].getsockname()
+            state["url"] = f"http://{addr[0]}:{addr[1]}"
+            ready.set()
+            async with server:
+                await app._shutdown_event.wait()
+
+        asyncio.run(_start())
+
+    thread = threading.Thread(target=_run, daemon=True)
+    thread.start()
+    ready.wait(timeout=5)
+    return state["url"]
+
+
+@pytest.fixture
+def hook_app_url():
+    """An app whose hooks can return bodies that fail to serialize."""
+    app = App()
+
+    @app.get("/ok")
+    async def ok(request):
+        return {"ok": True}
+
+    @app.get("/after")
+    async def after(request):
+        return {"ok": True}
+
+    @app.get("/before")
+    async def before(request):
+        return {"ok": True}
+
+    @app.after_request
+    async def after_hook(request, response):
+        if request.path == "/after":
+            return {"x": float("nan")}
+        return None
+
+    @app.before_request
+    async def before_hook(request):
+        if request.path == "/before":
+            return {"x": float("inf")}
+        return None
+
+    return _serve(app)
+
+
+class TestHookFailures:
+    """A hook runs outside the handler's guard; it must still answer."""
+
+    def test_after_hook_non_finite_returns_500(self, hook_app_url):
+        from httpclient import Client
+
+        with Client() as c:
+            r = c.get(f"{hook_app_url}/after")
+        assert r.status_code == 500
+        assert r.json() == {"error": "Internal Server Error"}
+
+    def test_before_hook_non_finite_returns_500(self, hook_app_url):
+        from httpclient import Client
+
+        with Client() as c:
+            r = c.get(f"{hook_app_url}/before")
+        assert r.status_code == 500
+        assert r.json() == {"error": "Internal Server Error"}
+
+    def test_failing_error_handler_falls_back_to_500(self):
+        """A broken error page must not cost the client its response."""
+        app = App()
+
+        @app.get("/boom")
+        async def boom(request):
+            raise RuntimeError("boom")
+
+        @app.errorhandler(RuntimeError)
+        async def broken_handler(request, exc):
+            return {"x": float("nan")}
+
+        url = _serve(app)
+        from httpclient import Client
+
+        with Client() as c:
+            r = c.get(f"{url}/boom")
+        assert r.status_code == 500
+        assert r.json() == {"error": "Internal Server Error"}
 
 
 class TestCookieRoundTrip:

@@ -317,7 +317,16 @@ zerodep version-check        # 仍然解析到上层的 checkout
 ```
 
 以 `manifest.json` 作为标记，是因为它本身就是目录清单——只含 `pyproject.toml`
-的目录属于别的项目，而不是本目录。不在任何目录内时，命令会拒绝执行而不是瞎猜：
+的目录属于别的项目，而不是本目录。仅有文件名也不够：浏览器扩展、PWA 和 npm 包
+都会附带 `manifest.json`。因此候选目录必须满足：该文件能解析为 zerodep 清单，
+且其中至少有一个模块确实存在于磁盘上。这样，上层遗留的清单副本不会劫持其下层
+运行的命令，`zerodep manifest` 也不会覆盖别人的 `manifest.json`。
+
+唯一的例外是尚无清单的 checkout：只要目录内有 CLI 本身、且有名为 `zerodep` 的
+`pyproject.toml`，即视为目录，`zerodep manifest` 可以创建它被要求创建的文件；
+但它仍然拒绝写入空清单。
+
+不在任何目录内时，命令会拒绝执行而不是瞎猜：
 
 ```
 error: version-check inspects the zerodep source tree, but no manifest.json is

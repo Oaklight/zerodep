@@ -401,6 +401,42 @@ class TestLoadLines:
             assert load_lines(f) == [{"x": 1}, {"y": 2}]
 
 
+class TestNonFiniteFloats:
+    """NaN/Infinity are not JSON; the serializers refuse them by default."""
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+    def test_dumps_rejects(self, value: float) -> None:
+        with pytest.raises(ValueError, match="JSON compliant"):
+            dumps({"x": value})
+
+    def test_dumps_rejects_nested(self) -> None:
+        with pytest.raises(ValueError, match="JSON compliant"):
+            dumps({"a": [1.0, {"b": float("nan")}]})
+
+    def test_dumps_allow_nan_opt_in(self) -> None:
+        assert dumps({"x": float("nan")}, allow_nan=True) == '{"x": NaN}'
+
+    def test_dump_rejects(self) -> None:
+        with pytest.raises(ValueError, match="JSON compliant"):
+            dump({"x": float("inf")}, io.StringIO())
+
+    def test_dump_allow_nan_opt_in(self) -> None:
+        buf = io.StringIO()
+        dump({"x": float("nan")}, buf, allow_nan=True)
+        assert buf.getvalue() == '{"x": NaN}'
+
+    def test_finite_floats_unchanged(self) -> None:
+        data = {"a": 0.5, "b": [1, 2], "c": -0.0}
+        assert dumps(data) == json.dumps(data)
+
+    def test_dumps_lines_rejects(self) -> None:
+        with pytest.raises(ValueError, match="JSON compliant"):
+            dumps_lines([{"x": 1}, {"x": float("inf")}])
+
+    def test_dumps_lines_allow_nan_opt_in(self) -> None:
+        assert dumps_lines([{"x": float("nan")}], allow_nan=True) == '{"x": NaN}'
+
+
 class TestDumpsLines:
     def test_basic(self) -> None:
         objs = [{"a": 1}, {"b": 2}]

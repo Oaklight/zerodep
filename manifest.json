@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-24T15:51:17.510693+00:00",
+  "generated": "2026-10-24T16:25:35.564588+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -8,14 +8,14 @@
         "a2a/a2a.py"
       ],
       "primary_file": "a2a/a2a.py",
-      "version": "0.3.2",
+      "version": "0.4.0",
       "deps": [
         "jsonrpc"
       ],
       "tier": "subsystem",
       "category": "protocol",
       "last_updated": "2026-08-25T10:54:32-05:00",
-      "content_hash": "a019b8de7a59e81c38276a82701b13922891c8d0100982db30d529b5ebfe93de"
+      "content_hash": "4c211b7e3cff987f919d4ded7d305695e9bd7882c8309bc619bdc853fab0dab4"
     },
     "acp": {
       "description": "ACP (Agent Client Protocol) -- Zero-dependency Python implementation",
@@ -90,14 +90,14 @@
         "cdp/cdp.py"
       ],
       "primary_file": "cdp/cdp.py",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "deps": [
         "websocket"
       ],
       "tier": "medium",
       "category": "protocol",
       "last_updated": "2026-08-25T10:54:32-05:00",
-      "content_hash": "a95910894a2ce329debb14aa8cad904e2f7a957ae23b776204397812b71c9796"
+      "content_hash": "c8a22905efe350dbe6d4afe4ab5ceb46cd66d720754b842f8260a2b62ae417bb"
     },
     "config": {
       "description": "Unified configuration loader — zero dependencies, stdlib only, Python 3.10+",
@@ -206,7 +206,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-10-24T10:19:33-05:00",
+      "last_updated": "2026-10-24T10:51:30-05:00",
       "content_hash": "5e7c5ae18fa66d38fa37bb7fa3de8d18a4593c1847df64b39308d7e84b38ebc0"
     },
     "jsonrpc": {
@@ -241,12 +241,12 @@
         "jsonx/jsonx.py"
       ],
       "primary_file": "jsonx/jsonx.py",
-      "version": "1.0.2",
+      "version": "1.1.0",
       "deps": [],
       "tier": "simple",
       "category": "serialization",
       "last_updated": "2026-10-22T17:17:12-05:00",
-      "content_hash": "d4b4feddd59d0e17ad9a3392583c5c9a85ea1665fcd7e89e800a2bdf9ebbb154"
+      "content_hash": "b9ac4f5cbb2fbccac06eef1f2bfa35e98553df649c9a5735f00c317eae919625"
     },
     "llmstxt": {
       "description": "llms.txt parser — zero dependencies, stdlib only, Python 3.10+",

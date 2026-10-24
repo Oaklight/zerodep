@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.3.2"
+# version = "0.4.0"
 # deps = ["jsonrpc"]
 # tier = "subsystem"
 # category = "protocol"
@@ -1100,7 +1100,7 @@ def sse_encode(data: Any) -> bytes:
     Returns:
         UTF-8 encoded SSE frame bytes (``data: ...\\n\\n``).
     """
-    payload = json.dumps(data, separators=(",", ":"))
+    payload = json.dumps(data, separators=(",", ":"), allow_nan=False)
     return f"data: {payload}\n\n".encode("utf-8")
 
 
@@ -1237,7 +1237,7 @@ class A2AClient:
         if request_id is None:
             request_id = id(params) & 0xFFFFFF
         rpc_req = JSONRPCRequest(method=method, params=params, id=request_id)
-        body = json.dumps(rpc_req.to_dict()).encode("utf-8")
+        body = json.dumps(rpc_req.to_dict(), allow_nan=False).encode("utf-8")
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -1284,7 +1284,7 @@ class A2AClient:
         if request_id is None:
             request_id = id(params) & 0xFFFFFF
         rpc_req = JSONRPCRequest(method=method, params=params, id=request_id)
-        body = json.dumps(rpc_req.to_dict()).encode("utf-8")
+        body = json.dumps(rpc_req.to_dict(), allow_nan=False).encode("utf-8")
         parsed = urllib.parse.urlparse(self._rpc_url())
         host = parsed.hostname or "localhost"
 
@@ -1487,7 +1487,9 @@ class A2ARequestHandler(http.server.BaseHTTPRequestHandler):
 
     def _serve_agent_card(self) -> None:
         """Respond with the agent card JSON."""
-        body = json.dumps(self._agent_card.to_dict(), indent=2).encode("utf-8")
+        body = json.dumps(self._agent_card.to_dict(), indent=2, allow_nan=False).encode(
+            "utf-8"
+        )
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
@@ -1544,7 +1546,7 @@ class A2ARequestHandler(http.server.BaseHTTPRequestHandler):
 
     def _send_jsonrpc_response(self, response: JSONRPCResponse) -> None:
         """Write a single JSON-RPC response."""
-        body = json.dumps(response.to_dict()).encode("utf-8")
+        body = json.dumps(response.to_dict(), allow_nan=False).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
@@ -1575,7 +1577,7 @@ class A2ARequestHandler(http.server.BaseHTTPRequestHandler):
 
     def _send_json_error(self, status: int, message: str) -> None:
         """Send a plain JSON error (non-RPC)."""
-        body = json.dumps({"error": message}).encode("utf-8")
+        body = json.dumps({"error": message}, allow_nan=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))

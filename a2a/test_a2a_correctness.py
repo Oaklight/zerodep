@@ -677,6 +677,12 @@ class TestSSE:
         payload = encoded.decode("utf-8").strip().removeprefix("data: ")
         assert json.loads(payload) == data
 
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+    def test_encode_rejects_non_finite(self, value):
+        """An SSE frame must stay parseable by a strict client."""
+        with pytest.raises(ValueError, match="JSON compliant"):
+            sse_encode({"result": {"score": value}})
+
     def test_encode_compact(self):
         """SSE encoding uses compact JSON (no spaces after separators)."""
         data = {"a": 1, "b": 2}

@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.1.1"
+# version = "0.2.0"
 # deps = ["websocket"]
 # tier = "medium"
 # category = "protocol"
@@ -242,7 +242,7 @@ class CDPClient:
         if session_id:
             msg["sessionId"] = session_id
 
-        self._ws.send(json.dumps(msg))
+        self._ws.send(json.dumps(msg, allow_nan=False))
         return self._recv_response(cmd_id, timeout=timeout or self._timeout)
 
     def create_target(self, url: str = "about:blank") -> str:
@@ -680,7 +680,7 @@ class AsyncCDPClient:
         if session_id:
             msg["sessionId"] = session_id
 
-        await self._ws.send(json.dumps(msg))
+        await self._ws.send(json.dumps(msg, allow_nan=False))
         return await self._recv_response(cmd_id, timeout=timeout or self._timeout)
 
     async def create_target(self, url: str = "about:blank") -> str:

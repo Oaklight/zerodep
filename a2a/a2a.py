@@ -1486,10 +1486,21 @@ class A2ARequestHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(404, "Not Found")
 
     def _serve_agent_card(self) -> None:
-        """Respond with the agent card JSON."""
-        body = json.dumps(self._agent_card.to_dict(), indent=2, allow_nan=False).encode(
-            "utf-8"
-        )
+        """Respond with the agent card JSON.
+
+        The card carries untyped ``security_schemes``, so a non-finite value
+        can reach it from configuration.  Answering is still possible because
+        nothing has been written yet; an unhandled serialization error here
+        used to close the connection with no response at all.
+        """
+        try:
+            body = json.dumps(
+                self._agent_card.to_dict(), indent=2, allow_nan=False
+            ).encode("utf-8")
+        except (TypeError, ValueError):
+            logger.exception("agent card is not JSON serializable")
+            self.send_error(500, "Agent card is not JSON serializable")
+            return
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
@@ -1555,7 +1566,7 @@ class A2ARequestHandler(http.server.BaseHTTPRequestHandler):
         """
         try:
             body = json.dumps(response.to_dict(), allow_nan=False).encode("utf-8")
-        except ValueError:
+        except (TypeError, ValueError):
             logger.exception(
                 "JSON-RPC response for %r is not serializable", response.id
             )
@@ -1596,6 +1607,10 @@ class A2ARequestHandler(http.server.BaseHTTPRequestHandler):
                 self.wfile.flush()
         except (BrokenPipeError, ConnectionResetError):
             logger.debug("SSE client disconnected")
+        except (TypeError, ValueError):
+            # Headers are already flushed, so the stream cannot be turned into
+            # an error page; end it rather than raising out of the handler.
+            logger.exception("SSE frame is not JSON serializable")
 
     def _send_json_error(self, status: int, message: str) -> None:
         """Send a plain JSON error (non-RPC)."""

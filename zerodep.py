@@ -476,6 +476,56 @@ def _build_module_entry(primary: Path, py_files: list[Path], repo_root: Path) ->
     }
 
 
+def _nearest_catalog_root(start: Path) -> Path | None:
+    """Return the nearest directory at or above ``start`` holding a manifest."""
+    for directory in (start, *start.parents):
+        if (directory / MANIFEST_PATH).is_file():
+            return directory
+    return None
+
+
+def _require_source_tree(command: str) -> Path:
+    """Return the catalog root a source-inspecting command must operate on.
+
+    The catalog root is the checkout containing ``manifest.json``.  Prefer the
+    one containing the current directory, so an installed CLI can manage a
+    checkout without ``python -m zerodep``; fall back to the directory holding
+    this CLI, which is the catalog when the CLI runs from a checkout itself.
+
+    Commands outside a catalog used to scan whatever directory the CLI lived
+    in.  With an installed CLI that is ``site-packages``, where every package
+    directory looks like a zerodep module, so the commands reported hundreds
+    of unrelated modules instead of refusing.  ``manifest.json`` is the marker
+    because it is the catalog itself: a directory that merely has a
+    ``pyproject.toml`` is some other project, not this one.
+
+    Args:
+        command: subcommand name, used in the error message.
+
+    Returns:
+        The resolved catalog root.
+    """
+    cwd_root = _nearest_catalog_root(Path.cwd())
+    cli_root = Path(__file__).resolve().parent
+    cli_root_is_catalog = (cli_root / MANIFEST_PATH).is_file()
+
+    if cwd_root is None and not cli_root_is_catalog:
+        _die(
+            f"{command} inspects the zerodep source tree, but no "
+            f"{MANIFEST_PATH} is above {Path.cwd()} and this CLI is not part "
+            f"of a checkout ({cli_root}).\n"
+            f"  Run it from a checkout: cd /path/to/zerodep && "
+            f"python -m zerodep {command}"
+        )
+    if cwd_root is not None and cli_root_is_catalog and cwd_root != cli_root:
+        # Writing commands (manifest, bump, new) would silently edit a tree
+        # the user may not have meant, so say which one is being used.
+        _warn(
+            f"using the catalog at {cwd_root}, not the one beside this CLI ({cli_root})"
+        )
+    return cwd_root if cwd_root is not None else cli_root
+
+
 def _scan_modules(repo_root: Path) -> dict:
     """Scan repo recursively for module directories and extract metadata.
 
@@ -1823,7 +1873,7 @@ def _write_files(
 
 def cmd_manifest(args: argparse.Namespace) -> None:
     """Regenerate manifest.json from local module source files."""
-    repo_root = Path(__file__).resolve().parent
+    repo_root = _require_source_tree("manifest")
     manifest = _generate_manifest(repo_root)
 
     out_path = repo_root / MANIFEST_PATH
@@ -1889,7 +1939,7 @@ def _bump_frontmatter_version(filepath: Path, level: str) -> tuple[str, str]:
 
 def cmd_bump(args: argparse.Namespace) -> None:
     """Bump module versions in frontmatter."""
-    repo_root = Path(__file__).resolve().parent
+    repo_root = _require_source_tree("bump")
     modules = _scan_modules(repo_root)
     if not modules:
         _die("no modules found")
@@ -2228,7 +2278,7 @@ def _new_from_file(args: argparse.Namespace, year: int) -> str:
 
 def cmd_new(args: argparse.Namespace) -> None:
     """Scaffold a new module directory with template files."""
-    repo_root = Path(__file__).resolve().parent
+    repo_root = _require_source_tree("new")
     name = args.name
 
     # Validate module name
@@ -2284,7 +2334,7 @@ def cmd_new(args: argparse.Namespace) -> None:
 
 def cmd_version_check(args: argparse.Namespace) -> None:
     """Check which modules have been modified since their declared version."""
-    repo_root = Path(__file__).resolve().parent
+    repo_root = _require_source_tree("version-check")
     modules = _scan_modules(repo_root)
     if not modules:
         _die("no modules found")
@@ -2843,20 +2893,7 @@ def _run_tests_check(repo_root: Path, modules: dict, selection: str) -> tuple[st
 
 def cmd_release_check(args: argparse.Namespace) -> None:
     """Run the checks that must pass before a release is tagged."""
-    repo_root = Path(__file__).resolve().parent
-    if not any(
-        (repo_root / marker).exists()
-        for marker in ("pyproject.toml", MANIFEST_PATH, ".git")
-    ):
-        # Installed from a wheel or sdist, every importable module in
-        # site-packages looks like a catalog entry and the check reports
-        # hundreds of unrelated modules. Refuse instead of guessing.
-        _die(
-            "release-check inspects the zerodep source tree, but this CLI is "
-            f"running from {repo_root}, which is an installed package.\n"
-            "  Run it from a checkout: cd /path/to/zerodep && "
-            "python -m zerodep release-check"
-        )
+    repo_root = _require_source_tree("release-check")
     results: list[tuple[str, str, str]] = []
 
     modules = _scan_modules(repo_root)
@@ -3010,7 +3047,7 @@ def cmd_release_check(args: argparse.Namespace) -> None:
 
 def cmd_dep_graph(args: argparse.Namespace) -> None:
     """Show module dependency relationships."""
-    repo_root = Path(__file__).resolve().parent
+    repo_root = _require_source_tree("dep-graph")
     modules = _scan_modules(repo_root)
     if not modules:
         _die("no modules found")
@@ -3139,7 +3176,7 @@ def _print_test_report(results: list[tuple[str, str, str, str]]) -> None:
 
 def cmd_dep_check(args: argparse.Namespace) -> None:
     """Test changed modules and their downstream dependents."""
-    repo_root = Path(__file__).resolve().parent
+    repo_root = _require_source_tree("dep-check")
     modules = _scan_modules(repo_root)
     if not modules:
         _die("no modules found")

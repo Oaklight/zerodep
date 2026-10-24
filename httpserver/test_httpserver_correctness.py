@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import logging
 import os
 import sys
 import threading
@@ -1022,10 +1023,16 @@ def hook_app_url():
     async def before_abort(request):
         return {"ok": True}
 
+    @app.get("/after-abort")
+    async def after_abort(request):
+        return {"ok": True}
+
     @app.after_request
     async def after_hook(request, response):
         if request.path == "/after":
             return {"x": float("nan")}
+        if request.path == "/after-abort":
+            raise HTTPException(403, "Forbidden")
         return None
 
     @app.before_request
@@ -1058,14 +1065,41 @@ class TestHookFailures:
         assert r.status_code == 500
         assert r.json() == {"error": "Internal Server Error"}
 
-    def test_before_hook_http_exception_keeps_status_and_message(self, hook_app_url):
-        """A hook that aborts keeps its status; it is not flattened to 500."""
+    def test_before_hook_http_exception_keeps_status_and_message(
+        self, hook_app_url, caplog
+    ):
+        """A hook that aborts keeps its status; it is not flattened to 500.
+
+        ``_handle_error`` recognises ``HTTPException`` on its own, so the
+        response alone does not prove the dedicated clause ran.  What it buys
+        is the absence of a traceback: an abort is control flow, not an
+        unhandled exception.
+        """
         from httpclient import Client
 
-        with Client() as c:
-            r = c.get(f"{hook_app_url}/before-abort")
+        with caplog.at_level(logging.ERROR):
+            with Client() as c:
+                r = c.get(f"{hook_app_url}/before-abort")
         assert r.status_code == 401
         assert r.json() == {"error": "Not Authenticated"}
+        assert not [
+            rec for rec in caplog.records if "before_request hook" in rec.getMessage()
+        ]
+
+    def test_after_hook_http_exception_keeps_status_and_message(
+        self, hook_app_url, caplog
+    ):
+        """Same clause in the after-hook path: abort, no traceback."""
+        from httpclient import Client
+
+        with caplog.at_level(logging.ERROR):
+            with Client() as c:
+                r = c.get(f"{hook_app_url}/after-abort")
+        assert r.status_code == 403
+        assert r.json() == {"error": "Forbidden"}
+        assert not [
+            rec for rec in caplog.records if "after_request hook" in rec.getMessage()
+        ]
 
     def test_failing_error_handler_falls_back_to_500(self):
         """A broken error page must not cost the client its response."""

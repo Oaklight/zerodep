@@ -46,6 +46,14 @@ class TestSyncConnection:
         with pytest.raises(CDPConnectionError):
             client.connect(timeout=2)
 
+    def test_send_command_rejects_non_finite_params(self, cdp_mock_url):
+        """Chrome's parser rejects NaN; the frame must never be built."""
+        with CDPClient(cdp_mock_url) as client:
+            with pytest.raises(ValueError, match="JSON compliant"):
+                client.send_command(
+                    "Emulation.setTimezoneOverride", {"x": float("nan")}
+                )
+
     def test_send_command_without_connect(self):
         client = CDPClient("ws://127.0.0.1:1/devtools/browser/test")
         with pytest.raises(CDPError, match="not connected"):
@@ -202,6 +210,18 @@ class TestAsyncConnection:
         client = AsyncCDPClient("ws://127.0.0.1:1/devtools/browser/test")
         with pytest.raises(CDPConnectionError):
             await client.connect(timeout=2)
+
+    @pytest.mark.asyncio
+    async def test_send_command_rejects_non_finite_params(self, cdp_mock_url):
+        client = AsyncCDPClient(cdp_mock_url)
+        await client.connect()
+        try:
+            with pytest.raises(ValueError, match="JSON compliant"):
+                await client.send_command(
+                    "Emulation.setTimezoneOverride", {"x": float("inf")}
+                )
+        finally:
+            await client.close()
 
     @pytest.mark.asyncio
     async def test_send_command_without_connect(self):

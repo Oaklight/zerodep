@@ -629,6 +629,10 @@ def _make_release_repo(tmp_path: Path) -> Path:
         '# category = "text"\n# ///\n\nVALUE = 1\n',
         encoding="utf-8",
     )
+    # ``manifest`` only writes a catalog where one already exists, using
+    # manifest.json to tell a checkout from site-packages, so seed the marker
+    # and let the CLI fill in the real contents.
+    (tmp_path / "manifest.json").write_text("{}\n", encoding="utf-8")
     r = subprocess.run(
         [sys.executable, str(tmp_path / "zerodep.py"), "--local", "manifest"],
         capture_output=True,
@@ -663,6 +667,80 @@ def test_release_check_refuses_to_run_outside_a_checkout(tmp_path: Path):
     assert r.returncode == 1
     assert "release-check inspects the zerodep source tree" in r.stderr
     assert "python -m zerodep release-check" in r.stderr
+
+
+# ── source-tree guard ──
+
+CATALOG_COMMANDS = [
+    ("manifest", ()),
+    ("bump", ()),
+    ("new", ("demonew",)),
+    ("version-check", ()),
+    ("dep-graph", ()),
+    ("dep-check", ()),
+    ("release-check", ("--allow-dirty",)),
+]
+
+
+def _run_copied_cli(
+    install_dir: Path, *args: str, cwd: Path
+) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, str(install_dir / "zerodep.py"), *args],
+        capture_output=True,
+        text=True,
+        cwd=cwd,
+    )
+
+
+@pytest.mark.parametrize(("command", "extra"), CATALOG_COMMANDS)
+def test_catalog_commands_refuse_to_scan_an_installed_package(
+    tmp_path: Path, command: str, extra: tuple[str, ...]
+):
+    """Every tree-scanning command must stop, not report site-packages."""
+    shutil.copy2(Path(__file__).parent / "zerodep.py", tmp_path / "zerodep.py")
+    r = _run_copied_cli(tmp_path, command, *extra, cwd=tmp_path)
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert f"{command} inspects the zerodep source tree" in r.stderr
+    assert f"python -m zerodep {command}" in r.stderr
+
+
+def test_pyproject_alone_does_not_make_a_catalog(tmp_path: Path):
+    """A Python project is not this catalog just because it has a pyproject."""
+    shutil.copy2(Path(__file__).parent / "zerodep.py", tmp_path / "zerodep.py")
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "other"\n', encoding="utf-8"
+    )
+    r = _run_copied_cli(tmp_path, "version-check", cwd=tmp_path)
+    assert r.returncode == 1
+    assert "version-check inspects the zerodep source tree" in r.stderr
+
+
+def test_installed_cli_uses_the_catalog_under_the_cwd(tmp_path: Path):
+    """The obvious command works: run the installed CLI inside a checkout."""
+    (tmp_path / "catalog").mkdir()
+    catalog = _make_release_repo(tmp_path / "catalog")
+    install_dir = tmp_path / "site-packages"
+    install_dir.mkdir()
+    shutil.copy2(Path(__file__).parent / "zerodep.py", install_dir / "zerodep.py")
+    # A subdirectory, so the manifest is found by walking up from the CWD.
+    r = _run_copied_cli(install_dir, "version-check", cwd=catalog / "demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "demo" in r.stdout
+    assert r.stderr == ""
+
+
+def test_cli_from_another_catalog_warns_which_tree_it_uses(tmp_path: Path):
+    """Writing commands must say so when two catalogs are in play."""
+    (tmp_path / "cli_tree").mkdir()
+    (tmp_path / "other").mkdir()
+    cli_tree = _make_release_repo(tmp_path / "cli_tree")
+    other = _make_release_repo(tmp_path / "other")
+    r = _run_copied_cli(cli_tree, "version-check", cwd=other)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "using the catalog at" in r.stderr
+    assert str(other) in r.stderr
+    assert str(cli_tree) in r.stderr
 
 
 def test_release_check_fails_on_a_stale_manifest(tmp_path: Path):

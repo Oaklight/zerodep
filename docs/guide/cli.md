@@ -341,6 +341,40 @@ timestamps and change when history is squashed or rewritten. Note that
 `docs-index` is skipped when the docs worktrees are not mounted, which is the
 case in CI — the docs gate runs for maintainers locally.
 
+### Which tree a catalog command operates on
+
+Commands that read or rewrite module sources — `manifest`, `bump`, `new`,
+`version-check`, `dep-graph`, `dep-check` and `release-check` — operate on a
+catalog: a checkout containing `manifest.json`. They find it by walking up from
+the current directory, and fall back to the directory holding the CLI when that
+is itself a checkout.
+
+So an installed CLI works inside a checkout without `python -m zerodep`:
+
+```bash
+cd ~/projects/zerodep
+zerodep release-check        # inspects this checkout, not site-packages
+
+cd httpclient
+zerodep version-check        # still resolves to the checkout above
+```
+
+`manifest.json` is the marker because it *is* the catalog — a directory that
+merely contains a `pyproject.toml` is some other project. Outside a catalog the
+command refuses instead of guessing:
+
+```
+error: version-check inspects the zerodep source tree, but no manifest.json is
+above /home/me/other-project and this CLI is not part of a checkout
+(/usr/lib/python3/site-packages).
+  Run it from a checkout: cd /path/to/zerodep && python -m zerodep version-check
+```
+
+Without that guard every directory in `site-packages` looks like a zerodep
+module, which is exactly what the command used to report. If two catalogs are
+in play — the CLI belongs to one checkout and you are standing in another — the
+command names the tree it used before writing to it.
+
 ### `zerodep bump`
 
 Auto-detect changed modules and bump their frontmatter versions. By default performs a patch bump; use `--minor` or `--major` for larger increments.

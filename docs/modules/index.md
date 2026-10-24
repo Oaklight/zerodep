@@ -12,13 +12,13 @@ title: 模块概览
 
 | 模块 | 版本 | 最后更新 |
 |--------|---------|--------------|
-| [a2a](a2a.md) | 0.3.2 | 2026-08-25 |
+| [a2a](a2a.md) | 0.4.0 | 2026-08-25 |
 | [acp](acp.md) | 0.3.2 | 2026-08-25 |
 | [aes](aes.md) | 0.5.0 | 2026-04-20 |
 | [aiosqlite](aiosqlite.md) | 0.1.0 | 2026-09-27 |
 | [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
 | [cache](cache.md) | 0.2.4 | 2026-04-27 |
-| [cdp](cdp.md) | 0.1.1 | 2026-08-25 |
+| [cdp](cdp.md) | 0.2.0 | 2026-08-25 |
 | [config](config.md) | 0.3.2 | 2026-08-25 |
 | [depdetect](depdetect.md) | 0.4.3 | 2026-04-15 |
 | [diff](diff.md) | 0.3.1 | 2026-04-15 |
@@ -29,7 +29,7 @@ title: 模块概览
 | [httpserver](httpserver.md) | 0.6.2 | 2026-10-24 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
 | [jsonschema](jsonschema.md) | 0.4.1 | 2026-09-23 |
-| [jsonx](jsonx.md) | 1.0.2 | 2026-10-22 |
+| [jsonx](jsonx.md) | 1.1.0 | 2026-10-22 |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
 | [multipart](multipart.md) | 0.1.0 | 2026-05-16 |

@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.1.0"
+# version = "0.2.0"
 # deps = []
 # tier = "subsystem"
 # category = "text"
@@ -438,9 +438,11 @@ def _api_post(url: str, headers: dict[str, str], payload: dict) -> Any:
         Parsed JSON response.
 
     Raises:
+        ValueError: If *payload* carries a non-finite float; ``NaN`` and
+            ``Infinity`` are not valid JSON, so nothing is sent.
         urllib.error.URLError: On network or HTTP errors.
     """
-    data = json.dumps(payload).encode("utf-8")
+    data = json.dumps(payload, allow_nan=False).encode("utf-8")
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
     with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read().decode("utf-8"))

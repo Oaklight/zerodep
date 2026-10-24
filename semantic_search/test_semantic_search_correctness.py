@@ -975,3 +975,23 @@ class TestMMR:
         results = [Result("a", 1.0, metadata={"k": "v"})]
         reranked = mmr(results, lambda a, b: 0.0)
         assert reranked[0].metadata == {"k": "v"}
+
+
+class TestApiPostNonFinite:
+    """The embedding request body must be valid JSON or not sent at all."""
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+    def test_non_finite_payload_is_refused(self, value):
+        from semantic_search import _api_post
+
+        with pytest.raises(ValueError, match="JSON compliant"):
+            _api_post("http://127.0.0.1:9/", {}, {"input": [value]})
+
+    def test_finite_payload_still_reaches_the_transport(self):
+        """Control: a finite payload fails at the socket, not the encoder."""
+        import urllib.error
+
+        from semantic_search import _api_post
+
+        with pytest.raises(urllib.error.URLError):
+            _api_post("http://127.0.0.1:9/", {}, {"input": ["a"]})

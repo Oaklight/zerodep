@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-24T18:43:17.600065+00:00",
+  "generated": "2026-10-24T19:41:10.721146+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -215,12 +215,12 @@
         "jsonrpc/jsonrpc.py"
       ],
       "primary_file": "jsonrpc/jsonrpc.py",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "deps": [],
       "tier": "medium",
       "category": "protocol",
       "last_updated": "2026-04-27T23:17:36+08:00",
-      "content_hash": "402d88f2ab1d6736a37a69a6b6269ea9e450e3dd22e9dd49c7d52b570b8b6dda"
+      "content_hash": "55c81cdfe08177a5c61e2505a1ce8c9248842f8fc36089a2e81c80491cf6be5b"
     },
     "jsonschema": {
       "description": "JSON Schema flattening, sanitization & validation — zero dependencies, stdlib only",
@@ -453,12 +453,12 @@
         "semantic_search/semantic_search.py"
       ],
       "primary_file": "semantic_search/semantic_search.py",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "deps": [],
       "tier": "subsystem",
       "category": "text",
       "last_updated": "2026-10-22T21:18:10-05:00",
-      "content_hash": "a2fe58bc7b4c640e1bca7e06bd630bbf32295e4dda99d8e310b3530e4ce35740"
+      "content_hash": "abefee494b041e89309e7d3328d7ca4adbf76595d6f45ee98b200271965eca23"
     },
     "semver": {
       "description": "PEP 440 version parser and comparator -- zero dependencies, stdlib only",

@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.3.0"
+# version = "0.4.0"
 # deps = []
 # tier = "medium"
 # category = "protocol"
@@ -396,8 +396,15 @@ class JSONRPCTransport:
 
         Args:
             msg: JSON-serializable dictionary to send.
+
+        Raises:
+            ValueError: If *msg* carries a non-finite float. ``NaN`` and
+                ``Infinity`` are not valid JSON, so the peer could not parse
+                the message; nothing is written in that case.
         """
-        raw = json.dumps(msg, separators=(",", ":"), ensure_ascii=False)
+        raw = json.dumps(
+            msg, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+        )
         self.writer.write((raw + "\n").encode("utf-8"))
         await self.writer.drain()
 

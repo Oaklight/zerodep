@@ -542,7 +542,12 @@ def _is_catalog_root(directory: Path) -> bool:
     for entry in modules.values():
         if not isinstance(entry, dict):
             continue
+        # primary_file arrived in 2026.10.23.3; older catalogues list only
+        # ``files``, and a checkout of those tags is still a catalogue.
         primary = entry.get("primary_file")
+        if not isinstance(primary, str):
+            files = entry.get("files")
+            primary = files[0] if isinstance(files, list) and files else None
         if isinstance(primary, str) and (directory / primary).is_file():
             return True
     return False
@@ -579,7 +584,10 @@ def _require_source_tree(command: str) -> Path:
     """
     cwd_root = _nearest_catalog_root(Path.cwd())
     cli_root = Path(__file__).resolve().parent
-    cli_root_is_catalog = (cli_root / MANIFEST_PATH).is_file()
+    # Same predicate as the CWD side, so a checkout of an old tag and a
+    # checkout that has not generated its manifest yet both work when the CLI
+    # is run from outside the tree.
+    cli_root_is_catalog = _is_catalog_root(cli_root)
 
     if cwd_root is None and not cli_root_is_catalog:
         _die(

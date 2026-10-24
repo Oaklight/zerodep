@@ -726,6 +726,76 @@ def test_installed_cli_uses_the_catalog_under_the_cwd(tmp_path: Path):
     assert r.stderr == ""
 
 
+def _write_old_style_catalog(root: Path, module: str = "demo") -> None:
+    """A catalog as written before ``primary_file`` existed (v2026.10.23)."""
+    (root / module).mkdir(parents=True)
+    (root / module / f"{module}.py").write_text(
+        '# /// zerodep\n# version = "0.1.0"\n# deps = []\n# tier = "medium"\n'
+        '# category = "text"\n# ///\n\nVALUE = 1\n',
+        encoding="utf-8",
+    )
+    (root / "manifest.json").write_text(
+        json.dumps(
+            {
+                "version": "2026.10.23",
+                "generated": "2026-10-23T00:00:00+00:00",
+                "modules": {
+                    module: {
+                        "description": "",
+                        "files": [f"{module}/{module}.py"],
+                        "version": "0.1.0",
+                        "deps": [],
+                        "tier": "medium",
+                        "category": "text",
+                        "last_updated": None,
+                        "content_hash": "0" * 64,
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_catalog_without_primary_file_is_still_a_catalog(tmp_path: Path):
+    """Catalogs written before primary_file existed must keep resolving."""
+    tree = tmp_path / "oldtag"
+    tree.mkdir()
+    _write_old_style_catalog(tree)
+    install_dir = tmp_path / "site-packages"
+    install_dir.mkdir()
+    shutil.copy2(Path(__file__).parent / "zerodep.py", install_dir / "zerodep.py")
+
+    r = _run_copied_cli(install_dir, "version-check", cwd=tree)
+
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "demo" in r.stdout
+
+
+def test_cli_bootstraps_its_checkout_when_run_from_outside(tmp_path: Path):
+    """The CLI's own tree counts even before it has a manifest."""
+    tree = tmp_path / "fresh"
+    tree.mkdir()
+    shutil.copy2(Path(__file__).parent / "zerodep.py", tree / "zerodep.py")
+    (tree / "pyproject.toml").write_text(
+        '[project]\nname = "zerodep"\n', encoding="utf-8"
+    )
+    (tree / "demo").mkdir()
+    (tree / "demo" / "demo.py").write_text(
+        '# /// zerodep\n# version = "0.1.0"\n# deps = []\n# tier = "medium"\n'
+        '# category = "text"\n# ///\n\nVALUE = 1\n',
+        encoding="utf-8",
+    )
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+
+    r = _run_copied_cli(tree, "manifest", cwd=elsewhere)
+
+    assert r.returncode == 0, r.stdout + r.stderr
+    data = json.loads((tree / "manifest.json").read_text(encoding="utf-8"))
+    assert list(data["modules"]) == ["demo"]
+
+
 def test_manifest_does_not_overwrite_a_foreign_manifest(tmp_path: Path):
     """manifest.json is not proof of a catalog: extensions ship one too."""
     install_dir = tmp_path / "site-packages"

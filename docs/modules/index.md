@@ -25,8 +25,8 @@ title: 模块概览
 | [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
-| [httpclient](httpclient.md) | 0.6.1 | 2026-10-23 |
-| [httpserver](httpserver.md) | 0.6.1 | 2026-10-23 |
+| [httpclient](httpclient.md) | 0.6.2 | 2026-10-24 |
+| [httpserver](httpserver.md) | 0.6.2 | 2026-10-24 |
 | [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
 | [jsonschema](jsonschema.md) | 0.4.1 | 2026-09-23 |
 | [jsonx](jsonx.md) | 1.0.2 | 2026-10-22 |

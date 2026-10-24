@@ -1018,6 +1018,10 @@ def hook_app_url():
     async def before(request):
         return {"ok": True}
 
+    @app.get("/before-abort")
+    async def before_abort(request):
+        return {"ok": True}
+
     @app.after_request
     async def after_hook(request, response):
         if request.path == "/after":
@@ -1028,6 +1032,8 @@ def hook_app_url():
     async def before_hook(request):
         if request.path == "/before":
             return {"x": float("inf")}
+        if request.path == "/before-abort":
+            raise HTTPException(401, "Not Authenticated")
         return None
 
     return _serve(app)
@@ -1051,6 +1057,15 @@ class TestHookFailures:
             r = c.get(f"{hook_app_url}/before")
         assert r.status_code == 500
         assert r.json() == {"error": "Internal Server Error"}
+
+    def test_before_hook_http_exception_keeps_status_and_message(self, hook_app_url):
+        """A hook that aborts keeps its status; it is not flattened to 500."""
+        from httpclient import Client
+
+        with Client() as c:
+            r = c.get(f"{hook_app_url}/before-abort")
+        assert r.status_code == 401
+        assert r.json() == {"error": "Not Authenticated"}
 
     def test_failing_error_handler_falls_back_to_500(self):
         """A broken error page must not cost the client its response."""

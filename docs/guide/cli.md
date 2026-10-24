@@ -299,6 +299,37 @@ zerodep release-check --with-tests
 
 manifest 检查只比较描述源码树的字段（`files`、`version`、`content_hash`、`deps`、`tier`、`category`、`description`），忽略 `generated` 与每个模块的 `last_updated`——它们来自提交时间戳，在历史被压缩或重写时会变化。注意：未挂载 docs worktree 时会跳过 `docs-index` 检查（CI 中即是如此），因此文档门禁只在维护者本地运行。
 
+### 目录类命令作用于哪棵树
+
+读取或改写模块源码的命令——`manifest`、`bump`、`new`、`version-check`、
+`dep-graph`、`dep-check` 与 `release-check`——都作用于一个“目录”（catalog），
+即包含 `manifest.json` 的 checkout。它们从当前目录逐级向上查找；若都找不到，
+则退回到 CLI 自身所在的目录（当该目录本身是 checkout 时）。
+
+因此，pip 安装的 CLI 在 checkout 内可以直接使用，无需 `python -m zerodep`：
+
+```bash
+cd ~/projects/zerodep
+zerodep release-check        # 检查这个 checkout，而不是 site-packages
+
+cd httpclient
+zerodep version-check        # 仍然解析到上层的 checkout
+```
+
+以 `manifest.json` 作为标记，是因为它本身就是目录清单——只含 `pyproject.toml`
+的目录属于别的项目，而不是本目录。不在任何目录内时，命令会拒绝执行而不是瞎猜：
+
+```
+error: version-check inspects the zerodep source tree, but no manifest.json is
+above /home/me/other-project and this CLI is not part of a checkout
+(/usr/lib/python3/site-packages).
+  Run it from a checkout: cd /path/to/zerodep && python -m zerodep version-check
+```
+
+没有这道防线时，`site-packages` 里的每个目录都像是 zerodep 模块，这正是该命令
+过去会报告的内容。若同时存在两个目录（CLI 属于一个 checkout，而你站在另一个
+checkout 里），命令会在写入前指明它使用的是哪棵树。
+
 ### `zerodep bump`
 
 自动检测变更模块并 bump 其 frontmatter 版本号。默认执行 patch bump；可使用 `--minor` 或 `--major` 进行更大幅度的版本递增。

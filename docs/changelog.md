@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### 问题修复
+
+- **cli**：读取模块源码的命令——`manifest`、`bump`、`new`、`version-check`、`dep-graph`、`dep-check`——现在与 `release-check` 一样解析目录，而不再扫描 CLI 被安装到的目录。从 wheel 安装时该目录是 `site-packages`，其中每个包都像是一个 zerodep 模块：`version-check` 会把 `PIL`、`aiohttp` 等所有已安装包报告为“需要 bump”，导致 `--strict` 的调用方永久报错。现在目录解析为当前目录之上包含 `manifest.json` 的 checkout，找不到时退回 CLI 自身所在目录；不在任何目录内时命令直接拒绝执行，只含 `pyproject.toml` 的目录也不再被视为目录。
+
+### 改进
+
+- **cli**：使用 pip 安装的 CLI 时，在 checkout 内直接运行目录类命令（例如 `cd ~/projects/zerodep && zerodep release-check`）现在会检查该 checkout，而不是被拒绝。当 CLI 属于另一个 checkout 时，命令会指明它使用的是哪棵树。
+
 ## [2026.10.23.3] - 2026-10-23
 
 ### 新功能

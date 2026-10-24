@@ -1200,3 +1200,58 @@ class TestNonFiniteResults:
         assert payload["id"] == 7
         assert payload["error"]["code"] == -32603
         assert "not JSON serializable" in payload["error"]["message"]
+
+    def test_unencodable_type_gets_a_jsonrpc_error(self):
+        """A value json cannot encode at all (a set) is answered too."""
+        import http.client
+
+        from a2a import A2AServer
+
+        server = A2AServer(host="127.0.0.1", port=0, agent_card=AgentCard(name="t"))
+
+        @server.dispatcher.register("Test.set")
+        def handle(params):
+            return {"x": {1, 2}}
+
+        server.start(blocking=False)
+        assert server._httpd is not None
+        port = server._httpd.server_address[1]
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        try:
+            body = json.dumps(
+                {"jsonrpc": "2.0", "id": 8, "method": "Test.set", "params": {}}
+            )
+            conn.request(
+                "POST", "/", body=body, headers={"Content-Type": "application/json"}
+            )
+            response = conn.getresponse()
+            payload = json.loads(response.read())
+        finally:
+            conn.close()
+            server.stop()
+
+        assert response.status == 200
+        assert payload["id"] == 8
+        assert payload["error"]["code"] == -32603
+
+    def test_agent_card_with_non_finite_value_answers_500(self):
+        """The GET surface must answer too; it used to drop the connection."""
+        import http.client
+
+        from a2a import A2AServer
+
+        card = AgentCard(name="t", security_schemes={"s": {"v": float("nan")}})
+        server = A2AServer(host="127.0.0.1", port=0, agent_card=card)
+        server.start(blocking=False)
+        assert server._httpd is not None
+        port = server._httpd.server_address[1]
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        try:
+            conn.request("GET", "/.well-known/agent-card.json")
+            response = conn.getresponse()
+            response.read()
+        finally:
+            conn.close()
+            server.stop()
+
+        assert response.status == 500

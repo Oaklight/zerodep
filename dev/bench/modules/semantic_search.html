@@ -125,20 +125,20 @@ td { white-space: nowrap; }
 <h1>semantic_search</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 9878125 | Commit: 98781258 | 2026-10-24T15:33:09.414975+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-10-24T15:33:09.414975+00:00"></span></p>
+<p class="meta">Version: 0c11215 | Commit: 0c11215d | 2026-10-24T20:27:53.953823+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-10-24T20:27:53.953823+00:00"></span></p>
 <h2>semantic_search</h2>
 <h3>Standalone benchmarks</h3>
 <div class="table-wrap"><table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>Build Performance</td><td>ivf_build_500</td><td>352.26 ms</td><td>2.8</td><td title="CV=0.6% | rounds=5">349.94 ms</td><td title="CV=0.6% | rounds=5">355.08 ms</td><td title="CV=0.6% | rounds=5">2.08 ms</td><td title="CV=0.6% | rounds=5">355.08 ms</td></tr>
-<tr><td>Flat Search Performance</td><td>our_flat</td><td>2.40 ms</td><td>416.9</td><td title="CV=1.9% | rounds=369">2.36 ms</td><td title="CV=1.9% | rounds=369">2.86 ms</td><td title="CV=1.9% | rounds=369">46.0 µs</td><td title="CV=1.9% | rounds=369">2.46 ms</td></tr>
-<tr><td>Flat Search Performance</td><td>faiss_flat</td><td>8.6 µs</td><td>116.8K</td><td title="CV=17.2% | rounds=15504">8.2 µs</td><td title="CV=17.2% | rounds=15504">68.8 µs</td><td title="CV=17.2% | rounds=15504">1.5 µs</td><td title="CV=17.2% | rounds=15504">8.5 µs</td></tr>
-<tr><td>HNSWBuild Performance</td><td>our_ivf_build</td><td>11.428 s</td><td>0.1</td><td title="CV=0.5% | rounds=5">11.342 s</td><td title="CV=0.5% | rounds=5">11.489 s</td><td title="CV=0.5% | rounds=5">62.10 ms</td><td title="CV=0.5% | rounds=5">11.489 s</td></tr>
-<tr><td>HNSWBuild Performance</td><td>hnswlib</td><td>78.78 ms</td><td>12.7</td><td title="CV=0.5% | rounds=13">78.18 ms</td><td title="CV=0.5% | rounds=13">79.68 ms</td><td title="CV=0.5% | rounds=13">408.1 µs</td><td title="CV=0.5% | rounds=13">79.68 ms</td></tr>
-<tr><td>HNSWSearch Performance</td><td>our_ivf</td><td>4.77 ms</td><td>209.5</td><td title="CV=1.1% | rounds=200">4.69 ms</td><td title="CV=1.1% | rounds=200">5.08 ms</td><td title="CV=1.1% | rounds=200">50.8 µs</td><td title="CV=1.1% | rounds=200">4.86 ms</td></tr>
-<tr><td>HNSWSearch Performance</td><td>hnswlib</td><td>35.0 µs</td><td>28.6K</td><td title="CV=8.2% | rounds=14393">33.1 µs</td><td title="CV=8.2% | rounds=14393">79.5 µs</td><td title="CV=8.2% | rounds=14393">2.9 µs</td><td title="CV=8.2% | rounds=14393">38.1 µs</td></tr>
-<tr><td>IVFSearch Performance</td><td>our_ivf</td><td>4.79 ms</td><td>208.7</td><td title="CV=0.9% | rounds=196">4.72 ms</td><td title="CV=0.9% | rounds=196">5.17 ms</td><td title="CV=0.9% | rounds=196">41.8 µs</td><td title="CV=0.9% | rounds=196">4.86 ms</td></tr>
+<tr><td>Build Performance</td><td>ivf_build_500</td><td>352.92 ms</td><td>2.8</td><td title="CV=0.5% | rounds=5">350.66 ms</td><td title="CV=0.5% | rounds=5">354.82 ms</td><td title="CV=0.5% | rounds=5">1.68 ms</td><td title="CV=0.5% | rounds=5">354.82 ms</td></tr>
+<tr><td>Flat Search Performance</td><td>our_flat</td><td>2.38 ms</td><td>419.8</td><td title="CV=1.8% | rounds=399">2.34 ms</td><td title="CV=1.8% | rounds=399">2.93 ms</td><td title="CV=1.8% | rounds=399">44.0 µs</td><td title="CV=1.8% | rounds=399">2.44 ms</td></tr>
+<tr><td>Flat Search Performance</td><td>faiss_flat</td><td>8.7 µs</td><td>114.5K</td><td title="CV=16.7% | rounds=18043">8.4 µs</td><td title="CV=16.7% | rounds=18043">44.0 µs</td><td title="CV=16.7% | rounds=18043">1.5 µs</td><td title="CV=16.7% | rounds=18043">8.8 µs</td></tr>
+<tr><td>HNSWBuild Performance</td><td>our_ivf_build</td><td>11.325 s</td><td>0.1</td><td title="CV=0.3% | rounds=5">11.281 s</td><td title="CV=0.3% | rounds=5">11.365 s</td><td title="CV=0.3% | rounds=5">29.66 ms</td><td title="CV=0.3% | rounds=5">11.365 s</td></tr>
+<tr><td>HNSWBuild Performance</td><td>hnswlib</td><td>79.45 ms</td><td>12.6</td><td title="CV=0.7% | rounds=12">78.73 ms</td><td title="CV=0.7% | rounds=12">80.82 ms</td><td title="CV=0.7% | rounds=12">569.7 µs</td><td title="CV=0.7% | rounds=12">80.82 ms</td></tr>
+<tr><td>HNSWSearch Performance</td><td>our_ivf</td><td>4.74 ms</td><td>211.0</td><td title="CV=3.7% | rounds=203">4.62 ms</td><td title="CV=3.7% | rounds=203">6.96 ms</td><td title="CV=3.7% | rounds=203">175.2 µs</td><td title="CV=3.7% | rounds=203">4.81 ms</td></tr>
+<tr><td>HNSWSearch Performance</td><td>hnswlib</td><td>34.2 µs</td><td>29.2K</td><td title="CV=42.3% | rounds=9625">32.6 µs</td><td title="CV=42.3% | rounds=9625">1.42 ms</td><td title="CV=42.3% | rounds=9625">14.5 µs</td><td title="CV=42.3% | rounds=9625">38.3 µs</td></tr>
+<tr><td>IVFSearch Performance</td><td>our_ivf</td><td>4.70 ms</td><td>212.9</td><td title="CV=0.9% | rounds=208">4.64 ms</td><td title="CV=0.9% | rounds=208">5.07 ms</td><td title="CV=0.9% | rounds=208">40.9 µs</td><td title="CV=0.9% | rounds=208">4.75 ms</td></tr>
 </tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">

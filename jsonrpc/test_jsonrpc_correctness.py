@@ -411,6 +411,38 @@ class TestJSONRPCTransport:
 
         asyncio.run(_test())
 
+    def test_write_message_rejects_non_finite(self):
+        """NaN/Infinity are not JSON; nothing may reach the stream."""
+
+        async def _test():
+            reader = asyncio.StreamReader()
+            writer_reader = asyncio.StreamReader()
+
+            class FakeTransport:
+                def is_closing(self):
+                    return False
+
+                def write(self, data):
+                    writer_reader.feed_data(data)
+
+                def get_extra_info(self, *a, **kw):
+                    return None
+
+            ft = FakeTransport()
+            protocol = asyncio.StreamReaderProtocol(reader)
+            writer = asyncio.StreamWriter(
+                ft, protocol, reader, asyncio.get_event_loop()
+            )
+
+            t = JSONRPCTransport(reader, writer)
+            with pytest.raises(ValueError, match="JSON compliant"):
+                await t.write_message(
+                    {"jsonrpc": "2.0", "id": 1, "result": float("nan")}
+                )
+            assert bytes(writer_reader._buffer) == b""  # noqa: SLF001
+
+        asyncio.run(_test())
+
     def test_close(self):
         async def _test():
             reader = asyncio.StreamReader()

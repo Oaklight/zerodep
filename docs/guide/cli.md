@@ -369,14 +369,19 @@ cannot rewrite someone else's `manifest.json`.
 
 The one exception is a checkout that has no catalog yet: the CLI plus a
 `pyproject.toml` naming `zerodep` counts, so `zerodep manifest` can create the
-file it is asked for. It still refuses to write an empty catalog.
+file it is asked for, whether it is invoked from inside the checkout or from
+elsewhere. It still refuses to write an empty catalog.
+
+Manifests written before `primary_file` existed (tags up to `v2026.10.23`) fall
+back to the first entry in `files`, so checking out an old tag and running the
+installed CLI still resolves to that checkout.
 
 Outside a catalog the command refuses instead of guessing:
 
 ```
-error: version-check inspects the zerodep source tree, but no manifest.json is
-above /home/me/other-project and this CLI is not part of a checkout
-(/usr/lib/python3/site-packages).
+error: version-check inspects the zerodep source tree, but no directory above
+/home/me/other-project holds a zerodep manifest.json and this CLI is not part of
+a checkout (/usr/lib/python3/site-packages).
   Run it from a checkout: cd /path/to/zerodep && python -m zerodep version-check
 ```
 

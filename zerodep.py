@@ -542,7 +542,7 @@ def _is_catalog_root(directory: Path) -> bool:
     for entry in modules.values():
         if not isinstance(entry, dict):
             continue
-        # primary_file arrived in 2026.10.23.3; older catalogues list only
+        # primary_file arrived in 2026.10.23.1; older catalogues list only
         # ``files``, and a checkout of those tags is still a catalogue.
         primary = entry.get("primary_file")
         if not isinstance(primary, str):

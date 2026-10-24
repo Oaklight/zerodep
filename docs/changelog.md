@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [2026.10.24] - 2026-10-24
+
 ### 问题修复
 
 - **传输层**：`jsonrpc.write_message` 与 `semantic_search` 的向量化请求现在拒绝 `NaN` / `Infinity`，不再把它们发到线路上。在 `httpclient`、`httpserver`、`jsonx`、`a2a`、`cdp` 转为严格之后，这是最后两个宽松的 JSON 发送点；本地存储与日志仍按设计保持宽松。

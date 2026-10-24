@@ -27,7 +27,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
 | [httpclient](httpclient.md) | 0.6.2 | 2026-10-24 |
 | [httpserver](httpserver.md) | 0.6.2 | 2026-10-24 |
-| [jsonrpc](jsonrpc.md) | 0.3.0 | 2026-04-27 |
+| [jsonrpc](jsonrpc.md) | 0.4.0 | 2026-04-27 |
 | [jsonschema](jsonschema.md) | 0.4.1 | 2026-09-23 |
 | [jsonx](jsonx.md) | 2.0.0 | 2026-10-24 |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
@@ -45,7 +45,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [runner](runner.md) | 0.3.1 | 2026-04-15 |
 | [s3](s3.md) | 0.2.0 | 2026-07-03 |
 | [scheduler](scheduler.md) | 0.3.1 | 2026-04-15 |
-| [semantic_search](semantic_search.md) | 0.1.0 | 2026-10-22 |
+| [semantic_search](semantic_search.md) | 0.2.0 | 2026-10-22 |
 | [semver](semver.md) | 0.4.1 | 2026-04-27 |
 | [skills](skills.md) | 0.4.3 | 2026-08-25 |
 | [soup](soup.md) | 0.9.0 | 2026-10-13 |

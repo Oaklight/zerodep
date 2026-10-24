@@ -165,12 +165,25 @@ def _load_manifest(
 ) -> dict:
     """Load manifest.json from network/cache or local file."""
     if local:
-        # Use local manifest.json in repo root
-        local_path = Path(__file__).resolve().parent / MANIFEST_PATH
-        if not local_path.exists():
+        # --local reads the checkout beside this CLI, never the network, so
+        # what gets vendored can be verified against a tree the user owns.
+        cli_root = Path(__file__).resolve().parent
+        local_path = cli_root / MANIFEST_PATH
+        if not local_path.is_file():
+            if (cli_root / "pyproject.toml").is_file():
+                _die(
+                    f"local {MANIFEST_PATH} not found in {cli_root}.\n"
+                    f"  Run 'cd {cli_root} && python -m zerodep manifest' "
+                    "first."
+                )
+            # Suggesting 'zerodep manifest' here would send an installed CLI
+            # to whatever catalog the CWD resolves to, which is not the tree
+            # --local means.
             _die(
-                f"local {MANIFEST_PATH} not found. "
-                "Run 'zerodep manifest' to generate it."
+                f"--local reads the checkout this CLI belongs to, but this CLI "
+                f"is installed ({cli_root}).\n"
+                "  Run the checkout's own CLI instead, or drop --local to "
+                "resolve the manifest from a release."
             )
         return json.loads(local_path.read_text())
 
@@ -476,10 +489,69 @@ def _build_module_entry(primary: Path, py_files: list[Path], repo_root: Path) ->
     }
 
 
+_PROJECT_SECTION_RE = re.compile(
+    r"^\[project\]\s*$(.*?)(?=^\[|\Z)", re.MULTILINE | re.DOTALL
+)
+_PROJECT_NAME_RE = re.compile(r'^\s*name\s*=\s*"([^"]*)"', re.MULTILINE)
+
+
+def _is_bootstrap_tree(directory: Path) -> bool:
+    """True for a checkout that has no catalog yet.
+
+    ``zerodep manifest`` creates ``manifest.json``, so requiring the file
+    would make the command that generates the marker depend on it.  A tree
+    carrying the CLI and its own ``pyproject.toml`` counts before the file
+    exists; an installed CLI has no ``pyproject.toml`` beside it, so
+    site-packages stays out.
+    """
+    if not (directory / "zerodep.py").is_file():
+        return False
+    try:
+        text = (directory / "pyproject.toml").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    section = _PROJECT_SECTION_RE.search(text)
+    if section is None:
+        return False
+    name = _PROJECT_NAME_RE.search(section.group(1))
+    return name is not None and name.group(1) == "zerodep"
+
+
+def _is_catalog_root(directory: Path) -> bool:
+    """True when ``directory`` is a zerodep catalog.
+
+    The filename alone proves nothing: WebExtensions, PWAs and npm packages
+    all ship a ``manifest.json``, so the file must parse as a zerodep
+    manifest and at least one module it lists must exist on disk.  A manifest
+    whose modules are all absent describes some other tree and must not
+    capture a command that merely runs below it, which is how a stray copy
+    ended up being rewritten from 49 modules to none.
+    """
+    manifest = directory / MANIFEST_PATH
+    if not manifest.is_file():
+        return _is_bootstrap_tree(directory)
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    modules = data.get("modules") if isinstance(data, dict) else None
+    if not isinstance(modules, dict):
+        return False
+    if not modules:
+        return _is_bootstrap_tree(directory)
+    for entry in modules.values():
+        if not isinstance(entry, dict):
+            continue
+        primary = entry.get("primary_file")
+        if isinstance(primary, str) and (directory / primary).is_file():
+            return True
+    return False
+
+
 def _nearest_catalog_root(start: Path) -> Path | None:
-    """Return the nearest directory at or above ``start`` holding a manifest."""
+    """Return the nearest directory at or above ``start`` that is a catalog."""
     for directory in (start, *start.parents):
-        if (directory / MANIFEST_PATH).is_file():
+        if _is_catalog_root(directory):
             return directory
     return None
 
@@ -511,9 +583,9 @@ def _require_source_tree(command: str) -> Path:
 
     if cwd_root is None and not cli_root_is_catalog:
         _die(
-            f"{command} inspects the zerodep source tree, but no "
-            f"{MANIFEST_PATH} is above {Path.cwd()} and this CLI is not part "
-            f"of a checkout ({cli_root}).\n"
+            f"{command} inspects the zerodep source tree, but no directory "
+            f"above {Path.cwd()} holds a zerodep {MANIFEST_PATH} and this CLI "
+            f"is not part of a checkout ({cli_root}).\n"
             f"  Run it from a checkout: cd /path/to/zerodep && "
             f"python -m zerodep {command}"
         )
@@ -1875,6 +1947,10 @@ def cmd_manifest(args: argparse.Namespace) -> None:
     """Regenerate manifest.json from local module source files."""
     repo_root = _require_source_tree("manifest")
     manifest = _generate_manifest(repo_root)
+    if not manifest["modules"]:
+        # Writing here would replace a real catalog with an empty one; the
+        # resolved root passed the guard, so the tree simply has no modules.
+        _die(f"refusing to write an empty {MANIFEST_PATH}: no modules in {repo_root}")
 
     out_path = repo_root / MANIFEST_PATH
     out_path.write_text(

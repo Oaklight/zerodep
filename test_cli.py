@@ -629,10 +629,6 @@ def _make_release_repo(tmp_path: Path) -> Path:
         '# category = "text"\n# ///\n\nVALUE = 1\n',
         encoding="utf-8",
     )
-    # ``manifest`` only writes a catalog where one already exists, using
-    # manifest.json to tell a checkout from site-packages, so seed the marker
-    # and let the CLI fill in the real contents.
-    (tmp_path / "manifest.json").write_text("{}\n", encoding="utf-8")
     r = subprocess.run(
         [sys.executable, str(tmp_path / "zerodep.py"), "--local", "manifest"],
         capture_output=True,
@@ -728,6 +724,112 @@ def test_installed_cli_uses_the_catalog_under_the_cwd(tmp_path: Path):
     assert r.returncode == 0, r.stdout + r.stderr
     assert "demo" in r.stdout
     assert r.stderr == ""
+
+
+def test_manifest_does_not_overwrite_a_foreign_manifest(tmp_path: Path):
+    """manifest.json is not proof of a catalog: extensions ship one too."""
+    install_dir = tmp_path / "site-packages"
+    install_dir.mkdir()
+    shutil.copy2(Path(__file__).parent / "zerodep.py", install_dir / "zerodep.py")
+    project = tmp_path / "extension"
+    (project / "packages").mkdir(parents=True)
+    (project / "packages" / "util.py").write_text("X = 1\n", encoding="utf-8")
+    foreign = '{"manifest_version": 3, "name": "ext"}\n'
+    (project / "manifest.json").write_text(foreign, encoding="utf-8")
+
+    r = _run_copied_cli(install_dir, "manifest", cwd=project)
+
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "manifest inspects the zerodep source tree" in r.stderr
+    assert (project / "manifest.json").read_text(encoding="utf-8") == foreign
+
+
+def test_manifest_ignores_a_catalog_whose_modules_are_not_on_disk(tmp_path: Path):
+    """A stray ancestor manifest must not capture the tree below it."""
+    (tmp_path / "catalog").mkdir()
+    generated = _make_release_repo(tmp_path / "catalog")
+    stray = tmp_path / "home"
+    stray.mkdir()
+    shutil.copy2(generated / "manifest.json", stray / "manifest.json")
+    before = (stray / "manifest.json").read_text(encoding="utf-8")
+
+    install_dir = tmp_path / "site-packages"
+    install_dir.mkdir()
+    shutil.copy2(Path(__file__).parent / "zerodep.py", install_dir / "zerodep.py")
+    project = stray / "other-project"
+    (project / "packages").mkdir(parents=True)
+    (project / "packages" / "util.py").write_text("X = 1\n", encoding="utf-8")
+
+    r = _run_copied_cli(install_dir, "manifest", cwd=project)
+
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "manifest inspects the zerodep source tree" in r.stderr
+    assert (stray / "manifest.json").read_text(encoding="utf-8") == before
+
+
+def test_manifest_bootstraps_a_checkout_without_a_manifest(tmp_path: Path):
+    """The marker cannot gate the command that creates it."""
+    tree = tmp_path / "fresh"
+    (tree / "demo").mkdir(parents=True)
+    shutil.copy2(Path(__file__).parent / "zerodep.py", tree / "zerodep.py")
+    (tree / "pyproject.toml").write_text(
+        '[project]\nname = "zerodep"\nversion = "2026.1.1"\n', encoding="utf-8"
+    )
+    (tree / "demo" / "demo.py").write_text(
+        '# /// zerodep\n# version = "0.1.0"\n# deps = []\n# tier = "medium"\n'
+        '# category = "text"\n# ///\n\nVALUE = 1\n',
+        encoding="utf-8",
+    )
+    assert not (tree / "manifest.json").exists()
+
+    r = subprocess.run(
+        [sys.executable, str(tree / "zerodep.py"), "manifest"],
+        capture_output=True,
+        text=True,
+        cwd=tree,
+    )
+
+    assert r.returncode == 0, r.stdout + r.stderr
+    data = json.loads((tree / "manifest.json").read_text(encoding="utf-8"))
+    assert list(data["modules"]) == ["demo"]
+
+
+def test_manifest_refuses_to_write_an_empty_catalog(tmp_path: Path):
+    """An empty regeneration would delete a real catalog's contents."""
+    tree = tmp_path / "fresh"
+    tree.mkdir()
+    shutil.copy2(Path(__file__).parent / "zerodep.py", tree / "zerodep.py")
+    (tree / "pyproject.toml").write_text(
+        '[project]\nname = "zerodep"\n', encoding="utf-8"
+    )
+
+    r = subprocess.run(
+        [sys.executable, str(tree / "zerodep.py"), "manifest"],
+        capture_output=True,
+        text=True,
+        cwd=tree,
+    )
+
+    assert r.returncode == 1
+    assert "refusing to write an empty manifest.json" in r.stderr
+    assert not (tree / "manifest.json").exists()
+
+
+def test_local_mode_says_so_when_the_cli_is_installed(tmp_path: Path):
+    """--local must not send an installed CLI to generate a catalog elsewhere."""
+    install_dir = tmp_path / "site-packages"
+    install_dir.mkdir()
+    shutil.copy2(Path(__file__).parent / "zerodep.py", install_dir / "zerodep.py")
+    project = tmp_path / "project"
+    project.mkdir()
+
+    r = _run_copied_cli(
+        install_dir, "--local", "add", "yaml", "-d", str(project), cwd=project
+    )
+
+    assert r.returncode == 1
+    assert "--local reads the checkout this CLI belongs to" in r.stderr
+    assert "zerodep manifest" not in r.stderr
 
 
 def test_cli_from_another_catalog_warns_which_tree_it_uses(tmp_path: Path):

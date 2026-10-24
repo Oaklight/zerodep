@@ -1545,8 +1545,30 @@ class A2ARequestHandler(http.server.BaseHTTPRequestHandler):
             self._send_jsonrpc_response(result)
 
     def _send_jsonrpc_response(self, response: JSONRPCResponse) -> None:
-        """Write a single JSON-RPC response."""
-        body = json.dumps(response.to_dict(), allow_nan=False).encode("utf-8")
+        """Write a single JSON-RPC response.
+
+        A result that cannot be serialized — a non-finite float, most
+        likely — is answered with a JSON-RPC error instead of propagating.
+        The body is built before any header is written, so the error is still
+        deliverable; letting the ``ValueError`` escape used to close the
+        connection without a response, which is worse than a 500.
+        """
+        try:
+            body = json.dumps(response.to_dict(), allow_nan=False).encode("utf-8")
+        except ValueError:
+            logger.exception(
+                "JSON-RPC response for %r is not serializable", response.id
+            )
+            body = json.dumps(
+                JSONRPCResponse(
+                    id=response.id,
+                    error=JSONRPCError(
+                        code=INTERNAL_ERROR,
+                        message="Internal error: response is not JSON serializable",
+                    ),
+                ).to_dict(),
+                allow_nan=False,
+            ).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))

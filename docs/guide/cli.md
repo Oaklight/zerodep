@@ -323,15 +323,18 @@ zerodep version-check        # 仍然解析到上层的 checkout
 运行的命令，`zerodep manifest` 也不会覆盖别人的 `manifest.json`。
 
 唯一的例外是尚无清单的 checkout：只要目录内有 CLI 本身、且有名为 `zerodep` 的
-`pyproject.toml`，即视为目录，`zerodep manifest` 可以创建它被要求创建的文件；
-但它仍然拒绝写入空清单。
+`pyproject.toml`，即视为目录，`zerodep manifest` 可以创建它被要求创建的文件，
+从该目录内或目录外调用均可；但它仍然拒绝写入空清单。
+
+`primary_file` 字段出现之前（截至 `v2026.10.23`）写入的清单会退回使用 `files`
+中的第一个条目，因此检出旧标签并用已安装的 CLI 运行时，依然能解析到该 checkout。
 
 不在任何目录内时，命令会拒绝执行而不是瞎猜：
 
 ```
-error: version-check inspects the zerodep source tree, but no manifest.json is
-above /home/me/other-project and this CLI is not part of a checkout
-(/usr/lib/python3/site-packages).
+error: version-check inspects the zerodep source tree, but no directory above
+/home/me/other-project holds a zerodep manifest.json and this CLI is not part of
+a checkout (/usr/lib/python3/site-packages).
   Run it from a checkout: cd /path/to/zerodep && python -m zerodep version-check
 ```
 

@@ -8,7 +8,7 @@
 
 ### 问题修复
 
-- **cli**：读取模块源码的命令——`manifest`、`bump`、`new`、`version-check`、`dep-graph`、`dep-check`——现在与 `release-check` 一样解析目录，而不再扫描 CLI 被安装到的目录。从 wheel 安装时该目录是 `site-packages`，其中每个包都像是一个 zerodep 模块：`version-check` 会把 `PIL`、`aiohttp` 等所有已安装包报告为“需要 bump”，导致 `--strict` 的调用方永久报错。现在目录解析为当前目录之上包含 zerodep `manifest.json` 的 checkout，找不到时退回 CLI 自身所在目录；不在任何目录内时命令直接拒绝执行，只含 `pyproject.toml` 的目录也不再被视为目录。并非 zerodep 目录的 `manifest.json`（浏览器扩展的、或模块文件已不存在的遗留副本）不会被误认，因此 `zerodep manifest` 不会覆盖它。
+- **cli**：读取模块源码的命令——`manifest`、`bump`、`new`、`version-check`、`dep-graph`、`dep-check`——现在与 `release-check` 一样解析目录，而不再扫描 CLI 被安装到的目录。从 wheel 安装时该目录是 `site-packages`，其中每个包都像是一个 zerodep 模块：`version-check` 会把 `PIL`、`aiohttp` 等所有已安装包报告为“需要 bump”，导致 `--strict` 的调用方永久报错。现在目录解析为当前目录之上包含 zerodep `manifest.json` 的 checkout，找不到时退回 CLI 自身所在目录；不在任何目录内时命令直接拒绝执行，只含 `pyproject.toml` 的目录也不再被视为目录。并非 zerodep 目录的 `manifest.json`（浏览器扩展的、或模块文件已不存在的遗留副本）不会被误认，因此 `zerodep manifest` 不会覆盖它。`primary_file` 出现之前（截至 `v2026.10.23`）的旧清单仍可通过 `files` 列表解析。
 
 ### 改进
 

@@ -1464,23 +1464,58 @@ class App:
             )
             return await self._handle_error(request, exc)
 
+    async def _run_before_hooks(
+        self, request: Request
+    ) -> Response | StreamingResponse | None:
+        """Run before-request hooks; a failing hook becomes an error response.
+
+        A hook returns a response to short-circuit routing.  Its body is
+        serialized here, outside the per-handler ``try`` that guards route
+        handlers, so without the catch a hook that returns an unserializable
+        body would drop the connection instead of answering.
+        """
+        for hook in self._before_request_handlers:
+            try:
+                result = await _invoke(hook, request)
+                if result is not None:
+                    return _coerce_response(result)
+            except HTTPException as exc:
+                return await self._handle_error(request, exc)
+            except Exception as exc:
+                logger.exception(
+                    "Unhandled exception in before_request hook %s",
+                    getattr(hook, "__name__", repr(hook)),
+                )
+                return await self._handle_error(request, exc)
+        return None
+
     async def _run_after_hooks(
         self, request: Request, response: Response | StreamingResponse
     ) -> Response | StreamingResponse:
         """Run after-request hooks, allowing them to replace the response."""
         for hook in self._after_request_handlers:
-            hook_result = await _invoke(hook, request, response)
-            if hook_result is not None:
-                response = _coerce_response(hook_result)
+            try:
+                hook_result = await _invoke(hook, request, response)
+                if hook_result is not None:
+                    response = _coerce_response(hook_result)
+            except HTTPException as exc:
+                return await self._handle_error(request, exc)
+            except Exception as exc:
+                # Same reason as _run_before_hooks: this runs outside the
+                # handler's guard, where an exception costs the response.
+                logger.exception(
+                    "Unhandled exception in after_request hook %s",
+                    getattr(hook, "__name__", repr(hook)),
+                )
+                return await self._handle_error(request, exc)
         return response
 
     async def _dispatch(self, request: Request) -> Response | StreamingResponse:
         """Match a request to a route and invoke the handler."""
         # -- before_request hooks --
-        for hook in self._before_request_handlers:
-            result = await _invoke(hook, request)
-            if result is not None:
-                return _coerce_response(result)
+        short_circuit = await self._run_before_hooks(request)
+        if short_circuit is not None:
+            return short_circuit
 
         # -- Static file check --
         for prefix, directory in self._static_routes:
@@ -1515,6 +1550,22 @@ class App:
         exc = HTTPException(404, "Not Found")
         return await self._handle_error(request, exc)
 
+    async def _run_error_handler(
+        self, request: Request, handler: Any, exc: Exception
+    ) -> Response | StreamingResponse | None:
+        """Render an error through a registered handler.
+
+        Returns ``None`` when the handler itself fails, so the caller falls
+        back to the default response: a broken error page must not cost the
+        client its response.
+        """
+        try:
+            result = await _invoke(handler, request, exc)
+            return _coerce_response(result)
+        except Exception:
+            logger.exception("Error handler %s failed while handling %s", handler, exc)
+            return None
+
     async def _handle_error(
         self, request: Request, exc: Exception
     ) -> Response | StreamingResponse:
@@ -1522,13 +1573,15 @@ class App:
         if isinstance(exc, HTTPException):
             handler = self._error_handlers.get(exc.status_code)
             if handler is not None:
-                result = await _invoke(handler, request, exc)
-                return _coerce_response(result)
+                response = await self._run_error_handler(request, handler, exc)
+                if response is not None:
+                    return response
 
         for exc_cls, handler in self._error_handlers.items():
             if isinstance(exc_cls, type) and isinstance(exc, exc_cls):
-                result = await _invoke(handler, request, exc)
-                return _coerce_response(result)
+                response = await self._run_error_handler(request, handler, exc)
+                if response is not None:
+                    return response
 
         if isinstance(exc, HTTPException):
             return JSONResponse(

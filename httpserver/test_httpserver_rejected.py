@@ -6,6 +6,7 @@ import socket
 
 from test_httpserver_keepalive import _live
 
+import httpserver as server_module
 from httpserver import App, RejectedRequest
 
 
@@ -115,19 +116,23 @@ class TestRejectionRows:
         assert rej.bytes_received == 3
         assert _header(response, "X-Request-Id") == rej.request_id
 
-    def test_read_error(self):
+    def test_read_error(self, monkeypatch):
+        async def failing_read(reader, timeout, max_body_size, *, state=None, **kw):
+            await reader.readuntil(b"\r\n\r\n")
+            state.method = "POST"
+            state.path = "/echo"
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(server_module, "_read_request", failing_read)
         app, events = _app()
         with _live(app):
-            response = _exchange(
-                app,
-                b"POST /echo HTTP/1.1\r\nHost: x\r\nContent-Length: abc\r\n\r\n",
-            )
+            response = _exchange(app, b"POST /echo HTTP/1.1\r\nHost: x\r\n\r\n")
         assert b" 500 " in response.split(b"\r\n", 1)[0]
         assert b"Internal Server Error" in response
         assert len(events) == 1
         rej = events[0]
         assert (rej.status_code, rej.reason) == (500, "read_error")
-        assert isinstance(rej.exception, ValueError)
+        assert isinstance(rej.exception, RuntimeError)
         assert rej.method == "POST"
         assert _header(response, "X-Request-Id") == rej.request_id
 
@@ -202,8 +207,8 @@ class TestHandlerSemantics:
         with _live(app):
             sock = socket.create_connection((app.host, app.port), timeout=5)
             sock.close()
-            _exchange(app, b"POST /echo HTTP/1.1\r\nContent-Length: abc\r\n\r\n")
-        assert [e.reason for e in events] == ["read_error"]
+            _exchange(app, b"GARBAGE\r\n\r\n")
+        assert [e.reason for e in events] == ["bad_request"]
 
     def test_no_handler_still_answers_with_request_id(self):
         app = App()
@@ -290,3 +295,35 @@ class TestRequestIdValidation:
             )
         assert "," not in (_header(response, "X-Request-Id") or ",")
         assert events[0].request_id == _header(response, "X-Request-Id")
+
+
+class TestInvalidFraming:
+    def _rejected(self, raw: bytes):
+        app, events = _app()
+        with _live(app):
+            response = _exchange(app, raw)
+        assert b" 400 " in response.split(b"\r\n", 1)[0]
+        assert len(events) == 1
+        rej = events[0]
+        assert (rej.status_code, rej.reason) == (400, "bad_request")
+        assert rej.method == "POST"
+        assert rej.path == "/echo"
+        assert rej.content_length is None
+        assert _header(response, "X-Request-Id") == rej.request_id
+        return response
+
+    def test_non_numeric_content_length(self):
+        response = self._rejected(
+            b"POST /echo HTTP/1.1\r\nHost: x\r\nContent-Length: abc\r\n\r\n"
+        )
+        assert b"Invalid Content-Length" in response
+
+    def test_negative_content_length(self):
+        self._rejected(b"POST /echo HTTP/1.1\r\nHost: x\r\nContent-Length: -5\r\n\r\n")
+
+    def test_invalid_chunk_size(self):
+        response = self._rejected(
+            b"POST /echo HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n"
+            b"zz\r\nabc\r\n0\r\n\r\n"
+        )
+        assert b"Invalid chunk size" in response

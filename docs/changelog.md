@@ -8,7 +8,7 @@
 
 ### 新功能
 
-- **httpserver**：新增 `App.on_request_rejected` 信号与导出的 `RejectedRequest` 数据类，用于在请求读取阶段、尚未生成 `Request` 时就被拒绝的情况：请求行格式错误（`400`）、请求体超过 `max_body_size`（`413`）、读取超时（`408`）、请求体短于 `Content-Length`（`400`）以及其他读取错误（`500`）。处理器会收到稳定的 `reason`（`bad_request`、`too_large`、`timeout`、`incomplete_body`、`read_error`）、状态码、异常，以及已解析到的信息（`method`、`path`、`headers`、`content_length`、`bytes_received`）。这些错误响应现在带有 `X-Request-Id`（客户端提供且可用时沿用，否则自动生成；同一个 id 也会传给信号），相关失败的日志级别由 `debug` 提升为 `warning`。非数字或为负的 `Content-Length` 与分块大小现在返回 `400 Bad Request`（`reason` 为 `bad_request`），不再返回 `500`，因为这属于客户端错误。除此之外，未注册处理器的应用只会感受到日志级别和多出的响应头。`httpserver` 升到 0.7.0。([#272](https://github.com/Oaklight/zerodep/issues/272))
+- **httpserver**：新增 `App.on_request_rejected` 信号与导出的 `RejectedRequest` 数据类，用于在请求读取阶段、尚未生成 `Request` 时就被拒绝的情况：请求行格式错误（`400`）、请求体超过 `max_body_size`（`413`）、读取超时（`408`）、请求体短于 `Content-Length`（`400`）以及其他读取错误（`500`）。处理器会收到稳定的 `reason`（`bad_request`、`too_large`、`timeout`、`incomplete_body`、`read_error`）、状态码、异常，以及已解析到的信息（`method`、`path`、`headers`、`content_length`、`bytes_received`）。这些错误响应现在带有 `X-Request-Id`（客户端提供且可用时沿用，否则自动生成；同一个 id 也会传给信号），相关失败的日志级别由 `debug` 提升为 `warning`。无效的 `Content-Length` 或分块大小现在返回 `400 Bad Request`（`reason` 为 `bad_request`），不再返回 `500`，因为这属于客户端错误。只接受纯数字（分块大小为十六进制数字），因此 `1_0`、`+5`、`0x10` 之类的写法会被拒绝。客户端的 `X-Request-Id` 仅在由字母、数字及 `._~:/+=@-` 组成的单个 token 且不超过 128 个字符时才会原样回显；`RejectedRequest.headers` 是只读视图。除此之外，未注册处理器的应用只会感受到日志级别和多出的响应头。`httpserver` 升到 0.7.0。([#272](https://github.com/Oaklight/zerodep/issues/272))
 
 ## [2026.10.24] - 2026-10-24
 

@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.10.25] - 2026-10-25
+
 ### Features
 
 - **httpserver**: new `App.on_request_rejected` signal and exported `RejectedRequest` dataclass for requests refused while being read, before any `Request` exists: a malformed request line (`400`), a body over `max_body_size` (`413`), a read timeout (`408`), a body shorter than `Content-Length` (`400`) and any other read error (`500`). The handler receives a stable `reason` (`bad_request`, `too_large`, `timeout`, `incomplete_body`, `read_error`), the status, the exception and whatever had been parsed (`method`, `path`, `headers`, `content_length`, `bytes_received`). These error responses now carry an `X-Request-Id` (the client's own when usable, otherwise generated; the same id is passed to the signal), and the failures are logged at `warning` instead of `debug`. An invalid `Content-Length` or chunk size now answers `400 Bad Request` (reason `bad_request`) instead of `500`, since it is a client error. Only plain digits are accepted (hex digits for a chunk size), so forms such as `1_0`, `+5` and `0x10` are refused. A client `X-Request-Id` is echoed only when it is a single token of letters, digits and `._~:/+=@-`, up to 128 characters; `RejectedRequest.headers` is a read-only view. Apart from that, applications that register no handler see only the log level and the extra header change. `httpserver` goes to 0.7.0. ([#272](https://github.com/Oaklight/zerodep/issues/272))

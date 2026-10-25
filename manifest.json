@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-24T19:41:10.721146+00:00",
+  "generated": "2026-10-25T07:29:11.871176+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -202,12 +202,12 @@
         "httpserver/httpserver.py"
       ],
       "primary_file": "httpserver/httpserver.py",
-      "version": "0.6.2",
+      "version": "0.7.0",
       "deps": [],
       "tier": "subsystem",
       "category": "network",
       "last_updated": "2026-10-24T10:51:30-05:00",
-      "content_hash": "5e7c5ae18fa66d38fa37bb7fa3de8d18a4593c1847df64b39308d7e84b38ebc0"
+      "content_hash": "657b64929db19d4f6bcb4c3ef4dcbe7852b3ef2073ae25ac40d088aac1d3bae3"
     },
     "jsonrpc": {
       "description": "JSON-RPC 2.0 -- Zero-dependency Python implementation",
@@ -219,7 +219,7 @@
       "deps": [],
       "tier": "medium",
       "category": "protocol",
-      "last_updated": "2026-04-27T23:17:36+08:00",
+      "last_updated": "2026-10-24T14:41:31-05:00",
       "content_hash": "55c81cdfe08177a5c61e2505a1ce8c9248842f8fc36089a2e81c80491cf6be5b"
     },
     "jsonschema": {
@@ -457,7 +457,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "text",
-      "last_updated": "2026-10-22T21:18:10-05:00",
+      "last_updated": "2026-10-24T14:41:31-05:00",
       "content_hash": "abefee494b041e89309e7d3328d7ca4adbf76595d6f45ee98b200271965eca23"
     },
     "semver": {

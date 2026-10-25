@@ -296,6 +296,20 @@ class TestRequestIdValidation:
         assert "," not in (_header(response, "X-Request-Id") or ",")
         assert events[0].request_id == _header(response, "X-Request-Id")
 
+    def test_ids_that_are_not_a_single_token_are_replaced(self):
+        for bad in (b"a b", b"a;b", b"a\x01b", b"caf\xe9"):
+            app, events = _app(max_body_size=1)
+            with _live(app):
+                response = _exchange(
+                    app,
+                    b"POST /echo HTTP/1.1\r\nHost: x\r\nX-Request-Id: "
+                    + bad
+                    + b"\r\nContent-Length: 50\r\n\r\n",
+                )
+            sent = _header(response, "X-Request-Id")
+            assert sent is not None and sent.isalnum() and len(sent) == 32, bad
+            assert events[0].request_id == sent
+
 
 class TestInvalidFraming:
     def _rejected(self, raw: bytes):
@@ -327,3 +341,66 @@ class TestInvalidFraming:
             b"zz\r\nabc\r\n0\r\n\r\n"
         )
         assert b"Invalid chunk size" in response
+
+    def test_negative_chunk_size(self):
+        self._rejected(
+            b"POST /echo HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n"
+            b"-1\r\nabc\r\n0\r\n\r\n"
+        )
+
+    def test_lenient_int_forms_are_refused(self):
+        for value in (b"1_0", b"+5", b"-0", b" ", b"5.0"):
+            self._rejected(
+                b"POST /echo HTTP/1.1\r\nHost: x\r\nContent-Length: "
+                + value
+                + b"\r\n\r\n"
+            )
+        for size in (b"0x10", b"+4", b"1_0"):
+            self._rejected(
+                b"POST /echo HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n"
+                + size
+                + b"\r\nabc\r\n0\r\n\r\n"
+            )
+
+    def test_valid_framing_is_still_accepted(self):
+        app, events = _app()
+        with _live(app):
+            plain = _exchange(
+                app,
+                b"POST /echo HTTP/1.1\r\nHost: x\r\nConnection: close\r\n"
+                b"Content-Length: 0010\r\n\r\n0123456789",
+            )
+            chunked = _exchange(
+                app,
+                b"POST /echo HTTP/1.1\r\nHost: x\r\nConnection: close\r\n"
+                b"Transfer-Encoding: chunked\r\n\r\nA\r\n0123456789\r\n0\r\n\r\n",
+            )
+        assert b" 200 " in plain.split(b"\r\n", 1)[0]
+        assert b" 200 " in chunked.split(b"\r\n", 1)[0]
+        assert events == []
+
+
+class TestHeadersView:
+    def test_headers_are_read_only_and_not_shared_between_handlers(self):
+        app = App()
+        outcomes: list[str] = []
+
+        @app.on_request_rejected
+        def first(rejection):
+            try:
+                rejection.headers["x-tampered"] = "yes"
+            except TypeError:
+                outcomes.append("read-only")
+
+        @app.on_request_rejected
+        def second(rejection):
+            outcomes.append(
+                "tampered" if "x-tampered" in rejection.headers else "clean"
+            )
+
+        with _live(app):
+            _exchange(
+                app,
+                b"POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: -1\r\n\r\n",
+            )
+        assert outcomes == ["read-only", "clean"]

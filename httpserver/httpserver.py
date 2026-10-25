@@ -914,6 +914,7 @@ def _request_id_from(headers: dict[str, str] | None) -> str:
     candidate = (headers or {}).get("x-request-id", "").strip()
     if (
         candidate
+        and "," not in candidate
         and len(candidate) <= _MAX_REQUEST_ID_LENGTH
         and candidate.isascii()
         and candidate.isprintable()
@@ -929,6 +930,7 @@ def _read_failure_reason(exc: BaseException) -> str:
     """Stable ``RejectedRequest.reason`` token for a read-phase exception."""
     if isinstance(exc, _BadRequest):
         return "bad_request"
+    # _read_request only raises HTTPException for 413.
     if isinstance(exc, HTTPException) and exc.status_code == 413:
         return "too_large"
     if isinstance(exc, asyncio.TimeoutError):
@@ -1055,11 +1057,39 @@ async def _read_request(
         if length > max_body_size:
             raise HTTPException(413, f"Request body too large ({length} bytes)")
         if length > 0:
-            body = await asyncio.wait_for(reader.readexactly(length), timeout=timeout)
+            body = await asyncio.wait_for(
+                _read_exact_body(reader, length, state), timeout=timeout
+            )
     elif headers.get("transfer-encoding", "").lower() == "chunked":
         body = await _read_chunked_body(reader, timeout, max_body_size, state)
 
     return method.upper(), path, query_string, headers, body, version.upper()
+
+
+async def _read_exact_body(
+    reader: asyncio.StreamReader,
+    length: int,
+    state: _ReadState | None,
+) -> bytes:
+    """Read *length* body bytes, counting them in *state* as they arrive.
+
+    Unlike ``readexactly`` this keeps the byte count visible when the caller
+    cancels the read on a timeout.
+
+    Raises:
+        asyncio.IncompleteReadError: If the stream ends first.
+    """
+    parts: list[bytes] = []
+    remaining = length
+    while remaining:
+        chunk = await reader.read(min(remaining, 65536))
+        if not chunk:
+            raise asyncio.IncompleteReadError(b"".join(parts), length)
+        parts.append(chunk)
+        remaining -= len(chunk)
+        if state is not None:
+            state.bytes_received += len(chunk)
+    return b"".join(parts)
 
 
 async def _read_chunked_body(
@@ -1510,7 +1540,7 @@ class App:
 
         Fired when a request is refused while it is being read, before a
         :class:`Request` exists, so none of the other lifecycle hooks see
-        it: malformed request line or headers (``400``), a body over
+        it: malformed request line (``400``), a body over
         ``max_body_size`` (``413``), a read timeout (``408``), a body
         shorter than ``Content-Length`` (``400``) and any other read error
         (``500``).  A keep-alive connection that goes idle or closes
@@ -1877,7 +1907,7 @@ class App:
                 request_id=request_id,
                 method=state.method,
                 path=state.path,
-                headers=state.headers,
+                headers=None if state.headers is None else dict(state.headers),
                 content_length=state.content_length,
                 bytes_received=bytes_received,
             ),

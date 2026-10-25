@@ -237,6 +237,26 @@ Main application class.
 | `after_request(handler)` | Register a post-request hook. Receives `(request, response)` |
 | `errorhandler(code_or_exc)` | Register an error handler for HTTP status code or exception class |
 
+**Signal Methods:**
+
+Signals observe the request lifecycle. Handlers may be sync or async, run sequentially, and have their exceptions logged and suppressed; return values are ignored.
+
+| Method | Description |
+|--------|-------------|
+| `on_response_started(handler)` | Fires just before the response is written. Receives `(request, response)` |
+| `on_response_completed(handler)` | Fires after the whole response was sent. Receives `(request, response)` |
+| `on_client_disconnect(handler)` | Fires when the client drops during response delivery. Receives `(request)` |
+| `on_request_rejected(handler)` | Fires for a request refused while being read, before any `Request` exists. Receives a `RejectedRequest` |
+
+`RejectedRequest` is a frozen dataclass: `client_addr`, `status_code`, `reason` (`"bad_request"`, `"too_large"`, `"timeout"`, `"incomplete_body"` or `"read_error"`), `exception`, `request_id`, and best-effort `method`, `path`, `headers`, `content_length`, `bytes_received` (`None` or `0` when not yet parsed). The error response carries the same id as `X-Request-Id`: the client's own when usable, otherwise generated.
+
+```python
+@app.on_request_rejected
+async def record(rejection):
+    logger.warning("rejected %s (%s) id=%s", rejection.status_code,
+                   rejection.reason, rejection.request_id)
+```
+
 **Lifecycle Methods:**
 
 | Method | Description |

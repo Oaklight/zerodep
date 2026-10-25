@@ -211,3 +211,82 @@ class TestHandlerSemantics:
             response = _exchange(app, b"GARBAGE\r\n\r\n")
         assert b" 400 " in response.split(b"\r\n", 1)[0]
         assert _header(response, "X-Request-Id")
+
+
+class TestBodyAccounting:
+    def test_timeout_mid_body_reports_bytes_received(self):
+        app, events = _app(read_timeout=0.4)
+        with _live(app):
+            response = _exchange(
+                app,
+                b"POST /echo HTTP/1.1\r\nHost: x\r\nContent-Length: 10\r\n\r\nabc",
+            )
+        assert b" 408 " in response.split(b"\r\n", 1)[0]
+        assert len(events) == 1
+        rej = events[0]
+        assert (rej.status_code, rej.reason) == (408, "timeout")
+        assert rej.content_length == 10
+        assert rej.bytes_received == 3
+
+    def test_chunked_overflow_is_too_large(self):
+        app, events = _app(max_body_size=10)
+        with _live(app):
+            response = _exchange(
+                app,
+                b"POST /echo HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n"
+                b"6\r\nabcdef\r\n6\r\nghijkl\r\n0\r\n\r\n",
+            )
+        assert b" 413 " in response.split(b"\r\n", 1)[0]
+        assert len(events) == 1
+        rej = events[0]
+        assert (rej.status_code, rej.reason) == (413, "too_large")
+        assert rej.content_length is None
+        assert rej.bytes_received == 6
+        assert _header(response, "X-Request-Id") == rej.request_id
+
+    def test_chunked_truncated_is_incomplete_body(self):
+        app, events = _app()
+        with _live(app):
+            response = _exchange(
+                app,
+                b"POST /echo HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n"
+                b"5\r\nabc",
+                half_close=True,
+            )
+        assert b" 400 " in response.split(b"\r\n", 1)[0]
+        assert len(events) == 1
+        rej = events[0]
+        assert (rej.status_code, rej.reason) == (400, "incomplete_body")
+        assert rej.bytes_received == 3
+
+
+class TestIdleConnection:
+    def test_keep_alive_idle_timeout_is_silent(self):
+        app, events = _app(keep_alive_timeout=0.3)
+        with _live(app):
+            sock = socket.create_connection((app.host, app.port), timeout=5)
+            try:
+                sock.sendall(
+                    b"POST /echo HTTP/1.1\r\nHost: x\r\nContent-Length: 2\r\n\r\nhi"
+                )
+                first = sock.recv(4096)
+                assert b" 200 " in first.split(b"\r\n", 1)[0]
+                # Idle past keep_alive_timeout: the server closes without a
+                # response, which is not a rejection.
+                assert sock.recv(4096) == b""
+            finally:
+                sock.close()
+        assert events == []
+
+
+class TestRequestIdValidation:
+    def test_comma_separated_client_id_is_replaced(self):
+        app, events = _app(max_body_size=1)
+        with _live(app):
+            response = _exchange(
+                app,
+                b"POST /echo HTTP/1.1\r\nHost: x\r\nX-Request-Id: a, b\r\n"
+                b"Content-Length: 50\r\n\r\n",
+            )
+        assert "," not in (_header(response, "X-Request-Id") or ",")
+        assert events[0].request_id == _header(response, "X-Request-Id")

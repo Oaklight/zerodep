@@ -998,7 +998,8 @@ async def _read_request(
         _ClientDisconnected: If the stream ended before a request line, which
             is how a client closes a kept-alive connection.
         _IdleTimeout: If no request line arrived within *idle_timeout*.
-        _BadRequest: If the request is malformed.
+        _BadRequest: If the request is malformed, including a
+            ``Content-Length`` or chunk size that is not a valid number.
         asyncio.TimeoutError: If reading headers or the body times out.
     """
     # -- Request line --
@@ -1051,7 +1052,12 @@ async def _read_request(
     body = b""
     cl = headers.get("content-length")
     if cl is not None:
-        length = int(cl)
+        try:
+            length = int(cl)
+        except ValueError:
+            raise _BadRequest(f"Invalid Content-Length: {cl!r}") from None
+        if length < 0:
+            raise _BadRequest(f"Invalid Content-Length: {cl!r}")
         if state is not None:
             state.content_length = length
         if length > max_body_size:
@@ -1106,7 +1112,12 @@ async def _read_chunked_body(
         size_str = size_line.decode("latin-1").split(";")[0].strip()
         if not size_str:
             break
-        chunk_size = int(size_str, 16)
+        try:
+            chunk_size = int(size_str, 16)
+        except ValueError:
+            raise _BadRequest(f"Invalid chunk size: {size_str!r}") from None
+        if chunk_size < 0:
+            raise _BadRequest(f"Invalid chunk size: {size_str!r}")
         if chunk_size == 0:
             await asyncio.wait_for(reader.readline(), timeout=timeout)
             break
@@ -1540,7 +1551,7 @@ class App:
 
         Fired when a request is refused while it is being read, before a
         :class:`Request` exists, so none of the other lifecycle hooks see
-        it: malformed request line (``400``), a body over
+        it: malformed request line, ``Content-Length`` or chunk size (``400``), a body over
         ``max_body_size`` (``413``), a read timeout (``408``), a body
         shorter than ``Content-Length`` (``400``) and any other read error
         (``500``).  A keep-alive connection that goes idle or closes

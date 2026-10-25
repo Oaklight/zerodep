@@ -85,6 +85,12 @@ data = response.json()
 print(data["json"])  # {"username": "alice", "email": "alice@example.com"}
 ```
 
+A `json=` body containing `NaN` or `Infinity` raises `ValueError` before any
+socket is opened — those constants are not valid JSON, so the peer could not
+read the request. Convert the value to `null` (or to a number) first.
+Responses are read leniently: `response.json()` still accepts what a
+non-conforming peer sends.
+
 ### Custom Headers
 
 ```python

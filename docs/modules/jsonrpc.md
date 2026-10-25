@@ -164,7 +164,7 @@ transport = JSONRPCTransport(reader, writer)
 | Method | Description |
 |--------|-------------|
 | `await read_message()` | Read the next JSON object. Returns `None` on EOF. Skips blank lines and malformed JSON. |
-| `await write_message(msg)` | Write a JSON object followed by `\n`. |
+| `await write_message(msg)` | Write a JSON object followed by `\n`. Raises `ValueError` and writes nothing if `msg` contains `NaN` or `Infinity`, which are not valid JSON. |
 | `await send_request(method, params, req_id)` | Build and send a request (auto-generates `id` if not provided). |
 | `await send_notification(method, params)` | Send a notification (no `id`). |
 | `await send_result(req_id, result)` | Send a success response. |

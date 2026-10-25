@@ -140,6 +140,13 @@ client.cancel_task("task-id")
 
 ### A2A Server
 
+A result that cannot be serialized — a non-finite float, or a type `json`
+cannot encode — is answered with a JSON-RPC error carrying `INTERNAL_ERROR`
+(-32603) and request id, not a dropped connection. The same applies to the
+agent card endpoint, which answers `500` when the card holds such a value.
+Streaming responses are the exception: once SSE headers are sent the stream
+ends rather than being repaired.
+
 ```python
 from a2a import A2AServer, A2ARequestHandler
 

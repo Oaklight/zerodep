@@ -71,6 +71,10 @@ results = index.search(text="how do I register a tool?", top_k=5)
 `cohere_embed()`, `voyage_embed()` and `jina_embed()` follow the same shape; any
 callable with the signature `list[str] -> list[list[float]]` works as `embed=`.
 
+The HTTP request these helpers build is refused with `ValueError` if the
+payload carries a non-finite float, so an invalid document never reaches the
+API. The local index lives in SQLite and is unaffected.
+
 ### Metadata Filters
 
 ```python

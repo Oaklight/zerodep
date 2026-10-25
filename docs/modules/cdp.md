@@ -187,7 +187,7 @@ Synchronous Chrome DevTools Protocol client.
 |--------|-------------|
 | `evaluate(target_id, expression) -> object` | Evaluate JavaScript in a target |
 | `set_user_agent(target_id, user_agent)` | Override User-Agent for a target |
-| `send_command(method, params=None, *, session_id=None, timeout=None) -> dict` | Send a raw CDP command |
+| `send_command(method, params=None, *, session_id=None, timeout=None) -> dict` | Send a raw CDP command. Raises `ValueError` if `params` contains `NaN` or `Infinity`: the frame would not be valid JSON, and Chrome's parser rejects it |
 
 ---
 

@@ -10,7 +10,7 @@ A zero-dependency extended JSON parser that supports JSONC (JSON with Comments),
 - **Block comments**: `/* ... */` (including multiline)
 - **Trailing commas**: In objects and arrays
 - **JSONL/NDJSON**: Newline-delimited JSON parsing and serialization
-- **Drop-in replacement**: Same API as stdlib `json` module
+- **Drop-in replacement**: Same API as stdlib `json` module, with one deliberate difference — `dumps` / `dump` refuse `NaN` and `Infinity` by default, because those constants are not valid JSON
 - **String-safe**: Comments inside quoted strings are preserved
 - **Error reporting**: `JSONCDecodeError` with position information
 
@@ -54,7 +54,21 @@ Deserialize a JSONC file-like object. Reads the stream and passes to `loads`.
 
 ### `dumps(obj, **kwargs)` / `dump(obj, fp, **kwargs)`
 
-Pass-through to `json.dumps` / `json.dump` for API compatibility.
+Pass-through to `json.dumps` / `json.dump`, except for `allow_nan`, which
+defaults to `False`: a non-finite float raises `ValueError` instead of being
+written as the bare `NaN` / `Infinity` constants, which `JSON.parse`, Go's
+`encoding/json` and serde all reject. Pass `allow_nan=True` when the consumer
+is known to accept Python's constants.
+
+```python
+>>> dumps({"x": float("nan")})
+ValueError: Out of range float values are not JSON compliant
+>>> dumps({"x": float("nan")}, allow_nan=True)
+'{"x": NaN}'
+```
+
+`dumps_lines` / `dump_lines` forward the same default to `json.dumps`, so
+the JSONL helpers behave identically.
 
 ### `JSONCDecodeError`
 

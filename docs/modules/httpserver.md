@@ -283,9 +283,21 @@ HTTP response with a fixed body.
 
 ---
 
-### `JSONResponse(data, status_code=200, headers=None)`
+### `JSONResponse(data, status_code=200, headers=None, *, allow_nan=False)`
 
 Convenience response that serializes `data` to JSON.
+
+Non-finite floats (`NaN`, `Infinity`, `-Infinity`) are refused with
+`ValueError` rather than written, because they are not valid JSON and a
+client's `JSON.parse` would fail on the body. Starlette's `JSONResponse`
+makes the same choice. Pass `allow_nan=True` to emit them anyway; a handler
+that wants `null` for non-finite values should sanitize the payload itself.
+
+A handler that returns a `dict` always goes through `JSONResponse` with the
+default, so the opt-out is reachable only by constructing the response
+explicitly. When serialization fails inside a handler, a `before_request` or
+`after_request` hook, or an error handler, the server answers `500` — the
+connection stays usable rather than being closed without a response.
 
 ---
 

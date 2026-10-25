@@ -10,7 +10,7 @@
 - **块注释**：`/* ... */`（支持多行）
 - **尾逗号**：对象和数组末尾允许多余的逗号
 - **JSONL/NDJSON**：换行分隔 JSON 的解析和序列化
-- **直接替换**：与标准库 `json` 模块相同的 API
+- **直接替换**：与标准库 `json` 模块相同的 API，但有一处刻意差异——`dumps` / `dump` 默认拒绝 `NaN` 与 `Infinity`，因为它们并非合法 JSON
 - **字符串安全**：引号内的注释标记不会被误处理
 - **错误报告**：`JSONCDecodeError` 包含位置信息
 
@@ -54,7 +54,18 @@ text = dumps(config, indent=2)
 
 ### `dumps(obj, **kwargs)` / `dump(obj, fp, **kwargs)`
 
-透传到 `json.dumps` / `json.dump`，保持 API 兼容。
+转发到 `json.dumps` / `json.dump`，但 `allow_nan` 默认为 `False`：遇到非有限浮点数会抛出
+`ValueError`，而不是写成裸 `NaN` / `Infinity`——`JSON.parse`、Go 的 `encoding/json`
+与 serde 都拒绝这些常量。确认使用方接受 Python 常量时，可传 `allow_nan=True`。
+
+```python
+>>> dumps({"x": float("nan")})
+ValueError: Out of range float values are not JSON compliant
+>>> dumps({"x": float("nan")}, allow_nan=True)
+'{"x": NaN}'
+```
+
+`dumps_lines` / `dump_lines` 以同样的默认值转发给 `json.dumps`，JSONL 辅助函数行为一致。
 
 ### `JSONCDecodeError`
 

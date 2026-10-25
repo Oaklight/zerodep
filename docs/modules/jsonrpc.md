@@ -164,7 +164,7 @@ transport = JSONRPCTransport(reader, writer)
 | 方法 | 说明 |
 |------|------|
 | `await read_message()` | 读取下一个 JSON 对象。EOF 时返回 `None`。跳过空行和格式错误的 JSON。 |
-| `await write_message(msg)` | 写入 JSON 对象并追加 `\n`。 |
+| `await write_message(msg)` | 写入 JSON 对象并追加 `\n`。`msg` 含 `NaN` 或 `Infinity` 时抛出 `ValueError` 且不写入任何内容——它们不是合法 JSON。 |
 | `await send_request(method, params, req_id)` | 构建并发送请求（未提供时自动生成 `id`）。 |
 | `await send_notification(method, params)` | 发送通知（无 `id`）。 |
 | `await send_result(req_id, result)` | 发送成功响应。 |

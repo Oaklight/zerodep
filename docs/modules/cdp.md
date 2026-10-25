@@ -187,7 +187,7 @@ with CDPClient("ws://localhost:9222") as client:
 |------|------|
 | `evaluate(target_id, expression) -> object` | 在标签页中执行 JavaScript |
 | `set_user_agent(target_id, user_agent)` | 覆盖标签页的 User-Agent |
-| `send_command(method, params=None, *, session_id=None, timeout=None) -> dict` | 发送原始 CDP 命令 |
+| `send_command(method, params=None, *, session_id=None, timeout=None) -> dict` | 发送原始 CDP 命令。`params` 含 `NaN` 或 `Infinity` 时抛出 `ValueError`：该帧不是合法 JSON，Chrome 的解析器会拒绝 |
 
 ---
 

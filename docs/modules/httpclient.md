@@ -85,6 +85,10 @@ data = response.json()
 print(data["json"])  # {"username": "alice", "email": "alice@example.com"}
 ```
 
+`json=` 请求体中含有 `NaN` 或 `Infinity` 时，会在建立任何 socket 之前抛出 `ValueError`——
+这些常量不是合法 JSON，对端无法解析该请求。请先把值转换为 `null`（或数值）。响应读取保持
+宽容：`response.json()` 仍接受不合规对端返回的内容。
+
 ### 自定义请求头
 
 ```python

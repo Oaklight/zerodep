@@ -140,6 +140,11 @@ client.cancel_task("task-id")
 
 ### A2A 服务端
 
+无法序列化的结果——非有限浮点数，或 `json` 无法编码的类型——会以携带
+`INTERNAL_ERROR`（-32603）和请求 id 的 JSON-RPC 错误回应，而不是断开连接。智能体卡片
+端点同理：卡片含此类值时返回 `500`。流式响应是例外：SSE 响应头已发出后，只能结束流而
+无法补救。
+
 ```python
 from a2a import A2AServer, A2ARequestHandler
 

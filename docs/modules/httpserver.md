@@ -283,9 +283,18 @@ async def trigger_shutdown(request):
 
 ---
 
-### `JSONResponse(data, status_code=200, headers=None)`
+### `JSONResponse(data, status_code=200, headers=None, *, allow_nan=False)`
 
-将 `data` 序列化为 JSON 的便捷响应。
+把 `data` 序列化为 JSON 的便捷响应。
+
+非有限浮点数（`NaN`、`Infinity`、`-Infinity`）会抛出 `ValueError` 而不是写入响应体，
+因为它们不是合法 JSON，客户端的 `JSON.parse` 会解析失败。Starlette 的 `JSONResponse`
+也作同样选择。需要原样输出时传 `allow_nan=True`；希望非有限值变成 `null` 的处理器应自行
+清理数据。
+
+处理器返回 `dict` 时总是经由默认的 `JSONResponse`，因此只有显式构造响应才能开启该选项。
+序列化在处理器、`before_request` / `after_request` 钩子或错误处理器中失败时，服务器返回
+`500`——连接保持可用，而不是被直接关闭。
 
 ---
 

@@ -71,6 +71,9 @@ results = index.search(text="如何注册工具？", top_k=5)
 `cohere_embed()`、`voyage_embed()` 与 `jina_embed()` 的用法相同；任何签名为
 `list[str] -> list[list[float]]` 的可调用对象都可以作为 `embed=` 传入。
 
+这些辅助函数构造的 HTTP 请求在载荷含非有限浮点数时会抛出 `ValueError`，非法文档不会
+发到 API。本地索引保存在 SQLite 中，不受影响。
+
 ### 元数据过滤
 
 ```python

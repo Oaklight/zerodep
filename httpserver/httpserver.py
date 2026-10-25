@@ -48,10 +48,11 @@ import signal
 import ssl
 import sys
 import uuid
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable, Mapping
 from email.utils import formatdate
 from http.cookies import CookieError, SimpleCookie
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
 
@@ -875,7 +876,8 @@ class RejectedRequest:
             generated id.
         method: Request method, once the request line was parsed.
         path: Decoded request path, once the request line was parsed.
-        headers: Lower-cased request headers parsed so far, or ``None``
+        headers: Read-only view of the lower-cased request headers parsed
+            so far, or ``None``
             when the request line itself was not usable.
         content_length: Declared ``Content-Length``, when present and valid.
         bytes_received: Body bytes read before the failure.
@@ -888,7 +890,7 @@ class RejectedRequest:
     request_id: str
     method: str | None = None
     path: str | None = None
-    headers: dict[str, str] | None = None
+    headers: Mapping[str, str] | None = None
     content_length: int | None = None
     bytes_received: int = 0
 
@@ -906,19 +908,15 @@ class _ReadState:
         self.bytes_received = 0
 
 
-_MAX_REQUEST_ID_LENGTH = 128
+# A single token of URL-safe characters: no spaces, commas or semicolons that a
+# proxy could read as separate values.
+_REQUEST_ID_RE = re.compile(r"[A-Za-z0-9._~:/+=@-]{1,128}")
 
 
 def _request_id_from(headers: dict[str, str] | None) -> str:
     """Return the client's ``X-Request-Id`` if usable, else a generated id."""
     candidate = (headers or {}).get("x-request-id", "").strip()
-    if (
-        candidate
-        and "," not in candidate
-        and len(candidate) <= _MAX_REQUEST_ID_LENGTH
-        and candidate.isascii()
-        and candidate.isprintable()
-    ):
+    if _REQUEST_ID_RE.fullmatch(candidate):
         return candidate
     return uuid.uuid4().hex
 
@@ -1052,12 +1050,10 @@ async def _read_request(
     body = b""
     cl = headers.get("content-length")
     if cl is not None:
-        try:
-            length = int(cl)
-        except ValueError:
-            raise _BadRequest(f"Invalid Content-Length: {cl!r}") from None
-        if length < 0:
+        # 1*DIGIT only: int() would also take "1_0", "+5" and non-ASCII digits.
+        if not (cl.isascii() and cl.isdigit()):
             raise _BadRequest(f"Invalid Content-Length: {cl!r}")
+        length = int(cl)
         if state is not None:
             state.content_length = length
         if length > max_body_size:
@@ -1070,6 +1066,9 @@ async def _read_request(
         body = await _read_chunked_body(reader, timeout, max_body_size, state)
 
     return method.upper(), path, query_string, headers, body, version.upper()
+
+
+_CHUNK_SIZE_RE = re.compile(r"[0-9A-Fa-f]+")  # 1*HEXDIG, no sign or 0x prefix
 
 
 async def _read_exact_body(
@@ -1112,12 +1111,9 @@ async def _read_chunked_body(
         size_str = size_line.decode("latin-1").split(";")[0].strip()
         if not size_str:
             break
-        try:
-            chunk_size = int(size_str, 16)
-        except ValueError:
-            raise _BadRequest(f"Invalid chunk size: {size_str!r}") from None
-        if chunk_size < 0:
+        if not _CHUNK_SIZE_RE.fullmatch(size_str):
             raise _BadRequest(f"Invalid chunk size: {size_str!r}")
+        chunk_size = int(size_str, 16)
         if chunk_size == 0:
             await asyncio.wait_for(reader.readline(), timeout=timeout)
             break
@@ -1918,7 +1914,11 @@ class App:
                 request_id=request_id,
                 method=state.method,
                 path=state.path,
-                headers=None if state.headers is None else dict(state.headers),
+                headers=(
+                    None
+                    if state.headers is None
+                    else MappingProxyType(dict(state.headers))
+                ),
                 content_length=state.content_length,
                 bytes_received=bytes_received,
             ),

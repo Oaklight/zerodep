@@ -1081,6 +1081,11 @@ def _record_modules(
         # Modules written by this run are recorded below, not adopted.
         for name in writes:
             lock["modules"].pop(name, None)
+    # The stamp records the CLI that last wrote the lock; without refreshing
+    # it, a lock created once by an old release keeps claiming that release
+    # forever, even after every module has been updated by a newer one.
+    lock["generated_by"] = f"zerodep {__version__}"
+    lock["source"] = {"repo": f"{REPO_OWNER}/{REPO_NAME}", "ref": ref}
     modules_data = manifest["modules"]
     for name, files in writes.items():
         entry = lock["modules"].get(name, {})

@@ -1315,3 +1315,34 @@ def test_release_check_reports_new_checks():
         "makefile-wiring",
     ):
         assert row in r.stdout
+
+
+def test_record_modules_refreshes_the_lock_stamp(tmp_path: Path):
+    """The lock records the CLI that last wrote it, not the one that created it."""
+    import zerodep as cli
+
+    target = tmp_path / "_vendor"
+    target.mkdir()
+    lock = {
+        "lock_version": 1,
+        "generated_by": "zerodep 1999.1.1",
+        "source": {"repo": "old/repo", "ref": "master"},
+        "modules": {},
+    }
+    manifest = {"modules": {"yaml": {"version": "1.0.0", "content_hash": "abc"}}}
+
+    cli._record_modules(
+        lock,
+        manifest,
+        {"yaml": {"yaml.py": "d" * 64}},
+        requested={"yaml"},
+        ref="v2026.10.25",
+        target=target,
+    )
+
+    assert lock["generated_by"] == f"zerodep {cli.__version__}"
+    assert lock["source"] == {
+        "repo": cli.REPO_OWNER + "/" + cli.REPO_NAME,
+        "ref": "v2026.10.25",
+    }
+    assert lock["modules"]["yaml"]["version"] == "1.0.0"

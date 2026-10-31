@@ -393,9 +393,15 @@ class TestEnumValues:
     )
     def test_enum_values_match(self, zd_enum, ref_literal):
         zd_values = {e.value for e in zd_enum}
-        # ``unknown`` is a zerodep-only sentinel for a stop reason a later ACP
-        # revision may introduce; it is never sent on the wire.
-        zd_values.discard("unknown")
+        # ACP v2 adds ``error`` (stop reason) and ``cancelled`` (tool status);
+        # ``unknown`` is a zerodep-only sentinel for a reason a later revision
+        # may introduce.  The pinned reference SDK models v1, so these cannot
+        # appear there.
+        if zd_enum is StopReason:
+            zd_values.discard("unknown")
+            zd_values.discard("error")
+        if zd_enum is ToolCallStatus:
+            zd_values.discard("cancelled")
         ref_values = set(ref_literal.__args__)
         assert zd_values == ref_values
 

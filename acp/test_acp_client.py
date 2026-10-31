@@ -15,20 +15,28 @@ from acp import (  # noqa: E402
     ACP_PROTOCOL_VERSION,
     ACP_SPEC_REVISION,
     SUPPORTED_PROTOCOL_VERSIONS,
+    UNSUPPORTED_PROTOCOL_VERSION,
     ACPAgent,
     ACPClient,
+    AuthMethod,
     ClientCapabilities,
     CompactionSummaryChunkUpdate,
     CompactionUpdate,
     InitializeResult,
+    JSONRPCError,
+    JSONRPCException,
     NewSessionResult,
     NoticeUpdate,
+    PlanItemsUpdate,
     PromptResult,
     SessionClientCapabilities,
+    StateUpdate,
     StopReason,
+    TerminalOutputChunkUpdate,
     TextContent,
     UnsupportedProtocolVersion,
     UsageUpdate,
+    UserMessageUpdate,
     negotiate_protocol_version,
     supports_update,
     to_dict,
@@ -88,25 +96,27 @@ class TestProtocolVersionCap:
     """The supported ACP version is explicit and testable."""
 
     def test_constants_are_explicit(self):
-        assert ACP_PROTOCOL_VERSION == 1
-        assert SUPPORTED_PROTOCOL_VERSIONS == (1,)
+        assert ACP_PROTOCOL_VERSION == 2
+        assert SUPPORTED_PROTOCOL_VERSIONS == (2, 1)
         assert ACP_PROTOCOL_VERSION in SUPPORTED_PROTOCOL_VERSIONS
         assert ACP_SPEC_REVISION
 
     def test_negotiate_supported(self):
         assert negotiate_protocol_version(1) == 1
+        assert negotiate_protocol_version(2) == 2
 
     def test_negotiate_unknown_clamps_to_cap(self):
-        assert negotiate_protocol_version(2) == 1
-        assert negotiate_protocol_version(0) == 1
+        assert negotiate_protocol_version(3) == 2
+        with pytest.raises(UnsupportedProtocolVersion):
+            negotiate_protocol_version(0)
 
-    def test_negotiate_normalizes_non_int_values(self):
+    def test_negotiate_normalizes_int_like_values(self):
         assert negotiate_protocol_version(1.0) == 1
-        assert negotiate_protocol_version(1.5) == 1
         assert negotiate_protocol_version("1") == 1
-        assert negotiate_protocol_version("latest") == 1
-        assert negotiate_protocol_version(None) == 1
         assert isinstance(negotiate_protocol_version(1.0), int)
+        for value in (1.5, "latest", None):
+            with pytest.raises(UnsupportedProtocolVersion):
+                negotiate_protocol_version(value)
 
 
 def test_new_update_types_serialize():
@@ -179,7 +189,7 @@ async def test_initialize_parses_capabilities_and_auth():
 
 @pytest.mark.asyncio
 async def test_initialize_rejects_unsupported_version():
-    client = _client_with_response({"protocolVersion": 2})
+    client = _client_with_response({"protocolVersion": 3})
     with pytest.raises(UnsupportedProtocolVersion):
         await client.initialize()
 
@@ -367,7 +377,9 @@ class _CapturingAgent(ACPAgent):
 
     async def on_initialize(self, params):
         self.init_params = params
-        return InitializeResult(protocol_version=ACP_PROTOCOL_VERSION)
+        return InitializeResult(
+            protocol_version=negotiate_protocol_version(params.protocol_version)
+        )
 
     async def on_new_session(self, params):
         return NewSessionResult(session_id="s")
@@ -475,7 +487,20 @@ class _FloatVersionAgent(_MinimalAgent):
 async def test_agent_default_initialize_negotiates_version():
     agent = _MinimalAgent()
     result = await agent._handle_method("initialize", {"protocolVersion": 2})
-    assert result.protocol_version == ACP_PROTOCOL_VERSION
+    assert result["protocolVersion"] == ACP_PROTOCOL_VERSION
+    assert agent.negotiated_version == ACP_PROTOCOL_VERSION
+    assert "info" in result
+    assert "capabilities" in result
+
+
+@pytest.mark.asyncio
+async def test_agent_initialize_downgrades_to_v1():
+    agent = _MinimalAgent()
+    result = await agent._handle_method("initialize", {"protocolVersion": 1})
+    assert result["protocolVersion"] == 1
+    assert agent.negotiated_version == 1
+    assert "info" not in result
+    assert "capabilities" not in result
 
 
 @pytest.mark.asyncio
@@ -504,8 +529,196 @@ async def test_echo_agent_round_trip():
         session = await client.new_session("/tmp")
         updates = [u async for u in client.prompt(session.session_id, "hello")]
         assert updates
-        assert updates[0]["update"]["sessionUpdate"] == "agent_message_chunk"
+        kinds = [u["update"]["sessionUpdate"] for u in updates]
+        assert kinds[0] == "state_update"
+        assert "user_message" in kinds
+        assert "agent_message_chunk" in kinds
         assert client.last_prompt_result is not None
         assert client.last_prompt_result.stop_reason == StopReason.END_TURN
+        assert client.last_prompt_result.message_id is not None
     finally:
         await client.stop()
+
+
+# ── ACP v2 ─────────────────────────────────────────────────────────────────
+
+
+def test_v2_update_types_serialize():
+    state = to_dict(StateUpdate(state="idle", stop_reason="end_turn"))
+    assert state == {
+        "state": "idle",
+        "stopReason": "end_turn",
+        "sessionUpdate": "state_update",
+    }
+    message = to_dict(
+        UserMessageUpdate(message_id="m1", content=[TextContent(text="hi")])
+    )
+    assert message["messageId"] == "m1"
+    assert message["sessionUpdate"] == "user_message"
+    plan = to_dict(PlanItemsUpdate(plan_id="p1", entries=[]))
+    assert plan == {
+        "sessionUpdate": "plan_update",
+        "plan": {"type": "items", "planId": "p1", "entries": []},
+    }
+    terminal = to_dict(TerminalOutputChunkUpdate(terminal_id="t1", data="aGk="))
+    assert terminal["terminalId"] == "t1"
+    assert terminal["data"] == "aGk="
+
+
+@pytest.mark.asyncio
+async def test_initialize_uses_v2_field_names():
+    seen: dict[str, object] = {}
+
+    client = ACPClient(["unused"])
+
+    async def fake_call(method, params=None):
+        seen["method"] = method
+        seen["params"] = params
+        return {
+            "protocolVersion": 2,
+            "info": {"name": "demo-agent", "version": "1.0"},
+            "capabilities": {"session": {"delete": {}}},
+        }
+
+    client._call = fake_call  # type: ignore[method-assign]
+    result = await client.initialize()
+    params = seen["params"]
+    assert isinstance(params, dict)
+    assert params["protocolVersion"] == 2
+    assert params["info"]["name"] == "zerodep-acp"
+    assert "capabilities" in params
+    assert "clientInfo" not in params
+    assert result.protocol_version == 2
+    assert result.agent_info is not None
+    assert result.agent_info.name == "demo-agent"
+    caps = result.agent_capabilities
+    assert caps is not None
+    assert caps.session_capabilities is not None
+    assert caps.session_capabilities.delete == {}
+    assert client.negotiated_version == 2
+
+
+@pytest.mark.asyncio
+async def test_v2_agent_rejects_removed_methods():
+    agent = _MinimalAgent()
+    await agent._handle_method("initialize", {"protocolVersion": 2})
+    with pytest.raises(JSONRPCException):
+        await agent._handle_method("session/load", {"sessionId": "s"})
+    with pytest.raises(JSONRPCException):
+        await agent._handle_method("session/set_mode", {"sessionId": "s"})
+    assert await agent._handle_method("auth/login", {"methodId": "x"}) is None
+    assert await agent._handle_method("auth/logout", {}) is None
+
+
+@pytest.mark.asyncio
+async def test_v2_load_session_uses_resume():
+    client = ACPClient(["unused"])
+    client._negotiated_version = 2
+    client._transport = _FakeTransport()  # type: ignore[assignment]
+    client._pending = _ResolvingPending({})  # type: ignore[assignment]
+    await client.load_session("s1", "/tmp")
+    method, params = client._transport.sent[0]  # type: ignore[union-attr]
+    assert method == "session/resume"
+    assert params["replayFrom"] == {"type": "start"}
+
+
+@pytest.mark.asyncio
+async def test_v2_set_config_option_tags_value():
+    client = ACPClient(["unused"])
+    client._negotiated_version = 2
+    client._transport = _FakeTransport()  # type: ignore[assignment]
+    client._pending = _ResolvingPending({"configOptions": []})  # type: ignore[assignment]
+    await client.set_config_option("s1", "mode", "plan")
+    method, params = client._transport.sent[0]  # type: ignore[union-attr]
+    assert method == "session/set_config_option"
+    assert params["configId"] == "mode"
+    assert params["type"] == "id"
+    assert params["value"] == "plan"
+
+
+@pytest.mark.asyncio
+async def test_v2_new_session_parses_available_commands():
+    client = _client_with_response(
+        {
+            "sessionId": "s1",
+            "availableCommands": [
+                {"name": "compact", "description": "Compact the conversation"}
+            ],
+        }
+    )
+    result = await client.new_session("/tmp")
+    assert result.available_commands is not None
+    assert result.available_commands[0].name == "compact"
+
+
+@pytest.mark.asyncio
+async def test_initialize_falls_back_to_v1_on_32022():
+    calls: list[dict[str, object]] = []
+
+    client = ACPClient(["unused"])
+
+    async def fake_call(method, params=None):
+        calls.append(params)
+        if len(calls) == 1:
+            raise JSONRPCException(
+                JSONRPCError(
+                    code=UNSUPPORTED_PROTOCOL_VERSION,
+                    message="unsupported",
+                    data={"requested": 2, "supported": [1]},
+                )
+            )
+        return {"protocolVersion": 1}
+
+    client._call = fake_call  # type: ignore[method-assign]
+    result = await client.initialize()
+    assert result.protocol_version == 1
+    assert calls[0]["protocolVersion"] == 2
+    assert "info" in calls[0]
+    assert calls[1]["protocolVersion"] == 1
+    assert "info" not in calls[1]
+
+
+@pytest.mark.asyncio
+async def test_v2_auth_method_round_trip():
+    """A v2 agent's methodId survives serialization and client parsing."""
+
+    class _AuthAgent(_MinimalAgent):
+        async def on_initialize(self, params):
+            return InitializeResult(
+                protocol_version=2,
+                auth_methods=[AuthMethod(id="m1", name="Login")],
+            )
+
+    agent = _AuthAgent()
+    wire = await agent._handle_method(
+        "initialize", {"protocolVersion": 2, "info": {"name": "client"}}
+    )
+    assert wire["authMethods"] == [{"methodId": "m1", "name": "Login", "type": "agent"}]
+    assert "id" not in wire["authMethods"][0]
+
+    client = _client_with_response(wire)
+    parsed = await client.initialize()
+    assert parsed.auth_methods is not None
+    assert parsed.auth_methods[0].id == "m1"
+    assert parsed.auth_methods[0].type == "agent"
+
+
+@pytest.mark.asyncio
+async def test_initialize_retries_on_invalid_params():
+    calls: list[dict[str, object]] = []
+
+    client = ACPClient(["unused"])
+
+    async def fake_call(method, params=None):
+        calls.append(params)
+        if len(calls) == 1:
+            raise JSONRPCException(
+                JSONRPCError(code=-32602, message="unknown protocolVersion")
+            )
+        return {"protocolVersion": 1}
+
+    client._call = fake_call  # type: ignore[method-assign]
+    result = await client.initialize()
+    assert result.protocol_version == 1
+    assert len(calls) == 2
+    assert calls[1]["protocolVersion"] == 1

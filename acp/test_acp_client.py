@@ -305,6 +305,22 @@ async def test_updates_are_routed_by_session_id():
 
 
 @pytest.mark.asyncio
+async def test_prompt_result_is_per_session():
+    client = ACPClient(["unused"])
+    client._transport = _FakeTransport()  # type: ignore[assignment]
+    client._pending = _ResolvingPending(  # type: ignore[assignment]
+        {"stopReason": "max_tokens"}
+    )
+
+    await client.prompt_simple("s1", "hi")
+
+    result = client.prompt_result("s1")
+    assert result is not None
+    assert result.stop_reason == StopReason.MAX_TOKENS
+    assert client.prompt_result("s2") is None
+
+
+@pytest.mark.asyncio
 async def test_stale_drain_is_per_session():
     client = ACPClient(["unused"])
     queue = client._queue_for("s1")

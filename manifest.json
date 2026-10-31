@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-10-31T21:39:52.506326+00:00",
+  "generated": "2026-10-31T21:46:02.313066+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -29,8 +29,8 @@
       ],
       "tier": "subsystem",
       "category": "protocol",
-      "last_updated": "2026-10-31T09:50:11-05:00",
-      "content_hash": "8d231986a4971e683b568d558181ffb875b7d02aabe4a87e0073b63f86153e9e"
+      "last_updated": "2026-10-31T16:40:07-05:00",
+      "content_hash": "da8beaa9c658986bd44bc82c4047bdb7b5b4be83d76cc77eeb09804a9f7bc794"
     },
     "aes": {
       "description": "AES encryption: ECB, CBC, CTR, and GCM modes for 128/192/256-bit keys",

@@ -281,6 +281,42 @@ async def test_prompt_uses_real_stop_reason():
 
 
 @pytest.mark.asyncio
+async def test_updates_are_routed_by_session_id():
+    client = ACPClient(["unused"])
+    client._transport = _FakeTransport()  # type: ignore[assignment]
+    client._pending = _ResolvingPending({"stopReason": "end_turn"})  # type: ignore[assignment]
+
+    await client._handle_notification(
+        {
+            "method": "session/update",
+            "params": {"sessionId": "s1", "update": {"n": 1}},
+        }
+    )
+    await client._handle_notification(
+        {
+            "method": "session/update",
+            "params": {"sessionId": "s2", "update": {"n": 2}},
+        }
+    )
+
+    assert [u["update"]["n"] for u in client._drain_remaining_updates("s1")] == [1]
+    assert [u["update"]["n"] for u in client._drain_remaining_updates("s2")] == [2]
+    assert client._drain_remaining_updates("s1") == []
+
+
+@pytest.mark.asyncio
+async def test_stale_drain_is_per_session():
+    client = ACPClient(["unused"])
+    queue = client._queue_for("s1")
+    queue.put_nowait({"sessionId": "s1", "update": {"n": 1}})
+
+    client._drain_stale_updates("s2")
+
+    assert not queue.empty()
+    assert queue.get_nowait()["update"]["n"] == 1
+
+
+@pytest.mark.asyncio
 async def test_prompt_simple_uses_real_stop_reason():
     client = ACPClient(["unused"])
     client._transport = _FakeTransport()  # type: ignore[assignment]

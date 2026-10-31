@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.3.2"
+# version = "0.3.5"
 # deps = ["jsonrpc"]
 # tier = "subsystem"
 # category = "protocol"
@@ -89,6 +89,62 @@ from typing import (
     Union,
 )
 
+# ── Protocol version cap ───────────────────────────────────────────────────
+
+#: Highest ACP protocol version implemented by this module.
+#:
+#: ACP wire compatibility is negotiated during ``initialize``. Bump this
+#: constant only when a new major protocol version is implemented; additive
+#: features within a version do not change it. See
+#: https://agentclientprotocol.com/protocol/ for the current specification.
+ACP_PROTOCOL_VERSION = 1
+
+#: Protocol versions this module can negotiate, newest first.
+SUPPORTED_PROTOCOL_VERSIONS: tuple[int, ...] = (1,)
+
+#: Date of the last audit against the published ACP v1 specification.
+#: Update this together with the feature lists below.
+ACP_SPEC_REVISION = "2026-10-31"
+
+#: Stable ACP methods implemented by this module (client or agent side).
+ACP_IMPLEMENTED_METHODS = frozenset(
+    {
+        "initialize",
+        "session/new",
+        "session/load",
+        "session/prompt",
+        "session/cancel",
+        "session/set_mode",
+        "session/set_config_option",
+        "session/list",
+        "session/resume",
+        "session/close",
+        "session/delete",
+        "authenticate",
+        "logout",
+    }
+)
+
+#: ``session/update`` variants modeled by this module.
+ACP_IMPLEMENTED_UPDATES = frozenset(
+    {
+        "agent_message_chunk",
+        "user_message_chunk",
+        "agent_thought_chunk",
+        "tool_call",
+        "tool_call_update",
+        "plan",
+        "available_commands_update",
+        "current_mode_update",
+        "config_option_update",
+        "session_info_update",
+        "usage_update",
+        "notice",
+        "compaction_update",
+        "compaction_summary_chunk",
+    }
+)
+
 
 def _ensure_sibling_path(name: str) -> str:
     """Add sibling module paths to ``sys.path`` for flat and nested layouts."""
@@ -99,16 +155,62 @@ def _ensure_sibling_path(name: str) -> str:
     return base
 
 
-_ensure_sibling_path("jsonrpc")
-from jsonrpc import (  # noqa: E402
-    INTERNAL_ERROR,
-    METHOD_NOT_FOUND,
-    JSONRPCError,
-    JSONRPCException,
-    JSONRPCTransport,
-)
+try:  # flat package layout: pkg.acp + pkg.jsonrpc
+    from .jsonrpc import (  # ty: ignore[unresolved-import]  # noqa: E402
+        INTERNAL_ERROR,
+        INVALID_PARAMS,
+        METHOD_NOT_FOUND,
+        JSONRPCError,
+        JSONRPCException,
+        JSONRPCTransport,
+    )
+except ImportError:
+    try:  # nested package layout: pkg.acp.acp + pkg.jsonrpc
+        from ..jsonrpc import (  # type: ignore[import-not-found]  # ty: ignore[unresolved-import]  # noqa: E402
+            INTERNAL_ERROR,
+            INVALID_PARAMS,
+            METHOD_NOT_FOUND,
+            JSONRPCError,
+            JSONRPCException,
+            JSONRPCTransport,
+        )
+    except ImportError:  # flat/nested sibling files on sys.path
+        _ensure_sibling_path("jsonrpc")
+        from jsonrpc import (  # noqa: E402
+            INTERNAL_ERROR,
+            INVALID_PARAMS,
+            METHOD_NOT_FOUND,
+            JSONRPCError,
+            JSONRPCException,
+            JSONRPCTransport,
+        )
+
+
+class UnsupportedProtocolVersion(JSONRPCException):
+    """Raised when a peer negotiates an ACP version this module does not support."""
+
+    def __init__(self, version: int) -> None:
+        super().__init__(
+            JSONRPCError(
+                code=INVALID_PARAMS,
+                message=(
+                    f"Unsupported ACP protocol version {version}; "
+                    f"supported versions: {SUPPORTED_PROTOCOL_VERSIONS}"
+                ),
+            )
+        )
+        self.version = version
+
 
 __all__ = [
+    # Protocol version
+    "ACP_PROTOCOL_VERSION",
+    "SUPPORTED_PROTOCOL_VERSIONS",
+    "ACP_SPEC_REVISION",
+    "ACP_IMPLEMENTED_METHODS",
+    "ACP_IMPLEMENTED_UPDATES",
+    "UnsupportedProtocolVersion",
+    "negotiate_protocol_version",
     # JSON-RPC (re-exported from jsonrpc module)
     "JSONRPCTransport",
     "JSONRPCException",
@@ -130,6 +232,9 @@ __all__ = [
     "ImplementationInfo",
     "FsCapabilities",
     "ClientCapabilities",
+    "SessionClientCapabilities",
+    "ElicitationCapabilities",
+    "supports_update",
     "PromptCapabilities",
     "McpCapabilities",
     "SessionCapabilities",
@@ -144,6 +249,11 @@ __all__ = [
     "NewSessionParams",
     "NewSessionResult",
     "LoadSessionParams",
+    "ResumeSessionParams",
+    "CloseSessionParams",
+    "DeleteSessionParams",
+    "AuthenticateParams",
+    "LogoutParams",
     "PromptParams",
     "PromptResult",
     "CancelParams",
@@ -171,6 +281,7 @@ __all__ = [
     # Session updates
     "AgentMessageChunkUpdate",
     "UserMessageChunkUpdate",
+    "AgentThoughtChunkUpdate",
     "ThoughtMessageChunkUpdate",
     "ToolCallUpdate",
     "ToolCallStatusUpdate",
@@ -179,6 +290,10 @@ __all__ = [
     "CurrentModeUpdate",
     "ConfigOptionUpdate",
     "SessionInfoUpdate",
+    "UsageUpdate",
+    "NoticeUpdate",
+    "CompactionUpdate",
+    "CompactionSummaryChunkUpdate",
     # File system
     "ReadTextFileParams",
     "ReadTextFileResult",
@@ -288,6 +403,9 @@ class StopReason(str, Enum):
     MAX_TURN_REQUESTS = "max_turn_requests"
     REFUSAL = "refusal"
     CANCELLED = "cancelled"
+    # Local sentinel for a reason introduced by a later ACP revision.  Never
+    # sent on the wire; ``PromptResult.raw_stop_reason`` keeps the original.
+    UNKNOWN = "unknown"
 
 
 class ToolKind(str, Enum):
@@ -501,16 +619,78 @@ class FsCapabilities:
 
 
 @dataclass
+class SessionClientCapabilities:
+    """Client support for session-level notifications.
+
+    Attributes:
+        notices: If present, ``notice`` updates are supported.
+        compaction: If present, compaction updates are supported.
+        config_options: If present, boolean config options are supported.
+    """
+
+    notices: dict[str, Any] | None = None
+    compaction: dict[str, Any] | None = None
+    config_options: dict[str, Any] | None = None
+
+
+@dataclass
+class ElicitationCapabilities:
+    """Client elicitation capabilities.
+
+    Attributes:
+        form: If present, form elicitation is supported.
+        url: If present, URL elicitation is supported.
+    """
+
+    form: dict[str, Any] | None = None
+    url: dict[str, Any] | None = None
+
+
+@dataclass
 class ClientCapabilities:
     """Capabilities supported by the client.
 
     Attributes:
         fs: File-system method availability.
         terminal: Whether all ``terminal/*`` methods are available.
+        session: Session-level notification capabilities.
+        elicitation: Structured user-input capabilities.
+        auth: Authentication-related client capabilities.
     """
 
     fs: FsCapabilities | None = None
     terminal: bool = False
+    session: SessionClientCapabilities | None = None
+    elicitation: ElicitationCapabilities | None = None
+    auth: dict[str, Any] | None = None
+
+
+_CAPABILITY_GATED_UPDATES: dict[str, str] = {
+    "notice": "notices",
+    "compaction_update": "compaction",
+    "compaction_summary_chunk": "compaction",
+}
+
+
+def supports_update(caps: ClientCapabilities | None, session_update: str) -> bool:
+    """Return whether a client advertising *caps* accepts *session_update*.
+
+    Some session updates are gated on a client capability and must not be
+    sent otherwise.  Ungated updates always return ``True``.
+
+    Args:
+        caps: Client capabilities from ``initialize`` (or ``None``).
+        session_update: Wire value of the ``sessionUpdate`` discriminator.
+
+    Returns:
+        ``True`` if the update may be sent to this client.
+    """
+    gate = _CAPABILITY_GATED_UPDATES.get(session_update)
+    if gate is None:
+        return True
+    if caps is None or caps.session is None:
+        return False
+    return getattr(caps.session, gate) is not None
 
 
 @dataclass
@@ -554,9 +734,18 @@ class SessionCapabilities:
 
     Attributes:
         list: If present, ``session/list`` is supported.
+        resume: If present, ``session/resume`` is supported.
+        close: If present, ``session/close`` is supported.
+        delete: If present, ``session/delete`` is supported.
+        additional_directories: If present, additional workspace roots are
+            supported on session lifecycle requests.
     """
 
     list: SessionListCapability | None = None
+    resume: dict[str, Any] | None = None
+    close: dict[str, Any] | None = None
+    delete: dict[str, Any] | None = None
+    additional_directories: dict[str, Any] | None = None
 
 
 @dataclass
@@ -568,12 +757,14 @@ class AgentCapabilities:
         prompt_capabilities: Supported content types in prompts.
         mcp_capabilities: Supported MCP transports.
         session_capabilities: Session-level capabilities.
+        auth: Authentication capabilities (for example ``logout``).
     """
 
     load_session: bool = False
     prompt_capabilities: PromptCapabilities | None = None
     mcp_capabilities: McpCapabilities | None = None
     session_capabilities: SessionCapabilities | None = None
+    auth: dict[str, Any] | None = None
 
 
 @dataclass
@@ -584,11 +775,13 @@ class AuthMethod:
         id: Unique identifier for this auth method.
         name: Human-readable name.
         description: Optional description.
+        type: Optional method kind (for example ``"agent"`` or ``"terminal"``).
     """
 
     id: str
     name: str
     description: str | None = None
+    type: str | None = None
 
 
 @dataclass
@@ -601,7 +794,7 @@ class InitializeParams:
         client_info: Information about the client implementation.
     """
 
-    protocol_version: int = 1
+    protocol_version: int = ACP_PROTOCOL_VERSION
     client_capabilities: ClientCapabilities | None = None
     client_info: ImplementationInfo | None = None
 
@@ -696,10 +889,12 @@ class NewSessionParams:
     Attributes:
         cwd: Absolute path to the working directory.
         mcp_servers: MCP servers to connect to.
+        additional_directories: Additional workspace roots.
     """
 
     cwd: str
     mcp_servers: list[dict[str, Any]] | None = None
+    additional_directories: list[str] | None = None
 
 
 @dataclass
@@ -791,11 +986,68 @@ class LoadSessionParams:
         session_id: Session to resume.
         cwd: Working directory.
         mcp_servers: MCP servers to connect to.
+        additional_directories: Additional workspace roots.
     """
 
     session_id: str
     cwd: str
     mcp_servers: list[dict[str, Any]] | None = None
+    additional_directories: list[str] | None = None
+
+
+@dataclass
+class ResumeSessionParams:
+    """Parameters for ``session/resume``.
+
+    Attributes:
+        session_id: Session to resume.
+        cwd: Working directory.
+        mcp_servers: MCP servers to connect to.
+        additional_directories: Additional workspace roots.
+    """
+
+    session_id: str
+    cwd: str
+    mcp_servers: list[dict[str, Any]] | None = None
+    additional_directories: list[str] | None = None
+
+
+@dataclass
+class CloseSessionParams:
+    """Parameters for ``session/close``.
+
+    Attributes:
+        session_id: Session to close.
+    """
+
+    session_id: str
+
+
+@dataclass
+class DeleteSessionParams:
+    """Parameters for ``session/delete``.
+
+    Attributes:
+        session_id: Session to delete.
+    """
+
+    session_id: str
+
+
+@dataclass
+class AuthenticateParams:
+    """Parameters for ``authenticate``.
+
+    Attributes:
+        method_id: Authentication method id advertised by the agent.
+    """
+
+    method_id: str
+
+
+@dataclass
+class LogoutParams:
+    """Parameters for ``logout`` (currently empty)."""
 
 
 # ── Protocol Types -- Prompt Turn ──────────────────────────────────────────
@@ -820,9 +1072,12 @@ class PromptResult:
 
     Attributes:
         stop_reason: Why the agent stopped.
+        raw_stop_reason: Original wire value when ``stop_reason`` is
+            :attr:`StopReason.UNKNOWN`.
     """
 
     stop_reason: StopReason
+    raw_stop_reason: str | None = None
 
 
 @dataclass
@@ -1278,16 +1533,20 @@ class UserMessageChunkUpdate:
 
 
 @dataclass
-class ThoughtMessageChunkUpdate:
+class AgentThoughtChunkUpdate:
     """Agent internal reasoning chunk.
 
     Attributes:
         content: The content block.
-        session_update: Discriminator.
+        session_update: Discriminator (``agent_thought_chunk``).
     """
 
     content: ContentBlock
-    session_update: str = "thought_message_chunk"
+    session_update: str = "agent_thought_chunk"
+
+
+# Backward-compatible alias for the pre-0.4 class name.
+ThoughtMessageChunkUpdate = AgentThoughtChunkUpdate
 
 
 @dataclass
@@ -1405,10 +1664,78 @@ class SessionInfoUpdate:
     session_update: str = "session_info_update"
 
 
+@dataclass
+class UsageUpdate:
+    """Session context usage and cumulative cost.
+
+    Attributes:
+        used: Tokens currently used in the session context.
+        size: Context window size in tokens.
+        cost: Optional ``{amount, currency}`` cost object.
+        session_update: Discriminator.
+    """
+
+    used: int
+    size: int
+    cost: dict[str, Any] | None = None
+    session_update: str = "usage_update"
+
+
+@dataclass
+class NoticeUpdate:
+    """Live user-facing notice.
+
+    Attributes:
+        severity: ``info``, ``warning``, ``error``, or an open value.
+        title: Short plain-text title.
+        description: Optional supporting detail.
+        session_update: Discriminator.
+    """
+
+    severity: str
+    title: str
+    description: str | None = None
+    session_update: str = "notice"
+
+
+@dataclass
+class CompactionUpdate:
+    """Context compaction status update.
+
+    Attributes:
+        compaction_id: Opaque compaction identifier.
+        status: ``in_progress``, ``completed``, ``failed``, or ``cancelled``.
+        summary: Optional retained summary content.
+        error: Optional human-readable error.
+        session_update: Discriminator.
+    """
+
+    compaction_id: str
+    status: str
+    summary: list[ContentBlock] | None = None
+    error: str | None = None
+    session_update: str = "compaction_update"
+
+
+@dataclass
+class CompactionSummaryChunkUpdate:
+    """Incremental chunk of a compaction summary.
+
+    Attributes:
+        compaction_id: Opaque compaction identifier.
+        content: Appended content block.
+        session_update: Discriminator.
+    """
+
+    compaction_id: str
+    content: ContentBlock
+    session_update: str = "compaction_summary_chunk"
+
+
 SessionUpdate = Union[
     AgentMessageChunkUpdate,
     UserMessageChunkUpdate,
-    ThoughtMessageChunkUpdate,
+    AgentThoughtChunkUpdate,
     ToolCallUpdate,
     ToolCallStatusUpdate,
     PlanUpdate,
@@ -1416,7 +1743,238 @@ SessionUpdate = Union[
     CurrentModeUpdate,
     ConfigOptionUpdate,
     SessionInfoUpdate,
+    UsageUpdate,
+    NoticeUpdate,
+    CompactionUpdate,
+    CompactionSummaryChunkUpdate,
 ]
+
+
+# ── Parsing helpers ────────────────────────────────────────────────────────
+
+
+def negotiate_protocol_version(requested: int) -> int:
+    """Return the protocol version to use for an ``initialize`` response.
+
+    ACP requires an agent to echo a supported requested version, or to
+    respond with the latest version it supports.  Non-integer values
+    (``1.5``, ``"latest"``, ``None``) are treated as unsupported and
+    negotiate down to the highest supported version.
+
+    Args:
+        requested: Protocol version requested by the client.
+
+    Returns:
+        The negotiated protocol version.
+    """
+    fallback = max(SUPPORTED_PROTOCOL_VERSIONS)
+    if isinstance(requested, bool) or not isinstance(requested, (int, float, str)):
+        return fallback
+    try:
+        version = int(requested)
+    except (TypeError, ValueError):
+        return fallback
+    if isinstance(requested, float) and requested != version:
+        return fallback
+    if version in SUPPORTED_PROTOCOL_VERSIONS:
+        return version
+    return fallback
+
+
+def _require_supported_version(value: Any) -> int:
+    """Return *value* as a supported int version, or raise.
+
+    Raises:
+        UnsupportedProtocolVersion: If *value* is not an integer version in
+            :data:`SUPPORTED_PROTOCOL_VERSIONS`.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        raise UnsupportedProtocolVersion(value)
+    try:
+        version = int(value)
+    except (TypeError, ValueError):
+        raise UnsupportedProtocolVersion(value) from None
+    if version != value or version not in SUPPORTED_PROTOCOL_VERSIONS:
+        raise UnsupportedProtocolVersion(value)
+    return version
+
+
+def _parse_implementation_info(raw: Any) -> ImplementationInfo | None:
+    """Parse an implementation info object from wire format."""
+    if not isinstance(raw, dict) or not raw:
+        return None
+    return ImplementationInfo(
+        name=raw.get("name", ""),
+        version=raw.get("version", ""),
+        title=raw.get("title"),
+    )
+
+
+def _parse_agent_capabilities(raw: Any) -> AgentCapabilities | None:
+    """Parse ``agentCapabilities`` from an ``initialize`` response."""
+    if not isinstance(raw, dict) or not raw:
+        return None
+    r = from_raw(raw)
+    prompt_raw = r.get("prompt_capabilities") or {}
+    mcp_raw = r.get("mcp_capabilities") or {}
+    session_raw = r.get("session_capabilities") or {}
+
+    prompt_caps = None
+    if prompt_raw:
+        prompt_caps = PromptCapabilities(
+            image=bool(prompt_raw.get("image", False)),
+            audio=bool(prompt_raw.get("audio", False)),
+            embedded_context=bool(prompt_raw.get("embeddedContext", False)),
+        )
+
+    mcp_caps = None
+    if mcp_raw:
+        mcp_caps = McpCapabilities(
+            http=bool(mcp_raw.get("http", False)),
+            sse=bool(mcp_raw.get("sse", False)),
+        )
+
+    session_caps = None
+    if session_raw:
+        session_caps = SessionCapabilities(
+            list=SessionListCapability() if "list" in session_raw else None,
+            resume=session_raw.get("resume"),
+            close=session_raw.get("close"),
+            delete=session_raw.get("delete"),
+            additional_directories=session_raw.get("additionalDirectories"),
+        )
+
+    auth_raw = r.get("auth")
+    return AgentCapabilities(
+        load_session=bool(r.get("load_session", False)),
+        prompt_capabilities=prompt_caps,
+        mcp_capabilities=mcp_caps,
+        session_capabilities=session_caps,
+        auth=from_raw(auth_raw) if isinstance(auth_raw, dict) else None,
+    )
+
+
+def _parse_session_modes(raw: Any) -> SessionModeState | None:
+    """Parse ``modes`` from a ``session/new`` response."""
+    if not isinstance(raw, dict) or not raw:
+        return None
+    modes = raw.get("availableModes", raw.get("available_modes", []))
+    return SessionModeState(
+        current_mode_id=raw.get("currentModeId", raw.get("current_mode_id", "")),
+        available_modes=[
+            SessionMode(
+                id=m.get("id", ""),
+                name=m.get("name", ""),
+                description=m.get("description"),
+            )
+            for m in modes
+            if isinstance(m, dict)
+        ],
+    )
+
+
+def _parse_config_options(raw: Any) -> list[ConfigOption] | None:
+    """Parse ``configOptions`` from a session response."""
+    if not isinstance(raw, list):
+        return None
+    result: list[ConfigOption] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        result.append(
+            ConfigOption(
+                id=item.get("id", ""),
+                name=item.get("name", ""),
+                type=item.get("type", ""),
+                current_value=item.get("currentValue", item.get("current_value", "")),
+                options=[
+                    ConfigOptionValue(
+                        value=v.get("value", ""),
+                        name=v.get("name", ""),
+                        description=v.get("description"),
+                    )
+                    for v in item.get("options", [])
+                    if isinstance(v, dict)
+                ],
+                description=item.get("description"),
+                category=item.get("category"),
+            )
+        )
+    return result or None
+
+
+def _parse_client_capabilities(raw: Any) -> ClientCapabilities | None:
+    """Parse ``clientCapabilities`` from an ``initialize`` request."""
+    if not isinstance(raw, dict):
+        return None
+    cc = raw or {}
+    fs = None
+    if "fs" in cc:
+        f = cc["fs"] or {}
+        fs = FsCapabilities(
+            read_text_file=f.get("readTextFile", False),
+            write_text_file=f.get("writeTextFile", False),
+        )
+    session_caps = None
+    if "session" in cc:
+        s = cc["session"] or {}
+        session_caps = SessionClientCapabilities(
+            notices=s.get("notices"),
+            compaction=s.get("compaction"),
+            config_options=s.get("configOptions"),
+        )
+    elicitation = None
+    if "elicitation" in cc:
+        e = cc["elicitation"] or {}
+        elicitation = ElicitationCapabilities(
+            form=e.get("form"),
+            url=e.get("url"),
+        )
+    auth = cc.get("auth")
+    return ClientCapabilities(
+        fs=fs,
+        terminal=cc.get("terminal", False),
+        session=session_caps,
+        elicitation=elicitation,
+        auth=from_raw(auth) if isinstance(auth, dict) else None,
+    )
+
+
+def _parse_initialize_params(params: dict[str, Any]) -> InitializeParams:
+    """Parse an ``initialize`` request into :class:`InitializeParams`."""
+    rp = from_raw(params)
+    client_info = None
+    if "client_info" in rp:
+        ci = rp["client_info"]
+        client_info = ImplementationInfo(
+            name=ci.get("name", ""),
+            version=ci.get("version", ""),
+            title=ci.get("title"),
+        )
+    client_caps = None
+    if "client_capabilities" in rp:
+        client_caps = _parse_client_capabilities(rp["client_capabilities"])
+    return InitializeParams(
+        protocol_version=rp.get("protocol_version", ACP_PROTOCOL_VERSION),
+        client_capabilities=client_caps,
+        client_info=client_info,
+    )
+
+
+def _parse_prompt_result(raw: Any) -> PromptResult:
+    """Parse a ``session/prompt`` response into a :class:`PromptResult`."""
+    if not isinstance(raw, dict):
+        return PromptResult(stop_reason=StopReason.END_TURN)
+    value = raw.get("stopReason", raw.get("stop_reason", "end_turn"))
+    try:
+        return PromptResult(stop_reason=StopReason(value))
+    except ValueError:
+        # A future ACP revision may add stop reasons.  Surface them as UNKNOWN
+        # instead of claiming a normal end of turn, and keep the raw value.
+        return PromptResult(
+            stop_reason=StopReason.UNKNOWN,
+            raw_stop_reason=str(value),
+        )
 
 
 # ── ACP Client ─────────────────────────────────────────────────────────────
@@ -1454,6 +2012,7 @@ class ACPClient:
         self._update_queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue()
         self._reader_task: asyncio.Task[None] | None = None
         self._request_handler: Callable[[str, dict[str, Any]], Any] | None = None
+        self._last_prompt_result: PromptResult | None = None
 
     async def start(self) -> None:
         """Launch the agent subprocess and begin reading messages."""
@@ -1503,6 +2062,11 @@ class ACPClient:
             handler: Async callable ``(method, params) -> result``.
         """
         self._request_handler = handler
+
+    @property
+    def last_prompt_result(self) -> PromptResult | None:
+        """Result of the most recent ``session/prompt`` turn, if any."""
+        return self._last_prompt_result
 
     def _is_response(self, msg: dict[str, Any]) -> bool:
         """Check if *msg* is a JSON-RPC response (has ``id`` and result/error)."""
@@ -1606,52 +2170,72 @@ class ACPClient:
 
         Returns:
             The agent's initialization result.
+
+        Raises:
+            UnsupportedProtocolVersion: If the agent negotiated a protocol
+                version this client does not implement.  The subprocess is
+                left running; call :meth:`stop` before retrying.
         """
         if params is None:
             params = InitializeParams()
         raw = await self._call("initialize", to_dict(params))
         raw = raw or {}
         r = from_raw(raw)
-        agent_info = None
-        if "agent_info" in r:
-            ai = r["agent_info"]
-            agent_info = ImplementationInfo(
-                name=ai.get("name", ""),
-                version=ai.get("version", ""),
-                title=ai.get("title"),
+        version = _require_supported_version(
+            r.get("protocol_version", ACP_PROTOCOL_VERSION)
+        )
+        auth_methods = [
+            AuthMethod(
+                id=m.get("id", ""),
+                name=m.get("name", ""),
+                description=m.get("description"),
+                type=m.get("type"),
             )
+            for m in (r.get("auth_methods") or [])
+            if isinstance(m, dict)
+        ]
         return InitializeResult(
-            protocol_version=r.get("protocol_version", 1),
-            agent_info=agent_info,
+            protocol_version=version,
+            agent_capabilities=_parse_agent_capabilities(r.get("agent_capabilities")),
+            agent_info=_parse_implementation_info(r.get("agent_info")),
+            auth_methods=auth_methods or None,
         )
 
     async def new_session(
         self,
         cwd: str,
         mcp_servers: list[dict[str, Any]] | None = None,
+        additional_directories: list[str] | None = None,
     ) -> NewSessionResult:
         """Create a new conversation session.
 
         Args:
             cwd: Absolute path to the working directory.
             mcp_servers: Optional MCP server configurations.
+            additional_directories: Additional workspace roots.
 
         Returns:
-            The session creation result including the session id.
+            The session creation result including the session id, modes,
+            and configuration options.
         """
-        p: dict[str, Any] = {"cwd": cwd}
-        if mcp_servers:
-            p["mcpServers"] = mcp_servers
+        p: dict[str, Any] = {"cwd": cwd, "mcpServers": mcp_servers or []}
+        if additional_directories:
+            p["additionalDirectories"] = additional_directories
         raw = await self._call("session/new", p)
         raw = raw or {}
         r = from_raw(raw)
-        return NewSessionResult(session_id=r.get("session_id", ""))
+        return NewSessionResult(
+            session_id=r.get("session_id", ""),
+            modes=_parse_session_modes(r.get("modes")),
+            config_options=_parse_config_options(r.get("config_options")),
+        )
 
     async def load_session(
         self,
         session_id: str,
         cwd: str,
         mcp_servers: list[dict[str, Any]] | None = None,
+        additional_directories: list[str] | None = None,
     ) -> None:
         """Load (resume) an existing session.
 
@@ -1662,10 +2246,15 @@ class ACPClient:
             session_id: Session to resume.
             cwd: Working directory.
             mcp_servers: Optional MCP server configurations.
+            additional_directories: Additional workspace roots.
         """
-        p: dict[str, Any] = {"sessionId": session_id, "cwd": cwd}
-        if mcp_servers:
-            p["mcpServers"] = mcp_servers
+        p: dict[str, Any] = {
+            "sessionId": session_id,
+            "cwd": cwd,
+            "mcpServers": mcp_servers or [],
+        }
+        if additional_directories:
+            p["additionalDirectories"] = additional_directories
         await self._call("session/load", p)
 
     @staticmethod
@@ -1710,6 +2299,7 @@ class ACPClient:
         blocks = self._build_prompt_blocks(text, extra_content)
         params = {"sessionId": session_id, "prompt": blocks}
         self._drain_stale_updates()
+        self._last_prompt_result = None
 
         assert self._transport is not None
         sent = await self._transport.send_request("session/prompt", params)
@@ -1735,6 +2325,7 @@ class ACPClient:
                 update_task.cancel()
 
             if prompt_fut.done():
+                self._last_prompt_result = _parse_prompt_result(prompt_fut.result())
                 for u in self._drain_remaining_updates():
                     yield u
                 return
@@ -1767,8 +2358,9 @@ class ACPClient:
         updates: list[dict[str, Any]] = []
         async for u in self.prompt(session_id, text):
             updates.append(u)
-        # The prompt future should be resolved by now
-        return updates, PromptResult(stop_reason=StopReason.END_TURN)
+        return updates, self._last_prompt_result or PromptResult(
+            stop_reason=StopReason.END_TURN
+        )
 
     async def cancel(self, session_id: str) -> None:
         """Cancel the current prompt turn.
@@ -1830,6 +2422,58 @@ class ACPClient:
             next_cursor=raw.get("nextCursor"),
         )
 
+    async def resume_session(
+        self,
+        session_id: str,
+        cwd: str,
+        mcp_servers: list[dict[str, Any]] | None = None,
+        additional_directories: list[str] | None = None,
+    ) -> None:
+        """Resume an existing session without replaying history.
+
+        Args:
+            session_id: Session to resume.
+            cwd: Working directory.
+            mcp_servers: Optional MCP server configurations.
+            additional_directories: Additional workspace roots.
+        """
+        p: dict[str, Any] = {
+            "sessionId": session_id,
+            "cwd": cwd,
+            "mcpServers": mcp_servers or [],
+        }
+        if additional_directories:
+            p["additionalDirectories"] = additional_directories
+        await self._call("session/resume", p)
+
+    async def close_session(self, session_id: str) -> None:
+        """Close an active session and free its resources.
+
+        Args:
+            session_id: Session to close.
+        """
+        await self._call("session/close", {"sessionId": session_id})
+
+    async def delete_session(self, session_id: str) -> None:
+        """Delete a session from the agent's history.
+
+        Args:
+            session_id: Session to delete.
+        """
+        await self._call("session/delete", {"sessionId": session_id})
+
+    async def authenticate(self, method_id: str) -> None:
+        """Authenticate with an agent-advertised auth method.
+
+        Args:
+            method_id: Auth method id from ``initialize``.
+        """
+        await self._call("authenticate", {"methodId": method_id})
+
+    async def logout(self) -> None:
+        """End the current authenticated state."""
+        await self._call("logout", {})
+
 
 # ── ACP Agent (server-side base class) ─────────────────────────────────────
 
@@ -1856,12 +2500,17 @@ class ACPAgent(ABC):
     def __init__(self) -> None:
         self._transport: JSONRPCTransport | None = None
         self._running = False
+        self._client_capabilities: ClientCapabilities | None = None
 
     # -- Handler methods (override these) -----------------------------------
 
-    @abstractmethod
     async def on_initialize(self, params: InitializeParams) -> InitializeResult:
         """Handle the ``initialize`` request.
+
+        The default implementation negotiates the protocol version and
+        advertises no optional capabilities.  Override to advertise agent
+        capabilities or authentication methods; the base class rejects any
+        returned version outside :data:`SUPPORTED_PROTOCOL_VERSIONS`.
 
         Args:
             params: Initialization parameters from the client.
@@ -1869,7 +2518,9 @@ class ACPAgent(ABC):
         Returns:
             Initialization result with agent capabilities.
         """
-        ...
+        return InitializeResult(
+            protocol_version=negotiate_protocol_version(params.protocol_version)
+        )
 
     @abstractmethod
     async def on_new_session(self, params: NewSessionParams) -> NewSessionResult:
@@ -1949,7 +2600,66 @@ class ACPAgent(ABC):
         """
         return ListSessionsResult()
 
+    async def on_resume_session(self, params: ResumeSessionParams) -> None:
+        """Handle ``session/resume``. Override to support resumption.
+
+        Args:
+            params: Session resume parameters.
+        """
+        raise JSONRPCException(
+            JSONRPCError(
+                code=METHOD_NOT_FOUND,
+                message="session/resume not supported",
+            )
+        )
+
+    async def on_close_session(self, params: CloseSessionParams) -> None:
+        """Handle ``session/close``. Default: no-op.
+
+        Args:
+            params: Session close parameters.
+        """
+
+    async def on_delete_session(self, params: DeleteSessionParams) -> None:
+        """Handle ``session/delete``. Override to support deletion.
+
+        Args:
+            params: Session delete parameters.
+        """
+        raise JSONRPCException(
+            JSONRPCError(
+                code=METHOD_NOT_FOUND,
+                message="session/delete not supported",
+            )
+        )
+
+    async def on_authenticate(self, params: AuthenticateParams) -> None:
+        """Handle ``authenticate``. Default: no-op.
+
+        Args:
+            params: Authentication parameters.
+        """
+
+    async def on_logout(self, params: LogoutParams) -> None:
+        """Handle ``logout``. Default: no-op.
+
+        Args:
+            params: Logout parameters.
+        """
+
     # -- Outgoing helpers ---------------------------------------------------
+
+    def supports_update(self, session_update: str) -> bool:
+        """Return whether the connected client accepts *session_update*.
+
+        Use this before sending capability-gated updates such as ``notice``
+        or ``compaction_update``; the client advertises support in
+        ``initialize``.
+
+        Args:
+            session_update: Wire value of the ``sessionUpdate`` discriminator.
+        """
+        return supports_update(self._client_capabilities, session_update)
 
     async def send_update(self, session_id: str, update: SessionUpdate) -> None:
         """Send a ``session/update`` notification to the client.
@@ -2192,35 +2902,13 @@ class ACPAgent(ABC):
     async def _handle_method(self, method: str | None, params: dict[str, Any]) -> Any:
         """Dispatch a method call to the correct handler."""
         if method == "initialize":
-            rp = from_raw(params)
-            client_info = None
-            if "client_info" in rp:
-                ci = rp["client_info"]
-                client_info = ImplementationInfo(
-                    name=ci.get("name", ""),
-                    version=ci.get("version", ""),
-                    title=ci.get("title"),
-                )
-            client_caps = None
-            if "client_capabilities" in rp:
-                cc = rp["client_capabilities"]
-                fs = None
-                if "fs" in cc:
-                    f = cc["fs"]
-                    fs = FsCapabilities(
-                        read_text_file=f.get("readTextFile", False),
-                        write_text_file=f.get("writeTextFile", False),
-                    )
-                client_caps = ClientCapabilities(
-                    fs=fs, terminal=cc.get("terminal", False)
-                )
-            return await self.on_initialize(
-                InitializeParams(
-                    protocol_version=rp.get("protocol_version", 1),
-                    client_capabilities=client_caps,
-                    client_info=client_info,
-                )
+            init_params = _parse_initialize_params(params)
+            self._client_capabilities = init_params.client_capabilities
+            result = await self.on_initialize(init_params)
+            result.protocol_version = _require_supported_version(
+                result.protocol_version
             )
+            return result
 
         if method == "session/new":
             rp = from_raw(params)
@@ -2228,6 +2916,7 @@ class ACPAgent(ABC):
                 NewSessionParams(
                     cwd=rp.get("cwd", "."),
                     mcp_servers=rp.get("mcp_servers"),
+                    additional_directories=rp.get("additional_directories"),
                 )
             )
 
@@ -2238,8 +2927,46 @@ class ACPAgent(ABC):
                     session_id=rp.get("session_id", ""),
                     cwd=rp.get("cwd", "."),
                     mcp_servers=rp.get("mcp_servers"),
+                    additional_directories=rp.get("additional_directories"),
                 )
             )
+
+        if method == "session/resume":
+            rp = from_raw(params)
+            await self.on_resume_session(
+                ResumeSessionParams(
+                    session_id=rp.get("session_id", ""),
+                    cwd=rp.get("cwd", "."),
+                    mcp_servers=rp.get("mcp_servers"),
+                    additional_directories=rp.get("additional_directories"),
+                )
+            )
+            return None
+
+        if method == "session/close":
+            rp = from_raw(params)
+            await self.on_close_session(
+                CloseSessionParams(session_id=rp.get("session_id", ""))
+            )
+            return None
+
+        if method == "session/delete":
+            rp = from_raw(params)
+            await self.on_delete_session(
+                DeleteSessionParams(session_id=rp.get("session_id", ""))
+            )
+            return None
+
+        if method == "authenticate":
+            rp = from_raw(params)
+            await self.on_authenticate(
+                AuthenticateParams(method_id=rp.get("method_id", ""))
+            )
+            return None
+
+        if method == "logout":
+            await self.on_logout(LogoutParams())
+            return None
 
         if method == "session/prompt":
             rp = from_raw(params)
@@ -2303,7 +3030,7 @@ class _EchoAgent(ACPAgent):
 
     async def on_initialize(self, params: InitializeParams) -> InitializeResult:
         return InitializeResult(
-            protocol_version=params.protocol_version,
+            protocol_version=negotiate_protocol_version(params.protocol_version),
             agent_info=ImplementationInfo(
                 name="echo-agent", version="0.1.0", title="Echo Agent"
             ),

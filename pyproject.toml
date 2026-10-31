@@ -136,7 +136,7 @@ bench-a2a = [
     "a2a-protocol==0.1.0",
 ]
 bench-acp = [
-    "agent-client-protocol==0.9.0",
+    "agent-client-protocol==0.12.1",
 ]
 bench-semver = [
     "packaging==26.1",

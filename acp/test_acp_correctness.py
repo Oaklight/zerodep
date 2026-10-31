@@ -49,6 +49,7 @@ for _k in list(sys.modules):
 from acp import (  # noqa: E402
     AgentCapabilities,
     AgentMessageChunkUpdate,
+    AgentThoughtChunkUpdate,
     AudioContent,
     AvailableCommand,
     AvailableCommandInput,
@@ -392,6 +393,9 @@ class TestEnumValues:
     )
     def test_enum_values_match(self, zd_enum, ref_literal):
         zd_values = {e.value for e in zd_enum}
+        # ``unknown`` is a zerodep-only sentinel for a stop reason a later ACP
+        # revision may introduce; it is never sent on the wire.
+        zd_values.discard("unknown")
         ref_values = set(ref_literal.__args__)
         assert zd_values == ref_values
 
@@ -680,10 +684,13 @@ class TestSessionUpdateTypes:
         d = to_dict(obj)
         assert d["sessionUpdate"] == "user_message_chunk"
 
-    def test_thought_message_chunk(self):
-        obj = ThoughtMessageChunkUpdate(content=TextContent(text="Thinking..."))
+    def test_agent_thought_chunk(self):
+        obj = AgentThoughtChunkUpdate(content=TextContent(text="Thinking..."))
         d = to_dict(obj)
-        assert d["sessionUpdate"] == "thought_message_chunk"
+        assert d["sessionUpdate"] == "agent_thought_chunk"
+
+    def test_thought_message_chunk_alias(self):
+        assert ThoughtMessageChunkUpdate is AgentThoughtChunkUpdate
 
     def test_tool_call_update_full(self):
         obj = ToolCallUpdate(

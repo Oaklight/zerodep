@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.3.6"
+# version = "0.3.7"
 # deps = ["jsonrpc"]
 # tier = "subsystem"
 # category = "protocol"
@@ -23,7 +23,7 @@ This single-file module provides:
   pairs (typically stdin/stdout of a subprocess).
 
 * **Protocol data types** -- pure-dataclass representations of every message
-  and structure defined by the ACP specification (protocol version 1).
+  and structure defined by the ACP specification (protocol versions 1 and 2).
 
 * **ACPClient** -- high-level async helper that spawns an agent subprocess,
   performs the ``initialize`` handshake, creates sessions, sends prompts, and
@@ -97,12 +97,15 @@ from typing import (
 #: constant only when a new major protocol version is implemented; additive
 #: features within a version do not change it. See
 #: https://agentclientprotocol.com/protocol/ for the current specification.
-ACP_PROTOCOL_VERSION = 1
+ACP_PROTOCOL_VERSION = 2
 
 #: Protocol versions this module can negotiate, newest first.
-SUPPORTED_PROTOCOL_VERSIONS: tuple[int, ...] = (1,)
+SUPPORTED_PROTOCOL_VERSIONS: tuple[int, ...] = (2, 1)
 
-#: Date of the last audit against the published ACP v1 specification.
+#: ACP v2 error code for failed protocol-version negotiation.
+UNSUPPORTED_PROTOCOL_VERSION = -32022
+
+#: Date of the last audit against the published ACP v1 and v2 specifications.
 #: Update this together with the feature lists below.
 ACP_SPEC_REVISION = "2026-10-31"
 
@@ -122,6 +125,8 @@ ACP_IMPLEMENTED_METHODS = frozenset(
         "session/delete",
         "authenticate",
         "logout",
+        "auth/login",
+        "auth/logout",
     }
 )
 
@@ -142,6 +147,32 @@ ACP_IMPLEMENTED_UPDATES = frozenset(
         "notice",
         "compaction_update",
         "compaction_summary_chunk",
+        # ACP v2 variants
+        "user_message",
+        "agent_message",
+        "agent_thought",
+        "state_update",
+        "tool_call_content_chunk",
+        "terminal_update",
+        "terminal_output_chunk",
+        "plan_update",
+    }
+)
+
+#: Methods removed in ACP v2.  A v2 connection must reject them.
+ACP_V2_REMOVED_METHODS = frozenset(
+    {
+        "authenticate",
+        "logout",
+        "session/load",
+        "session/set_mode",
+        "fs/read_text_file",
+        "fs/write_text_file",
+        "terminal/create",
+        "terminal/output",
+        "terminal/wait_for_exit",
+        "terminal/kill",
+        "terminal/release",
     }
 )
 
@@ -158,7 +189,6 @@ def _ensure_sibling_path(name: str) -> str:
 try:  # flat package layout: pkg.acp + pkg.jsonrpc
     from .jsonrpc import (  # ty: ignore[unresolved-import]  # noqa: E402
         INTERNAL_ERROR,
-        INVALID_PARAMS,
         METHOD_NOT_FOUND,
         JSONRPCError,
         JSONRPCException,
@@ -168,7 +198,6 @@ except ImportError:
     try:  # nested package layout: pkg.acp.acp + pkg.jsonrpc
         from ..jsonrpc import (  # type: ignore[import-not-found]  # ty: ignore[unresolved-import]  # noqa: E402
             INTERNAL_ERROR,
-            INVALID_PARAMS,
             METHOD_NOT_FOUND,
             JSONRPCError,
             JSONRPCException,
@@ -178,7 +207,6 @@ except ImportError:
         _ensure_sibling_path("jsonrpc")
         from jsonrpc import (  # noqa: E402
             INTERNAL_ERROR,
-            INVALID_PARAMS,
             METHOD_NOT_FOUND,
             JSONRPCError,
             JSONRPCException,
@@ -187,16 +215,24 @@ except ImportError:
 
 
 class UnsupportedProtocolVersion(JSONRPCException):
-    """Raised when a peer negotiates an ACP version this module does not support."""
+    """Raised when a peer negotiates an ACP version this module does not support.
 
-    def __init__(self, version: int) -> None:
+    ACP v2 defines error code ``-32022`` with ``{requested, supported}``
+    data for failed version negotiation.
+    """
+
+    def __init__(self, version: Any) -> None:
         super().__init__(
             JSONRPCError(
-                code=INVALID_PARAMS,
+                code=UNSUPPORTED_PROTOCOL_VERSION,
                 message=(
-                    f"Unsupported ACP protocol version {version}; "
+                    f"Unsupported ACP protocol version {version!r}; "
                     f"supported versions: {SUPPORTED_PROTOCOL_VERSIONS}"
                 ),
+                data={
+                    "requested": version,
+                    "supported": list(SUPPORTED_PROTOCOL_VERSIONS),
+                },
             )
         )
         self.version = version
@@ -209,6 +245,8 @@ __all__ = [
     "ACP_SPEC_REVISION",
     "ACP_IMPLEMENTED_METHODS",
     "ACP_IMPLEMENTED_UPDATES",
+    "ACP_V2_REMOVED_METHODS",
+    "UNSUPPORTED_PROTOCOL_VERSION",
     "UnsupportedProtocolVersion",
     "negotiate_protocol_version",
     # JSON-RPC (re-exported from jsonrpc module)
@@ -294,6 +332,14 @@ __all__ = [
     "NoticeUpdate",
     "CompactionUpdate",
     "CompactionSummaryChunkUpdate",
+    "UserMessageUpdate",
+    "AgentMessageUpdate",
+    "AgentThoughtUpdate",
+    "StateUpdate",
+    "ToolCallContentChunkUpdate",
+    "TerminalUpdate",
+    "TerminalOutputChunkUpdate",
+    "PlanItemsUpdate",
     # File system
     "ReadTextFileParams",
     "ReadTextFileResult",
@@ -312,7 +358,7 @@ __all__ = [
     "ACPAgent",
 ]
 
-__version__ = "0.3.0"
+__version__ = "0.3.7"
 
 logger = logging.getLogger("acp")
 
@@ -355,6 +401,9 @@ def to_dict(obj: Any) -> Any:
         return {k: to_dict(v) for k, v in obj.items() if v is not None}
     if isinstance(obj, (list, tuple)):
         return [to_dict(v) for v in obj]
+    to_wire = getattr(obj, "__acp_to_dict__", None)
+    if callable(to_wire):
+        return to_wire()
     if hasattr(obj, "__dataclass_fields__"):
         result: dict[str, Any] = {}
         for f in fields(obj):
@@ -403,6 +452,8 @@ class StopReason(str, Enum):
     MAX_TURN_REQUESTS = "max_turn_requests"
     REFUSAL = "refusal"
     CANCELLED = "cancelled"
+    # ACP v2 adds an explicit error stop reason.
+    ERROR = "error"
     # Local sentinel for a reason introduced by a later ACP revision.  Never
     # sent on the wire; ``PromptResult.raw_stop_reason`` keeps the original.
     UNKNOWN = "unknown"
@@ -713,10 +764,12 @@ class McpCapabilities:
     """MCP transport capabilities.
 
     Attributes:
+        stdio: Whether stdio MCP transport is supported.
         http: Whether HTTP MCP transport is supported.
-        sse: Whether SSE MCP transport is supported.
+        sse: Whether SSE MCP transport is supported (ACP v1 only).
     """
 
+    stdio: bool = False
     http: bool = False
     sse: bool = False
 
@@ -976,6 +1029,7 @@ class NewSessionResult:
     session_id: str
     modes: SessionModeState | None = None
     config_options: list[ConfigOption] | None = None
+    available_commands: list[AvailableCommand] | None = None
 
 
 @dataclass
@@ -1010,6 +1064,7 @@ class ResumeSessionParams:
     cwd: str
     mcp_servers: list[dict[str, Any]] | None = None
     additional_directories: list[str] | None = None
+    replay_from: dict[str, Any] | None = None
 
 
 @dataclass
@@ -1071,13 +1126,16 @@ class PromptResult:
     """Result of ``session/prompt``.
 
     Attributes:
-        stop_reason: Why the agent stopped.
+        stop_reason: Why the agent stopped.  ACP v2 reports this in an
+            ``idle`` ``state_update`` instead of the prompt response.
         raw_stop_reason: Original wire value when ``stop_reason`` is
             :attr:`StopReason.UNKNOWN`.
+        message_id: ACP v2 user-message id acknowledged by the response.
     """
 
     stop_reason: StopReason
     raw_stop_reason: str | None = None
+    message_id: str | None = None
 
 
 @dataclass
@@ -1119,7 +1177,7 @@ class SetConfigOptionParams:
 
     session_id: str
     config_id: str
-    value: str
+    value: Any
 
 
 @dataclass
@@ -1732,6 +1790,153 @@ class CompactionSummaryChunkUpdate:
     session_update: str = "compaction_summary_chunk"
 
 
+# ── ACP v2 session updates ─────────────────────────────────────────────────
+
+
+@dataclass
+class UserMessageUpdate:
+    """ACP v2 upsert of a user message.
+
+    Attributes:
+        message_id: Message id, unique among user messages in the session.
+        content: Complete replacement content, or ``None`` to leave unchanged.
+        session_update: Discriminator.
+    """
+
+    message_id: str
+    content: list[ContentBlock] | None = None
+    session_update: str = "user_message"
+
+
+@dataclass
+class AgentMessageUpdate:
+    """ACP v2 upsert of an agent message.
+
+    Attributes:
+        message_id: Message id, unique among agent messages in the session.
+        content: Complete replacement content, or ``None`` to leave unchanged.
+        session_update: Discriminator.
+    """
+
+    message_id: str
+    content: list[ContentBlock] | None = None
+    session_update: str = "agent_message"
+
+
+@dataclass
+class AgentThoughtUpdate:
+    """ACP v2 upsert of an agent thought message.
+
+    Attributes:
+        message_id: Message id, unique among agent thoughts in the session.
+        content: Complete replacement content, or ``None`` to leave unchanged.
+        session_update: Discriminator.
+    """
+
+    message_id: str
+    content: list[ContentBlock] | None = None
+    session_update: str = "agent_thought"
+
+
+@dataclass
+class StateUpdate:
+    """ACP v2 foreground-activity snapshot.
+
+    Attributes:
+        state: ``running``, ``idle``, or ``requires_action``.
+        stop_reason: Why foreground work stopped (on ``idle``).
+        error: Optional error object for ``stop_reason == "error"``.
+        session_update: Discriminator.
+    """
+
+    state: str
+    stop_reason: str | None = None
+    error: dict[str, Any] | None = None
+    session_update: str = "state_update"
+
+
+@dataclass
+class ToolCallContentChunkUpdate:
+    """ACP v2 streamed item of tool-call content.
+
+    Attributes:
+        tool_call_id: Tool call this content belongs to.
+        content: One content item produced by the tool call.
+        session_update: Discriminator.
+    """
+
+    tool_call_id: str
+    content: ToolCallContent
+    session_update: str = "tool_call_content_chunk"
+
+
+@dataclass
+class TerminalUpdate:
+    """ACP v2 upsert of an agent-owned terminal.
+
+    Attributes:
+        terminal_id: Terminal identifier.
+        command: Command being run.
+        cwd: Absolute working directory.
+        output: Authoritative replacement snapshot of terminal output.
+        exit_status: Exit information; a concrete object marks exit.
+        size: Terminal size the command runs with.
+        session_update: Discriminator.
+    """
+
+    terminal_id: str
+    command: str | None = None
+    cwd: str | None = None
+    output: dict[str, Any] | None = None
+    exit_status: dict[str, Any] | None = None
+    size: dict[str, Any] | None = None
+    session_update: str = "terminal_update"
+
+
+@dataclass
+class TerminalOutputChunkUpdate:
+    """ACP v2 chunk of bytes appended to a terminal's output.
+
+    Attributes:
+        terminal_id: Terminal receiving these bytes.
+        data: Base64-encoded output bytes.
+        session_update: Discriminator.
+    """
+
+    terminal_id: str
+    data: str
+    session_update: str = "terminal_output_chunk"
+
+
+@dataclass
+class PlanItemsUpdate:
+    """ACP v2 plan update carrying structured entries.
+
+    The wire shape nests the entries under ``plan``:
+    ``{"plan": {"type": "items", "planId": ..., "entries": [...]}}``.
+
+    Attributes:
+        plan_id: Plan identifier.
+        entries: Complete list of plan entries.
+        session_update: Discriminator.
+    """
+
+    plan_id: str
+    entries: list[PlanEntry] = field(default_factory=list)
+    session_update: str = "plan_update"
+
+    def __acp_to_dict__(self) -> dict[str, Any]:
+        """Serialize to the ACP v2 nested ``plan`` shape."""
+        return {
+            "sessionUpdate": self.session_update,
+            "plan": {
+                "type": "items",
+                "planId": self.plan_id,
+                "entries": [to_dict(e) for e in self.entries],
+            },
+        }
+
+
 SessionUpdate = Union[
     AgentMessageChunkUpdate,
     UserMessageChunkUpdate,
@@ -1747,6 +1952,14 @@ SessionUpdate = Union[
     NoticeUpdate,
     CompactionUpdate,
     CompactionSummaryChunkUpdate,
+    UserMessageUpdate,
+    AgentMessageUpdate,
+    AgentThoughtUpdate,
+    StateUpdate,
+    ToolCallContentChunkUpdate,
+    TerminalUpdate,
+    TerminalOutputChunkUpdate,
+    PlanItemsUpdate,
 ]
 
 
@@ -1756,29 +1969,33 @@ SessionUpdate = Union[
 def negotiate_protocol_version(requested: int) -> int:
     """Return the protocol version to use for an ``initialize`` response.
 
-    ACP requires an agent to echo a supported requested version, or to
-    respond with the latest version it supports.  Non-integer values
-    (``1.5``, ``"latest"``, ``None``) are treated as unsupported and
-    negotiate down to the highest supported version.
+    ACP v2 requires the agent to select the highest version it supports
+    that is at or below the version requested by the client.  When no
+    supported version qualifies, negotiation fails with
+    :class:`UnsupportedProtocolVersion` (error code ``-32022``).
 
     Args:
         requested: Protocol version requested by the client.
 
     Returns:
         The negotiated protocol version.
+
+    Raises:
+        UnsupportedProtocolVersion: If *requested* is malformed or no
+            supported version is at or below it.
     """
-    fallback = max(SUPPORTED_PROTOCOL_VERSIONS)
     if isinstance(requested, bool) or not isinstance(requested, (int, float, str)):
-        return fallback
+        raise UnsupportedProtocolVersion(requested)
     try:
         version = int(requested)
     except (TypeError, ValueError):
-        return fallback
+        raise UnsupportedProtocolVersion(requested) from None
     if isinstance(requested, float) and requested != version:
-        return fallback
-    if version in SUPPORTED_PROTOCOL_VERSIONS:
-        return version
-    return fallback
+        raise UnsupportedProtocolVersion(requested)
+    candidates = [v for v in SUPPORTED_PROTOCOL_VERSIONS if v <= version]
+    if not candidates:
+        raise UnsupportedProtocolVersion(requested)
+    return max(candidates)
 
 
 def _require_supported_version(value: Any) -> int:
@@ -1811,10 +2028,53 @@ def _parse_implementation_info(raw: Any) -> ImplementationInfo | None:
 
 
 def _parse_agent_capabilities(raw: Any) -> AgentCapabilities | None:
-    """Parse ``agentCapabilities`` from an ``initialize`` response."""
+    """Parse agent capabilities from an ``initialize`` response.
+
+    Accepts ACP v1 (``loadSession``, ``promptCapabilities``,
+    ``mcpCapabilities``, ``sessionCapabilities``) and ACP v2 (``session``,
+    ``auth``) shapes.
+    """
     if not isinstance(raw, dict) or not raw:
         return None
     r = from_raw(raw)
+
+    # ACP v2: session capabilities are nested under ``session`` and use
+    # presence-based objects instead of v1's boolean/marker mix.
+    v2_session = r.get("session")
+    if isinstance(v2_session, dict):
+        prompt_raw = v2_session.get("prompt") or {}
+        mcp_raw = v2_session.get("mcp") or {}
+        prompt_caps = (
+            PromptCapabilities(
+                image=bool(prompt_raw.get("image", False)),
+                audio=bool(prompt_raw.get("audio", False)),
+                embedded_context=bool(prompt_raw.get("embeddedContext", False)),
+            )
+            if prompt_raw
+            else None
+        )
+        mcp_caps = (
+            McpCapabilities(
+                stdio=bool(mcp_raw.get("stdio", False)),
+                http=bool(mcp_raw.get("http", False)),
+            )
+            if mcp_raw
+            else None
+        )
+        auth_raw = r.get("auth")
+        return AgentCapabilities(
+            prompt_capabilities=prompt_caps,
+            mcp_capabilities=mcp_caps,
+            session_capabilities=SessionCapabilities(
+                list=SessionListCapability(),
+                resume={},
+                close={},
+                delete=v2_session.get("delete"),
+                additional_directories=v2_session.get("additionalDirectories"),
+            ),
+            auth=from_raw(auth_raw) if isinstance(auth_raw, dict) else None,
+        )
+
     prompt_raw = r.get("prompt_capabilities") or {}
     mcp_raw = r.get("mcp_capabilities") or {}
     session_raw = r.get("session_capabilities") or {}
@@ -1830,6 +2090,7 @@ def _parse_agent_capabilities(raw: Any) -> AgentCapabilities | None:
     mcp_caps = None
     if mcp_raw:
         mcp_caps = McpCapabilities(
+            stdio=bool(mcp_raw.get("stdio", False)),
             http=bool(mcp_raw.get("http", False)),
             sse=bool(mcp_raw.get("sse", False)),
         )
@@ -1883,7 +2144,7 @@ def _parse_config_options(raw: Any) -> list[ConfigOption] | None:
             continue
         result.append(
             ConfigOption(
-                id=item.get("id", ""),
+                id=item.get("configId", item.get("id", "")),
                 name=item.get("name", ""),
                 type=item.get("type", ""),
                 current_value=item.get("currentValue", item.get("current_value", "")),
@@ -1898,6 +2159,29 @@ def _parse_config_options(raw: Any) -> list[ConfigOption] | None:
                 ],
                 description=item.get("description"),
                 category=item.get("category"),
+            )
+        )
+    return result or None
+
+
+def _parse_available_commands(raw: Any) -> list[AvailableCommand] | None:
+    """Parse ``availableCommands`` from a session response."""
+    if not isinstance(raw, list):
+        return None
+    result: list[AvailableCommand] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        input_raw = item.get("input")
+        result.append(
+            AvailableCommand(
+                name=item.get("name", ""),
+                description=item.get("description", ""),
+                input=(
+                    AvailableCommandInput(hint=input_raw.get("hint", ""))
+                    if isinstance(input_raw, dict)
+                    else None
+                ),
             )
         )
     return result or None
@@ -1941,19 +2225,24 @@ def _parse_client_capabilities(raw: Any) -> ClientCapabilities | None:
 
 
 def _parse_initialize_params(params: dict[str, Any]) -> InitializeParams:
-    """Parse an ``initialize`` request into :class:`InitializeParams`."""
+    """Parse an ``initialize`` request into :class:`InitializeParams`.
+
+    Accepts both ACP v1 field names (``clientInfo``/``clientCapabilities``)
+    and ACP v2 names (``info``/``capabilities``).
+    """
     rp = from_raw(params)
     client_info = None
-    if "client_info" in rp:
-        ci = rp["client_info"]
+    info_raw = rp.get("info", rp.get("client_info"))
+    if isinstance(info_raw, dict):
         client_info = ImplementationInfo(
-            name=ci.get("name", ""),
-            version=ci.get("version", ""),
-            title=ci.get("title"),
+            name=info_raw.get("name", ""),
+            version=info_raw.get("version", ""),
+            title=info_raw.get("title"),
         )
     client_caps = None
-    if "client_capabilities" in rp:
-        client_caps = _parse_client_capabilities(rp["client_capabilities"])
+    caps_raw = rp.get("capabilities", rp.get("client_capabilities"))
+    if isinstance(caps_raw, dict):
+        client_caps = _parse_client_capabilities(caps_raw)
     return InitializeParams(
         protocol_version=rp.get("protocol_version", ACP_PROTOCOL_VERSION),
         client_capabilities=client_caps,
@@ -1965,16 +2254,157 @@ def _parse_prompt_result(raw: Any) -> PromptResult:
     """Parse a ``session/prompt`` response into a :class:`PromptResult`."""
     if not isinstance(raw, dict):
         return PromptResult(stop_reason=StopReason.END_TURN)
+    message_id = raw.get("messageId", raw.get("message_id"))
+    if message_id is not None and "stopReason" not in raw and "stop_reason" not in raw:
+        # ACP v2 acknowledges insertion with a message id; the stop reason
+        # arrives in an idle ``state_update``.
+        return PromptResult(
+            stop_reason=StopReason.UNKNOWN,
+            message_id=str(message_id),
+        )
     value = raw.get("stopReason", raw.get("stop_reason", "end_turn"))
     try:
-        return PromptResult(stop_reason=StopReason(value))
+        return PromptResult(
+            stop_reason=StopReason(value),
+            message_id=str(message_id) if message_id is not None else None,
+        )
     except ValueError:
         # A future ACP revision may add stop reasons.  Surface them as UNKNOWN
         # instead of claiming a normal end of turn, and keep the raw value.
         return PromptResult(
             stop_reason=StopReason.UNKNOWN,
             raw_stop_reason=str(value),
+            message_id=str(message_id) if message_id is not None else None,
         )
+
+
+# ── Wire serialization (v1 / v2) ───────────────────────────────────────────
+
+
+def _default_implementation() -> ImplementationInfo:
+    """Return the default implementation info advertised on v2 ``initialize``."""
+    return ImplementationInfo(name="zerodep-acp", version=__version__)
+
+
+def _client_capabilities_to_wire(
+    caps: ClientCapabilities | None, version: int
+) -> dict[str, Any]:
+    """Serialize client capabilities for the negotiated *version*."""
+    if version < 2:
+        return to_dict(caps) or {}
+    payload: dict[str, Any] = {}
+    if caps is not None:
+        if caps.auth is not None:
+            payload["auth"] = caps.auth
+        if caps.elicitation is not None:
+            payload["elicitation"] = to_dict(caps.elicitation)
+    return payload
+
+
+def _agent_capabilities_to_wire(
+    caps: AgentCapabilities | None, version: int
+) -> dict[str, Any]:
+    """Serialize agent capabilities for the negotiated *version*."""
+    if version < 2:
+        return to_dict(caps) or {}
+    session: dict[str, Any] = {}
+    if caps is not None:
+        if caps.prompt_capabilities is not None:
+            prompt: dict[str, Any] = {}
+            if caps.prompt_capabilities.image:
+                prompt["image"] = {}
+            if caps.prompt_capabilities.audio:
+                prompt["audio"] = {}
+            if caps.prompt_capabilities.embedded_context:
+                prompt["embeddedContext"] = {}
+            if prompt:
+                session["prompt"] = prompt
+        if caps.mcp_capabilities is not None:
+            mcp: dict[str, Any] = {}
+            if caps.mcp_capabilities.stdio:
+                mcp["stdio"] = {}
+            if caps.mcp_capabilities.http:
+                mcp["http"] = {}
+            if mcp:
+                session["mcp"] = mcp
+        sc = caps.session_capabilities
+        if sc is not None:
+            if sc.delete is not None:
+                session["delete"] = sc.delete or {}
+            if sc.additional_directories is not None:
+                session["additionalDirectories"] = sc.additional_directories or {}
+    payload: dict[str, Any] = {"session": session}
+    if caps is not None and caps.auth is not None:
+        payload["auth"] = caps.auth
+    return payload
+
+
+def _initialize_params_to_wire(
+    params: InitializeParams, version: int
+) -> dict[str, Any]:
+    """Serialize ``initialize`` request parameters for *version*."""
+    if version < 2:
+        return to_dict(params)
+    payload: dict[str, Any] = {
+        "protocolVersion": params.protocol_version,
+        "info": to_dict(params.client_info or _default_implementation()),
+        "capabilities": _client_capabilities_to_wire(
+            params.client_capabilities, version
+        ),
+    }
+    return payload
+
+
+def _initialize_result_to_wire(
+    result: InitializeResult, version: int
+) -> dict[str, Any]:
+    """Serialize an ``initialize`` result for *version*."""
+    if version < 2:
+        return to_dict(result)
+    payload: dict[str, Any] = {
+        "protocolVersion": result.protocol_version,
+        "info": to_dict(result.agent_info or _default_implementation()),
+        "capabilities": _agent_capabilities_to_wire(result.agent_capabilities, version),
+    }
+    if result.auth_methods:
+        payload["authMethods"] = [to_dict(m) for m in result.auth_methods]
+    return payload
+
+
+def _config_option_to_wire(option: ConfigOption, version: int) -> dict[str, Any]:
+    """Serialize a session config option for *version*."""
+    if version < 2:
+        return to_dict(option)
+    payload: dict[str, Any] = {
+        "configId": option.id,
+        "name": option.name,
+        "type": option.type or "select",
+        "currentValue": option.current_value,
+        "options": [
+            {
+                "value": value.value,
+                "name": value.name,
+                **(
+                    {"description": value.description}
+                    if value.description is not None
+                    else {}
+                ),
+            }
+            for value in option.options
+        ],
+    }
+    if option.description is not None:
+        payload["description"] = option.description
+    if option.category is not None:
+        payload["category"] = option.category
+    return payload
+
+
+def _config_options_to_wire(
+    options: list[ConfigOption] | None, version: int
+) -> list[dict[str, Any]]:
+    """Serialize a config-option list for *version*."""
+    return [_config_option_to_wire(option, version) for option in options or []]
 
 
 # ── ACP Client ─────────────────────────────────────────────────────────────
@@ -2018,6 +2448,8 @@ class ACPClient:
         # backwards compatibility and always reflects the latest turn.
         self._prompt_results: dict[str, PromptResult] = {}
         self._last_prompt_result: PromptResult | None = None
+        # Negotiated in initialize(); None until the handshake completes.
+        self._negotiated_version: int | None = None
 
     async def start(self) -> None:
         """Launch the agent subprocess and begin reading messages."""
@@ -2069,6 +2501,11 @@ class ACPClient:
             handler: Async callable ``(method, params) -> result``.
         """
         self._request_handler = handler
+
+    @property
+    def negotiated_version(self) -> int | None:
+        """Protocol version negotiated by :meth:`initialize`, if any."""
+        return self._negotiated_version
 
     def prompt_result(self, session_id: str) -> PromptResult | None:
         """Return the last prompt result for *session_id*, if any."""
@@ -2197,12 +2634,27 @@ class ACPClient:
         """
         if params is None:
             params = InitializeParams()
-        raw = await self._call("initialize", to_dict(params))
+        # A client sends the highest version it supports.  Use v2 field names
+        # when requesting v2 or newer; v1 peers read the legacy names.
+        requested = params.protocol_version
+        wire_version = 2 if isinstance(requested, int) and requested >= 2 else 1
+        try:
+            raw = await self._call(
+                "initialize", _initialize_params_to_wire(params, wire_version)
+            )
+        except JSONRPCException as exc:
+            # A v2-only-first client can meet a v1-only agent.  Retry once
+            # with the v1 shape when the agent reports -32022.
+            if wire_version != 2 or exc.error.code != UNSUPPORTED_PROTOCOL_VERSION:
+                raise
+            params.protocol_version = 1
+            raw = await self._call("initialize", _initialize_params_to_wire(params, 1))
         raw = raw or {}
         r = from_raw(raw)
         version = _require_supported_version(
             r.get("protocol_version", ACP_PROTOCOL_VERSION)
         )
+        self._negotiated_version = version
         auth_methods = [
             AuthMethod(
                 id=m.get("id", ""),
@@ -2215,8 +2667,10 @@ class ACPClient:
         ]
         return InitializeResult(
             protocol_version=version,
-            agent_capabilities=_parse_agent_capabilities(r.get("agent_capabilities")),
-            agent_info=_parse_implementation_info(r.get("agent_info")),
+            agent_capabilities=_parse_agent_capabilities(
+                r.get("capabilities", r.get("agent_capabilities"))
+            ),
+            agent_info=_parse_implementation_info(r.get("info", r.get("agent_info"))),
             auth_methods=auth_methods or None,
         )
 
@@ -2247,6 +2701,7 @@ class ACPClient:
             session_id=r.get("session_id", ""),
             modes=_parse_session_modes(r.get("modes")),
             config_options=_parse_config_options(r.get("config_options")),
+            available_commands=_parse_available_commands(r.get("available_commands")),
         )
 
     async def load_session(
@@ -2267,6 +2722,16 @@ class ACPClient:
             mcp_servers: Optional MCP server configurations.
             additional_directories: Additional workspace roots.
         """
+        if self._negotiated_version is not None and self._negotiated_version >= 2:
+            # ACP v2 removed session/load; replay is requested on resume.
+            await self.resume_session(
+                session_id,
+                cwd,
+                mcp_servers,
+                additional_directories,
+                replay_from={"type": "start"},
+            )
+            return
         p: dict[str, Any] = {
             "sessionId": session_id,
             "cwd": cwd,
@@ -2321,8 +2786,10 @@ class ACPClient:
     ) -> AsyncIterator[dict[str, Any]]:
         """Send a prompt and yield ``session/update`` notifications.
 
-        This is an async generator.  It yields each raw update dictionary
-        until the ``session/prompt`` response is received.
+        This is an async generator.  For ACP v1 it yields each raw update
+        until the ``session/prompt`` response is received.  For ACP v2 the
+        response only acknowledges insertion, so iteration continues until
+        an ``idle`` ``state_update`` reports that the turn ended.
 
         Args:
             session_id: Target session.
@@ -2338,6 +2805,10 @@ class ACPClient:
         self._drain_stale_updates(session_id)
         self._last_prompt_result = None
         self._prompt_results.pop(session_id, None)
+        is_v2 = self._negotiated_version is not None and self._negotiated_version >= 2
+        ack_result: PromptResult | None = None
+        observed_stop_reason: str | None = None
+        idle_seen = False
 
         assert self._transport is not None
         sent = await self._transport.send_request("session/prompt", params)
@@ -2346,29 +2817,76 @@ class ACPClient:
         prompt_fut: asyncio.Future[dict[str, Any]] = loop.create_future()
         self._pending[req_id] = prompt_fut
 
+        def finish() -> PromptResult:
+            result = ack_result or _parse_prompt_result({})
+            if observed_stop_reason is not None:
+                try:
+                    result.stop_reason = StopReason(observed_stop_reason)
+                    result.raw_stop_reason = None
+                except ValueError:
+                    result.stop_reason = StopReason.UNKNOWN
+                    result.raw_stop_reason = observed_stop_reason
+            return result
+
+        def store(result: PromptResult) -> None:
+            self._prompt_results[session_id] = result
+            self._last_prompt_result = result
+
         while True:
-            # Wait for either an update notification or the prompt response
+            # Wait for an update, and for the prompt response until it lands.
+            wait_on = [prompt_fut] if ack_result is None else []
             update_task = asyncio.create_task(queue.get())
             done, _ = await asyncio.wait(
-                [update_task, prompt_fut],
+                [update_task, *wait_on],
                 return_when=asyncio.FIRST_COMPLETED,
             )
 
             if update_task in done:
                 update = update_task.result()
                 if update is None:
+                    # EOF: keep a completed turn's result, if any.
+                    if ack_result is not None:
+                        store(finish())
                     return
+                stop = self._stop_reason_from_update(update)
+                if stop is not None:
+                    observed_stop_reason = stop
+                    idle_seen = True
                 yield update
+                if idle_seen and ack_result is not None:
+                    store(finish())
+                    for u in self._drain_remaining_updates(session_id):
+                        yield u
+                    return
             else:
                 update_task.cancel()
 
-            if prompt_fut.done():
-                result = _parse_prompt_result(prompt_fut.result())
-                self._prompt_results[session_id] = result
-                self._last_prompt_result = result
-                for u in self._drain_remaining_updates(session_id):
-                    yield u
-                return
+            if ack_result is None and prompt_fut.done():
+                ack_result = _parse_prompt_result(prompt_fut.result())
+                # Some agents still return a stop reason with the v2 ack;
+                # treat that as turn completion instead of waiting for idle.
+                explicit_stop = (
+                    ack_result.raw_stop_reason is not None
+                    or ack_result.stop_reason is not StopReason.UNKNOWN
+                )
+                if not is_v2 or idle_seen or explicit_stop:
+                    store(finish() if is_v2 else ack_result)
+                    for u in self._drain_remaining_updates(session_id):
+                        yield u
+                    return
+
+    @staticmethod
+    def _stop_reason_from_update(update: dict[str, Any]) -> str | None:
+        """Return the stop reason carried by an idle ``state_update``."""
+        payload = update.get("update")
+        if not isinstance(payload, dict):
+            return None
+        if payload.get("sessionUpdate") != "state_update":
+            return None
+        if payload.get("state") != "idle":
+            return None
+        raw = payload.get("stopReason")
+        return raw if isinstance(raw, str) else None
 
     def _drain_remaining_updates(self, session_id: str) -> list[dict[str, Any]]:
         """Collect remaining non-None updates queued for *session_id*."""
@@ -2401,7 +2919,7 @@ class ACPClient:
         updates: list[dict[str, Any]] = []
         async for u in self.prompt(session_id, text):
             updates.append(u)
-        return updates, self._last_prompt_result or PromptResult(
+        return updates, self._prompt_results.get(session_id) or PromptResult(
             stop_reason=StopReason.END_TURN
         )
 
@@ -2471,6 +2989,7 @@ class ACPClient:
         cwd: str,
         mcp_servers: list[dict[str, Any]] | None = None,
         additional_directories: list[str] | None = None,
+        replay_from: dict[str, Any] | None = None,
     ) -> None:
         """Resume an existing session without replaying history.
 
@@ -2479,6 +2998,8 @@ class ACPClient:
             cwd: Working directory.
             mcp_servers: Optional MCP server configurations.
             additional_directories: Additional workspace roots.
+            replay_from: ACP v2 replay cursor, for example
+                ``{"type": "start"}`` to replay all retained history.
         """
         p: dict[str, Any] = {
             "sessionId": session_id,
@@ -2487,6 +3008,8 @@ class ACPClient:
         }
         if additional_directories:
             p["additionalDirectories"] = additional_directories
+        if replay_from is not None:
+            p["replayFrom"] = replay_from
         await self._call("session/resume", p)
 
     async def close_session(self, session_id: str) -> None:
@@ -2507,16 +3030,65 @@ class ACPClient:
         """
         await self._call("session/delete", {"sessionId": session_id})
 
+    async def set_config_option(
+        self, session_id: str, config_id: str, value: Any
+    ) -> SetConfigOptionResult:
+        """Set a session configuration option.
+
+        Args:
+            session_id: Target session.
+            config_id: Configuration option id.
+            value: New value.  ACP v2 expects a tagged value on the wire;
+                strings are sent as ``{"type": "id"}`` and booleans as
+                ``{"type": "boolean"}``.
+
+        Returns:
+            The complete configuration state after the change.
+        """
+        payload: dict[str, Any]
+        if self._negotiated_version is not None and self._negotiated_version >= 2:
+            if isinstance(value, bool):
+                payload = {
+                    "sessionId": session_id,
+                    "configId": config_id,
+                    "type": "boolean",
+                    "value": value,
+                }
+            else:
+                payload = {
+                    "sessionId": session_id,
+                    "configId": config_id,
+                    "type": "id",
+                    "value": value,
+                }
+        else:
+            payload = {
+                "sessionId": session_id,
+                "configId": config_id,
+                "value": value,
+            }
+        raw = await self._call("session/set_config_option", payload)
+        r = from_raw(raw or {})
+        return SetConfigOptionResult(
+            config_options=_parse_config_options(r.get("config_options")) or []
+        )
+
     async def authenticate(self, method_id: str) -> None:
         """Authenticate with an agent-advertised auth method.
 
         Args:
             method_id: Auth method id from ``initialize``.
         """
+        if self._negotiated_version is not None and self._negotiated_version >= 2:
+            await self._call("auth/login", {"methodId": method_id})
+            return
         await self._call("authenticate", {"methodId": method_id})
 
     async def logout(self) -> None:
         """End the current authenticated state."""
+        if self._negotiated_version is not None and self._negotiated_version >= 2:
+            await self._call("auth/logout", {})
+            return
         await self._call("logout", {})
 
 
@@ -2546,6 +3118,12 @@ class ACPAgent(ABC):
         self._transport: JSONRPCTransport | None = None
         self._running = False
         self._client_capabilities: ClientCapabilities | None = None
+        self._negotiated_version: int | None = None
+
+    @property
+    def negotiated_version(self) -> int | None:
+        """Protocol version negotiated by ``initialize``, if any."""
+        return self._negotiated_version
 
     # -- Handler methods (override these) -----------------------------------
 
@@ -2694,6 +3272,16 @@ class ACPAgent(ABC):
 
     # -- Outgoing helpers ---------------------------------------------------
 
+    def _require_v1_method(self, method: str) -> None:
+        """Raise ``METHOD_NOT_FOUND`` when *method* was removed in ACP v2."""
+        if self._negotiated_version is not None and self._negotiated_version >= 2:
+            raise JSONRPCException(
+                JSONRPCError(
+                    code=METHOD_NOT_FOUND,
+                    message=f"{method} was removed in ACP v2",
+                )
+            )
+
     def supports_update(self, session_update: str) -> bool:
         """Return whether the connected client accepts *session_update*.
 
@@ -2724,13 +3312,23 @@ class ACPAgent(ABC):
         session_id: str,
         tool_call: dict[str, Any],
         options: list[PermissionOption],
+        *,
+        title: str | None = None,
+        description: str | None = None,
+        subject: dict[str, Any] | None = None,
     ) -> PermissionOutcome:
         """Request permission from the client for a tool call.
 
         Args:
             session_id: Target session.
-            tool_call: Tool call details.
+            tool_call: Tool call details (ACP v1 ``toolCall``; ACP v2 uses it
+                as the ``tool_call`` subject when *subject* is omitted).
             options: Available permission options.
+            title: ACP v2 permission-prompt title.  Defaults to the tool
+                call's title.
+            description: ACP v2 optional explanation.
+            subject: ACP v2 structured subject.  Defaults to
+                ``{"type": "tool_call", "toolCall": tool_call}``.
 
         Returns:
             The user's decision.
@@ -2739,14 +3337,28 @@ class ACPAgent(ABC):
             JSONRPCException: If the client returns an error.
         """
         assert self._transport is not None
-        sent = await self._transport.send_request(
-            "session/request_permission",
-            {
+        is_v2 = self._negotiated_version is not None and self._negotiated_version >= 2
+        payload: dict[str, Any]
+        if is_v2:
+            payload = {
+                "sessionId": session_id,
+                "title": title or str(tool_call.get("title", "Permission required")),
+                "options": [to_dict(o) for o in options],
+            }
+            if description is not None:
+                payload["description"] = description
+            payload["subject"] = (
+                subject
+                if subject is not None
+                else {"type": "tool_call", "toolCall": tool_call}
+            )
+        else:
+            payload = {
                 "sessionId": session_id,
                 "toolCall": tool_call,
                 "options": [to_dict(o) for o in options],
-            },
-        )
+            }
+        sent = await self._transport.send_request("session/request_permission", payload)
         # We need to wait for the response in-line.  Since run() owns the
         # read loop, we store a future that run() will resolve.
         req_id = sent["id"]
@@ -2780,6 +3392,7 @@ class ACPAgent(ABC):
             File text content.
         """
         assert self._transport is not None
+        self._require_v1_method("fs/read_text_file")
         p: dict[str, Any] = {"sessionId": session_id, "path": path}
         if line is not None:
             p["line"] = line
@@ -2802,6 +3415,7 @@ class ACPAgent(ABC):
             content: Text content to write.
         """
         assert self._transport is not None
+        self._require_v1_method("fs/write_text_file")
         sent = await self._transport.send_request(
             "fs/write_text_file",
             {"sessionId": session_id, "path": path, "content": content},
@@ -2832,6 +3446,7 @@ class ACPAgent(ABC):
             Terminal id.
         """
         assert self._transport is not None
+        self._require_v1_method("terminal/create")
         p: dict[str, Any] = {"sessionId": session_id, "command": command}
         if args:
             p["args"] = args
@@ -2944,26 +3559,119 @@ class ACPAgent(ABC):
             msg.get("method"), msg.get("params", {}), msg.get("id")
         )
 
+    async def _handle_initialize(self, params: dict[str, Any]) -> Any:
+        """Handle ``initialize`` and serialize the negotiated result."""
+        init_params = _parse_initialize_params(params)
+        self._client_capabilities = init_params.client_capabilities
+        result = await self.on_initialize(init_params)
+        negotiated = _require_supported_version(result.protocol_version)
+        requested = init_params.protocol_version
+        if (
+            isinstance(requested, int)
+            and not isinstance(requested, bool)
+            and negotiated > requested
+        ):
+            # The agent must not pick a version above the client's.
+            raise UnsupportedProtocolVersion(requested)
+        result.protocol_version = negotiated
+        self._negotiated_version = negotiated
+        return _initialize_result_to_wire(result, negotiated)
+
+    def _reject_v2_removed(self, method: str | None) -> None:
+        """Reject methods that ACP v2 removed from the wire surface."""
+        if (
+            self._negotiated_version is not None
+            and self._negotiated_version >= 2
+            and method in ACP_V2_REMOVED_METHODS
+        ):
+            raise JSONRPCException(
+                JSONRPCError(
+                    code=METHOD_NOT_FOUND,
+                    message=f"{method} was removed in ACP v2",
+                )
+            )
+
+    async def _handle_prompt(self, params: dict[str, Any]) -> Any:
+        """Handle ``session/prompt`` for the negotiated protocol version."""
+        rp = from_raw(params)
+        prompt_blocks: list[ContentBlock] = []
+        for block in rp.get("prompt", []):
+            prompt_blocks.append(_content_from_dict(block))
+        session_id = rp.get("session_id", "")
+        is_v2 = self._negotiated_version is not None and self._negotiated_version >= 2
+        message_id: str | None = None
+        if is_v2:
+            message_id = f"msg_{uuid.uuid4().hex}"
+            await self.send_update(session_id, StateUpdate(state="running"))
+            await self.send_update(
+                session_id,
+                UserMessageUpdate(message_id=message_id, content=prompt_blocks),
+            )
+        result = await self.on_prompt(
+            PromptParams(
+                session_id=session_id,
+                prompt=prompt_blocks,
+            )
+        )
+        if not is_v2:
+            return result
+        stop_reason = result.raw_stop_reason
+        if stop_reason is None and result.stop_reason is not StopReason.UNKNOWN:
+            stop_reason = result.stop_reason.value
+        await self.send_update(
+            session_id,
+            StateUpdate(state="idle", stop_reason=stop_reason),
+        )
+        # ACP v2 acknowledges insertion; completion is the idle state_update.
+        return {"messageId": message_id}
+
+    async def _handle_new_session(self, params: dict[str, Any]) -> Any:
+        """Handle ``session/new`` and serialize the negotiated result."""
+        rp = from_raw(params)
+        result = await self.on_new_session(
+            NewSessionParams(
+                cwd=rp.get("cwd", "."),
+                mcp_servers=rp.get("mcp_servers"),
+                additional_directories=rp.get("additional_directories"),
+            )
+        )
+        if self._negotiated_version is None or self._negotiated_version < 2:
+            return result
+        payload: dict[str, Any] = {"sessionId": result.session_id}
+        if result.config_options:
+            payload["configOptions"] = _config_options_to_wire(result.config_options, 2)
+        if result.available_commands:
+            payload["availableCommands"] = [
+                to_dict(command) for command in result.available_commands
+            ]
+        return payload
+
+    async def _handle_set_config_option(self, params: dict[str, Any]) -> Any:
+        """Handle ``session/set_config_option`` and serialize the result."""
+        rp = from_raw(params)
+        value: Any = rp.get("value", "")
+        if rp.get("type") == "boolean":
+            value = bool(value)
+        result = await self.on_set_config_option(
+            SetConfigOptionParams(
+                session_id=rp.get("session_id", ""),
+                config_id=rp.get("config_id", ""),
+                value=value,
+            )
+        )
+        if self._negotiated_version is None or self._negotiated_version < 2:
+            return result
+        return {"configOptions": _config_options_to_wire(result.config_options, 2)}
+
     async def _handle_method(self, method: str | None, params: dict[str, Any]) -> Any:
         """Dispatch a method call to the correct handler."""
         if method == "initialize":
-            init_params = _parse_initialize_params(params)
-            self._client_capabilities = init_params.client_capabilities
-            result = await self.on_initialize(init_params)
-            result.protocol_version = _require_supported_version(
-                result.protocol_version
-            )
-            return result
+            return await self._handle_initialize(params)
+
+        self._reject_v2_removed(method)
 
         if method == "session/new":
-            rp = from_raw(params)
-            return await self.on_new_session(
-                NewSessionParams(
-                    cwd=rp.get("cwd", "."),
-                    mcp_servers=rp.get("mcp_servers"),
-                    additional_directories=rp.get("additional_directories"),
-                )
-            )
+            return await self._handle_new_session(params)
 
         if method == "session/load":
             rp = from_raw(params)
@@ -2978,14 +3686,19 @@ class ACPAgent(ABC):
 
         if method == "session/resume":
             rp = from_raw(params)
+            session_id = rp.get("session_id", "")
             await self.on_resume_session(
                 ResumeSessionParams(
-                    session_id=rp.get("session_id", ""),
+                    session_id=session_id,
                     cwd=rp.get("cwd", "."),
                     mcp_servers=rp.get("mcp_servers"),
                     additional_directories=rp.get("additional_directories"),
+                    replay_from=rp.get("replay_from"),
                 )
             )
+            if self._negotiated_version is not None and self._negotiated_version >= 2:
+                # ACP v2 requires a current state update before the response.
+                await self.send_update(session_id, StateUpdate(state="idle"))
             return None
 
         if method == "session/close":
@@ -3013,17 +3726,19 @@ class ACPAgent(ABC):
             await self.on_logout(LogoutParams())
             return None
 
-        if method == "session/prompt":
+        if method == "auth/login":
             rp = from_raw(params)
-            prompt_blocks: list[ContentBlock] = []
-            for block in rp.get("prompt", []):
-                prompt_blocks.append(_content_from_dict(block))
-            return await self.on_prompt(
-                PromptParams(
-                    session_id=rp.get("session_id", ""),
-                    prompt=prompt_blocks,
-                )
+            await self.on_authenticate(
+                AuthenticateParams(method_id=rp.get("method_id", ""))
             )
+            return None
+
+        if method == "auth/logout":
+            await self.on_logout(LogoutParams())
+            return None
+
+        if method == "session/prompt":
+            return await self._handle_prompt(params)
 
         if method == "session/cancel":
             rp = from_raw(params)
@@ -3041,14 +3756,7 @@ class ACPAgent(ABC):
             return None
 
         if method == "session/set_config_option":
-            rp = from_raw(params)
-            return await self.on_set_config_option(
-                SetConfigOptionParams(
-                    session_id=rp.get("session_id", ""),
-                    config_id=rp.get("config_id", ""),
-                    value=rp.get("value", ""),
-                )
-            )
+            return await self._handle_set_config_option(params)
 
         if method == "session/list":
             rp = from_raw(params)

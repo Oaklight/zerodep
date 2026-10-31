@@ -490,6 +490,8 @@ class ToolCallStatus(str, Enum):
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     FAILED = "failed"
+    # ACP v2 adds an explicit cancelled status.
+    CANCELLED = "cancelled"
 
 
 class PermissionOptionKind(str, Enum):

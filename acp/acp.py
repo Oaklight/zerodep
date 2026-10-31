@@ -37,6 +37,13 @@ Requires Python >= 3.10.  No third-party packages are needed -- only the
 standard library (``asyncio``, ``json``, ``dataclasses``, ``enum``, ``typing``,
 ``sys``, ``abc``, ``uuid``, ``logging``).
 
+Protocol versions: this module speaks ACP v1 and v2.  ``ACPClient`` opens
+with its highest supported version (2) and retries once with the v1 field
+names when the agent rejects it, so existing v1 agents keep working.  An
+agent selects the highest version it supports at or below the client's
+request; when none qualifies, initialization fails with ``-32022`` and
+``{requested, supported}`` data.
+
 Quickstart -- Client side::
 
     async def main():
@@ -104,6 +111,9 @@ SUPPORTED_PROTOCOL_VERSIONS: tuple[int, ...] = (2, 1)
 
 #: ACP v2 error code for failed protocol-version negotiation.
 UNSUPPORTED_PROTOCOL_VERSION = -32022
+
+#: Errors that may mean a v1-only peer saw our v2 initialize request.
+_VERSION_RETRY_CODES = frozenset({UNSUPPORTED_PROTOCOL_VERSION, -32600, -32602})
 
 #: Date of the last audit against the published ACP v1 and v2 specifications.
 #: Update this together with the feature lists below.
@@ -2355,6 +2365,24 @@ def _initialize_params_to_wire(
     return payload
 
 
+def _auth_method_to_wire(method: AuthMethod, version: int) -> dict[str, Any]:
+    """Serialize an auth method.
+
+    ACP v2 renames the descriptor's ``id`` to ``methodId`` and requires a
+    ``type`` discriminator.
+    """
+    if version < 2:
+        return to_dict(method)
+    payload: dict[str, Any] = {
+        "methodId": method.id,
+        "name": method.name,
+        "type": method.type or "agent",
+    }
+    if method.description is not None:
+        payload["description"] = method.description
+    return payload
+
+
 def _initialize_result_to_wire(
     result: InitializeResult, version: int
 ) -> dict[str, Any]:
@@ -2367,7 +2395,9 @@ def _initialize_result_to_wire(
         "capabilities": _agent_capabilities_to_wire(result.agent_capabilities, version),
     }
     if result.auth_methods:
-        payload["authMethods"] = [to_dict(m) for m in result.auth_methods]
+        payload["authMethods"] = [
+            _auth_method_to_wire(method, version) for method in result.auth_methods
+        ]
     return payload
 
 
@@ -2644,8 +2674,8 @@ class ACPClient:
             )
         except JSONRPCException as exc:
             # A v2-only-first client can meet a v1-only agent.  Retry once
-            # with the v1 shape when the agent reports -32022.
-            if wire_version != 2 or exc.error.code != UNSUPPORTED_PROTOCOL_VERSION:
+            # with the v1 shape when the agent rejects the v2 request.
+            if wire_version != 2 or exc.error.code not in _VERSION_RETRY_CODES:
                 raise
             params.protocol_version = 1
             raw = await self._call("initialize", _initialize_params_to_wire(params, 1))
@@ -2657,7 +2687,7 @@ class ACPClient:
         self._negotiated_version = version
         auth_methods = [
             AuthMethod(
-                id=m.get("id", ""),
+                id=m.get("methodId", m.get("id", "")),
                 name=m.get("name", ""),
                 description=m.get("description"),
                 type=m.get("type"),

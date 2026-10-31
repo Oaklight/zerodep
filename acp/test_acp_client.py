@@ -18,6 +18,7 @@ from acp import (  # noqa: E402
     UNSUPPORTED_PROTOCOL_VERSION,
     ACPAgent,
     ACPClient,
+    AuthMethod,
     ClientCapabilities,
     CompactionSummaryChunkUpdate,
     CompactionUpdate,
@@ -675,3 +676,49 @@ async def test_initialize_falls_back_to_v1_on_32022():
     assert "info" in calls[0]
     assert calls[1]["protocolVersion"] == 1
     assert "info" not in calls[1]
+
+
+@pytest.mark.asyncio
+async def test_v2_auth_method_round_trip():
+    """A v2 agent's methodId survives serialization and client parsing."""
+
+    class _AuthAgent(_MinimalAgent):
+        async def on_initialize(self, params):
+            return InitializeResult(
+                protocol_version=2,
+                auth_methods=[AuthMethod(id="m1", name="Login")],
+            )
+
+    agent = _AuthAgent()
+    wire = await agent._handle_method(
+        "initialize", {"protocolVersion": 2, "info": {"name": "client"}}
+    )
+    assert wire["authMethods"] == [{"methodId": "m1", "name": "Login", "type": "agent"}]
+    assert "id" not in wire["authMethods"][0]
+
+    client = _client_with_response(wire)
+    parsed = await client.initialize()
+    assert parsed.auth_methods is not None
+    assert parsed.auth_methods[0].id == "m1"
+    assert parsed.auth_methods[0].type == "agent"
+
+
+@pytest.mark.asyncio
+async def test_initialize_retries_on_invalid_params():
+    calls: list[dict[str, object]] = []
+
+    client = ACPClient(["unused"])
+
+    async def fake_call(method, params=None):
+        calls.append(params)
+        if len(calls) == 1:
+            raise JSONRPCException(
+                JSONRPCError(code=-32602, message="unknown protocolVersion")
+            )
+        return {"protocolVersion": 1}
+
+    client._call = fake_call  # type: ignore[method-assign]
+    result = await client.initialize()
+    assert result.protocol_version == 1
+    assert len(calls) == 2
+    assert calls[1]["protocolVersion"] == 1

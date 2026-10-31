@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.3.5"
+# version = "0.3.6"
 # deps = ["jsonrpc"]
 # tier = "subsystem"
 # category = "protocol"
@@ -2009,9 +2009,14 @@ class ACPClient:
         self._transport: JSONRPCTransport | None = None
         self._pending: dict[Union[int, str], asyncio.Future[dict[str, Any]]] = {}
         self._notification_handlers: dict[str, Callable[..., Any]] = {}
-        self._update_queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue()
+        # One queue per ACP session: updates are routed by sessionId so
+        # concurrent prompts cannot consume each other's notifications.
+        self._update_queues: dict[str, asyncio.Queue[dict[str, Any] | None]] = {}
         self._reader_task: asyncio.Task[None] | None = None
         self._request_handler: Callable[[str, dict[str, Any]], Any] | None = None
+        # Last prompt result per session; the shared attribute is kept for
+        # backwards compatibility and always reflects the latest turn.
+        self._prompt_results: dict[str, PromptResult] = {}
         self._last_prompt_result: PromptResult | None = None
 
     async def start(self) -> None:
@@ -2043,6 +2048,8 @@ class ACPClient:
                 pass
         if self._transport:
             await self._transport.close()
+        self._update_queues.clear()
+        self._prompt_results.clear()
         if self._process:
             self._process.terminate()
             try:
@@ -2063,9 +2070,17 @@ class ACPClient:
         """
         self._request_handler = handler
 
+    def prompt_result(self, session_id: str) -> PromptResult | None:
+        """Return the last prompt result for *session_id*, if any."""
+        return self._prompt_results.get(session_id)
+
     @property
     def last_prompt_result(self) -> PromptResult | None:
-        """Result of the most recent ``session/prompt`` turn, if any."""
+        """Result of the most recent ``session/prompt`` turn, if any.
+
+        Kept for compatibility; use :meth:`prompt_result` for concurrent
+        sessions.
+        """
         return self._last_prompt_result
 
     def _is_response(self, msg: dict[str, Any]) -> bool:
@@ -2088,7 +2103,10 @@ class ACPClient:
         method = msg["method"]
         params = msg.get("params", {})
         if method == "session/update":
-            await self._update_queue.put(params)
+            session_id = params.get("sessionId", "")
+            if not session_id:
+                logger.debug("session/update without sessionId: %r", params)
+            await self._queue_for(session_id).put(params)
         handler = self._notification_handlers.get(method)
         if handler:
             asyncio.create_task(handler(params))
@@ -2099,8 +2117,9 @@ class ACPClient:
         while True:
             msg = await self._transport.read_message()
             if msg is None:
-                # EOF -- signal any waiting prompt iterators
-                await self._update_queue.put(None)
+                # EOF -- signal every waiting prompt iterator
+                for queue in list(self._update_queues.values()):
+                    queue.put_nowait(None)
                 break
 
             if self._is_response(msg):
@@ -2269,11 +2288,28 @@ class ACPClient:
                 blocks.append(to_dict(b))
         return blocks
 
-    def _drain_stale_updates(self) -> None:
-        """Discard any stale updates queued before a new prompt."""
-        while not self._update_queue.empty():
+    def _queue_for(self, session_id: str) -> asyncio.Queue[dict[str, Any] | None]:
+        """Return the update queue for *session_id*, creating it if needed."""
+        queue = self._update_queues.get(session_id)
+        if queue is None:
+            queue = asyncio.Queue()
+            self._update_queues[session_id] = queue
+        return queue
+
+    def _existing_queue(
+        self, session_id: str
+    ) -> asyncio.Queue[dict[str, Any] | None] | None:
+        """Return the queue for *session_id* without creating one."""
+        return self._update_queues.get(session_id)
+
+    def _drain_stale_updates(self, session_id: str) -> None:
+        """Discard stale updates queued for *session_id* before a prompt."""
+        queue = self._existing_queue(session_id)
+        if queue is None:
+            return
+        while not queue.empty():
             try:
-                self._update_queue.get_nowait()
+                queue.get_nowait()
             except asyncio.QueueEmpty:
                 break
 
@@ -2298,8 +2334,10 @@ class ACPClient:
         """
         blocks = self._build_prompt_blocks(text, extra_content)
         params = {"sessionId": session_id, "prompt": blocks}
-        self._drain_stale_updates()
+        queue = self._queue_for(session_id)
+        self._drain_stale_updates(session_id)
         self._last_prompt_result = None
+        self._prompt_results.pop(session_id, None)
 
         assert self._transport is not None
         sent = await self._transport.send_request("session/prompt", params)
@@ -2310,7 +2348,7 @@ class ACPClient:
 
         while True:
             # Wait for either an update notification or the prompt response
-            update_task = asyncio.create_task(self._update_queue.get())
+            update_task = asyncio.create_task(queue.get())
             done, _ = await asyncio.wait(
                 [update_task, prompt_fut],
                 return_when=asyncio.FIRST_COMPLETED,
@@ -2325,16 +2363,21 @@ class ACPClient:
                 update_task.cancel()
 
             if prompt_fut.done():
-                self._last_prompt_result = _parse_prompt_result(prompt_fut.result())
-                for u in self._drain_remaining_updates():
+                result = _parse_prompt_result(prompt_fut.result())
+                self._prompt_results[session_id] = result
+                self._last_prompt_result = result
+                for u in self._drain_remaining_updates(session_id):
                     yield u
                 return
 
-    def _drain_remaining_updates(self) -> list[dict[str, Any]]:
-        """Collect any remaining non-None updates from the queue."""
+    def _drain_remaining_updates(self, session_id: str) -> list[dict[str, Any]]:
+        """Collect remaining non-None updates queued for *session_id*."""
         remaining: list[dict[str, Any]] = []
-        while not self._update_queue.empty():
-            update = self._update_queue.get_nowait()
+        queue = self._existing_queue(session_id)
+        if queue is None:
+            return remaining
+        while not queue.empty():
+            update = queue.get_nowait()
             if update is not None:
                 remaining.append(update)
         return remaining
@@ -2453,6 +2496,8 @@ class ACPClient:
             session_id: Session to close.
         """
         await self._call("session/close", {"sessionId": session_id})
+        self._update_queues.pop(session_id, None)
+        self._prompt_results.pop(session_id, None)
 
     async def delete_session(self, session_id: str) -> None:
         """Delete a session from the agent's history.

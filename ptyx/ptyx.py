@@ -22,6 +22,12 @@ The backend is selected per platform:
   the child writes to the host stdout instead of the pseudoconsole.  ConPTY
   answers terminal queries itself.
 
+End-of-stream note: ``read()`` returns ``b""`` when the terminal closes,
+not necessarily when the child exits.  On Windows that is after the child
+exits and ConPTY's final output is drained; on POSIX the slave stays open
+while any descendant holds it, so a surviving grandchild keeps the stream
+open until ``close()``.
+
 Quick start::
 
     import asyncio
@@ -84,6 +90,8 @@ _PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016
 _INFINITE = 0xFFFFFFFF
 _WAIT_OBJECT_0 = 0
 _WAIT_TIMEOUT = 0x00000102
+#: Seconds to keep draining ConPTY output after the child exits.
+_DRAIN_SECONDS = 0.5
 
 
 class _COORD(ctypes.Structure):
@@ -317,7 +325,13 @@ class PtyProcess:
         raise NotImplementedError
 
     async def read(self, size: int = 65536) -> bytes:
-        """Read one chunk of terminal output; ``b""`` at end of file."""
+        """Read one chunk of terminal output; ``b""`` at end of stream.
+
+        On Windows the stream ends after the child exits and ConPTY's final
+        output is drained.  On POSIX it ends when every holder of the slave
+        closes it, so a surviving grandchild keeps ``read()`` open until
+        ``close()``.  ``size <= 0`` returns immediately.
+        """
         raise NotImplementedError
 
     def write(self, data: bytes) -> None:
@@ -405,6 +419,10 @@ class _PosixPtyProcess(PtyProcess):
                 start_new_session=True,
                 close_fds=True,
             )
+        except OSError as exc:
+            os.close(master_fd)
+            os.close(slave_fd)
+            raise PtyStartupError(f"cannot start {argv[0]!r}: {exc}") from exc
         except BaseException:
             os.close(master_fd)
             os.close(slave_fd)
@@ -425,6 +443,8 @@ class _PosixPtyProcess(PtyProcess):
         return cls(proc, master_fd, reader, transport, pipe)
 
     async def read(self, size: int = 65536) -> bytes:
+        if size <= 0:
+            return b""
         try:
             chunk = await self._reader.read(size)
         except OSError as exc:
@@ -640,6 +660,8 @@ class _ConPtyProcess(PtyProcess):
         )
 
     async def read(self, size: int = 65536) -> bytes:
+        if size <= 0:
+            return b""
         if self._buffer:
             return self._take(size)
         if self._eof:
@@ -693,13 +715,26 @@ class _ConPtyProcess(PtyProcess):
         """Drain the output pipe and report EOF once the child is gone.
 
         ConPTY keeps the pipe open after the child exits (the console host
-        owns the other end until ``ClosePseudoConsole``), so the loop peeks
-        instead of blocking in ``ReadFile``: output is drained first, then
-        ``b""`` is queued when the process has exited and no bytes remain.
+        owns the other end until ``ClosePseudoConsole``), so the loop polls
+        ``PeekNamedPipe`` instead of blocking in ``ReadFile``.  The exit
+        state is checked on every iteration, so a console that keeps
+        emitting bytes after the child exits (``cls & exit``, a background
+        writer) still reaches EOF: after exit, output is drained for at most
+        ``_DRAIN_SECONDS`` and then ``b""`` is queued.
+
+        The 10 ms idle poll is deliberate — one thread per session, and a
+        handful of sessions per process is the expected scale.
         """
         buffer = ctypes.create_string_buffer(65536)
         exited = False
+        deadline = 0.0
         while True:
+            if not exited and _WaitForSingleObject(self._process, 0) == _WAIT_OBJECT_0:
+                exited = True
+                deadline = time.monotonic() + _DRAIN_SECONDS
+                time.sleep(0.1)
+            if exited and time.monotonic() > deadline:
+                break
             available = wintypes.DWORD(0)
             if not _PeekNamedPipe(
                 self._output,
@@ -727,10 +762,6 @@ class _ConPtyProcess(PtyProcess):
                 except RuntimeError:
                     return
                 continue
-            if not exited and _WaitForSingleObject(self._process, 0) == _WAIT_OBJECT_0:
-                exited = True
-                time.sleep(0.1)
-                continue
             if exited:
                 break
             time.sleep(0.01)
@@ -752,9 +783,13 @@ class _ConPtyProcess(PtyProcess):
                 _WaitForSingleObject(self._process, 5000)
         _ClosePseudoConsole(self._console)
         self._reader.join(timeout=5.0)
-        for handle in (self._input, self._output, self._process):
-            _CloseHandle(handle)
-        return self._exit_code()
+        # Read the code before any handle is closed: closing the process
+        # handle first makes GetExitCodeProcess fail and report 0.
+        code = self._exit_code()
+        if not self._reader.is_alive():
+            for handle in (self._input, self._output, self._process):
+                _CloseHandle(handle)
+        return code
 
     def _exit_code(self) -> int:
         code = wintypes.DWORD(0)

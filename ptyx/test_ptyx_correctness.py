@@ -10,7 +10,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from ptyx import PtyProcess  # noqa: E402
+from ptyx import PtyProcess, PtyStartupError  # noqa: E402
 
 IS_WINDOWS = os.name == "nt"
 
@@ -106,3 +106,29 @@ async def test_posix_child_runs_in_own_session():
         line.split("=", 1) for line in out.decode().splitlines() if "=" in line
     )
     assert fields["sid"] == fields["pid"]
+
+
+@pytest.mark.asyncio
+async def test_close_returns_child_exit_status():
+    proc = await PtyProcess.spawn(
+        [sys.executable, "-c", "raise SystemExit(3)"], env=_clean_env()
+    )
+    await _read_all(proc)
+    assert await proc.close() == 3
+    assert proc.returncode == 3
+
+
+@pytest.mark.asyncio
+async def test_spawn_missing_binary_raises_startup_error():
+    with pytest.raises(PtyStartupError):
+        await PtyProcess.spawn(["definitely-not-a-real-binary-xyz"], env=_clean_env())
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(not IS_WINDOWS, reason="ConPTY backend only")
+async def test_conpty_eof_when_console_keeps_writing():
+    comspec = os.environ.get("COMSPEC", "cmd.exe")
+    proc = await PtyProcess.spawn([comspec, "/c", "cls & exit"])
+    out = await asyncio.wait_for(_read_all(proc), timeout=15)
+    assert isinstance(out, bytes)
+    await proc.close()

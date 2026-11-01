@@ -13,7 +13,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | Module | Version | Last Updated |
 |--------|---------|--------------|
 | [a2a](a2a.md) | 0.4.0 | 2026-10-24 |
-| [acp](acp.md) | 0.3.2 | 2026-08-25 |
+| [acp](acp.md) | 0.3.7 | 2026-10-31 |
 | [aes](aes.md) | 0.5.0 | 2026-04-20 |
 | [aiosqlite](aiosqlite.md) | 0.1.0 | 2026-09-27 |
 | [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
@@ -38,6 +38,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [profiler](profiler.md) | 0.1.1 | 2026-09-24 |
 | [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
 | [protobuf](protobuf.md) | 0.4.4 | 2026-04-27 |
+| [ptyx](ptyx.md) | 0.1.0 | 2026-11-01 |
 | [qr](qr.md) | 0.3.4 | 2026-08-25 |
 | [ratelimit](ratelimit.md) | 0.2.0 | 2026-09-14 |
 | [readability](readability.md) | 0.2.1 | 2026-08-25 |
@@ -130,6 +131,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | Module | Description | Replaces | Benchmark Against |
 |--------|-------------|----------|-------------------|
 | [ansi](ansi.md) | ANSI terminal styling: colors, attributes, detection, strip/visible_len | colorama, termcolor | -- |
+| [ptyx](ptyx.md) | Async pseudo-terminal (PTY/ConPTY) transport, stdlib only | ptyprocess, pywinpty (partial) | -- |
 | [tabulate](tabulate.md) | Table formatting with multiple output styles | tabulate, prettytable | `tabulate` |
 | [prompt](prompt.md) | Interactive CLI prompts (confirm, select, text) | inquirer, questionary | `questionary` |
 

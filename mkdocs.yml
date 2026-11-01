@@ -89,6 +89,7 @@ plugins:
             - ../websocket
             - ../cdp
             - ../multipart
+            - ../ptyx
             - aes
             - qr
             - httpclient
@@ -135,6 +136,7 @@ plugins:
             - cdp
             - multipart
             - ratelimit
+            - ptyx
           options:
             docstring_style: google
             show_source: true
@@ -222,6 +224,7 @@ nav:
           - config / Config Loader: modules/config.md
       - CLI & Terminal:
           - ansi / ANSI Colors: modules/ansi.md
+          - ptyx / PTY Transport: modules/ptyx.md
           - tabulate / Table Formatter: modules/tabulate.md
           - prompt / CLI Prompts: modules/prompt.md
       - Security:
@@ -284,6 +287,7 @@ nav:
           - config / Config Loader: api/config.md
       - CLI & Terminal:
           - ansi / ANSI Colors: api/ansi.md
+          - ptyx / PTY Transport: api/ptyx.md
           - tabulate / Table Formatter: api/tabulate.md
           - prompt / CLI Prompts: api/prompt.md
       - Security:

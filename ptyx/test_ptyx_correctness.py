@@ -170,14 +170,30 @@ async def test_large_write_is_not_truncated():
 @pytest.mark.asyncio
 @pytest.mark.skipif(IS_WINDOWS, reason="POSIX terminal-query handling")
 async def test_split_terminal_query_is_answered_once():
+    # Split the query across chunks and follow it with a marker, so the
+    # answerer gets a second chance to match the same query.  The child
+    # reads in a non-blocking loop until the marker has been processed,
+    # rather than relying on the parent's drain order.
     code = (
         "import os, time, tty\n"
         "tty.setraw(0)\n"
         "os.write(1, b'\\x1b[')\n"
-        "time.sleep(0.2)\n"
+        "time.sleep(0.15)\n"
         "os.write(1, b'6n')\n"
-        "time.sleep(0.3)\n"
-        "data = os.read(0, 64)\n"
+        "time.sleep(0.15)\n"
+        "os.write(1, b'MARK')\n"
+        "time.sleep(0.15)\n"
+        "os.set_blocking(0, False)\n"
+        "data = b''\n"
+        "for _ in range(40):\n"
+        "    try:\n"
+        "        part = os.read(0, 64)\n"
+        "    except BlockingIOError:\n"
+        "        time.sleep(0.02)\n"
+        "        continue\n"
+        "    if not part:\n"
+        "        break\n"
+        "    data += part\n"
         "print('REPLIES=%d' % data.count(b'\\x1b[1;1R'))\n"
     )
     proc = await PtyProcess.spawn([sys.executable, "-c", code], env=_clean_env())

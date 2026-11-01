@@ -47,7 +47,7 @@ async def test_write_round_trip():
     code = "import sys\nline = sys.stdin.readline()\nprint('GOT:' + line.strip())\n"
     proc = await PtyProcess.spawn([sys.executable, "-c", code], env=_clean_env())
     await asyncio.sleep(0.3)
-    proc.write(b"ping\r")
+    await proc.write(b"ping\r")
     out = await _read_all(proc)
     assert b"GOT:ping" in out
     await proc.close()
@@ -131,4 +131,37 @@ async def test_conpty_eof_when_console_keeps_writing():
     proc = await PtyProcess.spawn([comspec, "/c", "cls & exit"])
     out = await asyncio.wait_for(_read_all(proc), timeout=15)
     assert isinstance(out, bytes)
+    await proc.close()
+
+
+@pytest.mark.asyncio
+async def test_read_after_child_exit_returns_buffered_output():
+    proc = await PtyProcess.spawn(
+        [sys.executable, "-c", "print('late output')"], env=_clean_env()
+    )
+    await asyncio.sleep(0.5)
+    out = await _read_all(proc)
+    assert b"late output" in out
+    await proc.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(IS_WINDOWS, reason="POSIX pty only")
+async def test_large_write_is_not_truncated():
+    code = (
+        "import os, tty\n"
+        "tty.setraw(0)\n"
+        "data = b''\n"
+        "while len(data) < 32768:\n"
+        "    chunk = os.read(0, 32768 - len(data))\n"
+        "    if not chunk:\n"
+        "        break\n"
+        "    data += chunk\n"
+        "print('LEN=%d' % len(data))\n"
+    )
+    proc = await PtyProcess.spawn([sys.executable, "-c", code], env=_clean_env())
+    await asyncio.sleep(0.3)
+    await proc.write(b"x" * 32768)
+    out = await _read_all(proc)
+    assert b"LEN=32768" in out
     await proc.close()

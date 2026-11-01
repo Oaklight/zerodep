@@ -53,6 +53,7 @@ Requirements:
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import ctypes
 import errno
 import os
@@ -334,8 +335,12 @@ class PtyProcess:
         """
         raise NotImplementedError
 
-    def write(self, data: bytes) -> None:
-        """Write raw bytes to the terminal."""
+    async def write(self, data: bytes) -> None:
+        """Write all of *data* to the terminal.
+
+        Waits for the terminal to accept the bytes instead of dropping a
+        partial write; safe for multi-kilobyte pastes.
+        """
         raise NotImplementedError
 
     def resize(self, rows: int, cols: int) -> None:
@@ -369,6 +374,21 @@ class PtyProcess:
 # ---------------------------------------------------------------------------
 
 
+class _PtyStreamReaderProtocol(asyncio.StreamReaderProtocol):
+    """Stream protocol that turns a PTY's EIO into EOF.
+
+    ``StreamReader.read()`` raises a stored exception before returning
+    buffered data.  When the last slave closes, Linux reports ``EIO`` on the
+    master; treating that as an exception would discard everything already
+    delivered.  Feed EOF instead so buffered output is returned first.
+    """
+
+    def connection_lost(self, exc: Exception | None) -> None:
+        if isinstance(exc, OSError) and exc.errno == errno.EIO:
+            exc = None
+        super().connection_lost(exc)
+
+
 class _PosixPtyProcess(PtyProcess):
     def __init__(
         self,
@@ -384,6 +404,7 @@ class _PosixPtyProcess(PtyProcess):
         self._transport = transport
         self._pipe = pipe
         self._closed = False
+        self._query_tail = b""
 
     @property
     def pid(self) -> int:
@@ -431,7 +452,7 @@ class _PosixPtyProcess(PtyProcess):
 
         loop = asyncio.get_running_loop()
         reader = asyncio.StreamReader()
-        protocol = asyncio.StreamReaderProtocol(reader)
+        protocol = _PtyStreamReaderProtocol(reader)
         pipe = os.fdopen(master_fd, "rb", buffering=0)
         try:
             transport, _ = await loop.connect_read_pipe(lambda: protocol, pipe)
@@ -455,13 +476,39 @@ class _PosixPtyProcess(PtyProcess):
             self._answer_terminal_queries(chunk)
         return chunk
 
-    def write(self, data: bytes) -> None:
-        if self._closed:
+    async def write(self, data: bytes) -> None:
+        if self._closed or not data:
             return
+        view = memoryview(data)
+        while view:
+            try:
+                written = os.write(self._master_fd, view)
+            except BlockingIOError as exc:
+                done = getattr(exc, "characters_written", 0)
+                view = view[done:]
+                if view:
+                    await self._wait_writable()
+                continue
+            except OSError:
+                return
+            view = view[written:]
+
+    async def _wait_writable(self) -> None:
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future[None] = loop.create_future()
+
+        def _ready() -> None:
+            if not future.done():
+                future.set_result(None)
+
+        loop.add_writer(self._master_fd, _ready)
         try:
-            os.write(self._master_fd, data)
-        except OSError:
-            pass
+            await future
+        finally:
+            try:
+                loop.remove_writer(self._master_fd)
+            except (OSError, ValueError):
+                pass
 
     def resize(self, rows: int, cols: int) -> None:
         if not self._closed:
@@ -501,10 +548,15 @@ class _PosixPtyProcess(PtyProcess):
         return self._proc.returncode
 
     def _answer_terminal_queries(self, chunk: bytes) -> None:
-        if b"\x1b[6n" in chunk:
-            self.write(b"\x1b[1;1R")
-        if b"\x1b[c" in chunk or b"\x1b[0c" in chunk:
-            self.write(b"\x1b[?62;c")
+        data = self._query_tail + chunk
+        self._query_tail = data[-8:]
+        try:
+            if b"\x1b[6n" in data:
+                os.write(self._master_fd, b"\x1b[1;1R")
+            if b"\x1b[c" in data or b"\x1b[0c" in data:
+                os.write(self._master_fd, b"\x1b[?62;c")
+        except OSError:
+            pass
 
     @staticmethod
     def _set_winsize(fd: int, rows: int, cols: int) -> None:
@@ -539,7 +591,7 @@ class _ConPtyProcess(PtyProcess):
         self._console = console
         self._input = input_handle
         self._output = output_handle
-        self._queue: asyncio.Queue[bytes] = asyncio.Queue()
+        self._queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=32)
         self._buffer = bytearray()
         self._eof = False
         self._closed = False
@@ -673,10 +725,10 @@ class _ConPtyProcess(PtyProcess):
         self._buffer.extend(item)
         return self._take(size)
 
-    def write(self, data: bytes) -> None:
+    async def write(self, data: bytes) -> None:
         if self._closed or not data:
             return
-        self._write_raw(data)
+        await asyncio.to_thread(self._write_raw, data)
 
     def resize(self, rows: int, cols: int) -> None:
         if not self._closed:
@@ -701,15 +753,21 @@ class _ConPtyProcess(PtyProcess):
         return chunk
 
     def _write_raw(self, data: bytes) -> None:
-        buffer = ctypes.create_string_buffer(data, len(data))
-        written = wintypes.DWORD(0)
-        _WriteFile(
-            self._input,
-            buffer,
-            len(data),
-            ctypes.byref(written),
-            None,
-        )
+        view = memoryview(data)
+        while view:
+            buffer = ctypes.create_string_buffer(bytes(view), len(view))
+            written = wintypes.DWORD(0)
+            if not _WriteFile(
+                self._input,
+                buffer,
+                len(view),
+                ctypes.byref(written),
+                None,
+            ):
+                return
+            if written.value == 0:
+                return
+            view = view[written.value :]
 
     def _read_loop(self) -> None:
         """Drain the output pipe and report EOF once the child is gone.
@@ -723,7 +781,9 @@ class _ConPtyProcess(PtyProcess):
         ``_DRAIN_SECONDS`` and then ``b""`` is queued.
 
         The 10 ms idle poll is deliberate — one thread per session, and a
-        handful of sessions per process is the expected scale.
+        handful of sessions per process is the expected scale.  Chunks go
+        through a bounded queue, so a chatty child blocks instead of growing
+        the process's memory.
         """
         buffer = ctypes.create_string_buffer(65536)
         exited = False
@@ -765,10 +825,24 @@ class _ConPtyProcess(PtyProcess):
             if exited:
                 break
             time.sleep(0.01)
-        try:
-            self._loop.call_soon_threadsafe(self._queue.put_nowait, b"")
-        except RuntimeError:
-            pass
+        self._emit(b"")
+
+    def _emit(self, chunk: bytes) -> bool:
+        """Queue *chunk*, blocking while the bounded queue is full."""
+        while not self._closed:
+            try:
+                future = asyncio.run_coroutine_threadsafe(
+                    self._queue.put(chunk), self._loop
+                )
+            except RuntimeError:
+                return False
+            try:
+                future.result(timeout=0.5)
+                return True
+            except concurrent.futures.TimeoutError:
+                if not future.cancel() and future.done():
+                    return True
+        return False
 
     def _wait_blocking(self) -> int:
         _WaitForSingleObject(self._process, _INFINITE)

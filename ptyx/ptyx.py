@@ -22,6 +22,11 @@ The backend is selected per platform:
   the child writes to the host stdout instead of the pseudoconsole.  ConPTY
   answers terminal queries itself.
 
+The child runs in its own session but has no controlling terminal
+(``TIOCSCTTY`` is not set), so ``/dev/tty`` is unavailable; programs that
+require it (``sudo``, ``ssh`` password prompts) need a real terminal.
+Agent CLIs use stdin/stdout only.
+
 End-of-stream note: ``read()`` returns ``b""`` when the terminal closes,
 not necessarily when the child exits.  On Windows that is after the child
 exits and ConPTY's final output is drained; on POSIX the slave stays open
@@ -57,6 +62,7 @@ import concurrent.futures
 import ctypes
 import errno
 import os
+import re
 import signal
 import struct
 import subprocess
@@ -68,6 +74,7 @@ from typing import Any
 __all__ = ["PtyProcess", "PtyStartupError"]
 
 _IS_WINDOWS = os.name == "nt"
+_QUERY_RE = re.compile(rb"\x1b\[(?:6n|0?c)")
 
 if not _IS_WINDOWS:  # pragma: no branch - platform-specific import
     import fcntl
@@ -306,6 +313,10 @@ class PtyProcess:
         Raises:
             PtyStartupError: If the pseudo-terminal or child cannot be
                 created.
+
+        Note:
+            The child is a session leader but has no controlling terminal,
+            so ``/dev/tty`` is unavailable (see the module docstring).
         """
         if _IS_WINDOWS:
             return await _ConPtyProcess._spawn(
@@ -339,7 +350,9 @@ class PtyProcess:
         """Write all of *data* to the terminal.
 
         Waits for the terminal to accept the bytes instead of dropping a
-        partial write; safe for multi-kilobyte pastes.
+        partial write; safe for multi-kilobyte pastes.  Keep reading while
+        writing: a child that echoes input can fill the output side, and the
+        wait is for a writable master, not a readable one.
         """
         raise NotImplementedError
 
@@ -548,13 +561,20 @@ class _PosixPtyProcess(PtyProcess):
         return self._proc.returncode
 
     def _answer_terminal_queries(self, chunk: bytes) -> None:
+        tail_len = len(self._query_tail)
         data = self._query_tail + chunk
-        self._query_tail = data[-8:]
+        # Keep only a partial query prefix for the next read; replies are
+        # sent for matches that end in the new bytes, so a query that was
+        # already answered is not answered twice.
+        self._query_tail = data[-3:]
         try:
-            if b"\x1b[6n" in data:
-                os.write(self._master_fd, b"\x1b[1;1R")
-            if b"\x1b[c" in data or b"\x1b[0c" in data:
-                os.write(self._master_fd, b"\x1b[?62;c")
+            for match in _QUERY_RE.finditer(data):
+                if match.end() <= tail_len:
+                    continue
+                if match.group() == b"\x1b[6n":
+                    os.write(self._master_fd, b"\x1b[1;1R")
+                else:
+                    os.write(self._master_fd, b"\x1b[?62;c")
         except OSError:
             pass
 

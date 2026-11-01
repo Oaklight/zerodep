@@ -165,3 +165,22 @@ async def test_large_write_is_not_truncated():
     out = await _read_all(proc)
     assert b"LEN=32768" in out
     await proc.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(IS_WINDOWS, reason="POSIX terminal-query handling")
+async def test_split_terminal_query_is_answered_once():
+    code = (
+        "import os, time, tty\n"
+        "tty.setraw(0)\n"
+        "os.write(1, b'\\x1b[')\n"
+        "time.sleep(0.2)\n"
+        "os.write(1, b'6n')\n"
+        "time.sleep(0.3)\n"
+        "data = os.read(0, 64)\n"
+        "print('REPLIES=%d' % data.count(b'\\x1b[1;1R'))\n"
+    )
+    proc = await PtyProcess.spawn([sys.executable, "-c", code], env=_clean_env())
+    out = await _read_all(proc)
+    assert b"REPLIES=1" in out
+    await proc.close()

@@ -1,0 +1,29 @@
+name: ptyx (Windows)
+
+on:
+  pull_request:
+    paths:
+      - "ptyx/**"
+      - "pyproject.toml"
+      - ".github/workflows/ptyx-windows.yml"
+  push:
+    branches: [master]
+    paths:
+      - "ptyx/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: pip install pytest pytest-asyncio
+      - name: Run ptyx tests on ConPTY
+        run: pytest ptyx -q

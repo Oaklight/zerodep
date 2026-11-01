@@ -43,7 +43,7 @@ categories:
   - id: terminal
     name_en: "CLI & Terminal"
     name_zh: "命令行与终端"
-    modules: [ansi, tabulate, prompt]
+    modules: [ansi, ptyx, tabulate, prompt]
 
   - id: crypto
     name_en: "Security"
@@ -230,6 +230,11 @@ modules:
     replaces_zh: "colorama、termcolor"
     desc_en: "ANSI terminal styling: colors, attributes, detection, strip/visible_len"
     desc_zh: "ANSI 终端样式：颜色、属性、检测、strip/visible_len"
+  ptyx:
+    replaces: "ptyprocess, pywinpty (partial)"
+    replaces_zh: "ptyprocess、pywinpty（部分）"
+    desc_en: "Async pseudo-terminal (PTY/ConPTY) transport, stdlib only"
+    desc_zh: "异步伪终端（PTY/ConPTY）传输，仅用标准库"
   tabulate:
     benchmark: tabulate
     replaces: "tabulate, prettytable"

@@ -13,7 +13,7 @@ title: 模块概览
 | 模块 | 版本 | 最后更新 |
 |--------|---------|--------------|
 | [a2a](a2a.md) | 0.4.0 | 2026-10-24 |
-| [acp](acp.md) | 0.3.2 | 2026-08-25 |
+| [acp](acp.md) | 0.3.7 | 2026-10-31 |
 | [aes](aes.md) | 0.5.0 | 2026-04-20 |
 | [aiosqlite](aiosqlite.md) | 0.1.0 | 2026-09-27 |
 | [ansi](ansi.md) | 0.3.0 | 2026-04-11 |
@@ -38,6 +38,7 @@ title: 模块概览
 | [profiler](profiler.md) | 0.1.1 | 2026-09-24 |
 | [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
 | [protobuf](protobuf.md) | 0.4.4 | 2026-04-27 |
+| [ptyx](ptyx.md) | 0.1.0 | 2026-11-01 |
 | [qr](qr.md) | 0.3.4 | 2026-08-25 |
 | [ratelimit](ratelimit.md) | 0.2.0 | 2026-09-14 |
 | [readability](readability.md) | 0.2.1 | 2026-08-25 |
@@ -130,6 +131,7 @@ title: 模块概览
 | 模块 | 描述 | 可替代 | 性能对标 |
 |--------|-------------|----------|-------------------|
 | [ansi](ansi.md) | ANSI 终端样式：颜色、属性、检测、strip/visible_len | colorama、termcolor | -- |
+| [ptyx](ptyx.md) | 异步伪终端（PTY/ConPTY）传输，仅用标准库 | ptyprocess、pywinpty（部分） | -- |
 | [tabulate](tabulate.md) | 多种输出样式的表格格式化 | tabulate、prettytable | `tabulate` |
 | [prompt](prompt.md) | 交互式 CLI 提示（confirm、select、text） | inquirer、questionary | `questionary` |
 

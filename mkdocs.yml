@@ -89,6 +89,7 @@ plugins:
             - ../websocket
             - ../cdp
             - ../multipart
+            - ../ptyx
             - aes
             - qr
             - httpclient
@@ -135,6 +136,7 @@ plugins:
             - cdp
             - multipart
             - ratelimit
+            - ptyx
           options:
             docstring_style: google
             show_source: true
@@ -222,6 +224,7 @@ nav:
           - config / 配置加载器: modules/config.md
       - 命令行与终端:
           - ansi / ANSI 终端样式: modules/ansi.md
+          - ptyx / 伪终端传输: modules/ptyx.md
           - tabulate / 表格格式化: modules/tabulate.md
           - prompt / 交互式提示: modules/prompt.md
       - 安全:
@@ -284,6 +287,7 @@ nav:
           - config / 配置加载器: api/config.md
       - 命令行与终端:
           - ansi / ANSI 终端样式: api/ansi.md
+          - ptyx / 伪终端传输: api/ptyx.md
           - tabulate / 表格格式化: api/tabulate.md
           - prompt / 交互式提示: api/prompt.md
       - 安全:

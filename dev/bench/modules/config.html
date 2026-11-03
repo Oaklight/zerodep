@@ -125,28 +125,28 @@ td { white-space: nowrap; }
 <h1>config</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: 11a789b | Commit: 11a789bb | 2026-10-25T08:55:08.069083+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-10-25T08:55:08.069083+00:00"></span></p>
+<p class="meta">Version: 70369c0 | Commit: 70369c0d | 2026-11-03T21:47:01.737297+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-11-03T21:47:01.737297+00:00"></span></p>
 <h2>config</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Cast Bool</td><td>zerodep</td><td>python-decouple</td><td>946.2 ns</td><td>1.9 µs</td><td>1.06M</td><td>525.2K</td><td title="CV=29.5% | rounds=120890">871.0 ns</td><td title="CV=29.5% | rounds=120890">54.4 µs</td><td title="CV=29.5% | rounds=120890">279.2 ns</td><td title="CV=29.5% | rounds=120890">981.0 ns</td><td title="CV=23.2% | rounds=76284">1.8 µs</td><td title="CV=23.2% | rounds=76284">46.9 µs</td><td title="CV=23.2% | rounds=76284">441.4 ns</td><td title="CV=23.2% | rounds=76284">1.9 µs</td><td class="ratio-cell faster">2.0x faster</td></tr>
-<tr><td>Cast Int</td><td>zerodep</td><td>python-decouple</td><td>905.2 ns</td><td>1.7 µs</td><td>1.10M</td><td>582.1K</td><td title="CV=42.5% | rounds=140628">801.0 ns</td><td title="CV=42.5% | rounds=140628">55.6 µs</td><td title="CV=42.5% | rounds=140628">384.6 ns</td><td title="CV=42.5% | rounds=140628">921.0 ns</td><td title="CV=23.4% | rounds=127535">1.6 µs</td><td title="CV=23.4% | rounds=127535">21.6 µs</td><td title="CV=23.4% | rounds=127535">402.6 ns</td><td title="CV=23.4% | rounds=127535">1.7 µs</td><td class="ratio-cell faster">1.9x faster</td></tr>
-<tr><td>Csv Cast</td><td>zerodep</td><td>python-decouple</td><td>2.0 µs</td><td>9.5 µs</td><td>500.7K</td><td>105.4K</td><td title="CV=20.8% | rounds=82048">1.9 µs</td><td title="CV=20.8% | rounds=82048">36.2 µs</td><td title="CV=20.8% | rounds=82048">415.4 ns</td><td title="CV=20.8% | rounds=82048">2.0 µs</td><td title="CV=10.4% | rounds=19727">9.0 µs</td><td title="CV=10.4% | rounds=19727">61.2 µs</td><td title="CV=10.4% | rounds=19727">986.3 ns</td><td title="CV=10.4% | rounds=19727">9.7 µs</td><td class="ratio-cell faster">4.8x faster</td></tr>
-<tr><td>Dotenv Lookup</td><td>zerodep</td><td>python-decouple</td><td>497.6 ns</td><td>1.2 µs</td><td>2.01M</td><td>817.3K</td><td title="CV=9.4% | rounds=98088">465.2 ns</td><td title="CV=9.4% | rounds=98088">3.3 µs</td><td title="CV=9.4% | rounds=98088">46.5 ns</td><td title="CV=9.4% | rounds=98088">506.3 ns</td><td title="CV=23.0% | rounds=128025">1.1 µs</td><td title="CV=23.0% | rounds=128025">19.8 µs</td><td title="CV=23.0% | rounds=128025">281.5 ns</td><td title="CV=23.0% | rounds=128025">1.3 µs</td><td class="ratio-cell faster">2.5x faster</td></tr>
-<tr><td>Env Lookup</td><td>zerodep</td><td>python-decouple</td><td>644.4 ns</td><td>1.2 µs</td><td>1.55M</td><td>806.4K</td><td title="CV=28.5% | rounds=136036">561.0 ns</td><td title="CV=28.5% | rounds=136036">17.0 µs</td><td title="CV=28.5% | rounds=136036">183.9 ns</td><td title="CV=28.5% | rounds=136036">681.0 ns</td><td title="CV=19.2% | rounds=5145">1.2 µs</td><td title="CV=19.2% | rounds=5145">9.9 µs</td><td title="CV=19.2% | rounds=5145">237.8 ns</td><td title="CV=19.2% | rounds=5145">1.3 µs</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Cast Bool</td><td>zerodep</td><td>python-decouple</td><td>1.3 µs</td><td>2.4 µs</td><td>796.6K</td><td>411.1K</td><td title="CV=31.2% | rounds=111533">1.2 µs</td><td title="CV=31.2% | rounds=111533">24.4 µs</td><td title="CV=31.2% | rounds=111533">392.1 ns</td><td title="CV=31.2% | rounds=111533">1.3 µs</td><td title="CV=29.4% | rounds=79033">2.3 µs</td><td title="CV=29.4% | rounds=79033">61.9 µs</td><td title="CV=29.4% | rounds=79033">714.6 ns</td><td title="CV=29.4% | rounds=79033">2.4 µs</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Cast Int</td><td>zerodep</td><td>python-decouple</td><td>1.2 µs</td><td>2.2 µs</td><td>822.6K</td><td>453.6K</td><td title="CV=43.6% | rounds=143001">1.1 µs</td><td title="CV=43.6% | rounds=143001">49.7 µs</td><td title="CV=43.6% | rounds=143001">529.5 ns</td><td title="CV=43.6% | rounds=143001">1.2 µs</td><td title="CV=31.2% | rounds=97182">2.1 µs</td><td title="CV=31.2% | rounds=97182">84.5 µs</td><td title="CV=31.2% | rounds=97182">688.1 ns</td><td title="CV=31.2% | rounds=97182">2.2 µs</td><td class="ratio-cell faster">1.8x faster</td></tr>
+<tr><td>Csv Cast</td><td>zerodep</td><td>python-decouple</td><td>2.6 µs</td><td>12.1 µs</td><td>383.4K</td><td>82.9K</td><td title="CV=29.6% | rounds=51136">2.4 µs</td><td title="CV=29.6% | rounds=51136">89.9 µs</td><td title="CV=29.6% | rounds=51136">771.2 ns</td><td title="CV=29.6% | rounds=51136">2.6 µs</td><td title="CV=13.6% | rounds=17536">11.4 µs</td><td title="CV=13.6% | rounds=17536">43.5 µs</td><td title="CV=13.6% | rounds=17536">1.6 µs</td><td title="CV=13.6% | rounds=17536">12.3 µs</td><td class="ratio-cell faster">4.6x faster</td></tr>
+<tr><td>Dotenv Lookup</td><td>zerodep</td><td>python-decouple</td><td>699.8 ns</td><td>1.7 µs</td><td>1.43M</td><td>603.1K</td><td title="CV=11.3% | rounds=68461">667.2 ns</td><td title="CV=11.3% | rounds=68461">5.4 µs</td><td title="CV=11.3% | rounds=68461">79.0 ns</td><td title="CV=11.3% | rounds=68461">707.3 ns</td><td title="CV=33.5% | rounds=119962">1.5 µs</td><td title="CV=33.5% | rounds=119962">84.5 µs</td><td title="CV=33.5% | rounds=119962">556.0 ns</td><td title="CV=33.5% | rounds=119962">1.7 µs</td><td class="ratio-cell faster">2.4x faster</td></tr>
+<tr><td>Env Lookup</td><td>zerodep</td><td>python-decouple</td><td>849.0 ns</td><td>1.7 µs</td><td>1.18M</td><td>601.2K</td><td title="CV=42.8% | rounds=116199">751.0 ns</td><td title="CV=42.8% | rounds=116199">29.0 µs</td><td title="CV=42.8% | rounds=116199">363.1 ns</td><td title="CV=42.8% | rounds=116199">892.0 ns</td><td title="CV=33.8% | rounds=4522">1.5 µs</td><td title="CV=33.8% | rounds=4522">21.8 µs</td><td title="CV=33.8% | rounds=4522">562.3 ns</td><td title="CV=33.8% | rounds=4522">1.7 µs</td><td class="ratio-cell faster">2.0x faster</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 <h3>Standalone benchmarks</h3>
 <div class="table-wrap"><table class="standalone-table">
 <thead><tr><th>Operation</th><th>Variant</th><th>Mean</th><th>ops/s</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr></thead>
 <tbody>
-<tr><td>Config Init</td><td>zerodep_env_only</td><td>403.7 ns</td><td>2.48M</td><td title="CV=10.0% | rounds=94653">385.5 ns</td><td title="CV=10.0% | rounds=94653">3.3 µs</td><td title="CV=10.0% | rounds=94653">40.3 ns</td><td title="CV=10.0% | rounds=94653">407.1 ns</td></tr>
-<tr><td>Config Init</td><td>zerodep_with_dotenv</td><td>1.31 ms</td><td>765.4</td><td title="CV=21.0% | rounds=436">1.25 ms</td><td title="CV=21.0% | rounds=436">6.73 ms</td><td title="CV=21.0% | rounds=436">273.8 µs</td><td title="CV=21.0% | rounds=436">1.36 ms</td></tr>
-<tr><td>Config Init</td><td>zerodep_with_json</td><td>34.9 µs</td><td>28.7K</td><td title="CV=38.3% | rounds=9855">33.4 µs</td><td title="CV=38.3% | rounds=9855">1.34 ms</td><td title="CV=38.3% | rounds=9855">13.4 µs</td><td title="CV=38.3% | rounds=9855">36.8 µs</td></tr>
-<tr><td>Nested Json Lookup</td><td>zerodep</td><td>1.6 µs</td><td>612.9K</td><td title="CV=21.0% | rounds=76811">1.5 µs</td><td title="CV=21.0% | rounds=76811">25.9 µs</td><td title="CV=21.0% | rounds=76811">341.8 ns</td><td title="CV=21.0% | rounds=76811">1.7 µs</td></tr>
+<tr><td>Config Init</td><td>zerodep_env_only</td><td>542.4 ns</td><td>1.84M</td><td title="CV=12.5% | rounds=79152">505.0 ns</td><td title="CV=12.5% | rounds=79152">6.3 µs</td><td title="CV=12.5% | rounds=79152">67.7 ns</td><td title="CV=12.5% | rounds=79152">556.1 ns</td></tr>
+<tr><td>Config Init</td><td>zerodep_with_dotenv</td><td>1.73 ms</td><td>577.7</td><td title="CV=20.7% | rounds=358">1.65 ms</td><td title="CV=20.7% | rounds=358">6.81 ms</td><td title="CV=20.7% | rounds=358">358.3 µs</td><td title="CV=20.7% | rounds=358">1.81 ms</td></tr>
+<tr><td>Config Init</td><td>zerodep_with_json</td><td>54.3 µs</td><td>18.4K</td><td title="CV=29.8% | rounds=10152">50.6 µs</td><td title="CV=29.8% | rounds=10152">1.57 ms</td><td title="CV=29.8% | rounds=10152">16.2 µs</td><td title="CV=29.8% | rounds=10152">70.0 µs</td></tr>
+<tr><td>Nested Json Lookup</td><td>zerodep</td><td>2.1 µs</td><td>471.1K</td><td title="CV=29.7% | rounds=72224">2.0 µs</td><td title="CV=29.7% | rounds=72224">83.3 µs</td><td title="CV=29.7% | rounds=72224">630.6 ns</td><td title="CV=29.7% | rounds=72224">2.2 µs</td></tr>
 </tbody></table></div>
 
 <div class="trend-section" id="trend-section" style="display:none">
@@ -217,13 +217,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [1056857.4998326646, 1104753.2971120942, 500717.08035721607, 2009473.9666365418, 1551758.5731468173],
+        data: [796579.1257543045, 822636.2746197333, 383378.33023286954, 1429063.6300458366, 1177898.019319787],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "python-decouple" + ' (ops/s)',
-        data: [525180.7595641247, 582127.3754524431, 105377.8926644104, 817267.7473801259, 806404.3400300882],
+        data: [411132.02554572414, 453592.11939784914, 82870.43098004835, 603059.8564778954, 601181.6503046377],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

@@ -10,13 +10,16 @@ sys.path.insert(0, os.path.dirname(__file__))
 import pytest
 
 from httpclient import (
+    _SSL_CONTEXT_CACHE,
     CaseInsensitiveDict,
     Client,
     HttpConnectionError,
     HTTPError,
     HttpTimeoutError,
     StreamingResponse,
+    _make_ssl_context,
     _prepare_body,
+    _ssl_context_key,
     _SyncConnectionPool,
     async_get,
     get,
@@ -568,3 +571,88 @@ class TestIterLinesDecoding:
         resp = self._make_sync_response([payload])
         lines = list(resp.iter_lines())
         assert lines == ["line1", "line2", "line3"]
+
+
+# ── SSL context cache ───────────────────────────────────────────────────────
+
+
+class TestSslContextCache:
+    """The SSL context is rebuilt only when the verification key changes."""
+
+    def test_same_key_reuses_the_context(self, monkeypatch):
+        created = []
+
+        def fake_context():
+            created.append(1)
+            return object()
+
+        monkeypatch.setattr("httpclient.ssl.create_default_context", fake_context)
+        monkeypatch.delenv("SSL_CERT_FILE", raising=False)
+        monkeypatch.delenv("SSL_CERT_DIR", raising=False)
+        _SSL_CONTEXT_CACHE.clear()
+        try:
+            first = _make_ssl_context(True)
+            second = _make_ssl_context(True)
+            assert first is second
+            assert len(created) == 1
+        finally:
+            _SSL_CONTEXT_CACHE.clear()
+
+    def test_verify_false_is_a_separate_entry(self, monkeypatch):
+        monkeypatch.setenv("SSL_CERT_FILE", "/tmp/a.pem")
+        assert _ssl_context_key(True) != _ssl_context_key(False)
+        _SSL_CONTEXT_CACHE.clear()
+        try:
+            unverified = _make_ssl_context(False)
+            assert not unverified.check_hostname
+        finally:
+            _SSL_CONTEXT_CACHE.clear()
+
+    def test_ca_env_change_rebuilds_the_context(self, monkeypatch):
+        created = []
+
+        def fake_context():
+            created.append(1)
+            return object()
+
+        monkeypatch.setattr("httpclient.ssl.create_default_context", fake_context)
+        monkeypatch.setenv("SSL_CERT_FILE", "/tmp/a.pem")
+        _SSL_CONTEXT_CACHE.clear()
+        try:
+            first = _make_ssl_context(True)
+            second = _make_ssl_context(True)
+            monkeypatch.setenv("SSL_CERT_FILE", "/tmp/b.pem")
+            third = _make_ssl_context(True)
+            assert first is second
+            assert third is not first
+            assert len(created) == 2
+        finally:
+            _SSL_CONTEXT_CACHE.clear()
+
+    def test_cache_key_includes_the_ca_path(self, monkeypatch):
+        monkeypatch.setenv("SSL_CERT_FILE", "/tmp/a.pem")
+        key_a = _ssl_context_key(True)
+        monkeypatch.setenv("SSL_CERT_FILE", "/tmp/b.pem")
+        key_b = _ssl_context_key(True)
+        assert key_a != key_b
+
+    def test_cache_key_tracks_ca_file_rotation(self, tmp_path, monkeypatch):
+        ca = tmp_path / "ca.pem"
+        ca.write_text("A" * 10)
+        monkeypatch.setenv("SSL_CERT_FILE", str(ca))
+        monkeypatch.setenv("SSL_CERT_DIR", "")
+        first = _ssl_context_key(True)
+        ca.write_text("B" * 20)
+        second = _ssl_context_key(True)
+        assert first != second
+
+    def test_cache_key_tracks_ca_dir_change(self, tmp_path, monkeypatch):
+        ca_dir = tmp_path / "certs"
+        ca_dir.mkdir()
+        monkeypatch.setenv("SSL_CERT_FILE", "")
+        monkeypatch.setenv("SSL_CERT_DIR", str(ca_dir))
+        first = _ssl_context_key(True)
+        (ca_dir / "new.pem").write_text("new")
+        os.utime(ca_dir, ns=(1, 1))
+        second = _ssl_context_key(True)
+        assert first != second

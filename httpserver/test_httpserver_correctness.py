@@ -1177,11 +1177,13 @@ class _TrackingWriter:
     def __init__(self):
         self._extra = {"peername": ("127.0.0.1", 9999)}
         self.data = bytearray()
+        self.writes: list[bytes] = []
 
     def get_extra_info(self, key):
         return self._extra.get(key)
 
     def write(self, data):
+        self.writes.append(bytes(data))
         self.data.extend(data)
 
     async def drain(self):
@@ -1318,6 +1320,78 @@ class TestLifecycleSignals:
             writer = _TrackingWriter()
             await app._handle_connection(reader, writer)
             assert events == ["completed"]
+
+        asyncio.run(_test())
+
+    def test_streaming_coalesces_a_small_chunk_frame(self):
+        """A small chunk reaches the transport as one framed write."""
+        app = App()
+
+        @app.get("/stream")
+        async def handler(request):
+            async def gen():
+                yield "a"
+                yield "b"
+
+            return StreamingResponse(gen(), content_type="text/plain")
+
+        async def _test():
+            reader = _mock_reader(b"GET /stream HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _TrackingWriter()
+            await app._handle_connection(reader, writer)
+            # The size line, payload and CRLF are one write per chunk; no
+            # standalone CRLF write is left over.
+            assert [w for w in writer.writes if w.startswith(b"1\r\n")] == [
+                b"1\r\na\r\n",
+                b"1\r\nb\r\n",
+            ]
+            assert b"\r\n" not in writer.writes
+            assert writer.writes[-1] == b"0\r\n\r\n"
+
+        asyncio.run(_test())
+
+    def test_streaming_skips_an_empty_chunk(self):
+        """An empty yield is a no-op, not the terminating chunk."""
+        app = App()
+
+        @app.get("/stream")
+        async def handler(request):
+            async def gen():
+                yield "a"
+                yield ""
+                yield "b"
+
+            return StreamingResponse(gen(), content_type="text/plain")
+
+        async def _test():
+            reader = _mock_reader(b"GET /stream HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _TrackingWriter()
+            await app._handle_connection(reader, writer)
+            body = bytes(writer.data)
+            assert body.endswith(b"1\r\na\r\n1\r\nb\r\n0\r\n\r\n")
+            # The empty yield did not write a terminator in the middle.
+            assert body.count(b"0\r\n\r\n") == 1
+
+        asyncio.run(_test())
+
+    def test_streaming_writes_a_large_chunk_in_pieces(self):
+        """A chunk above the coalesce limit is not copied into one buffer."""
+        payload = "x" * (64 * 1024 + 1)
+        app = App()
+
+        @app.get("/stream")
+        async def handler(request):
+            async def gen():
+                yield payload
+
+            return StreamingResponse(gen(), content_type="text/plain")
+
+        async def _test():
+            reader = _mock_reader(b"GET /stream HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            writer = _TrackingWriter()
+            await app._handle_connection(reader, writer)
+            assert payload.encode() in writer.writes
+            assert b"\r\n" in writer.writes
 
         asyncio.run(_test())
 

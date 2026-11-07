@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import socket
 
+import pytest
 from test_httpserver_keepalive import _live
 
 import httpserver as server_module
@@ -404,3 +405,56 @@ class TestHeadersView:
                 b"POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: -1\r\n\r\n",
             )
         assert outcomes == ["read-only", "clean"]
+
+
+def _content_length_request(path: str, body: bytes) -> bytes:
+    """Build a raw POST with a declared length and *body*."""
+    return (
+        b"POST %s HTTP/1.1\r\nHost: x\r\nContent-Length: %d\r\n\r\n"
+        % (path.encode(), len(body))
+    ) + body
+
+
+def _chunked_request(path: str, body: bytes, frame: int = 64 * 1024) -> bytes:
+    """Build a raw chunked POST that carries *body* in ``frame``-sized chunks."""
+    frames = [
+        b"%x\r\n" % len(part) + part + b"\r\n"
+        for part in (
+            body[start : start + frame] for start in range(0, len(body), frame)
+        )
+    ]
+    frames.append(b"0\r\n\r\n")
+    return (
+        b"POST %s HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n"
+        % path.encode()
+    ) + b"".join(frames)
+
+
+class TestTooLargeClosesCleanly:
+    """An over-limit body is drained before close, so the client sees FIN.
+
+    Closing with unread body bytes makes the kernel send RST, which surfaces
+    as ``ConnectionResetError`` on the client and can hide the 413.
+    """
+
+    LIMIT = 1 << 20
+
+    @pytest.mark.parametrize("multiplier", [1.1, 2, 8])
+    def test_content_length_body_is_drained(self, multiplier):
+        app, events = _app(max_body_size=self.LIMIT)
+        body = b"x" * int(self.LIMIT * multiplier)
+        with _live(app):
+            response = _exchange(app, _content_length_request("/echo", body))
+        assert b" 413 " in response.split(b"\r\n", 1)[0]
+        assert len(events) == 1
+        assert events[0].reason == "too_large"
+
+    @pytest.mark.parametrize("multiplier", [1.1, 2, 8])
+    def test_chunked_body_is_drained(self, multiplier):
+        app, events = _app(max_body_size=self.LIMIT)
+        body = b"x" * int(self.LIMIT * multiplier)
+        with _live(app):
+            response = _exchange(app, _chunked_request("/echo", body))
+        assert b" 413 " in response.split(b"\r\n", 1)[0]
+        assert len(events) == 1
+        assert events[0].reason == "too_large"

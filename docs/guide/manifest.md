@@ -139,6 +139,26 @@ python zerodep.py manifest
 make manifest
 ```
 
+### Checking Without Writing
+
+`zerodep manifest --check` compares `manifest.json` with the source tree
+without writing anything:
+
+```bash
+python zerodep.py manifest --check
+```
+
+| Exit | Output |
+|------|--------|
+| `0` | `manifest.json matches the source tree` |
+| `1` | `manifest.json is stale; run make manifest` |
+
+The check reports the same verdict as the `manifest` step in
+`zerodep release-check`, because both call one shared helper. The repository's
+pre-commit `manifest check` hook runs this command on every commit, so a stale
+manifest fails locally instead of after the PR is open. The check never
+rewrites the file; `make manifest` is still the command that regenerates it.
+
 ### When to Regenerate
 
 Regenerate `manifest.json` whenever you:

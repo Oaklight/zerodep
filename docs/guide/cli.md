@@ -515,6 +515,17 @@ Modules with dependencies:
   vcs -> diff
 ```
 
+Use `--check` to verify the committed manifest without rewriting it:
+
+```bash
+$ zerodep manifest --check
+manifest.json matches the source tree
+```
+
+It exits `1` with `manifest.json is stale; run make manifest` when a module
+file changed but the manifest did not. The pre-commit `manifest check` hook
+runs the same command on every commit.
+
 See [Manifest](manifest.md) for details on the manifest format.
 
 ### `zerodep version`

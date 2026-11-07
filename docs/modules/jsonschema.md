@@ -174,7 +174,7 @@ sanitize()          <- 阶段 4：剥离不支持的键，修剪 required 数组
 
 ## API 参考
 
-### `flatten_schema(schema, *, strip_keys=None)`
+### `flatten_schema(schema, *, strip_keys=None, max_ref_expansions=10000, max_expanded_nodes=500000)`
 
 一键全流程：resolve -> merge -> simplify -> sanitize。
 
@@ -184,12 +184,16 @@ sanitize()          <- 阶段 4：剥离不支持的键，修剪 required 数组
 |------|------|--------|------|
 | `schema` | `dict` | -- | 要展平的 JSON Schema。 |
 | `strip_keys` | `set[str] \| None` | `None` | 要剥离的键集合。默认为 `UNSUPPORTED_SCHEMA_KEYS`。 |
+| `max_ref_expansions` | `int` | `10000` | 不同 `$ref` 目标的最大展开次数。 |
+| `max_expanded_nodes` | `int` | `500000` | 内联后文档允许的最大节点数。 |
 
 **返回：** `dict` —— 展平后的 schema。
 
-### `resolve_refs(schema)`
+**异常：** `RefExpansionLimitError` —— schema 超出任一 `$ref` 展开预算时抛出。
 
-解析本地 `$ref` 指针并内联定义。
+### `resolve_refs(schema, *, max_ref_expansions=10000, max_expanded_nodes=500000)`
+
+解析本地 `$ref` 指针并内联定义。展开结果按 `(ref, 解析栈)` 记忆化，同级引用共享一次展开。指数级放大的文档会在超出任一预算时抛出 `RefExpansionLimitError`（`ValueError` 子类）；合法的大文档可在调用时提高上限。默认值见 `DEFAULT_MAX_REF_EXPANSIONS` 与 `DEFAULT_MAX_EXPANDED_NODES`。
 
 ### `merge_allof(schema)`
 

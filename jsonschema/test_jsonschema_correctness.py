@@ -20,6 +20,7 @@ sys.path.insert(0, _this_dir)
 
 from jsonschema import (  # noqa: E402
     UNSUPPORTED_SCHEMA_KEYS,
+    RefExpansionLimitError,
     SchemaValidationError,
     flatten_schema,
     iter_errors,
@@ -385,6 +386,109 @@ class TestResolveRefs:
         detail_items = error["properties"]["detail"]["items"]
         assert detail_items["type"] == "object"
         assert "msg" in detail_items["properties"]
+
+
+class TestRefExpansionBudget:
+    """A schema whose refs fan out is refused, not expanded without bound."""
+
+    @staticmethod
+    def _bomb(levels: int) -> dict:
+        """Nest one definition per level, each referencing the next twice."""
+        defs = {}
+        for i in range(levels):
+            target = (
+                {"$ref": f"#/$defs/L{i + 1}"} if i + 1 < levels else {"type": "string"}
+            )
+            defs[f"L{i}"] = {
+                "type": "object",
+                "properties": {"a": dict(target), "b": dict(target)},
+            }
+        return {"$ref": "#/$defs/L0", "$defs": defs}
+
+    def test_expansion_budget_is_enforced(self):
+        with pytest.raises(RefExpansionLimitError) as excinfo:
+            resolve_refs(
+                self._bomb(8),
+                max_ref_expansions=2,
+                max_expanded_nodes=10**6,
+            )
+        assert excinfo.value.limit == "expansions"
+        assert excinfo.value.reached > excinfo.value.maximum
+
+    def test_node_budget_is_enforced(self):
+        with pytest.raises(RefExpansionLimitError) as excinfo:
+            resolve_refs(self._bomb(12), max_expanded_nodes=2_000)
+        assert excinfo.value.limit == "nodes"
+        assert excinfo.value.reached > 2_000
+
+    def test_budget_error_is_a_value_error(self):
+        with pytest.raises(ValueError):
+            resolve_refs(self._bomb(8), max_expanded_nodes=100)
+
+    def test_non_positive_budgets_are_rejected(self):
+        with pytest.raises(ValueError, match="max_ref_expansions"):
+            resolve_refs({}, max_ref_expansions=0)
+        with pytest.raises(ValueError, match="max_expanded_nodes"):
+            resolve_refs({}, max_expanded_nodes=-1)
+
+    def test_a_larger_budget_resolves_the_schema(self):
+        result = resolve_refs(
+            self._bomb(4),
+            max_ref_expansions=1_000,
+            max_expanded_nodes=10_000,
+        )
+        assert "$defs" not in result
+        assert result["properties"]["a"]["properties"]["a"]["type"] == "object"
+
+    def test_repeated_refs_are_expanded_once_but_not_aliased(self):
+        schema = {
+            "type": "object",
+            "properties": {
+                "a": {"$ref": "#/$defs/Item"},
+                "b": {"$ref": "#/$defs/Item"},
+            },
+            "$defs": {
+                "Item": {
+                    "type": "object",
+                    "properties": {"v": {"type": "integer"}},
+                }
+            },
+        }
+        result = resolve_refs(schema)
+        assert result["properties"]["a"] == result["properties"]["b"]
+        assert result["properties"]["a"] is not result["properties"]["b"]
+
+    def test_error_ref_is_redacted(self):
+        """The error's ``ref`` follows the same userinfo redaction as warnings."""
+        error = RefExpansionLimitError(
+            "expansions", 2, 1, "https://user:secret@example.com/schema.json"
+        )
+        assert "secret" not in str(error)
+        assert error.ref == "https://example.com/schema.json"
+
+    def test_deep_chain_counts_memo_overhead(self):
+        """A long chain is bounded even when its output is small.
+
+        Each memo key retains the resolution stack, so a chain costs
+        quadratic memory in its depth even though the inlined tree is tiny.
+        The node budget must account for that overhead.
+        """
+        depth = 100
+        defs = {}
+        for i in range(depth):
+            target = (
+                {"$ref": f"#/$defs/L{i + 1}"} if i + 1 < depth else {"type": "string"}
+            )
+            defs[f"L{i}"] = target
+        schema = {"$ref": "#/$defs/L0", "$defs": defs}
+
+        with pytest.raises(RefExpansionLimitError) as excinfo:
+            resolve_refs(schema, max_expanded_nodes=1_000)
+        assert excinfo.value.limit == "nodes"
+
+    def test_flatten_schema_passes_the_budget(self):
+        with pytest.raises(RefExpansionLimitError):
+            flatten_schema(self._bomb(8), max_expanded_nodes=100)
 
 
 # ---------------------------------------------------------------------------

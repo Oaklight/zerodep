@@ -17,6 +17,7 @@ from httpclient import (
     HTTPError,
     HttpTimeoutError,
     StreamingResponse,
+    _compute_redirect,
     _make_ssl_context,
     _prepare_body,
     _ssl_context_key,
@@ -656,3 +657,133 @@ class TestSslContextCache:
         os.utime(ca_dir, ns=(1, 1))
         second = _ssl_context_key(True)
         assert first != second
+
+
+# ── Redirect credential scoping ─────────────────────────────────────────────
+
+
+_CREDENTIAL_HEADERS = {
+    "Authorization": "Bearer SECRET",
+    "Proxy-Authorization": "Basic Zm9vOmJhcg==",
+    "Cookie": "session=abc",
+    "X-Custom": "keep",
+}
+
+
+def _redirect(
+    location: str,
+    *,
+    url: str = "https://api.example/start",
+    scheme: str = "https",
+    host: str = "api.example",
+    port: int = 443,
+    headers: dict[str, str] | None = None,
+) -> tuple[str, CaseInsensitiveDict]:
+    """Run one redirect hop and return ``(new_url, request_headers)``."""
+    req_headers = CaseInsensitiveDict(
+        _CREDENTIAL_HEADERS if headers is None else headers
+    )
+    new_url, _, _ = _compute_redirect(
+        302,
+        "GET",
+        None,
+        req_headers,
+        {"location": location},
+        scheme,
+        host,
+        port,
+        url,
+        0,
+        10,
+    )
+    return new_url, req_headers
+
+
+class TestRedirectCredentialScoping:
+    """Credential headers follow the origin, not the redirect chain."""
+
+    def test_same_origin_absolute_url_keeps_credentials(self):
+        new_url, headers = _redirect("https://api.example/next")
+        assert new_url == "https://api.example/next"
+        assert headers["Authorization"] == "Bearer SECRET"
+        assert headers["Cookie"] == "session=abc"
+
+    def test_same_origin_path_keeps_credentials(self):
+        new_url, headers = _redirect("/next")
+        assert new_url == "https://api.example:443/next"
+        assert headers["Authorization"] == "Bearer SECRET"
+
+    def test_relative_location_resolves_within_origin(self):
+        new_url, headers = _redirect("next", url="https://api.example/a/start")
+        assert new_url == "https://api.example/a/next"
+        assert headers["Authorization"] == "Bearer SECRET"
+
+    def test_host_case_does_not_change_origin(self):
+        _, headers = _redirect("https://API.EXAMPLE/next")
+        assert headers["Authorization"] == "Bearer SECRET"
+
+    def test_explicit_default_port_does_not_change_origin(self):
+        _, headers = _redirect(
+            "http://api.example:80/next",
+            url="http://api.example/start",
+            scheme="http",
+            host="api.example",
+            port=80,
+        )
+        assert headers["Authorization"] == "Bearer SECRET"
+
+    def test_cross_host_redirect_strips_credentials(self):
+        _, headers = _redirect("https://other.example/next")
+        assert "Authorization" not in headers
+        assert "Proxy-Authorization" not in headers
+        assert "Cookie" not in headers
+        assert headers["X-Custom"] == "keep"
+
+    def test_cross_port_redirect_strips_credentials(self):
+        _, headers = _redirect("https://api.example:8443/next")
+        assert "Authorization" not in headers
+
+    def test_downgrade_to_http_strips_credentials(self):
+        _, headers = _redirect("http://api.example/next")
+        assert "Authorization" not in headers
+        assert "Cookie" not in headers
+
+    def test_scheme_relative_redirect_to_other_host_strips_credentials(self):
+        _, headers = _redirect("//other.example/next")
+        assert "Authorization" not in headers
+
+    def test_scheme_relative_redirect_to_same_host_keeps_credentials(self):
+        _, headers = _redirect("//api.example/next")
+        assert headers["Authorization"] == "Bearer SECRET"
+
+    def test_chain_does_not_restore_credentials(self):
+        req_headers = CaseInsensitiveDict(_CREDENTIAL_HEADERS)
+        _compute_redirect(
+            302,
+            "GET",
+            None,
+            req_headers,
+            {"location": "https://other.example/x"},
+            "https",
+            "api.example",
+            443,
+            "https://api.example/start",
+            0,
+            10,
+        )
+        _compute_redirect(
+            302,
+            "GET",
+            None,
+            req_headers,
+            {"location": "https://api.example/back"},
+            "https",
+            "other.example",
+            443,
+            "https://other.example/x",
+            1,
+            10,
+        )
+        assert "Authorization" not in req_headers
+        assert "Cookie" not in req_headers
+        assert req_headers["X-Custom"] == "keep"

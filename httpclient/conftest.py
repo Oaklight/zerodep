@@ -20,7 +20,7 @@ import time
 import zlib
 from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import ParseResult, parse_qs, urlparse
 
 import pytest
 
@@ -191,9 +191,35 @@ class _HttpBinHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
 
+    def _handle_redirect(self, path: str, parsed: ParseResult) -> bool:
+        """Serve the redirect endpoints; return True when handled."""
+        if path.startswith("/redirect/"):
+            n = int(path.rsplit("/", 1)[1])
+            target = "/get" if n <= 1 else f"/redirect/{n - 1}"
+        elif path.startswith("/absolute-redirect/"):
+            n = int(path.rsplit("/", 1)[1])
+            host = self.headers["Host"]
+            if n <= 1:
+                target = f"http://{host}/get"
+            else:
+                target = f"http://{host}/absolute-redirect/{n - 1}"
+        elif path == "/redirect-to":
+            # Echo httpbin's endpoint: redirect to an arbitrary URL.
+            target = parse_qs(parsed.query).get("url", ["/get"])[0]
+        else:
+            return False
+        self.send_response(302)
+        self.send_header("Location", target)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        return True
+
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
+
+        if self._handle_redirect(path, parsed):
+            return
 
         if path == "/get":
             args = {k: v[0] for k, v in parse_qs(parsed.query).items()}
@@ -212,24 +238,6 @@ class _HttpBinHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(_SAMPLE_HTML)))
             self.end_headers()
             self.wfile.write(_SAMPLE_HTML)
-        elif path.startswith("/redirect/"):
-            n = int(path.rsplit("/", 1)[1])
-            target = "/get" if n <= 1 else f"/redirect/{n - 1}"
-            self.send_response(302)
-            self.send_header("Location", target)
-            self.send_header("Content-Length", "0")
-            self.end_headers()
-        elif path.startswith("/absolute-redirect/"):
-            n = int(path.rsplit("/", 1)[1])
-            host = self.headers["Host"]
-            if n <= 1:
-                target = f"http://{host}/get"
-            else:
-                target = f"http://{host}/absolute-redirect/{n - 1}"
-            self.send_response(302)
-            self.send_header("Location", target)
-            self.send_header("Content-Length", "0")
-            self.end_headers()
         elif path.startswith("/status/"):
             code = int(path.rsplit("/", 1)[1])
             self.send_response(code)
@@ -598,14 +606,28 @@ class _Socks5Handler(socketserver.StreamRequestHandler):
 # ── pytest fixtures ──
 
 
-@pytest.fixture(scope="session")
-def httpbin_url():
-    """Start a local httpbin-compatible server and yield its base URL."""
+def _start_httpbin() -> tuple[ThreadingHTTPServer, str]:
+    """Start an httpbin-compatible server and return it with its base URL."""
     server = ThreadingHTTPServer(("127.0.0.1", 0), _HttpBinHandler)
     port = server.server_address[1]
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    yield f"http://127.0.0.1:{port}"
+    return server, f"http://127.0.0.1:{port}"
+
+
+@pytest.fixture(scope="session")
+def httpbin_url():
+    """Start a local httpbin-compatible server and yield its base URL."""
+    server, base_url = _start_httpbin()
+    yield base_url
+    server.shutdown()
+
+
+@pytest.fixture(scope="session")
+def httpbin_url_alt():
+    """Start a second server on another port, a different origin."""
+    server, base_url = _start_httpbin()
+    yield base_url
     server.shutdown()
 
 

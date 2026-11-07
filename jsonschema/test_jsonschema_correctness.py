@@ -2513,8 +2513,26 @@ class TestPatternMatcher:
             "patternProperties": {"opaque": {"type": "integer"}},
         }
         errors = iter_errors({"x-n": "not an int"}, schema, pattern_matcher=matcher)
-        assert calls == [("opaque", "x-n")]
+        assert calls == [("opaque", ""), ("opaque", "x-n")]
         assert [e.validator for e in errors] == ["type"]
+
+    def test_pattern_property_pattern_is_checked_on_an_empty_object(self):
+        """A schema error must not depend on the instance having keys."""
+        calls: list[tuple[str, str]] = []
+
+        def matcher(pattern: str, text: str) -> bool:
+            calls.append((pattern, text))
+            return True
+
+        schema = {"type": "object", "patternProperties": {"^x-": {}}}
+        assert iter_errors({}, schema, pattern_matcher=matcher) == []
+        assert calls == [("^x-", "")]
+
+    def test_invalid_pattern_property_raises_for_an_empty_object(self):
+        """Matches the pre-hook behaviour: ``re.compile`` ran before the loop."""
+        schema = {"type": "object", "patternProperties": {"(": {}}}
+        with pytest.raises(re.error):
+            iter_errors({}, schema)
 
     def test_default_pattern_properties_unchanged(self):
         schema = {"type": "object", "patternProperties": {"^x-": {"type": "string"}}}

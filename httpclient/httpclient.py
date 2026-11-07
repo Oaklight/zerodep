@@ -38,6 +38,8 @@ Redirects:
     or port -- including an ``https`` → ``http`` downgrade -- drops them
     before the next hop.  They stay dropped if a later hop returns to the
     original origin, because the redirect chain keeps one header set.
+    Digest auth is disabled at the same time, so a 401 challenge from a new
+    origin cannot harvest the configured username and password.
 """
 
 # ── Imports ──
@@ -2082,10 +2084,24 @@ def _should_attempt_digest(
     status: int,
     resp_headers: dict[str, str],
     digest_attempted: bool,
+    same_origin: bool,
 ) -> bool:
-    """Return True if a Digest auth retry should be attempted."""
+    """Return True if a Digest auth retry should be attempted.
+
+    Args:
+        auth_obj: Configured auth object.
+        status: Response status code.
+        resp_headers: Response headers.
+        digest_attempted: Whether this request already answered a Digest
+            challenge.
+        same_origin: Whether the request still targets the origin the
+            credentials were configured for.  A cross-origin redirect clears
+            this for the rest of the chain, so the new origin cannot harvest
+            the credentials with a 401 challenge.
+    """
     return (
-        isinstance(auth_obj, DigestAuth)
+        same_origin
+        and isinstance(auth_obj, DigestAuth)
         and status == 401
         and not digest_attempted
         and resp_headers.get("www-authenticate", "").lower().startswith("digest")
@@ -2480,6 +2496,8 @@ def _sync_request(
         method, url, headers, data, json, files, params, auth, cookies
     )
 
+    credential_origin = _origin(url)
+    same_origin = True
     redirects = 0
     _digest_attempted = False
     retried = False
@@ -2557,11 +2575,12 @@ def _sync_request(
                         redirects,
                         max_redirects,
                     )
+                    same_origin = same_origin and _origin(url) == credential_origin
                     redirects += 1
                     continue
 
                 if _should_attempt_digest(
-                    auth_obj, status, resp_headers, _digest_attempted
+                    auth_obj, status, resp_headers, _digest_attempted, same_origin
                 ):
                     resp.read()
                     www_auth = resp_headers["www-authenticate"]
@@ -3045,6 +3064,8 @@ async def _async_request(
         method, url, headers, data, json, files, params, auth, cookies
     )
 
+    credential_origin = _origin(url)
+    same_origin = True
     redirects = 0
     _digest_attempted = False
     retried = False
@@ -3125,11 +3146,12 @@ async def _async_request(
                     redirects,
                     max_redirects,
                 )
+                same_origin = same_origin and _origin(url) == credential_origin
                 redirects += 1
                 continue
 
             if _should_attempt_digest(
-                auth_obj, status, resp_headers, _digest_attempted
+                auth_obj, status, resp_headers, _digest_attempted, same_origin
             ):
                 await _async_read_body(reader, resp_headers, timeout)
                 www_auth = resp_headers["www-authenticate"]

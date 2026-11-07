@@ -182,6 +182,39 @@ class TestSyncRedirects:
         )
         assert "Authorization" not in r.json()["headers"]
 
+    def test_cross_origin_redirect_disables_digest_auth(
+        self, httpbin_url, httpbin_url_alt
+    ):
+        target = f"{httpbin_url_alt}/digest-auth/auth/user/pass"
+        r = get(
+            f"{httpbin_url}/redirect-to",
+            params={"url": target},
+            auth=DigestAuth("user", "pass"),
+        )
+        # A retry would authenticate against the new origin and return 200.
+        assert r.status_code == 401
+
+    def test_same_origin_redirect_keeps_digest_auth(self, httpbin_url):
+        target = f"{httpbin_url}/digest-auth/auth/user/pass"
+        r = get(
+            f"{httpbin_url}/redirect-to",
+            params={"url": target},
+            auth=DigestAuth("user", "pass"),
+        )
+        assert r.status_code == 200
+
+    def test_digest_auth_stays_disabled_after_returning_to_origin(
+        self, httpbin_url, httpbin_url_alt
+    ):
+        back = f"{httpbin_url}/digest-auth/auth/user/pass"
+        middle = f"{httpbin_url_alt}/redirect-to?url={quote(back, safe='')}"
+        r = get(
+            f"{httpbin_url}/redirect-to",
+            params={"url": middle},
+            auth=DigestAuth("user", "pass"),
+        )
+        assert r.status_code == 401
+
 
 # ── Sync: status codes ──
 
@@ -328,6 +361,42 @@ class TestAsyncRedirects:
             headers={"Authorization": "Bearer SECRET"},
         )
         assert "Authorization" not in r.json()["headers"]
+
+    @pytest.mark.asyncio
+    async def test_cross_origin_redirect_disables_digest_auth(
+        self, httpbin_url, httpbin_url_alt
+    ):
+        target = f"{httpbin_url_alt}/digest-auth/auth/user/pass"
+        r = await async_get(
+            f"{httpbin_url}/redirect-to",
+            params={"url": target},
+            auth=DigestAuth("user", "pass"),
+        )
+        # A retry would authenticate against the new origin and return 200.
+        assert r.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_same_origin_redirect_keeps_digest_auth(self, httpbin_url):
+        target = f"{httpbin_url}/digest-auth/auth/user/pass"
+        r = await async_get(
+            f"{httpbin_url}/redirect-to",
+            params={"url": target},
+            auth=DigestAuth("user", "pass"),
+        )
+        assert r.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_digest_auth_stays_disabled_after_returning_to_origin(
+        self, httpbin_url, httpbin_url_alt
+    ):
+        back = f"{httpbin_url}/digest-auth/auth/user/pass"
+        middle = f"{httpbin_url_alt}/redirect-to?url={quote(back, safe='')}"
+        r = await async_get(
+            f"{httpbin_url}/redirect-to",
+            params={"url": middle},
+            auth=DigestAuth("user", "pass"),
+        )
+        assert r.status_code == 401
 
 
 class TestAsyncClient:

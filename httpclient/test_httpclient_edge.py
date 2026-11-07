@@ -13,6 +13,7 @@ from httpclient import (
     _SSL_CONTEXT_CACHE,
     CaseInsensitiveDict,
     Client,
+    DigestAuth,
     HttpConnectionError,
     HTTPError,
     HttpTimeoutError,
@@ -20,6 +21,7 @@ from httpclient import (
     _compute_redirect,
     _make_ssl_context,
     _prepare_body,
+    _should_attempt_digest,
     _ssl_context_key,
     _SyncConnectionPool,
     async_get,
@@ -787,3 +789,25 @@ class TestRedirectCredentialScoping:
         assert "Authorization" not in req_headers
         assert "Cookie" not in req_headers
         assert req_headers["X-Custom"] == "keep"
+
+
+# ── Digest auth origin scoping ──────────────────────────────────────────────
+
+
+_DIGEST_CHALLENGE = {
+    "www-authenticate": 'Digest realm="test", nonce="abc", qop="auth"',
+}
+
+
+class TestDigestOriginScoping:
+    """Digest retries use the configured credentials only on their origin."""
+
+    def test_same_origin_allows_digest_retry(self):
+        assert _should_attempt_digest(
+            DigestAuth("user", "pass"), 401, _DIGEST_CHALLENGE, False, True
+        )
+
+    def test_cross_origin_blocks_digest_retry(self):
+        assert not _should_attempt_digest(
+            DigestAuth("user", "pass"), 401, _DIGEST_CHALLENGE, False, False
+        )

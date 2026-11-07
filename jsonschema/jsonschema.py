@@ -1087,6 +1087,13 @@ def _check_object_props(
                 )
 
     for pattern, pat_schema in pattern_properties.items():
+        # Check the pattern even when the object has no keys.  A malformed
+        # pattern is a schema error, so it must not depend on the instance:
+        # the pre-hook implementation compiled the regex before iterating,
+        # and dropping that made an invalid pattern pass silently for ``{}``.
+        # The result is discarded; only compilation errors and exceptions
+        # raised by the matcher matter here.
+        pattern_matcher(pattern, "")
         for key in instance:
             if not pattern_matcher(pattern, key):
                 continue

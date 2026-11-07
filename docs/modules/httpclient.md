@@ -337,6 +337,12 @@ with Client(auth=("user", "pass")) as client:
     r = client.get("https://api.example.com/protected")
 ```
 
+### 重定向
+
+重定向最多跟随 `max_redirects` 次（默认 10 次）。303 响应，以及以 301 或 302 应答的 POST，会转为不带请求体的 GET。
+
+`Authorization`、`Proxy-Authorization` 与 `Cookie` 只属于收到它们的 origin。当重定向目标使用不同的 scheme、host 或 port 时——包括 `https` → `http` 降级——这些请求头会在下一个请求前被移除，且后续跳转回到原 origin 时不会恢复。其他请求头原样转发，同 origin 重定向会全部保留。没有关闭开关：目标 origin 需要自己的凭据时，请发送新请求并带上它期望的请求头。
+
 ## API 参考
 
 ### 同步函数

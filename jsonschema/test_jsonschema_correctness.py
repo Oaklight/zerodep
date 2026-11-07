@@ -2,6 +2,7 @@
 
 import copy
 import os
+import re
 import sys
 import warnings
 
@@ -2455,3 +2456,135 @@ class TestSchemaValidateVsReference:
         self._both_agree(valid, schema)
         invalid = {"id": "one", "name": "", "email": "bad", "role": "superuser"}
         self._both_agree(invalid, schema)
+
+
+class TestPatternMatcher:
+    """The ``pattern_matcher`` hook bounds regex execution for untrusted schemas."""
+
+    def test_default_matches_re_search(self):
+        """Omitting the hook and passing ``None`` are the same path."""
+        schema = {"type": "string", "pattern": "^[a-z]+$"}
+        default = iter_errors("ABC", schema)
+        explicit_none = iter_errors("ABC", schema, pattern_matcher=None)
+        assert default == explicit_none
+        assert [e.validator for e in default] == ["pattern"]
+
+    def test_matcher_is_called_with_pattern_and_text(self):
+        calls: list[tuple[str, str]] = []
+
+        def matcher(pattern: str, text: str) -> bool:
+            calls.append((pattern, text))
+            return True
+
+        schema = {"type": "string", "pattern": "^x$"}
+        assert iter_errors("anything", schema, pattern_matcher=matcher) == []
+        assert calls == [("^x$", "anything")]
+
+    def test_matcher_has_re_search_semantics(self):
+        """The hook is a partial match, so a substring pattern still matches."""
+        calls: list[tuple[str, str]] = []
+
+        def matcher(pattern: str, text: str) -> bool:
+            calls.append((pattern, text))
+            return re.search(pattern, text) is not None
+
+        schema = {"type": "string", "pattern": "b"}
+        assert iter_errors("abc", schema, pattern_matcher=matcher) == []
+        assert calls == [("b", "abc")]
+
+    def test_matcher_rejection_is_a_pattern_error(self):
+        def never(pattern: str, text: str) -> bool:
+            return False
+
+        errors = iter_errors(
+            "abc", {"type": "string", "pattern": "abc"}, pattern_matcher=never
+        )
+        assert [e.validator for e in errors] == ["pattern"]
+
+    def test_matcher_is_used_for_pattern_properties(self):
+        calls: list[tuple[str, str]] = []
+
+        def matcher(pattern: str, text: str) -> bool:
+            calls.append((pattern, text))
+            return text.startswith("x-")
+
+        schema = {
+            "type": "object",
+            "patternProperties": {"opaque": {"type": "integer"}},
+        }
+        errors = iter_errors({"x-n": "not an int"}, schema, pattern_matcher=matcher)
+        assert calls == [("opaque", "x-n")]
+        assert [e.validator for e in errors] == ["type"]
+
+    def test_default_pattern_properties_unchanged(self):
+        schema = {"type": "object", "patternProperties": {"^x-": {"type": "string"}}}
+        assert iter_errors({"x-a": "ok", "y": 1}, schema) == []
+        assert [e.validator for e in iter_errors({"x-a": 1}, schema)] == ["type"]
+
+    def test_matcher_reaches_nested_composition(self):
+        """Nested properties and ``anyOf`` branches share the hook."""
+        calls: list[tuple[str, str]] = []
+
+        def matcher(pattern: str, text: str) -> bool:
+            calls.append((pattern, text))
+            return pattern == "^b$"
+
+        schema = {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "anyOf": [
+                            {"type": "string", "pattern": "^a$"},
+                            {"type": "string", "pattern": "^b$"},
+                        ]
+                    },
+                }
+            },
+        }
+        assert iter_errors({"items": ["z"]}, schema, pattern_matcher=matcher) == []
+        assert calls == [("^a$", "z"), ("^b$", "z")]
+
+    def test_schema_validate_forwards_the_matcher(self):
+        calls: list[tuple[str, str]] = []
+
+        def matcher(pattern: str, text: str) -> bool:
+            calls.append((pattern, text))
+            return False
+
+        with pytest.raises(SchemaValidationError):
+            schema_validate(
+                "abc", {"type": "string", "pattern": "abc"}, pattern_matcher=matcher
+            )
+        assert calls == [("abc", "abc")]
+
+    def test_matcher_exceptions_propagate(self):
+        """A bounded matcher's ``TimeoutError`` is not swallowed or re-wrapped."""
+
+        def matcher(pattern: str, text: str) -> bool:
+            raise TimeoutError("regex timed out")
+
+        with pytest.raises(TimeoutError, match="regex timed out"):
+            iter_errors(
+                "abc", {"type": "string", "pattern": "abc"}, pattern_matcher=matcher
+            )
+        with pytest.raises(TimeoutError, match="regex timed out"):
+            iter_errors(
+                "abc",
+                {"anyOf": [{"type": "string", "pattern": "abc"}]},
+                pattern_matcher=matcher,
+            )
+        with pytest.raises(TimeoutError, match="regex timed out"):
+            schema_validate(
+                {"k": "abc"},
+                {
+                    "type": "object",
+                    "properties": {"k": {"type": "string", "pattern": "abc"}},
+                },
+                pattern_matcher=matcher,
+            )
+
+    def test_pattern_matcher_is_keyword_only(self):
+        with pytest.raises(TypeError):
+            iter_errors("abc", {"pattern": "abc"}, False, lambda p, t: True)  # noqa: E501

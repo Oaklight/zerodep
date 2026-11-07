@@ -361,8 +361,11 @@ received them. When a redirect targets a different scheme, host or port —
 including an `https` → `http` downgrade — those headers are removed before the
 next request. They stay removed if a later hop returns to the original origin.
 Other headers are forwarded unchanged, and same-origin redirects keep all of
-them. There is no opt-out switch: when the redirect target needs its own
-credentials, send a new request with the headers that origin expects.
+them. Digest auth follows the same rule: once the chain leaves the original
+origin, a 401 Digest challenge from the new origin is returned to the caller
+instead of being answered with the configured credentials. There is no opt-out
+switch: when the redirect target needs its own credentials, send a new request
+with the headers that origin expects.
 
 ## API Reference
 

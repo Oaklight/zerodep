@@ -351,6 +351,19 @@ with Client(auth=("user", "pass")) as client:
     r = client.get("https://api.example.com/protected")
 ```
 
+### Redirects
+
+Redirects are followed up to `max_redirects` (10 by default). A 303, and a
+POST answered with 301 or 302, becomes a GET without a body.
+
+`Authorization`, `Proxy-Authorization` and `Cookie` belong to the origin that
+received them. When a redirect targets a different scheme, host or port —
+including an `https` → `http` downgrade — those headers are removed before the
+next request. They stay removed if a later hop returns to the original origin.
+Other headers are forwarded unchanged, and same-origin redirects keep all of
+them. There is no opt-out switch: when the redirect target needs its own
+credentials, send a new request with the headers that origin expects.
+
 ## API Reference
 
 ### Sync Functions

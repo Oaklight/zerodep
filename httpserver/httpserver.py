@@ -1889,11 +1889,21 @@ class App:
         is read; for chunked transfer encoding the frame that crossed the limit
         and every frame after it are read.  Both paths stop at
         ``_REJECT_DRAIN_FACTOR * max_body_size`` data bytes or
-        ``_REJECT_DRAIN_TIMEOUT`` seconds.  A declared length beyond the byte
-        budget is not drained at all: an absurd upload must not hold the task,
-        and that connection may still see RST.
+        ``_REJECT_DRAIN_TIMEOUT`` seconds.  A body that would need more than
+        that byte budget is not drained at all — for ``Content-Length`` when
+        the declared remainder is larger, for chunked when the next frame
+        would cross the budget.  An absurd upload must not hold the task, so
+        that connection may still see RST.
+
+        The drain is asynchronous and bounded per connection: other
+        connections keep being served, each rejected connection costs at most
+        ``_REJECT_DRAIN_TIMEOUT`` seconds, and there is no global drain
+        budget.  That is the same order as the idle keep-alive wait.
 
         Read errors are swallowed because the connection is closing anyway.
+        ``ValueError`` is one of them: ``StreamReader.readline()`` raises it
+        when a chunk size line or trailer exceeds the 64 KiB stream limit,
+        and a hostile client must not turn that into a logged traceback.
         """
         if not (isinstance(exc, HTTPException) and exc.status_code == 413):
             return
@@ -1921,7 +1931,7 @@ class App:
                     _discard_chunked(reader, state.pending_chunk_size, budget),
                     timeout=_REJECT_DRAIN_TIMEOUT,
                 )
-        except (asyncio.TimeoutError, asyncio.IncompleteReadError, OSError):
+        except (asyncio.TimeoutError, asyncio.IncompleteReadError, OSError, ValueError):
             pass
 
     async def _handle_connection(

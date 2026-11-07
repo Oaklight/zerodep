@@ -8,7 +8,7 @@
 
 ### 新功能
 
-- **jsonschema**：`iter_errors()` 与 `schema_validate()` 新增仅限关键字的 `pattern_matcher` 钩子，每次 `pattern` 与 `patternProperties` 检查都会调用 `pattern_matcher(pattern, text)`。默认值 `None` 沿用 `re.search` 语义，行为不变；传入有界匹配器——例如 `regex.search(pattern, text, timeout=...)`——可让调用方校验不可信 schema 时，spec 提供的正则不会卡住进程，因为 Python 的 `re` 没有超时。该钩子会穿透嵌套 schema 与组合关键字，`patternProperties` 对每个 (pattern, key) 调用一次；匹配器抛出的异常原样传播，不会被当作校验错误。模块仍保持零依赖：钩子由调用方提供。`jsonschema` 升到 0.4.4。([#294](https://github.com/Oaklight/zerodep/issues/294))
+- **jsonschema**：`iter_errors()` 与 `schema_validate()` 新增仅限关键字的 `pattern_matcher` 钩子，每次 `pattern` 与 `patternProperties` 检查都会调用 `pattern_matcher(pattern, text)`。默认值 `None` 沿用 `re.search` 语义，行为不变；传入有界匹配器——例如 `regex.search(pattern, text, timeout=...)`——可让调用方校验不可信 schema 时，spec 提供的正则不会卡住进程，因为 Python 的 `re` 没有超时。该钩子会穿透嵌套 schema 与组合关键字，`patternProperties` 先对每个 pattern 调用一次（即使对象为空也校验该 pattern），再对每个 (pattern, key) 调用一次；匹配器抛出的异常原样传播，不会被当作校验错误。模块仍保持零依赖：钩子由调用方提供。`jsonschema` 升到 0.4.4。([#294](https://github.com/Oaklight/zerodep/issues/294))
 
 ### 问题修复
 

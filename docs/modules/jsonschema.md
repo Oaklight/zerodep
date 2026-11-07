@@ -218,7 +218,7 @@ Validate `instance` against `schema` and return a list of `SchemaErrorDetail` �
 | `resolved` | `bool` | `False` | Skip `$ref` resolution when the caller already ran `resolve_refs()`. |
 | `pattern_matcher` | `Callable[[str, str], bool] \| None` | `None` | Hook for every `pattern` and `patternProperties` check. `None` uses `re.search`. |
 
-`pattern_matcher` is called as `pattern_matcher(pattern, text)` with `re.search` semantics: a partial match, not a full match. Supply a bounded matcher — for example one backed by the `regex` package's `timeout` argument — when the schema is untrusted: Python's `re` has no timeout, so a schema-supplied pattern can backtrack catastrophically. The hook reaches nested schemas and composition keywords, and `patternProperties` calls it once per (pattern, key). An exception raised by the matcher propagates unchanged; it is never reported as a validation error. The module stays zero-dependency because the caller supplies the hook.
+`pattern_matcher` is called as `pattern_matcher(pattern, text)` with `re.search` semantics: a partial match, not a full match. Supply a bounded matcher — for example one backed by the `regex` package's `timeout` argument — when the schema is untrusted: Python's `re` has no timeout, so a schema-supplied pattern can backtrack catastrophically. The hook reaches nested schemas and composition keywords, and `patternProperties` calls it once per pattern to validate the pattern even when the object is empty, then once per (pattern, key). An exception raised by the matcher propagates unchanged; it is never reported as a validation error. The module stays zero-dependency because the caller supplies the hook.
 
 ### `schema_validate(instance, schema, *, resolved=False, pattern_matcher=None)`
 

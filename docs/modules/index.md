@@ -28,7 +28,7 @@ title: 模块概览
 | [httpclient](httpclient.md) | 0.6.5 | 2026-11-07 |
 | [httpserver](httpserver.md) | 0.7.2 | 2026-11-07 |
 | [jsonrpc](jsonrpc.md) | 0.4.0 | 2026-10-24 |
-| [jsonschema](jsonschema.md) | 0.4.2 | 2026-11-07 |
+| [jsonschema](jsonschema.md) | 0.4.3 | 2026-11-07 |
 | [jsonx](jsonx.md) | 2.0.0 | 2026-10-24 |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |

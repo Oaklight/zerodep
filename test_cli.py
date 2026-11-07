@@ -1346,3 +1346,69 @@ def test_record_modules_refreshes_the_lock_stamp(tmp_path: Path):
         "ref": "v2026.10.25",
     }
     assert lock["modules"]["yaml"]["version"] == "1.0.0"
+
+
+# ── manifest --check ──
+
+
+def _write_demo_catalog(root: Path) -> Path:
+    """Create a minimal catalog: a module plus a manifest that lists it."""
+    module_dir = root / "demo"
+    module_dir.mkdir()
+    module = module_dir / "demo.py"
+    module.write_text(
+        "# /// zerodep\n"
+        '# version = "0.1.0"\n'
+        "# deps = []\n"
+        '# tier = "utility"\n'
+        '# category = "test"\n'
+        "# ///\n"
+        '"""Demo module."""\n'
+        "\n"
+        "def answer() -> int:\n"
+        "    return 42\n",
+        encoding="utf-8",
+    )
+    # ``_is_catalog_root`` needs a manifest that lists a file present on
+    # disk before the first ``manifest`` run can resolve the root.
+    seed = {
+        "version": "1",
+        "modules": {
+            "demo": {
+                "files": ["demo/demo.py"],
+                "primary_file": "demo/demo.py",
+            }
+        },
+    }
+    (root / "manifest.json").write_text(json.dumps(seed), encoding="utf-8")
+    return module
+
+
+def test_manifest_check_passes_when_current(tmp_path):
+    _write_demo_catalog(tmp_path)
+    assert run_cli("manifest", cwd=tmp_path).returncode == 0
+
+    result = run_cli("manifest", "--check", cwd=tmp_path)
+
+    assert result.returncode == 0
+    assert "matches the source tree" in result.stdout
+
+
+def test_manifest_check_fails_when_stale_and_does_not_rewrite(tmp_path):
+    module = _write_demo_catalog(tmp_path)
+    assert run_cli("manifest", cwd=tmp_path).returncode == 0
+    manifest = tmp_path / "manifest.json"
+    before = manifest.read_text(encoding="utf-8")
+
+    module.write_text(
+        module.read_text(encoding="utf-8") + "\n# stale marker\n", encoding="utf-8"
+    )
+    result = run_cli("manifest", "--check", cwd=tmp_path)
+
+    assert result.returncode == 1
+    assert "run make manifest" in result.stderr
+    assert manifest.read_text(encoding="utf-8") == before
+
+    # Regenerating clears the failure.
+    assert run_cli("manifest", cwd=tmp_path).returncode == 0
+    assert run_cli("manifest", "--check", cwd=tmp_path).returncode == 0

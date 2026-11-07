@@ -17,6 +17,14 @@ repos:
         require_serial: true
         types: [python]
 
+      - id: manifest-check
+        name: manifest check
+        description: Fail when manifest.json is stale (run make manifest).
+        entry: python zerodep.py manifest --check
+        language: system
+        pass_filenames: false
+        require_serial: true
+
   - repo: https://github.com/rohaquinlop/complexipy-pre-commit
     rev: v5.1.0
     hooks:

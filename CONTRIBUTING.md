@@ -5,7 +5,7 @@
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-change`)
 3. Install dev dependencies: `pip install -e ".[dev]"`
-4. **Install pre-commit hooks: `pre-commit install`** — this is mandatory, not optional. The hooks enforce `ruff check`, `ruff format`, `ty check`, and `complexipy` on every commit. If you skip this step, your PR will fail CI lint.
+4. **Install pre-commit hooks: `pre-commit install`** — this is mandatory, not optional. The hooks enforce `ruff check`, `ruff format`, `ty check`, `complexipy`, and a manifest consistency check on every commit. The manifest hook fails — without rewriting anything — when a module file changed but `manifest.json` did not; run `make manifest` and re-commit. If you skip this step, your PR will fail CI lint.
 5. Make your changes
 6. Run `make lint` to check code quality
 7. Run `make test` to run correctness tests
@@ -45,7 +45,7 @@ Zerodep modules are self-contained, zero-dependency Python files. To add a new m
 3. Add a PEP 723-style metadata block at the top of the file
 4. Add correctness tests in `<module>/test_<module>_correctness.py`
 5. Optionally add benchmarks in `<module>/test_<module>_benchmark.py`
-6. Run `make manifest` to regenerate `manifest.json`
+6. Run `make manifest` to regenerate `manifest.json` — the pre-commit `manifest check` fails if this step was skipped, and it never regenerates the file for you
 7. Submit a PR
 
 See existing modules for reference implementations.

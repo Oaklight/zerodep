@@ -1957,8 +1957,14 @@ def _write_files(
 
 
 def cmd_manifest(args: argparse.Namespace) -> None:
-    """Regenerate manifest.json from local module source files."""
+    """Regenerate manifest.json, or verify it with ``--check``."""
     repo_root = _require_source_tree("manifest")
+    if getattr(args, "check", False):
+        ok, detail = _manifest_consistency(repo_root)
+        if not ok:
+            _die(detail)
+        _ok(detail)
+        return
     manifest = _generate_manifest(repo_root)
     if not manifest["modules"]:
         # Writing here would replace a real catalog with an empty one; the
@@ -2492,6 +2498,34 @@ _MANIFEST_SOURCE_FIELDS = (
 )
 
 
+def _manifest_consistency(repo_root: Path) -> tuple[bool, str]:
+    """Compare ``manifest.json`` with the module source tree.
+
+    Shared by ``release-check`` and ``manifest --check`` so both report the
+    same verdict from the same hashes.  Neither writes the file.
+
+    Args:
+        repo_root: Catalog root containing ``manifest.json``.
+
+    Returns:
+        ``(ok, detail)``.  ``detail`` is the message shown to the user; on
+        failure it names the command that regenerates the file.
+    """
+    manifest_path = repo_root / MANIFEST_PATH
+    if not manifest_path.exists():
+        return False, f"{MANIFEST_PATH} is missing; run make manifest"
+    try:
+        on_disk = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return False, f"{MANIFEST_PATH} is unreadable: {exc}"
+    expected = _generate_manifest(repo_root)
+    same_layout = on_disk.get("version") == expected.get("version")
+    same_modules = _manifest_source_view(on_disk) == _manifest_source_view(expected)
+    if same_layout and same_modules:
+        return True, f"{MANIFEST_PATH} matches the source tree"
+    return False, f"{MANIFEST_PATH} is stale; run make manifest"
+
+
 def _manifest_source_view(manifest: dict) -> dict[str, dict]:
     """Return only the manifest fields that describe the source tree."""
     view: dict[str, dict] = {}
@@ -3009,36 +3043,8 @@ def cmd_release_check(args: argparse.Namespace) -> None:
             )
         )
 
-    manifest_path = repo_root / MANIFEST_PATH
-    if not manifest_path.exists():
-        results.append(
-            ("manifest", "fail", f"{MANIFEST_PATH} is missing; run make manifest")
-        )
-    else:
-        try:
-            on_disk = json.loads(manifest_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            results.append(
-                ("manifest", "fail", f"{MANIFEST_PATH} is unreadable: {exc}")
-            )
-        else:
-            expected = _generate_manifest(repo_root)
-            same_layout = on_disk.get("version") == expected.get("version")
-            same_modules = _manifest_source_view(on_disk) == _manifest_source_view(
-                expected
-            )
-            if same_layout and same_modules:
-                results.append(
-                    ("manifest", "ok", f"{MANIFEST_PATH} matches the source tree")
-                )
-            else:
-                results.append(
-                    (
-                        "manifest",
-                        "fail",
-                        f"{MANIFEST_PATH} is stale; run make manifest",
-                    )
-                )
+    manifest_ok, manifest_detail = _manifest_consistency(repo_root)
+    results.append(("manifest", "ok" if manifest_ok else "fail", manifest_detail))
 
     project_version = _read_declared_version(repo_root)
     if project_version is None:
@@ -3566,7 +3572,12 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     # manifest
-    sub.add_parser("manifest", help="regenerate manifest.json from source")
+    p_manifest = sub.add_parser("manifest", help="regenerate manifest.json from source")
+    p_manifest.add_argument(
+        "--check",
+        action="store_true",
+        help="verify manifest.json is current without rewriting it",
+    )
 
     # version-check
     p_vcheck = sub.add_parser(

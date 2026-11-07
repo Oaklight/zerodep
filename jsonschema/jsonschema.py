@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.1"
+# version = "0.4.2"
 # deps = []
 # tier = "subsystem"
 # category = "validation"
@@ -172,6 +172,38 @@ def _resolve_ref(ref: str, root: dict[str, Any]) -> dict[str, Any]:
     return node if isinstance(node, dict) else {}
 
 
+#: ``scheme://user:password@`` — an absolute URL with userinfo.
+_URL_USERINFO_SCHEME = re.compile(r"\b([A-Za-z][A-Za-z0-9+.\-]*://)[^/\s]+@")
+
+#: ``//user:password@`` — a protocol-relative reference.  Both a colon and a
+#: token boundary are required, so a path such as ``a//b@c`` is left alone.
+_URL_USERINFO_NETLOC = re.compile(r"(?<![:/\w.])(//)[^/\s:@]+:[^/\s@]+@")
+
+#: ``user:password@host`` with no scheme.  The colon keeps an email address
+#: (``user@host``) untouched; the greedy class consumes an ``@`` inside the
+#: password up to the last one in the segment.
+_URL_USERINFO_BARE = re.compile(r"(?<![:/\w.@])[^/\s:@]+:[^/\s]+@")
+
+
+def _redact_userinfo(text: str) -> str:
+    """Remove ``user:password@`` userinfo from every URL in *text*.
+
+    The ``$ref`` warnings quote a pointer supplied by the document, so a
+    credential can reach a log or an alert handler.  Three forms are handled:
+    with a scheme, protocol-relative (``//user:password@host``) and without a
+    scheme (``user:password@host``).  A bare email address is left alone.
+
+    Args:
+        text: Arbitrary text, such as a warning message.
+
+    Returns:
+        *text* with each URL's userinfo removed.
+    """
+    text = _URL_USERINFO_SCHEME.sub(r"\1", text)
+    text = _URL_USERINFO_NETLOC.sub(r"\1", text)
+    return _URL_USERINFO_BARE.sub("", text)
+
+
 def _inline_refs(
     schema: dict[str, Any],
     root: dict[str, Any],
@@ -191,7 +223,7 @@ def _inline_refs(
         if ref in _seen:
             # Circular reference — drop the $ref and keep sibling keys.
             warnings.warn(
-                f"Circular $ref: {ref!r} — dropped",
+                f"Circular $ref: {_redact_userinfo(ref)!r} — dropped",
                 stacklevel=2,
             )
             return {k: v for k, v in schema.items() if k != "$ref"}
@@ -205,7 +237,7 @@ def _inline_refs(
             return _inline_refs(merged, root, _seen)
         else:
             warnings.warn(
-                f"Unresolvable $ref: {ref!r} — dropped",
+                f"Unresolvable $ref: {_redact_userinfo(ref)!r} — dropped",
                 stacklevel=2,
             )
             return {k: v for k, v in schema.items() if k != "$ref"}

@@ -3,6 +3,7 @@
 import copy
 import os
 import sys
+import warnings
 
 import pytest
 
@@ -134,6 +135,59 @@ class TestResolveRefs:
             result = resolve_refs(schema)
         assert "$ref" not in result["properties"]["x"]
         assert result["properties"]["x"]["description"] == "kept"
+
+    @pytest.mark.parametrize(
+        ("ref", "redacted"),
+        [
+            (
+                "https://user:secret@example.com/schema.json",
+                "https://example.com/schema.json",
+            ),
+            (
+                "//user:secret@example.com/schema.json",
+                "//example.com/schema.json",
+            ),
+            (
+                "user:secret@example.com/schema.json",
+                "example.com/schema.json",
+            ),
+        ],
+    )
+    def test_unresolvable_ref_warning_redacts_userinfo(self, ref, redacted):
+        """A dropped $ref must not leak credentials into the warning."""
+        schema = {"type": "object", "properties": {"x": {"$ref": ref}}}
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            resolve_refs(schema)
+
+        messages = [str(item.message) for item in caught]
+        assert len(messages) == 1
+        assert "secret" not in messages[0]
+        assert redacted in messages[0]
+
+    def test_ref_warning_leaves_a_plain_url_unchanged(self):
+        """A URL without userinfo is quoted exactly as it appeared."""
+        schema = {
+            "type": "object",
+            "properties": {"x": {"$ref": "https://example.com/schema.json"}},
+        }
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            resolve_refs(schema)
+
+        assert "'https://example.com/schema.json'" in str(caught[0].message)
+
+    def test_ref_warning_does_not_redact_an_email_address(self):
+        """A bare email address has no colon and must survive."""
+        schema = {"type": "object", "properties": {"x": {"$ref": "user@example.com"}}}
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            resolve_refs(schema)
+
+        assert "user@example.com" in str(caught[0].message)
 
     def test_nested_ref_in_items(self):
         schema = {

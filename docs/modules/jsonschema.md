@@ -207,6 +207,23 @@ sanitize()          <- 阶段 4：剥离不支持的键，修剪 required 数组
 
 剥离不支持的关键字并校验 `required` 为 `properties` 的子集。
 
+### `iter_errors(instance, schema, *, resolved=False, pattern_matcher=None)`
+
+校验 `instance` 是否符合 `schema`，返回 `SchemaErrorDetail` 列表；实例合法时返回空列表。
+
+| 名称 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `instance` | `Any` | -- | 要校验的数据。 |
+| `schema` | `dict \| bool` | -- | JSON Schema 文档。 |
+| `resolved` | `bool` | `False` | 调用方已执行 `resolve_refs()` 时跳过 `$ref` 解析。 |
+| `pattern_matcher` | `Callable[[str, str], bool] \| None` | `None` | 每次 `pattern` 与 `patternProperties` 检查使用的钩子；`None` 表示使用 `re.search`。 |
+
+`pattern_matcher` 按 `pattern_matcher(pattern, text)` 调用，语义与 `re.search` 一致：部分匹配，而非完整匹配。schema 不可信时应提供有界匹配器——例如基于 `regex` 包 `timeout` 参数的实现——因为 Python 的 `re` 没有超时，spec 提供的正则会灾难性回溯。该钩子会穿透嵌套 schema 与组合关键字，`patternProperties` 对每个 (pattern, key) 调用一次。匹配器抛出的异常原样传播，不会被当作校验错误。模块保持零依赖，因为钩子由调用方提供。
+
+### `schema_validate(instance, schema, *, resolved=False, pattern_matcher=None)`
+
+参数与 `iter_errors` 相同。实例合法时返回 `None`；否则抛出携带全部错误的 `SchemaValidationError`。
+
 ### `UNSUPPORTED_SCHEMA_KEYS`
 
 默认要剥离的 JSON Schema 关键字集合：

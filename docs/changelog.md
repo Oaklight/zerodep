@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### 新功能
+
+- **jsonschema**：`iter_errors()` 与 `schema_validate()` 新增仅限关键字的 `pattern_matcher` 钩子，每次 `pattern` 与 `patternProperties` 检查都会调用 `pattern_matcher(pattern, text)`。默认值 `None` 沿用 `re.search` 语义，行为不变；传入有界匹配器——例如 `regex.search(pattern, text, timeout=...)`——可让调用方校验不可信 schema 时，spec 提供的正则不会卡住进程，因为 Python 的 `re` 没有超时。该钩子会穿透嵌套 schema 与组合关键字，`patternProperties` 对每个 (pattern, key) 调用一次；匹配器抛出的异常原样传播，不会被当作校验错误。模块仍保持零依赖：钩子由调用方提供。`jsonschema` 升到 0.4.4。([#294](https://github.com/Oaklight/zerodep/issues/294))
+
 ### 问题修复
 
 - **jsonschema**：`resolve_refs()` 与 `flatten_schema()` 现在为 `$ref` 展开设置两道预算——不同目标的展开次数（默认 10 000）与输出节点数（默认 500 000）——任一超限都会抛出新增的 `RefExpansionLimitError`（`ValueError` 子类）。此前 `_seen` 只能阻止某个 ref 回到自身链路，无法阻止同级节点重复展开同一个定义，因此每层引用两次的定义会指数级放大：一个 1.7 KB 的 schema 可能耗时约 23 秒并增加约 744 MB RSS，远程 OpenAPI spec 可在注册工具之前耗尽进程资源。现在按 `(ref, 解析栈)` 记忆化展开结果，同级引用共享一次展开，但每次返回仍会深拷贝；循环引用与不可解析引用的历史行为保持不变。合法的大文档可在调用时提高上限。节点预算还会计入每个 memo 键的解析栈大小，因此很深但输出很小的文档会比按输出大小预期更早触发 `RefExpansionLimitError`；合法但很深的 schema 可提高 `max_expanded_nodes`。`jsonschema` 升到 0.4.3。([#291](https://github.com/Oaklight/zerodep/issues/291))

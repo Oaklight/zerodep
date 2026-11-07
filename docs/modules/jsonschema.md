@@ -207,6 +207,23 @@ Simplify `anyOf`/`oneOf`: nullable detection, single-variant unwrap.
 
 Strip unsupported keywords and validate `required` is a subset of `properties`.
 
+### `iter_errors(instance, schema, *, resolved=False, pattern_matcher=None)`
+
+Validate `instance` against `schema` and return a list of `SchemaErrorDetail` — empty when the instance is valid.
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `instance` | `Any` | -- | The data to validate. |
+| `schema` | `dict \| bool` | -- | The JSON Schema document. |
+| `resolved` | `bool` | `False` | Skip `$ref` resolution when the caller already ran `resolve_refs()`. |
+| `pattern_matcher` | `Callable[[str, str], bool] \| None` | `None` | Hook for every `pattern` and `patternProperties` check. `None` uses `re.search`. |
+
+`pattern_matcher` is called as `pattern_matcher(pattern, text)` with `re.search` semantics: a partial match, not a full match. Supply a bounded matcher — for example one backed by the `regex` package's `timeout` argument — when the schema is untrusted: Python's `re` has no timeout, so a schema-supplied pattern can backtrack catastrophically. The hook reaches nested schemas and composition keywords, and `patternProperties` calls it once per (pattern, key). An exception raised by the matcher propagates unchanged; it is never reported as a validation error. The module stays zero-dependency because the caller supplies the hook.
+
+### `schema_validate(instance, schema, *, resolved=False, pattern_matcher=None)`
+
+Takes the same arguments as `iter_errors`. Returns `None` when the instance is valid; raises `SchemaValidationError` with all collected errors otherwise.
+
 ### `UNSUPPORTED_SCHEMA_KEYS`
 
 Default set of JSON Schema keywords to strip:

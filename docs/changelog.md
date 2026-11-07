@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Features
+
+- **jsonschema**: `iter_errors()` and `schema_validate()` accept a keyword-only `pattern_matcher` hook, called as `pattern_matcher(pattern, text)` for every `pattern` and `patternProperties` check. The default `None` keeps `re.search` semantics with no behaviour change; passing a bounded matcher — for example `regex.search(pattern, text, timeout=...)` — lets a caller validate untrusted schemas without a schema-supplied pattern hanging the process, because Python's `re` has no timeout. The hook is threaded through nested schemas and composition keywords, `patternProperties` calls it once per (pattern, key), and an exception raised by the matcher propagates unchanged instead of being reported as a validation error. The module stays dependency-free: the caller supplies the hook, and `jsonschema` goes to 0.4.4. ([#294](https://github.com/Oaklight/zerodep/issues/294))
+
 ### Bug Fixes
 
 - **jsonschema**: `resolve_refs()` and `flatten_schema()` now bound `$ref` inlining with two budgets — distinct target expansions (default 10 000) and emitted nodes (default 500 000) — and raise the new `RefExpansionLimitError` (a `ValueError`) when either is crossed. Previously `_seen` only stopped a ref from re-entering its own chain, so a definition referenced twice per level expanded exponentially: a 1.7 KB schema could take ~23 s and add ~744 MB RSS, and a remote OpenAPI spec could exhaust the process before registration. Expanded targets are now memoized per `(ref, resolution stack)`, so sibling references share one expansion while each result is still deep-copied; circular and unresolvable refs keep their historical behaviour. Callers with a legitimately larger document can raise the limits per call. The node budget also charges each memo key's resolution-stack size, so a deeply nested but small document can hit `RefExpansionLimitError` earlier than its output size suggests; raise `max_expanded_nodes` for a legitimately deep schema. `jsonschema` goes to 0.4.3. ([#291](https://github.com/Oaklight/zerodep/issues/291))

@@ -8,6 +8,7 @@ import sys
 import time
 import unittest.mock
 from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import quote
 
 import pytest
 
@@ -118,6 +119,69 @@ class TestSyncRedirects:
         ours = get(f"{httpbin_url}/absolute-redirect/1")
         assert ours.status_code == 200
 
+    def test_same_origin_redirect_keeps_credentials(self, httpbin_url):
+        headers = {
+            "Authorization": "Bearer SECRET",
+            "Proxy-Authorization": "Basic Zm9vOmJhcg==",
+            "Cookie": "session=abc",
+            "X-Custom": "keep",
+        }
+        echoed = get(f"{httpbin_url}/redirect/1", headers=headers).json()["headers"]
+        assert echoed["Authorization"] == "Bearer SECRET"
+        assert echoed["Proxy-Authorization"] == "Basic Zm9vOmJhcg=="
+        assert echoed["Cookie"] == "session=abc"
+        assert echoed["X-Custom"] == "keep"
+
+    def test_cross_origin_redirect_strips_credentials(
+        self, httpbin_url, httpbin_url_alt
+    ):
+        target = f"{httpbin_url_alt}/get"
+        headers = {
+            "Authorization": "Bearer SECRET",
+            "Proxy-Authorization": "Basic Zm9vOmJhcg==",
+            "Cookie": "session=abc",
+            "X-Custom": "keep",
+        }
+        r = get(f"{httpbin_url}/redirect-to", params={"url": target}, headers=headers)
+        echoed = r.json()["headers"]
+        assert "Authorization" not in echoed
+        assert "Proxy-Authorization" not in echoed
+        assert "Cookie" not in echoed
+        assert echoed["X-Custom"] == "keep"
+        assert r.url == target
+
+    def test_cross_origin_redirect_strips_basic_auth(
+        self, httpbin_url, httpbin_url_alt
+    ):
+        target = f"{httpbin_url_alt}/get"
+        r = get(
+            f"{httpbin_url}/redirect-to", params={"url": target}, auth=("user", "pass")
+        )
+        assert "Authorization" not in r.json()["headers"]
+
+    def test_cross_origin_redirect_strips_cookie_jar(
+        self, httpbin_url, httpbin_url_alt
+    ):
+        target = f"{httpbin_url_alt}/get"
+        r = get(
+            f"{httpbin_url}/redirect-to",
+            params={"url": target},
+            cookies={"session": "abc"},
+        )
+        assert "Cookie" not in r.json()["headers"]
+
+    def test_redirect_chain_does_not_restore_credentials(
+        self, httpbin_url, httpbin_url_alt
+    ):
+        back = f"{httpbin_url}/get"
+        middle = f"{httpbin_url_alt}/redirect-to?url={quote(back, safe='')}"
+        r = get(
+            f"{httpbin_url}/redirect-to",
+            params={"url": middle},
+            headers={"Authorization": "Bearer SECRET"},
+        )
+        assert "Authorization" not in r.json()["headers"]
+
 
 # ── Sync: status codes ──
 
@@ -215,6 +279,55 @@ class TestAsyncRedirects:
     async def test_redirect_followed(self, httpbin_url):
         ours = await async_get(f"{httpbin_url}/redirect/2")
         assert ours.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_same_origin_redirect_keeps_credentials(self, httpbin_url):
+        headers = {
+            "Authorization": "Bearer SECRET",
+            "Proxy-Authorization": "Basic Zm9vOmJhcg==",
+            "Cookie": "session=abc",
+            "X-Custom": "keep",
+        }
+        r = await async_get(f"{httpbin_url}/redirect/1", headers=headers)
+        echoed = r.json()["headers"]
+        assert echoed["Authorization"] == "Bearer SECRET"
+        assert echoed["Proxy-Authorization"] == "Basic Zm9vOmJhcg=="
+        assert echoed["Cookie"] == "session=abc"
+        assert echoed["X-Custom"] == "keep"
+
+    @pytest.mark.asyncio
+    async def test_cross_origin_redirect_strips_credentials(
+        self, httpbin_url, httpbin_url_alt
+    ):
+        target = f"{httpbin_url_alt}/get"
+        headers = {
+            "Authorization": "Bearer SECRET",
+            "Proxy-Authorization": "Basic Zm9vOmJhcg==",
+            "Cookie": "session=abc",
+            "X-Custom": "keep",
+        }
+        r = await async_get(
+            f"{httpbin_url}/redirect-to", params={"url": target}, headers=headers
+        )
+        echoed = r.json()["headers"]
+        assert "Authorization" not in echoed
+        assert "Proxy-Authorization" not in echoed
+        assert "Cookie" not in echoed
+        assert echoed["X-Custom"] == "keep"
+        assert r.url == target
+
+    @pytest.mark.asyncio
+    async def test_redirect_chain_does_not_restore_credentials(
+        self, httpbin_url, httpbin_url_alt
+    ):
+        back = f"{httpbin_url}/get"
+        middle = f"{httpbin_url_alt}/redirect-to?url={quote(back, safe='')}"
+        r = await async_get(
+            f"{httpbin_url}/redirect-to",
+            params={"url": middle},
+            headers={"Authorization": "Bearer SECRET"},
+        )
+        assert "Authorization" not in r.json()["headers"]
 
 
 class TestAsyncClient:

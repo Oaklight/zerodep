@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-11-07T22:39:41.587395+00:00",
+  "generated": "2026-11-07T23:02:45.885947+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -193,7 +193,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-11-07T16:22:16-06:00",
+      "last_updated": "2026-11-07T16:31:38-06:00",
       "content_hash": "5b7c48adbe2a5c5520a84341963d9e8e01b841d2d911c11d9525810f1f90d458"
     },
     "httpserver": {
@@ -228,12 +228,12 @@
         "jsonschema/jsonschema.py"
       ],
       "primary_file": "jsonschema/jsonschema.py",
-      "version": "0.4.2",
+      "version": "0.4.3",
       "deps": [],
       "tier": "subsystem",
       "category": "validation",
-      "last_updated": "2026-09-23T19:15:39-05:00",
-      "content_hash": "34ff86bed69e84c729f62c2102297f872b93fd36696c097fb0bcc02c37d07fcd"
+      "last_updated": "2026-11-07T16:47:35-06:00",
+      "content_hash": "60a0c33c6982ea184dd199b740f8e9c92e95b915c5b5ac78f14534ee1e1975fb"
     },
     "jsonx": {
       "description": "Extended JSON parser — zero dependencies, stdlib only, Python 3.10+",

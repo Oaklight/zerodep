@@ -8,7 +8,7 @@
 
 ### 问题修复
 
-- **http**：`httpclient` 不再在跨 origin 的重定向中转发 `Authorization`、`Proxy-Authorization` 与 `Cookie`。重定向链复用同一组请求头，因此指向不同 scheme、host 或 port 的 301/302/303/307/308 会把调用方的 bearer token、Basic 凭据或会话 Cookie 重放到新 origin，`https` → `http` 跳转还会以明文发送这些凭据。现在这三类请求头在下一跳之前被移除，且后续跳转回到原 origin 时不会恢复；同 origin 重定向仍会保留，其他请求头不受影响，并且没有关闭开关。相对 `Location` 现在相对于当前 URL 解析，scheme 相对路径（`//host/path`）会保留当前 scheme，不再被当作路径。`httpclient` 升到 0.6.5。([#287](https://github.com/Oaklight/zerodep/issues/287))
+- **http**：`httpclient` 不再在跨 origin 的重定向中转发 `Authorization`、`Proxy-Authorization` 与 `Cookie`。重定向链复用同一组请求头，因此指向不同 scheme、host 或 port 的 301/302/303/307/308 会把调用方的 bearer token、Basic 凭据或会话 Cookie 重放到新 origin，`https` → `http` 跳转还会以明文发送这些凭据。现在这三类请求头在下一跳之前被移除，且后续跳转回到原 origin 时不会恢复；同 origin 重定向仍会保留，其他请求头不受影响，并且没有关闭开关。重定向链离开原 origin 后会禁用 Digest 认证，新 origin 的 401 挑战无法取得配置的凭据。相对 `Location` 现在相对于当前 URL 解析，scheme 相对路径（`//host/path`）会保留当前 scheme，不再被当作路径。`httpclient` 升到 0.6.5。([#287](https://github.com/Oaklight/zerodep/issues/287))
 
 ## [2026.10.25] - 2026-10-25
 

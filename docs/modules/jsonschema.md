@@ -174,7 +174,7 @@ Output Schema
 
 ## API Reference
 
-### `flatten_schema(schema, *, strip_keys=None)`
+### `flatten_schema(schema, *, strip_keys=None, max_ref_expansions=10000, max_expanded_nodes=500000)`
 
 One-call full pipeline: resolve -> merge -> simplify -> sanitize.
 
@@ -184,12 +184,16 @@ One-call full pipeline: resolve -> merge -> simplify -> sanitize.
 |------|------|---------|-------------|
 | `schema` | `dict` | -- | The JSON Schema to flatten. |
 | `strip_keys` | `set[str] \| None` | `None` | Keys to strip. Defaults to `UNSUPPORTED_SCHEMA_KEYS`. |
+| `max_ref_expansions` | `int` | `10000` | Maximum number of distinct `$ref` targets expanded. |
+| `max_expanded_nodes` | `int` | `500000` | Maximum number of nodes in the inlined document. |
 
 **Returns:** `dict` -- the flattened schema.
 
-### `resolve_refs(schema)`
+**Raises:** `RefExpansionLimitError` -- if the schema exceeds either `$ref` expansion budget.
 
-Resolve local `$ref` pointers and inline definitions.
+### `resolve_refs(schema, *, max_ref_expansions=10000, max_expanded_nodes=500000)`
+
+Resolve local `$ref` pointers and inline definitions. Expanded targets are memoized per `(ref, resolution stack)`, so sibling references share one expansion. A document that fans out exponentially is refused with `RefExpansionLimitError` (a `ValueError`) once either budget is crossed; raise the limits for a legitimately larger document. `DEFAULT_MAX_REF_EXPANSIONS` and `DEFAULT_MAX_EXPANDED_NODES` hold the defaults.
 
 ### `merge_allof(schema)`
 

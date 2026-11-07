@@ -8,6 +8,7 @@
 
 ### 问题修复
 
+- **jsonschema**：`resolve_refs()` 与 `flatten_schema()` 现在为 `$ref` 展开设置两道预算——不同目标的展开次数（默认 10 000）与输出节点数（默认 500 000）——任一超限都会抛出新增的 `RefExpansionLimitError`（`ValueError` 子类）。此前 `_seen` 只能阻止某个 ref 回到自身链路，无法阻止同级节点重复展开同一个定义，因此每层引用两次的定义会指数级放大：一个 1.7 KB 的 schema 可能耗时约 23 秒并增加约 744 MB RSS，远程 OpenAPI spec 可在注册工具之前耗尽进程资源。现在按 `(ref, 解析栈)` 记忆化展开结果，同级引用共享一次展开，但每次返回仍会深拷贝；循环引用与不可解析引用的历史行为保持不变。合法的大文档可在调用时提高上限。`jsonschema` 升到 0.4.2。([#291](https://github.com/Oaklight/zerodep/issues/291))
 - **http**：`httpclient` 不再在跨 origin 的重定向中转发 `Authorization`、`Proxy-Authorization` 与 `Cookie`。重定向链复用同一组请求头，因此指向不同 scheme、host 或 port 的 301/302/303/307/308 会把调用方的 bearer token、Basic 凭据或会话 Cookie 重放到新 origin，`https` → `http` 跳转还会以明文发送这些凭据。现在这三类请求头在下一跳之前被移除，且后续跳转回到原 origin 时不会恢复；同 origin 重定向仍会保留，其他请求头不受影响，并且没有关闭开关。重定向链离开原 origin 后会禁用 Digest 认证，新 origin 的 401 挑战无法取得配置的凭据。相对 `Location` 现在相对于当前 URL 解析，scheme 相对路径（`//host/path`）会保留当前 scheme，不再被当作路径。`httpclient` 升到 0.6.5。([#287](https://github.com/Oaklight/zerodep/issues/287))
 
 ## [2026.10.25] - 2026-10-25

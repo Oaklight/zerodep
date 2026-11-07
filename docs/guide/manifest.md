@@ -139,6 +139,21 @@ python zerodep.py manifest
 make manifest
 ```
 
+### 只检查、不写入
+
+`zerodep manifest --check` 将 `manifest.json` 与源码树比较，不写入任何文件：
+
+```bash
+python zerodep.py manifest --check
+```
+
+| 退出码 | 输出 |
+|--------|------|
+| `0` | `manifest.json matches the source tree` |
+| `1` | `manifest.json is stale; run make manifest` |
+
+该检查与 `zerodep release-check` 中的 `manifest` 步骤共用同一个辅助函数，因此判定结果一致。仓库的 pre-commit `manifest check` 钩子会在每次提交时运行此命令，过期的 manifest 会在本地失败，而不是等到 PR 打开之后。该检查不会改写文件；重新生成仍然使用 `make manifest`。
+
 ### 何时需要重新生成
 
 在以下情况后需要重新生成 `manifest.json`：

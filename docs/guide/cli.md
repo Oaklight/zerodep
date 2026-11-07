@@ -467,6 +467,15 @@ Modules with dependencies:
   vcs -> diff
 ```
 
+使用 `--check` 可以在不改写文件的情况下校验已提交的 manifest：
+
+```bash
+$ zerodep manifest --check
+manifest.json matches the source tree
+```
+
+当模块文件发生变化而 manifest 未更新时，命令退出码为 `1`，并输出 `manifest.json is stale; run make manifest`。pre-commit 的 `manifest check` 钩子会在每次提交时运行同一命令。
+
 详见 [Manifest 清单](manifest.md) 了解清单格式。
 
 ### `zerodep version`

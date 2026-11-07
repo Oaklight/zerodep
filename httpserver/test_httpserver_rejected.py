@@ -458,3 +458,62 @@ class TestTooLargeClosesCleanly:
         assert b" 413 " in response.split(b"\r\n", 1)[0]
         assert len(events) == 1
         assert events[0].reason == "too_large"
+
+
+class _ScriptedReader:
+    """StreamReader stand-in: fixed data for ``read``, scripted ``readline``."""
+
+    def __init__(self, data: bytes, lines: list[bytes | Exception]) -> None:
+        self._data = data
+        self._lines = list(lines)
+
+    async def read(self, n: int) -> bytes:
+        part, self._data = self._data[:n], self._data[n:]
+        return part
+
+    async def readline(self) -> bytes:
+        item = self._lines.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+
+class TestDrainReadErrors:
+    """An over-long chunk line ends the drain, not the connection task.
+
+    ``StreamReader.readline()`` raises ``ValueError`` once a line passes the
+    64 KiB stream limit.  Draining happens after the 413 is written, so the
+    error must be swallowed instead of escaping ``_handle_connection`` and
+    logging a traceback for every hostile request.
+    """
+
+    @staticmethod
+    def _chunked_state() -> server_module._ReadState:
+        state = server_module._ReadState()
+        state.headers = {"transfer-encoding": "chunked"}
+        state.pending_chunk_size = 4
+        return state
+
+    @pytest.mark.asyncio
+    async def test_over_long_chunk_size_line_is_swallowed(self):
+        # Pending chunk data, its CRLF, then an over-limit size line.
+        reader = _ScriptedReader(b"xxxx", [b"\r\n", ValueError("line too long")])
+        app = App(max_body_size=1024)
+        await app._drain_rejected_body(
+            reader,
+            server_module.HTTPException(413, "Request body too large"),
+            self._chunked_state(),
+        )
+
+    @pytest.mark.asyncio
+    async def test_over_long_trailer_line_is_swallowed(self):
+        # Pending chunk data, CRLF, zero chunk, then an over-limit trailer.
+        reader = _ScriptedReader(
+            b"xxxx", [b"\r\n", b"0\r\n", ValueError("line too long")]
+        )
+        app = App(max_body_size=1024)
+        await app._drain_rejected_body(
+            reader,
+            server_module.HTTPException(413, "Request body too large"),
+            self._chunked_state(),
+        )

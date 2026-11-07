@@ -45,3 +45,7 @@ docs_zh/
 node_modules/
 package-lock.json
 uv.lock
+
+# Local agent state and experiment outputs (kept in the working tree)
+.claude/
+/results/

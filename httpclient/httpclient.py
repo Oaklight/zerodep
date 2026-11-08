@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.7.1"
+# version = "0.7.2"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -45,9 +45,12 @@ Redirects:
     receive the first 3xx response unchanged: status, headers -- including
     ``Location`` -- and body as received, with no connection to the target
     opened.  The caller can validate the next hop and issue its own request.
-    The rule covers ``stream=True`` responses (the 3xx is returned unread)
-    and a redirect reached after a Digest-auth retry.  The default follows
-    redirects up to ``max_redirects``.
+    This differs from ``max_redirects=0``, which raises
+    :class:`TooManyRedirects` and exposes neither the response nor its
+    ``Location``.  The rule covers ``stream=True`` responses (the 3xx is
+    returned unread; drain or close it before the connection returns to the
+    pool) and a redirect reached after a Digest-auth retry.  The default
+    follows redirects up to ``max_redirects``.
 """
 
 # ── Imports ──
@@ -3830,7 +3833,10 @@ class Client:
 
     ``follow_redirects=False`` returns the first 3xx response unchanged
     instead of following it, so the caller can read ``Location`` and
-    validate the next hop.  The keyword is also accepted per request.
+    validate the next hop; unlike ``max_redirects=0``, the response is
+    returned rather than an exception.  A ``stream=True`` 3xx is unread --
+    drain or close it to return the connection to the pool.  The keyword is
+    also accepted per request.
 
     Usage::
 
@@ -3954,7 +3960,10 @@ class AsyncClient:
 
     ``follow_redirects=False`` returns the first 3xx response unchanged
     instead of following it, so the caller can read ``Location`` and
-    validate the next hop.  The keyword is also accepted per request.
+    validate the next hop; unlike ``max_redirects=0``, the response is
+    returned rather than an exception.  A ``stream=True`` 3xx is unread --
+    drain or close it to return the connection to the pool.  The keyword is
+    also accepted per request.
 
     Usage::
 

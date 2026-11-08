@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-11-08T05:16:10.052520+00:00",
+  "generated": "2026-11-08T06:04:36.506856+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -189,12 +189,12 @@
         "httpclient/httpclient.py"
       ],
       "primary_file": "httpclient/httpclient.py",
-      "version": "0.7.1",
+      "version": "0.7.2",
       "deps": [],
       "tier": "subsystem",
       "category": "network",
       "last_updated": "2026-11-07T23:16:08-06:00",
-      "content_hash": "bd9fe3afee73d7b0f72a7a51bd88f1ee5209e63b4142e1bb4e9f2793736396b7"
+      "content_hash": "f502cb1dd5a308f1dc0ac23987e1f9579655ec9f31e51efc4ccab95085225819"
     },
     "httpserver": {
       "description": "Zero-dependency async HTTP server with decorator-based routing",

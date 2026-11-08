@@ -184,20 +184,26 @@ bench-profiler = [
     "pyinstrument>=5.0.0",
     "yappi>=1.6.0",
 ]
+bench-ptyx = [
+    # The POSIX comparison; the benchmark job runs on ubuntu-latest.
+    "ptyprocess==0.7.0",
+    # The ConPTY reference, kept for a Windows benchmark job (#279).
+    "pywinpty==3.1.2; sys_platform == 'win32'",
+]
 dev = [
     "ruff==0.15.20",
     "ty==0.0.54",
     "complexipy==5.6.1",
     "build>=1.2.2.post1",
     "twine>=6.1.0",
-    "zerodep[test,bench-aes,bench-aiosqlite,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonx,bench-structlog,bench-retry,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-runner,bench-readability,bench-png,bench-useragent,bench-httpserver,bench-websocket,bench-cdp,bench-multipart,bench-s3,bench-ratelimit,bench-jsonschema,bench-profiler,bench-semantic_search]"
+    "zerodep[test,bench-aes,bench-aiosqlite,bench-qr,bench-http,bench-dotenv,bench-yaml,bench-jsonx,bench-structlog,bench-retry,bench-tabulate,bench-soup,bench-validate,bench-sse,bench-markdown,bench-diff,bench-scheduler,bench-search,bench-frontmatter,bench-config,bench-cache,bench-xml,bench-jsonrpc,bench-a2a,bench-acp,bench-protobuf,bench-semver,bench-runner,bench-readability,bench-png,bench-useragent,bench-httpserver,bench-websocket,bench-cdp,bench-multipart,bench-s3,bench-ratelimit,bench-jsonschema,bench-profiler,bench-semantic_search,bench-ptyx]"
 ]
 
 [tool.pytest.ini_options]
 markers = [
     "cold_start: cold-start (import + first-call) benchmarks via subprocess",
 ]
-testpaths = ["aes", "aiosqlite", "qr", "httpclient", "dotenv", "yaml", "jsonx", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema", "png", "llmstxt", "useragent", "synctex", "httpserver", "websocket", "cdp", "multipart", "s3", "ratelimit", "profiler", "semantic_search"]
+testpaths = ["aes", "aiosqlite", "qr", "httpclient", "dotenv", "yaml", "jsonx", "structlog", "retry", "toon", "tabulate", "soup", "prompt", "validate", "sse", "markdown", "diff", "vcs", "ansi", "scheduler", "sparse_search", "frontmatter", "config", "cache", "runner", "xml", "jsonrpc", "a2a", "acp", "skills", "filelock", "persistdict", "protobuf", "depdetect", "semver", "readability", "jsonschema", "png", "llmstxt", "useragent", "synctex", "httpserver", "websocket", "cdp", "multipart", "s3", "ratelimit", "profiler", "semantic_search", "ptyx"]
 
 [tool.ruff]
 target-version = "py310"

@@ -231,6 +231,7 @@ modules:
     desc_en: "ANSI terminal styling: colors, attributes, detection, strip/visible_len"
     desc_zh: "ANSI 终端样式：颜色、属性、检测、strip/visible_len"
   ptyx:
+    benchmark: ptyprocess
     replaces: "ptyprocess, pywinpty (partial)"
     replaces_zh: "ptyprocess、pywinpty（部分）"
     desc_en: "Async pseudo-terminal (PTY/ConPTY) transport, stdlib only"

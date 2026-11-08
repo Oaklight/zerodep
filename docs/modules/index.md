@@ -131,7 +131,7 @@ title: 模块概览
 | 模块 | 描述 | 可替代 | 性能对标 |
 |--------|-------------|----------|-------------------|
 | [ansi](ansi.md) | ANSI 终端样式：颜色、属性、检测、strip/visible_len | colorama、termcolor | -- |
-| [ptyx](ptyx.md) | 异步伪终端（PTY/ConPTY）传输，仅用标准库 | ptyprocess、pywinpty（部分） | -- |
+| [ptyx](ptyx.md) | 异步伪终端（PTY/ConPTY）传输，仅用标准库 | ptyprocess、pywinpty（部分） | `ptyprocess` |
 | [tabulate](tabulate.md) | 多种输出样式的表格格式化 | tabulate、prettytable | `tabulate` |
 | [prompt](prompt.md) | 交互式 CLI 提示（confirm、select、text） | inquirer、questionary | `questionary` |
 

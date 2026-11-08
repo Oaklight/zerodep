@@ -131,7 +131,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | Module | Description | Replaces | Benchmark Against |
 |--------|-------------|----------|-------------------|
 | [ansi](ansi.md) | ANSI terminal styling: colors, attributes, detection, strip/visible_len | colorama, termcolor | -- |
-| [ptyx](ptyx.md) | Async pseudo-terminal (PTY/ConPTY) transport, stdlib only | ptyprocess, pywinpty (partial) | -- |
+| [ptyx](ptyx.md) | Async pseudo-terminal (PTY/ConPTY) transport, stdlib only | ptyprocess, pywinpty (partial) | `ptyprocess` |
 | [tabulate](tabulate.md) | Table formatting with multiple output styles | tabulate, prettytable | `tabulate` |
 | [prompt](prompt.md) | Interactive CLI prompts (confirm, select, text) | inquirer, questionary | `questionary` |
 

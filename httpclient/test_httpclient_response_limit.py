@@ -179,6 +179,23 @@ def _gzip_members(parts: list[bytes], *, truncate_last: bool = False) -> bytes:
     )
 
 
+def _chunked_gzip_frames(frames: list[bytes]) -> bytes:
+    """Send each frame as one HTTP chunk of a chunked response.
+
+    The chunked readers (`HTTPResponse.read1()` and `_aiter_chunked()`)
+    never read past the HTTP chunk they are in, so every frame reaches the
+    decompressor as exactly one read.  Framing the compressed stream this
+    way pins a member boundary to the end of a read.
+    """
+    body = b"".join(
+        f"{len(frame):x}\r\n".encode() + frame + b"\r\n" for frame in frames
+    )
+    return (
+        b"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\n"
+        b"Transfer-Encoding: chunked\r\n\r\n" + body + b"0\r\n\r\n"
+    )
+
+
 def _pool_entries(client: Client) -> int:
     return sum(len(entries) for entries in client._pool._pool.values())
 
@@ -497,3 +514,74 @@ class TestAsyncResponseLimit:
                 await client.get(server.url)
             response = await client.get(server.url, max_response_size=8192)
         assert len(response.content) == limit * 4
+
+
+# ── Gzip member boundaries on read chunks ───────────────────────────────────
+
+
+class TestGzipMemberBoundaries:
+    """Member boundaries that fall on a read-chunk boundary (#303).
+
+    ``StreamingResponse`` decompresses one read at a time, so a
+    ``decompressobj`` can end a member at the last byte of a chunk and
+    leave ``unused_data`` empty; the next member then starts in the next
+    chunk, handed to a decompressor that already reported ``eof``.  The
+    chunked framing below puts one gzip member in each HTTP chunk, which
+    makes that the read alignment, and the sync/async readers never cross
+    an HTTP chunk boundary.
+    """
+
+    @staticmethod
+    def _frames(*members: bytes) -> bytes:
+        return _chunked_gzip_frames([gzip.compress(member, 9) for member in members])
+
+    def test_sync_every_member_ends_at_a_chunk_boundary(self, raw_server):
+        server = raw_server(self._frames(b"first|", b"second|", b"third"))
+        with Client() as client:
+            response = client.get(server.url, stream=True)
+            try:
+                body = b"".join(response.iter_bytes())
+            finally:
+                response.close()
+        assert body == b"first|second|third"
+
+    @pytest.mark.asyncio
+    async def test_async_every_member_ends_at_a_chunk_boundary(self, raw_server):
+        server = raw_server(self._frames(b"first|", b"second|", b"third"))
+        async with AsyncClient() as client:
+            response = await client.get(server.url, stream=True)
+            try:
+                body = b"".join([chunk async for chunk in response.aiter_bytes()])
+            finally:
+                await response.aclose()
+        assert body == b"first|second|third"
+
+    @staticmethod
+    def _split_frames(first: bytes, second: bytes) -> bytes:
+        """Split the first member across two chunks, then start the second."""
+        compressed = gzip.compress(first, 9)
+        midpoint = len(compressed) // 2
+        return _chunked_gzip_frames(
+            [compressed[:midpoint], compressed[midpoint:], gzip.compress(second, 9)]
+        )
+
+    def test_sync_member_spans_two_chunks(self, raw_server):
+        server = raw_server(self._split_frames(b"first|", b"second"))
+        with Client() as client:
+            response = client.get(server.url, stream=True)
+            try:
+                body = b"".join(response.iter_bytes())
+            finally:
+                response.close()
+        assert body == b"first|second"
+
+    @pytest.mark.asyncio
+    async def test_async_member_spans_two_chunks(self, raw_server):
+        server = raw_server(self._split_frames(b"first|", b"second"))
+        async with AsyncClient() as client:
+            response = await client.get(server.url, stream=True)
+            try:
+                body = b"".join([chunk async for chunk in response.aiter_bytes()])
+            finally:
+                await response.aclose()
+        assert body == b"first|second"

@@ -165,6 +165,20 @@ def _gzip_bomb(limit: int) -> bytes:
     )
 
 
+def _gzip_members(parts: list[bytes], *, truncate_last: bool = False) -> bytes:
+    """Send one gzip member per part, concatenated into one stream."""
+    compressed = b"".join(gzip.compress(part, 9) for part in parts)
+    if truncate_last:
+        # Cut the last member's 8-byte trailer.
+        compressed = compressed[:-8]
+    return (
+        b"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\n"
+        + f"Content-Length: {len(compressed)}\r\n".encode()
+        + b"\r\n"
+        + compressed
+    )
+
+
 def _pool_entries(client: Client) -> int:
     return sum(len(entries) for entries in client._pool._pool.values())
 
@@ -271,6 +285,40 @@ class TestSyncResponseLimit:
         # The message names the problem, never the body.
         assert "d" * 32 not in str(excinfo.value)
 
+    def test_every_gzip_member_is_decoded(self, raw_server):
+        """Concatenated gzip members are one stream, not just the first."""
+        server = raw_server(_gzip_members([b"first|", b"second|", b"third"]))
+        with Client() as client:
+            response = client.get(server.url)
+        assert response.content == b"first|second|third"
+
+    def test_truncated_second_gzip_member_is_refused(self, raw_server):
+        """A member that ends mid-stream still fails the whole body."""
+        server = raw_server(_gzip_members([b"first|", b"second|"], truncate_last=True))
+        with Client() as client:
+            with pytest.raises(DecompressionError):
+                client.get(server.url)
+
+    def test_gzip_members_share_one_size_budget(self, raw_server):
+        """Several members cannot combine past ``max_response_size``."""
+        limit = 256
+        server = raw_server(_gzip_members([b"a" * 200, b"b" * 200]))
+        with Client() as client:
+            with pytest.raises(ResponseTooLargeError) as excinfo:
+                client.get(server.url, max_response_size=limit)
+        assert excinfo.value.received == limit + 1
+
+    def test_streaming_decodes_every_gzip_member(self, raw_server):
+        """The streaming decompressor crosses member boundaries too."""
+        server = raw_server(_gzip_members([b"first|", b"second|", b"third"]))
+        with Client() as client:
+            response = client.get(server.url, stream=True)
+            try:
+                body = b"".join(response.iter_bytes())
+            finally:
+                response.close()
+        assert body == b"first|second|third"
+
     @pytest.mark.parametrize(
         ("status", "reason", "method"),
         [
@@ -374,6 +422,44 @@ class TestAsyncResponseLimit:
         async with AsyncClient() as client:
             with pytest.raises(DecompressionError):
                 await client.get(server.url)
+
+    @pytest.mark.asyncio
+    async def test_every_gzip_member_is_decoded(self, raw_server):
+        """Concatenated gzip members are one stream, not just the first."""
+        server = raw_server(_gzip_members([b"first|", b"second|", b"third"]))
+        async with AsyncClient() as client:
+            response = await client.get(server.url)
+        assert response.content == b"first|second|third"
+
+    @pytest.mark.asyncio
+    async def test_truncated_second_gzip_member_is_refused(self, raw_server):
+        """A member that ends mid-stream still fails the whole body."""
+        server = raw_server(_gzip_members([b"first|", b"second|"], truncate_last=True))
+        async with AsyncClient() as client:
+            with pytest.raises(DecompressionError):
+                await client.get(server.url)
+
+    @pytest.mark.asyncio
+    async def test_gzip_members_share_one_size_budget(self, raw_server):
+        """Several members cannot combine past ``max_response_size``."""
+        limit = 256
+        server = raw_server(_gzip_members([b"a" * 200, b"b" * 200]))
+        async with AsyncClient() as client:
+            with pytest.raises(ResponseTooLargeError) as excinfo:
+                await client.get(server.url, max_response_size=limit)
+        assert excinfo.value.received == limit + 1
+
+    @pytest.mark.asyncio
+    async def test_streaming_decodes_every_gzip_member(self, raw_server):
+        """The async streaming decompressor crosses member boundaries too."""
+        server = raw_server(_gzip_members([b"first|", b"second|", b"third"]))
+        async with AsyncClient() as client:
+            response = await client.get(server.url, stream=True)
+            try:
+                body = b"".join([chunk async for chunk in response.aiter_bytes()])
+            finally:
+                await response.aclose()
+        assert body == b"first|second|third"
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(

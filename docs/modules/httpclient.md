@@ -390,8 +390,10 @@ with Client(resolve_to="203.0.113.10") as client:
 
 `httpclient` does not re-check the addresses; choosing which ones are
 acceptable (public-only, an allowlist, the metadata-endpoint deny list) is
-the caller's policy. A URL whose host is already an IP literal accepts the
-option but does not need it.
+the caller's policy. Each entry must be an IP literal; a hostname raises
+`ValueError` instead of being resolved, because resolving it would turn the
+pin back into a normal lookup. A URL whose host is already an IP literal
+accepts the option but does not need it.
 
 `resolve_to` cannot be combined with `proxy`. A proxy resolves the name on
 its own side, so the pin would be unenforceable; the client raises
@@ -423,7 +425,7 @@ All sync functions accept the same keyword arguments:
 | `stream` | `bool` | `False` | Return a `StreamingResponse` for incremental body consumption |
 | `auth` | `tuple[str, str] \| Auth \| None` | `None` | Authentication credentials (tuple for Basic, or `BasicAuth`/`DigestAuth` object) |
 | `proxy` | `str \| None` | `None` | Proxy URL (e.g. `"http://proxy:8080"`) |
-| `resolve_to` | `str \| Sequence[str] \| None` | `None` | Validated address(es) to connect to while the URL host keeps `Host`/SNI/verification. Tried in order; not allowed with `proxy` |
+| `resolve_to` | `str \| Sequence[str] \| None` | `None` | Validated IP address(es) to connect to while the URL host keeps `Host`/SNI/verification. Tried in order; each must be an IP literal; not allowed with `proxy` |
 
 ```python
 get(url, **kwargs) -> Response

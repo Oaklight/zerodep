@@ -58,8 +58,10 @@ Address pinning:
     while the URL host still provides the ``Host`` header, TLS SNI and
     certificate verification.  It exists for DNS-rebinding protection: the
     caller resolves and checks the address, and this module connects to it
-    without resolving again.  The caller owns the policy and must validate
-    the addresses.  ``resolve_to`` cannot be combined with ``proxy`` --
+    without resolving again.  The caller owns the policy.  Each entry must
+    be an IP literal: a hostname is refused with ``ValueError`` because the
+    socket layer would resolve it, silently turning the pin back into a
+    normal lookup.  ``resolve_to`` cannot be combined with ``proxy`` --
     the proxy resolves the name, so the pin would be unenforceable -- and a
     redirect that changes scheme, host or port drops the pin for the rest
     of the chain.
@@ -74,6 +76,7 @@ import base64
 import hashlib
 import http.client
 import http.cookies
+import ipaddress
 import json as _json
 import logging
 import os
@@ -2221,7 +2224,7 @@ ResolveTo = str | Sequence[str] | None
 
 
 def _normalize_resolve_to(resolve_to: ResolveTo) -> tuple[str, ...] | None:
-    """Normalize ``resolve_to`` to an ordered tuple of addresses.
+    """Normalize ``resolve_to`` to an ordered tuple of IP addresses.
 
     Args:
         resolve_to: ``None``, one address, or a sequence of addresses.  A
@@ -2229,11 +2232,14 @@ def _normalize_resolve_to(resolve_to: ResolveTo) -> tuple[str, ...] | None:
 
     Returns:
         ``None`` when no pin was requested, otherwise a non-empty tuple.
-        The caller is responsible for validating the addresses; this module
-        does not re-check them (see #305).
+        The caller is responsible for choosing acceptable addresses; this
+        module does not re-check the policy (see #305).
 
     Raises:
-        ValueError: If the sequence is empty.
+        ValueError: If the sequence is empty, or an entry is not an IP
+            address.  A hostname entry would be resolved by the socket
+            layer, silently downgrading the pin to a normal lookup, which is
+            the behaviour this option exists to prevent.
     """
     if resolve_to is None:
         return None
@@ -2243,7 +2249,15 @@ def _normalize_resolve_to(resolve_to: ResolveTo) -> tuple[str, ...] | None:
         addresses = tuple(resolve_to)
     if not addresses:
         raise ValueError("resolve_to must contain at least one address")
-    return tuple(str(address) for address in addresses)
+    normalized = tuple(str(address) for address in addresses)
+    for address in normalized:
+        try:
+            ipaddress.ip_address(address)
+        except ValueError as exc:
+            raise ValueError(
+                f"resolve_to entry {address!r} is not an IP address"
+            ) from exc
+    return normalized
 
 
 def _reject_proxy_with_resolve_to(resolve_to: object, proxy: str | None) -> None:
@@ -2270,16 +2284,20 @@ def _reject_proxy_with_resolve_to(resolve_to: object, proxy: str | None) -> None
         )
 
 
-def _redact_pinned(text: str, addresses: Sequence[str] | None) -> str:
+def _redact_pinned(text: str, addresses: Sequence[str] | None, host: str) -> str:
     """Remove pinned addresses from an error message.
 
     A transport error may embed the address it failed to reach.  The caller
     supplied that address and already knows it, but the message is the wrong
-    place for it: it can end up in a log or an HTTP error body.
+    place for it: it can end up in a log or an HTTP error body.  An address
+    equal to the URL host is left alone -- that is the host the message
+    already names, not leaked pin material.
     """
     if not addresses:
         return text
     for address in addresses:
+        if address == host:
+            continue
         text = text.replace(address, "<pinned>")
     return text
 
@@ -2944,7 +2962,7 @@ def _wrap_sync_errors(
             timeout=timeout,
         )
     if isinstance(exc, (OSError, http.client.HTTPException)):
-        detail = _redact_pinned(str(exc), pinned)
+        detail = _redact_pinned(str(exc), pinned, host)
         return HttpConnectionError(
             f"Connection to {host}:{port} failed: {detail}",
             host=host,
@@ -2983,10 +3001,11 @@ def _sync_request(
 ) -> Response | StreamingResponse:
     """Perform a synchronous HTTP request.
 
-    ``resolve_to`` connects to the caller-supplied address (or addresses, in
-    order) while the URL host still provides ``Host``, TLS SNI and
-    certificate verification.  The caller is responsible for validating the
-    addresses; this module does not re-check them.  It cannot be combined
+    ``resolve_to`` connects to the caller-supplied IP address (or addresses,
+    in order) while the URL host still provides ``Host``, TLS SNI and
+    certificate verification.  The caller is responsible for choosing the
+    addresses; this module does not re-check the policy.  An entry that is
+    not an IP literal raises ``ValueError``.  It cannot be combined
     with ``proxy``: the proxy resolves the name, so the pin is unenforceable.
     A redirect that changes scheme, host or port drops the pin for the rest
     of the chain.
@@ -3553,7 +3572,7 @@ async def _async_acquire_connection(
         msg = f"Connection to {host}:{port} timed out after {timeout}s"
         raise HttpTimeoutError(msg, url=url, timeout=timeout)
     except OSError as exc:
-        detail = _redact_pinned(str(exc), resolve_to)
+        detail = _redact_pinned(str(exc), resolve_to, host)
         raise HttpConnectionError(
             f"Connection to {host}:{port} failed: {detail}",
             host=host,
@@ -3711,10 +3730,11 @@ async def _async_request(
 ) -> Response | StreamingResponse:
     """Perform an asynchronous HTTP request using asyncio streams.
 
-    ``resolve_to`` connects to the caller-supplied address (or addresses, in
-    order) while the URL host still provides ``Host``, TLS SNI and
-    certificate verification.  The caller is responsible for validating the
-    addresses; this module does not re-check them.  It cannot be combined
+    ``resolve_to`` connects to the caller-supplied IP address (or addresses,
+    in order) while the URL host still provides ``Host``, TLS SNI and
+    certificate verification.  The caller is responsible for choosing the
+    addresses; this module does not re-check the policy.  An entry that is
+    not an IP literal raises ``ValueError``.  It cannot be combined
     with ``proxy``: the proxy resolves the name, so the pin is unenforceable.
     A redirect that changes scheme, host or port drops the pin for the rest
     of the chain.
@@ -4201,11 +4221,12 @@ class Client:
     drain or close it to return the connection to the pool.  The keyword is
     also accepted per request.
 
-    ``resolve_to`` pins the TCP peer to a caller-validated address, or to an
-    ordered list of addresses tried until one connects, while the URL host
-    still provides ``Host``, TLS SNI and certificate verification.  The
-    caller must validate the addresses.  It cannot be combined with
-    ``proxy``: that raises ``ValueError`` at construction.
+    ``resolve_to`` pins the TCP peer to a caller-validated IP address, or to
+    an ordered list of IP addresses tried until one connects, while the URL
+    host still provides ``Host``, TLS SNI and certificate verification.  The
+    caller chooses the addresses.  A hostname entry raises ``ValueError``
+    rather than being resolved.  It cannot be combined with ``proxy``: that
+    raises ``ValueError`` at construction.
 
     Usage::
 
@@ -4338,11 +4359,12 @@ class AsyncClient:
     drain or close it to return the connection to the pool.  The keyword is
     also accepted per request.
 
-    ``resolve_to`` pins the TCP peer to a caller-validated address, or to an
-    ordered list of addresses tried until one connects, while the URL host
-    still provides ``Host``, TLS SNI and certificate verification.  The
-    caller must validate the addresses.  It cannot be combined with
-    ``proxy``: that raises ``ValueError`` at construction.
+    ``resolve_to`` pins the TCP peer to a caller-validated IP address, or to
+    an ordered list of IP addresses tried until one connects, while the URL
+    host still provides ``Host``, TLS SNI and certificate verification.  The
+    caller chooses the addresses.  A hostname entry raises ``ValueError``
+    rather than being resolved.  It cannot be combined with ``proxy``: that
+    raises ``ValueError`` at construction.
 
     Usage::
 

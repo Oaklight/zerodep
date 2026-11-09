@@ -360,7 +360,7 @@ with Client(resolve_to="203.0.113.10") as client:
     r = client.get("https://api.example.com/data")
 ```
 
-`httpclient` 不会重新检查这些地址；哪些地址可以接受（仅公网、允许列表、云元数据端点拒绝列表）由调用方决定。如果 URL 主机本身就是 IP 字面量，该选项仍可传入，但没有必要。
+`httpclient` 不会重新检查这些地址；哪些地址可以接受（仅公网、允许列表、云元数据端点拒绝列表）由调用方决定。每个条目必须是 IP 字面量；传入主机名会抛出 `ValueError`，而不是去解析它，因为解析会让钉定退化为普通查找。如果 URL 主机本身就是 IP 字面量，该选项仍可传入，但没有必要。
 
 `resolve_to` 不能与 `proxy` 同时使用。代理会自行解析域名，钉定无法被强制执行；客户端在构造时和每次请求时都会抛出 `ValueError`，而不是报告一个无法兑现的保证。该检查同样适用于空地址列表。
 
@@ -385,7 +385,7 @@ with Client(resolve_to="203.0.113.10") as client:
 | `stream` | `bool` | `False` | 返回 `StreamingResponse` 以增量消费响应体 |
 | `auth` | `tuple[str, str] \| Auth \| None` | `None` | 认证凭据（元组用于 Basic，或 `BasicAuth`/`DigestAuth` 对象） |
 | `proxy` | `str \| None` | `None` | 代理 URL（如 `"http://proxy:8080"`） |
-| `resolve_to` | `str \| Sequence[str] \| None` | `None` | 连接时使用的已校验地址；URL 主机仍用于 `Host`、SNI 与证书校验。按顺序尝试；不可与 `proxy` 同时使用 |
+| `resolve_to` | `str \| Sequence[str] \| None` | `None` | 连接时使用的已校验 IP 地址；URL 主机仍用于 `Host`、SNI 与证书校验。按顺序尝试；每个条目必须是 IP 字面量；不可与 `proxy` 同时使用 |
 
 ```python
 get(url, **kwargs) -> Response

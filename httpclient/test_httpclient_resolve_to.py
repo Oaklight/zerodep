@@ -343,6 +343,30 @@ def test_empty_resolve_to_is_rejected_without_a_proxy():
         Client(resolve_to=())
 
 
+def test_client_rejects_a_hostname_entry():
+    """A hostname would be resolved, silently downgrading the pin."""
+    with pytest.raises(ValueError, match="not an IP address"):
+        Client(resolve_to="pinned.invalid")
+
+
+def test_request_rejects_a_hostname_entry():
+    with pytest.raises(ValueError, match="not an IP address"):
+        get("http://example.test/", resolve_to="pinned.invalid")
+
+
+def test_a_bad_entry_in_a_list_is_named():
+    with pytest.raises(ValueError, match="'nope.example'"):
+        get("http://example.test/", resolve_to=["127.0.0.1", "nope.example"])
+
+
+def test_an_ip_literal_url_keeps_its_host_in_errors():
+    """Redaction skips the URL host, so the message still names the peer."""
+    with pytest.raises(HttpConnectionError) as excinfo:
+        get("http://127.0.0.1:1/hit", resolve_to="127.0.0.1", timeout=1)
+
+    assert "Connection to 127.0.0.1:1" in str(excinfo.value)
+
+
 @pytest.mark.asyncio
 async def test_async_client_rejects_resolve_to_with_proxy():
     with pytest.raises(ValueError, match="proxy"):

@@ -135,7 +135,13 @@ class TestDefaultSyncPool:
         monkeypatch.setattr(httpclient, "_socket_peer_closed", lambda sock: False)
         with httpclient._DEFAULT_SYNC_POOL._lock:
             httpclient._DEFAULT_SYNC_POOL._pool[
-                (server.server_address[0], server.server_address[1], False, True)
+                (
+                    server.server_address[0],
+                    server.server_address[1],
+                    False,
+                    True,
+                    None,
+                )
             ] = [(conn, time.monotonic())]
 
         response = httpclient.get(url)
@@ -483,7 +489,7 @@ class TestGlobalConnectionCap:
     def test_sync_release_sweeps_expired_entries_of_other_hosts(self):
         pool = httpclient._SyncConnectionPool(pool_size=5, max_total=10)
         stale = _FakeConn()
-        key = ("stale-host", 80, False, True)
+        key = ("stale-host", 80, False, True, None)
         pool._pool[key] = [(stale, time.monotonic() - 10_000)]
 
         fresh = _FakeConn()
@@ -512,7 +518,7 @@ class TestGlobalConnectionCap:
     def test_async_release_sweeps_expired_entries_of_other_hosts(self):
         pool = httpclient._AsyncConnectionPool(pool_size=5, max_total=10)
         stale = _FakeWriter()
-        pool._pool[("stale-host", 80, False, True)] = [
+        pool._pool[("stale-host", 80, False, True, None)] = [
             (object(), stale, time.monotonic() - 10_000)
         ]
 
@@ -533,7 +539,7 @@ class TestIdleTimeoutIsConfigurable:
     def test_sync_pool_uses_its_own_idle_timeout(self):
         pool = httpclient._SyncConnectionPool(pool_size=2, idle_timeout=1.0)
         conn = _FakeConn()
-        key = ("host", 80, False, True)
+        key = ("host", 80, False, True, None)
         pool._pool[key] = [(conn, time.monotonic() - 5.0)]
 
         assert pool.acquire("host", 80, False, 1.0, True) is None
@@ -542,7 +548,7 @@ class TestIdleTimeoutIsConfigurable:
     def test_async_pool_uses_its_own_idle_timeout(self):
         pool = httpclient._AsyncConnectionPool(pool_size=2, idle_timeout=1.0)
         writer = _FakeWriter()
-        pool._pool[("host", 80, False, True)] = [
+        pool._pool[("host", 80, False, True, None)] = [
             (object(), writer, time.monotonic() - 5.0)
         ]
 

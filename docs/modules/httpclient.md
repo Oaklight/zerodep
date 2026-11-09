@@ -343,6 +343,29 @@ with Client(auth=("user", "pass")) as client:
 
 `Authorization`、`Proxy-Authorization` 与 `Cookie` 只属于收到它们的 origin。当重定向目标使用不同的 scheme、host 或 port 时——包括 `https` → `http` 降级——这些请求头会在下一个请求前被移除，且后续跳转回到原 origin 时不会恢复。其他请求头原样转发，同 origin 重定向会全部保留。Digest 认证遵循同一规则：重定向链离开原 origin 后，新 origin 的 401 Digest 挑战会原样返回给调用方，不会用配置的凭据应答。没有关闭开关：目标 origin 需要自己的凭据时，请发送新请求并带上它期望的请求头。
 
+## 地址钉定
+
+`resolve_to` 让已经解析并校验过域名的调用方连接到指定地址，同时 URL 中的主机名仍用于 `Host` 请求头、TLS SNI 与证书校验。这消除了“校验地址”与“按域名连接”之间的 DNS 重绑定窗口：`httpclient` 不会再次解析该域名。
+
+```python
+# 调用方已解析并校验地址；连接发往该地址，但 Host/SNI 仍是
+# api.example.com，证书也按该名称校验。
+r = get("https://api.example.com/data", resolve_to="203.0.113.10")
+
+# 可传入多个已校验地址，连接失败时按顺序尝试。
+r = get("https://api.example.com/data", resolve_to=["203.0.113.10", "203.0.113.11"])
+
+# 会话级默认值
+with Client(resolve_to="203.0.113.10") as client:
+    r = client.get("https://api.example.com/data")
+```
+
+`httpclient` 不会重新检查这些地址；哪些地址可以接受（仅公网、允许列表、云元数据端点拒绝列表）由调用方决定。如果 URL 主机本身就是 IP 字面量，该选项仍可传入，但没有必要。
+
+`resolve_to` 不能与 `proxy` 同时使用。代理会自行解析域名，钉定无法被强制执行；客户端在构造时和每次请求时都会抛出 `ValueError`，而不是报告一个无法兑现的保证。该检查同样适用于空地址列表。
+
+重定向只在同一 origin（scheme、host 与 port）内保留钉定。跨 origin 的跳转会为后续整条链丢弃该钉定，因此新主机不会被钉到为旧主机校验过的地址。钉定连接与非钉定连接分开入池，钉定连接不会被未钉定的请求复用，反之亦然。
+
 ## API 参考
 
 ### 同步函数
@@ -362,6 +385,7 @@ with Client(auth=("user", "pass")) as client:
 | `stream` | `bool` | `False` | 返回 `StreamingResponse` 以增量消费响应体 |
 | `auth` | `tuple[str, str] \| Auth \| None` | `None` | 认证凭据（元组用于 Basic，或 `BasicAuth`/`DigestAuth` 对象） |
 | `proxy` | `str \| None` | `None` | 代理 URL（如 `"http://proxy:8080"`） |
+| `resolve_to` | `str \| Sequence[str] \| None` | `None` | 连接时使用的已校验地址；URL 主机仍用于 `Host`、SNI 与证书校验。按顺序尝试；不可与 `proxy` 同时使用 |
 
 ```python
 get(url, **kwargs) -> Response
@@ -430,6 +454,7 @@ Client(
     verify: bool = True,
     auth: tuple[str, str] | Auth | None = None,
     proxy: str | None = None,
+    resolve_to: str | Sequence[str] | None = None,
     pool_size: int = 10,
     max_total_connections: int = 100,
     pool_idle_timeout: float = 60.0,
@@ -451,6 +476,7 @@ AsyncClient(
     verify: bool = True,
     auth: tuple[str, str] | Auth | None = None,
     proxy: str | None = None,
+    resolve_to: str | Sequence[str] | None = None,
     pool_size: int = 10,
     max_total_connections: int = 100,
     pool_idle_timeout: float = 60.0,

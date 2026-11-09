@@ -367,6 +367,43 @@ instead of being answered with the configured credentials. There is no opt-out
 switch: when the redirect target needs its own credentials, send a new request
 with the headers that origin expects.
 
+## Address Pinning
+
+`resolve_to` lets a caller that has already resolved and validated a name
+connect to one of those addresses while the URL host still supplies the
+`Host` header, TLS SNI and certificate verification. This closes the DNS
+rebinding window between "validate the address" and "connect to the name":
+`httpclient` does not resolve the name again.
+
+```python
+# The caller resolved and checked the address; the request connects there,
+# but sends Host/SNI for api.example.com and verifies that certificate.
+r = get("https://api.example.com/data", resolve_to="203.0.113.10")
+
+# Several validated addresses are tried in order if a connect fails.
+r = get("https://api.example.com/data", resolve_to=["203.0.113.10", "203.0.113.11"])
+
+# Session-level default
+with Client(resolve_to="203.0.113.10") as client:
+    r = client.get("https://api.example.com/data")
+```
+
+`httpclient` does not re-check the addresses; choosing which ones are
+acceptable (public-only, an allowlist, the metadata-endpoint deny list) is
+the caller's policy. A URL whose host is already an IP literal accepts the
+option but does not need it.
+
+`resolve_to` cannot be combined with `proxy`. A proxy resolves the name on
+its own side, so the pin would be unenforceable; the client raises
+`ValueError` at construction and per request rather than reporting a
+guarantee it cannot keep. The check also applies to an empty address list.
+
+A redirect keeps the pin only while it stays on the same origin (scheme,
+host and port). A cross-origin hop drops it for the rest of the chain, so a
+new host is never pinned to an address that was validated for the old one.
+Pinned and unpinned connections are pooled separately, so a pinned
+connection is never reused for an unpinned request, or vice versa.
+
 ## API Reference
 
 ### Sync Functions
@@ -386,6 +423,7 @@ All sync functions accept the same keyword arguments:
 | `stream` | `bool` | `False` | Return a `StreamingResponse` for incremental body consumption |
 | `auth` | `tuple[str, str] \| Auth \| None` | `None` | Authentication credentials (tuple for Basic, or `BasicAuth`/`DigestAuth` object) |
 | `proxy` | `str \| None` | `None` | Proxy URL (e.g. `"http://proxy:8080"`) |
+| `resolve_to` | `str \| Sequence[str] \| None` | `None` | Validated address(es) to connect to while the URL host keeps `Host`/SNI/verification. Tried in order; not allowed with `proxy` |
 
 ```python
 get(url, **kwargs) -> Response
@@ -454,6 +492,7 @@ Client(
     verify: bool = True,
     auth: tuple[str, str] | Auth | None = None,
     proxy: str | None = None,
+    resolve_to: str | Sequence[str] | None = None,
     pool_size: int = 10,
     max_total_connections: int = 100,
     pool_idle_timeout: float = 60.0,
@@ -475,6 +514,7 @@ AsyncClient(
     verify: bool = True,
     auth: tuple[str, str] | Auth | None = None,
     proxy: str | None = None,
+    resolve_to: str | Sequence[str] | None = None,
     pool_size: int = 10,
     max_total_connections: int = 100,
     pool_idle_timeout: float = 60.0,

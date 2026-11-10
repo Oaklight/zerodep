@@ -48,7 +48,7 @@ categories:
   - id: crypto
     name_en: "Security"
     name_zh: "安全"
-    modules: [aes]
+    modules: [jwt, aes]
 
   - id: image
     name_en: "Image"
@@ -248,6 +248,12 @@ modules:
     replaces_zh: "inquirer、questionary"
     desc_en: "Interactive CLI prompts (confirm, select, text)"
     desc_zh: "交互式 CLI 提示（confirm、select、text）"
+  jwt:
+    benchmark: PyJWT
+    replaces: "PyJWT, python-jose"
+    replaces_zh: "PyJWT、python-jose"
+    desc_en: "JWS verification (RS/PS/ES) and HMAC sign/verify, stdlib only"
+    desc_zh: "JWS 校验（RS/PS/ES）与 HMAC 签名/校验，仅用标准库"
   aes:
     benchmark: pycryptodome
     replaces: "pycryptodome (AES), cryptography (AES)"

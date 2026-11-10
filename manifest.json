@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-11-09T04:03:42.063379+00:00",
+  "generated": "2026-11-10T22:37:39.846353+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -193,7 +193,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-11-08T21:49:07-06:00",
+      "last_updated": "2026-11-08T22:04:04-06:00",
       "content_hash": "5b68de91c57cc980766bca97cd2712ec87f89dfaa500377201b79cc437dbbc74"
     },
     "httpserver": {
@@ -247,6 +247,19 @@
       "category": "serialization",
       "last_updated": "2026-10-24T11:32:21-05:00",
       "content_hash": "b9ac4f5cbb2fbccac06eef1f2bfa35e98553df649c9a5735f00c317eae919625"
+    },
+    "jwt": {
+      "description": "JWS (JWT) token verification and HMAC signing — stdlib only",
+      "files": [
+        "jwt/jwt.py"
+      ],
+      "primary_file": "jwt/jwt.py",
+      "version": "0.1.0",
+      "deps": [],
+      "tier": "medium",
+      "category": "crypto",
+      "last_updated": null,
+      "content_hash": "0527962957c61958f9b9fb28d6d8c19533c904099e487a9b081fcc979f429e99"
     },
     "llmstxt": {
       "description": "llms.txt parser — zero dependencies, stdlib only, Python 3.10+",

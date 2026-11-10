@@ -90,6 +90,7 @@ plugins:
             - ../cdp
             - ../multipart
             - ../ptyx
+            - ../jwt
             - aes
             - qr
             - httpclient
@@ -137,6 +138,7 @@ plugins:
             - multipart
             - ratelimit
             - ptyx
+            - jwt
           options:
             docstring_style: google
             show_source: true
@@ -228,6 +230,7 @@ nav:
           - tabulate / 表格格式化: modules/tabulate.md
           - prompt / 交互式提示: modules/prompt.md
       - 安全:
+          - jwt / JWT / JWS: modules/jwt.md
           - aes / AES 加密: modules/aes.md
       - 图像:
           - png / PNG 图像编解码器: modules/png.md
@@ -291,6 +294,7 @@ nav:
           - tabulate / 表格格式化: api/tabulate.md
           - prompt / 交互式提示: api/prompt.md
       - 安全:
+          - jwt / JWT / JWS: api/jwt.md
           - aes / AES 加密: api/aes.md
       - 图像:
           - png / PNG 图像编解码器: api/png.md
@@ -351,6 +355,7 @@ nav:
           - tabulate / 表格格式化: benchmarks/tabulate.md
           - prompt / 交互式提示: benchmarks/prompt.md
       - 安全:
+          - jwt / JWT / JWS: benchmarks/jwt.md
           - aes / AES 加密: benchmarks/aes.md
       - 图像:
           - png / PNG 图像编解码器: benchmarks/png.md

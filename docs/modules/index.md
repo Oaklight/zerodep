@@ -25,11 +25,12 @@ title: 模块概览
 | [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
-| [httpclient](httpclient.md) | 0.7.2 | 2026-11-08 |
+| [httpclient](httpclient.md) | 0.7.3 | 2026-11-08 |
 | [httpserver](httpserver.md) | 0.7.2 | 2026-11-07 |
 | [jsonrpc](jsonrpc.md) | 0.4.0 | 2026-10-24 |
 | [jsonschema](jsonschema.md) | 0.4.4 | 2026-11-07 |
 | [jsonx](jsonx.md) | 2.0.0 | 2026-10-24 |
+| [jwt](jwt.md) | 0.1.0 | — |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
 | [multipart](multipart.md) | 0.1.0 | 2026-05-16 |
@@ -139,6 +140,7 @@ title: 模块概览
 
 | 模块 | 描述 | 可替代 | 性能对标 |
 |--------|-------------|----------|-------------------|
+| [jwt](jwt.md) | JWS 校验（RS/PS/ES）与 HMAC 签名/校验，仅用标准库 | PyJWT、python-jose | `PyJWT` |
 | [aes](aes.md) | AES 加密：ECB、CBC、CTR、GCM 模式（纯 Python + OpenSSL ctypes） | pycryptodome（AES 部分）、cryptography（AES 部分） | `pycryptodome` |
 
 ### 图像

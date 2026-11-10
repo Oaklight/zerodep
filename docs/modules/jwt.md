@@ -204,6 +204,7 @@ JWTError
 
 - RS / ES / PS 签名（Python 中的私钥大数运算会泄漏密钥）
 - JWE、X.509 证书、加密 PEM
+- 分离载荷（`b64: false`），compact 解析器会拒绝此类令牌
 - JWKS 拉取与缓存——这部分策略由调用方负责
 
 ## 运行测试

@@ -204,6 +204,7 @@ JWTError
 
 - RS / ES / PS signing (private-key arithmetic in Python leaks the key)
 - JWE, X.509 certificates, encrypted PEM
+- Detached payloads (`b64: false`), which the compact parser rejects
 - JWKS fetching and caching -- the caller owns that policy
 
 ## Run the Tests

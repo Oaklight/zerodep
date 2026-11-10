@@ -518,8 +518,7 @@ class TestJwk:
         with pytest.raises(InvalidKeyError):
             key_from_jwk([1, 2, 3])  # type: ignore[arg-type]
 
-    def test_low_order_point_rejected(self):
-        # (0, 0) satisfies no curve equation; a real off-curve point is used.
+    def test_point_not_on_curve_rejected(self):
         jwk = {"kty": "EC", "crv": "P-256", "x": _b64uint(1), "y": _b64uint(1)}
         with pytest.raises(InvalidKeyError):
             key_from_jwk(jwk)

@@ -1,0 +1,69 @@
+# JWT Benchmark
+
+Apple-to-apple performance comparison between zerodep JWT and [`PyJWT[crypto]`](https://pypi.org/project/PyJWT/) (OpenSSL-backed via `cryptography`).
+
+!!! info "Test Environment"
+    - **CPU:** x86_64 Linux
+    - **Python:** 3.10
+    - **Tool:** pytest-benchmark 5.2.3 (mean values reported)
+    - **Reference:** PyJWT 2.10.1, cryptography 46.0.6
+    - **Last Updated:** 2026-11-10
+
+## Implementations
+
+| Implementation | File/Package | Description |
+|----------------|--------------|-------------|
+| **zerodep** | `jwt.py` | Pure Python: `hashlib`, `hmac`, `int` arithmetic, Jacobian point math |
+| **PyJWT[crypto]** | *(reference)* | `cryptography` calling OpenSSL |
+
+## Workloads
+
+Each case verifies (or, for HS256, signs) a token with six claims (`sub`, `iss`, `aud`, `iat`, `exp`, `scope`) and a checked audience, so token parsing and claim validation are included on both sides. PyJWT signs every token; both libraries then verify the same compact JWS.
+
+| Algorithm | Key |
+|-----------|-----|
+| RS256 | RSA 2048, `e = 65537` |
+| PS256 | RSA 2048, salt length = digest length |
+| ES256 | P-256 |
+| HS256 | 39-byte shared secret |
+
+## Results (Mean)
+
+| Operation | zerodep | PyJWT[crypto] | Ratio |
+|-----------|---------|---------------|-------|
+| RS256 verify | 164 us | 35.2 us | 4.7x slower |
+| PS256 verify | 185 us | 40.6 us | 4.6x slower |
+| ES256 verify | 1,692 us | 84.8 us | 20.0x slower |
+| HS256 verify | 14.3 us | 14.5 us | ~1.0x |
+| HS256 sign | 10.0 us | 10.3 us | ~1.0x |
+
+## Where the Time Goes
+
+- **RS256 / PS256** is one modular exponentiation with `e = 65537`, which costs ~147 us of the ~164 us total. OpenSSL uses the same square-and-multiply sequence in C, so the gap is interpreter overhead on 2048-bit multiplies, a fixed cost that does not grow with token size.
+- **ES256** is two scalar multiplications on P-256, combined with Shamir's trick into a single chain of 128 doublings and 3 precomputed additions. Every one of those is Python-level big-integer arithmetic, which is why the gap is wider than for RSA.
+- **HS256** has no big-integer work; `hmac` and `hashlib` are C modules in the stdlib, so both libraries measure the same code.
+
+## Key Takeaways
+
+- **HMAC verification and signing are on par** with PyJWT, because both call the same `hmac` implementation.
+- **Asymmetric verification is 4.6-20x slower** than OpenSSL. For an OAuth resource server this is a few hundred microseconds per request after the JWKS lookup, which is usually far below the cost of the request's own database or network work -- but it is not free, and a token-per-request path at very high volume should measure it first.
+- **No compiled dependency.** The module installs nothing, so it works where a wheel for `cryptography` is unavailable or unwanted.
+
+## Run It Yourself
+
+```bash
+pip install pytest pytest-benchmark "PyJWT[crypto]"
+pytest jwt/test_jwt_benchmark.py --benchmark-only -v
+```
+
+---
+
+## Latest CI Results
+
+<iframe
+  src="https://oaklight.github.io/zerodep/dev/bench/modules/jwt.html"
+  width="100%" height="600" frameborder="0"
+  style="border: 1px solid #dee2e6; border-radius: 8px;">
+</iframe>
+
+> Updated automatically on each release via [Benchmark CI](https://github.com/Oaklight/zerodep/actions/workflows/benchmark.yml).

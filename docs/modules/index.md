@@ -25,11 +25,12 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
 | [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
-| [httpclient](httpclient.md) | 0.7.2 | 2026-11-08 |
+| [httpclient](httpclient.md) | 0.7.3 | 2026-11-08 |
 | [httpserver](httpserver.md) | 0.7.2 | 2026-11-07 |
 | [jsonrpc](jsonrpc.md) | 0.4.0 | 2026-10-24 |
 | [jsonschema](jsonschema.md) | 0.4.4 | 2026-11-07 |
 | [jsonx](jsonx.md) | 2.0.0 | 2026-10-24 |
+| [jwt](jwt.md) | 0.1.0 | — |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
 | [multipart](multipart.md) | 0.1.0 | 2026-05-16 |
@@ -139,6 +140,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 
 | Module | Description | Replaces | Benchmark Against |
 |--------|-------------|----------|-------------------|
+| [jwt](jwt.md) | JWS verification (RS/PS/ES) and HMAC sign/verify, stdlib only | PyJWT, python-jose | `PyJWT` |
 | [aes](aes.md) | AES encryption: ECB, CBC, CTR, GCM modes (pure Python + OpenSSL via ctypes) | pycryptodome (AES), cryptography (AES) | `pycryptodome` |
 
 ### Image

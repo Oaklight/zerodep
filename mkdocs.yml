@@ -90,6 +90,7 @@ plugins:
             - ../cdp
             - ../multipart
             - ../ptyx
+            - ../jwt
             - aes
             - qr
             - httpclient
@@ -137,6 +138,7 @@ plugins:
             - multipart
             - ratelimit
             - ptyx
+            - jwt
           options:
             docstring_style: google
             show_source: true
@@ -228,6 +230,7 @@ nav:
           - tabulate / Table Formatter: modules/tabulate.md
           - prompt / CLI Prompts: modules/prompt.md
       - Security:
+          - jwt / JWT / JWS: modules/jwt.md
           - aes / AES Encryption: modules/aes.md
       - Image:
           - png / PNG Image Codec: modules/png.md
@@ -291,6 +294,7 @@ nav:
           - tabulate / Table Formatter: api/tabulate.md
           - prompt / CLI Prompts: api/prompt.md
       - Security:
+          - jwt / JWT / JWS: api/jwt.md
           - aes / AES Encryption: api/aes.md
       - Image:
           - png / PNG Image Codec: api/png.md
@@ -351,6 +355,7 @@ nav:
           - tabulate / Table Formatter: benchmarks/tabulate.md
           - prompt / CLI Prompts: benchmarks/prompt.md
       - Security:
+          - jwt / JWT / JWS: benchmarks/jwt.md
           - aes / AES Encryption: benchmarks/aes.md
       - Image:
           - png / PNG Image Codec: benchmarks/png.md

@@ -1687,6 +1687,7 @@ class _LibCrypto:
         buffer = self._c.create_string_buffer(raw, len(raw))
         bignum = self._BN_bin2bn(buffer, len(raw), None)
         if not bignum:
+            self._ERR_clear_error()
             raise MemoryError("libcrypto could not allocate a BIGNUM")
         return bignum
 
@@ -1701,6 +1702,7 @@ class _LibCrypto:
             result = self._BN_new()
             context = self._BN_CTX_new()
             if not result or not context:
+                self._ERR_clear_error()
                 raise MemoryError("libcrypto could not allocate a BIGNUM context")
             if self._BN_mod_exp(result, bn_base, bn_exponent, bn_modulus, context) != 1:
                 self._ERR_clear_error()
@@ -1737,6 +1739,7 @@ class _LibCrypto:
             return None
         key = self._EC_KEY_new_by_curve_name(nid)
         if not key:
+            self._ERR_clear_error()
             return None
         point = None
         signature = None
@@ -1744,6 +1747,7 @@ class _LibCrypto:
             group = self._EC_KEY_get0_group(key)
             point = self._EC_POINT_new(group)
             if not point:
+                self._ERR_clear_error()
                 return None
             raw = b"\x04" + qx.to_bytes(size, "big") + qy.to_bytes(size, "big")
             buffer = ctypes.create_string_buffer(raw, len(raw))
@@ -1758,6 +1762,7 @@ class _LibCrypto:
                 return None
             signature = self._ECDSA_SIG_new()
             if not signature:
+                self._ERR_clear_error()
                 return None
             bn_r = bn_s = None
             try:

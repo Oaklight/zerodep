@@ -198,7 +198,7 @@ def test_add_no_lock_skips_lock_file(tmp_path: Path):
     assert not (vendor / "zerodep.lock.json").exists()
 
 
-def test_add_warns_when_a_flat_copy_shadows_an_importable_module(tmp_path: Path):
+def test_add_warns_when_a_flat_copy_may_shadow_an_importable_module(tmp_path: Path):
     lib = tmp_path / "lib"
     lib.mkdir()
     (lib / "sse.py").write_text("", encoding="utf-8")
@@ -208,7 +208,7 @@ def test_add_warns_when_a_flat_copy_shadows_an_importable_module(tmp_path: Path)
     vendor.mkdir()
     r = run_cli("add", "sse", "-d", str(vendor), "-y", env=shadow_env)
     assert r.returncode == 0, r.stderr
-    assert "'sse.py' shadows the importable module 'sse'" in r.stderr
+    assert "'sse.py' may shadow the importable module 'sse'" in r.stderr
     assert str(lib / "sse.py") in r.stderr
     assert "zerodep add sse --nested" in r.stderr
     assert "rename the copied file" in r.stderr
@@ -218,8 +218,53 @@ def test_add_warns_when_a_flat_copy_shadows_an_importable_module(tmp_path: Path)
     nested.mkdir()
     r = run_cli("add", "sse", "-d", str(nested), "-y", "--nested", env=shadow_env)
     assert r.returncode == 0, r.stderr
-    assert "shadows" not in r.stderr
+    assert "may shadow" not in r.stderr
     assert (nested / "sse" / "sse.py").exists()
+
+
+def test_add_tracked_flat_module_suggests_remove_then_nested(tmp_path: Path):
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    (lib / "sse.py").write_text("", encoding="utf-8")
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    r = run_cli("add", "sse", "-d", str(vendor), "-y")
+    assert r.returncode == 0, r.stderr
+
+    # The lock keeps the flat layout, so --nested alone cannot fix it.
+    r = run_cli("add", "sse", "-d", str(vendor), "-y", env={"PYTHONPATH": str(lib)})
+    assert r.returncode == 0, r.stderr
+    assert "Reinstall it nested" in r.stderr
+    assert "zerodep remove sse" in r.stderr
+    assert "zerodep add sse --nested -d" in r.stderr
+
+
+def test_add_warns_for_a_dependency_that_may_shadow(tmp_path: Path):
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    (lib / "httpclient.py").write_text("", encoding="utf-8")
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+
+    r = run_cli("add", "sse", "-d", str(vendor), "-y", env={"PYTHONPATH": str(lib)})
+    assert r.returncode == 0, r.stderr
+    assert "'httpclient.py' may shadow the importable module 'httpclient'" in r.stderr
+    assert "zerodep add httpclient --nested" in r.stderr
+
+
+def test_add_dry_run_warns_and_writes_nothing(tmp_path: Path):
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    (lib / "sse.py").write_text("", encoding="utf-8")
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+
+    r = run_cli(
+        "add", "sse", "-d", str(vendor), "--dry-run", env={"PYTHONPATH": str(lib)}
+    )
+    assert r.returncode == 0, r.stderr
+    assert "'sse.py' may shadow the importable module 'sse'" in r.stderr
+    assert not (vendor / "sse.py").exists()
 
 
 def test_shadow_warning_skips_the_file_being_written(
@@ -247,6 +292,50 @@ def test_shadow_warning_skips_an_unimportable_stem(
     monkeypatch.setattr(zerodep.importlib.util, "find_spec", lambda name: None)
     zerodep._warn_flat_shadows([("sse", "sse/sse.py", dest)], tmp_path)
     assert capsys.readouterr().err == ""
+
+
+def test_shadow_warning_ignores_the_checkout_as_a_namespace_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+):
+    import zerodep
+
+    dest = tmp_path / "sse.py"
+
+    class _Spec:
+        origin = None
+
+    def spec_for(name):
+        spec = _Spec()
+        # ``python zerodep.py`` makes the checkout's module directories
+        # namespace-package portions; they are not installed modules.
+        spec.submodule_search_locations = [str(Path(zerodep.__file__).parent / name)]
+        return spec
+
+    monkeypatch.setattr(zerodep.importlib.util, "find_spec", spec_for)
+    zerodep._warn_flat_shadows([("sse", "sse/sse.py", dest)], tmp_path)
+    assert capsys.readouterr().err == ""
+
+
+def test_shadow_warning_reports_a_namespace_package_outside_the_checkout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+):
+    import zerodep
+
+    dest = tmp_path / "sse.py"
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    portion = lib / "sse"
+    portion.mkdir()
+
+    class _Spec:
+        origin = None
+        submodule_search_locations = [str(portion)]
+
+    monkeypatch.setattr(zerodep.importlib.util, "find_spec", lambda name: _Spec())
+    zerodep._warn_flat_shadows([("sse", "sse/sse.py", dest)], tmp_path)
+    err = capsys.readouterr().err
+    assert "may shadow the importable module 'sse'" in err
+    assert str(portion) in err
 
 
 def test_status_json_reports_tracked_state(tmp_path: Path):

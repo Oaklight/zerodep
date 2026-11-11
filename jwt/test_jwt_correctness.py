@@ -75,6 +75,7 @@ from cryptography.hazmat.primitives.asymmetric.utils import (  # noqa: E402
 sys.path.insert(0, _this_dir)
 
 from jwt import (  # noqa: E402
+    MAX_JSON_DEPTH,
     DecodeError,
     ExpiredSignatureError,
     ImmatureSignatureError,
@@ -141,6 +142,23 @@ def _rsa_token(alg: str, claims: dict | None = None) -> str:
 def _ec_token(alg: str, claims: dict | None = None) -> str:
     key = _EC_P256 if alg == "ES256" else _EC_P384
     return _pyjwt.encode(claims or {"sub": "alice"}, key, algorithm=alg)
+
+
+def _json_failing_depth() -> int:
+    """Smallest depth at which this interpreter's json parser raises RecursionError.
+
+    The limit is not ``sys.getrecursionlimit()``: 3.12's C scanner ignores it
+    and parses 2,000 levels.  Doubling until it raises keeps the test honest on
+    every version without hard-coding a number that ages badly.
+    """
+    depth = 1000
+    while depth <= 1_000_000:
+        try:
+            json.loads("[" * depth + "]" * depth)
+        except RecursionError:
+            return depth
+        depth *= 2
+    raise AssertionError("json.loads never raised RecursionError")
 
 
 def _forge_hs256(secret: bytes) -> str:
@@ -1059,26 +1077,120 @@ class TestHostileInput:
     def _token(header: bytes, payload: bytes) -> str:
         return f"{b64url_encode(header)}.{b64url_encode(payload)}."
 
-    def test_deeply_nested_payload_is_a_decode_error(self):
-        nested = b"[" * 2000 + b"]" * 2000
-        token = self._token(b'{"alg":"HS256"}', nested)
-        with pytest.raises(DecodeError):
-            get_unverified_header(token)
-        with pytest.raises(DecodeError):
+    @staticmethod
+    def _arrays(count: int) -> bytes:
+        return b"[" * count + b"]" * count
+
+    def _payload_at_depth(self, depth: int) -> bytes:
+        """An object payload nested to exactly *depth* levels."""
+        return b'{"a":' + self._arrays(depth - 1) + b"}"
+
+    def _header_at_depth(self, depth: int) -> bytes:
+        """A header nested to exactly *depth* levels, with a usable alg."""
+        return b'{"alg":"HS256","x":' + self._arrays(depth - 1) + b"}"
+
+    def test_payload_at_cap_minus_one_parses(self):
+        token = self._token(
+            b'{"alg":"HS256"}', self._payload_at_depth(MAX_JSON_DEPTH - 1)
+        )
+        assert "a" in get_unverified_claims(token)
+
+    def test_payload_past_cap_is_a_decode_error(self):
+        token = self._token(
+            b'{"alg":"HS256"}', self._payload_at_depth(MAX_JSON_DEPTH + 1)
+        )
+        with pytest.raises(DecodeError, match="nested too deeply"):
+            get_unverified_claims(token)
+        with pytest.raises(DecodeError, match="nested too deeply"):
             decode(token, _HS_SECRET, algorithms=["HS256"])
 
-    def test_deeply_nested_header_is_a_decode_error(self):
-        nested = b"[" * 2000 + b"]" * 2000
-        header = b'{"alg":"HS256","x":' + nested + b"}"
-        token = self._token(header, b'{"sub":"a"}')
-        with pytest.raises(DecodeError):
-            get_unverified_header(token)
+    def test_header_at_cap_minus_one_parses(self):
+        token = self._token(self._header_at_depth(MAX_JSON_DEPTH - 1), b'{"sub":"a"}')
+        assert get_unverified_header(token)["alg"] == "HS256"
 
-    def test_deeply_nested_claims_are_a_decode_error(self):
-        payload = b'{"sub":"a","x":' + b"[" * 2000 + b"]" * 2000 + b"}"
-        token = self._token(b'{"alg":"HS256"}', payload)
-        with pytest.raises(DecodeError):
+    def test_header_past_cap_is_a_decode_error(self):
+        token = self._token(self._header_at_depth(MAX_JSON_DEPTH + 1), b'{"sub":"a"}')
+        with pytest.raises(DecodeError, match="nested too deeply"):
+            get_unverified_header(token)
+        with pytest.raises(DecodeError, match="nested too deeply"):
+            decode(token, _HS_SECRET, algorithms=["HS256"])
+
+    def test_brackets_inside_strings_do_not_count(self):
+        """The scan tracks string state, so a claim holding brackets is inert.
+
+        The value also contains `{{` and an escaped quote, so both the string
+        tracking and the escape handling are exercised.
+        """
+        values = [
+            "[" * 500 + '\\"' + "{{" * 100,
+            "[" * 500 + "\\",  # ends in a backslash, encoded as \\ before the quote
+            "\\" + "]" * 500,
+        ]
+        for value in values:
+            payload = json.dumps({"sub": value}).encode()
+            token = self._token(b'{"alg":"HS256"}', payload)
+            assert get_unverified_claims(token)["sub"] == value
+
+    def test_json_recursion_in_header_becomes_decode_error(self, monkeypatch):
+        """A RecursionError from json.loads is mapped to DecodeError.
+
+        This binds to the catch itself, not to where the interpreter's parser
+        gives up, so a CPython change cannot make it pass or fail spuriously.
+        """
+        import jwt as jwt_module
+
+        def boom(*args, **kwargs):
+            raise RecursionError("maximum recursion depth exceeded")
+
+        monkeypatch.setattr(jwt_module.json, "loads", boom)
+        token = self._token(b'{"alg":"HS256"}', b'{"sub":"a"}')
+        with pytest.raises(DecodeError, match="nested too deeply"):
+            get_unverified_header(token)
+        with pytest.raises(DecodeError, match="nested too deeply"):
+            decode(token, _HS_SECRET, algorithms=["HS256"])
+
+    def test_json_recursion_in_payload_becomes_decode_error(self, monkeypatch):
+        """Only the payload's RecursionError escapes into DecodeError.
+
+        The header call succeeds, so the failure is on the second json.loads
+        call and the message names the payload.
+        """
+        import jwt as jwt_module
+
+        real_loads = jwt_module.json.loads
+        calls = {"count": 0}
+
+        def boom(raw, *args, **kwargs):
+            calls["count"] += 1
+            if calls["count"] == 2:
+                raise RecursionError("maximum recursion depth exceeded")
+            return real_loads(raw, *args, **kwargs)
+
+        monkeypatch.setattr(jwt_module.json, "loads", boom)
+        token = self._token(b'{"alg":"HS256"}', b'{"sub":"a"}')
+        with pytest.raises(DecodeError, match="payload is nested too deeply"):
             get_unverified_claims(token)
+
+    def test_recursion_error_catch_is_reachable(self, monkeypatch):
+        """The pre-scan passes and json itself still recurses.
+
+        The segment handed to json.loads is shallow, so the depth scan does not
+        fire; the patched loader then parses a document deep enough to overflow
+        this interpreter, and the catch must turn that into DecodeError.
+        """
+        import jwt as jwt_module
+
+        depth = _json_failing_depth()
+        overflowing = "[" * depth + "]" * depth
+        real_loads = jwt_module.json.loads
+
+        def recursing(raw, *args, **kwargs):
+            return real_loads(overflowing, *args, **kwargs)
+
+        monkeypatch.setattr(jwt_module.json, "loads", recursing)
+        token = self._token(b'{"alg":"HS256"}', b'{"sub":"a"}')
+        with pytest.raises(DecodeError, match="nested too deeply"):
+            get_unverified_header(token)
 
 
 # ── Error hierarchy ──

@@ -31,19 +31,19 @@ Each case verifies (or, for HS256, signs) a token with six claims (`sub`, `iss`,
 
 | Operation | zerodep | PyJWT[crypto] | Ratio |
 |-----------|---------|---------------|-------|
-| RS256 verify | 167 us | 35.5 us | 4.7x slower |
+| RS256 verify | 170 us | 35.5 us | 4.8x slower |
 | PS256 verify | 189 us | 40.1 us | 4.7x slower |
-| ES256 verify | 1,735 us | 85.6 us | 20.3x slower |
-| HS256 verify | 16.0 us | 14.3 us | 1.1x slower |
-| HS256 sign | 11.2 us | 10.5 us | 1.1x slower |
+| ES256 verify | 1,721 us | 85.6 us | 20.1x slower |
+| HS256 verify | 15.9 us | 14.3 us | 1.1x slower |
+| HS256 sign | 11.3 us | 10.5 us | 1.1x slower |
 
-Every figure is the mean of three consecutive runs with `--benchmark-min-rounds=20`, measured on one machine. Treat the ranges as indicative, not as bounds: on the same head an independent machine measured HS256 verify at 15.92--16.36 us and ES256 as high as 1,821 us. The spreads observed here were HS256 verify 16.00--16.07 us, HS256 sign 11.05--11.55 us, RS256 161.6--171.5 us, PS256 183.4--192.2 us, ES256 1,701--1,763 us; the wider spread across machines is CPU and scheduler noise on the same code.
+Every figure is the mean of six runs (two sessions of three consecutive runs) with `--benchmark-min-rounds=20`, plus an independent machine's runs at the same head. The spread is large enough that these are indicative, not bounds. Observed across all of those runs: HS256 verify 15.68--16.36 us, HS256 sign 11.05--11.55 us, RS256 161.6--180.4 us, PS256 183.4--192.2 us, ES256 1,701--1,821 us. That is CPU and scheduler noise on identical code, not a difference in the implementation.
 
 ## Where the Time Goes
 
-- **RS256 / PS256** is one modular exponentiation with `e = 65537`, which costs ~147 us of the ~167 us total. OpenSSL uses the same square-and-multiply sequence in C, so the gap is interpreter overhead on 2048-bit multiplies, a fixed cost that does not grow with token size.
+- **RS256 / PS256** is one modular exponentiation with `e = 65537`, which costs ~147 us of the ~170 us total. OpenSSL uses the same square-and-multiply sequence in C, so the gap is interpreter overhead on 2048-bit multiplies, a fixed cost that does not grow with token size.
 - **ES256** is two scalar multiplications on P-256, combined with Shamir's trick into one chain of two-bit steps. The count is exactly `2 * chunks + 2` point doublings and `chunks + 19` point additions, where `chunks = ceil(max(bit_length(u1), bit_length(u2)) / 2)` comes from the two reduced ECDSA scalars. The `+ 2` is constant: two coincidences in `_shamir_mult`'s precompute -- `multiples_of_p2` adds `j2` to itself, and the first `row = _j_add(row, p1)` adds `p1` to itself -- both take `_j_add`'s `h == 0` fallback to `_j_double`. The `19` is the 16-entry table build. Measured over 6,000 sampled signatures, 258/147 is the mode (about 94%); 256/146 follows at about 6% and 254/145 at about 0.4%, with smaller `chunks` rarer still. Two separate multiplications would double the doublings. Every operation is Python-level big-integer arithmetic, which is why the gap is wider than for RSA.
-- **HS256** has no big-integer work; `hmac` and `hashlib` are C modules in the stdlib, so both libraries run the same hash. The gap is this module's own guards: the key-material check costs about 1 us on every HMAC call, and the JSON depth pre-scan about 0.4 us on a typical token during verification. PyJWT has no depth pre-scan.
+- **HS256** has no big-integer work; `hmac` and `hashlib` are C modules in the stdlib, so both libraries run the same hash. The gap -- about 1.6 us on verify and 0.8 us on sign -- is this module's own guards: the key-material check costs about 1 us on every HMAC call, and the JSON depth pre-scan about 0.4 us on a typical token during verification. PyJWT has no depth pre-scan.
 
 ## Key Takeaways
 

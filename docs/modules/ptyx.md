@@ -22,10 +22,11 @@ The backend is selected per platform:
 ## Key Features
 
 - **One async API on both platforms** -- `spawn`, `read`, `write`, `resize`, `wait`, `close`
-- **POSIX backend** -- own session and process group, `TIOCSWINSZ` resize, terminal-query replies (`CSI 6n`, `CSI c`), `SIGTERM` → `SIGKILL` teardown
+- **POSIX backend** -- own session and process group, `TIOCSWINSZ` resize, cursor-position replies (`CSI 6n` only), `SIGTERM` → `SIGKILL` teardown
 - **Windows backend** -- ConPTY via `ctypes`, no `pywinpty`; the child is created with `STARTF_USESTDHANDLES` and NULL standard handles so its console binds to the pseudoconsole
 - **No silent truncation** -- `write()` is async and loops over partial writes and `EAGAIN`
-- **Backpressure** -- bounded queues; a chatty child cannot grow memory without bound
+- **Backpressure** -- bounded queues; a chatty child cannot grow memory without bound, and the ConPTY reader blocks on the queue instead of dropping output
+- **Failures are distinguishable** -- a ConPTY pipe failure while the child runs raises `PtyReadError`; it is never reported as end-of-stream
 - **Bracketed paste** -- write the usual `ESC[200~ ... ESC[201~` sequence to paste into TUIs
 - **Reliable teardown** -- Ctrl+C first, then terminate and close the pseudoconsole after `grace`
 
@@ -95,10 +96,24 @@ async with await PtyProcess.spawn(["/bin/bash"]) as proc:
     await proc.write(b"exit\r")
 ```
 
+## Errors
+
+| Exception | When | Base |
+|-----------|------|------|
+| `PtyStartupError` | The pseudo-terminal or the child cannot be created, on either platform | `RuntimeError` |
+| `PtyReadError` | A ConPTY pipe call (`PeekNamedPipe`, `ReadFile`) fails while the child is still running | `RuntimeError` |
+
+Both are in `__all__`. A pipe failure during teardown, or after the child has exited, is the normal end of stream and returns `b""` instead.
+
+## Terminal Queries
+
+The POSIX backend answers `CSI 6n` (cursor position request) with `ESC[1;1R`. It leaves every other query unanswered -- DA1 (`CSI c`), DA2 (`CSI > c`) and kitty-keyboard queries included. A fixed reply would claim capabilities the pseudo-terminal does not have, and a program handles a missing reply better than a wrong one.
+
 ## Platform Notes
 
-- **POSIX EOF** is tied to the slave, not the child: `read()` returns `b""` when every holder of the slave closes it. A surviving grandchild keeps the stream open until `close()`.
-- **Windows EOF** is after the child exits and ConPTY's final output is drained (bounded at 0.5 s).
+- **POSIX EOF** is tied to the slave, not the child: `read()` returns `b""` when every holder of the slave closes it. A surviving grandchild keeps the stream open until `close()`. `EIO` from the master is treated as that same end of stream.
+- **Windows EOF** is after the child exits and ConPTY's final output is drained (bounded at 0.5 s). A pipe failure while the child still runs is not EOF: the blocked `read()` raises `PtyReadError`.
+- **Read errors are per terminal**: once `PtyReadError` is raised, later reads raise it again rather than returning `b""`. Recreate the process.
 - **No controlling terminal**: the child is a session leader without `TIOCSCTTY`, so `/dev/tty` is unavailable. Programs that require it (`sudo`, `ssh` password prompts) need a real terminal; agent CLIs use stdin/stdout only.
 - **Keep reading while writing**: the wait is for a writable master, so a child that echoes input can fill the output side.
 - **Requirements**: Python 3.10+; Windows 10 1809 or later (ConPTY).

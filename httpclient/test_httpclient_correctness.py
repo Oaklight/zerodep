@@ -1042,6 +1042,7 @@ class TestSyncConcurrency:
 sys.path.insert(0, os.path.dirname(__file__))
 
 from httpclient import (
+    _authority,
     _build_raw_http_request,
     _merge_headers,
     _prepare_body,
@@ -1238,6 +1239,22 @@ class TestPrepareRequestHeaderDedup:
         assert host_values == ["mybucket.s3.amazonaws.com"], f"got: {h}"
         # SigV4 headers must survive intact
         assert "x-amz-date" in h or "X-Amz-Date" in h
+
+
+class TestAuthority:
+    """_authority: Host/CONNECT authority formatting, IPv6 bracketed."""
+
+    def test_ipv6_is_bracketed_with_a_port(self):
+        assert _authority("::1", 8443) == "[::1]:8443"
+
+    def test_ipv6_without_a_port(self):
+        assert _authority("::1") == "[::1]"
+
+    def test_hostname_keeps_the_port(self):
+        assert _authority("example.com", 443) == "example.com:443"
+
+    def test_already_bracketed_is_not_doubled(self):
+        assert _authority("[::1]", 80) == "[::1]:80"
 
 
 class TestBuildRawHttpRequestHostDedup:

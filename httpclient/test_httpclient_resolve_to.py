@@ -264,7 +264,7 @@ async def test_async_pinned_peer_uses_the_url_host():
         )
 
     assert response.status_code == 200
-    assert seen == [("pinned.invalid", "/hit")]
+    assert seen == [(f"pinned.invalid:{port}", "/hit")]
 
 
 @pytest.mark.asyncio
@@ -277,7 +277,7 @@ async def test_async_addresses_are_tried_in_order():
         )
 
     assert response.status_code == 200
-    assert seen == [("pinned.invalid", "/hit")]
+    assert seen == [(f"pinned.invalid:{port}", "/hit")]
 
 
 @pytest.mark.asyncio

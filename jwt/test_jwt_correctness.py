@@ -150,6 +150,10 @@ def _json_failing_depth() -> int:
     The limit is not ``sys.getrecursionlimit()``: 3.12's C scanner ignores it
     and parses 2,000 levels.  Doubling until it raises keeps the test honest on
     every version without hard-coding a number that ages badly.
+
+    This asserts an interpreter property.  If a future CPython ships an
+    iterative scanner the search gives up and the caller skips; the catch then
+    becomes dead code, which the monkeypatch tests still cover.
     """
     depth = 1000
     while depth <= 1_000_000:
@@ -158,7 +162,7 @@ def _json_failing_depth() -> int:
         except RecursionError:
             return depth
         depth *= 2
-    raise AssertionError("json.loads never raised RecursionError")
+    return 0
 
 
 def _forge_hs256(secret: bytes) -> str:
@@ -436,6 +440,25 @@ class TestVerifyHmac:
         with pytest.raises(InvalidKeyError):
             decode(_forge_hs256(openssh), openssh, algorithms=["HS256"])
 
+    @pytest.mark.parametrize(
+        "material",
+        [
+            # RFC 4716 armor: four dashes, a space, and SSH2 in the label.
+            b"---- BEGIN SSH2 PUBLIC KEY ----\r\nAAAAB3NzaC1yc2E=\r\n"
+            b"---- END SSH2 PUBLIC KEY ----\r\n",
+            # DSA and an armor block that does not start at offset 0.
+            b"ssh-dss AAAAB3NzaC1kc3M= user@host",
+            b"note: key follows\n-----BEGIN PUBLIC KEY-----\nAAAAB3NzaC1yc2E=\n"
+            b"-----END PUBLIC KEY-----\n",
+        ],
+        ids=["rfc4716", "ssh-dss", "armor-not-at-offset-0"],
+    )
+    def test_other_key_armor_rejected_as_secret(self, material):
+        with pytest.raises(InvalidKeyError):
+            encode({"sub": "attacker"}, material, algorithm="HS256")
+        with pytest.raises(InvalidKeyError):
+            decode(_forge_hs256(material), material, algorithms=["HS256"])
+
     def test_str_secret_with_leading_space_still_works(self):
         """The prefix guard only rejects key material, not an odd secret."""
         token = encode({"sub": "a"}, b"  padded secret", algorithm="HS256")
@@ -682,9 +705,6 @@ class TestJwk:
         hand = JWKKey(kty="RSA", n=numbers.n, e=numbers.e)
         with pytest.raises(InvalidKeyError, match=r"1024 bits"):
             decode(token, hand, algorithms=["RS256"])
-
-
-# ── Claims ──
 
 
 # ── Claims ──
@@ -1181,6 +1201,8 @@ class TestHostileInput:
         import jwt as jwt_module
 
         depth = _json_failing_depth()
+        if not depth:
+            pytest.skip("this interpreter's JSON parser is iterative")
         overflowing = "[" * depth + "]" * depth
         real_loads = jwt_module.json.loads
 

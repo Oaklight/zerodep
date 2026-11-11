@@ -125,17 +125,17 @@ td { white-space: nowrap; }
 <h1>structlog</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: d9d8710 | Commit: d9d8710a | 2026-11-09T04:31:12.191216+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-11-09T04:31:12.191216+00:00"></span></p>
+<p class="meta">Version: d2294c4 | Commit: d2294c49 | 2026-11-11T08:40:17.360445+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-11-11T08:40:17.360445+00:00"></span></p>
 <h2>structlog</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Bind And Log</td><td>zerodep</td><td>structlog</td><td>8.7 µs</td><td>15.9 µs</td><td>115.0K</td><td>63.0K</td><td title="CV=22.6% | rounds=17456">8.0 µs</td><td title="CV=22.6% | rounds=17456">67.8 µs</td><td title="CV=22.6% | rounds=17456">2.0 µs</td><td title="CV=22.6% | rounds=17456">8.8 µs</td><td title="CV=84.6% | rounds=13088">13.6 µs</td><td title="CV=84.6% | rounds=13088">1.20 ms</td><td title="CV=84.6% | rounds=13088">13.4 µs</td><td title="CV=84.6% | rounds=13088">17.2 µs</td><td class="ratio-cell faster">1.8x faster</td></tr>
-<tr><td>Bound Log</td><td>zerodep</td><td>structlog</td><td>8.8 µs</td><td>15.1 µs</td><td>113.6K</td><td>66.2K</td><td title="CV=21.0% | rounds=17125">8.0 µs</td><td title="CV=21.0% | rounds=17125">65.5 µs</td><td title="CV=21.0% | rounds=17125">1.8 µs</td><td title="CV=21.0% | rounds=17125">9.0 µs</td><td title="CV=24.0% | rounds=14945">13.3 µs</td><td title="CV=24.0% | rounds=14945">77.7 µs</td><td title="CV=24.0% | rounds=14945">3.6 µs</td><td title="CV=24.0% | rounds=14945">22.7 µs</td><td class="ratio-cell faster">1.7x faster</td></tr>
-<tr><td>JSONRendering</td><td>zerodep</td><td>structlog</td><td>7.6 µs</td><td>8.9 µs</td><td>132.1K</td><td>112.3K</td><td title="CV=22.2% | rounds=19196">7.0 µs</td><td title="CV=22.2% | rounds=19196">64.4 µs</td><td title="CV=22.2% | rounds=19196">1.7 µs</td><td title="CV=22.2% | rounds=19196">7.7 µs</td><td title="CV=18.5% | rounds=16218">8.2 µs</td><td title="CV=18.5% | rounds=16218">61.6 µs</td><td title="CV=18.5% | rounds=16218">1.6 µs</td><td title="CV=18.5% | rounds=16218">9.0 µs</td><td class="ratio-cell faster">1.2x faster</td></tr>
-<tr><td>Simple Log</td><td>zerodep</td><td>structlog</td><td>8.3 µs</td><td>9.8 µs</td><td>120.6K</td><td>101.6K</td><td title="CV=49.9% | rounds=13044">6.9 µs</td><td title="CV=49.9% | rounds=13044">61.5 µs</td><td title="CV=49.9% | rounds=13044">4.1 µs</td><td title="CV=49.9% | rounds=13044">9.3 µs</td><td title="CV=22.4% | rounds=14455">8.9 µs</td><td title="CV=22.4% | rounds=14455">75.3 µs</td><td title="CV=22.4% | rounds=14455">2.2 µs</td><td title="CV=22.4% | rounds=14455">10.0 µs</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Bind And Log</td><td>zerodep</td><td>structlog</td><td>12.9 µs</td><td>24.1 µs</td><td>77.2K</td><td>41.5K</td><td title="CV=27.7% | rounds=19599">11.3 µs</td><td title="CV=27.7% | rounds=19599">99.4 µs</td><td title="CV=27.7% | rounds=19599">3.6 µs</td><td title="CV=27.7% | rounds=19599">16.7 µs</td><td title="CV=49.5% | rounds=14508">20.5 µs</td><td title="CV=49.5% | rounds=14508">1.11 ms</td><td title="CV=49.5% | rounds=14508">11.9 µs</td><td title="CV=49.5% | rounds=14508">28.3 µs</td><td class="ratio-cell faster">1.9x faster</td></tr>
+<tr><td>Bound Log</td><td>zerodep</td><td>structlog</td><td>12.5 µs</td><td>20.9 µs</td><td>79.9K</td><td>48.0K</td><td title="CV=19.0% | rounds=18529">11.7 µs</td><td title="CV=19.0% | rounds=18529">59.8 µs</td><td title="CV=19.0% | rounds=18529">2.4 µs</td><td title="CV=19.0% | rounds=18529">16.1 µs</td><td title="CV=16.6% | rounds=15270">19.4 µs</td><td title="CV=16.6% | rounds=15270">77.6 µs</td><td title="CV=16.6% | rounds=15270">3.5 µs</td><td title="CV=16.6% | rounds=15270">23.1 µs</td><td class="ratio-cell faster">1.7x faster</td></tr>
+<tr><td>JSONRendering</td><td>zerodep</td><td>structlog</td><td>9.9 µs</td><td>11.8 µs</td><td>100.6K</td><td>84.8K</td><td title="CV=17.1% | rounds=24256">9.4 µs</td><td title="CV=17.1% | rounds=24256">63.7 µs</td><td title="CV=17.1% | rounds=24256">1.7 µs</td><td title="CV=17.1% | rounds=24256">10.0 µs</td><td title="CV=17.5% | rounds=23675">11.1 µs</td><td title="CV=17.5% | rounds=23675">65.3 µs</td><td title="CV=17.5% | rounds=23675">2.1 µs</td><td title="CV=17.5% | rounds=23675">12.0 µs</td><td class="ratio-cell faster">1.2x faster</td></tr>
+<tr><td>Simple Log</td><td>zerodep</td><td>structlog</td><td>10.9 µs</td><td>14.4 µs</td><td>91.5K</td><td>69.6K</td><td title="CV=20.0% | rounds=14171">10.1 µs</td><td title="CV=20.0% | rounds=14171">52.2 µs</td><td title="CV=20.0% | rounds=14171">2.2 µs</td><td title="CV=20.0% | rounds=14171">14.4 µs</td><td title="CV=15.2% | rounds=14688">13.4 µs</td><td title="CV=15.2% | rounds=14688">59.6 µs</td><td title="CV=15.2% | rounds=14688">2.2 µs</td><td title="CV=15.2% | rounds=14688">14.9 µs</td><td class="ratio-cell faster">1.3x faster</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -207,13 +207,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [115008.96890200168, 113628.48881037835, 132108.3775133766, 120569.18861868407],
+        data: [77232.11328929743, 79948.05693200973, 100644.04136729386, 91546.69948134023],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "structlog" + ' (ops/s)',
-        data: [63047.70647685093, 66198.63999377032, 112264.44480767683, 101601.25403791822],
+        data: [41528.965879452124, 47951.75055305508, 84822.6880681876, 69620.47324387087],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

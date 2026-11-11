@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-11-11T08:26:50.779054+00:00",
+  "generated": "2026-11-11T08:36:39.725861+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -375,8 +375,8 @@
       "deps": [],
       "tier": "subsystem",
       "category": "terminal",
-      "last_updated": "2026-11-01T14:58:22-06:00",
-      "content_hash": "85de2f048319efd15aaf4f8905ae190400711efc5ddf1b6a57ae6ee97ba97006"
+      "last_updated": "2026-11-11T02:32:11-06:00",
+      "content_hash": "248f714c7757d10860d46cd3eafbba8a48491f8c2713f4702cdb4f009e4709c7"
     },
     "qr": {
       "description": "QR Code generator library (Python)",

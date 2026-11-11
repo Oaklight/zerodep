@@ -358,6 +358,11 @@ class PtyProcess:
         output is drained.  On POSIX it ends when every holder of the slave
         closes it, so a surviving grandchild keeps ``read()`` open until
         ``close()``.  ``size <= 0`` returns immediately.
+
+        Raises:
+            PtyReadError: On Windows, when the output pipe fails while the
+                child is still running.  Chunks already queued are returned
+                first; after that, every call raises it again.
         """
         raise NotImplementedError
 

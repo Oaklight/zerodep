@@ -47,7 +47,11 @@ try:
     ):
         raise ImportError("Resolved our own jwt.py instead of PyJWT")
 except ImportError:  # pragma: no cover - depends on the environment
-    pytest.skip("PyJWT not installed", allow_module_level=True)
+    pytest.skip(
+        "PyJWT not installed; install the bench-jwt extra: "
+        "pip install -e '.[bench-jwt]'",
+        allow_module_level=True,
+    )
 finally:
     sys.path = _saved_path
     for key in [k for k in sys.modules if k == "jwt" or k.startswith("jwt.")]:

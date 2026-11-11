@@ -1,6 +1,6 @@
 # JWT / JWS
 
-JWS 令牌校验（RS/PS/ES）与 HMAC 签名/校验——零依赖，仅标准库，Python 3.10+。
+JWS 令牌校验（RS/PS/ES）与 HMAC 签名/校验——零 Python 依赖，仅标准库；可选使用系统 `libcrypto` 加速，Python 3.10+。
 
 > **可替代:** `PyJWT`、`python-jose`
 
@@ -20,7 +20,7 @@ JWT 模块用 Python 标准库完成 compact JWS 令牌的校验，以及 HMAC �
 
 | 文件 | 说明 | 依赖 |
 |------|------|------|
-| `jwt.py` | JWS 校验、HMAC 签名、P-256 校验器 | 无（仅标准库） |
+| `jwt.py` | JWS 校验、HMAC 签名、P-256 校验器 | 无（仅标准库）；可选通过 `ctypes` 使用系统 `libcrypto` |
 
 ## 在项目中使用
 
@@ -38,6 +38,35 @@ from jwt import decode, encode, get_unverified_header, key_from_jwk
 
 !!! warning "包名冲突"
     文件名为 `jwt.py`，会遮蔽同名的 PyJWT 包。若项目同时需要两者，请重命名其中一个。正确性测试中给出了用于比对两者的 `sys.path` 处理方式。
+
+## 后端
+
+RSA/PS 模幂与 ECDSA 校验各有两种实现。`BACKEND` 报告当前使用哪一种；HMAC、base64 与 JSON 在两种实现下相同。
+
+| 后端 | `BACKEND` | 实现方式 |
+|------|-----------|----------|
+| 原生 | `"openssl"` | 通过 `ctypes` 调用系统 `libcrypto`，与 `aes` 采用相同策略 |
+| 纯 Python | `"python"` | Python 整数运算；参考实现，也是回退路径 |
+
+`BACKEND` 在首次访问时才解析，因此只用 HMAC 的进程不会付出加载库的代价。当 `libcrypto` 能加载并导出所需符号时使用原生后端。以下情况会静默回退，校验结果完全一致：
+
+- 找不到候选库——distroless 或精简镜像、SONAME 不同的 BoringSSL/LibreSSL，或不在加载器搜索路径中的 Windows `libcrypto-*.dll`；
+- 该构建缺少 `BN_mod_exp`、`EC_KEY_*` 或 `ECDSA_*`，例如 OpenSSL 以 `no-deprecated` 配置构建；
+- 原生调用在运行时失败。
+
+用环境变量强制纯 Python 实现，测试套件也用它覆盖两条路径：
+
+```bash
+ZERODEP_JWT_BACKEND=python
+```
+
+只有公开密钥材料会跨过 `ctypes` 边界。HMAC 密钥不会：HMAC 本来就在 `hmac` 与 `hashlib` 的 C 实现中完成。
+
+| 操作 | 原生 | 纯 Python |
+|------|------|-----------|
+| RSA / PSS 校验 | `BN_mod_exp` | `pow()` |
+| ECDSA 校验 | `ECDSA_do_verify` | Jacobian 坐标点运算 |
+| HMAC、base64、JSON | 不变 | 不变 |
 
 ## 支持的算法
 
@@ -174,6 +203,19 @@ ok = ecdsa_p256_verify((x, y), auth_data + sha256(client_data_json), der_signatu
 ### 编码工具
 
 `b64url_encode(data) -> str` 与 `b64url_decode(data) -> bytes` 是整个模块使用的无填充 base64url 编解码器。之所以公开，是因为调用方在拼装 JWKS 或 COSE 密钥时通常也要用到。
+
+### `BACKEND`
+
+原生后端启用时为 `"openssl"`，纯 Python 实现启用或被强制时为 `"python"`。导入后读取一次即可记录或断言部署使用的是哪条路径：
+
+```python
+from jwt import BACKEND
+
+if BACKEND != "openssl":
+    log.warning("jwt 正在使用纯 Python 后端")
+```
+
+首次读取 `BACKEND` 会加载 `libcrypto`；只用 HMAC 且从不读取它的进程不会付出该代价。
 
 ## 声明校验
 

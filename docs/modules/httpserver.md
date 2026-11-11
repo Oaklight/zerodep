@@ -234,7 +234,7 @@ Main application class.
 | Method | Description |
 |--------|-------------|
 | `before_request(handler)` | Register a pre-request hook. Return `Response` to short-circuit |
-| `after_request(handler)` | Register a post-request hook. Receives `(request, response)` |
+| `after_request(handler)` | Register a post-request hook. Receives `(request, response)`. Runs for every response the server sends: handler output, static files, `before_request` short-circuits, 404/405, and read rejections whose request line was parsed |
 | `errorhandler(code_or_exc)` | Register an error handler for HTTP status code or exception class |
 
 **Signal Methods:**
@@ -248,7 +248,7 @@ Signals observe the request lifecycle. Handlers may be sync or async, run sequen
 | `on_client_disconnect(handler)` | Fires when the client drops during response delivery. Receives `(request)` |
 | `on_request_rejected(handler)` | Fires for a request refused while being read, before any `Request` exists. Receives a `RejectedRequest` |
 
-`RejectedRequest` is a frozen dataclass: `client_addr`, `status_code`, `reason` (`"bad_request"`, `"too_large"`, `"timeout"`, `"incomplete_body"` or `"read_error"`), `exception`, `request_id`, and best-effort `method`, `path`, `headers`, `content_length`, `bytes_received` (`None` or `0` when not yet parsed). The error response carries the same id as `X-Request-Id`: the client's own when usable, otherwise generated.
+`RejectedRequest` is a frozen dataclass: `client_addr`, `status_code`, `reason` (`"bad_request"`, `"too_large"`, `"timeout"`, `"incomplete_body"` or `"read_error"`), `exception`, `request_id`, and best-effort `method`, `path`, `headers`, `content_length`, `bytes_received` (`None` or `0` when not yet parsed). The error response carries the same id as `X-Request-Id`: the client's own when usable, otherwise generated. When the request line has been parsed, the response also passes through `after_request` hooks, built from the parsed method, path, query string and headers with an empty body (the body is what failed to read); a malformed request line has no `Request` and skips them.
 
 ```python
 @app.on_request_rejected

@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.7.3"
+# version = "0.7.4"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -3584,6 +3584,8 @@ def _build_raw_http_request(
     method: str,
     request_path: str,
     host: str,
+    port: int,
+    is_https: bool,
     req_headers: dict[str, str],
     use_pool: bool,
     use_proxy: bool,
@@ -3594,6 +3596,10 @@ def _build_raw_http_request(
         method: HTTP method.
         request_path: The request path or full URL (for proxy).
         host: Target hostname.
+        port: TCP port the connection uses; part of the ``Host`` header when
+            it is not the scheme default (RFC 7230 section 5.4).
+        is_https: Whether the request is over TLS, which sets the default
+            port for the ``Host`` header.
         req_headers: Request headers dict.
         use_pool: Whether connection pooling is active.
         use_proxy: Whether a proxy is being used.
@@ -3603,8 +3609,11 @@ def _build_raw_http_request(
     """
     request_line = f"{method} {request_path} HTTP/1.1\r\n"
     # Emit Host first (RFC 7230 §5.4). req_headers is a CaseInsensitiveDict
-    # so the 'in' check is O(1) and case-insensitive.
-    header_lines = "" if "host" in req_headers else f"Host: {host}\r\n"
+    # so the 'in' check is O(1) and case-insensitive.  A non-default port is
+    # included, matching http.client on the sync path.
+    default_port = 443 if is_https else 80
+    host_header = host if port == default_port else f"{host}:{port}"
+    header_lines = "" if "host" in req_headers else f"Host: {host_header}\r\n"
     for k, v in req_headers.items():
         header_lines += f"{k}: {v}\r\n"
     if (not use_pool or use_proxy) and "connection" not in req_headers:
@@ -3808,6 +3817,8 @@ async def _async_request(
                     method,
                     request_path,
                     host,
+                    port,
+                    is_https,
                     req_headers,
                     use_pool=bool(pool),
                     use_proxy=bool(proxy),

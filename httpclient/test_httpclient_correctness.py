@@ -8,7 +8,7 @@ import sys
 import time
 import unittest.mock
 from concurrent.futures import ThreadPoolExecutor
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 import pytest
 
@@ -405,6 +405,16 @@ class TestAsyncClient:
         async with AsyncClient() as c:
             r = await c.get(f"{httpbin_url}/get")
             assert r.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_client_host_header_includes_non_default_port(self, httpbin_url):
+        """The async Host matches http.client: host:port when not default."""
+        port = urlparse(httpbin_url).port
+        expected = f"127.0.0.1:{port}"
+        async with AsyncClient() as c:
+            r = await c.get(f"{httpbin_url}/get")
+        assert r.json()["headers"]["Host"] == expected  # type: ignore
+        assert get(f"{httpbin_url}/get").json()["headers"]["Host"] == expected
 
     @pytest.mark.asyncio
     async def test_client_base_headers(self, httpbin_url):
@@ -1233,15 +1243,36 @@ class TestPrepareRequestHeaderDedup:
 class TestBuildRawHttpRequestHostDedup:
     """_build_raw_http_request: no duplicate Host when user already provides one."""
 
-    def _build(self, req_headers, host="example.com", use_pool=False, use_proxy=False):
+    def _build(
+        self,
+        req_headers,
+        host="example.com",
+        *,
+        port=80,
+        is_https=False,
+        use_pool=False,
+        use_proxy=False,
+    ):
         # _build_raw_http_request always receives a CaseInsensitiveDict in
         # production (from _prepare_request); wrap here to match reality.
         if not isinstance(req_headers, CaseInsensitiveDict):
             req_headers = CaseInsensitiveDict(req_headers)
         raw = _build_raw_http_request(
-            "GET", "/path", host, req_headers, use_pool, use_proxy
+            "GET",
+            "/path",
+            host,
+            port,
+            is_https,
+            req_headers,
+            use_pool,
+            use_proxy,
         )
         return raw.decode("latin-1")
+
+    def _host_line(self, raw: str) -> str:
+        return next(
+            line for line in raw.splitlines() if line.lower().startswith("host:")
+        )
 
     def test_host_added_when_absent(self):
         raw = self._build({})
@@ -1249,6 +1280,20 @@ class TestBuildRawHttpRequestHostDedup:
             1 for line in raw.splitlines() if line.lower().startswith("host:")
         )
         assert host_count == 1
+
+    def test_non_default_port_is_included(self):
+        assert self._host_line(self._build({}, port=8080)) == "Host: example.com:8080"
+
+    def test_default_http_port_is_omitted(self):
+        assert self._host_line(self._build({}, port=80)) == "Host: example.com"
+
+    def test_default_https_port_is_omitted(self):
+        raw = self._build({}, port=443, is_https=True)
+        assert self._host_line(raw) == "Host: example.com"
+
+    def test_non_default_https_port_is_included(self):
+        raw = self._build({}, port=8443, is_https=True)
+        assert self._host_line(raw) == "Host: example.com:8443"
 
     def test_no_duplicate_host_when_user_provides_host(self):
         """User-supplied 'host' must not result in two Host lines."""

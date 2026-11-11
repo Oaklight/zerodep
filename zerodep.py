@@ -1344,7 +1344,7 @@ def cmd_add(args: argparse.Namespace) -> None:
             "move your changes aside first."
         )
 
-    _warn_flat_shadows(file_plan, target, lock)
+    _warn_flat_shadows(file_plan, target, lock, requested)
 
     if args.dry_run:
         _print_add_plan(file_plan, requested, target)
@@ -1376,6 +1376,7 @@ def _warn_flat_shadows(
     file_plan: list[tuple[str, str, Path]],
     target: Path,
     lock: dict | None = None,
+    requested: set[str] | None = None,
 ) -> None:
     """Warn when a flat copy may shadow an importable top-level module.
 
@@ -1390,6 +1391,9 @@ def _warn_flat_shadows(
     """
     seen: set[str] = set()
     cli_root = Path(__file__).resolve().parent
+    # Deliberately re-checked instead of taken from the caller's manifest
+    # load: _is_catalog_root also recognizes a bootstrap tree without a
+    # manifest, which the parsed manifest cannot answer.
     checkout_root = cli_root if _is_catalog_root(cli_root) else None
     tracked = (lock or {}).get("modules", {})
     for mod_name, _remote, dest in file_plan:
@@ -1432,15 +1436,20 @@ def _warn_flat_shadows(
             ),
             None,
         )
-        if locked is not None and len(Path(locked).parts) == 1:
+        quoted = f'"{target}"'
+        if (
+            locked is not None
+            and len(Path(locked).parts) == 1
+            and (requested is None or mod_name in requested)
+        ):
             remedy = (
                 f"  Reinstall it nested: 'zerodep remove {mod_name} "
-                f"-d {target}', then 'zerodep add {mod_name} --nested "
-                f"-d {target}'."
+                f"-d {quoted}', then 'zerodep add {mod_name} --nested "
+                f"-d {quoted}'."
             )
         else:
             remedy = (
-                f"  Use 'zerodep add {mod_name} --nested -d {target}' to "
+                f"  Use 'zerodep add {mod_name} --nested -d {quoted}' to "
                 f"copy into a subdirectory."
             )
         _warn(
@@ -1623,6 +1632,12 @@ def cmd_update(args: argparse.Namespace) -> None:
         return
 
     if args.dry_run:
+        _warn_flat_shadows(
+            _plan_files(candidates, manifest, target, nested=args.nested, lock=lock),
+            target,
+            lock,
+            set(candidates),
+        )
         for name in candidates:
             row = rows[name]
             print(
@@ -1634,7 +1649,7 @@ def cmd_update(args: argparse.Namespace) -> None:
 
     file_plan = _plan_files(candidates, manifest, target, nested=args.nested, lock=lock)
 
-    _warn_flat_shadows(file_plan, target, lock)
+    _warn_flat_shadows(file_plan, target, lock, set(candidates))
 
     writes = _write_files(
         file_plan,

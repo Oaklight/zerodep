@@ -311,9 +311,39 @@ def test_shadow_warning_ignores_the_checkout_as_a_namespace_package(
         spec.submodule_search_locations = [str(Path(zerodep.__file__).parent / name)]
         return spec
 
+    # Do not depend on the ambient tree being a catalog: a wheel install
+    # would not set the flag and this test would fail there.
+    monkeypatch.setattr(zerodep, "_is_catalog_root", lambda path: True)
     monkeypatch.setattr(zerodep.importlib.util, "find_spec", spec_for)
     zerodep._warn_flat_shadows([("sse", "sse/sse.py", dest)], tmp_path)
     assert capsys.readouterr().err == ""
+
+
+def test_shadow_warning_does_not_suggest_remove_for_a_dependency(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+):
+    import zerodep
+
+    dest = tmp_path / "httpclient.py"
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    (lib / "httpclient.py").write_text("", encoding="utf-8")
+
+    class _Spec:
+        origin = str(lib / "httpclient.py")
+
+    monkeypatch.setattr(zerodep.importlib.util, "find_spec", lambda name: _Spec())
+    lock = {"modules": {"httpclient": {"files": {"httpclient.py": "0" * 64}}}}
+    # sse was requested; httpclient came in as its dependency.
+    zerodep._warn_flat_shadows(
+        [("httpclient", "httpclient/httpclient.py", dest)],
+        tmp_path,
+        lock,
+        {"sse"},
+    )
+    err = capsys.readouterr().err
+    assert "Reinstall it nested" not in err
+    assert "Use 'zerodep add httpclient --nested" in err
 
 
 def test_shadow_warning_reports_a_namespace_package_outside_the_checkout(

@@ -1337,6 +1337,10 @@ class TestNativeBackend:
 
     @pytest.mark.parametrize("alg", _RSA_ALGS + _EC_ALGS)
     def test_native_and_pure_verdicts_agree(self, alg, monkeypatch):
+        if _ours.BACKEND != "openssl":
+            pytest.skip(
+                "libcrypto backend unavailable; parity would compare pure with pure"
+            )
         issuer = _RSA_KEY
         key = _RSA_JWK
         if alg == "ES256":
@@ -1358,6 +1362,10 @@ class TestNativeBackend:
             decode(tampered, key, algorithms=[alg])
 
     def test_public_ecdsa_verify_backends_agree(self, monkeypatch):
+        if _ours.BACKEND != "openssl":
+            pytest.skip(
+                "libcrypto backend unavailable; parity would compare pure with pure"
+            )
         message = b"native and pure"
         signature = _EC_P256.sign(message, ec.ECDSA(hashes.SHA256()))
         native = ecdsa_p256_verify(_EC_P256_JWK, message, signature, der=True)
@@ -1382,3 +1390,12 @@ class TestNativeBackend:
         assert _ours.BACKEND == "python"
         token = _rsa_token("RS256")
         assert decode(token, _RSA_JWK, algorithms=["RS256"])["sub"] == "alice"
+
+    def test_native_ecdsa_exception_falls_back_to_pure(self, monkeypatch):
+        class Broken:
+            def ecdsa_verify(self, *_args):
+                raise RuntimeError("native failure")
+
+        token = _pyjwt.encode({"sub": "alice"}, _EC_P256, algorithm="ES256")
+        monkeypatch.setattr(_ours, "_native", Broken())
+        assert decode(token, _EC_P256_JWK, algorithms=["ES256"])["sub"] == "alice"

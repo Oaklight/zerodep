@@ -342,8 +342,42 @@ def test_shadow_warning_does_not_suggest_remove_for_a_dependency(
         {"sse"},
     )
     err = capsys.readouterr().err
-    assert "Reinstall it nested" not in err
-    assert "Use 'zerodep add httpclient --nested" in err
+    assert "Reinstall" not in err
+    # The remedy names the requested module, because reinstalling the flat
+    # dependency on its own would leave a mixed layout.
+    assert "zerodep add sse --nested" in err
+    assert "zerodep add httpclient --nested" not in err
+
+
+def test_shadow_warning_reinstalls_the_requested_set_when_it_is_flat(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+):
+    import zerodep
+
+    dest = tmp_path / "httpclient.py"
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    (lib / "httpclient.py").write_text("", encoding="utf-8")
+
+    class _Spec:
+        origin = str(lib / "httpclient.py")
+
+    monkeypatch.setattr(zerodep.importlib.util, "find_spec", lambda name: _Spec())
+    lock = {
+        "modules": {
+            "httpclient": {"files": {"httpclient.py": "0" * 64}},
+            "sse": {"files": {"sse.py": "0" * 64}},
+        }
+    }
+    zerodep._warn_flat_shadows(
+        [("httpclient", "httpclient/httpclient.py", dest)],
+        tmp_path,
+        lock,
+        {"sse"},
+    )
+    err = capsys.readouterr().err
+    assert "Reinstall the set nested" in err
+    assert "zerodep remove sse" in err
 
 
 def test_shadow_warning_reports_a_namespace_package_outside_the_checkout(
@@ -1242,10 +1276,22 @@ def test_update_dry_run_writes_nothing(tmp_path: Path):
     lock["modules"]["yaml"]["upstream_hash"] = "0" * 64
     _write_lock(vendor, lock)
     before = (vendor / "yaml.py").read_text(encoding="utf-8")
+    lib = tmp_path / "_lib"
+    lib.mkdir()
+    (lib / "yaml.py").write_text("", encoding="utf-8")
 
-    r = run_cli("update", "--all", "--dry-run", "-d", str(vendor))
+    r = run_cli(
+        "update",
+        "--all",
+        "--dry-run",
+        "-d",
+        str(vendor),
+        env={"PYTHONPATH": str(lib)},
+    )
     assert r.returncode == 0, r.stderr
     assert "would update" in r.stdout
+    # The shadow check runs for a dry run too, as it does for add.
+    assert "'yaml.py' may shadow the importable module 'yaml'" in r.stderr
     assert (vendor / "yaml.py").read_text(encoding="utf-8") == before
     r = run_cli("status", "--json", "-d", str(vendor))
     assert json.loads(r.stdout)["modules"][0]["state"] == "outdated"

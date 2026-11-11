@@ -1396,6 +1396,7 @@ def _warn_flat_shadows(
     # manifest, which the parsed manifest cannot answer.
     checkout_root = cli_root if _is_catalog_root(cli_root) else None
     tracked = (lock or {}).get("modules", {})
+    quoted = f'"{target}"'
     for mod_name, _remote, dest in file_plan:
         if dest.parent != target:
             continue
@@ -1436,17 +1437,32 @@ def _warn_flat_shadows(
             ),
             None,
         )
-        quoted = f'"{target}"'
-        if (
-            locked is not None
-            and len(Path(locked).parts) == 1
-            and (requested is None or mod_name in requested)
-        ):
+        locked_flat = locked is not None and len(Path(locked).parts) == 1
+        if locked_flat and (requested is None or mod_name in requested):
             remedy = (
                 f"  Reinstall it nested: 'zerodep remove {mod_name} "
                 f"-d {quoted}', then 'zerodep add {mod_name} --nested "
                 f"-d {quoted}'."
             )
+        elif locked_flat and requested:
+            # A dependency: reinstalling it alone would leave a mixed layout,
+            # so point at the module the user named.
+            target_mod = sorted(requested)[0]
+            target_flat = any(
+                len(Path(rel).parts) == 1
+                for rel in tracked.get(target_mod, {}).get("files", {})
+            )
+            if target_flat:
+                remedy = (
+                    f"  Reinstall the set nested: 'zerodep remove "
+                    f"{target_mod} -d {quoted}', then 'zerodep add "
+                    f"{target_mod} --nested -d {quoted}'."
+                )
+            else:
+                remedy = (
+                    f"  Use 'zerodep add {target_mod} --nested -d {quoted}' "
+                    f"to keep the whole set nested."
+                )
         else:
             remedy = (
                 f"  Use 'zerodep add {mod_name} --nested -d {quoted}' to "

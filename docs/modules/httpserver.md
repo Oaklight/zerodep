@@ -246,9 +246,9 @@ async def trigger_shutdown(request):
 | `on_response_started(handler)` | 在写出响应之前触发。接收 `(request, response)` |
 | `on_response_completed(handler)` | 整个响应发送完毕后触发。接收 `(request, response)` |
 | `on_client_disconnect(handler)` | 客户端在响应发送过程中断开时触发。接收 `(request)` |
-| `on_request_rejected(handler)` | 请求在读取阶段、尚未生成 `Request` 时被拒绝时触发。接收一个 `RejectedRequest` |
+| `on_request_rejected(handler)` | 请求在读取阶段、尚未进入分派与其他生命周期钩子时被拒绝时触发。接收一个 `RejectedRequest` |
 
-`RejectedRequest` 是冻结的数据类：`client_addr`、`status_code`、`reason`（`"bad_request"`、`"too_large"`、`"timeout"`、`"incomplete_body"` 或 `"read_error"`）、`exception`、`request_id`，以及尽力提供的 `method`、`path`、`headers`、`content_length`、`bytes_received`（尚未解析到时为 `None` 或 `0`）。错误响应的 `X-Request-Id` 与之相同：客户端提供且可用时沿用，否则自动生成。请求行已解析时，响应还会经过 `after_request` 钩子：用已解析的方法、路径、查询字符串与请求头构造 `Request`，正文为空（正文正是读取失败的部分）；请求行格式错误时没有 `Request`，钩子不会运行。
+`RejectedRequest` 是冻结的数据类：`client_addr`、`status_code`、`reason`（`"bad_request"`、`"too_large"`、`"timeout"`、`"incomplete_body"` 或 `"read_error"`）、`exception`、`request_id`，以及尽力提供的 `method`、`path`、`query_string`、`headers`、`content_length`、`bytes_received`（尚未解析到时为 `None`、`""` 或 `0`）。错误响应的 `X-Request-Id` 与之相同：客户端提供且可用时沿用，否则自动生成。请求行已解析时，响应还会经过 `after_request` 钩子：用已解析的方法、路径、查询字符串与请求头构造 `Request`，正文为空（正文正是读取失败的部分）；请求行格式错误时没有 `Request`，钩子不会运行。
 
 ```python
 @app.on_request_rejected

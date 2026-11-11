@@ -805,6 +805,10 @@ def _looks_like_public_key(secret: bytes) -> bool:
     stripped = secret.lstrip()
     if any(stripped.startswith(marker) for marker in _SSH_KEY_MARKERS):
         return True
+    # Every armor label follows the word BEGIN, so this C-level substring test
+    # spares the regex on the common path.
+    if b"BEGIN" not in secret:
+        return False
     return _ARMOR_RE.search(secret) is not None
 
 

@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [2026.11.11] - 2026-11-11
+
 ### 新功能
 
 - **jwt**：可选的原生后端。当系统 `libcrypto` 能加载并导出所需符号时，RSA/PS 模幂与 ECDSA 校验通过 `ctypes` 调用它，与 `aes` 采用相同策略；否则纯 Python 路径照常运行，判定结果完全一致。模块仍然不安装任何 Python 包，且只有公开密钥材料会跨过 ctypes 边界——HMAC 密钥不会。`BACKEND` 报告 `"openssl"` 或 `"python"`，首次访问时才解析，因此只用 HMAC 的进程不会付出加载库的代价；`ZERODEP_JWT_BACKEND=python` 可强制回退。基准负载实测：RS256 从 164 us 降到 58 us，PS256 从 187 us 降到 77 us，ES256 从 1,717 us 降到 102 us；HMAC 不变。`jwt` 升到 0.2.0。([#316](https://github.com/Oaklight/zerodep/issues/316))

@@ -27,6 +27,16 @@ Signing with a shared secret::
 
     >>> token = encode({"sub": "alice"}, b"secret", algorithm="HS256")
 
+.. warning::
+
+   This file is named ``jwt.py``, so a flat copy shadows the PyJWT package of
+   the same name.  If the destination directory is on ``sys.path``, ``import
+   jwt`` resolves to this file, and every import of a PyJWT submodule --
+   ``import jwt.exceptions``, ``import jwt.algorithms`` -- fails with
+   ``ModuleNotFoundError: 'jwt' is not a package``.  Copy it nested
+   (``zerodep add jwt --nested``), or rename the copied file and import it
+   under that name (``import my_jwt``).
+
 Part of zerodep: https://github.com/Oaklight/zerodep
 Copyright (c) 2026 Peng Ding. MIT License.
 """
@@ -38,6 +48,7 @@ import binascii
 import hashlib
 import hmac
 import json
+import math
 import re
 import time
 from collections.abc import Callable, Mapping, Sequence, Set
@@ -51,6 +62,7 @@ __all__ = [
     "DecodeError",
     "InvalidSignatureError",
     "InvalidAlgorithmError",
+    "UnsupportedCriticalHeaderError",
     "InvalidKeyError",
     "ExpiredSignatureError",
     "ImmatureSignatureError",
@@ -91,6 +103,10 @@ class InvalidSignatureError(JWTError):
 
 class InvalidAlgorithmError(DecodeError):
     """The token's ``alg`` is unsupported or outside the caller's allowlist."""
+
+
+class UnsupportedCriticalHeaderError(DecodeError):
+    """The token's ``crit`` names an extension this module does not implement."""
 
 
 class InvalidKeyError(JWTError, ValueError):
@@ -309,6 +325,14 @@ def _jwk_optional_str(jwk: Mapping[str, Any], name: str) -> str | None:
     return value
 
 
+#: Smallest RSA modulus accepted, in bits.  A shorter modulus is forgeable
+#: with modest effort, so it is rejected as a bad key rather than used.  The
+#: floor is enforced here, in :func:`key_from_jwk`, so a rejected modulus never
+#: reaches ``decode()``; :func:`_rsa_public` repeats the check as defence in
+#: depth for a directly constructed :class:`JWKKey`.
+MIN_RSA_BITS = 2048
+
+
 def _parse_rsa_jwk(jwk: Mapping[str, Any]) -> JWKKey:
     """Build and validate an RSA JWKKey."""
     n = _b64url_uint(_jwk_field(jwk, "n"), "n")
@@ -319,6 +343,11 @@ def _parse_rsa_jwk(jwk: Mapping[str, Any]) -> JWKKey:
         raise InvalidKeyError("JWK 'e' must be an odd integer >= 3")
     if e >= n:
         raise InvalidKeyError("JWK 'e' must be smaller than 'n'")
+    if n.bit_length() < MIN_RSA_BITS:
+        raise InvalidKeyError(
+            f"RSA modulus is {n.bit_length()} bits; "
+            f"at least {MIN_RSA_BITS} are required"
+        )
     return JWKKey(
         kty="RSA",
         n=n,
@@ -389,8 +418,11 @@ def key_from_jwk(jwk: Mapping[str, Any]) -> JWKKey:
         The parsed key, ready for :func:`decode`.
 
     Raises:
-        InvalidKeyError: The JWK is malformed, uses an unsupported key type or
-            curve, or its EC point is not on the curve.
+        InvalidKeyError: The JWK is malformed in any way: missing or non-string
+            members, invalid base64url, an unsupported key type or curve, an
+            EC point off the curve, or an RSA modulus below
+            :data:`MIN_RSA_BITS`.  No other exception type escapes, so
+            ``except InvalidKeyError`` covers the whole key-loading path.
     """
     if not isinstance(jwk, Mapping):
         raise InvalidKeyError(f"expected a JWK mapping, got {type(jwk).__name__}")
@@ -398,7 +430,14 @@ def key_from_jwk(jwk: Mapping[str, Any]) -> JWKKey:
     parser = _JWK_PARSERS.get(kty) if isinstance(kty, str) else None
     if parser is None:
         raise InvalidKeyError(f"unsupported JWK key type {kty!r}")
-    return parser(jwk)
+    try:
+        return parser(jwk)
+    except InvalidKeyError:
+        raise
+    except (DecodeError, TypeError, ValueError) as exc:
+        # b64url_decode raises DecodeError for bad base64 and TypeError for a
+        # non-str member; both are key errors from the caller's point of view.
+        raise InvalidKeyError(f"malformed JWK: {exc}") from exc
 
 
 def _as_jwk(key: Any) -> JWKKey:
@@ -453,10 +492,6 @@ _ECDSA_ALGS: dict[str, tuple[str, Callable[[bytes], Any]]] = {
 SUPPORTED_ALGORITHMS: frozenset[str] = frozenset(
     (*_HMAC_ALGS, *_RSA_PKCS1_ALGS, *_RSA_PSS_ALGS, *_ECDSA_ALGS)
 )
-
-#: Smallest RSA modulus accepted, in bits.  A shorter modulus is forgeable
-#: with modest effort, so it is rejected as a bad key rather than used.
-MIN_RSA_BITS = 2048
 
 
 def _hmac_sign(alg: str, key: bytes, msg: bytes) -> bytes:
@@ -706,7 +741,13 @@ def _der_to_raw(sig: bytes, size: int) -> bytes:
             raise DecodeError("DER signature INTEGER is negative")
         if length > 1 and raw[0] == 0 and not raw[1] & 0x80:
             raise DecodeError("DER signature INTEGER is not minimally encoded")
-        values.append(int.from_bytes(raw, "big"))
+        value = int.from_bytes(raw, "big")
+        # A barely-wider-than-field integer is a legal DER encoding of an
+        # invalid signature, not a malformed one: report it as DecodeError so
+        # ecdsa_p256_verify() turns it into False instead of OverflowError.
+        if value.bit_length() > 8 * size:
+            raise DecodeError("DER signature INTEGER is wider than the field")
+        values.append(value)
         offset = end
     if offset != len(sig):
         raise DecodeError("DER signature has trailing bytes")
@@ -718,15 +759,40 @@ def _der_to_raw(sig: bytes, size: int) -> bytes:
 # ===========================================================================
 
 
+#: Leading bytes of a PEM or OpenSSH public key, either of which is public
+#: data and therefore forgeable as an HMAC secret.
+_ASYMMETRIC_KEY_PREFIXES = (
+    b"-----BEGIN ",
+    b"ssh-rsa ",
+    b"ssh-ed25519 ",
+    b"ecdsa-sha2-",
+)
+
+
 def _secret_bytes(key: Any) -> bytes:
-    """Return the shared secret carried by *key*."""
+    """Return the shared secret carried by *key*.
+
+    A PEM or OpenSSH public key is rejected: it is public data, so anyone
+    holding it could sign an ``HS*`` token that verifies against it.  PyJWT
+    applies the same guard; without it, the RS/HS confusion class is only
+    closed for keys that arrive as a JWK.
+    """
     if isinstance(key, (bytes, bytearray, memoryview)):
-        return bytes(key)
-    if isinstance(key, str):
-        return key.encode("utf-8")
-    raise InvalidKeyError(
-        f"an HMAC algorithm needs a bytes or str secret, got {type(key).__name__}"
-    )
+        secret = bytes(key)
+    elif isinstance(key, str):
+        secret = key.encode("utf-8")
+    else:
+        raise InvalidKeyError(
+            f"an HMAC algorithm needs a bytes or str secret, got {type(key).__name__}"
+        )
+    for prefix in _ASYMMETRIC_KEY_PREFIXES:
+        if secret.lstrip().startswith(prefix):
+            raise InvalidKeyError(
+                "an asymmetric public key or certificate cannot be used as an "
+                "HMAC secret: it is public data, so anyone holding it could "
+                "forge a token"
+            )
+    return secret
 
 
 def _rsa_public(key: Any, alg: str) -> tuple[int, int]:
@@ -739,7 +805,8 @@ def _rsa_public(key: Any, alg: str) -> tuple[int, int]:
     parsed = _as_jwk(key)
     if parsed.kty != "RSA":
         raise InvalidKeyError(f"{alg} needs an RSA key, got kty={parsed.kty!r}")
-    assert parsed.n is not None and parsed.e is not None
+    if parsed.n is None or parsed.e is None:
+        raise InvalidKeyError(f"{alg} needs an RSA key with 'n' and 'e'")
     if parsed.n.bit_length() < MIN_RSA_BITS:
         raise InvalidKeyError(
             f"RSA modulus is {parsed.n.bit_length()} bits; "
@@ -765,7 +832,8 @@ def _ec_public(key: Any, alg: str) -> tuple[_Curve, int, int]:
     curve_name, _hash = _ECDSA_ALGS[alg]
     if parsed.crv != curve_name:
         raise InvalidKeyError(f"{alg} needs curve {curve_name}, got {parsed.crv!r}")
-    assert parsed.x is not None and parsed.y is not None
+    if parsed.x is None or parsed.y is None:
+        raise InvalidKeyError(f"{alg} needs an EC key with 'x' and 'y'")
     if parsed.alg is not None and parsed.alg != alg:
         raise InvalidKeyError(
             f"JWK declares alg={parsed.alg!r} but the token uses {alg!r}"
@@ -786,7 +854,8 @@ def _hmac_secret(key: Any, alg: str) -> bytes:
             raise InvalidKeyError(
                 f"JWK declares alg={parsed.alg!r} but the token uses {alg!r}"
             )
-        assert parsed.secret is not None
+        if parsed.secret is None:
+            raise InvalidKeyError("oct key has no 'k' secret")
         return parsed.secret
     return _secret_bytes(key)
 
@@ -824,9 +893,16 @@ class _JWS:
 
 
 def _loads_object(raw: bytes, what: str) -> dict[str, Any]:
-    """Decode a JSON object from *raw*, or raise DecodeError."""
+    """Decode a JSON object from *raw*, or raise DecodeError.
+
+    ``RecursionError`` is caught too: the token is unauthenticated at this
+    point, so deeply nested JSON must not escape as anything but a
+    :class:`DecodeError`.
+    """
     try:
         value = json.loads(raw)
+    except RecursionError as exc:
+        raise DecodeError(f"{what} is nested too deeply") from exc
     except (ValueError, UnicodeDecodeError) as exc:
         raise DecodeError(f"{what} is not valid JSON: {exc}") from exc
     if not isinstance(value, dict):
@@ -959,26 +1035,42 @@ def encode(
 
 
 def _leeway_seconds(leeway: float | timedelta) -> float:
-    """Normalize *leeway* to seconds."""
+    """Normalize *leeway* to seconds, rejecting a negative tolerance."""
     if isinstance(leeway, timedelta):
-        return leeway.total_seconds()
-    if isinstance(leeway, bool) or not isinstance(leeway, (int, float)):
+        seconds = leeway.total_seconds()
+    elif isinstance(leeway, bool) or not isinstance(leeway, (int, float)):
         raise TypeError(
             f"leeway must be a number or timedelta, got {type(leeway).__name__}"
         )
-    if leeway < 0:
+    else:
+        seconds = float(leeway)
+    if seconds < 0:
         raise ValueError("leeway must not be negative")
-    return float(leeway)
+    return seconds
 
 
 def _numeric_claim(claims: Mapping[str, Any], name: str) -> float:
-    """Return a NumericDate claim as a number of seconds."""
+    """Return a finite NumericDate claim as a number of seconds.
+
+    RFC 7519 defines NumericDate as a number, and RFC 8259 has no ``NaN`` or
+    ``Infinity``, so a non-finite value is malformed.  Rejecting it also
+    closes a fail-open case: every comparison against ``NaN`` is false, so an
+    ``exp`` of ``NaN`` would never expire.
+    """
     value = claims[name]
     if isinstance(value, bool):
         raise DecodeError(f"{name!r} claim must be a number, got a bool")
-    if isinstance(value, (int, float)):
-        return float(value)
-    raise DecodeError(f"{name!r} claim must be a number, got {type(value).__name__}")
+    if not isinstance(value, (int, float)):
+        raise DecodeError(
+            f"{name!r} claim must be a number, got {type(value).__name__}"
+        )
+    try:
+        seconds = float(value)
+    except OverflowError as exc:
+        raise DecodeError(f"{name!r} claim is out of range") from exc
+    if not math.isfinite(seconds):
+        raise DecodeError(f"{name!r} claim must be a finite number")
+    return seconds
 
 
 def _check_time_claims(
@@ -1006,7 +1098,8 @@ def _check_audience(claims: Mapping[str, Any], audience: Any) -> None:
             "audience must be a string or a non-empty iterable of strings"
         )
     value = claims.get("aud")
-    if value is None:
+    if not value:
+        # An empty string or empty list is treated as absent, matching PyJWT.
         raise MissingRequiredClaimError("aud")
     if isinstance(value, str):
         actual = [value]
@@ -1038,10 +1131,44 @@ def _check_required(claims: Mapping[str, Any], required: Any) -> None:
     if not required:
         return
     if isinstance(required, str):
-        required = [required]
-    for name in required:
+        names = [required]
+    else:
+        try:
+            names = list(required)
+        except TypeError as exc:
+            raise TypeError(
+                "'require' must be a claim name or an iterable of claim names, "
+                f"got {type(required).__name__}"
+            ) from exc
+    for name in names:
+        if not isinstance(name, str):
+            raise TypeError(
+                f"'require' entries must be claim names, got {type(name).__name__}"
+            )
         if claims.get(name) is None:
             raise MissingRequiredClaimError(name)
+
+
+def _check_critical_header(header: Mapping[str, Any]) -> None:
+    """Reject a JWS whose ``crit`` names an extension this module ignores.
+
+    RFC 7515 section 4.1.11 requires the recipient to reject a JWS that lists
+    a critical extension it does not implement.  This module implements none,
+    so any well-formed non-empty ``crit`` is unsupported.
+    """
+    if "crit" not in header:
+        return
+    crit = header["crit"]
+    if (
+        not isinstance(crit, list)
+        or not crit
+        or any(not isinstance(name, str) for name in crit)
+    ):
+        raise DecodeError("'crit' must be a non-empty array of strings")
+    raise UnsupportedCriticalHeaderError(
+        "the token requires critical header extensions this module does not "
+        f"implement: {', '.join(crit)}"
+    )
 
 
 def _validate_claims(
@@ -1112,6 +1239,8 @@ def decode(
         DecodeError: The token is not a well-formed compact JWS.
         InvalidAlgorithmError: ``alg`` is absent, unsupported, not in
             *algorithms*, or is ``"none"``.
+        UnsupportedCriticalHeaderError: The header's ``crit`` lists an
+            extension this module does not implement.
         InvalidKeyError: The key is unusable or does not match the algorithm.
         InvalidSignatureError: The signature does not verify.
         ExpiredSignatureError: ``exp`` has passed.
@@ -1133,6 +1262,7 @@ def decode(
         )
     if alg not in SUPPORTED_ALGORITHMS:
         raise InvalidAlgorithmError(f"algorithm {alg!r} is not supported")
+    _check_critical_header(jws.header)
     if not _verify_signature(alg, key, jws.signing_input, jws.signature):
         raise InvalidSignatureError("the signature does not verify")
     _validate_claims(
@@ -1234,7 +1364,8 @@ def _p256_point(pub: Any) -> tuple[_Curve, int, int]:
             raise InvalidKeyError(f"expected an EC key, got kty={parsed.kty!r}")
         if parsed.crv != "P-256":
             raise InvalidKeyError(f"expected curve P-256, got {parsed.crv!r}")
-        assert parsed.x is not None and parsed.y is not None
+        if parsed.x is None or parsed.y is None:
+            raise InvalidKeyError("EC key is missing 'x' or 'y'")
         return _SECP256R1, parsed.x, parsed.y
     raise InvalidKeyError(
         f"expected (x, y), a JWK mapping or a JWKKey, got {type(pub).__name__}"

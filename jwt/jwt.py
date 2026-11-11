@@ -1538,10 +1538,11 @@ def _native_libraries() -> list[str]:
             "libcrypto-1_1-x64.dll",
             "libcrypto-1_1.dll",
         ]
-        # A CPython build from python.org keeps its OpenSSL DLLs here, and the
-        # Windows loader does not search that directory by default.
+        # A CPython build from python.org keeps its OpenSSL DLLs here.  Only
+        # absolute paths are used on Windows: the bare-name loader search order
+        # includes the current directory, which is a DLL-hijack surface.
         dll_dir = os.path.join(sys.base_prefix, "DLLs")
-        return [os.path.join(dll_dir, name) for name in names] + names
+        return [os.path.join(dll_dir, name) for name in names]
     if sys.platform == "darwin":
         return [
             "libcrypto.3.dylib",
@@ -1628,8 +1629,8 @@ class _LibCrypto:
     per call.  Inputs are public and short-lived, so no zeroisation is needed.
     """
 
-    #: Curve field sizes to OpenSSL NIDs: prime256v1 and secp384r1.
-    _CURVE_NIDS = {256: 415, 384: 715}
+    #: Curve parameter sets to OpenSSL NIDs: prime256v1 and secp384r1.
+    _CURVE_NIDS = {_SECP256R1.p: 415, _SECP384R1.p: 715}
 
     def __init__(self, library: Any, ctypes: Any) -> None:
         self._c = ctypes
@@ -1678,6 +1679,7 @@ class _LibCrypto:
         self._ECDSA_do_verify = declare(
             "ECDSA_do_verify", [pointer, integer, pointer, pointer], integer
         )
+        self._ERR_clear_error = declare("ERR_clear_error", [], None)
 
     def _int_to_bn(self, value: int) -> Any:
         """Copy a non-negative integer into a new BIGNUM."""
@@ -1701,6 +1703,7 @@ class _LibCrypto:
             if not result or not context:
                 raise MemoryError("libcrypto could not allocate a BIGNUM context")
             if self._BN_mod_exp(result, bn_base, bn_exponent, bn_modulus, context) != 1:
+                self._ERR_clear_error()
                 raise RuntimeError("BN_mod_exp failed")
             size = (self._BN_num_bits(result) + 7) // 8
             buffer = ctypes.create_string_buffer(size or 1)
@@ -1729,7 +1732,7 @@ class _LibCrypto:
         """
         ctypes = self._c
         size = _field_size(curve)
-        nid = self._CURVE_NIDS.get(curve.p.bit_length())
+        nid = self._CURVE_NIDS.get(curve.p)
         if nid is None:
             return None
         key = self._EC_KEY_new_by_curve_name(nid)
@@ -1745,8 +1748,13 @@ class _LibCrypto:
             raw = b"\x04" + qx.to_bytes(size, "big") + qy.to_bytes(size, "big")
             buffer = ctypes.create_string_buffer(raw, len(raw))
             if self._EC_POINT_oct2point(group, point, buffer, len(raw), None) != 1:
-                return False
+                # The point passed the curve check, so this is an internal
+                # error; let the pure path decide rather than reject a valid
+                # signature.
+                self._ERR_clear_error()
+                return None
             if self._EC_KEY_set_public_key(key, point) != 1:
+                self._ERR_clear_error()
                 return None
             signature = self._ECDSA_SIG_new()
             if not signature:
@@ -1756,6 +1764,7 @@ class _LibCrypto:
                 bn_r = self._int_to_bn(int.from_bytes(sig_raw[:size], "big"))
                 bn_s = self._int_to_bn(int.from_bytes(sig_raw[size:], "big"))
                 if self._ECDSA_SIG_set0(signature, bn_r, bn_s) != 1:
+                    self._ERR_clear_error()
                     return None
                 # ECDSA_SIG_set0 took ownership of both BIGNUMs.
                 bn_r = bn_s = None
@@ -1765,6 +1774,7 @@ class _LibCrypto:
                     digest_buffer, len(digest), signature, key
                 )
                 if verdict < 0:
+                    self._ERR_clear_error()
                     return None
                 return verdict == 1
             finally:

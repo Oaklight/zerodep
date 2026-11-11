@@ -1318,10 +1318,30 @@ class TestNativeBackend:
         assert subject == "a"
 
     def test_missing_libcrypto_falls_back(self, monkeypatch):
+        monkeypatch.delenv("ZERODEP_JWT_BACKEND", raising=False)
         monkeypatch.setattr(_ours, "_native", _ours._NATIVE_UNSET)
         monkeypatch.setattr(
             _ours, "_native_libraries", lambda: ["/nonexistent/libcrypto.so.3"]
         )
+        assert _ours._native_backend() is None
+        assert _ours.BACKEND == "python"
+        assert "nonexistent" in (_ours._load_error or "")
+        token = _rsa_token("RS256")
+        assert decode(token, _RSA_JWK, algorithms=["RS256"])["sub"] == "alice"
+
+    def test_missing_symbols_fall_back(self, monkeypatch):
+        """A build without EC_KEY_*/ECDSA_* (``no-deprecated``) must fall back."""
+
+        class SymbolLess:
+            def __getattr__(self, name):
+                raise AttributeError(name)
+
+        import ctypes
+
+        monkeypatch.delenv("ZERODEP_JWT_BACKEND", raising=False)
+        monkeypatch.setattr(_ours, "_native", _ours._NATIVE_UNSET)
+        monkeypatch.setattr(_ours, "_native_libraries", lambda: ["libcrypto-fake"])
+        monkeypatch.setattr(ctypes, "CDLL", lambda _name: SymbolLess())
         assert _ours._native_backend() is None
         assert _ours.BACKEND == "python"
         token = _rsa_token("RS256")

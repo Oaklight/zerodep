@@ -30,7 +30,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [jsonrpc](jsonrpc.md) | 0.4.0 | 2026-10-24 |
 | [jsonschema](jsonschema.md) | 0.4.4 | 2026-11-07 |
 | [jsonx](jsonx.md) | 2.0.0 | 2026-10-24 |
-| [jwt](jwt.md) | 0.2.0 | 2026-11-10 |
+| [jwt](jwt.md) | 0.2.0 | 2026-11-11 |
 | [llmstxt](llmstxt.md) | 0.1.1 | 2026-04-27 |
 | [markdown](markdown.md) | 0.4.1 | 2026-04-27 |
 | [multipart](multipart.md) | 0.1.0 | 2026-05-16 |
@@ -39,7 +39,7 @@ Each zerodep module is a **self-contained single `.py` file** that you can copy 
 | [profiler](profiler.md) | 0.1.1 | 2026-09-24 |
 | [prompt](prompt.md) | 0.2.0 | 2026-04-11 |
 | [protobuf](protobuf.md) | 0.4.4 | 2026-04-27 |
-| [ptyx](ptyx.md) | 0.1.0 | 2026-11-01 |
+| [ptyx](ptyx.md) | 0.1.1 | 2026-11-01 |
 | [qr](qr.md) | 0.3.4 | 2026-08-25 |
 | [ratelimit](ratelimit.md) | 0.2.0 | 2026-09-14 |
 | [readability](readability.md) | 0.2.1 | 2026-08-25 |

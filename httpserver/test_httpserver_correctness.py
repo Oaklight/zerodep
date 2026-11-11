@@ -97,6 +97,20 @@ class TestResponse:
         r = JSONResponse({"a": 0.5, "b": -0.0, "c": 1e308})
         assert json.loads(r.body) == {"a": 0.5, "b": -0.0, "c": 1e308}
 
+    def test_421_reason_phrase(self):
+        class _Writer:
+            data = b""
+
+            def write(self, data):
+                self.data += data
+
+            async def drain(self):
+                pass
+
+        writer = _Writer()
+        asyncio.run(Response(body=b"", status_code=421)._write(writer))
+        assert writer.data.startswith(b"HTTP/1.1 421 Misdirected Request\r\n")
+
 
 class TestCoerceResponse:
     """Handler return value coercion."""
@@ -559,6 +573,76 @@ class TestMiddleware:
             assert json.loads(resp.body)["custom"] == "not found"
 
         asyncio.run(_test())
+
+    def test_after_request_runs_for_404_and_405(self):
+        """Rejections produced outside a handler still reach the hooks."""
+        app = App()
+        seen = []
+
+        @app.get("/ok")
+        async def ok(request):
+            return {"ok": True}
+
+        @app.after_request
+        async def mark(request, response):
+            seen.append(request.path)
+            response.headers["X-Marker"] = "1"
+            return response
+
+        async def _test():
+            for method, path, status in (
+                ("GET", "/missing", 404),
+                ("POST", "/ok", 405),
+            ):
+                req = Request(method, path, "", {}, b"", ("127.0.0.1", 0), app=app)
+                resp = await app._dispatch(req)
+                assert resp.status_code == status
+                assert resp.headers["X-Marker"] == "1"
+
+        asyncio.run(_test())
+        assert seen == ["/missing", "/ok"]
+
+    def test_after_request_runs_for_before_request_shortcircuit(self):
+        """A before-hook response also passes through the after-hooks."""
+        app = App()
+
+        @app.before_request
+        async def auth_check(request):
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+        @app.after_request
+        async def mark(request, response):
+            response.headers["X-Marker"] = "1"
+            return response
+
+        async def _test():
+            req = Request("GET", "/any", "", {}, b"", ("127.0.0.1", 0), app=app)
+            resp = await app._dispatch(req)
+            assert resp.status_code == 401
+            assert resp.headers["X-Marker"] == "1"
+
+        asyncio.run(_test())
+
+    def test_after_request_runs_once_per_response(self):
+        """Routing must not run the hooks twice now that dispatch owns them."""
+        app = App()
+        calls = []
+
+        @app.get("/ok")
+        async def ok(request):
+            return {"ok": True}
+
+        @app.after_request
+        async def count(request, response):
+            calls.append(request.path)
+            return response
+
+        async def _test():
+            req = Request("GET", "/ok", "", {}, b"", ("127.0.0.1", 0), app=app)
+            await app._dispatch(req)
+
+        asyncio.run(_test())
+        assert calls == ["/ok"]
 
 
 class TestRequestState:

@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.7.2"
+# version = "0.8.0"
 # deps = []
 # tier = "subsystem"
 # category = "network"
@@ -115,6 +115,7 @@ _STATUS_REASONS: dict[int, str] = {
     409: "Conflict",
     413: "Content Too Large",
     415: "Unsupported Media Type",
+    421: "Misdirected Request",
     422: "Unprocessable Entity",
     429: "Too Many Requests",
     500: "Internal Server Error",
@@ -934,6 +935,7 @@ class _ReadState:
     __slots__ = (
         "method",
         "path",
+        "query_string",
         "headers",
         "content_length",
         "bytes_received",
@@ -943,6 +945,7 @@ class _ReadState:
     def __init__(self) -> None:
         self.method: str | None = None
         self.path: str | None = None
+        self.query_string: str = ""
         self.headers: dict[str, str] | None = None
         self.content_length: int | None = None
         self.bytes_received = 0
@@ -1076,6 +1079,7 @@ async def _read_request(
     if state is not None:
         state.method = method.upper()
         state.path = path
+        state.query_string = query_string
 
     # -- Headers --
     headers: dict[str, str] = {}
@@ -1766,6 +1770,16 @@ class App:
         return response
 
     async def _dispatch(self, request: Request) -> Response | StreamingResponse:
+        """Route a request and run the after-request hooks exactly once.
+
+        Every response leaves through the hooks: handler output, static
+        files, ``before_request`` short-circuits and 404/405 rejections
+        alike, so a hook that adds headers applies uniformly.
+        """
+        response = await self._route_request(request)
+        return await self._run_after_hooks(request, response)
+
+    async def _route_request(self, request: Request) -> Response | StreamingResponse:
         """Match a request to a route and invoke the handler."""
         # -- before_request hooks --
         short_circuit = await self._run_before_hooks(request)
@@ -1782,8 +1796,7 @@ class App:
         route, match, path_existed = self._match_route(request)
 
         if route is not None and match is not None:
-            response = await self._invoke_route(route, match, request)
-            return await self._run_after_hooks(request, response)
+            return await self._invoke_route(route, match, request)
 
         # -- No route matched --
         if path_existed:
@@ -1853,7 +1866,7 @@ class App:
     async def _send_error_and_close(
         self,
         writer: asyncio.StreamWriter,
-        response: Response | JSONResponse,
+        response: Response | StreamingResponse,
         reader: asyncio.StreamReader | None = None,
         exc: Exception | None = None,
         state: _ReadState | None = None,
@@ -2089,6 +2102,21 @@ class App:
                 bytes_received=bytes_received,
             ),
         )
+        # A rejection is a response too: run the after-request hooks when the
+        # request line was parsed far enough to build a Request.  The body is
+        # not available here (it is what failed to read), so hooks see b"".
+        if state.method is not None and state.path is not None:
+            rejected = Request(
+                method=state.method,
+                path=state.path,
+                query_string=state.query_string,
+                headers=dict(state.headers or {}),
+                body=b"",
+                client_addr=(client_addr[0], client_addr[1]),
+                app=self,
+            )
+            response = await self._run_after_hooks(rejected, response)
+            response.headers.setdefault("X-Request-Id", request_id)
         await self._send_error_and_close(writer, response, reader, exc, state)
 
     @staticmethod

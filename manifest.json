@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-11-11T06:41:51.735287+00:00",
+  "generated": "2026-11-11T08:26:50.779054+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -371,12 +371,12 @@
         "ptyx/ptyx.py"
       ],
       "primary_file": "ptyx/ptyx.py",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "deps": [],
       "tier": "subsystem",
       "category": "terminal",
       "last_updated": "2026-11-01T14:58:22-06:00",
-      "content_hash": "edfcce92959f9f11e1eefb1b06e22c94a26cab08ccda963ff0befbf0e37da671"
+      "content_hash": "85de2f048319efd15aaf4f8905ae190400711efc5ddf1b6a57ae6ee97ba97006"
     },
     "qr": {
       "description": "QR Code generator library (Python)",

@@ -3,14 +3,23 @@
 from __future__ import annotations
 
 import asyncio
+import ctypes
 import os
 import sys
+import threading
 
 import pytest
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from ptyx import PtyProcess, PtyStartupError  # noqa: E402
+import ptyx as ptyx_module  # noqa: E402
+from ptyx import (  # noqa: E402
+    PtyProcess,
+    PtyReadError,
+    PtyStartupError,
+    _ConPtyProcess,
+    _PosixPtyProcess,
+)
 
 IS_WINDOWS = os.name == "nt"
 
@@ -200,3 +209,144 @@ async def test_split_terminal_query_is_answered_once():
     out = await _read_all(proc)
     assert b"REPLIES=1" in out
     await proc.close()
+
+
+# ── ConPTY backpressure, pipe errors, terminal queries (#311) ──
+
+
+def _conpty_stub(queue_size: int = 1) -> _ConPtyProcess:
+    """Build a ConPTY backend whose reader thread has not started."""
+    proc = _ConPtyProcess.__new__(_ConPtyProcess)
+    proc._loop = asyncio.get_running_loop()
+    proc._process = object()
+    proc._pid = 0
+    proc._console = object()
+    proc._input = object()
+    proc._output = object()
+    proc._queue = asyncio.Queue(maxsize=queue_size)
+    proc._buffer = bytearray()
+    proc._read_error = None
+    proc._eof = False
+    proc._closed = False
+    proc._returncode = None
+    return proc
+
+
+def _posix_stub(write_fd: int) -> _PosixPtyProcess:
+    proc = _PosixPtyProcess.__new__(_PosixPtyProcess)
+    proc._master_fd = write_fd
+    proc._query_tail = b""
+    return proc
+
+
+@pytest.mark.asyncio
+async def test_conpty_full_queue_does_not_drop_chunks(monkeypatch):
+    chunks = [b"chunk-%d" % index for index in range(8)]
+    state = {"index": 0}
+    proc = _conpty_stub(queue_size=1)
+
+    def fake_wait(handle, timeout):
+        if state["index"] < len(chunks):
+            return ptyx_module._WAIT_TIMEOUT
+        return ptyx_module._WAIT_OBJECT_0
+
+    def fake_peek(handle, buffer, size, read, available, overlapped):
+        if state["index"] < len(chunks):
+            available._obj.value = len(chunks[state["index"]])
+        else:
+            available._obj.value = 0
+        return 1
+
+    def fake_read(handle, buffer, size, read, overlapped):
+        data = chunks[state["index"]]
+        ctypes.memmove(buffer, data, len(data))
+        read._obj.value = len(data)
+        state["index"] += 1
+        return 1
+
+    monkeypatch.setattr(ptyx_module, "_WaitForSingleObject", fake_wait, raising=False)
+    monkeypatch.setattr(ptyx_module, "_PeekNamedPipe", fake_peek, raising=False)
+    monkeypatch.setattr(ptyx_module, "_ReadFile", fake_read, raising=False)
+
+    reader = threading.Thread(target=proc._read_loop, daemon=True)
+    reader.start()
+    # Let the reader fill the one-slot queue and try to enqueue more.  The
+    # old put_nowait handoff dropped these chunks.
+    await asyncio.sleep(0.2)
+
+    received: list[bytes] = []
+    while True:
+        item = await asyncio.wait_for(proc._queue.get(), 2.0)
+        if item == b"":
+            break
+        received.append(item)
+
+    # Join off the event loop: _emit() needs the loop to finish its handoff.
+    await asyncio.to_thread(reader.join, 2.0)
+    assert received == chunks
+    assert not reader.is_alive()
+
+
+@pytest.mark.asyncio
+async def test_conpty_peek_failure_raises_instead_of_eof(monkeypatch):
+    proc = _conpty_stub(queue_size=1)
+
+    monkeypatch.setattr(
+        ptyx_module,
+        "_WaitForSingleObject",
+        lambda handle, timeout: ptyx_module._WAIT_TIMEOUT,
+        raising=False,
+    )
+    monkeypatch.setattr(ptyx_module, "_PeekNamedPipe", lambda *args: 0, raising=False)
+    monkeypatch.setattr(ptyx_module, "_last_error", lambda: 5, raising=False)
+
+    reader = threading.Thread(target=proc._read_loop, daemon=True)
+    reader.start()
+    with pytest.raises(PtyReadError, match="PeekNamedPipe.*WinError 5"):
+        await asyncio.wait_for(proc.read(), 2.0)
+
+    # Join off the event loop so the reader can finish its queued handoff.
+    await asyncio.to_thread(reader.join, 2.0)
+    assert not reader.is_alive()
+
+
+@pytest.mark.skipif(IS_WINDOWS, reason="POSIX terminal-query handling")
+def test_cursor_position_query_gets_a_reply():
+    read_fd, write_fd = os.pipe()
+    try:
+        proc = _posix_stub(write_fd)
+        proc._answer_terminal_queries(b"before\x1b[6nafter")
+        assert os.read(read_fd, 64) == b"\x1b[1;1R"
+    finally:
+        os.close(read_fd)
+        os.close(write_fd)
+
+
+@pytest.mark.skipif(IS_WINDOWS, reason="POSIX terminal-query handling")
+def test_split_cursor_query_is_answered_once():
+    read_fd, write_fd = os.pipe()
+    try:
+        proc = _posix_stub(write_fd)
+        proc._answer_terminal_queries(b"\x1b[")
+        proc._answer_terminal_queries(b"6n")
+        proc._answer_terminal_queries(b"more")
+        assert os.read(read_fd, 64) == b"\x1b[1;1R"
+    finally:
+        os.close(read_fd)
+        os.close(write_fd)
+
+
+@pytest.mark.skipif(IS_WINDOWS, reason="POSIX terminal-query handling")
+def test_other_terminal_queries_get_no_reply():
+    read_fd, write_fd = os.pipe()
+    os.set_blocking(read_fd, False)
+    try:
+        proc = _posix_stub(write_fd)
+        # DA1, DA2 and the kitty-keyboard query must not receive a fixed
+        # reply that claims capabilities the PTY does not have.
+        proc._answer_terminal_queries(b"\x1b[?u\x1b[>c\x1b[c\x1b[0c")
+        with pytest.raises(BlockingIOError):
+            os.read(read_fd, 64)
+    finally:
+        os.close(read_fd)
+        os.close(write_fd)

@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.1.0"
+# version = "0.1.1"
 # deps = []
 # tier = "subsystem"
 # category = "terminal"
@@ -14,8 +14,10 @@ do for a person: interactive mode, prompt rendering, and terminal queries.
 The backend is selected per platform:
 
 - POSIX: ``pty.openpty`` plus ``termios``/``fcntl``; the child runs in its own
-  session so teardown can signal the whole process group.  Cursor-position and
-  device-attribute queries are answered while reading so the renderer settles.
+  session so teardown can signal the whole process group.  Cursor-position
+  queries are answered while reading so the renderer settles; other terminal
+  queries are left unanswered rather than receiving a fixed, possibly wrong
+  reply.
 - Windows: the ConPTY API (``CreatePseudoConsole``) through :mod:`ctypes`.
   The child is created with ``STARTF_USESTDHANDLES`` and NULL standard
   handles; otherwise ``CreateProcessW`` copies the host's standard handles and
@@ -71,10 +73,10 @@ import time
 from ctypes import wintypes
 from typing import Any
 
-__all__ = ["PtyProcess", "PtyStartupError"]
+__all__ = ["PtyProcess", "PtyStartupError", "PtyReadError"]
 
 _IS_WINDOWS = os.name == "nt"
-_QUERY_RE = re.compile(rb"\x1b\[(?:6n|0?c)")
+_QUERY_RE = re.compile(rb"\x1b\[6n")
 
 if not _IS_WINDOWS:  # pragma: no branch - platform-specific import
     import fcntl
@@ -84,6 +86,14 @@ if not _IS_WINDOWS:  # pragma: no branch - platform-specific import
 
 class PtyStartupError(RuntimeError):
     """Raised when a pseudo-terminal cannot be created or the child fails."""
+
+
+class PtyReadError(RuntimeError):
+    """Raised when the pseudo-terminal output cannot be read.
+
+    A pipe failure is reported instead of being folded into end-of-stream,
+    so a caller can tell a broken terminal from a child that exited.
+    """
 
 
 # ---------------------------------------------------------------------------
@@ -269,6 +279,11 @@ if _IS_WINDOWS:  # pragma: no cover - exercised on Windows only
 def _win_error(prefix: str) -> PtyStartupError:
     err = getattr(ctypes, "WinError")()  # noqa: B009 - Windows only
     return PtyStartupError(f"{prefix}: {err}")
+
+
+def _last_error() -> int:
+    """Return the calling thread's last Win32 error code."""
+    return int(getattr(ctypes, "get_last_error")())  # noqa: B009 - Windows only
 
 
 def _environment_block(env: dict[str, str]) -> Any:
@@ -561,6 +576,13 @@ class _PosixPtyProcess(PtyProcess):
         return self._proc.returncode
 
     def _answer_terminal_queries(self, chunk: bytes) -> None:
+        """Answer cursor-position queries and ignore the rest.
+
+        Only ``ESC[6n`` gets a reply.  DA1/DA2 and kitty-keyboard queries
+        are left unanswered: a fixed reply would claim capabilities the PTY
+        does not have, and a program handles a missing reply better than a
+        wrong one.
+        """
         tail_len = len(self._query_tail)
         data = self._query_tail + chunk
         # Keep only a partial query prefix for the next read; replies are
@@ -571,10 +593,7 @@ class _PosixPtyProcess(PtyProcess):
             for match in _QUERY_RE.finditer(data):
                 if match.end() <= tail_len:
                     continue
-                if match.group() == b"\x1b[6n":
-                    os.write(self._master_fd, b"\x1b[1;1R")
-                else:
-                    os.write(self._master_fd, b"\x1b[?62;c")
+                os.write(self._master_fd, b"\x1b[1;1R")
         except OSError:
             pass
 
@@ -613,6 +632,7 @@ class _ConPtyProcess(PtyProcess):
         self._output = output_handle
         self._queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=32)
         self._buffer = bytearray()
+        self._read_error: PtyReadError | None = None
         self._eof = False
         self._closed = False
         self._returncode: int | None = None
@@ -736,10 +756,14 @@ class _ConPtyProcess(PtyProcess):
             return b""
         if self._buffer:
             return self._take(size)
+        if self._read_error is not None and self._queue.empty():
+            raise self._read_error
         if self._eof:
             return b""
         item = await self._queue.get()
         if not item:
+            if self._read_error is not None:
+                raise self._read_error
             self._eof = True
             return b""
         self._buffer.extend(item)
@@ -803,12 +827,13 @@ class _ConPtyProcess(PtyProcess):
         The 10 ms idle poll is deliberate — one thread per session, and a
         handful of sessions per process is the expected scale.  Chunks go
         through a bounded queue, so a chatty child blocks instead of growing
-        the process's memory.
+        the process's memory.  A pipe failure while the child still runs is
+        recorded as a read error rather than reported as EOF.
         """
         buffer = ctypes.create_string_buffer(65536)
         exited = False
         deadline = 0.0
-        while True:
+        while not self._closed:
             if not exited and _WaitForSingleObject(self._process, 0) == _WAIT_OBJECT_0:
                 exited = True
                 deadline = time.monotonic() + _DRAIN_SECONDS
@@ -824,7 +849,9 @@ class _ConPtyProcess(PtyProcess):
                 ctypes.byref(available),
                 None,
             ):
-                break
+                if self._pipe_failed("PeekNamedPipe", exited):
+                    break
+                return
             if available.value:
                 read = wintypes.DWORD(0)
                 ok = _ReadFile(
@@ -834,12 +861,17 @@ class _ConPtyProcess(PtyProcess):
                     ctypes.byref(read),
                     None,
                 )
-                if not ok or read.value == 0:
-                    break
+                if not ok:
+                    if self._pipe_failed("ReadFile", exited):
+                        break
+                    return
+                if read.value == 0:
+                    if exited:
+                        break
+                    time.sleep(0.01)
+                    continue
                 chunk = bytes(buffer.raw[: read.value])
-                try:
-                    self._loop.call_soon_threadsafe(self._queue.put_nowait, chunk)
-                except RuntimeError:
+                if not self._emit(chunk):
                     return
                 continue
             if exited:
@@ -847,22 +879,49 @@ class _ConPtyProcess(PtyProcess):
             time.sleep(0.01)
         self._emit(b"")
 
+    def _pipe_failed(self, prefix: str, exited: bool) -> bool:
+        """Return ``True`` when a pipe failure is the normal end of stream.
+
+        A failure after the child exits, or during teardown, is EOF.
+        Otherwise the Win32 error is recorded and a blocked reader is woken
+        with the EOF sentinel, so ``read()`` raises instead of pretending
+        the child exited.
+        """
+        if exited or self._closed:
+            return True
+        if _WaitForSingleObject(self._process, 0) == _WAIT_OBJECT_0:
+            # The child exited between the loop's state check and the pipe
+            # call; this is the normal end of the stream, not a failure.
+            return True
+        self._read_error = PtyReadError(f"{prefix} failed (WinError {_last_error()})")
+        self._emit(b"")
+        return False
+
     def _emit(self, chunk: bytes) -> bool:
-        """Queue *chunk*, blocking while the bounded queue is full."""
-        while not self._closed:
-            try:
-                future = asyncio.run_coroutine_threadsafe(
-                    self._queue.put(chunk), self._loop
-                )
-            except RuntimeError:
-                return False
+        """Queue *chunk*, blocking while the bounded queue is full.
+
+        The same future is awaited until it completes, so a timeout cannot
+        enqueue the chunk twice.  ``False`` means the loop closed or the
+        terminal is closing, and the chunk was not queued.
+        """
+        if self._closed or self._loop.is_closed():
+            return False
+        coro = self._queue.put(chunk)
+        try:
+            future = asyncio.run_coroutine_threadsafe(coro, self._loop)
+        except RuntimeError:
+            coro.close()
+            return False
+        while True:
             try:
                 future.result(timeout=0.5)
                 return True
             except concurrent.futures.TimeoutError:
-                if not future.cancel() and future.done():
-                    return True
-        return False
+                if self._closed:
+                    future.cancel()
+                    return False
+            except (concurrent.futures.CancelledError, RuntimeError):
+                return False
 
     def _wait_blocking(self) -> int:
         _WaitForSingleObject(self._process, _INFINITE)

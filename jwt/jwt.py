@@ -57,6 +57,7 @@ Copyright (c) 2026 Peng Ding. MIT License.
 
 from __future__ import annotations
 
+import _thread
 import base64
 import binascii
 import hashlib
@@ -720,7 +721,12 @@ def _ecdsa_verify(
         return False
     native = _native_backend()
     if native is not None:
-        verdict = native.ecdsa_verify(curve, qx, qy, msg, sig_raw, hash_ctor)
+        try:
+            verdict = native.ecdsa_verify(curve, qx, qy, msg, sig_raw, hash_ctor)
+        except (MemoryError, OSError, RuntimeError, ValueError):
+            # The pure implementation below is the reference; a native failure
+            # must not change the verdict or escape as a non-JWTError.
+            verdict = None
         if verdict is not None:
             return verdict
     digest = hash_ctor(msg).digest()
@@ -1511,7 +1517,9 @@ _NATIVE_UNSET = object()
 
 #: ``_NATIVE_UNSET`` until a load is attempted; ``None`` when unavailable.
 _native: Any = _NATIVE_UNSET
-_native_lock: Any = None
+#: Guards the one-time load.  Created eagerly: lazy creation races, and two
+#: racers can disagree about whether the accelerator loaded.
+_native_lock = _thread.allocate_lock()
 _load_error: str | None = None
 
 
@@ -1573,13 +1581,9 @@ def _try_load_libcrypto() -> _LibCrypto | None:
 
 def _native_backend() -> _LibCrypto | None:
     """Return the loaded backend, loading it once, or ``None``."""
-    global _native, _native_lock
+    global _native
     if _native is not _NATIVE_UNSET:
         return _native
-    if _native_lock is None:
-        import threading
-
-        _native_lock = threading.Lock()
     with _native_lock:
         if _native is not _NATIVE_UNSET:
             return _native
@@ -1687,12 +1691,13 @@ class _LibCrypto:
     def modexp(self, base: int, exponent: int, modulus: int) -> int:
         """Return ``base ** exponent % modulus`` through ``BN_mod_exp``."""
         ctypes = self._c
-        bn_base = self._int_to_bn(base)
-        bn_exponent = self._int_to_bn(exponent)
-        bn_modulus = self._int_to_bn(modulus)
-        result = self._BN_new()
-        context = self._BN_CTX_new()
+        bn_base = bn_exponent = bn_modulus = result = context = None
         try:
+            bn_base = self._int_to_bn(base)
+            bn_exponent = self._int_to_bn(exponent)
+            bn_modulus = self._int_to_bn(modulus)
+            result = self._BN_new()
+            context = self._BN_CTX_new()
             if not result or not context:
                 raise MemoryError("libcrypto could not allocate a BIGNUM context")
             if self._BN_mod_exp(result, bn_base, bn_exponent, bn_modulus, context) != 1:
@@ -1746,19 +1751,27 @@ class _LibCrypto:
             signature = self._ECDSA_SIG_new()
             if not signature:
                 return None
-            bn_r = self._int_to_bn(int.from_bytes(sig_raw[:size], "big"))
-            bn_s = self._int_to_bn(int.from_bytes(sig_raw[size:], "big"))
-            if self._ECDSA_SIG_set0(signature, bn_r, bn_s) != 1:
-                self._BN_free(bn_r)
-                self._BN_free(bn_s)
-                return None
-            # ECDSA_SIG_set0 took ownership of both BIGNUMs.
-            digest = hash_ctor(msg).digest()
-            digest_buffer = ctypes.create_string_buffer(digest, len(digest))
-            verdict = self._ECDSA_do_verify(digest_buffer, len(digest), signature, key)
-            if verdict < 0:
-                return None
-            return verdict == 1
+            bn_r = bn_s = None
+            try:
+                bn_r = self._int_to_bn(int.from_bytes(sig_raw[:size], "big"))
+                bn_s = self._int_to_bn(int.from_bytes(sig_raw[size:], "big"))
+                if self._ECDSA_SIG_set0(signature, bn_r, bn_s) != 1:
+                    return None
+                # ECDSA_SIG_set0 took ownership of both BIGNUMs.
+                bn_r = bn_s = None
+                digest = hash_ctor(msg).digest()
+                digest_buffer = ctypes.create_string_buffer(digest, len(digest))
+                verdict = self._ECDSA_do_verify(
+                    digest_buffer, len(digest), signature, key
+                )
+                if verdict < 0:
+                    return None
+                return verdict == 1
+            finally:
+                if bn_r:
+                    self._BN_free(bn_r)
+                if bn_s:
+                    self._BN_free(bn_s)
         finally:
             if signature:
                 self._ECDSA_SIG_free(signature)

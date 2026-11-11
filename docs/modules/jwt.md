@@ -63,7 +63,7 @@ from jwt import decode, encode, get_unverified_header, key_from_jwk
 
 带有 `crit` 头（列出任何扩展）的令牌会抛出 `UnsupportedCriticalHeaderError`：RFC 7515 第 4.1.11 节有此要求，而本模块未实现任何扩展。
 
-解析发生在认证之前，因此格式错误或恶意的令牌只会产生 `JWTError`：深层嵌套的 JSON 抛出 `DecodeError` 而不是 `RecursionError`，宽于 P-256 域的 DER 整数按无效签名处理（返回 `False`），而不是抛出 `OverflowError`。
+解析发生在认证之前，因此格式错误或恶意的令牌只会产生 `JWTError`：头部或载荷的嵌套深度超过 `MAX_JSON_DEPTH`（100）时抛出 `DecodeError`，JSON 解析器抛出的 `RecursionError` 会转换为 `DecodeError`，宽于 P-256 域的 DER 整数按无效签名处理（返回 `False`），而不是抛出 `OverflowError`。
 
 ## API 参考
 

@@ -602,6 +602,33 @@ class TestMiddleware:
         asyncio.run(_test())
         assert seen == ["/missing", "/ok"]
 
+    def test_after_request_runs_for_static_files(self, tmp_path):
+        """Static responses pass through the after-request hooks too."""
+        (tmp_path / "hello.txt").write_text("hi", encoding="utf-8")
+        app = App()
+        app.static("/assets", str(tmp_path))
+
+        @app.after_request
+        async def mark(request, response):
+            response.headers["X-Marker"] = "1"
+            return response
+
+        async def _test():
+            req = Request(
+                "GET",
+                "/assets/hello.txt",
+                "",
+                {},
+                b"",
+                ("127.0.0.1", 0),
+                app=app,
+            )
+            resp = await app._dispatch(req)
+            assert resp.status_code == 200
+            assert resp.headers["X-Marker"] == "1"
+
+        asyncio.run(_test())
+
     def test_after_request_runs_for_before_request_shortcircuit(self):
         """A before-hook response also passes through the after-hooks."""
         app = App()

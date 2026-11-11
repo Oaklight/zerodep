@@ -910,6 +910,7 @@ class RejectedRequest:
             generated id.
         method: Request method, once the request line was parsed.
         path: Decoded request path, once the request line was parsed.
+        query_string: Raw query string, once the request line was parsed.
         headers: Read-only view of the lower-cased request headers parsed
             so far, or ``None``
             when the request line itself was not usable.
@@ -924,6 +925,7 @@ class RejectedRequest:
     request_id: str
     method: str | None = None
     path: str | None = None
+    query_string: str = ""
     headers: Mapping[str, str] | None = None
     content_length: int | None = None
     bytes_received: int = 0
@@ -1349,6 +1351,10 @@ class App:
           → on_response_started → write → on_response_completed
                                     ↘ on_client_disconnect
 
+    ``after_request`` runs for every response the server sends, including
+    404/405, static files, ``before_request`` short-circuits and read
+    rejections whose request line was parsed (those carry an empty body).
+
     Args:
         max_body_size: Maximum request body size in bytes.
         read_timeout: Timeout for reading a single request (seconds).
@@ -1511,7 +1517,11 @@ class App:
         """Register an after-request hook.
 
         The hook receives ``(request, response)`` and may return a new
-        or modified ``Response``.
+        or modified ``Response``.  It runs once for every response the
+        server sends, not only for a routed handler: 404/405, static files,
+        ``before_request`` short-circuits, and read rejections whose request
+        line was parsed also pass through it.  A rejection's ``request`` has
+        an empty body because the body is what failed to read.
         """
         self._after_request_handlers.append(handler)
         return handler
@@ -1642,9 +1652,9 @@ class App:
     def on_request_rejected(self, handler: Callable[..., Any]) -> Callable[..., Any]:
         """Register a request-rejected signal.
 
-        Fired when a request is refused while it is being read, before a
-        :class:`Request` exists, so none of the other lifecycle hooks see
-        it: malformed request line, ``Content-Length`` or chunk size (``400``), a body over
+        Fired when a request is refused while it is being read, before
+        dispatch reaches the other lifecycle hooks: malformed request line,
+        ``Content-Length`` or chunk size (``400``), a body over
         ``max_body_size`` (``413``), a read timeout (``408``), a body
         shorter than ``Content-Length`` (``400``) and any other read error
         (``500``).  A keep-alive connection that goes idle or closes
@@ -1882,8 +1892,8 @@ class App:
         already disconnected.
         """
         try:
-            await response._write(writer)
-        except (BrokenPipeError, ConnectionResetError):
+            await response._write(writer, reader)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             writer.close()
             return
         if reader is not None and exc is not None:
@@ -2093,6 +2103,7 @@ class App:
                 request_id=request_id,
                 method=state.method,
                 path=state.path,
+                query_string=state.query_string,
                 headers=(
                     None
                     if state.headers is None
@@ -2116,7 +2127,9 @@ class App:
                 app=self,
             )
             response = await self._run_after_hooks(rejected, response)
-            response.headers.setdefault("X-Request-Id", request_id)
+            # A hook may return a new response under any casing.
+            if not any(key.lower() == "x-request-id" for key in response.headers):
+                response.headers["X-Request-Id"] = request_id
         await self._send_error_and_close(writer, response, reader, exc, state)
 
     @staticmethod

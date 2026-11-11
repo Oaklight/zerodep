@@ -271,6 +271,9 @@ def test_the_suggested_remedy_clears_the_warning(tmp_path: Path):
     assert "Reinstall the set nested" in r.stderr
     assert "zerodep remove httpclient sse" in r.stderr
     assert "zerodep add sse --nested" in r.stderr
+    assert "add --force to the remove command" in r.stderr
+    # The remedy is advice, not a second warning line.
+    assert "warning: Reinstall" not in r.stderr
 
     r = run_cli("remove", "sse", "httpclient", "-d", str(vendor), "-y")
     assert r.returncode == 0, r.stderr

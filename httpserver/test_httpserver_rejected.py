@@ -478,6 +478,66 @@ class _ScriptedReader:
         return item
 
 
+class TestAfterHooks:
+    """A rejected read is still a response and passes through after-hooks."""
+
+    @staticmethod
+    def _app(**kwargs) -> tuple[App, list[tuple[str, str]]]:
+        app = App(**kwargs)
+        seen: list[tuple[str, str]] = []
+
+        @app.after_request
+        async def mark(request, response):
+            seen.append((request.path, request.query_string))
+            response.headers["X-Marker"] = "1"
+            return response
+
+        @app.post("/echo")
+        async def echo(request):
+            return {"len": len(request.body)}
+
+        return app, seen
+
+    def test_over_limit_body_gets_the_hook_headers(self):
+        app, seen = self._app(max_body_size=10)
+        with _live(app):
+            response = _exchange(
+                app,
+                b"POST /echo?x=1 HTTP/1.1\r\nHost: x\r\nContent-Length: 100\r\n\r\n",
+            )
+        assert b" 413 " in response.split(b"\r\n", 1)[0]
+        assert _header(response, "X-Marker") == "1"
+        # The parsed request line is available to the hook.
+        assert seen == [("/echo", "x=1")]
+
+    def test_malformed_request_line_skips_the_hooks(self):
+        app, seen = self._app()
+        with _live(app):
+            response = _exchange(app, b"GARBAGE\r\n\r\n")
+        assert b" 400 " in response.split(b"\r\n", 1)[0]
+        assert _header(response, "X-Marker") is None
+        assert seen == []
+
+    def test_hook_can_replace_the_rejection_response(self):
+        app = App(max_body_size=10)
+
+        @app.after_request
+        async def replace(request, response):
+            return server_module.JSONResponse({"custom": "rejected"}, status_code=422)
+
+        @app.post("/echo")
+        async def echo(request):
+            return {"len": len(request.body)}
+
+        with _live(app):
+            response = _exchange(
+                app,
+                b"POST /echo HTTP/1.1\r\nHost: x\r\nContent-Length: 100\r\n\r\n",
+            )
+        assert b" 422 " in response.split(b"\r\n", 1)[0]
+        assert _header(response, "X-Request-Id") is not None
+
+
 class TestDrainReadErrors:
     """An over-long chunk line ends the drain, not the connection task.
 

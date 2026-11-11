@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.11.11] - 2026-11-11
+
 ### Features
 
 - **jwt**: optional native backend. RSA/PS modular exponentiation and ECDSA verification call the system `libcrypto` through `ctypes` when the library loads and exports the needed symbols, the same strategy `aes` uses; otherwise the pure-Python path runs unchanged and produces identical verdicts. The module still installs no Python package, and only public key material crosses the ctypes boundary — HMAC secrets never do. `BACKEND` reports `"openssl"` or `"python"` and is resolved on first access, so an HMAC-only process pays no library-load cost; `ZERODEP_JWT_BACKEND=python` forces the fallback. Measured on the benchmark workload: RS256 164 -> 58 us, PS256 187 -> 77 us, ES256 1,717 -> 102 us; HMAC is unchanged. `jwt` goes to 0.2.0. ([#316](https://github.com/Oaklight/zerodep/issues/316))

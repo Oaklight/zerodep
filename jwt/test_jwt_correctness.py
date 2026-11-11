@@ -8,8 +8,11 @@ so a shadowed import fails loudly instead of comparing our module with itself.
 """
 
 import base64
+import hashlib
+import hmac
 import json
 import os
+import subprocess
 import sys
 import time
 
@@ -52,7 +55,10 @@ finally:
     sys.modules.update(_cached_jwt)
 
 crypto = pytest.importorskip("cryptography", reason="PyJWT[crypto] not installed")
-from cryptography.hazmat.primitives import hashes  # noqa: E402
+from cryptography.hazmat.primitives import (
+    hashes,  # noqa: E402
+    serialization,  # noqa: E402
+)
 from cryptography.hazmat.primitives.asymmetric import (  # noqa: E402
     ec,
     padding,
@@ -73,8 +79,10 @@ from jwt import (  # noqa: E402
     InvalidIssuerError,
     InvalidKeyError,
     InvalidSignatureError,
+    JWKKey,
     JWTError,
     MissingRequiredClaimError,
+    UnsupportedCriticalHeaderError,
     b64url_decode,
     b64url_encode,
     decode,
@@ -129,6 +137,19 @@ def _rsa_token(alg: str, claims: dict | None = None) -> str:
 def _ec_token(alg: str, claims: dict | None = None) -> str:
     key = _EC_P256 if alg == "ES256" else _EC_P384
     return _pyjwt.encode(claims or {"sub": "alice"}, key, algorithm=alg)
+
+
+def _forge_hs256(secret: bytes) -> str:
+    """Build an HS256 token by hand, as an attacker holding a public key would.
+
+    Neither library will sign with an asymmetric key, so the attack token is
+    assembled from stdlib primitives: that is exactly what an attacker has.
+    """
+    header = b64url_encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
+    payload = b64url_encode(json.dumps({"sub": "attacker"}).encode())
+    signing_input = f"{header}.{payload}".encode()
+    signature = hmac.new(secret, signing_input, hashlib.sha256).digest()
+    return f"{header}.{payload}.{b64url_encode(signature)}"
 
 
 def _ec_jwk_for(alg: str) -> dict:
@@ -370,6 +391,34 @@ class TestVerifyHmac:
         with pytest.raises(InvalidSignatureError):
             decode(token, b"other-secret", algorithms=["HS256"])
 
+    def test_pem_public_key_rejected_as_secret(self):
+        """A PEM public key is public data and must not sign or verify HS*."""
+        pem = _RSA_KEY.public_key().public_bytes(
+            serialization.Encoding.PEM,
+            serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        with pytest.raises(InvalidKeyError):
+            encode({"sub": "attacker"}, pem, algorithm="HS256")
+        forged = _forge_hs256(pem)
+        with pytest.raises(InvalidKeyError):
+            decode(forged, pem, algorithms=["HS256"])
+
+    @pytest.mark.parametrize("open_ssh", [True, False], ids=["ssh-rsa", "ecdsa"])
+    def test_openssh_public_key_rejected_as_secret(self, open_ssh):
+        key = _RSA_KEY if open_ssh else _EC_P256
+        openssh = key.public_key().public_bytes(
+            serialization.Encoding.OpenSSH, serialization.PublicFormat.OpenSSH
+        )
+        with pytest.raises(InvalidKeyError):
+            encode({"sub": "attacker"}, openssh, algorithm="HS256")
+        with pytest.raises(InvalidKeyError):
+            decode(_forge_hs256(openssh), openssh, algorithms=["HS256"])
+
+    def test_str_secret_with_leading_space_still_works(self):
+        """The prefix guard only rejects key material, not an odd secret."""
+        token = encode({"sub": "a"}, b"  padded secret", algorithm="HS256")
+        assert decode(token, b"  padded secret", algorithms=["HS256"])["sub"] == "a"
+
     def test_extra_headers(self):
         token = encode({"sub": "a"}, _HS_SECRET, headers={"kid": "key-1"})
         assert get_unverified_header(token)["kid"] == "key-1"
@@ -461,6 +510,61 @@ class TestAlgorithms:
         token = _rsa_token("RS256")
         assert decode(token, jwk, algorithms=["RS256"])["sub"] == "alice"
 
+    def test_crit_extension_rejected(self):
+        """RFC 7515 4.1.11: an unimplemented critical extension invalidates."""
+        token = encode({"sub": "a"}, _HS_SECRET, headers={"crit": ["exp"]})
+        with pytest.raises(UnsupportedCriticalHeaderError):
+            decode(token, _HS_SECRET, algorithms=["HS256"])
+
+    @pytest.mark.parametrize(
+        "crit", [[], "exp", [1]], ids=["empty", "string", "non-string-entry"]
+    )
+    def test_malformed_crit_rejected(self, crit):
+        token = encode({"sub": "a"}, _HS_SECRET, headers={"crit": crit})
+        with pytest.raises(DecodeError):
+            decode(token, _HS_SECRET, algorithms=["HS256"])
+
+    def test_absent_crit_is_fine(self):
+        token = encode({"sub": "a"}, _HS_SECRET)
+        assert decode(token, _HS_SECRET, algorithms=["HS256"])["sub"] == "a"
+
+    @pytest.mark.parametrize(
+        ("alg", "key"),
+        [
+            ("HS256", lambda: JWKKey(kty="oct")),
+            ("RS256", lambda: JWKKey(kty="RSA")),
+            ("ES256", lambda: JWKKey(kty="EC")),
+        ],
+    )
+    def test_incomplete_jwkkey_raises_key_error(self, alg, key):
+        """A hand-built JWKKey with missing members is a key error, not an assert."""
+        signer = _HS_SECRET if alg == "HS256" else None
+        if alg == "RS256":
+            token = _rsa_token(alg)
+        elif alg == "ES256":
+            token = _ec_token(alg)
+        else:
+            token = _pyjwt.encode({"sub": "a"}, signer, algorithm=alg)
+        with pytest.raises(InvalidKeyError):
+            decode(token, key(), algorithms=[alg])
+
+    def test_incomplete_jwkkey_under_python_optimized(self):
+        """The same error must survive ``python -O``, where asserts vanish."""
+        code = (
+            "import sys; sys.path.insert(0, {path!r})\n"
+            "import jwt\n"
+            "token = jwt.encode({{'sub': 'a'}}, b'secret')\n"
+            "try:\n"
+            "    jwt.decode(token, jwt.JWKKey(kty='oct'), algorithms=['HS256'])\n"
+            "except jwt.InvalidKeyError:\n"
+            "    raise SystemExit(0)\n"
+            "raise SystemExit(1)\n"
+        ).format(path=_this_dir)
+        result = subprocess.run(
+            [sys.executable, "-O", "-c", code], capture_output=True, text=True
+        )
+        assert result.returncode == 0, result.stderr
+
     def test_supported_algorithms_constant(self):
         from jwt import SUPPORTED_ALGORITHMS
 
@@ -524,8 +628,41 @@ class TestJwk:
             key_from_jwk(jwk)
 
     def test_invalid_base64_in_field(self):
-        with pytest.raises(DecodeError):
+        with pytest.raises(InvalidKeyError):
             key_from_jwk({"kty": "RSA", "n": "!!!", "e": "AQAB"})
+
+    @pytest.mark.parametrize(
+        "jwk",
+        [
+            {"kty": "RSA", "n": 5, "e": "AQAB"},
+            {"kty": "RSA", "n": "AQAB", "e": None},
+            {"kty": "EC", "crv": "P-256", "x": 1, "y": "AQ"},
+            {"kty": "oct", "k": 7},
+        ],
+        ids=["int-n", "null-e", "int-x", "int-k"],
+    )
+    def test_non_string_field_is_a_key_error(self, jwk):
+        """A non-string member is a key error, not a bare TypeError."""
+        with pytest.raises(InvalidKeyError):
+            key_from_jwk(jwk)
+
+    def test_short_rsa_modulus_refused_at_key_load(self):
+        """The 2048-bit floor is enforced by key_from_jwk, not only by decode."""
+        weak = rsa.generate_private_key(public_exponent=65537, key_size=1024)
+        with pytest.raises(InvalidKeyError, match=r"1024 bits"):
+            key_from_jwk(_rsa_jwk(weak.public_key()))
+
+    def test_hand_built_rsa_jwkkey_below_floor_refused(self):
+        """A JWKKey built by hand bypasses key_from_jwk; decode still refuses."""
+        weak = rsa.generate_private_key(public_exponent=65537, key_size=1024)
+        numbers = weak.public_key().public_numbers()
+        token = _pyjwt.encode({"sub": "a"}, weak, algorithm="RS256")
+        hand = JWKKey(kty="RSA", n=numbers.n, e=numbers.e)
+        with pytest.raises(InvalidKeyError, match=r"1024 bits"):
+            decode(token, hand, algorithms=["RS256"])
+
+
+# ── Claims ──
 
 
 # ── Claims ──
@@ -673,6 +810,53 @@ class TestClaims:
         with pytest.raises(MissingRequiredClaimError):
             decode(token, _HS_SECRET, algorithms=["HS256"], require=["sub"])
 
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (float("nan"), "finite"),
+            (float("inf"), "finite"),
+            (float("-inf"), "finite"),
+            (float("1e400"), "finite"),
+            (10**400, "out of range"),
+        ],
+        ids=["nan", "inf", "neg-inf", "1e400", "huge-int"],
+    )
+    def test_non_finite_time_claim_rejected(self, value, expected):
+        """``exp: NaN`` must not pass, and a huge int must not escape as
+
+        OverflowError.  Both would otherwise leave a token that never expires.
+        """
+        token = self._token({"exp": value})
+        with pytest.raises(DecodeError, match=expected):
+            decode(token, _HS_SECRET, algorithms=["HS256"])
+
+    @pytest.mark.parametrize("claim", ["nbf", "iat"])
+    def test_non_finite_other_time_claims_rejected(self, claim):
+        token = self._token({claim: float("nan")})
+        with pytest.raises(DecodeError):
+            decode(token, _HS_SECRET, algorithms=["HS256"])
+
+    def test_empty_audience_claim_is_missing(self):
+        """``aud: ""`` is absent, matching PyJWT."""
+        token = self._token({"aud": ""})
+        with pytest.raises(MissingRequiredClaimError):
+            decode(token, _HS_SECRET, algorithms=["HS256"], audience="api://mine")
+        pyjwt_token = _pyjwt.encode({"aud": ""}, _HS_SECRET, algorithm="HS256")
+        with pytest.raises(_pyjwt.exceptions.MissingRequiredClaimError):
+            _pyjwt.decode(
+                pyjwt_token, _HS_SECRET, algorithms=["HS256"], audience="api://mine"
+            )
+
+    def test_require_not_iterable(self):
+        token = self._token({"sub": "a"})
+        with pytest.raises(TypeError, match="require"):
+            decode(token, _HS_SECRET, algorithms=["HS256"], require=5)
+
+    def test_require_non_string_entry(self):
+        token = self._token({"sub": "a"})
+        with pytest.raises(TypeError, match="claim names"):
+            decode(token, _HS_SECRET, algorithms=["HS256"], require=[5])
+
     def test_now_override(self):
         token = self._token({"exp": 5000})
         assert decode(token, _HS_SECRET, algorithms=["HS256"], now=4000)["exp"]
@@ -683,6 +867,19 @@ class TestClaims:
         token = self._token({"sub": "a"})
         with pytest.raises(ValueError):
             decode(token, _HS_SECRET, algorithms=["HS256"], leeway=-1)
+
+    def test_negative_timedelta_leeway_rejected(self):
+        """The timedelta path applies the same negative check as the float one."""
+        from datetime import timedelta
+
+        token = self._token({"sub": "a"})
+        with pytest.raises(ValueError):
+            decode(
+                token,
+                _HS_SECRET,
+                algorithms=["HS256"],
+                leeway=timedelta(seconds=-5),
+            )
 
     def test_bad_leeway_type(self):
         token = self._token({"sub": "a"})
@@ -813,6 +1010,72 @@ class TestEcdsaP256Verify:
     def test_malformed_der_is_invalid(self, der):
         assert not ecdsa_p256_verify(_EC_P256_JWK, b"msg", der, der=True)
 
+    def test_wide_der_integer_is_invalid_not_an_error(self):
+        """A DER integer at or above the field is an invalid signature.
+
+        V1-V3 have a value of or above 2**256 -- the encoding is legal DER, the
+        value cannot fit the field, and the call must return False rather than
+        raise.  V4 sits one below the bound and must also stay False.  V5 is a
+        genuine signature whose r and s both have the top bit set, encoded with
+        a leading zero: it is valid and must stay True, so a bound that rejects
+        a 33-byte integer rather than a wide value fails here.
+        """
+        jwk = {
+            "kty": "EC",
+            "crv": "P-256",
+            "x": "Rxw-dYxJBChbun5TEY7Q9SSt6wdX0lvS-Oew1236cUw",
+            "y": "3VIPesqKi5F6zDf1HejwybvjrYWDgucC3CWhLQn3qFg",
+        }
+        msg = b"top-bit-probe-0"
+        v1 = bytes.fromhex("3026022101") + b"\x00" * 32 + bytes.fromhex("020101")
+        v2 = bytes.fromhex("3026020101") + bytes.fromhex("022101") + b"\x00" * 32
+        v3 = bytes.fromhex("30760271") + b"\x10" + b"\x00" * 112
+        v3 += bytes.fromhex("020101")
+        v4 = bytes.fromhex("3026022100") + b"\xff" * 32 + bytes.fromhex("020101")
+        v5 = bytes.fromhex(
+            "3046022100a55cf842158d258610f4abcf3e8e8735036ca02bd53df288"
+            "4949126aebbf0a8502210082676849650e19aff49422ce105b44a9951174"
+            "7e4df101d9115d06653baeae8b"
+        )
+
+        assert not ecdsa_p256_verify(jwk, msg, v1, der=True)
+        assert not ecdsa_p256_verify(jwk, msg, v2, der=True)
+        assert not ecdsa_p256_verify(jwk, msg, v3, der=True)
+        assert not ecdsa_p256_verify(jwk, msg, v4, der=True)
+        assert ecdsa_p256_verify(jwk, msg, v5, der=True)
+
+
+# ── Hostile input ──
+
+
+class TestHostileInput:
+    """Unauthenticated parsing must never raise anything but JWTError."""
+
+    @staticmethod
+    def _token(header: bytes, payload: bytes) -> str:
+        return f"{b64url_encode(header)}.{b64url_encode(payload)}."
+
+    def test_deeply_nested_payload_is_a_decode_error(self):
+        nested = b"[" * 2000 + b"]" * 2000
+        token = self._token(b'{"alg":"HS256"}', nested)
+        with pytest.raises(DecodeError):
+            get_unverified_header(token)
+        with pytest.raises(DecodeError):
+            decode(token, _HS_SECRET, algorithms=["HS256"])
+
+    def test_deeply_nested_header_is_a_decode_error(self):
+        nested = b"[" * 2000 + b"]" * 2000
+        header = b'{"alg":"HS256","x":' + nested + b"}"
+        token = self._token(header, b'{"sub":"a"}')
+        with pytest.raises(DecodeError):
+            get_unverified_header(token)
+
+    def test_deeply_nested_claims_are_a_decode_error(self):
+        payload = b'{"sub":"a","x":' + b"[" * 2000 + b"]" * 2000 + b"}"
+        token = self._token(b'{"alg":"HS256"}', payload)
+        with pytest.raises(DecodeError):
+            get_unverified_claims(token)
+
 
 # ── Error hierarchy ──
 
@@ -826,6 +1089,7 @@ class TestErrors:
             DecodeError,
             InvalidSignatureError,
             InvalidAlgorithmError,
+            UnsupportedCriticalHeaderError,
             InvalidKeyError,
             ExpiredSignatureError,
             ImmatureSignatureError,

@@ -451,6 +451,9 @@ async def test_conpty_emit_submits_once_across_timeouts(monkeypatch):
         def cancel(self):
             pass
 
+        def done(self):
+            return False
+
     future = _Future()
 
     def fake_submit(coro, loop):
@@ -477,11 +480,20 @@ async def test_conpty_emit_stops_when_the_loop_closes_during_the_wait(monkeypatc
     proc._loop = _Loop()
 
     class _Future:
+        waits = 0
+
         def result(self, timeout=None):
-            raise concurrent.futures.TimeoutError
+            self.waits += 1
+            if self.waits <= 2:
+                raise concurrent.futures.TimeoutError
+            # Fail fast on a build without the loop check instead of hanging.
+            raise RuntimeError("loop closed without timeout")
 
         def cancel(self):
             loop_state["cancelled"] = True
+
+        def done(self):
+            return False
 
     def fake_submit(coro, loop):
         coro.close()

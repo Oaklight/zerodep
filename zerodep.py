@@ -1463,7 +1463,8 @@ def _warn_flat_shadows(
             remedy = (
                 f"  Reinstall the set nested: 'zerodep remove "
                 f"{' '.join(remove)} -d {quoted}', then 'zerodep add "
-                f"{add} --nested -d {quoted}'."
+                f"{add} --nested -d {quoted}' (add --force to the remove "
+                f"command if a file has local edits)."
             )
         else:
             remedy = (

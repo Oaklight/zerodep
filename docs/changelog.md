@@ -12,7 +12,7 @@
 
 ### 开发体验
 
-- **cli**：当平铺复制可能遮蔽一个可导入的顶层模块时，`zerodep add` 现在会在 stderr 给出告警。写任何文件之前，它对每个直接落在目标目录里的文件（包括依赖）按文件名主干调用 `importlib.util.find_spec()`；若解析到另一个模块或包，就给出既有来源路径与补救方式——`zerodep add <module> --nested -d <target>`、重命名复制出的文件并用该名字导入，或者对于已被记录为平铺布局的模块（锁文件会保持该布局）先移除再以嵌套方式重装。只存在于 CLI 自身检出目录中的命名空间包会被忽略，因此 `python zerodep.py add …` 与可编辑安装不会对源码树告警。`zerodep update` 在重写已记录文件之前也运行同一检查。告警只是提醒：它从不阻止复制，且在 `-y` 与 `--dry-run` 下同样输出，因此非交互安装也能看到。若主干不可导入，或解析结果正是将要写入的文件，则不告警；`--nested` 布局写入子目录，因此也不告警。这是 `jwt` docstring 告警在 CLI 一侧的对应实现：`zerodep add jwt` 会写出 `./jwt.py`，一旦该目录进入 `sys.path`，对真实 PyJWT 的 `import jwt.exceptions` 就会失败。([#314](https://github.com/Oaklight/zerodep/issues/314))
+- **cli**：当平铺复制可能遮蔽一个可导入的顶层模块时，`zerodep add` 现在会在 stderr 给出告警。写任何文件之前，它对每个直接落在目标目录里的文件（包括依赖）按文件名主干调用 `importlib.util.find_spec()`；若解析到另一个模块或包，就给出既有来源路径与补救方式——`zerodep add <module> --nested -d <target>`、重命名复制出的文件并用该名字导入，或者对于已被记录为平铺布局的模块（锁文件会保持该布局）先移除再以嵌套方式重装；若被记录为平铺的是依赖，则补救命令指向用户请求的模块，使整组一起迁移。只存在于 CLI 自身检出目录中的命名空间包会被忽略，因此 `python zerodep.py add …` 与可编辑安装不会对源码树告警。`zerodep update` 在重写已记录文件之前也运行同一检查。告警只是提醒：它从不阻止复制，且在 `-y` 与 `--dry-run` 下同样输出，因此非交互安装也能看到。若主干不可导入，或解析结果正是将要写入的文件，则不告警；`--nested` 布局写入子目录，因此也不告警。这是 `jwt` docstring 告警在 CLI 一侧的对应实现：`zerodep add jwt` 会写出 `./jwt.py`，一旦该目录进入 `sys.path`，对真实 PyJWT 的 `import jwt.exceptions` 就会失败。([#314](https://github.com/Oaklight/zerodep/issues/314))
 
 ## [2026.11.11] - 2026-11-11
 

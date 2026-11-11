@@ -63,7 +63,7 @@ RSA moduli below 2048 bits are refused by `key_from_jwk()`, so a rejected key ne
 
 A `crit` header naming any extension is rejected with `UnsupportedCriticalHeaderError`: RFC 7515 section 4.1.11 requires that, and this module implements no extensions.
 
-Parsing is unauthenticated, so a malformed or hostile token produces only `JWTError`: deeply nested JSON raises `DecodeError` rather than `RecursionError`, and a DER integer wider than the P-256 field is an invalid signature (`False`), not an `OverflowError`.
+Parsing is unauthenticated, so a malformed or hostile token produces only `JWTError`: a header or payload nested deeper than `MAX_JSON_DEPTH` (100) is rejected with `DecodeError`, a `RecursionError` from the JSON parser is converted to `DecodeError`, and a DER integer wider than the P-256 field is an invalid signature (`False`), not an `OverflowError`.
 
 ## API Reference
 

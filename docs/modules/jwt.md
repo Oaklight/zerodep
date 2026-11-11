@@ -57,8 +57,13 @@ from jwt import decode, encode, get_unverified_header, key_from_jwk
 - **算法白名单是必填项。** `decode()` 的 `algorithms` 没有默认值，省略会抛出 `TypeError`。令牌无法自行决定校验算法。
 - **永不接受 `alg: "none"`**，即使它出现在白名单中；判断不区分大小写。
 - **密钥类型必须与算法匹配。** `RS256` 令牌配 `bytes` 密钥会抛出 `InvalidKeyError`，`HS256` 令牌配 RSA JWK 同样如此。这封堵了把公钥当作 HMAC 密钥重放的 RS/HS 混淆攻击。
+- **PEM 与 OpenSSH 密钥不能作为 HMAC 密钥。** 在裸 `bytes`/`str` 路径上，以 `-----BEGIN `、`ssh-rsa `、`ssh-ed25519 `、`ecdsa-sha2-` 开头的内容会抛出 `InvalidKeyError`，因此 `algorithms=["RS256", "HS256"]` 的混合部署无法被"用 RSA 公钥签名的 HS256 令牌"骗过。PyJWT 采用同样的防护。
 
-小于 2048 位的 RSA 模数会被拒绝；使用前会校验 EC 点是否满足曲线方程。
+小于 2048 位的 RSA 模数由 `key_from_jwk()` 拒绝，因此被拒绝的密钥不会进入 `decode()`；对手工构造的 `JWKKey`，`decode()` 会重复该检查。使用前还会校验 EC 点是否满足曲线方程。
+
+带有 `crit` 头（列出任何扩展）的令牌会抛出 `UnsupportedCriticalHeaderError`：RFC 7515 第 4.1.11 节有此要求，而本模块未实现任何扩展。
+
+解析发生在认证之前，因此格式错误或恶意的令牌只会产生 `JWTError`：深层嵌套的 JSON 抛出 `DecodeError` 而不是 `RecursionError`，宽于 P-256 域的 DER 整数按无效签名处理（返回 `False`），而不是抛出 `OverflowError`。
 
 ## API 参考
 
@@ -178,10 +183,10 @@ ok = ecdsa_p256_verify((x, y), auth_data + sha256(client_data_json), der_signatu
 | `nbf` | `nbf > now + leeway` 时抛出 `ImmatureSignatureError` | 开启 |
 | `iat` | `iat > now + leeway` 时抛出 `ImmatureSignatureError` | 开启 |
 | `iss` | 传入 `issuer` 时必须匹配 | 未传 `issuer` 时关闭 |
-| `aud` | 传入 `audience` 时必须匹配；列表声明命中任一即可 | 未传 `audience` 时关闭 |
+| `aud` | 传入 `audience` 时必须匹配；列表声明命中任一即可；空声明视为缺失 | 未传 `audience` 时关闭 |
 | `require` | 每个指定声明必须存在且不为 null | 关闭 |
 
-`exp`、`nbf`、`iat` 不是数值时抛出 `DecodeError`。
+`exp`、`nbf`、`iat` 不是数值、不是有限数（`NaN`、`Infinity`）或超出范围时抛出 `DecodeError`，因此 `exp: NaN` 无法产生永不过期的令牌。
 
 ## 异常
 
@@ -190,7 +195,8 @@ ok = ecdsa_p256_verify((x, y), auth_data + sha256(client_data_json), der_signatu
 ```
 JWTError
 ├── DecodeError            (同时是 ValueError)
-│   └── InvalidAlgorithmError
+│   ├── InvalidAlgorithmError
+│   └── UnsupportedCriticalHeaderError
 ├── InvalidSignatureError
 ├── InvalidKeyError        (同时是 ValueError)
 ├── ExpiredSignatureError
@@ -205,6 +211,7 @@ JWTError
 - RS / ES / PS 签名（Python 中的私钥大数运算会泄漏密钥）
 - JWE、X.509 证书、加密 PEM
 - 分离载荷（`b64: false`），compact 解析器会拒绝此类令牌
+- `crit` 中列出的任何 JWS 扩展（本模块未实现）
 - JWKS 拉取与缓存——这部分策略由调用方负责
 
 ## 运行测试

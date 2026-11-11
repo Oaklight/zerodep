@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-11-11T04:34:51.067112+00:00",
+  "generated": "2026-11-11T05:59:25.251458+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -254,12 +254,12 @@
         "jwt/jwt.py"
       ],
       "primary_file": "jwt/jwt.py",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "deps": [],
       "tier": "medium",
       "category": "crypto",
       "last_updated": "2026-11-10T22:34:47-06:00",
-      "content_hash": "eb5cd692cfbf4dcee6a95fa98955d7a674fc0c7e3d8e191088499adeb8c1da2a"
+      "content_hash": "738c87a9489dab4d5687caf6e861715cd6b675515e53d3103468ef6a611603d2"
     },
     "llmstxt": {
       "description": "llms.txt parser — zero dependencies, stdlib only, Python 3.10+",

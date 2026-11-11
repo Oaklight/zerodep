@@ -74,6 +74,7 @@ from cryptography.hazmat.primitives.asymmetric.utils import (  # noqa: E402
 
 sys.path.insert(0, _this_dir)
 
+import jwt as _ours  # noqa: E402  (our module, after the shadowing workaround)
 from jwt import (  # noqa: E402
     MAX_JSON_DEPTH,
     DecodeError,
@@ -1266,3 +1267,110 @@ class TestErrors:
 
     def test_invalid_key_is_value_error(self):
         assert issubclass(InvalidKeyError, ValueError)
+
+
+# ── Optional native backend ──
+
+
+class TestNativeBackend:
+    """The libcrypto accelerator and its pure-Python fallback."""
+
+    def test_backend_is_known(self):
+        assert _ours.BACKEND in {"openssl", "python"}
+
+    def test_backend_loads_lazily(self):
+        code = (
+            "import sys; sys.path.insert(0, {dir!r}); import jwt; "
+            "print(jwt._native is jwt._NATIVE_UNSET)"
+        ).format(dir=_this_dir)
+        result = subprocess.run(
+            [sys.executable, "-c", code], capture_output=True, text=True, check=False
+        )
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.strip() == "True"
+
+    def test_hmac_does_not_trigger_a_load(self, monkeypatch):
+        monkeypatch.setattr(_ours, "_native", _ours._NATIVE_UNSET)
+        token = _pyjwt.encode({"sub": "alice"}, _HS_SECRET, algorithm="HS256")
+        assert decode(token, _HS_SECRET, algorithms=["HS256"])["sub"] == "alice"
+        assert _ours._native is _ours._NATIVE_UNSET
+
+    def test_forced_pure_backend_in_subprocess(self):
+        code = (
+            "import sys; sys.path.insert(0, {dir!r}); import jwt; "
+            "print(jwt.BACKEND); print(jwt._native); "
+            "t = jwt.encode({{'sub': 'a'}}, b'secret-secret-secret-secret', "
+            "algorithm='HS256'); print(jwt.decode(t, "
+            "b'secret-secret-secret-secret', algorithms=['HS256'])['sub'])"
+        ).format(dir=_this_dir)
+        environment = dict(os.environ, ZERODEP_JWT_BACKEND="python")
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            env=environment,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr
+        backend, native, subject = result.stdout.splitlines()
+        assert backend == "python"
+        assert native == "None"
+        assert subject == "a"
+
+    def test_missing_libcrypto_falls_back(self, monkeypatch):
+        monkeypatch.setattr(_ours, "_native", _ours._NATIVE_UNSET)
+        monkeypatch.setattr(
+            _ours, "_native_libraries", lambda: ["/nonexistent/libcrypto.so.3"]
+        )
+        assert _ours._native_backend() is None
+        assert _ours.BACKEND == "python"
+        token = _rsa_token("RS256")
+        assert decode(token, _RSA_JWK, algorithms=["RS256"])["sub"] == "alice"
+
+    def test_modexp_falls_back_when_native_fails(self, monkeypatch):
+        class Broken:
+            def modexp(self, *_args):
+                raise RuntimeError("native failure")
+
+        monkeypatch.setattr(_ours, "_native", Broken())
+        assert _ours._modexp(2, 10, 1000) == pow(2, 10, 1000)
+
+    @pytest.mark.parametrize("alg", _RSA_ALGS + _EC_ALGS)
+    def test_native_and_pure_verdicts_agree(self, alg, monkeypatch):
+        issuer = _RSA_KEY
+        key = _RSA_JWK
+        if alg == "ES256":
+            issuer, key = _EC_P256, _EC_P256_JWK
+        elif alg == "ES384":
+            issuer, key = _EC_P384, _EC_P384_JWK
+        token = _pyjwt.encode({"sub": "alice"}, issuer, algorithm=alg)
+        native = decode(token, key, algorithms=[alg])
+
+        monkeypatch.setattr(_ours, "_native", None)
+        pure = decode(token, key, algorithms=[alg])
+        assert native == pure == {"sub": "alice"}
+
+        tampered = token[:-4] + ("AAAA" if not token.endswith("AAAA") else "BBBB")
+        with pytest.raises(InvalidSignatureError):
+            decode(tampered, key, algorithms=[alg])
+        monkeypatch.setattr(_ours, "_native", _ours._NATIVE_UNSET)
+        with pytest.raises(InvalidSignatureError):
+            decode(tampered, key, algorithms=[alg])
+
+    def test_public_ecdsa_verify_backends_agree(self, monkeypatch):
+        message = b"native and pure"
+        signature = _EC_P256.sign(message, ec.ECDSA(hashes.SHA256()))
+        native = ecdsa_p256_verify(_EC_P256_JWK, message, signature, der=True)
+        monkeypatch.setattr(_ours, "_native", None)
+        pure = ecdsa_p256_verify(_EC_P256_JWK, message, signature, der=True)
+        assert native is True
+        assert pure is True
+
+    def test_native_ecdsa_error_falls_back_to_pure(self, monkeypatch):
+        class Unavailable:
+            def ecdsa_verify(self, *_args):
+                return None
+
+        token = _pyjwt.encode({"sub": "alice"}, _EC_P256, algorithm="ES256")
+        monkeypatch.setattr(_ours, "_native", Unavailable())
+        assert decode(token, _EC_P256_JWK, algorithms=["ES256"])["sub"] == "alice"

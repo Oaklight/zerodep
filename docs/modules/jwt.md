@@ -92,7 +92,7 @@ def decode(
 | `algorithms` | Allowed `alg` values. Required, and must be non-empty. |
 | `audience` | Expected `aud`. A token without an `aud` claim raises `MissingRequiredClaimError`. |
 | `issuer` | Expected `iss`, as one string or several. |
-| `leeway` | Clock-skew tolerance for `exp`, `nbf` and `iat`, in seconds or as a `timedelta`. |
+| `leeway` | Clock-skew tolerance for `exp`, `nbf` and `iat`, in seconds or as a `timedelta`. A negative or non-finite value raises `ValueError`. |
 | `require` | Claims that must be present and not null. |
 | `verify_audience` | Set `False` to skip the audience check. `aud` is only checked when `audience` is given. |
 | `verify_expiry` | Set `False` to accept an expired token. `nbf` and `iat` stay enforced. |

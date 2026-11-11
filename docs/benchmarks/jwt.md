@@ -37,13 +37,13 @@ Each case verifies (or, for HS256, signs) a token with six claims (`sub`, `iss`,
 | HS256 verify | 16.0 us | 14.3 us | 1.1x slower |
 | HS256 sign | 11.2 us | 10.5 us | 1.1x slower |
 
-Every figure is the mean of three consecutive runs with `--benchmark-min-rounds=20`. Observed ranges across those runs: HS256 verify 16.00--16.07 us, HS256 sign 11.05--11.55 us, RS256 161.6--171.5 us, PS256 183.4--192.2 us, ES256 1,701--1,763 us.
+Every figure is the mean of three consecutive runs with `--benchmark-min-rounds=20`, measured on one machine. Treat the ranges as indicative, not as bounds: on the same head an independent machine measured HS256 verify at 15.92--16.36 us and ES256 as high as 1,821 us. The spreads observed here were HS256 verify 16.00--16.07 us, HS256 sign 11.05--11.55 us, RS256 161.6--171.5 us, PS256 183.4--192.2 us, ES256 1,701--1,763 us; the wider spread across machines is CPU and scheduler noise on the same code.
 
 ## Where the Time Goes
 
 - **RS256 / PS256** is one modular exponentiation with `e = 65537`, which costs ~147 us of the ~167 us total. OpenSSL uses the same square-and-multiply sequence in C, so the gap is interpreter overhead on 2048-bit multiplies, a fixed cost that does not grow with token size.
 - **ES256** is two scalar multiplications on P-256, combined with Shamir's trick into one chain of two-bit steps. The count is exactly `2 * chunks + 2` point doublings and `chunks + 19` point additions, where `chunks = ceil(max(bit_length(u1), bit_length(u2)) / 2)` comes from the two reduced ECDSA scalars. The `+ 2` is constant: two coincidences in `_shamir_mult`'s precompute -- `multiples_of_p2` adds `j2` to itself, and the first `row = _j_add(row, p1)` adds `p1` to itself -- both take `_j_add`'s `h == 0` fallback to `_j_double`. The `19` is the 16-entry table build. Measured over 6,000 sampled signatures, 258/147 is the mode (about 94%); 256/146 follows at about 6% and 254/145 at about 0.4%, with smaller `chunks` rarer still. Two separate multiplications would double the doublings. Every operation is Python-level big-integer arithmetic, which is why the gap is wider than for RSA.
-- **HS256** has no big-integer work; `hmac` and `hashlib` are C modules in the stdlib, so both libraries run the same hash. The 1.7 us verify gap and 0.7 us sign gap are this module's own guards: the key-material check costs about 1 us on every HMAC call, and the JSON depth pre-scan about 0.4 us on a typical token during verification. PyJWT has no depth pre-scan.
+- **HS256** has no big-integer work; `hmac` and `hashlib` are C modules in the stdlib, so both libraries run the same hash. The gap is this module's own guards: the key-material check costs about 1 us on every HMAC call, and the JSON depth pre-scan about 0.4 us on a typical token during verification. PyJWT has no depth pre-scan.
 
 ## Key Takeaways
 

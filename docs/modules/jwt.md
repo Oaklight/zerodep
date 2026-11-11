@@ -57,7 +57,7 @@ Three rules are enforced by the API shape, not by the caller:
 - **An algorithm allowlist is required.** `decode()` has no default for `algorithms`; omitting it raises `TypeError`. A token cannot choose its own verification algorithm.
 - **`alg: "none"` is never accepted**, even when it appears in the allowlist. The check is case-insensitive.
 - **The key type must match the algorithm.** An `RS256` token with a `bytes` key raises `InvalidKeyError`, and an `HS256` token with an RSA JWK does too. This closes the RS/HS confusion class where a public key is replayed as an HMAC secret.
-- **PEM and OpenSSH keys are never HMAC secrets.** `-----BEGIN `, `ssh-rsa `, `ssh-ed25519 ` and `ecdsa-sha2-` prefixes raise `InvalidKeyError` on the raw `bytes`/`str` path, so a mixed `algorithms=["RS256", "HS256"]` deployment cannot be tricked into verifying an `HS256` token signed with the RSA public key. PyJWT applies the same guard.
+- **PEM and OpenSSH keys are never HMAC secrets.** PEM armor, RFC 4716 armor (`---- BEGIN SSH2 PUBLIC KEY ----`) and the `ssh-rsa`, `ssh-ed25519`, `ssh-dss` and `ecdsa-sha2-` prefixes raise `InvalidKeyError` on the raw `bytes`/`str` path, so a mixed `algorithms=["RS256", "HS256"]` deployment cannot be tricked into verifying an `HS256` token signed with the RSA public key. PyJWT applies the same guard. This is a best-effort denylist: unarmored DER key material has no distinguishing prefix, so it is accepted by this module and by PyJWT, and a caller holding it must not pass it as an `oct` key.
 
 RSA moduli below 2048 bits are refused by `key_from_jwk()`, so a rejected key never reaches `decode()`; `decode()` repeats the check for a hand-built `JWKKey`. EC points are checked against the curve equation before use.
 

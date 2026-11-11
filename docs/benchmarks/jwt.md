@@ -31,17 +31,19 @@ Each case verifies (or, for HS256, signs) a token with six claims (`sub`, `iss`,
 
 | Operation | zerodep | PyJWT[crypto] | Ratio |
 |-----------|---------|---------------|-------|
-| RS256 verify | 164 us | 35.2 us | 4.7x slower |
-| PS256 verify | 185 us | 40.6 us | 4.6x slower |
-| ES256 verify | 1,692 us | 84.8 us | 20.0x slower |
-| HS256 verify | 14.3 us | 14.5 us | ~1.0x |
-| HS256 sign | 10.0 us | 10.3 us | ~1.0x |
+| RS256 verify | 167 us | 35.4 us | 4.7x slower |
+| PS256 verify | 188 us | 40.8 us | 4.6x slower |
+| ES256 verify | 1,715 us | 86.2 us | 19.9x slower |
+| HS256 verify | 15.0 us | 14.4 us | ~1.0x |
+| HS256 sign | 10.8 us | 10.5 us | ~1.0x |
+
+Every figure is the mean of three consecutive runs with `--benchmark-min-rounds=20`. Observed ranges across those runs: HS256 verify 14.7--15.4 us, HS256 sign 10.6--11.2 us, RS256 164.7--170.0 us, PS256 184.9--190.9 us, ES256 1,704--1,736 us.
 
 ## Where the Time Goes
 
-- **RS256 / PS256** is one modular exponentiation with `e = 65537`, which costs ~147 us of the ~164 us total. OpenSSL uses the same square-and-multiply sequence in C, so the gap is interpreter overhead on 2048-bit multiplies, a fixed cost that does not grow with token size.
-- **ES256** is two scalar multiplications on P-256, combined with Shamir's trick into a single chain of 128 doublings and 3 precomputed additions. Every one of those is Python-level big-integer arithmetic, which is why the gap is wider than for RSA.
-- **HS256** has no big-integer work; `hmac` and `hashlib` are C modules in the stdlib, so both libraries measure the same code.
+- **RS256 / PS256** is one modular exponentiation with `e = 65537`, which costs ~147 us of the ~167 us total. OpenSSL uses the same square-and-multiply sequence in C, so the gap is interpreter overhead on 2048-bit multiplies, a fixed cost that does not grow with token size.
+- **ES256** is two scalar multiplications on P-256, combined with Shamir's trick into one chain of 128 two-bit steps. Instrumenting the point helpers on a single verify counts **258 point doublings and 147 point additions** -- 2 doublings and 1 addition per step, plus the 16-entry table build (ES384: 384--386 doublings, 210--211 additions; its `h == 0` addition branch fires data-dependently). Two separate multiplications would double the doublings. Every operation is Python-level big-integer arithmetic, which is why the gap is wider than for RSA.
+- **HS256** has no big-integer work; `hmac` and `hashlib` are C modules in the stdlib, so both libraries measure the same code. The difference is inside the run-to-run noise.
 
 ## Key Takeaways
 

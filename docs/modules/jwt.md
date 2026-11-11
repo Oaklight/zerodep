@@ -57,8 +57,13 @@ Three rules are enforced by the API shape, not by the caller:
 - **An algorithm allowlist is required.** `decode()` has no default for `algorithms`; omitting it raises `TypeError`. A token cannot choose its own verification algorithm.
 - **`alg: "none"` is never accepted**, even when it appears in the allowlist. The check is case-insensitive.
 - **The key type must match the algorithm.** An `RS256` token with a `bytes` key raises `InvalidKeyError`, and an `HS256` token with an RSA JWK does too. This closes the RS/HS confusion class where a public key is replayed as an HMAC secret.
+- **PEM and OpenSSH keys are never HMAC secrets.** `-----BEGIN `, `ssh-rsa `, `ssh-ed25519 ` and `ecdsa-sha2-` prefixes raise `InvalidKeyError` on the raw `bytes`/`str` path, so a mixed `algorithms=["RS256", "HS256"]` deployment cannot be tricked into verifying an `HS256` token signed with the RSA public key. PyJWT applies the same guard.
 
-RSA moduli below 2048 bits are refused. EC points are checked against the curve equation before use.
+RSA moduli below 2048 bits are refused by `key_from_jwk()`, so a rejected key never reaches `decode()`; `decode()` repeats the check for a hand-built `JWKKey`. EC points are checked against the curve equation before use.
+
+A `crit` header naming any extension is rejected with `UnsupportedCriticalHeaderError`: RFC 7515 section 4.1.11 requires that, and this module implements no extensions.
+
+Parsing is unauthenticated, so a malformed or hostile token produces only `JWTError`: deeply nested JSON raises `DecodeError` rather than `RecursionError`, and a DER integer wider than the P-256 field is an invalid signature (`False`), not an `OverflowError`.
 
 ## API Reference
 
@@ -178,10 +183,10 @@ A malformed signature or an off-curve point returns `False`. A key that is not a
 | `nbf` | `nbf > now + leeway` raises `ImmatureSignatureError` | on |
 | `iat` | `iat > now + leeway` raises `ImmatureSignatureError` | on |
 | `iss` | must match `issuer` when given | off unless `issuer` is passed |
-| `aud` | must match `audience` when given; a list claim matches any entry | off unless `audience` is passed |
+| `aud` | must match `audience` when given; a list claim matches any entry; an empty claim counts as absent | off unless `audience` is passed |
 | `require` | each named claim must be present and not null | off |
 
-A non-numeric `exp`, `nbf` or `iat` raises `DecodeError`.
+A non-numeric, non-finite (`NaN`, `Infinity`) or out-of-range `exp`, `nbf` or `iat` raises `DecodeError`, so `exp: NaN` cannot produce a token that never expires.
 
 ## Errors
 
@@ -190,7 +195,8 @@ Every error derives from `JWTError`.
 ```
 JWTError
 ├── DecodeError            (also ValueError)
-│   └── InvalidAlgorithmError
+│   ├── InvalidAlgorithmError
+│   └── UnsupportedCriticalHeaderError
 ├── InvalidSignatureError
 ├── InvalidKeyError        (also ValueError)
 ├── ExpiredSignatureError
@@ -205,6 +211,7 @@ JWTError
 - RS / ES / PS signing (private-key arithmetic in Python leaks the key)
 - JWE, X.509 certificates, encrypted PEM
 - Detached payloads (`b64: false`), which the compact parser rejects
+- Any JWS extension listed in `crit` (none are implemented)
 - JWKS fetching and caching -- the caller owns that policy
 
 ## Run the Tests

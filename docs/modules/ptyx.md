@@ -22,10 +22,11 @@
 ## 主要特性
 
 - **两个平台统一异步 API** -- `spawn`、`read`、`write`、`resize`、`wait`、`close`
-- **POSIX 后端** -- 独立会话与进程组、`TIOCSWINSZ` 调整大小、终端查询应答（`CSI 6n`、`CSI c`）、`SIGTERM` → `SIGKILL` 结束进程
+- **POSIX 后端** -- 独立会话与进程组、`TIOCSWINSZ` 调整大小、光标位置应答（仅 `CSI 6n`）、`SIGTERM` → `SIGKILL` 结束进程
 - **Windows 后端** -- 通过 `ctypes` 调用 ConPTY，不依赖 `pywinpty`；子进程以 `STARTF_USESTDHANDLES` 和空标准句柄创建，使其控制台绑定到伪终端
 - **写入不截断** -- `write()` 为异步方法，循环处理部分写入与 `EAGAIN`
-- **背压** -- 有界队列，持续输出的子进程不会无限占用内存
+- **背压** -- 有界队列，持续输出的子进程不会无限占用内存；ConPTY 读取线程在队列满时阻塞，而不是丢弃输出
+- **失败可区分** -- 子进程仍在运行时 ConPTY 管道出错会抛出 `PtyReadError`，绝不会被当作流结束
 - **括号粘贴** -- 写入 `ESC[200~ ... ESC[201~` 即可向 TUI 粘贴
 - **可靠清理** -- 先发 Ctrl+C，等待 `grace` 后终止进程并关闭伪终端
 
@@ -95,10 +96,24 @@ async with await PtyProcess.spawn(["/bin/bash"]) as proc:
     await proc.write(b"exit\r")
 ```
 
+## 错误
+
+| 异常 | 触发条件 | 基类 |
+|------|----------|------|
+| `PtyStartupError` | 两个平台上创建伪终端或子进程失败 | `RuntimeError` |
+| `PtyReadError` | 子进程仍在运行时 ConPTY 管道调用（`PeekNamedPipe`、`ReadFile`）失败 | `RuntimeError` |
+
+两者都在 `__all__` 中。清理阶段或子进程退出后的管道失败属于正常的流结束，此时返回 `b""`。
+
+## 终端查询
+
+POSIX 后端对 `CSI 6n`（光标位置请求）回复 `ESC[1;1R`，其余查询一律不回复——包括 DA1（`CSI c`）、DA2（`CSI > c`）和 kitty 键盘查询。固定回复会声明伪终端并不具备的能力，而程序对“没有回复”的处理要好于“错误回复”。
+
 ## 平台说明
 
-- **POSIX EOF** 与从端（slave）绑定，而不是子进程：当所有持有从端的进程关闭后，`read()` 返回 `b""`。存活的孙进程会让流一直打开，直到 `close()`。
-- **Windows EOF** 在子进程退出且 ConPTY 的最后输出排空后（最多 0.5 秒）返回。
+- **POSIX EOF** 与从端（slave）绑定，而不是子进程：当所有持有从端的进程关闭后，`read()` 返回 `b""`。存活的孙进程会让流一直打开，直到 `close()`。主端返回的 `EIO` 同样按流结束处理。
+- **Windows EOF** 在子进程退出且 ConPTY 的最后输出排空后（最多 0.5 秒）返回。子进程仍在运行时管道出错不算流结束：正在等待的 `read()` 会抛出 `PtyReadError`。
+- **读取错误属于该终端实例**：`PtyReadError` 一旦抛出，后续 `read()` 仍会抛出，而不是返回 `b""`。需要重新创建进程。
 - **无控制终端**：子进程是会话首进程但没有设置 `TIOCSCTTY`，因此 `/dev/tty` 不可用。需要它的程序（`sudo`、`ssh` 密码提示）需要真实终端；agent CLI 只使用 stdin/stdout。
 - **写入时保持读取**：等待的是可写的主端，回显输入的子进程可能填满输出侧。
 - **要求**：Python 3.10+；Windows 10 1809 或更高版本（ConPTY）。

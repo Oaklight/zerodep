@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import ctypes
 import os
 import sys
@@ -313,25 +314,32 @@ async def test_conpty_peek_failure_raises_instead_of_eof(monkeypatch):
 @pytest.mark.asyncio
 async def test_conpty_read_failure_raises_instead_of_eof(monkeypatch):
     proc = _conpty_stub(queue_size=1)
+    state = {"code": 109}
 
     def fake_peek(handle, buffer, size, read, available, overlapped):
         available._obj.value = 4
         return 1
 
-    monkeypatch.setattr(
-        ptyx_module,
-        "_WaitForSingleObject",
-        lambda handle, timeout: ptyx_module._WAIT_TIMEOUT,
-        raising=False,
-    )
+    def fake_wait(handle, timeout):
+        # A Win32 call overwrites the thread's last-error value.
+        state["code"] = 999
+        return ptyx_module._WAIT_TIMEOUT
+
+    def fake_read(handle, buffer, size, read, overlapped):
+        # The failing call is what sets the thread's last error.
+        state["code"] = 109
+        return 0
+
+    monkeypatch.setattr(ptyx_module, "_WaitForSingleObject", fake_wait, raising=False)
     monkeypatch.setattr(ptyx_module, "_PeekNamedPipe", fake_peek, raising=False)
-    monkeypatch.setattr(ptyx_module, "_ReadFile", lambda *args: 0, raising=False)
-    # The code must be the one seen at the failing call, not a later one.
-    codes = iter([109, 999])
-    monkeypatch.setattr(ptyx_module, "_last_error", lambda: next(codes), raising=False)
+    monkeypatch.setattr(ptyx_module, "_ReadFile", fake_read, raising=False)
+    monkeypatch.setattr(
+        ptyx_module, "_last_error", lambda: state["code"], raising=False
+    )
 
     reader = threading.Thread(target=proc._read_loop, daemon=True)
     reader.start()
+    # The code captured at ReadFile (109), not the one the later wait left (999).
     with pytest.raises(PtyReadError, match="ReadFile.*WinError 109"):
         await asyncio.wait_for(proc.read(), 2.0)
 
@@ -425,6 +433,63 @@ async def test_conpty_queue_timeout_does_not_duplicate_chunks(monkeypatch):
     await asyncio.to_thread(reader.join, 2.0)
     assert received == chunks
     assert not reader.is_alive()
+
+
+@pytest.mark.asyncio
+async def test_conpty_emit_submits_once_across_timeouts(monkeypatch):
+    proc = _conpty_stub(queue_size=1)
+    calls: list[object] = []
+
+    class _Future:
+        waits = 0
+
+        def result(self, timeout=None):
+            self.waits += 1
+            if self.waits <= 2:
+                raise concurrent.futures.TimeoutError
+
+        def cancel(self):
+            pass
+
+    future = _Future()
+
+    def fake_submit(coro, loop):
+        calls.append(coro)
+        coro.close()
+        return future
+
+    monkeypatch.setattr(asyncio, "run_coroutine_threadsafe", fake_submit)
+    assert proc._emit(b"x") is True
+    # Two timeouts passed; the chunk was put once, not once per wait.
+    assert len(calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_conpty_emit_stops_when_the_loop_closes_during_the_wait(monkeypatch):
+    proc = _conpty_stub(queue_size=1)
+    loop_state = {"calls": 0}
+
+    class _Loop:
+        def is_closed(self):
+            loop_state["calls"] += 1
+            return loop_state["calls"] > 1
+
+    proc._loop = _Loop()
+
+    class _Future:
+        def result(self, timeout=None):
+            raise concurrent.futures.TimeoutError
+
+        def cancel(self):
+            loop_state["cancelled"] = True
+
+    def fake_submit(coro, loop):
+        coro.close()
+        return _Future()
+
+    monkeypatch.setattr(asyncio, "run_coroutine_threadsafe", fake_submit)
+    assert proc._emit(b"x") is False
+    assert loop_state.get("cancelled") is True
 
 
 @pytest.mark.skipif(IS_WINDOWS, reason="POSIX terminal-query handling")

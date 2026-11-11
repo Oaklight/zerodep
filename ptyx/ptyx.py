@@ -928,7 +928,7 @@ class _ConPtyProcess(PtyProcess):
                 future.result(timeout=0.5)
                 return True
             except concurrent.futures.TimeoutError:
-                if self._closed:
+                if self._closed or self._loop.is_closed():
                     future.cancel()
                     return False
             except (concurrent.futures.CancelledError, RuntimeError):

@@ -246,9 +246,9 @@ Signals observe the request lifecycle. Handlers may be sync or async, run sequen
 | `on_response_started(handler)` | Fires just before the response is written. Receives `(request, response)` |
 | `on_response_completed(handler)` | Fires after the whole response was sent. Receives `(request, response)` |
 | `on_client_disconnect(handler)` | Fires when the client drops during response delivery. Receives `(request)` |
-| `on_request_rejected(handler)` | Fires for a request refused while being read, before any `Request` exists. Receives a `RejectedRequest` |
+| `on_request_rejected(handler)` | Fires for a request refused while being read, before dispatch reaches the other lifecycle hooks. Receives a `RejectedRequest` |
 
-`RejectedRequest` is a frozen dataclass: `client_addr`, `status_code`, `reason` (`"bad_request"`, `"too_large"`, `"timeout"`, `"incomplete_body"` or `"read_error"`), `exception`, `request_id`, and best-effort `method`, `path`, `headers`, `content_length`, `bytes_received` (`None` or `0` when not yet parsed). The error response carries the same id as `X-Request-Id`: the client's own when usable, otherwise generated. When the request line has been parsed, the response also passes through `after_request` hooks, built from the parsed method, path, query string and headers with an empty body (the body is what failed to read); a malformed request line has no `Request` and skips them.
+`RejectedRequest` is a frozen dataclass: `client_addr`, `status_code`, `reason` (`"bad_request"`, `"too_large"`, `"timeout"`, `"incomplete_body"` or `"read_error"`), `exception`, `request_id`, and best-effort `method`, `path`, `query_string`, `headers`, `content_length`, `bytes_received` (`None`, `""` or `0` when not yet parsed). The error response carries the same id as `X-Request-Id`: the client's own when usable, otherwise generated. When the request line has been parsed, the response also passes through `after_request` hooks, built from the parsed method, path, query string and headers with an empty body (the body is what failed to read); a malformed request line has no `Request` and skips them.
 
 ```python
 @app.on_request_rejected

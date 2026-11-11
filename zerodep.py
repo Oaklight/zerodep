@@ -1344,7 +1344,7 @@ def cmd_add(args: argparse.Namespace) -> None:
             "move your changes aside first."
         )
 
-    _warn_flat_shadows(file_plan, target)
+    _warn_flat_shadows(file_plan, target, lock)
 
     if args.dry_run:
         _print_add_plan(file_plan, requested, target)
@@ -1375,19 +1375,23 @@ def cmd_add(args: argparse.Namespace) -> None:
 def _warn_flat_shadows(
     file_plan: list[tuple[str, str, Path]],
     target: Path,
+    lock: dict | None = None,
 ) -> None:
-    """Warn when a flat copy would shadow an importable top-level module.
+    """Warn when a flat copy may shadow an importable top-level module.
 
     A file written directly into *target* is importable by stem whenever
-    *target* is on ``sys.path`` (a vendor directory that is, a checkout
-    root).  If ``find_spec`` already resolves that stem elsewhere, the copy
-    replaces it for every importer.
+    *target* is on ``sys.path`` ahead of the original (that is, a vendor
+    directory or a checkout root).  If ``find_spec`` already resolves that
+    stem elsewhere, the copy can replace it for every importer.
 
     The check is advisory: it never blocks the copy, and it runs before any
     file is written and independently of ``-y``, so a non-interactive
     install shows it too.
     """
     seen: set[str] = set()
+    cli_root = Path(__file__).resolve().parent
+    checkout_root = cli_root if _is_catalog_root(cli_root) else None
+    tracked = (lock or {}).get("modules", {})
     for mod_name, _remote, dest in file_plan:
         if dest.parent != target:
             continue
@@ -1404,6 +1408,14 @@ def _warn_flat_shadows(
         origin = spec.origin
         if origin is None:
             locations = list(spec.submodule_search_locations or ())
+            if checkout_root is not None:
+                # ``python zerodep.py`` puts the checkout first on sys.path,
+                # so its module directories look like namespace packages.
+                locations = [
+                    loc
+                    for loc in locations
+                    if not Path(loc).resolve().is_relative_to(checkout_root)
+                ]
             if not locations:
                 continue
             origin = locations[0]
@@ -1412,13 +1424,32 @@ def _warn_flat_shadows(
                 continue
         except OSError:
             pass
+        locked = next(
+            (
+                rel
+                for rel in tracked.get(mod_name, {}).get("files", {})
+                if Path(rel).name == dest.name
+            ),
+            None,
+        )
+        if locked is not None and len(Path(locked).parts) == 1:
+            remedy = (
+                f"  Reinstall it nested: 'zerodep remove {mod_name} "
+                f"-d {target}', then 'zerodep add {mod_name} --nested "
+                f"-d {target}'."
+            )
+        else:
+            remedy = (
+                f"  Use 'zerodep add {mod_name} --nested -d {target}' to "
+                f"copy into a subdirectory."
+            )
         _warn(
-            f"'{dest.name}' shadows the importable module '{stem}' at {origin}.\n"
-            f"  When {target} is on sys.path, 'import {stem}' loads the copy, "
-            f"not that module.\n"
-            f"  Use 'zerodep add {mod_name} --nested' to copy into a "
-            f"subdirectory, or rename the copied file and import it under "
-            f"that name."
+            f"'{dest.name}' may shadow the importable module '{stem}' at "
+            f"{origin}.\n"
+            f"  When {target} comes before it on sys.path, 'import {stem}' "
+            f"loads the copy, not that module.\n"
+            f"{remedy}\n"
+            f"  Or rename the copied file and import it under that name."
         )
 
 
@@ -1602,6 +1633,8 @@ def cmd_update(args: argparse.Namespace) -> None:
         return
 
     file_plan = _plan_files(candidates, manifest, target, nested=args.nested, lock=lock)
+
+    _warn_flat_shadows(file_plan, target, lock)
 
     writes = _write_files(
         file_plan,

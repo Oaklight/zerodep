@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.1.1"
+# version = "0.2.0"
 # deps = []
 # tier = "subsystem"
 # category = "terminal"
@@ -854,7 +854,8 @@ class _ConPtyProcess(PtyProcess):
                 ctypes.byref(available),
                 None,
             ):
-                if self._pipe_failed("PeekNamedPipe", exited):
+                winerror = _last_error()
+                if self._pipe_failure_is_eof("PeekNamedPipe", exited, winerror):
                     break
                 return
             if available.value:
@@ -867,7 +868,8 @@ class _ConPtyProcess(PtyProcess):
                     None,
                 )
                 if not ok:
-                    if self._pipe_failed("ReadFile", exited):
+                    winerror = _last_error()
+                    if self._pipe_failure_is_eof("ReadFile", exited, winerror):
                         break
                     return
                 if read.value == 0:
@@ -884,13 +886,17 @@ class _ConPtyProcess(PtyProcess):
             time.sleep(0.01)
         self._emit(b"")
 
-    def _pipe_failed(self, prefix: str, exited: bool) -> bool:
+    def _pipe_failure_is_eof(self, prefix: str, exited: bool, winerror: int) -> bool:
         """Return ``True`` when a pipe failure is the normal end of stream.
 
         A failure after the child exits, or during teardown, is EOF.
-        Otherwise the Win32 error is recorded and a blocked reader is woken
-        with the EOF sentinel, so ``read()`` raises instead of pretending
-        the child exited.
+        Otherwise the captured Win32 error is recorded and a blocked reader
+        is woken with the EOF sentinel, so ``read()`` raises instead of
+        pretending the child exited.
+
+        *winerror* is captured at the failing call, before this method runs:
+        the ``_WaitForSingleObject`` check below is itself a Win32 call and
+        would overwrite the thread's last-error value.
         """
         if exited or self._closed:
             return True
@@ -898,7 +904,7 @@ class _ConPtyProcess(PtyProcess):
             # The child exited between the loop's state check and the pipe
             # call; this is the normal end of the stream, not a failure.
             return True
-        self._read_error = PtyReadError(f"{prefix} failed (WinError {_last_error()})")
+        self._read_error = PtyReadError(f"{prefix} failed (WinError {winerror})")
         self._emit(b"")
         return False
 

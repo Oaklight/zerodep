@@ -310,6 +310,123 @@ async def test_conpty_peek_failure_raises_instead_of_eof(monkeypatch):
     assert not reader.is_alive()
 
 
+@pytest.mark.asyncio
+async def test_conpty_read_failure_raises_instead_of_eof(monkeypatch):
+    proc = _conpty_stub(queue_size=1)
+
+    def fake_peek(handle, buffer, size, read, available, overlapped):
+        available._obj.value = 4
+        return 1
+
+    monkeypatch.setattr(
+        ptyx_module,
+        "_WaitForSingleObject",
+        lambda handle, timeout: ptyx_module._WAIT_TIMEOUT,
+        raising=False,
+    )
+    monkeypatch.setattr(ptyx_module, "_PeekNamedPipe", fake_peek, raising=False)
+    monkeypatch.setattr(ptyx_module, "_ReadFile", lambda *args: 0, raising=False)
+    # The code must be the one seen at the failing call, not a later one.
+    codes = iter([109, 999])
+    monkeypatch.setattr(ptyx_module, "_last_error", lambda: next(codes), raising=False)
+
+    reader = threading.Thread(target=proc._read_loop, daemon=True)
+    reader.start()
+    with pytest.raises(PtyReadError, match="ReadFile.*WinError 109"):
+        await asyncio.wait_for(proc.read(), 2.0)
+
+    await asyncio.to_thread(reader.join, 2.0)
+    assert not reader.is_alive()
+
+
+@pytest.mark.asyncio
+async def test_conpty_zero_byte_read_is_retried(monkeypatch):
+    proc = _conpty_stub(queue_size=1)
+    state = {"reads": 0, "done": False}
+
+    def fake_wait(handle, timeout):
+        return (
+            ptyx_module._WAIT_OBJECT_0 if state["done"] else ptyx_module._WAIT_TIMEOUT
+        )
+
+    def fake_peek(handle, buffer, size, read, available, overlapped):
+        available._obj.value = 0 if state["done"] else 4
+        return 1
+
+    def fake_read(handle, buffer, size, read, overlapped):
+        state["reads"] += 1
+        if state["reads"] == 1:
+            # A zero-byte read before the child exits is not end of stream.
+            read._obj.value = 0
+            return 1
+        ctypes.memmove(buffer, b"late", 4)
+        read._obj.value = 4
+        state["done"] = True
+        return 1
+
+    monkeypatch.setattr(ptyx_module, "_WaitForSingleObject", fake_wait, raising=False)
+    monkeypatch.setattr(ptyx_module, "_PeekNamedPipe", fake_peek, raising=False)
+    monkeypatch.setattr(ptyx_module, "_ReadFile", fake_read, raising=False)
+
+    reader = threading.Thread(target=proc._read_loop, daemon=True)
+    reader.start()
+    received: list[bytes] = []
+    while True:
+        item = await asyncio.wait_for(proc._queue.get(), 2.0)
+        if item == b"":
+            break
+        received.append(item)
+
+    await asyncio.to_thread(reader.join, 2.0)
+    assert received == [b"late"]
+    assert not reader.is_alive()
+
+
+@pytest.mark.asyncio
+async def test_conpty_queue_timeout_does_not_duplicate_chunks(monkeypatch):
+    chunks = [b"one", b"two", b"three"]
+    state = {"index": 0}
+    proc = _conpty_stub(queue_size=1)
+
+    def fake_wait(handle, timeout):
+        if state["index"] < len(chunks):
+            return ptyx_module._WAIT_TIMEOUT
+        return ptyx_module._WAIT_OBJECT_0
+
+    def fake_peek(handle, buffer, size, read, available, overlapped):
+        available._obj.value = (
+            len(chunks[state["index"]]) if state["index"] < len(chunks) else 0
+        )
+        return 1
+
+    def fake_read(handle, buffer, size, read, overlapped):
+        data = chunks[state["index"]]
+        ctypes.memmove(buffer, data, len(data))
+        read._obj.value = len(data)
+        state["index"] += 1
+        return 1
+
+    monkeypatch.setattr(ptyx_module, "_WaitForSingleObject", fake_wait, raising=False)
+    monkeypatch.setattr(ptyx_module, "_PeekNamedPipe", fake_peek, raising=False)
+    monkeypatch.setattr(ptyx_module, "_ReadFile", fake_read, raising=False)
+
+    reader = threading.Thread(target=proc._read_loop, daemon=True)
+    reader.start()
+    # Stay idle past two 0.5 s waits so _emit() times out while blocked.
+    await asyncio.sleep(1.1)
+
+    received: list[bytes] = []
+    while True:
+        item = await asyncio.wait_for(proc._queue.get(), 2.0)
+        if item == b"":
+            break
+        received.append(item)
+
+    await asyncio.to_thread(reader.join, 2.0)
+    assert received == chunks
+    assert not reader.is_alive()
+
+
 @pytest.mark.skipif(IS_WINDOWS, reason="POSIX terminal-query handling")
 def test_cursor_position_query_gets_a_reply():
     read_fd, write_fd = os.pipe()

@@ -537,6 +537,56 @@ class TestAfterHooks:
         assert b" 422 " in response.split(b"\r\n", 1)[0]
         assert _header(response, "X-Request-Id") is not None
 
+    def test_replaced_response_keeps_one_request_id_header_under_any_casing(self):
+        app = App(max_body_size=10)
+
+        @app.after_request
+        async def replace(request, response):
+            return server_module.JSONResponse(
+                {"custom": "rejected"},
+                status_code=422,
+                headers={"x-request-id": "hook-id"},
+            )
+
+        @app.post("/echo")
+        async def echo(request):
+            return {"len": len(request.body)}
+
+        with _live(app):
+            response = _exchange(
+                app,
+                b"POST /echo HTTP/1.1\r\nHost: x\r\nContent-Length: 100\r\n\r\n",
+            )
+        head = response.split(b"\r\n\r\n", 1)[0].decode("latin-1")
+        ids = [
+            line
+            for line in head.split("\r\n")[1:]
+            if line.lower().startswith("x-request-id:")
+        ]
+        assert len(ids) == 1
+        assert ids[0].lower().endswith("hook-id")
+
+    def test_rejected_request_exposes_the_query_string(self):
+        app = App(max_body_size=10)
+        events: list[server_module.RejectedRequest] = []
+
+        @app.on_request_rejected
+        async def record(rejection):
+            events.append(rejection)
+
+        @app.post("/echo")
+        async def echo(request):
+            return {"len": len(request.body)}
+
+        with _live(app):
+            _exchange(
+                app,
+                b"POST /echo?a=1&b=2 HTTP/1.1\r\nHost: x\r\n"
+                b"Content-Length: 100\r\n\r\n",
+            )
+        assert events[0].path == "/echo"
+        assert events[0].query_string == "a=1&b=2"
+
 
 class TestDrainReadErrors:
     """An over-long chunk line ends the drain, not the connection task.

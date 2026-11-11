@@ -57,7 +57,7 @@ from jwt import decode, encode, get_unverified_header, key_from_jwk
 - **算法白名单是必填项。** `decode()` 的 `algorithms` 没有默认值，省略会抛出 `TypeError`。令牌无法自行决定校验算法。
 - **永不接受 `alg: "none"`**，即使它出现在白名单中；判断不区分大小写。
 - **密钥类型必须与算法匹配。** `RS256` 令牌配 `bytes` 密钥会抛出 `InvalidKeyError`，`HS256` 令牌配 RSA JWK 同样如此。这封堵了把公钥当作 HMAC 密钥重放的 RS/HS 混淆攻击。
-- **PEM 与 OpenSSH 密钥不能作为 HMAC 密钥。** 在裸 `bytes`/`str` 路径上，以 `-----BEGIN `、`ssh-rsa `、`ssh-ed25519 `、`ecdsa-sha2-` 开头的内容会抛出 `InvalidKeyError`，因此 `algorithms=["RS256", "HS256"]` 的混合部署无法被"用 RSA 公钥签名的 HS256 令牌"骗过。PyJWT 采用同样的防护。
+- **PEM 与 OpenSSH 密钥不能作为 HMAC 密钥。** 在裸 `bytes`/`str` 路径上，PEM 装甲、RFC 4716 装甲（`---- BEGIN SSH2 PUBLIC KEY ----`）以及 `ssh-rsa`、`ssh-ed25519`、`ssh-dss`、`ecdsa-sha2-` 前缀都会抛出 `InvalidKeyError`，因此 `algorithms=["RS256", "HS256"]` 的混合部署无法被"用 RSA 公钥签名的 HS256 令牌"骗过。PyJWT 采用同样的防护。这是一份尽力而为的黑名单：未装甲的 DER 密钥材料没有可辨识的前缀，本模块与 PyJWT 都会接受，持有此类材料的调用方不得把它当作 `oct` 密钥传入。
 
 小于 2048 位的 RSA 模数由 `key_from_jwk()` 拒绝，因此被拒绝的密钥不会进入 `decode()`；对手工构造的 `JWKKey`，`decode()` 会重复该检查。使用前还会校验 EC 点是否满足曲线方程。
 

@@ -764,23 +764,63 @@ def _der_to_raw(sig: bytes, size: int) -> bytes:
 # ===========================================================================
 
 
-#: Leading bytes of a PEM or OpenSSH public key, either of which is public
-#: data and therefore forgeable as an HMAC secret.
-_ASYMMETRIC_KEY_PREFIXES = (
-    b"-----BEGIN ",
-    b"ssh-rsa ",
-    b"ssh-ed25519 ",
+#: Armor labels a PEM or RFC 4716 block can carry.  The list matches PyJWT's.
+_ARMOR_LABELS = (
+    b"PRIVATE KEY",
+    b"PUBLIC KEY",
+    b"ENCRYPTED PRIVATE KEY",
+    b"OPENSSH PRIVATE KEY",
+    b"DSA PRIVATE KEY",
+    b"RSA PRIVATE KEY",
+    b"RSA PUBLIC KEY",
+    b"EC PRIVATE KEY",
+    b"DH PARAMETERS",
+    b"NEW CERTIFICATE REQUEST",
+    b"CERTIFICATE REQUEST",
+    b"SSH2 PUBLIC KEY",
+    b"SSH2 ENCRYPTED PRIVATE KEY",
+    b"X509 CRL",
+)
+
+#: A PEM (five dashes) or RFC 4716 (four dashes and a space) ``BEGIN`` marker,
+#: searched anywhere in the material: a caller may prepend a comment or a
+#: banner.  PyJWT's PEM regex also searches the whole value.
+_ARMOR_RE = re.compile(
+    rb"-{4,5}[ -]BEGIN (?:"
+    + b"|".join(re.escape(label) for label in _ARMOR_LABELS)
+    + rb")"
+)
+
+#: OpenSSH public key type prefixes, as PyJWT lists them.
+_SSH_KEY_MARKERS = (
+    b"ssh-rsa",
+    b"ssh-ed25519",
+    b"ssh-dss",
     b"ecdsa-sha2-",
 )
+
+
+def _looks_like_public_key(secret: bytes) -> bool:
+    """Report whether *secret* looks like PEM, RFC 4716 or OpenSSH key material."""
+    stripped = secret.lstrip()
+    if any(stripped.startswith(marker) for marker in _SSH_KEY_MARKERS):
+        return True
+    return _ARMOR_RE.search(secret) is not None
 
 
 def _secret_bytes(key: Any) -> bytes:
     """Return the shared secret carried by *key*.
 
-    A PEM or OpenSSH public key is rejected: it is public data, so anyone
-    holding it could sign an ``HS*`` token that verifies against it.  PyJWT
-    applies the same guard; without it, the RS/HS confusion class is only
-    closed for keys that arrive as a JWK.
+    A PEM, RFC 4716 or OpenSSH public key is rejected: it is public data, so
+    anyone holding it could sign an ``HS*`` token that verifies against it.
+    Without this check the RS/HS confusion class is only closed for keys that
+    arrive as a JWK.
+
+    The check is a best-effort denylist keyed on armor and on OpenSSH type
+    prefixes, the same approach PyJWT takes.  Unarmored DER SubjectPublicKeyInfo
+    carries no distinguishing prefix, so this module -- like PyJWT -- accepts it
+    as a secret; a caller holding DER key material must not pass it as an
+    ``oct`` key.
     """
     if isinstance(key, (bytes, bytearray, memoryview)):
         secret = bytes(key)
@@ -790,13 +830,12 @@ def _secret_bytes(key: Any) -> bytes:
         raise InvalidKeyError(
             f"an HMAC algorithm needs a bytes or str secret, got {type(key).__name__}"
         )
-    for prefix in _ASYMMETRIC_KEY_PREFIXES:
-        if secret.lstrip().startswith(prefix):
-            raise InvalidKeyError(
-                "an asymmetric public key or certificate cannot be used as an "
-                "HMAC secret: it is public data, so anyone holding it could "
-                "forge a token"
-            )
+    if _looks_like_public_key(secret):
+        raise InvalidKeyError(
+            "an asymmetric public key or certificate cannot be used as an "
+            "HMAC secret: it is public data, so anyone holding it could "
+            "forge a token"
+        )
     return secret
 
 
@@ -912,7 +951,15 @@ def _check_json_depth(raw: bytes, what: str) -> None:
     Bracket characters inside string literals do not count, and backslash
     escapes inside a string are skipped, so a claim holding ``"[[[["`` is not
     mistaken for nesting.  The segment is scanned, not parsed.
+
+    The scan is skipped when the segment cannot be too deep: nesting is bounded
+    by the number of opening brackets, so a segment with at most
+    :data:`MAX_JSON_DEPTH` of them is accepted after two C-level ``count``
+    calls.  Brackets inside strings are counted too, which only makes the
+    estimate more conservative.
     """
+    if raw.count(b"[") + raw.count(b"{") <= MAX_JSON_DEPTH:
+        return
     depth = 0
     in_string = False
     escaped = False

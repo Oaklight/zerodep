@@ -409,8 +409,8 @@ class TestAsyncClient:
     @pytest.mark.asyncio
     async def test_client_host_header_includes_non_default_port(self, httpbin_url):
         """The async Host matches http.client: host:port when not default."""
-        port = urlparse(httpbin_url).port
-        expected = f"127.0.0.1:{port}"
+        parsed = urlparse(httpbin_url)
+        expected = f"{parsed.hostname}:{parsed.port}"
         async with AsyncClient() as c:
             r = await c.get(f"{httpbin_url}/get")
         assert r.json()["headers"]["Host"] == expected  # type: ignore
@@ -1294,6 +1294,19 @@ class TestBuildRawHttpRequestHostDedup:
     def test_non_default_https_port_is_included(self):
         raw = self._build({}, port=8443, is_https=True)
         assert self._host_line(raw) == "Host: example.com:8443"
+
+    def test_ipv6_literal_is_bracketed(self):
+        raw = self._build({}, host="::1", port=8080)
+        assert self._host_line(raw) == "Host: [::1]:8080"
+
+    def test_ipv6_literal_is_bracketed_without_a_port(self):
+        raw = self._build({}, host="::1", port=80)
+        assert self._host_line(raw) == "Host: [::1]"
+
+    def test_user_host_with_non_default_port_stays_single(self):
+        raw = self._build({"Host": "custom.example.com"}, port=8080)
+        host_lines = [ln for ln in raw.splitlines() if ln.lower().startswith("host:")]
+        assert host_lines == ["Host: custom.example.com"]
 
     def test_no_duplicate_host_when_user_provides_host(self):
         """User-supplied 'host' must not result in two Host lines."""

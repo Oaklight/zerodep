@@ -2112,6 +2112,27 @@ def _parse_url(url: str) -> tuple[str, str, int, str, bool]:
     return parsed.scheme, host, port, path, is_https
 
 
+def _authority(host: str, port: int | None = None) -> str:
+    """Format ``host[:port]`` for an authority, bracketing IPv6 literals.
+
+    ``urlparse().hostname`` strips the brackets from an IP literal, but RFC
+    3986 section 3.2.2 requires them in a URI authority.  ``http.client``
+    brackets them on the sync path, so this keeps the async path equal.
+    """
+    host_part = f"[{host}]" if ":" in host and not host.startswith("[") else host
+    return host_part if port is None else f"{host_part}:{port}"
+
+
+def _host_header_value(host: str, port: int, is_https: bool) -> str:
+    """Return the ``Host`` header value for an origin request.
+
+    The port is included only when it is not the scheme default
+    (RFC 7230 section 5.4), matching ``http.client``.
+    """
+    default_port = 443 if is_https else 80
+    return _authority(host) if port == default_port else _authority(host, port)
+
+
 # -- Shared request preparation helpers --
 
 
@@ -2606,12 +2627,12 @@ def _sync_connect_via_proxy(
 
     # CONNECT tunnel for HTTPS through proxy
     tunnel_conn = http.client.HTTPConnection(proxy_host, proxy_port, timeout=timeout)
-    connect_headers: dict[str, str] = {"Host": f"{host}:{port}"}
+    connect_headers: dict[str, str] = {"Host": _authority(host, port)}
     if proxy_user and proxy_pass:
         connect_headers["Proxy-Authorization"] = _proxy_auth_header(
             proxy_user, proxy_pass
         )
-    tunnel_conn.request("CONNECT", f"{host}:{port}", headers=connect_headers)
+    tunnel_conn.request("CONNECT", _authority(host, port), headers=connect_headers)
     tunnel_resp = tunnel_conn.getresponse()
     if tunnel_resp.status != 200:
         tunnel_conn.close()
@@ -3363,8 +3384,8 @@ async def _async_connect_via_proxy_tunnel(
         asyncio.open_connection(proxy_host, proxy_port),
         timeout=timeout,
     )
-    connect_line = f"CONNECT {host}:{port} HTTP/1.1\r\n"
-    connect_headers = f"Host: {host}:{port}\r\n"
+    connect_line = f"CONNECT {_authority(host, port)} HTTP/1.1\r\n"
+    connect_headers = f"Host: {_authority(host, port)}\r\n"
     if proxy_user and proxy_pass:
         connect_headers += (
             f"Proxy-Authorization: {_proxy_auth_header(proxy_user, proxy_pass)}\r\n"
@@ -3596,8 +3617,9 @@ def _build_raw_http_request(
         method: HTTP method.
         request_path: The request path or full URL (for proxy).
         host: Target hostname.
-        port: TCP port the connection uses; part of the ``Host`` header when
-            it is not the scheme default (RFC 7230 section 5.4).
+        port: Target port from the URL; part of the ``Host`` header when it
+            is not the scheme default (RFC 7230 section 5.4).  Under a
+            proxy the socket port is the proxy's, not this one.
         is_https: Whether the request is over TLS, which sets the default
             port for the ``Host`` header.
         req_headers: Request headers dict.
@@ -3610,9 +3632,8 @@ def _build_raw_http_request(
     request_line = f"{method} {request_path} HTTP/1.1\r\n"
     # Emit Host first (RFC 7230 §5.4). req_headers is a CaseInsensitiveDict
     # so the 'in' check is O(1) and case-insensitive.  A non-default port is
-    # included, matching http.client on the sync path.
-    default_port = 443 if is_https else 80
-    host_header = host if port == default_port else f"{host}:{port}"
+    # included and IPv6 literals are bracketed, matching http.client.
+    host_header = _host_header_value(host, port, is_https)
     header_lines = "" if "host" in req_headers else f"Host: {host_header}\r\n"
     for k, v in req_headers.items():
         header_lines += f"{k}: {v}\r\n"

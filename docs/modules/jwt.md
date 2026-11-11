@@ -92,7 +92,7 @@ def decode(
 | `algorithms` | 允许的 `alg` 值。必填且不能为空。 |
 | `audience` | 期望的 `aud`。令牌缺少 `aud` 时抛出 `MissingRequiredClaimError`。 |
 | `issuer` | 期望的 `iss`，可为单个字符串或多个值。 |
-| `leeway` | `exp`、`nbf`、`iat` 的时钟偏差容忍度，单位为秒或 `timedelta`。 |
+| `leeway` | `exp`、`nbf`、`iat` 的时钟偏差容忍度，单位为秒或 `timedelta`。负值或非有限值抛出 `ValueError`。 |
 | `require` | 必须存在且不为 null 的声明。 |
 | `verify_audience` | 传 `False` 跳过受众检查。只有在传入 `audience` 时才检查 `aud`。 |
 | `verify_expiry` | 传 `False` 时接受已过期令牌；`nbf` 与 `iat` 仍会校验。 |

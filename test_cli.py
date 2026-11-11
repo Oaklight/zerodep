@@ -348,7 +348,7 @@ def test_shadow_warning_ignores_the_checkout_as_a_namespace_package(
     assert capsys.readouterr().err == ""
 
 
-def test_shadow_warning_does_not_suggest_remove_for_a_dependency(
+def test_shadow_warning_includes_a_flat_dependency_in_the_remove_list(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
 ):
     import zerodep
@@ -408,6 +408,39 @@ def test_shadow_warning_reinstalls_the_requested_set_when_it_is_flat(
     assert "Reinstall the set nested" in err
     assert "zerodep remove httpclient sse" in err
     assert "zerodep add sse --nested" in err
+
+
+def test_shadow_warning_leaves_a_nested_requested_module_out_of_remove(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+):
+    import zerodep
+
+    dest = tmp_path / "httpclient.py"
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    (lib / "httpclient.py").write_text("", encoding="utf-8")
+
+    class _Spec:
+        origin = str(lib / "httpclient.py")
+
+    monkeypatch.setattr(zerodep.importlib.util, "find_spec", lambda name: _Spec())
+    lock = {
+        "modules": {
+            "httpclient": {"files": {"httpclient.py": "0" * 64}},
+            # config is already nested and does not need to move.
+            "config": {"files": {"config/config.py": "0" * 64}},
+        }
+    }
+    zerodep._warn_flat_shadows(
+        [("httpclient", "httpclient/httpclient.py", dest)],
+        tmp_path,
+        lock,
+        {"config"},
+    )
+    err = capsys.readouterr().err
+    assert "zerodep remove httpclient -d" in err
+    assert "zerodep remove httpclient config" not in err
+    assert "zerodep add config --nested" in err
 
 
 def test_shadow_warning_reports_a_namespace_package_outside_the_checkout(

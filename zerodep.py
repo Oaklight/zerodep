@@ -1448,7 +1448,16 @@ def _warn_flat_shadows(
     # module the lock already tracks.
     if requested:
         remove = sorted(set(requested) | {name for name, _, _, _ in warned})
-        remove = [name for name in remove if name in tracked]
+        # Only a module whose tracked layout is flat has to be removed for
+        # --nested to take effect; dropping a nested one would churn files.
+        remove = [
+            name
+            for name in remove
+            if any(
+                len(Path(rel).parts) == 1
+                for rel in tracked.get(name, {}).get("files", {})
+            )
+        ]
         add = " ".join(sorted(requested))
         if remove:
             remedy = (
@@ -1478,7 +1487,12 @@ def _warn_flat_shadows(
                 f"  Use 'zerodep add {mod_name} --nested -d {quoted}' to "
                 f"copy into a subdirectory."
             )
-    _warn(remedy + "\n  Or rename the copied file and import it under that name.")
+    # A remedy block, not a warning of its own: print it without the
+    # "warning:" prefix so it reads as advice attached to the lines above.
+    print(
+        remedy + "\n  Or rename the copied file and import it under that name.",
+        file=sys.stderr,
+    )
 
 
 def _print_add_plan(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -14,12 +15,17 @@ import pytest
 CLI = str(Path(__file__).parent / "zerodep.py")
 
 
-def run_cli(*args: str, cwd: str | Path | None = None) -> subprocess.CompletedProcess:
+def run_cli(
+    *args: str,
+    cwd: str | Path | None = None,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, CLI, "--local", *args],
         capture_output=True,
         text=True,
         cwd=cwd,
+        env={**os.environ, **(env or {})},
     )
 
 
@@ -190,6 +196,57 @@ def test_add_no_lock_skips_lock_file(tmp_path: Path):
     r = run_cli("add", "yaml", "-d", str(vendor), "-y", "--no-lock")
     assert r.returncode == 0, r.stderr
     assert not (vendor / "zerodep.lock.json").exists()
+
+
+def test_add_warns_when_a_flat_copy_shadows_an_importable_module(tmp_path: Path):
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    (lib / "sse.py").write_text("", encoding="utf-8")
+    shadow_env = {"PYTHONPATH": str(lib)}
+
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    r = run_cli("add", "sse", "-d", str(vendor), "-y", env=shadow_env)
+    assert r.returncode == 0, r.stderr
+    assert "'sse.py' shadows the importable module 'sse'" in r.stderr
+    assert str(lib / "sse.py") in r.stderr
+    assert "zerodep add sse --nested" in r.stderr
+    assert "rename the copied file" in r.stderr
+    assert (vendor / "sse.py").exists()
+
+    nested = tmp_path / "_nested"
+    nested.mkdir()
+    r = run_cli("add", "sse", "-d", str(nested), "-y", "--nested", env=shadow_env)
+    assert r.returncode == 0, r.stderr
+    assert "shadows" not in r.stderr
+    assert (nested / "sse" / "sse.py").exists()
+
+
+def test_shadow_warning_skips_the_file_being_written(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+):
+    import zerodep
+
+    dest = tmp_path / "sse.py"
+    dest.write_text("", encoding="utf-8")
+
+    class _Spec:
+        origin = str(dest)
+
+    monkeypatch.setattr(zerodep.importlib.util, "find_spec", lambda name: _Spec())
+    zerodep._warn_flat_shadows([("sse", "sse/sse.py", dest)], tmp_path)
+    assert capsys.readouterr().err == ""
+
+
+def test_shadow_warning_skips_an_unimportable_stem(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+):
+    import zerodep
+
+    dest = tmp_path / "sse.py"
+    monkeypatch.setattr(zerodep.importlib.util, "find_spec", lambda name: None)
+    zerodep._warn_flat_shadows([("sse", "sse/sse.py", dest)], tmp_path)
+    assert capsys.readouterr().err == ""
 
 
 def test_status_json_reports_tracked_state(tmp_path: Path):

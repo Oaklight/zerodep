@@ -24,6 +24,7 @@ import argparse
 import ast
 import difflib
 import hashlib
+import importlib.util
 import json
 import re
 import shutil
@@ -1343,6 +1344,8 @@ def cmd_add(args: argparse.Namespace) -> None:
             "move your changes aside first."
         )
 
+    _warn_flat_shadows(file_plan, target)
+
     if args.dry_run:
         _print_add_plan(file_plan, requested, target)
         _ok(f"Would copy {len(file_plan)} file(s) (dry run)")
@@ -1367,6 +1370,56 @@ def cmd_add(args: argparse.Namespace) -> None:
         )
 
     _ok(f"Copied {sum(len(f) for f in writes.values())} file(s) to {target}")
+
+
+def _warn_flat_shadows(
+    file_plan: list[tuple[str, str, Path]],
+    target: Path,
+) -> None:
+    """Warn when a flat copy would shadow an importable top-level module.
+
+    A file written directly into *target* is importable by stem whenever
+    *target* is on ``sys.path`` (a vendor directory that is, a checkout
+    root).  If ``find_spec`` already resolves that stem elsewhere, the copy
+    replaces it for every importer.
+
+    The check is advisory: it never blocks the copy, and it runs before any
+    file is written and independently of ``-y``, so a non-interactive
+    install shows it too.
+    """
+    seen: set[str] = set()
+    for mod_name, _remote, dest in file_plan:
+        if dest.parent != target:
+            continue
+        stem = dest.stem
+        if stem in seen:
+            continue
+        seen.add(stem)
+        try:
+            spec = importlib.util.find_spec(stem)
+        except (ImportError, ValueError):
+            continue
+        if spec is None:
+            continue
+        origin = spec.origin
+        if origin is None:
+            locations = list(spec.submodule_search_locations or ())
+            if not locations:
+                continue
+            origin = locations[0]
+        try:
+            if Path(origin).resolve() == dest.resolve():
+                continue
+        except OSError:
+            pass
+        _warn(
+            f"'{dest.name}' shadows the importable module '{stem}' at {origin}.\n"
+            f"  When {target} is on sys.path, 'import {stem}' loads the copy, "
+            f"not that module.\n"
+            f"  Use 'zerodep add {mod_name} --nested' to copy into a "
+            f"subdirectory, or rename the copied file and import it under "
+            f"that name."
+        )
 
 
 def _print_add_plan(

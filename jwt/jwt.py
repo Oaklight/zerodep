@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.1.0"
+# version = "0.2.0"
 # deps = []
 # tier = "medium"
 # category = "crypto"
@@ -42,6 +42,15 @@ parser raises, so parsing an unauthenticated token cannot leak a
    (``zerodep add jwt --nested``), or rename the copied file and import it
    under that name (``import my_jwt``).
 
+The module is pure Python, with one optional accelerator: when the system
+``libcrypto`` can be loaded through :mod:`ctypes`, RSA/PS modular
+exponentiation and ECDSA verification run in OpenSSL instead of Python
+integers.  This is the same backend strategy ``aes`` uses.  Nothing is
+installed and no Python package is required; if the library or a needed symbol
+is missing, every algorithm falls back to the pure-Python implementation with
+identical results.  :data:`BACKEND` reports which one is active, and the
+environment variable ``ZERODEP_JWT_BACKEND=python`` forces the fallback.
+
 Part of zerodep: https://github.com/Oaklight/zerodep
 Copyright (c) 2026 Peng Ding. MIT License.
 """
@@ -54,7 +63,9 @@ import hashlib
 import hmac
 import json
 import math
+import os
 import re
+import sys
 import time
 from collections.abc import Callable, Mapping, Sequence, Set
 from dataclasses import dataclass, field
@@ -87,7 +98,11 @@ __all__ = [
     "b64url_encode",
     "b64url_decode",
     "SUPPORTED_ALGORITHMS",
+    "BACKEND",
 ]
+
+#: ``"openssl"`` or ``"python"``, resolved on first attribute access.
+BACKEND: str
 
 # ===========================================================================
 # Section 1: Errors
@@ -534,7 +549,7 @@ def _rsa_pkcs1_v15_verify(
     s = int.from_bytes(sig, "big")
     if s >= n:
         return False
-    em = pow(s, e, n).to_bytes(k, "big")
+    em = _modexp(s, e, n).to_bytes(k, "big")
     t = digest_info_prefix + hash_ctor(msg).digest()
     if k < len(t) + 11:
         return False
@@ -561,7 +576,7 @@ def _rsa_pss_verify(
     s = int.from_bytes(sig, "big")
     if s >= n:
         return False
-    m = pow(s, e, n)
+    m = _modexp(s, e, n)
     if m.bit_length() > em_bits:
         return False
     if em_len < h_len + salt_len + 2:
@@ -703,6 +718,11 @@ def _ecdsa_verify(
         return False
     if not _on_curve(curve, qx, qy):
         return False
+    native = _native_backend()
+    if native is not None:
+        verdict = native.ecdsa_verify(curve, qx, qy, msg, sig_raw, hash_ctor)
+        if verdict is not None:
+            return verdict
     digest = hash_ctor(msg).digest()
     e = int.from_bytes(digest, "big")
     excess = len(digest) * 8 - curve.n.bit_length()
@@ -1480,3 +1500,261 @@ def _p256_point(pub: Any) -> tuple[_Curve, int, int]:
     raise InvalidKeyError(
         f"expected (x, y), a JWK mapping or a JWKKey, got {type(pub).__name__}"
     )
+
+
+# ===========================================================================
+# Section 12: Optional libcrypto acceleration
+# ===========================================================================
+
+#: Sentinel meaning "the native load has not been attempted yet".
+_NATIVE_UNSET = object()
+
+#: ``_NATIVE_UNSET`` until a load is attempted; ``None`` when unavailable.
+_native: Any = _NATIVE_UNSET
+_native_lock: Any = None
+_load_error: str | None = None
+
+
+def _native_libraries() -> list[str]:
+    """Return candidate ``libcrypto`` names for this platform.
+
+    Names are tried directly with :class:`ctypes.CDLL`, which lets the
+    platform loader resolve them.  ``ctypes.util.find_library`` is avoided on
+    purpose: it can shell out to ``ldconfig`` and cost hundreds of
+    milliseconds.
+    """
+    if sys.platform == "win32":
+        names = [
+            "libcrypto-3-x64.dll",
+            "libcrypto-3.dll",
+            "libcrypto-1_1-x64.dll",
+            "libcrypto-1_1.dll",
+        ]
+        # A CPython build from python.org keeps its OpenSSL DLLs here, and the
+        # Windows loader does not search that directory by default.
+        dll_dir = os.path.join(sys.base_prefix, "DLLs")
+        return [os.path.join(dll_dir, name) for name in names] + names
+    if sys.platform == "darwin":
+        return [
+            "libcrypto.3.dylib",
+            "/opt/homebrew/lib/libcrypto.dylib",
+            "/usr/local/lib/libcrypto.dylib",
+            "libcrypto.dylib",
+        ]
+    return ["libcrypto.so.3", "libcrypto.so.1.1", "libcrypto.so"]
+
+
+def _try_load_libcrypto() -> _LibCrypto | None:
+    """Load ``libcrypto`` and bind the primitives, or return ``None``."""
+    global _load_error
+    import ctypes
+
+    last_error: Exception | None = None
+    for candidate in _native_libraries():
+        try:
+            library = ctypes.CDLL(candidate)
+        except OSError as exc:
+            last_error = exc
+            continue
+        try:
+            return _LibCrypto(library, ctypes)
+        except AttributeError as exc:
+            # A build without the symbols, for example OpenSSL configured with
+            # ``no-deprecated``, which drops the EC_KEY_* and ECDSA_* family.
+            last_error = exc
+            continue
+    _load_error = str(last_error) if last_error is not None else "not found"
+    return None
+
+
+def _native_backend() -> _LibCrypto | None:
+    """Return the loaded backend, loading it once, or ``None``."""
+    global _native, _native_lock
+    if _native is not _NATIVE_UNSET:
+        return _native
+    if _native_lock is None:
+        import threading
+
+        _native_lock = threading.Lock()
+    with _native_lock:
+        if _native is not _NATIVE_UNSET:
+            return _native
+        if os.environ.get("ZERODEP_JWT_BACKEND", "").strip().lower() == "python":
+            _native = None
+        else:
+            _native = _try_load_libcrypto()
+        return _native
+
+
+def _modexp(base: int, exponent: int, modulus: int) -> int:
+    """Return ``base ** exponent % modulus``, natively when available."""
+    backend = _native_backend()
+    if backend is not None:
+        try:
+            return backend.modexp(base, exponent, modulus)
+        except (MemoryError, RuntimeError, ValueError):
+            # The pure implementation is the reference and stays correct, so a
+            # native failure must not change a verification verdict.
+            pass
+    return pow(base, exponent, modulus)
+
+
+def __getattr__(name: str) -> Any:
+    """Resolve :data:`BACKEND` lazily so an HMAC-only import stays cheap."""
+    if name == "BACKEND":
+        return "openssl" if _native_backend() is not None else "python"
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+class _LibCrypto:
+    """The two OpenSSL primitives this module needs, through :mod:`ctypes`.
+
+    Only public key material crosses this boundary.  HMAC secrets never do:
+    HMAC already runs in C inside :mod:`hmac` and :mod:`hashlib`.
+
+    Every call owns its BIGNUMs, BN_CTX and EC_KEY objects and frees them in a
+    ``finally`` block.  A shared BN_CTX is not thread-safe, so one is created
+    per call.  Inputs are public and short-lived, so no zeroisation is needed.
+    """
+
+    #: Curve field sizes to OpenSSL NIDs: prime256v1 and secp384r1.
+    _CURVE_NIDS = {256: 415, 384: 715}
+
+    def __init__(self, library: Any, ctypes: Any) -> None:
+        self._c = ctypes
+        self._lib = library
+        pointer = ctypes.c_void_p
+        integer = ctypes.c_int
+        size_t = ctypes.c_size_t
+
+        def declare(name: str, argtypes: list[Any], restype: Any) -> Any:
+            function = getattr(library, name)
+            function.argtypes = argtypes
+            function.restype = restype
+            return function
+
+        self._BN_new = declare("BN_new", [], pointer)
+        self._BN_free = declare("BN_free", [pointer], None)
+        self._BN_bin2bn = declare("BN_bin2bn", [pointer, integer, pointer], pointer)
+        self._BN_bn2bin = declare("BN_bn2bin", [pointer, pointer], integer)
+        self._BN_num_bits = declare("BN_num_bits", [pointer], integer)
+        self._BN_CTX_new = declare("BN_CTX_new", [], pointer)
+        self._BN_CTX_free = declare("BN_CTX_free", [pointer], None)
+        self._BN_mod_exp = declare(
+            "BN_mod_exp", [pointer, pointer, pointer, pointer, pointer], integer
+        )
+
+        self._EC_KEY_new_by_curve_name = declare(
+            "EC_KEY_new_by_curve_name", [integer], pointer
+        )
+        self._EC_KEY_free = declare("EC_KEY_free", [pointer], None)
+        self._EC_KEY_get0_group = declare("EC_KEY_get0_group", [pointer], pointer)
+        self._EC_KEY_set_public_key = declare(
+            "EC_KEY_set_public_key", [pointer, pointer], integer
+        )
+        self._EC_POINT_new = declare("EC_POINT_new", [pointer], pointer)
+        self._EC_POINT_free = declare("EC_POINT_free", [pointer], None)
+        self._EC_POINT_oct2point = declare(
+            "EC_POINT_oct2point",
+            [pointer, pointer, pointer, size_t, pointer],
+            integer,
+        )
+        self._ECDSA_SIG_new = declare("ECDSA_SIG_new", [], pointer)
+        self._ECDSA_SIG_free = declare("ECDSA_SIG_free", [pointer], None)
+        self._ECDSA_SIG_set0 = declare(
+            "ECDSA_SIG_set0", [pointer, pointer, pointer], integer
+        )
+        self._ECDSA_do_verify = declare(
+            "ECDSA_do_verify", [pointer, integer, pointer, pointer], integer
+        )
+
+    def _int_to_bn(self, value: int) -> Any:
+        """Copy a non-negative integer into a new BIGNUM."""
+        raw = value.to_bytes((value.bit_length() + 7) // 8 or 1, "big")
+        buffer = self._c.create_string_buffer(raw, len(raw))
+        bignum = self._BN_bin2bn(buffer, len(raw), None)
+        if not bignum:
+            raise MemoryError("libcrypto could not allocate a BIGNUM")
+        return bignum
+
+    def modexp(self, base: int, exponent: int, modulus: int) -> int:
+        """Return ``base ** exponent % modulus`` through ``BN_mod_exp``."""
+        ctypes = self._c
+        bn_base = self._int_to_bn(base)
+        bn_exponent = self._int_to_bn(exponent)
+        bn_modulus = self._int_to_bn(modulus)
+        result = self._BN_new()
+        context = self._BN_CTX_new()
+        try:
+            if not result or not context:
+                raise MemoryError("libcrypto could not allocate a BIGNUM context")
+            if self._BN_mod_exp(result, bn_base, bn_exponent, bn_modulus, context) != 1:
+                raise RuntimeError("BN_mod_exp failed")
+            size = (self._BN_num_bits(result) + 7) // 8
+            buffer = ctypes.create_string_buffer(size or 1)
+            self._BN_bn2bin(result, buffer)
+            return int.from_bytes(buffer.raw[:size], "big")
+        finally:
+            for bignum in (bn_base, bn_exponent, bn_modulus, result):
+                if bignum:
+                    self._BN_free(bignum)
+            if context:
+                self._BN_CTX_free(context)
+
+    def ecdsa_verify(
+        self,
+        curve: _Curve,
+        qx: int,
+        qy: int,
+        msg: bytes,
+        sig_raw: bytes,
+        hash_ctor: Callable[[bytes], Any],
+    ) -> bool | None:
+        """Verify raw ``r || s`` with ``ECDSA_do_verify``.
+
+        Returns ``True`` or ``False`` for a verdict, and ``None`` when OpenSSL
+        reports an error, so the caller can fall back to the pure path.
+        """
+        ctypes = self._c
+        size = _field_size(curve)
+        nid = self._CURVE_NIDS.get(curve.p.bit_length())
+        if nid is None:
+            return None
+        key = self._EC_KEY_new_by_curve_name(nid)
+        if not key:
+            return None
+        point = None
+        signature = None
+        try:
+            group = self._EC_KEY_get0_group(key)
+            point = self._EC_POINT_new(group)
+            if not point:
+                return None
+            raw = b"\x04" + qx.to_bytes(size, "big") + qy.to_bytes(size, "big")
+            buffer = ctypes.create_string_buffer(raw, len(raw))
+            if self._EC_POINT_oct2point(group, point, buffer, len(raw), None) != 1:
+                return False
+            if self._EC_KEY_set_public_key(key, point) != 1:
+                return None
+            signature = self._ECDSA_SIG_new()
+            if not signature:
+                return None
+            bn_r = self._int_to_bn(int.from_bytes(sig_raw[:size], "big"))
+            bn_s = self._int_to_bn(int.from_bytes(sig_raw[size:], "big"))
+            if self._ECDSA_SIG_set0(signature, bn_r, bn_s) != 1:
+                self._BN_free(bn_r)
+                self._BN_free(bn_s)
+                return None
+            # ECDSA_SIG_set0 took ownership of both BIGNUMs.
+            digest = hash_ctor(msg).digest()
+            digest_buffer = ctypes.create_string_buffer(digest, len(digest))
+            verdict = self._ECDSA_do_verify(digest_buffer, len(digest), signature, key)
+            if verdict < 0:
+                return None
+            return verdict == 1
+        finally:
+            if signature:
+                self._ECDSA_SIG_free(signature)
+            if point:
+                self._EC_POINT_free(point)
+            self._EC_KEY_free(key)

@@ -13,7 +13,8 @@ Apple-to-apple performance comparison between zerodep JWT and [`PyJWT[crypto]`](
 
 | Implementation | File/Package | Description |
 |----------------|--------------|-------------|
-| **zerodep** | `jwt.py` | Pure Python: `hashlib`, `hmac`, `int` arithmetic, Jacobian point math |
+| **zerodep (native)** | `jwt.py` | `ctypes` -> system `libcrypto` for RSA/PS modexp and ECDSA |
+| **zerodep (pure)** | `jwt.py`, `ZERODEP_JWT_BACKEND=python` | `hashlib`, `hmac`, `int` arithmetic, Jacobian point math |
 | **PyJWT[crypto]** | *(reference)* | `cryptography` calling OpenSSL |
 
 ## Workloads
@@ -29,27 +30,30 @@ Each case verifies (or, for HS256, signs) a token with six claims (`sub`, `iss`,
 
 ## Results (Mean)
 
-| Operation | zerodep | PyJWT[crypto] | Ratio |
-|-----------|---------|---------------|-------|
-| RS256 verify | 170 us | 35.5 us | 4.8x slower |
-| PS256 verify | 189 us | 40.1 us | 4.7x slower |
-| ES256 verify | 1,721 us | 85.6 us | 20.1x slower |
-| HS256 verify | 15.9 us | 14.3 us | 1.1x slower |
-| HS256 sign | 11.3 us | 10.5 us | 1.1x slower |
+| Operation | zerodep native | zerodep pure | PyJWT[crypto] | native vs PyJWT |
+|-----------|----------------|--------------|---------------|-----------------|
+| RS256 verify | 57.6 us | 164.4 us | 34.8 us | 1.7x slower |
+| PS256 verify | 77.3 us | 187.1 us | 40.3 us | 1.9x slower |
+| ES256 verify | 102.3 us | 1,716.6 us | 85.2 us | 1.2x slower |
+| HS256 verify | 16.2 us | 16.1 us | 14.5 us | 1.1x slower |
+| HS256 sign | 10.9 us | 11.2 us | 10.4 us | 1.0x |
 
-Every figure is the mean of six runs (two sessions of three consecutive runs) with `--benchmark-min-rounds=20`, plus an independent machine's runs at the same head. The spread is large enough that these are indicative, not bounds. Observed across all of those runs: HS256 verify 15.68--16.36 us, HS256 sign 11.05--11.55 us, RS256 161.6--180.4 us, PS256 183.4--192.2 us, ES256 1,701--1,821 us. That is CPU and scheduler noise on identical code, not a difference in the implementation.
+Every figure is the mean of three consecutive runs of each backend with `--benchmark-min-rounds=20`, on the same machine and in the same session. The pure column was forced with `ZERODEP_JWT_BACKEND=python`. Run-to-run spread is about 1 us on the native backend and up to about 2% on the pure backend, so the last digit is indicative rather than a bound.
 
 ## Where the Time Goes
 
-- **RS256 / PS256** is one modular exponentiation with `e = 65537`, which costs ~147 us of the ~170 us total. OpenSSL uses the same square-and-multiply sequence in C, so the gap is interpreter overhead on 2048-bit multiplies, a fixed cost that does not grow with token size.
-- **ES256** is two scalar multiplications on P-256, combined with Shamir's trick into one chain of two-bit steps. The count is exactly `2 * chunks + 2` point doublings and `chunks + 19` point additions, where `chunks = ceil(max(bit_length(u1), bit_length(u2)) / 2)` comes from the two reduced ECDSA scalars. The `+ 2` is constant: two coincidences in `_shamir_mult`'s precompute -- `multiples_of_p2` adds `j2` to itself, and the first `row = _j_add(row, p1)` adds `p1` to itself -- both take `_j_add`'s `h == 0` fallback to `_j_double`. The `19` is the 16-entry table build. Measured over 6,000 sampled signatures, 258/147 is the mode (about 94%); 256/146 follows at about 6% and 254/145 at about 0.4%, with smaller `chunks` rarer still. Two separate multiplications would double the doublings. Every operation is Python-level big-integer arithmetic, which is why the gap is wider than for RSA.
-- **HS256** has no big-integer work; `hmac` and `hashlib` are C modules in the stdlib, so both libraries run the same hash. The gap -- about 1.6 us on verify and 0.8 us on sign -- is this module's own guards: the key-material check costs about 1 us on every HMAC call, and the JSON depth pre-scan about 0.4 us on a typical token during verification. PyJWT has no depth pre-scan.
+- **RSA / PS native.** One modular exponentiation with `e = 65537` runs inside `BN_mod_exp`; padding, `DigestInfo`, JSON parsing and claim checks stay in Python. The remaining gap to PyJWT is about 23 us on RS256 and 37 us on PS256, most of it the Python-side PSS mask generation (MGF1) and the per-call key conversion.
+- **RSA / PS pure.** The same algorithm with `pow()` as the modexp, which costs about 150 us of the total. That is why the pure backend is 2.1--2.9x slower than native here.
+- **ES256 native.** `ECDSA_do_verify` runs the two scalar multiplications in OpenSSL; the module builds an `EC_KEY` from the JWK point on each call. The remaining ~17 us over PyJWT is that construction plus token parsing and claims.
+- **ES256 pure.** Two scalar multiplications on P-256, combined with Shamir's trick into one chain of two-bit steps. The count is exactly `2 * chunks + 2` point doublings and `chunks + 19` point additions, where `chunks = ceil(max(bit_length(u1), bit_length(u2)) / 2)` comes from the two reduced ECDSA scalars. The `+ 2` is constant: two coincidences in `_shamir_mult`'s precompute -- `multiples_of_p2` adds `j2` to itself, and the first `row = _j_add(row, p1)` adds `p1` to itself -- both take `_j_add`'s `h == 0` fallback to `_j_double`. The `19` is the 16-entry table build. Measured over 6,000 sampled signatures, 258/147 is the mode (about 94%); 256/146 follows at about 6% and 254/145 at about 0.4%, with smaller `chunks` rarer still. Two separate multiplications would double the doublings. Every operation is Python-level big-integer arithmetic, which is why the pure backend is ~17x slower than native.
+- **HS256** has no big-integer work in either backend; `hmac` and `hashlib` are C modules in the stdlib, so both libraries run the same hash. The gap -- about 1.6 us on verify and 0.8 us on sign -- is this module's own guards: the key-material check costs about 1 us on every HMAC call, and the JSON depth pre-scan about 0.4 us on a typical token during verification. PyJWT has no depth pre-scan.
 
 ## Key Takeaways
 
-- **HMAC verification and signing are within about 11%** of PyJWT. Both call the same `hmac` implementation; the gap is the JSON depth pre-scan and the key-material check.
-- **Asymmetric verification is 4.6-20x slower** than OpenSSL. For an OAuth resource server this is a few hundred microseconds per request after the JWKS lookup, which is usually far below the cost of the request's own database or network work -- but it is not free, and a token-per-request path at very high volume should measure it first.
-- **No compiled dependency.** The module installs nothing, so it works where a wheel for `cryptography` is unavailable or unwanted.
+- **The native backend makes asymmetric verification competitive with PyJWT**: 1.7x slower on RS256, 1.9x on PS256 and 1.2x on ES256, versus 4.7x, 4.7x and 20x for the pure backend.
+- **HMAC is unchanged** at about 1.1x PyJWT, because both call the same C `hmac` implementation.
+- **No Python dependency.** The accelerator uses the system `libcrypto` through `ctypes`, which Python already links for `ssl` and `hashlib`. When the library or a needed symbol is missing, the module falls back to pure Python with identical results; `BACKEND` says which path ran.
+- **A pure fallback remains.** `ZERODEP_JWT_BACKEND=python` forces it, for constrained images or for comparison.
 
 ## Run It Yourself
 

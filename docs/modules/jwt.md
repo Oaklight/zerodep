@@ -1,6 +1,6 @@
 # JWT / JWS
 
-JWS token verification (RS/PS/ES) and HMAC sign/verify -- zero dependencies, stdlib only, Python 3.10+.
+JWS token verification (RS/PS/ES) and HMAC sign/verify -- zero Python dependencies, stdlib only, with an optional system `libcrypto` accelerator, Python 3.10+.
 
 > **Replaces:** `PyJWT`, `python-jose`
 
@@ -20,7 +20,7 @@ Asymmetric **signing** is out of scope on purpose. Verification works on public 
 
 | File | Description | Dependencies |
 |------|-------------|--------------|
-| `jwt.py` | JWS verification, HMAC signing, P-256 verifier | None (stdlib only) |
+| `jwt.py` | JWS verification, HMAC signing, P-256 verifier | None (stdlib only); optionally the system `libcrypto` through `ctypes` |
 
 ## How to Use in Your Project
 
@@ -38,6 +38,35 @@ from jwt import decode, encode, get_unverified_header, key_from_jwk
 
 !!! warning "Package name collision"
     The file is named `jwt.py`, so it shadows the PyJWT package of the same name. If a project needs both, rename one of them. The correctness tests show the `sys.path` workaround used to compare the two.
+
+## Backends
+
+RSA/PS modular exponentiation and ECDSA verification have two implementations. `BACKEND` reports the active one; HMAC, base64 and JSON are the same in both.
+
+| Backend | `BACKEND` | How it works |
+|---------|-----------|--------------|
+| Native | `"openssl"` | Calls the system `libcrypto` through `ctypes`, the same strategy `aes` uses |
+| Pure Python | `"python"` | Python integer arithmetic; the reference implementation and the fallback |
+
+`BACKEND` is resolved on first access, so an HMAC-only process never pays the library load. The native backend is used when `libcrypto` loads and exports the symbols the module needs. It falls back silently, with identical verification results, when:
+
+- no candidate library is found -- distroless or minimal images, BoringSSL or LibreSSL with a different SONAME, or a Windows `libcrypto-*.dll` outside the loader search path;
+- the build lacks `BN_mod_exp`, `EC_KEY_*` or `ECDSA_*`, for example OpenSSL configured with `no-deprecated`;
+- a native call fails at run time.
+
+Force the pure implementation with an environment variable, which is also how the test suite covers both paths:
+
+```bash
+ZERODEP_JWT_BACKEND=python
+```
+
+Only public key material crosses the `ctypes` boundary. HMAC secrets never do: HMAC already runs in C inside `hmac` and `hashlib`.
+
+| Operation | Native | Pure |
+|-----------|--------|------|
+| RSA / PSS verify | `BN_mod_exp` | `pow()` |
+| ECDSA verify | `ECDSA_do_verify` | Jacobian point math |
+| HMAC, base64, JSON | unchanged | unchanged |
 
 ## Supported Algorithms
 
@@ -174,6 +203,20 @@ A malformed signature or an off-curve point returns `False`. A key that is not a
 ### Encoding helpers
 
 `b64url_encode(data) -> str` and `b64url_decode(data) -> bytes` are the unpadded base64url codec used throughout, exported because callers assembling a JWKS or a COSE key usually need it.
+
+### `BACKEND`
+
+`"openssl"` when the native backend is active, `"python"` when the pure implementation is active or forced. Read it once after import to log or assert which path a deployment uses:
+
+```python
+from jwt import BACKEND
+
+if BACKEND != "openssl":
+    log.warning("jwt is running the pure-Python backend")
+```
+
+Reading `BACKEND` loads `libcrypto` on first access; an HMAC-only process that never reads it never pays that cost.
+
 
 ## Claims
 

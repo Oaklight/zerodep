@@ -925,10 +925,11 @@ class RejectedRequest:
     request_id: str
     method: str | None = None
     path: str | None = None
-    query_string: str = ""
     headers: Mapping[str, str] | None = None
     content_length: int | None = None
     bytes_received: int = 0
+    # Appended last so positional construction keeps its old field order.
+    query_string: str = ""
 
 
 class _ReadState:

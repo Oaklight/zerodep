@@ -1374,3 +1374,11 @@ class TestNativeBackend:
         token = _pyjwt.encode({"sub": "alice"}, _EC_P256, algorithm="ES256")
         monkeypatch.setattr(_ours, "_native", Unavailable())
         assert decode(token, _EC_P256_JWK, algorithms=["ES256"])["sub"] == "alice"
+
+    def test_ctypes_unavailable_falls_back(self, monkeypatch):
+        monkeypatch.setattr(_ours, "_native", _ours._NATIVE_UNSET)
+        monkeypatch.setitem(sys.modules, "ctypes", None)
+        assert _ours._native_backend() is None
+        assert _ours.BACKEND == "python"
+        token = _rsa_token("RS256")
+        assert decode(token, _RSA_JWK, algorithms=["RS256"])["sub"] == "alice"

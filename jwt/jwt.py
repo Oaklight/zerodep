@@ -1547,7 +1547,11 @@ def _native_libraries() -> list[str]:
 def _try_load_libcrypto() -> _LibCrypto | None:
     """Load ``libcrypto`` and bind the primitives, or return ``None``."""
     global _load_error
-    import ctypes
+    try:
+        import ctypes
+    except ImportError as exc:  # pragma: no cover - ctypes is always present
+        _load_error = f"ctypes unavailable: {exc}"
+        return None
 
     last_error: Exception | None = None
     for candidate in _native_libraries():
@@ -1558,7 +1562,7 @@ def _try_load_libcrypto() -> _LibCrypto | None:
             continue
         try:
             return _LibCrypto(library, ctypes)
-        except AttributeError as exc:
+        except (AttributeError, OSError, TypeError) as exc:
             # A build without the symbols, for example OpenSSL configured with
             # ``no-deprecated``, which drops the EC_KEY_* and ECDSA_* family.
             last_error = exc
@@ -1582,7 +1586,10 @@ def _native_backend() -> _LibCrypto | None:
         if os.environ.get("ZERODEP_JWT_BACKEND", "").strip().lower() == "python":
             _native = None
         else:
-            _native = _try_load_libcrypto()
+            try:
+                _native = _try_load_libcrypto()
+            except Exception:  # pragma: no cover - defensive: never break verify
+                _native = None
         return _native
 
 

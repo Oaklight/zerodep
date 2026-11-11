@@ -234,7 +234,7 @@ def test_add_tracked_flat_module_suggests_remove_then_nested(tmp_path: Path):
     # The lock keeps the flat layout, so --nested alone cannot fix it.
     r = run_cli("add", "sse", "-d", str(vendor), "-y", env={"PYTHONPATH": str(lib)})
     assert r.returncode == 0, r.stderr
-    assert "Reinstall it nested" in r.stderr
+    assert "Reinstall the set nested" in r.stderr
     assert "zerodep remove sse" in r.stderr
     assert "zerodep add sse --nested -d" in r.stderr
 
@@ -249,7 +249,36 @@ def test_add_warns_for_a_dependency_that_may_shadow(tmp_path: Path):
     r = run_cli("add", "sse", "-d", str(vendor), "-y", env={"PYTHONPATH": str(lib)})
     assert r.returncode == 0, r.stderr
     assert "'httpclient.py' may shadow the importable module 'httpclient'" in r.stderr
-    assert "zerodep add httpclient --nested" in r.stderr
+    # The dependency is not tracked yet, so adding the requested module
+    # nested is the actionable remedy.
+    assert "zerodep add sse --nested" in r.stderr
+
+
+def test_the_suggested_remedy_clears_the_warning(tmp_path: Path):
+    """Apply the printed remove/add sequence and check the warning is gone."""
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    (lib / "sse.py").write_text("", encoding="utf-8")
+    (lib / "httpclient.py").write_text("", encoding="utf-8")
+    vendor = tmp_path / "_vendor"
+    vendor.mkdir()
+    shadow_env = {"PYTHONPATH": str(lib)}
+
+    r = run_cli("add", "sse", "-d", str(vendor), "-y")
+    assert r.returncode == 0, r.stderr
+    r = run_cli("add", "sse", "-d", str(vendor), "-y", env=shadow_env)
+    assert r.returncode == 0, r.stderr
+    assert "Reinstall the set nested" in r.stderr
+    assert "zerodep remove httpclient sse" in r.stderr
+    assert "zerodep add sse --nested" in r.stderr
+
+    r = run_cli("remove", "sse", "httpclient", "-d", str(vendor), "-y")
+    assert r.returncode == 0, r.stderr
+    r = run_cli("add", "sse", "-d", str(vendor), "-y", "--nested", env=shadow_env)
+    assert r.returncode == 0, r.stderr
+    assert "may shadow" not in r.stderr
+    assert (vendor / "sse" / "sse.py").exists()
+    assert (vendor / "httpclient" / "httpclient.py").exists()
 
 
 def test_add_dry_run_warns_and_writes_nothing(tmp_path: Path):
@@ -342,11 +371,11 @@ def test_shadow_warning_does_not_suggest_remove_for_a_dependency(
         {"sse"},
     )
     err = capsys.readouterr().err
-    assert "Reinstall" not in err
-    # The remedy names the requested module, because reinstalling the flat
-    # dependency on its own would leave a mixed layout.
+    # The dependency is tracked flat, so it joins the remove list; the add
+    # names the requested module, which is what the user asked for.
+    assert "Reinstall the set nested" in err
+    assert "zerodep remove httpclient" in err
     assert "zerodep add sse --nested" in err
-    assert "zerodep add httpclient --nested" not in err
 
 
 def test_shadow_warning_reinstalls_the_requested_set_when_it_is_flat(
@@ -377,7 +406,8 @@ def test_shadow_warning_reinstalls_the_requested_set_when_it_is_flat(
     )
     err = capsys.readouterr().err
     assert "Reinstall the set nested" in err
-    assert "zerodep remove sse" in err
+    assert "zerodep remove httpclient sse" in err
+    assert "zerodep add sse --nested" in err
 
 
 def test_shadow_warning_reports_a_namespace_package_outside_the_checkout(

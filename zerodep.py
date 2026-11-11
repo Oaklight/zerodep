@@ -1397,6 +1397,7 @@ def _warn_flat_shadows(
     checkout_root = cli_root if _is_catalog_root(cli_root) else None
     tracked = (lock or {}).get("modules", {})
     quoted = f'"{target}"'
+    warned: list[tuple[str, Path, str, str]] = []
     for mod_name, _remote, dest in file_plan:
         if dest.parent != target:
             continue
@@ -1429,53 +1430,55 @@ def _warn_flat_shadows(
                 continue
         except OSError:
             pass
-        locked = next(
-            (
-                rel
-                for rel in tracked.get(mod_name, {}).get("files", {})
-                if Path(rel).name == dest.name
-            ),
-            None,
+        warned.append((mod_name, dest, stem, origin))
+
+    for mod_name, dest, stem, origin in warned:
+        _warn(
+            f"'{dest.name}' may shadow the importable module '{stem}' at "
+            f"{origin}.\n"
+            f"  When {target} comes before it on sys.path, 'import {stem}' "
+            f"loads the copy, not that module."
         )
-        locked_flat = locked is not None and len(Path(locked).parts) == 1
-        if locked_flat and (requested is None or mod_name in requested):
+    if not warned:
+        return
+
+    # One consolidated remedy for the run.  Removing only one module leaves
+    # the others tracked flat, and the lock keeps that layout, so the set
+    # that must be removed is every requested module plus every warned
+    # module the lock already tracks.
+    if requested:
+        remove = sorted(set(requested) | {name for name, _, _, _ in warned})
+        remove = [name for name in remove if name in tracked]
+        add = " ".join(sorted(requested))
+        if remove:
+            remedy = (
+                f"  Reinstall the set nested: 'zerodep remove "
+                f"{' '.join(remove)} -d {quoted}', then 'zerodep add "
+                f"{add} --nested -d {quoted}'."
+            )
+        else:
+            remedy = (
+                f"  Use 'zerodep add {add} --nested -d {quoted}' to copy "
+                f"into subdirectories."
+            )
+    else:
+        mod_name = warned[0][0]
+        locked_flat = any(
+            len(Path(rel).parts) == 1
+            for rel in tracked.get(mod_name, {}).get("files", {})
+        )
+        if locked_flat:
             remedy = (
                 f"  Reinstall it nested: 'zerodep remove {mod_name} "
                 f"-d {quoted}', then 'zerodep add {mod_name} --nested "
                 f"-d {quoted}'."
             )
-        elif locked_flat and requested:
-            # A dependency: reinstalling it alone would leave a mixed layout,
-            # so point at the module the user named.
-            target_mod = sorted(requested)[0]
-            target_flat = any(
-                len(Path(rel).parts) == 1
-                for rel in tracked.get(target_mod, {}).get("files", {})
-            )
-            if target_flat:
-                remedy = (
-                    f"  Reinstall the set nested: 'zerodep remove "
-                    f"{target_mod} -d {quoted}', then 'zerodep add "
-                    f"{target_mod} --nested -d {quoted}'."
-                )
-            else:
-                remedy = (
-                    f"  Use 'zerodep add {target_mod} --nested -d {quoted}' "
-                    f"to keep the whole set nested."
-                )
         else:
             remedy = (
                 f"  Use 'zerodep add {mod_name} --nested -d {quoted}' to "
                 f"copy into a subdirectory."
             )
-        _warn(
-            f"'{dest.name}' may shadow the importable module '{stem}' at "
-            f"{origin}.\n"
-            f"  When {target} comes before it on sys.path, 'import {stem}' "
-            f"loads the copy, not that module.\n"
-            f"{remedy}\n"
-            f"  Or rename the copied file and import it under that name."
-        )
+    _warn(remedy + "\n  Or rename the copied file and import it under that name.")
 
 
 def _print_add_plan(

@@ -450,8 +450,19 @@ class TestVerifyHmac:
             b"ssh-dss AAAAB3NzaC1kc3M= user@host",
             b"note: key follows\n-----BEGIN PUBLIC KEY-----\nAAAAB3NzaC1yc2E=\n"
             b"-----END PUBLIC KEY-----\n",
+            # The artifact an OIDC resource server already holds as x5c.
+            b"-----BEGIN CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIEAgAAuTANBg==\n"
+            b"-----END CERTIFICATE-----\n",
+            b"-----BEGIN TRUSTED CERTIFICATE-----\nMIIDdzCCAl+gAwIBAgIEAgAAuTANBg==\n"
+            b"-----END TRUSTED CERTIFICATE-----\n",
         ],
-        ids=["rfc4716", "ssh-dss", "armor-not-at-offset-0"],
+        ids=[
+            "rfc4716",
+            "ssh-dss",
+            "armor-not-at-offset-0",
+            "certificate",
+            "trusted-certificate",
+        ],
     )
     def test_other_key_armor_rejected_as_secret(self, material):
         with pytest.raises(InvalidKeyError):
@@ -922,6 +933,17 @@ class TestClaims:
                 algorithms=["HS256"],
                 leeway=timedelta(seconds=-5),
             )
+
+    @pytest.mark.parametrize(
+        "leeway",
+        [float("nan"), float("inf"), float("-inf")],
+        ids=["nan", "inf", "neg-inf"],
+    )
+    def test_non_finite_leeway_rejected(self, leeway):
+        """``exp <= now - nan`` is False, so a NaN tolerance would not expire."""
+        token = self._token({"exp": time.time() - 60})
+        with pytest.raises(ValueError, match="finite"):
+            decode(token, _HS_SECRET, algorithms=["HS256"], leeway=leeway)
 
     def test_bad_leeway_type(self):
         token = self._token({"sub": "a"})

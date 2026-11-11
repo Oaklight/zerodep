@@ -764,8 +764,11 @@ def _der_to_raw(sig: bytes, size: int) -> bytes:
 # ===========================================================================
 
 
-#: Armor labels a PEM or RFC 4716 block can carry.  The list matches PyJWT's.
+#: Armor labels a PEM or RFC 4716 block can carry.  The list matches PyJWT's,
+#: including the bare ``CERTIFICATE`` an OIDC resource server holds as ``x5c``.
 _ARMOR_LABELS = (
+    b"TRUSTED CERTIFICATE",
+    b"CERTIFICATE",
     b"PRIVATE KEY",
     b"PUBLIC KEY",
     b"ENCRYPTED PRIVATE KEY",
@@ -787,7 +790,11 @@ _ARMOR_LABELS = (
 #: banner.  PyJWT's PEM regex also searches the whole value.
 _ARMOR_RE = re.compile(
     rb"-{4,5}[ -]BEGIN (?:"
-    + b"|".join(re.escape(label) for label in _ARMOR_LABELS)
+    # Longest first so ``CERTIFICATE REQUEST`` is not shadowed by ``CERTIFICATE``
+    # when the alternation is evaluated; a bare ``CERTIFICATE`` still matches.
+    + b"|".join(
+        re.escape(label) for label in sorted(_ARMOR_LABELS, key=len, reverse=True)
+    )
     + rb")"
 )
 
@@ -1138,7 +1145,14 @@ def _leeway_seconds(leeway: float | timedelta) -> float:
             f"leeway must be a number or timedelta, got {type(leeway).__name__}"
         )
     else:
-        seconds = float(leeway)
+        try:
+            seconds = float(leeway)
+        except OverflowError as exc:
+            raise ValueError("leeway must be finite") from exc
+    if not math.isfinite(seconds):
+        # exp <= now - nan is False, so a NaN tolerance would let an expired
+        # token through: reject it like a negative one.
+        raise ValueError("leeway must be finite")
     if seconds < 0:
         raise ValueError("leeway must not be negative")
     return seconds
@@ -1318,7 +1332,8 @@ def decode(
             no ``aud`` claim raises :class:`MissingRequiredClaimError`.
         issuer: Expected ``iss`` value or values.
         leeway: Clock skew tolerance for ``exp``, ``nbf`` and ``iat``, in
-            seconds or as a :class:`~datetime.timedelta`.
+            seconds or as a :class:`~datetime.timedelta`.  A negative or
+            non-finite value raises ``ValueError``.
         require: Claims that must be present and non-null.
         verify_audience: Set to ``False`` to skip the ``aud`` check even when
             *audience* is given.  The ``aud`` claim is never checked unless

@@ -27,6 +27,11 @@ Signing with a shared secret::
 
     >>> token = encode({"sub": "alice"}, b"secret", algorithm="HS256")
 
+A header or payload nested deeper than :data:`MAX_JSON_DEPTH` (100) levels is
+rejected with :class:`DecodeError`, and so is any ``RecursionError`` the JSON
+parser raises, so parsing an unauthenticated token cannot leak a
+``RecursionError`` to the caller.
+
 .. warning::
 
    This file is named ``jwt.py``, so a flat copy shadows the PyJWT package of
@@ -892,13 +897,52 @@ class _JWS:
     signature: bytes
 
 
+#: Deepest JSON nesting accepted in a header or payload.  JWT headers and
+#: claims nest a handful of levels, so 100 is far above any legitimate token.
+#: The cap is enforced by a scan, not by the parser, because CPython changed
+#: where ``json`` gives up: 3.10 raises at roughly 1,000 levels, while 3.12
+#: parses 2,000 and 3.14 parses 50,000.  A scan makes the answer the same on
+#: every supported version.
+MAX_JSON_DEPTH = 100
+
+
+def _check_json_depth(raw: bytes, what: str) -> None:
+    """Reject JSON nested deeper than :data:`MAX_JSON_DEPTH`.
+
+    Bracket characters inside string literals do not count, and backslash
+    escapes inside a string are skipped, so a claim holding ``"[[[["`` is not
+    mistaken for nesting.  The segment is scanned, not parsed.
+    """
+    depth = 0
+    in_string = False
+    escaped = False
+    for byte in raw:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif byte == 0x5C:  # backslash
+                escaped = True
+            elif byte == 0x22:  # double quote
+                in_string = False
+            continue
+        if byte == 0x22:
+            in_string = True
+        elif byte in (0x7B, 0x5B):  # { or [
+            depth += 1
+            if depth > MAX_JSON_DEPTH:
+                raise DecodeError(f"{what} is nested too deeply")
+        elif byte in (0x7D, 0x5D):  # } or ]
+            depth -= 1
+
+
 def _loads_object(raw: bytes, what: str) -> dict[str, Any]:
     """Decode a JSON object from *raw*, or raise DecodeError.
 
-    ``RecursionError`` is caught too: the token is unauthenticated at this
-    point, so deeply nested JSON must not escape as anything but a
-    :class:`DecodeError`.
+    Depth is capped before parsing, and ``RecursionError`` is caught as defence
+    in depth: the token is unauthenticated at this point, so deeply nested JSON
+    must not escape as anything but a :class:`DecodeError`.
     """
+    _check_json_depth(raw, what)
     try:
         value = json.loads(raw)
     except RecursionError as exc:

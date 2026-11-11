@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-11-11T04:12:27.118143+00:00",
+  "generated": "2026-11-11T04:21:27.502589+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -259,7 +259,7 @@
       "tier": "medium",
       "category": "crypto",
       "last_updated": "2026-11-10T22:10:18-06:00",
-      "content_hash": "8e9fb1325da0ca63d36a94a201c0bacc2b696f3bb2457e2a65c1548395449b77"
+      "content_hash": "9cdb934f7268e2510e98f6ff2516b047bdf08a0f99dd5a209a684d7849605509"
     },
     "llmstxt": {
       "description": "llms.txt parser — zero dependencies, stdlib only, Python 3.10+",

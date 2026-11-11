@@ -10,6 +10,10 @@
 
 - **ptyx**：当子进程的输出快于消费方时，ConPTY 读取线程不再丢失数据。此前分块从事件循环里用 `put_nowait` 送入 32 槽的有界队列，队列满时会在回调中抛出 `QueueFull`，该分块被丢弃；现在读取线程通过 `run_coroutine_threadsafe` 阻塞在 `put` 上，并在 0.5 秒的等待中复用同一个 future，因此超时不会把同一分块重复入队，关闭时仍能停止等待。子进程仍在运行时 `PeekNamedPipe`/`ReadFile` 失败会被记录并唤醒阻塞的 `read()`，由它抛出新增的 `PtyReadError`（已加入 `__all__`），而不是像子进程退出那样返回 `b""`；子进程退出后或清理阶段的失败仍属正常流结束，退出前的零字节读取会重试而不是结束流。POSIX 终端查询应答现在只对 `CSI 6n`（光标位置）回复 `ESC[1;1R`：DA1/DA2（`CSI c`、`CSI > c`）此前会收到固定的 `ESC[?62;c`，等于声明伪终端并不具备的能力；跨两次读取拆分的查询仍然只回复一次。`ptyx` 升到 0.2.0。([#311](https://github.com/Oaklight/zerodep/issues/311))
 
+### 开发体验
+
+- **cli**：当平铺复制会遮蔽一个可导入的顶层模块时，`zerodep add` 现在会在 stderr 给出告警。写任何文件之前，它对每个直接落在目标目录里的文件（包括依赖）按文件名主干调用 `importlib.util.find_spec()`；若解析到另一个模块或包，就给出既有来源路径以及两种补救方式——`zerodep add <module> --nested`，或重命名复制出的文件并用该名字导入。告警只是提醒：它从不阻止复制，且在 `-y` 与 `--dry-run` 下同样输出，因此非交互安装也能看到。若主干不可导入，或解析结果正是将要写入的文件，则不告警；`--nested` 布局写入子目录，因此也不告警。这是 `jwt` docstring 告警在 CLI 一侧的对应实现：`zerodep add jwt` 会写出 `./jwt.py`，一旦该目录进入 `sys.path`，对真实 PyJWT 的 `import jwt.exceptions` 就会失败。([#314](https://github.com/Oaklight/zerodep/issues/314))
+
 ## [2026.11.11] - 2026-11-11
 
 ### 新功能

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794386561607,
+  "lastUpdate": 1795153325833,
   "repoUrl": "https://github.com/Oaklight/zerodep",
   "entries": {
     "Benchmark": [
@@ -258981,6 +258981,6335 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.000002494993664257664",
             "extra": "mean: 17.120392068955244 usec\nrounds: 18155"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "github-actions[bot]",
+            "username": "github-actions[bot]",
+            "email": "github-actions[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "github-actions[bot]",
+            "username": "github-actions[bot]",
+            "email": "github-actions[bot]@users.noreply.github.com"
+          },
+          "id": "9f872e8d652272c34600b9fda6448fe4fd4436c3",
+          "message": "release: v2026.11.20",
+          "timestamp": "2026-11-20T05:22:24Z",
+          "url": "https://github.com/Oaklight/zerodep/commit/9f872e8d652272c34600b9fda6448fe4fd4436c3"
+        },
+        "date": 1795153323985,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pure_python",
+            "value": 16952.77439290093,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004529235093525772",
+            "extra": "mean: 58.98739503185719 usec\nrounds: 7850"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_openssl",
+            "value": 198049.40427438033,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000015757145405075235",
+            "extra": "mean: 5.049245180331805 usec\nrounds: 2023"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbEncryptSmall::test_pycryptodome",
+            "value": 140522.0980021959,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000010737979328618528",
+            "extra": "mean: 7.116318459637381 usec\nrounds: 15710"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbEncryptMedium::test_pure_python",
+            "value": 351.43774340567126,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00010208100749253342",
+            "extra": "mean: 2.8454541914289524 msec\nrounds: 350"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbEncryptMedium::test_openssl",
+            "value": 179648.4182886403,
+            "unit": "iter/sec",
+            "range": "stddev: 7.933474855290762e-7",
+            "extra": "mean: 5.566428079501955 usec\nrounds: 10164"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbEncryptMedium::test_pycryptodome",
+            "value": 132532.54101342568,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000011963376848325264",
+            "extra": "mean: 7.5453167377112225 usec\nrounds: 16430"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbEncryptLarge::test_pure_python",
+            "value": 5.581701818016803,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0010307949224046071",
+            "extra": "mean: 179.15682933333463 msec\nrounds: 6"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbEncryptLarge::test_openssl",
+            "value": 52929.59902444057,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000032670737008414407",
+            "extra": "mean: 18.893020510853365 usec\nrounds: 7947"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbEncryptLarge::test_pycryptodome",
+            "value": 53030.34663036731,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002614908653446942",
+            "extra": "mean: 18.857127353328664 usec\nrounds: 12854"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbDecryptSmall::test_pure_python",
+            "value": 13085.196910269678,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000069935285869760574",
+            "extra": "mean: 76.42223551218922 usec\nrounds: 8093"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbDecryptSmall::test_openssl",
+            "value": 197252.4857728367,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000011057957832047318",
+            "extra": "mean: 5.069644603372134 usec\nrounds: 10062"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbDecryptSmall::test_pycryptodome",
+            "value": 133115.61573510128,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000015620655426428154",
+            "extra": "mean: 7.512266644884021 usec\nrounds: 9192"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbDecryptMedium::test_pure_python",
+            "value": 251.55883803231964,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00015134993080926948",
+            "extra": "mean: 3.9752131462442293 msec\nrounds: 253"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbDecryptMedium::test_openssl",
+            "value": 177486.38525355098,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000012429527872141013",
+            "extra": "mean: 5.6342349784826276 usec\nrounds: 10252"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbDecryptMedium::test_pycryptodome",
+            "value": 124348.45802022607,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000012427417269037483",
+            "extra": "mean: 8.041917173089058 usec\nrounds: 15466"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbDecryptLarge::test_pure_python",
+            "value": 3.993652967212194,
+            "unit": "iter/sec",
+            "range": "stddev: 0.003048339512771923",
+            "extra": "mean: 250.3973200000047 msec\nrounds: 5"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbDecryptLarge::test_openssl",
+            "value": 59671.263398858886,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000021066220398191964",
+            "extra": "mean: 16.758485459168664 usec\nrounds: 6946"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestEcbDecryptLarge::test_pycryptodome",
+            "value": 52588.643540624114,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000018537110582745497",
+            "extra": "mean: 19.01551233637566 usec\nrounds: 12605"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcEncryptSmall::test_pure_python",
+            "value": 16275.891524508039,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004069044984665041",
+            "extra": "mean: 61.44056677289918 usec\nrounds: 8162"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcEncryptSmall::test_openssl",
+            "value": 192645.27222667696,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001015449888071701",
+            "extra": "mean: 5.190887834627705 usec\nrounds: 16547"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcEncryptSmall::test_pycryptodome",
+            "value": 119954.31603437309,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000013040472279349567",
+            "extra": "mean: 8.336507039175217 usec\nrounds: 13993"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcEncryptMedium::test_pure_python",
+            "value": 338.6511276817909,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000039338356120458353",
+            "extra": "mean: 2.9528913925236853 msec\nrounds: 214"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcEncryptMedium::test_openssl",
+            "value": 159753.444551124,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000015533865795737957",
+            "extra": "mean: 6.259645936335238 usec\nrounds: 8699"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcEncryptMedium::test_pycryptodome",
+            "value": 100878.49899520345,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000016107907109246558",
+            "extra": "mean: 9.91291514009886 usec\nrounds: 12173"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcEncryptLarge::test_pure_python",
+            "value": 5.447160323330127,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0006511682244910047",
+            "extra": "mean: 183.58189233333397 msec\nrounds: 6"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcEncryptLarge::test_openssl",
+            "value": 17587.068384038328,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003031317622399749",
+            "extra": "mean: 56.85995972515692 usec\nrounds: 6257"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcEncryptLarge::test_pycryptodome",
+            "value": 10890.41112406674,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000037258095575389487",
+            "extra": "mean: 91.82389797847925 usec\nrounds: 6332"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcDecryptSmall::test_pure_python",
+            "value": 12878.011638408883,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000039605910283564966",
+            "extra": "mean: 77.65173910990136 usec\nrounds: 8448"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcDecryptSmall::test_openssl",
+            "value": 186971.39983627634,
+            "unit": "iter/sec",
+            "range": "stddev: 9.658663199276068e-7",
+            "extra": "mean: 5.3484115799296665 usec\nrounds: 10190"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcDecryptSmall::test_pycryptodome",
+            "value": 114169.12008196568,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000013284703852369502",
+            "extra": "mean: 8.75893586008255 usec\nrounds: 9261"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcDecryptMedium::test_pure_python",
+            "value": 245.85762360433068,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001270017264934098",
+            "extra": "mean: 4.0673947195119045 msec\nrounds: 246"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcDecryptMedium::test_openssl",
+            "value": 174263.6533450579,
+            "unit": "iter/sec",
+            "range": "stddev: 8.950572420525526e-7",
+            "extra": "mean: 5.738431283888609 usec\nrounds: 8848"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcDecryptMedium::test_pycryptodome",
+            "value": 95335.87949713474,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001531173932767682",
+            "extra": "mean: 10.489230343021637 usec\nrounds: 14435"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcDecryptLarge::test_pure_python",
+            "value": 3.824240863636919,
+            "unit": "iter/sec",
+            "range": "stddev: 0.006003936253491691",
+            "extra": "mean: 261.48980560000155 msec\nrounds: 5"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcDecryptLarge::test_openssl",
+            "value": 56934.75480398057,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000015892045477143574",
+            "extra": "mean: 17.563964285836978 usec\nrounds: 7980"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCbcDecryptLarge::test_pycryptodome",
+            "value": 10714.578784098188,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000451987280938139",
+            "extra": "mean: 93.33078043946334 usec\nrounds: 6554"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCtrEncryptSmall::test_pure_python",
+            "value": 16293.739642416727,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000432096863804861",
+            "extra": "mean: 61.373264943840574 usec\nrounds: 9519"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCtrEncryptSmall::test_openssl",
+            "value": 174323.64116317255,
+            "unit": "iter/sec",
+            "range": "stddev: 9.247837620063e-7",
+            "extra": "mean: 5.736456589178101 usec\nrounds: 9341"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCtrEncryptSmall::test_pycryptodome",
+            "value": 101938.56394558246,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001703455295265705",
+            "extra": "mean: 9.809830169216694 usec\nrounds: 12589"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCtrEncryptMedium::test_pure_python",
+            "value": 339.67865494148316,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005674505961246298",
+            "extra": "mean: 2.9439589018988293 msec\nrounds: 316"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCtrEncryptMedium::test_openssl",
+            "value": 156838.48470727052,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000014366403964077368",
+            "extra": "mean: 6.375986109955341 usec\nrounds: 12455"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCtrEncryptMedium::test_pycryptodome",
+            "value": 90571.75263904735,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000017083447542758955",
+            "extra": "mean: 11.040969958760401 usec\nrounds: 12849"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCtrEncryptLarge::test_pure_python",
+            "value": 5.393323059580308,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005456882735268632",
+            "extra": "mean: 185.4144446666647 msec\nrounds: 6"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCtrEncryptLarge::test_openssl",
+            "value": 55403.51372146295,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002246403954463277",
+            "extra": "mean: 18.049396740925598 usec\nrounds: 8469"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestCtrEncryptLarge::test_pycryptodome",
+            "value": 13690.277230201898,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003561855153536016",
+            "extra": "mean: 73.04453979893967 usec\nrounds: 6960"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmEncryptSmall::test_pure_python",
+            "value": 4933.650296044542,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00002667056657984664",
+            "extra": "mean: 202.68968005327218 usec\nrounds: 3760"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmEncryptSmall::test_openssl",
+            "value": 138561.96542875323,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001023075621854512",
+            "extra": "mean: 7.216987698649433 usec\nrounds: 6666"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmEncryptSmall::test_pycryptodome",
+            "value": 23001.07717017062,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004111646596673314",
+            "extra": "mean: 43.47622472641711 usec\nrounds: 6301"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmEncryptMedium::test_pure_python",
+            "value": 222.26016218760034,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007509636612902452",
+            "extra": "mean: 4.499231846847762 msec\nrounds: 222"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmEncryptMedium::test_openssl",
+            "value": 130490.78717905059,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000013225897151513276",
+            "extra": "mean: 7.66337625527439 usec\nrounds: 8962"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmEncryptMedium::test_pycryptodome",
+            "value": 21863.936643490983,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004097128470655161",
+            "extra": "mean: 45.737417570577605 usec\nrounds: 6545"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmEncryptLarge::test_pure_python",
+            "value": 3.5928596481735706,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0006218854315671058",
+            "extra": "mean: 278.3298258000002 msec\nrounds: 5"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmEncryptLarge::test_openssl",
+            "value": 61986.51685716379,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000221819557413103",
+            "extra": "mean: 16.13254060240731 usec\nrounds: 5677"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmEncryptLarge::test_pycryptodome",
+            "value": 8428.995311921855,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000885923221973351",
+            "extra": "mean: 118.63810133879345 usec\nrounds: 4332"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmDecryptSmall::test_pure_python",
+            "value": 5001.285919376867,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006485436851225193",
+            "extra": "mean: 199.9485764502331 usec\nrounds: 3499"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmDecryptSmall::test_openssl",
+            "value": 139917.17188525,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000012633880624131492",
+            "extra": "mean: 7.147085568740112 usec\nrounds: 12563"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmDecryptSmall::test_pycryptodome",
+            "value": 17380.90692030945,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000047805845612878165",
+            "extra": "mean: 57.53439705908027 usec\nrounds: 2584"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmDecryptMedium::test_pure_python",
+            "value": 221.08678599651654,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005401834852838997",
+            "extra": "mean: 4.523110666667143 msec\nrounds: 219"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmDecryptMedium::test_openssl",
+            "value": 130760.5150317978,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001349834734064329",
+            "extra": "mean: 7.647568532112496 usec\nrounds: 12775"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmDecryptMedium::test_pycryptodome",
+            "value": 16858.373709552114,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004594604403901237",
+            "extra": "mean: 59.31770271727875 usec\nrounds: 5557"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmDecryptLarge::test_pure_python",
+            "value": 3.5711556790163606,
+            "unit": "iter/sec",
+            "range": "stddev: 0.002327280379061541",
+            "extra": "mean: 280.0213964000136 msec\nrounds: 5"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmDecryptLarge::test_openssl",
+            "value": 63262.471718510205,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001827113110439342",
+            "extra": "mean: 15.807159803201403 usec\nrounds: 6508"
+          },
+          {
+            "name": "aes/test_aes_benchmark.py::TestGcmDecryptLarge::test_pycryptodome",
+            "value": 7556.379355039868,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007868960330922307",
+            "extra": "mean: 132.3385120061543 usec\nrounds: 3873"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestSingleInsertSelect::test_zerodep",
+            "value": 549.7049300196699,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00039234768428891045",
+            "extra": "mean: 1.819157779727785 msec\nrounds: 513"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestSingleInsertSelect::test_aiosqlite",
+            "value": 532.1703069551615,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00036562726948204176",
+            "extra": "mean: 1.879097700361279 msec\nrounds: 554"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestBulkInsert::test_zerodep",
+            "value": 374.90282716020255,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0031213628362724293",
+            "extra": "mean: 2.66735785263279 msec\nrounds: 380"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestBulkInsert::test_aiosqlite",
+            "value": 397.24893551505346,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003214725923459719",
+            "extra": "mean: 2.5173132275444594 msec\nrounds: 334"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestBulkSelect::test_zerodep",
+            "value": 1000.8857962555992,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001602635672716943",
+            "extra": "mean: 999.1149876849956 usec\nrounds: 812"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestBulkSelect::test_aiosqlite",
+            "value": 1040.8149116795526,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008156672695666657",
+            "extra": "mean: 960.7856197854718 usec\nrounds: 839"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestCursorIteration::test_zerodep",
+            "value": 22.414688987652244,
+            "unit": "iter/sec",
+            "range": "stddev: 0.004669185259623696",
+            "extra": "mean: 44.61360139999613 msec\nrounds: 20"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestCursorIteration::test_aiosqlite",
+            "value": 468.88034551470344,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00013465937567770802",
+            "extra": "mean: 2.132740281323311 msec\nrounds: 423"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestExecuteInsert::test_zerodep",
+            "value": 155.56051302022902,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0006728950218674644",
+            "extra": "mean: 6.428366560284874 msec\nrounds: 141"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestExecuteInsert::test_aiosqlite",
+            "value": 151.9637381509767,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0006063296594347992",
+            "extra": "mean: 6.580517248177293 msec\nrounds: 137"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestLargeRowInsert::test_zerodep",
+            "value": 53.19813699443165,
+            "unit": "iter/sec",
+            "range": "stddev: 0.002966453552923565",
+            "extra": "mean: 18.797650754286224 msec\nrounds: 175"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestLargeRowInsert::test_aiosqlite",
+            "value": 52.866556577819956,
+            "unit": "iter/sec",
+            "range": "stddev: 0.003262338296290125",
+            "extra": "mean: 18.91555010828051 msec\nrounds: 157"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestLargeRowSelect::test_zerodep",
+            "value": 688.2834052208677,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002623369146715437",
+            "extra": "mean: 1.4528898886921493 msec\nrounds: 566"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestLargeRowSelect::test_aiosqlite",
+            "value": 727.337659430874,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009482897691160316",
+            "extra": "mean: 1.3748772485979597 msec\nrounds: 535"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestLargeResultFetchall::test_zerodep",
+            "value": 164.72037163495088,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00011376885008055183",
+            "extra": "mean: 6.070894510948377 msec\nrounds: 137"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestLargeResultFetchall::test_aiosqlite",
+            "value": 167.90180642185715,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002099802910980295",
+            "extra": "mean: 5.955862067901027 msec\nrounds: 162"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestLargeResultIteration::test_zerodep",
+            "value": 2.3443651863337576,
+            "unit": "iter/sec",
+            "range": "stddev: 0.014617868776840442",
+            "extra": "mean: 426.55470480000304 msec\nrounds: 5"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestLargeResultIteration::test_aiosqlite",
+            "value": 61.009754525539485,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001286548428402766",
+            "extra": "mean: 16.39082156249927 msec\nrounds: 48"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestConcurrentTasks::test_zerodep",
+            "value": 7.288260736208163,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005151990250576793",
+            "extra": "mean: 137.2069463750094 msec\nrounds: 8"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestConcurrentTasks::test_aiosqlite",
+            "value": 7.284104806045349,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0009989300980591225",
+            "extra": "mean: 137.28522950000155 msec\nrounds: 8"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestMixedReadWrite::test_zerodep",
+            "value": 29.185181259235325,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0036743362727053876",
+            "extra": "mean: 34.26396400000295 msec\nrounds: 29"
+          },
+          {
+            "name": "aiosqlite/test_aiosqlite_benchmark.py::TestMixedReadWrite::test_aiosqlite",
+            "value": 29.816214641918176,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0021220089393955478",
+            "extra": "mean: 33.538798000002146 msec\nrounds: 28"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeShort::test_zerodep",
+            "value": 533.0110294699532,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000054007889363962954",
+            "extra": "mean: 1.8761337846881683 msec\nrounds: 418"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeShort::test_qrcode",
+            "value": 743.945558027502,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000026360502600789392",
+            "extra": "mean: 1.3441843817864858 msec\nrounds: 571"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeURL::test_zerodep",
+            "value": 235.1920296859739,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005358713464965008",
+            "extra": "mean: 4.25184476419201 msec\nrounds: 229"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeURL::test_qrcode",
+            "value": 261.7380316367247,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00004710701164229271",
+            "extra": "mean: 3.8206140458331816 msec\nrounds: 240"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeLong::test_zerodep",
+            "value": 114.896677897483,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008443547650599634",
+            "extra": "mean: 8.703471834862395 msec\nrounds: 109"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeLong::test_qrcode",
+            "value": 112.64188842466405,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000743911218359873",
+            "extra": "mean: 8.87769207339603 msec\nrounds: 109"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeNumeric::test_zerodep",
+            "value": 292.7794564778109,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00004202147955699229",
+            "extra": "mean: 3.415540188612201 msec\nrounds: 281"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeNumeric::test_qrcode",
+            "value": 291.9010967840713,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00010278916961815548",
+            "extra": "mean: 3.4258178918037174 msec\nrounds: 305"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeBinary::test_zerodep",
+            "value": 36.59358672232172,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00021534510148755098",
+            "extra": "mean: 27.32719281081048 msec\nrounds: 37"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeBinary::test_qrcode",
+            "value": 29.829668053605364,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001841766474501316",
+            "extra": "mean: 33.52367174193664 msec\nrounds: 31"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeHighEcc::test_zerodep",
+            "value": 193.86232206157644,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005824325145249795",
+            "extra": "mean: 5.158299918033429 msec\nrounds: 183"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeHighEcc::test_qrcode",
+            "value": 211.89997959869385,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005840811000093256",
+            "extra": "mean: 4.7192076275507295 msec\nrounds: 196"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeLargeData::test_zerodep",
+            "value": 36.3851373336056,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00014342444075373848",
+            "extra": "mean: 27.483749500002357 msec\nrounds: 36"
+          },
+          {
+            "name": "qr/test_qr_benchmark.py::TestEncodeLargeData::test_qrcode",
+            "value": 27.099302012941674,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0008344021278438859",
+            "extra": "mean: 36.90131943333578 msec\nrounds: 30"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncGet::test_zerodep",
+            "value": 1675.9017772754423,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005541757262866918",
+            "extra": "mean: 596.6936807154214 usec\nrounds: 783"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncGet::test_httpx",
+            "value": 159.08146077172614,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0018829717809993516",
+            "extra": "mean: 6.286087612905123 msec\nrounds: 31"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncPostJSON::test_zerodep",
+            "value": 1526.6963550863036,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000053260282286407284",
+            "extra": "mean: 655.0090963854238 usec\nrounds: 1245"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncPostJSON::test_httpx",
+            "value": 163.576753788817,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001961749959439851",
+            "extra": "mean: 6.113338092593726 msec\nrounds: 162"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncClientGet::test_zerodep",
+            "value": 1685.1936700519063,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008820999270263833",
+            "extra": "mean: 593.4036056337659 usec\nrounds: 1349"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncClientGet::test_httpx",
+            "value": 1088.5161007125373,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008593933605156164",
+            "extra": "mean: 918.6818636356459 usec\nrounds: 110"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestAsyncGet::test_zerodep",
+            "value": 909.0013113006851,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001420220939000009",
+            "extra": "mean: 1.1001084240121781 msec\nrounds: 658"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestAsyncGet::test_httpx",
+            "value": 67.67108385255452,
+            "unit": "iter/sec",
+            "range": "stddev: 0.002191065991117779",
+            "extra": "mean: 14.777360477613378 msec\nrounds: 67"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestAsyncPostJSON::test_zerodep",
+            "value": 845.7695513138656,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00014495327757572816",
+            "extra": "mean: 1.1823551680792292 msec\nrounds: 708"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestAsyncPostJSON::test_httpx",
+            "value": 68.61617381766605,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001851303566358671",
+            "extra": "mean: 14.573823405795006 msec\nrounds: 69"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncStreaming::test_zerodep",
+            "value": 1659.7727551989426,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007623142777785208",
+            "extra": "mean: 602.492116386221 usec\nrounds: 1306"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncStreaming::test_httpx",
+            "value": 164.5998491861193,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0020430183033438003",
+            "extra": "mean: 6.07533970987581 msec\nrounds: 162"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestAsyncStreaming::test_zerodep",
+            "value": 900.5314166111758,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00012057064441722018",
+            "extra": "mean: 1.1104554283771 msec\nrounds: 733"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestAsyncStreaming::test_httpx",
+            "value": 66.70161555082159,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0018451905401255229",
+            "extra": "mean: 14.992140621212926 msec\nrounds: 66"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncFileUpload::test_zerodep",
+            "value": 1076.0414536256362,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008208695663414809",
+            "extra": "mean: 929.3322265890216 usec\nrounds: 865"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncFileUpload::test_httpx",
+            "value": 154.19459797351465,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0018072669256526306",
+            "extra": "mean: 6.485311503401472 msec\nrounds: 147"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestAsyncFileUpload::test_zerodep",
+            "value": 679.5724274035165,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001537855277112294",
+            "extra": "mean: 1.4715134983047513 msec\nrounds: 590"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestAsyncFileUpload::test_httpx",
+            "value": 64.22200173483401,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0024908711752158366",
+            "extra": "mean: 15.570987714286707 msec\nrounds: 63"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncGzipDecompression::test_zerodep",
+            "value": 1580.9351391199502,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009438765359002375",
+            "extra": "mean: 632.5370189169582 usec\nrounds: 1163"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncGzipDecompression::test_httpx",
+            "value": 161.79755567625358,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001984443537567797",
+            "extra": "mean: 6.180563085890711 msec\nrounds: 163"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestAsyncClientGet::test_zerodep",
+            "value": 913.3776615686984,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00013960096827590927",
+            "extra": "mean: 1.0948373734940378 msec\nrounds: 747"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestAsyncClientGet::test_httpx",
+            "value": 68.37949058220704,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0020707790483005107",
+            "extra": "mean: 14.624268058823604 msec\nrounds: 68"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncSocks5Get::test_zerodep",
+            "value": 857.5451133290278,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00016178021411023907",
+            "extra": "mean: 1.166119408129977 msec\nrounds: 615"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncSocks5PostJSON::test_zerodep",
+            "value": 23.72224015672965,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003568726470283486",
+            "extra": "mean: 42.154534875000614 msec\nrounds: 24"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestAsyncSocks5Get::test_zerodep",
+            "value": 543.5166724443322,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001748166466217095",
+            "extra": "mean: 1.839869962963135 msec\nrounds: 405"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestSyncSocks5Streaming::test_zerodep",
+            "value": 845.7686842283696,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009050293524506669",
+            "extra": "mean: 1.182356380234558 msec\nrounds: 597"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestConcurrentAsyncGet::test_zerodep[N=10]",
+            "value": 38.97354208265992,
+            "unit": "iter/sec",
+            "range": "stddev: 0.1339607836023954",
+            "extra": "mean: 25.658432530435032 msec\nrounds: 115"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestConcurrentAsyncGet::test_zerodep[N=50]",
+            "value": 0.8963254067943287,
+            "unit": "iter/sec",
+            "range": "stddev: 0.10412599607512685",
+            "extra": "mean: 1.1156662439999991 sec\nrounds: 5"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestConcurrentAsyncGet::test_httpx[N=10]",
+            "value": 12.15712459599303,
+            "unit": "iter/sec",
+            "range": "stddev: 0.010640802973687646",
+            "extra": "mean: 82.2562927692292 msec\nrounds: 13"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestConcurrentAsyncGet::test_httpx[N=50]",
+            "value": 0.7845154565946045,
+            "unit": "iter/sec",
+            "range": "stddev: 0.07479337580102145",
+            "extra": "mean: 1.2746721451999974 sec\nrounds: 5"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestConnectionPoolReuse::test_zerodep",
+            "value": 16.45912189974657,
+            "unit": "iter/sec",
+            "range": "stddev: 0.002031908562784038",
+            "extra": "mean: 60.756582647060746 msec\nrounds: 17"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestConnectionPoolReuse::test_httpx",
+            "value": 10.215329696172315,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0026428990445136074",
+            "extra": "mean: 97.89209254545158 msec\nrounds: 11"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestConcurrentAsyncPost::test_zerodep",
+            "value": 27.996496988706937,
+            "unit": "iter/sec",
+            "range": "stddev: 0.16640222005074898",
+            "extra": "mean: 35.71875440000134 msec\nrounds: 115"
+          },
+          {
+            "name": "httpclient/test_httpclient_benchmark.py::TestConcurrentAsyncPost::test_httpx",
+            "value": 6.397732567986358,
+            "unit": "iter/sec",
+            "range": "stddev: 0.27290923628020847",
+            "extra": "mean: 156.30537684615084 msec\nrounds: 13"
+          },
+          {
+            "name": "dotenv/test_dotenv_benchmark.py::TestParseSmall::test_zerodep",
+            "value": 42846.18341303889,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000018774897645959747",
+            "extra": "mean: 23.339301668014645 usec\nrounds: 15769"
+          },
+          {
+            "name": "dotenv/test_dotenv_benchmark.py::TestParseSmall::test_python_dotenv",
+            "value": 984.9754889841115,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005508647136729054",
+            "extra": "mean: 1.0152536902531297 msec\nrounds: 749"
+          },
+          {
+            "name": "dotenv/test_dotenv_benchmark.py::TestParseMedium::test_zerodep",
+            "value": 5955.203213885878,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010452757216703202",
+            "extra": "mean: 167.92038224124377 usec\nrounds: 3435"
+          },
+          {
+            "name": "dotenv/test_dotenv_benchmark.py::TestParseMedium::test_python_dotenv",
+            "value": 191.4969408543164,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00023528788509963411",
+            "extra": "mean: 5.222015534758658 msec\nrounds: 187"
+          },
+          {
+            "name": "dotenv/test_dotenv_benchmark.py::TestParseLarge::test_zerodep",
+            "value": 874.0452798790258,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003390450228536296",
+            "extra": "mean: 1.1441054863180626 msec\nrounds: 804"
+          },
+          {
+            "name": "dotenv/test_dotenv_benchmark.py::TestParseLarge::test_python_dotenv",
+            "value": 18.813848017593404,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00031418430746459747",
+            "extra": "mean: 53.152337526319414 msec\nrounds: 19"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestLoadSmall::test_zerodep",
+            "value": 29619.970255498945,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003151528633498224",
+            "extra": "mean: 33.76100621891577 usec\nrounds: 13829"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestLoadSmall::test_pyyaml",
+            "value": 4352.784961471195,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000011347487762596118",
+            "extra": "mean: 229.73797438916222 usec\nrounds: 2577"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestLoadMedium::test_zerodep",
+            "value": 4518.767293271179,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000938528109945878",
+            "extra": "mean: 221.2992913994671 usec\nrounds: 3116"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestLoadMedium::test_pyyaml",
+            "value": 680.9424163261207,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00004011424789905552",
+            "extra": "mean: 1.4685529584062134 msec\nrounds: 577"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestLoadLarge::test_zerodep",
+            "value": 214.07875605837395,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007213756664343689",
+            "extra": "mean: 4.671178114129759 msec\nrounds: 184"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestLoadLarge::test_pyyaml",
+            "value": 27.829600558736672,
+            "unit": "iter/sec",
+            "range": "stddev: 0.02009655331794658",
+            "extra": "mean: 35.93296274193434 msec\nrounds: 31"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestDumpSmall::test_zerodep",
+            "value": 64084.9523849484,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000017349744173271154",
+            "extra": "mean: 15.60428716546678 usec\nrounds: 14765"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestDumpSmall::test_pyyaml",
+            "value": 7269.018169015569,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006967459970721985",
+            "extra": "mean: 137.5701610242953 usec\nrounds: 2422"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestDumpMedium::test_zerodep",
+            "value": 9995.976514955688,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000054408912353461344",
+            "extra": "mean: 100.04025104539105 usec\nrounds: 6218"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestDumpMedium::test_pyyaml",
+            "value": 1320.9071256326192,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000022493528611703593",
+            "extra": "mean: 757.0554966315835 usec\nrounds: 1039"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestDumpLarge::test_zerodep",
+            "value": 469.1476016213913,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00004039358789707357",
+            "extra": "mean: 2.131525337748639 msec\nrounds: 453"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestDumpLarge::test_pyyaml",
+            "value": 65.0535289238048,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001666983416223148",
+            "extra": "mean: 15.371956241932226 msec\nrounds: 62"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestFixtureLoadGithubActions::test_zerodep",
+            "value": 1379.526636848267,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000021686514062507492",
+            "extra": "mean: 724.8863293315222 usec\nrounds: 1166"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestFixtureLoadGithubActions::test_pyyaml",
+            "value": 198.21041012944247,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009457513548930228",
+            "extra": "mean: 5.0451436902176034 msec\nrounds: 184"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestFixtureLoadDockerCompose::test_zerodep",
+            "value": 1138.7054824511076,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000018909904074279898",
+            "extra": "mean: 878.1902040617748 usec\nrounds: 1034"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestFixtureLoadDockerCompose::test_pyyaml",
+            "value": 174.25971497457627,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008591536061816927",
+            "extra": "mean: 5.73856097575906 msec\nrounds: 165"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestFixtureLoadK8sDeployment::test_zerodep",
+            "value": 519.9815393526671,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000031430787676157815",
+            "extra": "mean: 1.9231451971254883 msec\nrounds: 487"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestFixtureLoadK8sDeployment::test_pyyaml",
+            "value": 79.75479963540043,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00012860688302167295",
+            "extra": "mean: 12.538430346154792 msec\nrounds: 78"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestFixtureDumpGithubActions::test_zerodep",
+            "value": 2425.811000180963,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000015704633173113293",
+            "extra": "mean: 412.23326958505874 usec\nrounds: 2170"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestFixtureDumpGithubActions::test_pyyaml",
+            "value": 381.32048807517754,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000051815197560763",
+            "extra": "mean: 2.6224659604517484 msec\nrounds: 354"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestFixtureDumpDockerCompose::test_zerodep",
+            "value": 112947.12420201299,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000013327105451729724",
+            "extra": "mean: 8.853700411277737 usec\nrounds: 35986"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestFixtureDumpDockerCompose::test_pyyaml",
+            "value": 12750.845187059618,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004585416640098569",
+            "extra": "mean: 78.42617374218179 usec\nrounds: 5088"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestFixtureDumpK8sDeployment::test_zerodep",
+            "value": 4948.899842742603,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010117919862118052",
+            "extra": "mean: 202.0651117978204 usec\nrounds: 3721"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestFixtureDumpK8sDeployment::test_pyyaml",
+            "value": 676.1072942388063,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000127645637613469",
+            "extra": "mean: 1.4790551862420704 msec\nrounds: 596"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_zerodep[100B]",
+            "value": 33330.00138995015,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000027370080858278635",
+            "extra": "mean: 30.00299904882469 usec\nrounds: 17873"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_zerodep[500B]",
+            "value": 6370.187339170441,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000067520484981484614",
+            "extra": "mean: 156.9812545152283 usec\nrounds: 5481"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_zerodep[1KB]",
+            "value": 3536.191847691954,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000009859961391662635",
+            "extra": "mean: 282.79008692718196 usec\nrounds: 2945"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_zerodep[5KB]",
+            "value": 694.5204087247558,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005959193453070753",
+            "extra": "mean: 1.439842497697297 msec\nrounds: 651"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_zerodep[10KB]",
+            "value": 346.0082642325926,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000034683009671174905",
+            "extra": "mean: 2.890104380072793 msec\nrounds: 271"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_zerodep[50KB]",
+            "value": 54.78923676400368,
+            "unit": "iter/sec",
+            "range": "stddev: 0.014353740666062448",
+            "extra": "mean: 18.251760000004165 msec\nrounds: 58"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_zerodep[100KB]",
+            "value": 33.28851676783549,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001374243949257766",
+            "extra": "mean: 30.040389212121173 msec\nrounds: 33"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_zerodep[500KB]",
+            "value": 5.289856252659829,
+            "unit": "iter/sec",
+            "range": "stddev: 0.053280778372261195",
+            "extra": "mean: 189.0410537143014 msec\nrounds: 7"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_pyyaml[100B]",
+            "value": 5263.58430997448,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001872388759785859",
+            "extra": "mean: 189.98460765699193 usec\nrounds: 3265"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_pyyaml[500B]",
+            "value": 1215.2292884063713,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000037592619650119005",
+            "extra": "mean: 822.889976023686 usec\nrounds: 1001"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_pyyaml[1KB]",
+            "value": 625.9870824692545,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003432925358070508",
+            "extra": "mean: 1.5974770534488072 msec\nrounds: 580"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_pyyaml[5KB]",
+            "value": 123.62803364692104,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008523424339957651",
+            "extra": "mean: 8.088780274997967 msec\nrounds: 120"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_pyyaml[10KB]",
+            "value": 61.218494675591906,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005629520620116101",
+            "extra": "mean: 16.33493285483716 msec\nrounds: 62"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_pyyaml[50KB]",
+            "value": 10.132737615659487,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04041800355211564",
+            "extra": "mean: 98.69001230768723 msec\nrounds: 13"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_pyyaml[100KB]",
+            "value": 5.078572436968514,
+            "unit": "iter/sec",
+            "range": "stddev: 0.053448840901626",
+            "extra": "mean: 196.90572742857577 msec\nrounds: 7"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_load_pyyaml[500KB]",
+            "value": 0.9982165045392147,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06975163379259416",
+            "extra": "mean: 1.0017866820000223 sec\nrounds: 5"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_zerodep[100B]",
+            "value": 51592.765602928244,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001812031225011074",
+            "extra": "mean: 19.3825624254429 usec\nrounds: 21802"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_zerodep[500B]",
+            "value": 11078.889522724707,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004648842741519388",
+            "extra": "mean: 90.26175393741656 usec\nrounds: 9079"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_zerodep[1KB]",
+            "value": 5584.129275068982,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006865181202601981",
+            "extra": "mean: 179.07894870282115 usec\nrounds: 5049"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_zerodep[5KB]",
+            "value": 1103.7247742576897,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000029911443976243297",
+            "extra": "mean: 906.0229717798536 usec\nrounds: 1063"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_zerodep[10KB]",
+            "value": 658.2917696821227,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000022520731561966093",
+            "extra": "mean: 1.5190832485766639 msec\nrounds: 527"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_zerodep[50KB]",
+            "value": 130.87651874657814,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007467326574568198",
+            "extra": "mean: 7.640790033056603 msec\nrounds: 121"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_zerodep[100KB]",
+            "value": 55.273780897228015,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004275052587348579",
+            "extra": "mean: 18.091760392858344 msec\nrounds: 56"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_zerodep[500KB]",
+            "value": 10.84579820461807,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0016695599355562559",
+            "extra": "mean: 92.20160481818725 msec\nrounds: 11"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_pyyaml[100B]",
+            "value": 8464.795079043766,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000774087916408974",
+            "extra": "mean: 118.13635069272887 usec\nrounds: 4474"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_pyyaml[500B]",
+            "value": 2216.6956568649966,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000021269805236076703",
+            "extra": "mean: 451.12191964785495 usec\nrounds: 1929"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_pyyaml[1KB]",
+            "value": 1151.7128865448292,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00002021832930851865",
+            "extra": "mean: 868.2719553482012 usec\nrounds: 1075"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_pyyaml[5KB]",
+            "value": 233.2582728030244,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000977992967019486",
+            "extra": "mean: 4.287093392157854 msec\nrounds: 204"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_pyyaml[10KB]",
+            "value": 115.57967081902682,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00012599082713206418",
+            "extra": "mean: 8.6520405614045 msec\nrounds: 114"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_pyyaml[50KB]",
+            "value": 22.40631252926274,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00024832907886141657",
+            "extra": "mean: 44.63027991303771 msec\nrounds: 23"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_pyyaml[100KB]",
+            "value": 11.037922035059058,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004922085344214414",
+            "extra": "mean: 90.59676240000272 msec\nrounds: 5"
+          },
+          {
+            "name": "yaml/test_yaml_benchmark.py::TestScaleCurve::test_dump_pyyaml[500KB]",
+            "value": 1.8854786939663155,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06504729568111346",
+            "extra": "mean: 530.3692920000003 msec\nrounds: 5"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestLoadSmall::test_zerodep",
+            "value": 55570.770659913665,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001907010880535779",
+            "extra": "mean: 17.995071655922825 usec\nrounds: 11625"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestLoadSmall::test_commentjson",
+            "value": 957.8384268648217,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008609622899250687",
+            "extra": "mean: 1.0440174166672147 msec\nrounds: 732"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestLoadMedium::test_zerodep",
+            "value": 11177.109383360068,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004675941522435796",
+            "extra": "mean: 89.46857060276703 usec\nrounds: 6919"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestLoadMedium::test_commentjson",
+            "value": 128.77853727251787,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00013744795560290585",
+            "extra": "mean: 7.765269129310155 msec\nrounds: 116"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestLoadLarge::test_zerodep",
+            "value": 597.449329862579,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003607713549977094",
+            "extra": "mean: 1.6737821100745276 msec\nrounds: 536"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestLoadLarge::test_commentjson",
+            "value": 5.033322514901543,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05841771755927499",
+            "extra": "mean: 198.67592371429055 msec\nrounds: 7"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestLoadPlainJson::test_zerodep",
+            "value": 18444.743983752996,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004004860709652728",
+            "extra": "mean: 54.21598699775109 usec\nrounds: 12844"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestLoadPlainJson::test_stdlib",
+            "value": 18664.576252175106,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005872656840419226",
+            "extra": "mean: 53.577428519624895 usec\nrounds: 13759"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestFixtureLoadVscodeSettings::test_zerodep",
+            "value": 1970.465479864592,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000012950556623876577",
+            "extra": "mean: 507.4943003156385 usec\nrounds: 1585"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestFixtureLoadVscodeSettings::test_commentjson",
+            "value": 34.40674010746893,
+            "unit": "iter/sec",
+            "range": "stddev: 0.019654696233177015",
+            "extra": "mean: 29.06407282051468 msec\nrounds: 39"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestFixtureLoadTsconfig::test_zerodep",
+            "value": 4258.902659068341,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000012708213661688801",
+            "extra": "mean: 234.80226716868793 usec\nrounds: 3320"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestFixtureLoadTsconfig::test_commentjson",
+            "value": 72.49901604974154,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00024679737172350185",
+            "extra": "mean: 13.793290647060651 msec\nrounds: 68"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestFixtureLoadEslintConfig::test_zerodep",
+            "value": 1393.4730610918207,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000015529001951516263",
+            "extra": "mean: 717.6313829967227 usec\nrounds: 1188"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestFixtureLoadEslintConfig::test_commentjson",
+            "value": 19.991684277181445,
+            "unit": "iter/sec",
+            "range": "stddev: 0.025009646497884373",
+            "extra": "mean: 50.02079795454764 msec\nrounds: 22"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestJsonlSmall::test_zerodep",
+            "value": 125422.00575696307,
+            "unit": "iter/sec",
+            "range": "stddev: 9.956145466530701e-7",
+            "extra": "mean: 7.973082506252957 usec\nrounds: 42312"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestJsonlSmall::test_jsonlines",
+            "value": 43082.15994692244,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002412796141859299",
+            "extra": "mean: 23.211463892061307 usec\nrounds: 4902"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestJsonlSmall::test_ndjson",
+            "value": 109159.92711797493,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000012268508231232449",
+            "extra": "mean: 9.160870902004605 usec\nrounds: 21596"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestJsonlMedium::test_zerodep",
+            "value": 11501.631474078618,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004163662175904003",
+            "extra": "mean: 86.94418720106913 usec\nrounds: 6688"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestJsonlMedium::test_jsonlines",
+            "value": 4464.816246697025,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000067110016197383246",
+            "extra": "mean: 223.97338316885455 usec\nrounds: 3244"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestJsonlMedium::test_ndjson",
+            "value": 11526.90578970188,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005160081572404159",
+            "extra": "mean: 86.7535501932703 usec\nrounds: 8019"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestJsonlLarge::test_zerodep",
+            "value": 616.4167377345163,
+            "unit": "iter/sec",
+            "range": "stddev: 0.005982203768620941",
+            "extra": "mean: 1.622279115384256 msec\nrounds: 364"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestJsonlLarge::test_jsonlines",
+            "value": 274.84004574088027,
+            "unit": "iter/sec",
+            "range": "stddev: 0.009100626411401849",
+            "extra": "mean: 3.6384799649713417 msec\nrounds: 314"
+          },
+          {
+            "name": "jsonx/test_jsonx_benchmark.py::TestJsonlLarge::test_ndjson",
+            "value": 612.6832799907754,
+            "unit": "iter/sec",
+            "range": "stddev: 0.006228650726926746",
+            "extra": "mean: 1.6321646642863439 msec\nrounds: 700"
+          },
+          {
+            "name": "structlog/test_structlog_benchmark.py::TestSimpleLog::test_zerodep",
+            "value": 139339.48408378218,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000012308219443061413",
+            "extra": "mean: 7.176716682822788 usec\nrounds: 9117"
+          },
+          {
+            "name": "structlog/test_structlog_benchmark.py::TestSimpleLog::test_structlog",
+            "value": 107973.41776283417,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000015293968581969146",
+            "extra": "mean: 9.261538818716662 usec\nrounds: 15727"
+          },
+          {
+            "name": "structlog/test_structlog_benchmark.py::TestBoundLog::test_zerodep",
+            "value": 121655.35612406365,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000014471930271400238",
+            "extra": "mean: 8.219942235672747 usec\nrounds: 17104"
+          },
+          {
+            "name": "structlog/test_structlog_benchmark.py::TestBoundLog::test_structlog",
+            "value": 71229.40914656078,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000031100572976358",
+            "extra": "mean: 14.039144954051382 usec\nrounds: 16488"
+          },
+          {
+            "name": "structlog/test_structlog_benchmark.py::TestJSONRendering::test_zerodep",
+            "value": 144432.86691214525,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001186319402501526",
+            "extra": "mean: 6.923631867033935 usec\nrounds: 21370"
+          },
+          {
+            "name": "structlog/test_structlog_benchmark.py::TestJSONRendering::test_structlog",
+            "value": 122424.71707316046,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000015490445563328737",
+            "extra": "mean: 8.168285162565697 usec\nrounds: 23804"
+          },
+          {
+            "name": "structlog/test_structlog_benchmark.py::TestBindAndLog::test_zerodep",
+            "value": 122792.49770936318,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001653636760231336",
+            "extra": "mean: 8.14382001062389 usec\nrounds: 14862"
+          },
+          {
+            "name": "structlog/test_structlog_benchmark.py::TestBindAndLog::test_structlog",
+            "value": 68899.318473825,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000012057039607068076",
+            "extra": "mean: 14.51393166363325 usec\nrounds: 11458"
+          },
+          {
+            "name": "retry/test_retry_benchmark.py::TestDecoratorOverhead::test_zerodep",
+            "value": 4295200.751049862,
+            "unit": "iter/sec",
+            "range": "stddev: 4.82017779306388e-8",
+            "extra": "mean: 232.81798871812293 nsec\nrounds: 195849"
+          },
+          {
+            "name": "retry/test_retry_benchmark.py::TestDecoratorOverhead::test_tenacity",
+            "value": 63464.31410872924,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000023335690260842024",
+            "extra": "mean: 15.75688659120724 usec\nrounds: 10687"
+          },
+          {
+            "name": "retry/test_retry_benchmark.py::TestRetryWithFailures::test_zerodep",
+            "value": 7753.547857539116,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000893834436809806",
+            "extra": "mean: 128.97321566509143 usec\nrounds: 6422"
+          },
+          {
+            "name": "retry/test_retry_benchmark.py::TestRetryWithFailures::test_tenacity",
+            "value": 5892.316446317672,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000020219886169018717",
+            "extra": "mean: 169.71254159727576 usec\nrounds: 4219"
+          },
+          {
+            "name": "retry/test_retry_benchmark.py::TestBackoffCalculation::test_zerodep",
+            "value": 327026.11423028726,
+            "unit": "iter/sec",
+            "range": "stddev: 7.595373288140596e-7",
+            "extra": "mean: 3.0578597747573575 usec\nrounds: 90433"
+          },
+          {
+            "name": "retry/test_retry_benchmark.py::TestBackoffCalculation::test_tenacity",
+            "value": 84067.38666812354,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002074878007925186",
+            "extra": "mean: 11.895219295298702 usec\nrounds: 39253"
+          },
+          {
+            "name": "toon/test_toon_benchmark.py::TestEncodeBenchmark::test_encode_small_ours",
+            "value": 148346.0230025677,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000008475711058905359",
+            "extra": "mean: 6.740996352714431 usec\nrounds: 23853"
+          },
+          {
+            "name": "toon/test_toon_benchmark.py::TestEncodeBenchmark::test_encode_small_ref",
+            "value": 159303.820814163,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000013484285717422438",
+            "extra": "mean: 6.277313343077672 usec\nrounds: 31215"
+          },
+          {
+            "name": "toon/test_toon_benchmark.py::TestEncodeBenchmark::test_encode_medium_ours",
+            "value": 6643.8807672870325,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000239599290499089",
+            "extra": "mean: 150.51444103629524 usec\nrounds: 4206"
+          },
+          {
+            "name": "toon/test_toon_benchmark.py::TestEncodeBenchmark::test_encode_medium_ref",
+            "value": 6718.440991935946,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000021511356503302737",
+            "extra": "mean: 148.84405492290347 usec\nrounds: 4916"
+          },
+          {
+            "name": "toon/test_toon_benchmark.py::TestEncodeBenchmark::test_encode_large_ours",
+            "value": 1119.9399014636774,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001268489101051813",
+            "extra": "mean: 892.9050556133191 usec\nrounds: 971"
+          },
+          {
+            "name": "toon/test_toon_benchmark.py::TestEncodeBenchmark::test_encode_large_ref",
+            "value": 1127.393088885687,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00011864280839436986",
+            "extra": "mean: 887.0020668553132 usec\nrounds: 1062"
+          },
+          {
+            "name": "toon/test_toon_benchmark.py::TestDecodeBenchmark::test_decode_small_ours",
+            "value": 104284.45072006472,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002137017118224658",
+            "extra": "mean: 9.589157281792119 usec\nrounds: 23887"
+          },
+          {
+            "name": "toon/test_toon_benchmark.py::TestDecodeBenchmark::test_decode_small_ref",
+            "value": 108060.69664086521,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000018310351632730566",
+            "extra": "mean: 9.254058423512245 usec\nrounds: 15867"
+          },
+          {
+            "name": "toon/test_toon_benchmark.py::TestDecodeBenchmark::test_decode_medium_ours",
+            "value": 9030.442584240092,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001241651646242213",
+            "extra": "mean: 110.73654371549824 usec\nrounds: 4861"
+          },
+          {
+            "name": "toon/test_toon_benchmark.py::TestDecodeBenchmark::test_decode_medium_ref",
+            "value": 9564.756497894106,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005499756982542647",
+            "extra": "mean: 104.55049223889517 usec\nrounds: 4961"
+          },
+          {
+            "name": "toon/test_toon_benchmark.py::TestDecodeBenchmark::test_decode_large_ours",
+            "value": 1355.5089460042377,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001666205356123875",
+            "extra": "mean: 737.7302842211369 usec\nrounds: 1147"
+          },
+          {
+            "name": "toon/test_toon_benchmark.py::TestDecodeBenchmark::test_decode_large_ref",
+            "value": 1356.8022214072128,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009991815555288016",
+            "extra": "mean: 737.0270951965616 usec\nrounds: 1166"
+          },
+          {
+            "name": "tabulate/test_tabulate_benchmark.py::TestSmallTable::test_zerodep",
+            "value": 23632.23805803776,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000045710037865188305",
+            "extra": "mean: 42.31507813792869 usec\nrounds: 7346"
+          },
+          {
+            "name": "tabulate/test_tabulate_benchmark.py::TestSmallTable::test_reference",
+            "value": 7090.0252639571745,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000611324987203872",
+            "extra": "mean: 141.04322097180616 usec\nrounds: 1421"
+          },
+          {
+            "name": "tabulate/test_tabulate_benchmark.py::TestMediumTable::test_zerodep",
+            "value": 3154.1971852857264,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010995536494068946",
+            "extra": "mean: 317.0378835746167 usec\nrounds: 2405"
+          },
+          {
+            "name": "tabulate/test_tabulate_benchmark.py::TestMediumTable::test_reference",
+            "value": 686.0402424507473,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000033070499692613324",
+            "extra": "mean: 1.4576404387411614 msec\nrounds: 604"
+          },
+          {
+            "name": "tabulate/test_tabulate_benchmark.py::TestLargeTable::test_zerodep",
+            "value": 209.92743299554598,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002020239632357088",
+            "extra": "mean: 4.763550841024274 msec\nrounds: 195"
+          },
+          {
+            "name": "tabulate/test_tabulate_benchmark.py::TestLargeTable::test_reference",
+            "value": 44.8180537159578,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00015912864940141258",
+            "extra": "mean: 22.312437000001687 msec\nrounds: 44"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSmall::test_zerodep",
+            "value": 4767.613644348517,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003146597236287069",
+            "extra": "mean: 209.74853975120033 usec\nrounds: 2088"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSmall::test_beautifulsoup4",
+            "value": 1713.2547874158986,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007423723245528587",
+            "extra": "mean: 583.684345927496 usec\nrounds: 847"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestMedium::test_zerodep",
+            "value": 543.9597295873627,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0047442957062667525",
+            "extra": "mean: 1.8383713823054153 msec\nrounds: 599"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestMedium::test_beautifulsoup4",
+            "value": 225.21732113558448,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00044385442066184735",
+            "extra": "mean: 4.440155823530038 msec\nrounds: 221"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestLarge::test_zerodep",
+            "value": 42.067537792598436,
+            "unit": "iter/sec",
+            "range": "stddev: 0.03181880861145496",
+            "extra": "mean: 23.77129854687965 msec\nrounds: 64"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestLarge::test_beautifulsoup4",
+            "value": 16.99207897388262,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04466767428275717",
+            "extra": "mean: 58.8509505833296 msec\nrounds: 24"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSerializeSmall::test_zerodep",
+            "value": 4592.056912151595,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003163256474581089",
+            "extra": "mean: 217.76733588683967 usec\nrounds: 3263"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSerializeSmall::test_beautifulsoup4",
+            "value": 1312.9722905851302,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007969720282952808",
+            "extra": "mean: 761.6306963754329 usec\nrounds: 1021"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSerializeMedium::test_zerodep",
+            "value": 583.3259811765444,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002474118767885078",
+            "extra": "mean: 1.7143073208963564 msec\nrounds: 536"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSerializeMedium::test_beautifulsoup4",
+            "value": 172.48007000450477,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00045204025216821314",
+            "extra": "mean: 5.797771301773488 msec\nrounds: 169"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSerializeLarge::test_zerodep",
+            "value": 40.23257385741161,
+            "unit": "iter/sec",
+            "range": "stddev: 0.03393617780520013",
+            "extra": "mean: 24.855481619050853 msec\nrounds: 63"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSerializeLarge::test_beautifulsoup4",
+            "value": 12.593775138749386,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05126522294255128",
+            "extra": "mean: 79.40430800000007 msec\nrounds: 18"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestTreeOpsSmall::test_zerodep",
+            "value": 4327.784112744623,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003015453548014216",
+            "extra": "mean: 231.0651303181141 usec\nrounds: 2962"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestTreeOpsSmall::test_beautifulsoup4",
+            "value": 1406.9121146328482,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007457777985676336",
+            "extra": "mean: 710.7764512078019 usec\nrounds: 1117"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestTreeOpsMedium::test_zerodep",
+            "value": 571.3533764459751,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001827659032758084",
+            "extra": "mean: 1.7502303149416254 msec\nrounds: 435"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestTreeOpsMedium::test_beautifulsoup4",
+            "value": 178.97162380451223,
+            "unit": "iter/sec",
+            "range": "stddev: 0.010601152135237157",
+            "extra": "mean: 5.587477940593999 msec\nrounds: 202"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestTreeOpsLarge::test_zerodep",
+            "value": 42.93287464825504,
+            "unit": "iter/sec",
+            "range": "stddev: 0.02991341298931347",
+            "extra": "mean: 23.29217431147821 msec\nrounds: 61"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestTreeOpsLarge::test_beautifulsoup4",
+            "value": 15.45843734674695,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04904131672525067",
+            "extra": "mean: 64.6895916818163 msec\nrounds: 22"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSelectSmall::test_zerodep",
+            "value": 2963.5191365261026,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003775487651043048",
+            "extra": "mean: 337.4366602444891 usec\nrounds: 2128"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSelectSmall::test_beautifulsoup4",
+            "value": 1136.5381166341188,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008597411747123162",
+            "extra": "mean: 879.8649032216542 usec\nrounds: 124"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSelectMedium::test_zerodep",
+            "value": 422.61646033871045,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002694574784559411",
+            "extra": "mean: 2.3662116690829773 msec\nrounds: 414"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSelectMedium::test_beautifulsoup4",
+            "value": 140.91139280079378,
+            "unit": "iter/sec",
+            "range": "stddev: 0.011628690467628721",
+            "extra": "mean: 7.096658262499034 msec\nrounds: 160"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSelectLarge::test_zerodep",
+            "value": 35.629895872097926,
+            "unit": "iter/sec",
+            "range": "stddev: 0.028594977214863374",
+            "extra": "mean: 28.066318340916297 msec\nrounds: 44"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestSelectLarge::test_beautifulsoup4",
+            "value": 12.042886253771632,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05501543233692517",
+            "extra": "mean: 83.03657270588407 msec\nrounds: 17"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestPseudoSelectSmall::test_zerodep",
+            "value": 2557.7367577538103,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003608790884082587",
+            "extra": "mean: 390.9706489412907 usec\nrounds: 2031"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestPseudoSelectSmall::test_beautifulsoup4",
+            "value": 787.5354896071557,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009433669782637425",
+            "extra": "mean: 1.2697840455403826 msec\nrounds: 527"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestPseudoSelectMedium::test_zerodep",
+            "value": 309.1422310306224,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002473336561034248",
+            "extra": "mean: 3.2347570135150643 msec\nrounds: 296"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestPseudoSelectMedium::test_beautifulsoup4",
+            "value": 111.14842449387847,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004775295472027824",
+            "extra": "mean: 8.99697863063345 msec\nrounds: 111"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestPseudoSelectLarge::test_zerodep",
+            "value": 11.093728499634652,
+            "unit": "iter/sec",
+            "range": "stddev: 0.03742128726919803",
+            "extra": "mean: 90.14101976922663 msec\nrounds: 13"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestPseudoSelectLarge::test_beautifulsoup4",
+            "value": 9.157773848202972,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05391531672696539",
+            "extra": "mean: 109.19684374999387 msec\nrounds: 12"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureParseBlogPost::test_zerodep",
+            "value": 364.92436046585925,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00738749206050222",
+            "extra": "mean: 2.7402939028882827 msec\nrounds: 381"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureParseBlogPost::test_beautifulsoup4",
+            "value": 130.66795310815152,
+            "unit": "iter/sec",
+            "range": "stddev: 0.011696915528737124",
+            "extra": "mean: 7.652985879195015 msec\nrounds: 149"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureParseDocsPage::test_zerodep",
+            "value": 297.4422309010259,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00035763428113778586",
+            "extra": "mean: 3.361997376669592 msec\nrounds: 300"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureParseDocsPage::test_beautifulsoup4",
+            "value": 79.64583679014972,
+            "unit": "iter/sec",
+            "range": "stddev: 0.019920720603649737",
+            "extra": "mean: 12.55558407446698 msec\nrounds: 94"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureParseEcommerce::test_zerodep",
+            "value": 184.29025800871844,
+            "unit": "iter/sec",
+            "range": "stddev: 0.009666134349156036",
+            "extra": "mean: 5.426222800950725 msec\nrounds: 211"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureParseEcommerce::test_beautifulsoup4",
+            "value": 64.0017795205366,
+            "unit": "iter/sec",
+            "range": "stddev: 0.016625217861488042",
+            "extra": "mean: 15.624565558823633 msec\nrounds: 68"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureSerializeBlogPost::test_zerodep",
+            "value": 357.12577073749105,
+            "unit": "iter/sec",
+            "range": "stddev: 0.007076298180150396",
+            "extra": "mean: 2.8001339638271587 msec\nrounds: 387"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureSerializeBlogPost::test_beautifulsoup4",
+            "value": 110.9189556231198,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005896231059232659",
+            "extra": "mean: 9.015591558559189 msec\nrounds: 111"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureSerializeEcommerce::test_zerodep",
+            "value": 170.44996612495297,
+            "unit": "iter/sec",
+            "range": "stddev: 0.010290595939462131",
+            "extra": "mean: 5.866824281249332 msec\nrounds: 192"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureSerializeEcommerce::test_beautifulsoup4",
+            "value": 47.444679057813524,
+            "unit": "iter/sec",
+            "range": "stddev: 0.018964322093802947",
+            "extra": "mean: 21.077179145451776 msec\nrounds: 55"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureSelectEcommerce::test_zerodep",
+            "value": 127.77071146354038,
+            "unit": "iter/sec",
+            "range": "stddev: 0.011520524658534077",
+            "extra": "mean: 7.826519775507019 msec\nrounds: 147"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureSelectEcommerce::test_beautifulsoup4",
+            "value": 45.044242161858385,
+            "unit": "iter/sec",
+            "range": "stddev: 0.020793774723688152",
+            "extra": "mean: 22.200395700002673 msec\nrounds: 50"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureSelectDocsPage::test_zerodep",
+            "value": 198.37727751348646,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00040260638156611894",
+            "extra": "mean: 5.040899908166227 msec\nrounds: 196"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestFixtureSelectDocsPage::test_beautifulsoup4",
+            "value": 62.55950168577166,
+            "unit": "iter/sec",
+            "range": "stddev: 0.017005858509600708",
+            "extra": "mean: 15.98478205633529 msec\nrounds: 71"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_zerodep[5nodes]",
+            "value": 3996.960588610915,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0023713992316739176",
+            "extra": "mean: 250.19010766566888 usec\nrounds: 3418"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_zerodep[25nodes]",
+            "value": 1188.0503761349848,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009952777377111849",
+            "extra": "mean: 841.7151495319935 usec\nrounds: 1177"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_zerodep[50nodes]",
+            "value": 601.1134363048418,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002665018023058713",
+            "extra": "mean: 1.6635795169497283 msec\nrounds: 590"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_zerodep[250nodes]",
+            "value": 100.20440048668627,
+            "unit": "iter/sec",
+            "range": "stddev: 0.017474319443845785",
+            "extra": "mean: 9.979601645666905 msec\nrounds: 127"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_zerodep[500nodes]",
+            "value": 41.96882387757292,
+            "unit": "iter/sec",
+            "range": "stddev: 0.03352321308741689",
+            "extra": "mean: 23.82721047692677 msec\nrounds: 65"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_zerodep[2500nodes]",
+            "value": 7.732823845725127,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06932519233501862",
+            "extra": "mean: 129.31886461539165 msec\nrounds: 13"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_zerodep[5000nodes]",
+            "value": 4.2294743394602445,
+            "unit": "iter/sec",
+            "range": "stddev: 0.07664003212937086",
+            "extra": "mean: 236.436001200002 msec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_zerodep[25000nodes]",
+            "value": 0.8806462164323274,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05712067633952861",
+            "extra": "mean: 1.1355297749999977 sec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_bs4[5nodes]",
+            "value": 1728.4049719367702,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007209422216408978",
+            "extra": "mean: 578.5681111987583 usec\nrounds: 1268"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_bs4[25nodes]",
+            "value": 433.54661036302025,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003337825478174255",
+            "extra": "mean: 2.3065570715976143 msec\nrounds: 419"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_bs4[50nodes]",
+            "value": 226.05308946238134,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004490010600237071",
+            "extra": "mean: 4.423739584264409 msec\nrounds: 178"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_bs4[250nodes]",
+            "value": 34.59485783747214,
+            "unit": "iter/sec",
+            "range": "stddev: 0.038380053087046624",
+            "extra": "mean: 28.9060300434832 msec\nrounds: 46"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_bs4[500nodes]",
+            "value": 15.586711894924292,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05285424846481487",
+            "extra": "mean: 64.15721331999748 msec\nrounds: 25"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_bs4[2500nodes]",
+            "value": 3.3152630346567817,
+            "unit": "iter/sec",
+            "range": "stddev: 0.08221629559196973",
+            "extra": "mean: 301.635191399987 msec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_bs4[5000nodes]",
+            "value": 1.6217973713318186,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06468679287275177",
+            "extra": "mean: 616.5998402000127 msec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_parse_find_bs4[25000nodes]",
+            "value": 0.3408949356187733,
+            "unit": "iter/sec",
+            "range": "stddev: 0.020931711162454673",
+            "extra": "mean: 2.933455136800012 sec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_zerodep[5nodes]",
+            "value": 4714.186200907262,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000029860440451671353",
+            "extra": "mean: 212.1256898608601 usec\nrounds: 3018"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_zerodep[25nodes]",
+            "value": 1163.858265941766,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009177658890329822",
+            "extra": "mean: 859.211150758829 usec\nrounds: 1121"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_zerodep[50nodes]",
+            "value": 585.507920150276,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00024059100728518324",
+            "extra": "mean: 1.7079188266886993 msec\nrounds: 577"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_zerodep[250nodes]",
+            "value": 82.48693616668402,
+            "unit": "iter/sec",
+            "range": "stddev: 0.03296862481838119",
+            "extra": "mean: 12.123131813009367 msec\nrounds: 123"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_zerodep[500nodes]",
+            "value": 42.50030587434429,
+            "unit": "iter/sec",
+            "range": "stddev: 0.030935807410445288",
+            "extra": "mean: 23.529242423727105 msec\nrounds: 59"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_zerodep[2500nodes]",
+            "value": 7.325542144791968,
+            "unit": "iter/sec",
+            "range": "stddev: 0.07333593393182379",
+            "extra": "mean: 136.50866792308904 msec\nrounds: 13"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_zerodep[5000nodes]",
+            "value": 4.087204463645969,
+            "unit": "iter/sec",
+            "range": "stddev: 0.07740158566929795",
+            "extra": "mean: 244.66600799999014 msec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_zerodep[25000nodes]",
+            "value": 0.820124921444439,
+            "unit": "iter/sec",
+            "range": "stddev: 0.07890055524619509",
+            "extra": "mean: 1.2193264389999967 sec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_bs4[5nodes]",
+            "value": 1340.5732740462395,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007459875669007158",
+            "extra": "mean: 745.9495272359933 usec\nrounds: 973"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_bs4[25nodes]",
+            "value": 330.07530994951026,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003220068215633165",
+            "extra": "mean: 3.0296116366685055 msec\nrounds: 300"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_bs4[50nodes]",
+            "value": 172.82742936494512,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00045819357733798566",
+            "extra": "mean: 5.786118578946079 msec\nrounds: 171"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_bs4[250nodes]",
+            "value": 25.820349235412333,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04616288567688034",
+            "extra": "mean: 38.7291430833364 msec\nrounds: 36"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_bs4[500nodes]",
+            "value": 12.403993990968363,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05619437932121333",
+            "extra": "mean: 80.61919416666304 msec\nrounds: 18"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_bs4[2500nodes]",
+            "value": 2.6436536685317424,
+            "unit": "iter/sec",
+            "range": "stddev: 0.08814556289721974",
+            "extra": "mean: 378.26437400001396 msec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_bs4[5000nodes]",
+            "value": 1.3250484734069206,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06657758510425492",
+            "extra": "mean: 754.6893717999865 msec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_serialize_bs4[25000nodes]",
+            "value": 0.2757693080667966,
+            "unit": "iter/sec",
+            "range": "stddev: 0.021159519572081176",
+            "extra": "mean: 3.62621934619998 sec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_zerodep[5nodes]",
+            "value": 3117.83464186315,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000328362547709832",
+            "extra": "mean: 320.7354189260088 usec\nrounds: 1955"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_zerodep[25nodes]",
+            "value": 827.7378234394289,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000096671570640733",
+            "extra": "mean: 1.208112003200222 msec\nrounds: 625"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_zerodep[50nodes]",
+            "value": 427.99260437338273,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00023933831691494306",
+            "extra": "mean: 2.336488971495394 msec\nrounds: 421"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_zerodep[250nodes]",
+            "value": 67.48213580810527,
+            "unit": "iter/sec",
+            "range": "stddev: 0.03520321100508791",
+            "extra": "mean: 14.818736663042756 msec\nrounds: 92"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_zerodep[500nodes]",
+            "value": 35.59478636013649,
+            "unit": "iter/sec",
+            "range": "stddev: 0.028475171622564594",
+            "extra": "mean: 28.094002022721106 msec\nrounds: 44"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_zerodep[2500nodes]",
+            "value": 5.940112618571269,
+            "unit": "iter/sec",
+            "range": "stddev: 0.07617493907630889",
+            "extra": "mean: 168.34697660000302 msec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_zerodep[5000nodes]",
+            "value": 3.1647374261694607,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0840480726730832",
+            "extra": "mean: 315.9819806000087 msec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_zerodep[25000nodes]",
+            "value": 0.6318718530691048,
+            "unit": "iter/sec",
+            "range": "stddev: 0.07837203062287576",
+            "extra": "mean: 1.582599375399991 sec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_bs4[5nodes]",
+            "value": 1176.4709647294267,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008281098010768781",
+            "extra": "mean: 849.9997279830764 usec\nrounds: 897"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_bs4[25nodes]",
+            "value": 307.8579897417746,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00034302749645188506",
+            "extra": "mean: 3.2482509251709883 msec\nrounds: 294"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_bs4[50nodes]",
+            "value": 161.74333582653696,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005128705043735505",
+            "extra": "mean: 6.1826349437509975 msec\nrounds: 160"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_bs4[250nodes]",
+            "value": 24.54120631631187,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04739921205850924",
+            "extra": "mean: 40.747793205883575 msec\nrounds: 34"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_bs4[500nodes]",
+            "value": 13.252507136542025,
+            "unit": "iter/sec",
+            "range": "stddev: 0.049187335719831936",
+            "extra": "mean: 75.4574202222184 msec\nrounds: 18"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_bs4[2500nodes]",
+            "value": 2.584235649618328,
+            "unit": "iter/sec",
+            "range": "stddev: 0.08173111480856517",
+            "extra": "mean: 386.96161479998636 msec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_bs4[5000nodes]",
+            "value": 1.2321591715244247,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06885687256234747",
+            "extra": "mean: 811.5834569999606 msec\nrounds: 5"
+          },
+          {
+            "name": "soup/test_soup_benchmark.py::TestScaleCurve::test_css_select_bs4[25000nodes]",
+            "value": 0.2604418933668828,
+            "unit": "iter/sec",
+            "range": "stddev: 0.07469565586142679",
+            "extra": "mean: 3.8396280531999762 sec\nrounds: 5"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkSimple::test_ours",
+            "value": 196133.87803207446,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000010497050906775162",
+            "extra": "mean: 5.098558240083676 usec\nrounds: 11753"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkSimple::test_pydantic",
+            "value": 882446.7477408854,
+            "unit": "iter/sec",
+            "range": "stddev: 3.5328710870413394e-7",
+            "extra": "mean: 1.133212856821171 usec\nrounds: 54586"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkNested::test_ours",
+            "value": 107592.21122998986,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001395541031487294",
+            "extra": "mean: 9.294353081584996 usec\nrounds: 10904"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkNested::test_pydantic",
+            "value": 567150.0871453952,
+            "unit": "iter/sec",
+            "range": "stddev: 4.3936195865651194e-7",
+            "extra": "mean: 1.7632017038615722 usec\nrounds: 51298"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkConstrained::test_ours",
+            "value": 116784.81923832894,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000016022977997282201",
+            "extra": "mean: 8.562756756588776 usec\nrounds: 8399"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkConstrained::test_pydantic",
+            "value": 848218.2693556919,
+            "unit": "iter/sec",
+            "range": "stddev: 3.277864610835901e-7",
+            "extra": "mean: 1.1789418315165527 usec\nrounds: 53620"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkListOfDicts::test_ours",
+            "value": 4722.303078504832,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007750319942684163",
+            "extra": "mean: 211.76108000179823 usec\nrounds: 525"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkListOfDicts::test_pydantic",
+            "value": 35822.53038121858,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001976571424059632",
+            "extra": "mean: 27.915392613479103 usec\nrounds: 13484"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkJsonSchema::test_ours",
+            "value": 122004.92089979364,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001230951599555209",
+            "extra": "mean: 8.196390708054558 usec\nrounds: 17586"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkJsonSchema::test_pydantic",
+            "value": 6940.173496675871,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008364342119518965",
+            "extra": "mean: 144.0886168737668 usec\nrounds: 877"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkDiscUnionFlat50::test_ours",
+            "value": 3075.131060417142,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000013449958572266264",
+            "extra": "mean: 325.18939204638315 usec\nrounds: 1584"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkDiscUnionFlat500::test_ours",
+            "value": 314.53738063305786,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000059155028596506706",
+            "extra": "mean: 3.1792723586218488 msec\nrounds: 290"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkDiscUnionFlat2000::test_ours",
+            "value": 77.4458924063668,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00010569725136332656",
+            "extra": "mean: 12.912240648644014 msec\nrounds: 74"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkConversationSmall::test_ours",
+            "value": 2004.9274405971696,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000014747886576329366",
+            "extra": "mean: 498.77116735064936 usec\nrounds: 1709"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkConversationMedium::test_ours",
+            "value": 139.14974967091425,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009896551796871401",
+            "extra": "mean: 7.186502328354707 msec\nrounds: 134"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkConversationLarge::test_ours",
+            "value": 27.726606015819897,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003212323934704562",
+            "extra": "mean: 36.066441000006726 msec\nrounds: 28"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkTools10::test_ours",
+            "value": 2722.3436903498573,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000011709458883899911",
+            "extra": "mean: 367.33054813938156 usec\nrounds: 1963"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkTools50::test_ours",
+            "value": 363.441690291257,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000058727674727091394",
+            "extra": "mean: 2.7514730057484993 msec\nrounds: 348"
+          },
+          {
+            "name": "validate/test_validate_benchmark.py::TestBenchmarkTools200::test_ours",
+            "value": 74.06828859396192,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001860254059529482",
+            "extra": "mean: 13.501054486110005 msec\nrounds: 72"
+          },
+          {
+            "name": "sse/test_sse_benchmark.py::TestSmallStream::test_zerodep",
+            "value": 37861.79068337726,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000070647638447306585",
+            "extra": "mean: 26.411851683471415 usec\nrounds: 17375"
+          },
+          {
+            "name": "sse/test_sse_benchmark.py::TestSmallStream::test_httpx_sse",
+            "value": 55469.57794411767,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000021247265319197697",
+            "extra": "mean: 18.027899923944634 usec\nrounds: 24941"
+          },
+          {
+            "name": "sse/test_sse_benchmark.py::TestMediumStream::test_zerodep",
+            "value": 3011.3339782138873,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000016224624858194496",
+            "extra": "mean: 332.07874225665597 usec\nrounds: 2615"
+          },
+          {
+            "name": "sse/test_sse_benchmark.py::TestMediumStream::test_httpx_sse",
+            "value": 3857.1971712594977,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000017602668803278877",
+            "extra": "mean: 259.25560856757244 usec\nrounds: 3385"
+          },
+          {
+            "name": "sse/test_sse_benchmark.py::TestLargeStream::test_zerodep",
+            "value": 409.839966398006,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006325339214609253",
+            "extra": "mean: 2.439976776273875 msec\nrounds: 295"
+          },
+          {
+            "name": "sse/test_sse_benchmark.py::TestLargeStream::test_httpx_sse",
+            "value": 565.0455681726226,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00012703710043635214",
+            "extra": "mean: 1.7697687696835418 msec\nrounds: 508"
+          },
+          {
+            "name": "markdown/test_markdown_benchmark.py::TestRenderSmall::test_zerodep",
+            "value": 23285.3514416758,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000037880058250467133",
+            "extra": "mean: 42.94545446328175 usec\nrounds: 3338"
+          },
+          {
+            "name": "markdown/test_markdown_benchmark.py::TestRenderSmall::test_mistune",
+            "value": 11293.334624211893,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006165248502205968",
+            "extra": "mean: 88.54780569913247 usec\nrounds: 386"
+          },
+          {
+            "name": "markdown/test_markdown_benchmark.py::TestRenderMedium::test_zerodep",
+            "value": 3186.2645522175685,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000014186210433739006",
+            "extra": "mean: 313.8471346655828 usec\nrounds: 1552"
+          },
+          {
+            "name": "markdown/test_markdown_benchmark.py::TestRenderMedium::test_mistune",
+            "value": 1357.740637639219,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00002422114027158019",
+            "extra": "mean: 736.5176914338787 usec\nrounds: 175"
+          },
+          {
+            "name": "markdown/test_markdown_benchmark.py::TestRenderLarge::test_zerodep",
+            "value": 194.3646962764187,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001551756845363636",
+            "extra": "mean: 5.144967265957779 msec\nrounds: 188"
+          },
+          {
+            "name": "markdown/test_markdown_benchmark.py::TestRenderLarge::test_mistune",
+            "value": 93.64049971314797,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00013762021231179908",
+            "extra": "mean: 10.679139934786049 msec\nrounds: 92"
+          },
+          {
+            "name": "markdown/test_markdown_benchmark.py::TestRenderGFMMedium::test_zerodep",
+            "value": 3554.783301990449,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000012582732937079043",
+            "extra": "mean: 281.31109973428323 usec\nrounds: 2647"
+          },
+          {
+            "name": "markdown/test_markdown_benchmark.py::TestRenderGFMMedium::test_mistune",
+            "value": 1602.1106260289118,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000022546308276583396",
+            "extra": "mean: 624.1766228582231 usec\nrounds: 350"
+          },
+          {
+            "name": "markdown/test_markdown_benchmark.py::TestRenderGFMLarge::test_zerodep",
+            "value": 174.32226389391656,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008613385960074181",
+            "extra": "mean: 5.736501911244956 msec\nrounds: 169"
+          },
+          {
+            "name": "markdown/test_markdown_benchmark.py::TestRenderGFMLarge::test_mistune",
+            "value": 94.80411604972794,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00011253119861403948",
+            "extra": "mean: 10.548065228259356 msec\nrounds: 92"
+          },
+          {
+            "name": "diff/test_diff_benchmark.py::TestParseSmall::test_zerodep",
+            "value": 119763.41971983513,
+            "unit": "iter/sec",
+            "range": "stddev: 9.833421194797317e-7",
+            "extra": "mean: 8.349794973618149 usec\nrounds: 24153"
+          },
+          {
+            "name": "diff/test_diff_benchmark.py::TestParseSmall::test_unidiff",
+            "value": 60526.333395948575,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000018484492756962559",
+            "extra": "mean: 16.521734324434338 usec\nrounds: 12982"
+          },
+          {
+            "name": "diff/test_diff_benchmark.py::TestParseMedium::test_zerodep",
+            "value": 39728.183179356376,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002688029534514787",
+            "extra": "mean: 25.171047855005398 usec\nrounds: 20144"
+          },
+          {
+            "name": "diff/test_diff_benchmark.py::TestParseMedium::test_unidiff",
+            "value": 20752.134300901093,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000033165947450036313",
+            "extra": "mean: 48.1878145881399 usec\nrounds: 10954"
+          },
+          {
+            "name": "diff/test_diff_benchmark.py::TestParseLarge::test_zerodep",
+            "value": 12796.557582101414,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005376950542631537",
+            "extra": "mean: 78.14601650358713 usec\nrounds: 8665"
+          },
+          {
+            "name": "diff/test_diff_benchmark.py::TestParseLarge::test_unidiff",
+            "value": 6816.401220749149,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000009403842163901026",
+            "extra": "mean: 146.7049793013939 usec\nrounds: 5073"
+          },
+          {
+            "name": "diff/test_diff_benchmark.py::TestApplySmall::test_zerodep",
+            "value": 505648.69260899187,
+            "unit": "iter/sec",
+            "range": "stddev: 5.174447798651613e-7",
+            "extra": "mean: 1.9776576398137355 usec\nrounds: 60191"
+          },
+          {
+            "name": "diff/test_diff_benchmark.py::TestApplyMedium::test_zerodep",
+            "value": 160050.19496002552,
+            "unit": "iter/sec",
+            "range": "stddev: 8.49431773892919e-7",
+            "extra": "mean: 6.248039874301698 usec\nrounds: 66309"
+          },
+          {
+            "name": "diff/test_diff_benchmark.py::TestApplyLarge::test_zerodep",
+            "value": 19036.437118167807,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004046839211474418",
+            "extra": "mean: 52.53083829671204 usec\nrounds: 7254"
+          },
+          {
+            "name": "scheduler/test_scheduler_benchmark.py::TestCronParsing::test_zerodep",
+            "value": 28239.617876823417,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000026472247572837096",
+            "extra": "mean: 35.41124403176545 usec\nrounds: 13740"
+          },
+          {
+            "name": "scheduler/test_scheduler_benchmark.py::TestCronParsing::test_croniter",
+            "value": 3868.1693611785277,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000020975541099611188",
+            "extra": "mean: 258.52022148671557 usec\nrounds: 1508"
+          },
+          {
+            "name": "scheduler/test_scheduler_benchmark.py::TestCronParsing::test_apscheduler",
+            "value": 7469.219379759375,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000059669290966094886",
+            "extra": "mean: 133.8827994140688 usec\nrounds: 339"
+          },
+          {
+            "name": "scheduler/test_scheduler_benchmark.py::TestNextFireTime::test_zerodep",
+            "value": 23135.955874922198,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000034341525004636817",
+            "extra": "mean: 43.22276569881999 usec\nrounds: 10128"
+          },
+          {
+            "name": "scheduler/test_scheduler_benchmark.py::TestNextFireTime::test_croniter",
+            "value": 1988.2579207733722,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000026180243264092657",
+            "extra": "mean: 502.9528561420393 usec\nrounds: 1286"
+          },
+          {
+            "name": "scheduler/test_scheduler_benchmark.py::TestNextFireTime::test_apscheduler",
+            "value": 9788.453004576291,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000055853486085305",
+            "extra": "mean: 102.16118926376626 usec\nrounds: 5067"
+          },
+          {
+            "name": "scheduler/test_scheduler_benchmark.py::TestBatchNextFireTime::test_zerodep",
+            "value": 1785.7643998680142,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000013866978398680833",
+            "extra": "mean: 559.9842846424255 usec\nrounds: 1732"
+          },
+          {
+            "name": "scheduler/test_scheduler_benchmark.py::TestBatchNextFireTime::test_croniter",
+            "value": 319.06030761195285,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000489044880440008",
+            "extra": "mean: 3.1342037105292926 msec\nrounds: 304"
+          },
+          {
+            "name": "scheduler/test_scheduler_benchmark.py::TestBatchNextFireTime::test_apscheduler",
+            "value": 1303.7252084169015,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001654353839765376",
+            "extra": "mean: 767.0328022684232 usec\nrounds: 1234"
+          },
+          {
+            "name": "scheduler/test_scheduler_benchmark.py::TestJobAddOverhead::test_zerodep",
+            "value": 2478.3789056595933,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010895808074059015",
+            "extra": "mean: 403.48955428744705 usec\nrounds: 1842"
+          },
+          {
+            "name": "scheduler/test_scheduler_benchmark.py::TestJobAddOverhead::test_schedule",
+            "value": 2157.650860618916,
+            "unit": "iter/sec",
+            "range": "stddev: 0.003466180206645555",
+            "extra": "mean: 463.4670132465977 usec\nrounds: 1434"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestIndexingPerformance::test_index_1k_ours",
+            "value": 6.394609227784395,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0757204770787907",
+            "extra": "mean: 156.3817215999734 msec\nrounds: 5"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestIndexingPerformance::test_index_1k_rank_bm25",
+            "value": 91.12468579673073,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003227130805207901",
+            "extra": "mean: 10.973974738641862 msec\nrounds: 88"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestIndexingPerformance::test_index_1k_bm25s",
+            "value": 22.820576729847055,
+            "unit": "iter/sec",
+            "range": "stddev: 0.003944143950188554",
+            "extra": "mean: 43.82010199996826 msec\nrounds: 11"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestSearchPerformance::test_search_ours",
+            "value": 401315.86899944657,
+            "unit": "iter/sec",
+            "range": "stddev: 6.316087785430405e-7",
+            "extra": "mean: 2.491802784906517 usec\nrounds: 59752"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestSearchPerformance::test_search_rank_bm25",
+            "value": 10465.683848177998,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005372521283969167",
+            "extra": "mean: 95.55037344015442 usec\nrounds: 4646"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestSearchPerformance::test_search_bm25s",
+            "value": 47341.39440315121,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000033157805735030226",
+            "extra": "mean: 21.123163198028585 usec\nrounds: 4277"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestLargeSearchPerformance::test_search_1k_ours",
+            "value": 403159.9496315369,
+            "unit": "iter/sec",
+            "range": "stddev: 6.498723701452205e-7",
+            "extra": "mean: 2.48040511195107 usec\nrounds: 71521"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestLargeSearchPerformance::test_search_1k_rank_bm25",
+            "value": 2914.119437642544,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001031767954493183",
+            "extra": "mean: 343.1568339590697 usec\nrounds: 1602"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestLargeSearchPerformance::test_search_1k_bm25s",
+            "value": 48712.83220858503,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000029685913402180277",
+            "extra": "mean: 20.528471752947315 usec\nrounds: 7877"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestCalibrationPerformance::test_calibrate_corpus",
+            "value": 1076.2476894774977,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003429353624990941",
+            "extra": "mean: 929.1541433974973 usec\nrounds: 1583"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestCalibrationPerformance::test_search_raw",
+            "value": 29948.123724515735,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005560442440918297",
+            "extra": "mean: 33.391073484226105 usec\nrounds: 18208"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestCalibrationPerformance::test_search_calibrated",
+            "value": 16542.233735316713,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000396567723148498",
+            "extra": "mean: 60.451328158001886 usec\nrounds: 11528"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestRRFPerformance::test_rrf_2_lists_1000_results",
+            "value": 1414.3834520260045,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000015053062949238539",
+            "extra": "mean: 707.0218465632997 usec\nrounds: 567"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestRRFPerformance::test_rrf_10_lists_100_results",
+            "value": 2941.838711642697,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000012637910900252143",
+            "extra": "mean: 339.92346216751247 usec\nrounds: 1956"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestRRFPerformance::test_rrf_overlapping_docs",
+            "value": 1514.171156388923,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00002158104704704411",
+            "extra": "mean: 660.4273207692412 usec\nrounds: 1300"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestMMRPerformance::test_mmr_100_candidates",
+            "value": 274.7762134272832,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00015591547096063525",
+            "extra": "mean: 3.6393252076917495 msec\nrounds: 260"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestMMRPerformance::test_mmr_500_candidates",
+            "value": 43.571481753387346,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00015849061192285658",
+            "extra": "mean: 22.950791659093802 msec\nrounds: 44"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestScaleSearch1K::test_broad_query_ours",
+            "value": 279.2921544444216,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00011660203507752204",
+            "extra": "mean: 3.5804800961532104 msec\nrounds: 208"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestScaleSearch1K::test_broad_query_rank_bm25",
+            "value": 3623.6414746404507,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010928289570249677",
+            "extra": "mean: 275.96549134299306 usec\nrounds: 1502"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestScaleSearch1K::test_broad_query_bm25s",
+            "value": 29371.907931983456,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000924877385894743",
+            "extra": "mean: 34.04613695220959 usec\nrounds: 5564"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestScaleSearch1K::test_selective_query_ours",
+            "value": 70719.34400883825,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000014558261548011141",
+            "extra": "mean: 14.140402658076459 usec\nrounds: 18589"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestScaleSearch1K::test_selective_query_rank_bm25",
+            "value": 3613.7577797568906,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000009853432173748191",
+            "extra": "mean: 276.7202621054677 usec\nrounds: 1900"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestScaleSearch1K::test_selective_query_bm25s",
+            "value": 23514.550473581974,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000048978016569963225",
+            "extra": "mean: 42.52686017210815 usec\nrounds: 5707"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestScaleSearch10K::test_broad_query_ours",
+            "value": 18.32610939651429,
+            "unit": "iter/sec",
+            "range": "stddev: 0.005117770155293085",
+            "extra": "mean: 54.56695572221153 msec\nrounds: 18"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestScaleSearch10K::test_broad_query_rank_bm25",
+            "value": 305.6910726820739,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007613224113397865",
+            "extra": "mean: 3.271276426969865 msec\nrounds: 178"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestScaleSearch10K::test_broad_query_bm25s",
+            "value": 12085.361594517513,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001131964903327555",
+            "extra": "mean: 82.74473148189847 usec\nrounds: 3564"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestScaleSearch10K::test_selective_query_ours",
+            "value": 7532.274606824831,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000072034132656934045",
+            "extra": "mean: 132.76202106252492 usec\nrounds: 3086"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestScaleSearch10K::test_selective_query_rank_bm25",
+            "value": 322.2883951205988,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006398449667986465",
+            "extra": "mean: 3.1028110696502265 msec\nrounds: 201"
+          },
+          {
+            "name": "sparse_search/test_sparse_search_benchmark.py::TestScaleSearch10K::test_selective_query_bm25s",
+            "value": 4096.892973692901,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000012138997867600817",
+            "extra": "mean: 244.08741122143823 usec\nrounds: 2495"
+          },
+          {
+            "name": "frontmatter/test_frontmatter_benchmark.py::TestParseSmall::test_zerodep",
+            "value": 92447.71940020927,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000016884564873306012",
+            "extra": "mean: 10.816924489732045 usec\nrounds: 18236"
+          },
+          {
+            "name": "frontmatter/test_frontmatter_benchmark.py::TestParseSmall::test_python_frontmatter",
+            "value": 72833.18264462172,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000259597715904453",
+            "extra": "mean: 13.730005523434913 usec\nrounds: 7966"
+          },
+          {
+            "name": "frontmatter/test_frontmatter_benchmark.py::TestParseMedium::test_zerodep",
+            "value": 13998.831293645797,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000008301998426206348",
+            "extra": "mean: 71.43453471390211 usec\nrounds: 7634"
+          },
+          {
+            "name": "frontmatter/test_frontmatter_benchmark.py::TestParseMedium::test_python_frontmatter",
+            "value": 16259.668905935738,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007483062930414097",
+            "extra": "mean: 61.50186733722118 usec\nrounds: 5367"
+          },
+          {
+            "name": "frontmatter/test_frontmatter_benchmark.py::TestParseLarge::test_zerodep",
+            "value": 2728.513770409408,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000030707690622553336",
+            "extra": "mean: 366.4998912026571 usec\nrounds: 2353"
+          },
+          {
+            "name": "frontmatter/test_frontmatter_benchmark.py::TestParseLarge::test_python_frontmatter",
+            "value": 3530.355063515124,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000011725147568684723",
+            "extra": "mean: 283.25762763485733 usec\nrounds: 1896"
+          },
+          {
+            "name": "frontmatter/test_frontmatter_benchmark.py::TestSerializeSmall::test_zerodep",
+            "value": 58626.03812964836,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000021387083678986066",
+            "extra": "mean: 17.057267246825603 usec\nrounds: 14264"
+          },
+          {
+            "name": "frontmatter/test_frontmatter_benchmark.py::TestSerializeSmall::test_python_frontmatter",
+            "value": 31656.89817123332,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003968492794970437",
+            "extra": "mean: 31.58869181026402 usec\nrounds: 4945"
+          },
+          {
+            "name": "frontmatter/test_frontmatter_benchmark.py::TestSerializeMedium::test_zerodep",
+            "value": 8984.580765832421,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006684775436840295",
+            "extra": "mean: 111.3017987219741 usec\nrounds: 4541"
+          },
+          {
+            "name": "frontmatter/test_frontmatter_benchmark.py::TestSerializeMedium::test_python_frontmatter",
+            "value": 7175.855748747525,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000014661755636252162",
+            "extra": "mean: 139.35620154774435 usec\nrounds: 2843"
+          },
+          {
+            "name": "frontmatter/test_frontmatter_benchmark.py::TestSerializeLarge::test_zerodep",
+            "value": 1789.2778561197945,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000017645447288010732",
+            "extra": "mean: 558.8846900327641 usec\nrounds: 1555"
+          },
+          {
+            "name": "frontmatter/test_frontmatter_benchmark.py::TestSerializeLarge::test_python_frontmatter",
+            "value": 1749.315425821448,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00002438474339879534",
+            "extra": "mean: 571.65219333181 usec\nrounds: 1200"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestEnvLookup::test_zerodep",
+            "value": 1497751.8040770686,
+            "unit": "iter/sec",
+            "range": "stddev: 2.3614043857990162e-7",
+            "extra": "mean: 667.6673646981258 nsec\nrounds: 103585"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestEnvLookup::test_decouple",
+            "value": 742136.3147085425,
+            "unit": "iter/sec",
+            "range": "stddev: 3.322886122838074e-7",
+            "extra": "mean: 1.3474613493246554 usec\nrounds: 5278"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestDotenvLookup::test_zerodep",
+            "value": 1799628.5958251103,
+            "unit": "iter/sec",
+            "range": "stddev: 7.878709072891968e-8",
+            "extra": "mean: 555.6702101310581 nsec\nrounds: 88661"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestDotenvLookup::test_decouple",
+            "value": 744628.8312331386,
+            "unit": "iter/sec",
+            "range": "stddev: 4.3657879188338296e-7",
+            "extra": "mean: 1.3429509549663226 usec\nrounds: 118442"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestCastInt::test_zerodep",
+            "value": 1086787.866386419,
+            "unit": "iter/sec",
+            "range": "stddev: 3.2491284920803333e-7",
+            "extra": "mean: 920.1427720434629 nsec\nrounds: 120759"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestCastInt::test_decouple",
+            "value": 557047.1435558632,
+            "unit": "iter/sec",
+            "range": "stddev: 5.479039893742498e-7",
+            "extra": "mean: 1.7951801953719482 usec\nrounds: 98049"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestCastBool::test_zerodep",
+            "value": 1059044.9159266064,
+            "unit": "iter/sec",
+            "range": "stddev: 4.110837839043181e-7",
+            "extra": "mean: 944.247014419643 nsec\nrounds: 83655"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestCastBool::test_decouple",
+            "value": 514701.11464088724,
+            "unit": "iter/sec",
+            "range": "stddev: 4.7609910959616776e-7",
+            "extra": "mean: 1.942875139677347 usec\nrounds: 72401"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestCsvCast::test_zerodep",
+            "value": 479860.0322490058,
+            "unit": "iter/sec",
+            "range": "stddev: 5.424851643839251e-7",
+            "extra": "mean: 2.0839410094506197 usec\nrounds: 65994"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestCsvCast::test_decouple",
+            "value": 106997.63006341721,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000015059379329432148",
+            "extra": "mean: 9.34600139654778 usec\nrounds: 17903"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestNestedJsonLookup::test_zerodep",
+            "value": 602378.286502051,
+            "unit": "iter/sec",
+            "range": "stddev: 5.519641305056576e-7",
+            "extra": "mean: 1.6600863982114917 usec\nrounds: 71043"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestConfigInit::test_zerodep_env_only",
+            "value": 2150438.9486383973,
+            "unit": "iter/sec",
+            "range": "stddev: 6.370040686833241e-8",
+            "extra": "mean: 465.0213393098997 nsec\nrounds: 86118"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestConfigInit::test_zerodep_with_dotenv",
+            "value": 804.2935536775512,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005332597851904958",
+            "extra": "mean: 1.24332713525752 msec\nrounds: 451"
+          },
+          {
+            "name": "config/test_config_benchmark.py::TestConfigInit::test_zerodep_with_json",
+            "value": 31115.328572096616,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002809569594974546",
+            "extra": "mean: 32.1385004076985 usec\nrounds: 11043"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestLRUGetSet::test_zerodep",
+            "value": 1342.5326915905941,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005190312099761513",
+            "extra": "mean: 744.8608188566558 usec\nrounds: 1612"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestLRUGetSet::test_cachetools",
+            "value": 1227.8902117072669,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006402363034908305",
+            "extra": "mean: 814.405058746737 usec\nrounds: 1515"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestEvictionPressure::test_zerodep_lru",
+            "value": 761.3128464960156,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000924274379531877",
+            "extra": "mean: 1.3135204595621304 msec\nrounds: 779"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestEvictionPressure::test_cachetools_lru",
+            "value": 710.6932145000477,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00010359752112126222",
+            "extra": "mean: 1.4070768928101718 msec\nrounds: 737"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestEvictionPressure::test_zerodep_lfu",
+            "value": 713.9763564553201,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009200556979277948",
+            "extra": "mean: 1.4006066040683784 msec\nrounds: 836"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestEvictionPressure::test_cachetools_lfu",
+            "value": 660.5793995768671,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00004830227351980635",
+            "extra": "mean: 1.513822563405017 msec\nrounds: 552"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestTTLExpiry::test_zerodep",
+            "value": 329.4225102225596,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000024630674349589525",
+            "extra": "mean: 3.0356152629776108 msec\nrounds: 289"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestTTLExpiry::test_cachetools",
+            "value": 329.21557041268863,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000024927890099668085",
+            "extra": "mean: 3.0375234037273775 msec\nrounds: 322"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestDecoratorOverhead::test_zerodep_lru",
+            "value": 5375.942536845647,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007551777475065913",
+            "extra": "mean: 186.01389303293288 usec\nrounds: 3057"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestDecoratorOverhead::test_cachetools_lru",
+            "value": 4704.824646854055,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010269892374762205",
+            "extra": "mean: 212.54777277802768 usec\nrounds: 2733"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestDecoratorOverhead::test_zerodep_ttl",
+            "value": 4163.197219599682,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000008563548578874832",
+            "extra": "mean: 240.20000669008814 usec\nrounds: 2242"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestDecoratorOverhead::test_cachetools_ttl",
+            "value": 4181.786275180444,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001241849745782593",
+            "extra": "mean: 239.1322593254362 usec\nrounds: 2225"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestKeyFunction::test_zerodep_hashkey",
+            "value": 1830.480486057779,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000014858233288130268",
+            "extra": "mean: 546.3046493074906 usec\nrounds: 1805"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestKeyFunction::test_cachetools_hashkey",
+            "value": 1819.3644544022995,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000016474719496025596",
+            "extra": "mean: 549.6424850888502 usec\nrounds: 1777"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestKeyFunction::test_zerodep_typedkey",
+            "value": 926.0021778201839,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007467953174675505",
+            "extra": "mean: 1.0799110671143426 msec\nrounds: 745"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestKeyFunction::test_cachetools_typedkey",
+            "value": 737.9496701576386,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003932371610658124",
+            "extra": "mean: 1.3551059651349704 msec\nrounds: 717"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestMixedWorkload::test_zerodep",
+            "value": 1541.9863119780775,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000447806939702172",
+            "extra": "mean: 648.5141873387894 usec\nrounds: 1548"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestMixedWorkload::test_cachetools",
+            "value": 1454.4026765482322,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005623657544453986",
+            "extra": "mean: 687.5674915377103 usec\nrounds: 1595"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestThreadedContention::test_zerodep",
+            "value": 99.13423783140689,
+            "unit": "iter/sec",
+            "range": "stddev: 0.007492049964265812",
+            "extra": "mean: 10.087332306933703 msec\nrounds: 101"
+          },
+          {
+            "name": "cache/test_cache_benchmark.py::TestThreadedContention::test_cachetools",
+            "value": 96.90478349360781,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0011654371687014361",
+            "extra": "mean: 10.31940802040968 msec\nrounds: 98"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestSimpleCommand::test_zerodep",
+            "value": 558.6642065075629,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00014784431473260297",
+            "extra": "mean: 1.7899840160718485 msec\nrounds: 311"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestSimpleCommand::test_sh",
+            "value": 19.69967377006982,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0037750824481744",
+            "extra": "mean: 50.7622619375212 msec\nrounds: 16"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestSimpleCommand::test_subprocess",
+            "value": 583.8116606173288,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009628409148412586",
+            "extra": "mean: 1.7128811694898132 msec\nrounds: 413"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestOutputCapture::test_zerodep",
+            "value": 99.38122080185653,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00017243541940798948",
+            "extra": "mean: 10.062263191491395 msec\nrounds: 94"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestOutputCapture::test_sh",
+            "value": 16.314045606324303,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0014227284806985977",
+            "extra": "mean: 61.29687412497731 msec\nrounds: 16"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestOutputCapture::test_subprocess",
+            "value": 99.89378730630881,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001772200316093855",
+            "extra": "mean: 10.010632562500158 msec\nrounds: 96"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestStdinInput::test_zerodep",
+            "value": 99.3431497498743,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00019028525966688183",
+            "extra": "mean: 10.066119329997036 msec\nrounds: 100"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestStdinInput::test_sh",
+            "value": 15.709485706174593,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0030472931629406085",
+            "extra": "mean: 63.655807625004 msec\nrounds: 16"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestStdinInput::test_subprocess",
+            "value": 99.74860425778219,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002730607729644339",
+            "extra": "mean: 10.025202933323069 msec\nrounds: 90"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestStreamingLines::test_zerodep",
+            "value": 99.75547489087425,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00017910291681384207",
+            "extra": "mean: 10.024512450007705 msec\nrounds: 100"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestStreamingLines::test_sh",
+            "value": 16.16237358377427,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0024103058747669674",
+            "extra": "mean: 61.872100333327275 msec\nrounds: 15"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestStreamingLines::test_subprocess",
+            "value": 100.05386066080891,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002045964437889587",
+            "extra": "mean: 9.994616833328251 msec\nrounds: 96"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestEnvPassing::test_zerodep",
+            "value": 97.2751365752281,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002490892636535881",
+            "extra": "mean: 10.280119208330754 msec\nrounds: 96"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestEnvPassing::test_sh",
+            "value": 15.65826240644397,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0015556651803626937",
+            "extra": "mean: 63.8640465999894 msec\nrounds: 15"
+          },
+          {
+            "name": "runner/test_runner_benchmark.py::TestEnvPassing::test_subprocess",
+            "value": 98.52803565105799,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00023681334213207262",
+            "extra": "mean: 10.149395483145025 msec\nrounds: 89"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestParseSmall::test_zerodep",
+            "value": 81745.31498648033,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002420893543740077",
+            "extra": "mean: 12.233116970255576 usec\nrounds: 8951"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestParseSmall::test_xmltodict",
+            "value": 74032.82536564909,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000018928086933231376",
+            "extra": "mean: 13.507521765662556 usec\nrounds: 16287"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestParseMedium::test_zerodep",
+            "value": 3246.9293469725267,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010298982562327686",
+            "extra": "mean: 307.98329533484036 usec\nrounds: 2509"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestParseMedium::test_xmltodict",
+            "value": 2906.6310486435495,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000017233472537447318",
+            "extra": "mean: 344.04091309307194 usec\nrounds: 2658"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestParseLarge::test_zerodep",
+            "value": 244.6634538838483,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000055325731411476086",
+            "extra": "mean: 4.087247131215358 msec\nrounds: 221"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestParseLarge::test_xmltodict",
+            "value": 220.82878007191778,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00010310466060647205",
+            "extra": "mean: 4.5283952557013984 msec\nrounds: 219"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestUnparseSmall::test_zerodep",
+            "value": 85383.91696148436,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001318583775144705",
+            "extra": "mean: 11.71180751113922 usec\nrounds: 8894"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestUnparseSmall::test_xmltodict",
+            "value": 64258.36558412193,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001928135855381684",
+            "extra": "mean: 15.562176082597055 usec\nrounds: 9223"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestUnparseMedium::test_zerodep",
+            "value": 4563.666973268597,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000009276963252237067",
+            "extra": "mean: 219.12203626106802 usec\nrounds: 3530"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestUnparseMedium::test_xmltodict",
+            "value": 2702.2981168514975,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010080613690132557",
+            "extra": "mean: 370.0553960956463 usec\nrounds: 2305"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestUnparseLarge::test_zerodep",
+            "value": 314.28389509645376,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007961261818847118",
+            "extra": "mean: 3.181836599336724 msec\nrounds: 302"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestUnparseLarge::test_xmltodict",
+            "value": 190.73899285537078,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000815044554828652",
+            "extra": "mean: 5.242766489588509 msec\nrounds: 192"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestExtractTags::test_extract_all",
+            "value": 1621.3625404327058,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000025912182261630496",
+            "extra": "mean: 616.7652052286358 usec\nrounds: 765"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestExtractTags::test_extract_filtered",
+            "value": 2757.7262745454004,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000014791225915646414",
+            "extra": "mean: 362.61756985466064 usec\nrounds: 2269"
+          },
+          {
+            "name": "xml/test_xml_benchmark.py::TestExtractTags::test_extract_first_only",
+            "value": 126198.95321012459,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001265207036530113",
+            "extra": "mean: 7.923995996503819 usec\nrounds: 24732"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestDispatchSuccess::test_zerodep",
+            "value": 175450.99383911237,
+            "unit": "iter/sec",
+            "range": "stddev: 9.089738983522936e-7",
+            "extra": "mean: 5.699597238628325 usec\nrounds: 10572"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestDispatchSuccess::test_jsonrpcserver",
+            "value": 9520.58893797215,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006929462484447151",
+            "extra": "mean: 105.03551897000568 usec\nrounds: 1397"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestDispatchError::test_zerodep",
+            "value": 137897.51877279044,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000010383254640705343",
+            "extra": "mean: 7.251762097675373 usec\nrounds: 18743"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestDispatchError::test_jsonrpcserver",
+            "value": 9995.832870877972,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007574453906061946",
+            "extra": "mean: 100.04168866342462 usec\nrounds: 3167"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestDispatchNotFound::test_zerodep",
+            "value": 165621.42403051275,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001066294673401192",
+            "extra": "mean: 6.037866211171861 usec\nrounds: 29128"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestDispatchNotFound::test_jsonrpcserver",
+            "value": 12754.127557805934,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006386051390507096",
+            "extra": "mean: 78.40599017593861 usec\nrounds: 3563"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestDispatchBatch::test_zerodep",
+            "value": 8988.144519787995,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005594088675871348",
+            "extra": "mean: 111.25766812031492 usec\nrounds: 6879"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestDispatchBatch::test_jsonrpcserver",
+            "value": 478.2951152413723,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00010504595956892852",
+            "extra": "mean: 2.0907593829289866 msec\nrounds: 410"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestSerializeToDict::test_request_to_dict",
+            "value": 3312056.9780016076,
+            "unit": "iter/sec",
+            "range": "stddev: 4.174243370094896e-8",
+            "extra": "mean: 301.92717294476284 nsec\nrounds: 187688"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestSerializeToDict::test_response_to_dict",
+            "value": 4004310.764174729,
+            "unit": "iter/sec",
+            "range": "stddev: 4.2179358185787285e-8",
+            "extra": "mean: 249.73086728100023 nsec\nrounds: 194818"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestDeserializeFromDict::test_request_from_dict",
+            "value": 1589450.9202118407,
+            "unit": "iter/sec",
+            "range": "stddev: 7.020959825218658e-8",
+            "extra": "mean: 629.1480833310166 nsec\nrounds: 78052"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestDeserializeFromDict::test_response_from_dict",
+            "value": 1352335.3214723559,
+            "unit": "iter/sec",
+            "range": "stddev: 2.984720864142312e-7",
+            "extra": "mean: 739.4615700130122 nsec\nrounds: 155764"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestJsonRoundTrip::test_json_round_trip",
+            "value": 194281.29999607502,
+            "unit": "iter/sec",
+            "range": "stddev: 9.045862485847488e-7",
+            "extra": "mean: 5.147175770494653 usec\nrounds: 26967"
+          },
+          {
+            "name": "jsonrpc/test_jsonrpc_benchmark.py::TestIdGeneration::test_next_id",
+            "value": 11218809.161513558,
+            "unit": "iter/sec",
+            "range": "stddev: 7.348626165271183e-9",
+            "extra": "mean: 89.1360201963795 nsec\nrounds: 65561"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestSerializeSmall::test_zerodep",
+            "value": 309539.1760993715,
+            "unit": "iter/sec",
+            "range": "stddev: 6.195641135573809e-7",
+            "extra": "mean: 3.2306088444164156 usec\nrounds: 21278"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestSerializeSmall::test_a2a_protocol",
+            "value": 224124.23468726044,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006231194660420556",
+            "extra": "mean: 4.461811108447888 usec\nrounds: 15898"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestSerializeMedium::test_zerodep",
+            "value": 14420.20162179341,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000035157505493999863",
+            "extra": "mean: 69.3471579820832 usec\nrounds: 6007"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestSerializeMedium::test_a2a_protocol",
+            "value": 11958.528866077406,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004724093885550788",
+            "extra": "mean: 83.62232605690205 usec\nrounds: 6735"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestSerializeLarge::test_zerodep",
+            "value": 771.5665385484396,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00004420814641392715",
+            "extra": "mean: 1.2960644999993338 msec\nrounds: 624"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestSerializeLarge::test_a2a_protocol",
+            "value": 107.45807378779628,
+            "unit": "iter/sec",
+            "range": "stddev: 0.1844410637400589",
+            "extra": "mean: 9.305955008785643 msec\nrounds: 569"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestDeserializeSmall::test_zerodep",
+            "value": 649183.89196384,
+            "unit": "iter/sec",
+            "range": "stddev: 5.327419365313736e-7",
+            "extra": "mean: 1.540395583406898 usec\nrounds: 61676"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestDeserializeSmall::test_a2a_protocol",
+            "value": 1110498.6893251361,
+            "unit": "iter/sec",
+            "range": "stddev: 4.105472724509359e-7",
+            "extra": "mean: 900.4963352164895 nsec\nrounds: 82271"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestDeserializeMedium::test_zerodep",
+            "value": 29503.3971962894,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000278697981150902",
+            "extra": "mean: 33.89440183267331 usec\nrounds: 12545"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestDeserializeMedium::test_a2a_protocol",
+            "value": 33030.60393452932,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000039918027105342105",
+            "extra": "mean: 30.274953554652583 usec\nrounds: 15373"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestDeserializeLarge::test_zerodep",
+            "value": 1703.6688232211013,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000035858189619010666",
+            "extra": "mean: 586.9685389378171 usec\nrounds: 488"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestDeserializeLarge::test_a2a_protocol",
+            "value": 2051.738672229914,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000199464029867635",
+            "extra": "mean: 487.3915053290675 usec\nrounds: 1595"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestJsonRoundTripSmall::test_zerodep",
+            "value": 112277.20802234435,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000014403768574202118",
+            "extra": "mean: 8.906527135952556 usec\nrounds: 17762"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestJsonRoundTripSmall::test_a2a_protocol",
+            "value": 104261.48748219741,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001528997845603029",
+            "extra": "mean: 9.59126926105624 usec\nrounds: 18859"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestJsonRoundTripMedium::test_zerodep",
+            "value": 6852.381514128576,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000068642334833755175",
+            "extra": "mean: 145.934664895431 usec\nrounds: 3578"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestJsonRoundTripMedium::test_a2a_protocol",
+            "value": 6940.967470185796,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000008727428186488637",
+            "extra": "mean: 144.07213465491603 usec\nrounds: 4337"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestJsonRoundTripLarge::test_zerodep",
+            "value": 385.6711773657433,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00020698767510550901",
+            "extra": "mean: 2.592882379311614 msec\nrounds: 290"
+          },
+          {
+            "name": "a2a/test_a2a_benchmark.py::TestJsonRoundTripLarge::test_a2a_protocol",
+            "value": 392.207476967137,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000053730169079383424",
+            "extra": "mean: 2.549670923493868 msec\nrounds: 366"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestSerializeSmall::test_zerodep",
+            "value": 312481.48080422456,
+            "unit": "iter/sec",
+            "range": "stddev: 6.590886716514533e-7",
+            "extra": "mean: 3.2001896478035396 usec\nrounds: 51970"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestSerializeSmall::test_acp_ref",
+            "value": 973876.1737492868,
+            "unit": "iter/sec",
+            "range": "stddev: 2.654954045239879e-7",
+            "extra": "mean: 1.026824587103451 usec\nrounds: 25802"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestSerializeMedium::test_zerodep",
+            "value": 19744.97750209672,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004164003725710074",
+            "extra": "mean: 50.645790803955585 usec\nrounds: 9570"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestSerializeMedium::test_acp_ref",
+            "value": 80521.23576146836,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000015415804708442234",
+            "extra": "mean: 12.419084115429431 usec\nrounds: 11936"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestSerializeLarge::test_zerodep",
+            "value": 2306.261381441188,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000014280791355182988",
+            "extra": "mean: 433.60219619820276 usec\nrounds: 1473"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestSerializeLarge::test_acp_ref",
+            "value": 15919.488255827011,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003484395816936666",
+            "extra": "mean: 62.81608955827898 usec\nrounds: 7135"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestDeserializeSmall::test_zerodep",
+            "value": 735207.6255681342,
+            "unit": "iter/sec",
+            "range": "stddev: 3.7363598304170715e-7",
+            "extra": "mean: 1.3601599945692164 usec\nrounds: 23807"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestDeserializeSmall::test_acp_ref",
+            "value": 752271.8628765274,
+            "unit": "iter/sec",
+            "range": "stddev: 3.7203412158792737e-7",
+            "extra": "mean: 1.3293066633865755 usec\nrounds: 33933"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestDeserializeMedium::test_zerodep",
+            "value": 206723.63581849018,
+            "unit": "iter/sec",
+            "range": "stddev: 7.796021941172492e-7",
+            "extra": "mean: 4.837376219901779 usec\nrounds: 49075"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestDeserializeMedium::test_acp_ref",
+            "value": 32181.709413130382,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000030180769247633254",
+            "extra": "mean: 31.073551350631245 usec\nrounds: 6261"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestDeserializeLarge::test_zerodep",
+            "value": 8045.987282513676,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005342032392291447",
+            "extra": "mean: 124.28555563010862 usec\nrounds: 5968"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestDeserializeLarge::test_acp_ref",
+            "value": 6931.685400247958,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006541685116501",
+            "extra": "mean: 144.26505853312796 usec\nrounds: 3229"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestJsonRoundTripSmall::test_zerodep",
+            "value": 127816.05823605378,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000015827748827994105",
+            "extra": "mean: 7.823743071102817 usec\nrounds: 20422"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestJsonRoundTripSmall::test_acp_ref",
+            "value": 193308.64702693812,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000010428352101677007",
+            "extra": "mean: 5.173074331541139 usec\nrounds: 19238"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestJsonRoundTripMedium::test_zerodep",
+            "value": 13737.695079316525,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005145558011122945",
+            "extra": "mean: 72.79241490121586 usec\nrounds: 6751"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestJsonRoundTripMedium::test_acp_ref",
+            "value": 19011.83685344519,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003868833176308111",
+            "extra": "mean: 52.59881029427133 usec\nrounds: 4080"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestJsonRoundTripLarge::test_zerodep",
+            "value": 1279.3937078714,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005563881549917122",
+            "extra": "mean: 781.6202267117264 usec\nrounds: 966"
+          },
+          {
+            "name": "acp/test_acp_benchmark.py::TestJsonRoundTripLarge::test_acp_ref",
+            "value": 2432.498406919063,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000016356273522268796",
+            "extra": "mean: 411.09996091079586 usec\nrounds: 1714"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestWriteSmall::test_zerodep_json",
+            "value": 3634.9917697539154,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00002693671218598905",
+            "extra": "mean: 275.10378656722486 usec\nrounds: 2010"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestWriteSmall::test_zerodep_sqlite",
+            "value": 198.28180687232526,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0014159294858782441",
+            "extra": "mean: 5.043327049384342 msec\nrounds: 162"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestWriteSmall::test_zerodep_sqlite_batched",
+            "value": 263.1401756147759,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0010358207294433911",
+            "extra": "mean: 3.800255881351809 msec\nrounds: 236"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestWriteSmall::test_shelve",
+            "value": 3050.495228843539,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000029073442047757568",
+            "extra": "mean: 327.8156249990616 usec\nrounds: 8"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestWriteLarge::test_zerodep_json",
+            "value": 84.95397517653595,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000713190390941834",
+            "extra": "mean: 11.771079551274456 msec\nrounds: 78"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestWriteLarge::test_zerodep_sqlite",
+            "value": 12.36250457532167,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0023314897181677323",
+            "extra": "mean: 80.88975772726701 msec\nrounds: 11"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestWriteLarge::test_zerodep_sqlite_batched",
+            "value": 51.715289798170716,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0015678383105006237",
+            "extra": "mean: 19.33664113461803 msec\nrounds: 52"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestWriteLarge::test_shelve",
+            "value": 109.67737059578239,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0016821305601020485",
+            "extra": "mean: 9.117651112238232 msec\nrounds: 98"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestReadSmall::test_zerodep_json",
+            "value": 1625.393835537122,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00022015396864870446",
+            "extra": "mean: 615.2355067038528 usec\nrounds: 2611"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestReadSmall::test_zerodep_sqlite",
+            "value": 2008.7234874162061,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003465471220568134",
+            "extra": "mean: 497.8285992395531 usec\nrounds: 1315"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestReadSmall::test_shelve",
+            "value": 7786.306327032675,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001314224938429004",
+            "extra": "mean: 128.43060085218806 usec\nrounds: 4928"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestIterateSmall::test_zerodep_json",
+            "value": 1679.8761641439005,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004726818642738597",
+            "extra": "mean: 595.2819745553212 usec\nrounds: 2083"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestIterateSmall::test_zerodep_sqlite",
+            "value": 1903.3199197564882,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00031345139794979884",
+            "extra": "mean: 525.3977482292838 usec\nrounds: 1271"
+          },
+          {
+            "name": "persistdict/test_persistdict_benchmark.py::TestIterateSmall::test_shelve",
+            "value": 7415.174965283406,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000078101574099841",
+            "extra": "mean: 134.85858454882464 usec\nrounds: 3495"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::test_encode_small",
+            "value": 626929.0043375607,
+            "unit": "iter/sec",
+            "range": "stddev: 6.163619253605348e-7",
+            "extra": "mean: 1.5950769434517413 usec\nrounds: 40835"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::test_encode_medium",
+            "value": 72166.17258276297,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001938294507550256",
+            "extra": "mean: 13.856907803350124 usec\nrounds: 20402"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::test_encode_large",
+            "value": 10258.632458901053,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005233548199479537",
+            "extra": "mean: 97.47887976358247 usec\nrounds: 6271"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::test_decode_small",
+            "value": 272830.52491292654,
+            "unit": "iter/sec",
+            "range": "stddev: 8.690478943261143e-7",
+            "extra": "mean: 3.6652790237424813 usec\nrounds: 22697"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::test_decode_medium",
+            "value": 29319.745809194195,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000030400383481080203",
+            "extra": "mean: 34.1067076947992 usec\nrounds: 13568"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::test_decode_large",
+            "value": 3897.117212773177,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000009742627049554219",
+            "extra": "mean: 256.5999289737562 usec\nrounds: 718"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::test_roundtrip_small",
+            "value": 190740.1361002257,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000010317678180504242",
+            "extra": "mean: 5.242735065862296 usec\nrounds: 29947"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::test_roundtrip_medium",
+            "value": 20642.829671865995,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000035473932384763382",
+            "extra": "mean: 48.44297104107267 usec\nrounds: 9807"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::test_roundtrip_large",
+            "value": 2789.662801194645,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000012451298636146041",
+            "extra": "mean: 358.46626322427215 usec\nrounds: 2382"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::test_to_dict_large",
+            "value": 11463.624485870916,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004592955899927797",
+            "extra": "mean: 87.23244565734986 usec\nrounds: 7048"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::test_from_dict_large",
+            "value": 7154.780476369008,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007749020074955194",
+            "extra": "mean: 139.76669211624667 usec\nrounds: 5226"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestEncodeComparison::test_zerodep_small",
+            "value": 626457.5500815797,
+            "unit": "iter/sec",
+            "range": "stddev: 5.120736098964519e-7",
+            "extra": "mean: 1.5962773533015544 usec\nrounds: 55139"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestEncodeComparison::test_google_small",
+            "value": 6210107.006701674,
+            "unit": "iter/sec",
+            "range": "stddev: 2.159750755165529e-8",
+            "extra": "mean: 161.02782108598834 nsec\nrounds: 198334"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestEncodeComparison::test_zerodep_medium",
+            "value": 72249.15815290624,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000017987109423062127",
+            "extra": "mean: 13.840991723164802 usec\nrounds: 20901"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestEncodeComparison::test_google_medium",
+            "value": 3245109.2485952745,
+            "unit": "iter/sec",
+            "range": "stddev: 4.091333995480884e-8",
+            "extra": "mean: 308.1560352499302 nsec\nrounds: 156348"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestEncodeComparison::test_zerodep_large",
+            "value": 10244.427715428528,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000061357083202298476",
+            "extra": "mean: 97.61404226552928 usec\nrounds: 6483"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestEncodeComparison::test_google_large",
+            "value": 484943.67959290213,
+            "unit": "iter/sec",
+            "range": "stddev: 4.4410820297496744e-7",
+            "extra": "mean: 2.062095129973597 usec\nrounds: 182382"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestDecodeComparison::test_zerodep_small",
+            "value": 273694.7494093338,
+            "unit": "iter/sec",
+            "range": "stddev: 8.762856647309611e-7",
+            "extra": "mean: 3.6537054589396405 usec\nrounds: 46564"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestDecodeComparison::test_google_small",
+            "value": 1769401.6710201509,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006136809659640059",
+            "extra": "mean: 565.1627984636461 nsec\nrounds: 128883"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestDecodeComparison::test_zerodep_medium",
+            "value": 29450.833869442795,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000029046921377521954",
+            "extra": "mean: 33.95489596094481 usec\nrounds: 15917"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestDecodeComparison::test_google_medium",
+            "value": 933055.0767039796,
+            "unit": "iter/sec",
+            "range": "stddev: 6.038088103035135e-7",
+            "extra": "mean: 1.0717480939415749 usec\nrounds: 79347"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestDecodeComparison::test_zerodep_large",
+            "value": 3958.7804344834412,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000011945591887243075",
+            "extra": "mean: 252.60304696097256 usec\nrounds: 3322"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestDecodeComparison::test_google_large",
+            "value": 239275.9391837194,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000012430638071462632",
+            "extra": "mean: 4.179275205904368 usec\nrounds: 58062"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestRoundtripComparison::test_zerodep_small",
+            "value": 188064.6418489061,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000013147800220446116",
+            "extra": "mean: 5.31732063065536 usec\nrounds: 25768"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestRoundtripComparison::test_google_small",
+            "value": 1302110.39082248,
+            "unit": "iter/sec",
+            "range": "stddev: 5.282569287460022e-7",
+            "extra": "mean: 767.9840411751484 nsec\nrounds: 90984"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestRoundtripComparison::test_zerodep_medium",
+            "value": 20669.636060888555,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003807074915697706",
+            "extra": "mean: 48.38014549720193 usec\nrounds: 8873"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestRoundtripComparison::test_google_medium",
+            "value": 688891.1479631328,
+            "unit": "iter/sec",
+            "range": "stddev: 6.340604934483547e-7",
+            "extra": "mean: 1.4516081429653043 usec\nrounds: 82816"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestRoundtripComparison::test_zerodep_large",
+            "value": 2801.7952437271533,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000011642856657351028",
+            "extra": "mean: 356.9140186952872 usec\nrounds: 107"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestRoundtripComparison::test_google_large",
+            "value": 159436.36092089565,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000012443399269508384",
+            "extra": "mean: 6.272094986514087 usec\nrounds: 31194"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_zerodep[10items]",
+            "value": 220249.26573393564,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003076712428405513",
+            "extra": "mean: 4.540310255599285 usec\nrounds: 28628"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_zerodep[50items]",
+            "value": 122546.95208821072,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000011383156767961473",
+            "extra": "mean: 8.16013766935785 usec\nrounds: 40452"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_zerodep[100items]",
+            "value": 78240.37069625538,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001496027122510379",
+            "extra": "mean: 12.781125537891405 usec\nrounds: 35567"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_zerodep[500items]",
+            "value": 15048.755243380649,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004163158427117412",
+            "extra": "mean: 66.45067873237292 usec\nrounds: 9117"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_zerodep[1Kitems]",
+            "value": 7453.231382502667,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006669159667034388",
+            "extra": "mean: 134.16999267560874 usec\nrounds: 5734"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_zerodep[5Kitems]",
+            "value": 1490.8235661934805,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000020073368398815535",
+            "extra": "mean: 670.7701854709071 usec\nrounds: 1294"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_zerodep[10Kitems]",
+            "value": 747.8444126189218,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000027883226739407862",
+            "extra": "mean: 1.3371765344853472 msec\nrounds: 696"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_zerodep[50Kitems]",
+            "value": 108.18897952635012,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00043454258631660426",
+            "extra": "mean: 9.24308561165829 msec\nrounds: 103"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_zerodep[10items]",
+            "value": 124953.16049932754,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001142788520603761",
+            "extra": "mean: 8.00299885176079 usec\nrounds: 30484"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_zerodep[50items]",
+            "value": 55121.70916480097,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000017130247151679517",
+            "extra": "mean: 18.1416725851195 usec\nrounds: 26529"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_zerodep[100items]",
+            "value": 31655.32662848696,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000030468120489085206",
+            "extra": "mean: 31.59026004489524 usec\nrounds: 19712"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_zerodep[500items]",
+            "value": 5130.103453920597,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000008151416738882144",
+            "extra": "mean: 194.92784287532575 usec\nrounds: 4315"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_zerodep[1Kitems]",
+            "value": 2436.4499713598257,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000015915189133820902",
+            "extra": "mean: 410.43321708012843 usec\nrounds: 2225"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_zerodep[5Kitems]",
+            "value": 474.0107457367818,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000039597245721974574",
+            "extra": "mean: 2.109656814732424 msec\nrounds: 448"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_zerodep[10Kitems]",
+            "value": 235.98796482584459,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006159603829284676",
+            "extra": "mean: 4.237504233480654 msec\nrounds: 227"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_zerodep[50Kitems]",
+            "value": 38.197596241749125,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00016123070241235365",
+            "extra": "mean: 26.17965784210846 msec\nrounds: 38"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[10items]",
+            "value": 78768.65018302007,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000014772940779221648",
+            "extra": "mean: 12.695406074326346 usec\nrounds: 18504"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[50items]",
+            "value": 37174.56912072456,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000025153494846518645",
+            "extra": "mean: 26.90011003900263 usec\nrounds: 18657"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[100items]",
+            "value": 22264.025414843116,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000033018048777935772",
+            "extra": "mean: 44.91550747751635 usec\nrounds: 13305"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[500items]",
+            "value": 3717.4568638635483,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00002633136617090053",
+            "extra": "mean: 269.0011038784997 usec\nrounds: 3119"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[1Kitems]",
+            "value": 1819.2532057307774,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000017496499868069734",
+            "extra": "mean: 549.6760961310547 usec\nrounds: 1550"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[5Kitems]",
+            "value": 357.9769081996847,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005627885557904372",
+            "extra": "mean: 2.793476274850068 msec\nrounds: 342"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[10Kitems]",
+            "value": 177.88984130369442,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00015309383345287663",
+            "extra": "mean: 5.62145647368809 msec\nrounds: 171"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[50Kitems]",
+            "value": 27.78843171914624,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0013358384368902132",
+            "extra": "mean: 35.98619778571382 msec\nrounds: 28"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_google[10items]",
+            "value": 5089080.53126971,
+            "unit": "iter/sec",
+            "range": "stddev: 2.6473280360532597e-8",
+            "extra": "mean: 196.4991502601558 nsec\nrounds: 196580"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_google[50items]",
+            "value": 4289244.623530377,
+            "unit": "iter/sec",
+            "range": "stddev: 3.1836704383228345e-8",
+            "extra": "mean: 233.14128425179993 nsec\nrounds: 192790"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_google[100items]",
+            "value": 3488284.274545323,
+            "unit": "iter/sec",
+            "range": "stddev: 6.136999801265183e-8",
+            "extra": "mean: 286.673883575714 nsec\nrounds: 167701"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_google[500items]",
+            "value": 300633.33827321924,
+            "unit": "iter/sec",
+            "range": "stddev: 5.606519862447064e-7",
+            "extra": "mean: 3.326311066310243 usec\nrounds: 127812"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_google[1Kitems]",
+            "value": 139033.43986823643,
+            "unit": "iter/sec",
+            "range": "stddev: 8.335523106599301e-7",
+            "extra": "mean: 7.1925142681337055 usec\nrounds: 108004"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_google[5Kitems]",
+            "value": 26122.34861638863,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000018797893986510783",
+            "extra": "mean: 38.281397078232864 usec\nrounds: 19097"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_google[10Kitems]",
+            "value": 12992.865208073192,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000030367106263054023",
+            "extra": "mean: 76.96531780985799 usec\nrounds: 11617"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_encode_google[50Kitems]",
+            "value": 2397.835776257849,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001330355388290111",
+            "extra": "mean: 417.04273908225565 usec\nrounds: 1878"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_google[10items]",
+            "value": 1571638.3044251364,
+            "unit": "iter/sec",
+            "range": "stddev: 5.200616599473637e-7",
+            "extra": "mean: 636.2787145009 nsec\nrounds: 165126"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_google[50items]",
+            "value": 1394037.3288784095,
+            "unit": "iter/sec",
+            "range": "stddev: 1.395362364376695e-7",
+            "extra": "mean: 717.3409056445876 nsec\nrounds: 68559"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_google[100items]",
+            "value": 1066027.4973713637,
+            "unit": "iter/sec",
+            "range": "stddev: 1.4311405145624902e-7",
+            "extra": "mean: 938.0621067147181 nsec\nrounds: 53813"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_google[500items]",
+            "value": 313660.95806938934,
+            "unit": "iter/sec",
+            "range": "stddev: 8.155927455414846e-7",
+            "extra": "mean: 3.1881557913840717 usec\nrounds: 155015"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_google[1Kitems]",
+            "value": 174856.3744066409,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000010259194406602853",
+            "extra": "mean: 5.718979381754931 usec\nrounds: 82015"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_google[5Kitems]",
+            "value": 38192.16220669622,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000029294399006881607",
+            "extra": "mean: 26.1833827209885 usec\nrounds: 23312"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_google[10Kitems]",
+            "value": 19472.877303216686,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003757132324464655",
+            "extra": "mean: 51.353479222857935 usec\nrounds: 13067"
+          },
+          {
+            "name": "protobuf/test_protobuf_benchmark.py::TestScaleCurve::test_decode_google[50Kitems]",
+            "value": 3578.5672984547596,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00002413969673762952",
+            "extra": "mean: 279.4414402746608 usec\nrounds: 3784"
+          },
+          {
+            "name": "semver/test_semver_benchmark.py::TestParseSimple::test_zerodep",
+            "value": 87260.39142940163,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000013839820269732534",
+            "extra": "mean: 11.459953177141704 usec\nrounds: 27807"
+          },
+          {
+            "name": "semver/test_semver_benchmark.py::TestParseSimple::test_packaging",
+            "value": 192032.67786155146,
+            "unit": "iter/sec",
+            "range": "stddev: 9.66805410539389e-7",
+            "extra": "mean: 5.207447040450915 usec\nrounds: 73736"
+          },
+          {
+            "name": "semver/test_semver_benchmark.py::TestParsePrerelease::test_zerodep",
+            "value": 61925.51268985408,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000022564750010760277",
+            "extra": "mean: 16.148433118484956 usec\nrounds: 21426"
+          },
+          {
+            "name": "semver/test_semver_benchmark.py::TestParsePrerelease::test_packaging",
+            "value": 59670.35330937214,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000018607088157027277",
+            "extra": "mean: 16.758741058818813 usec\nrounds: 21642"
+          },
+          {
+            "name": "semver/test_semver_benchmark.py::TestParseComplex::test_zerodep",
+            "value": 55360.309530947,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001918504148707643",
+            "extra": "mean: 18.063482817793666 usec\nrounds: 15801"
+          },
+          {
+            "name": "semver/test_semver_benchmark.py::TestParseComplex::test_packaging",
+            "value": 55800.442136528676,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002333229164951862",
+            "extra": "mean: 17.921004954642992 usec\nrounds: 19175"
+          },
+          {
+            "name": "semver/test_semver_benchmark.py::TestSort::test_zerodep",
+            "value": 703377.1425787152,
+            "unit": "iter/sec",
+            "range": "stddev: 3.8579116341252617e-7",
+            "extra": "mean: 1.4217123922079822 usec\nrounds: 89775"
+          },
+          {
+            "name": "semver/test_semver_benchmark.py::TestSort::test_packaging",
+            "value": 656812.0137472565,
+            "unit": "iter/sec",
+            "range": "stddev: 4.134555231647276e-7",
+            "extra": "mean: 1.522505647079719 usec\nrounds: 38074"
+          },
+          {
+            "name": "semver/test_semver_benchmark.py::TestCompare::test_zerodep",
+            "value": 384502.1619552863,
+            "unit": "iter/sec",
+            "range": "stddev: 5.53489473087723e-7",
+            "extra": "mean: 2.600765610561872 usec\nrounds: 74918"
+          },
+          {
+            "name": "semver/test_semver_benchmark.py::TestCompare::test_packaging",
+            "value": 355560.33632209426,
+            "unit": "iter/sec",
+            "range": "stddev: 5.708488837266997e-7",
+            "extra": "mean: 2.812462183898156 usec\nrounds: 56510"
+          },
+          {
+            "name": "semver/test_semver_benchmark.py::TestPropertyAccess::test_zerodep",
+            "value": 1053816.854518417,
+            "unit": "iter/sec",
+            "range": "stddev: 3.0625735676937547e-7",
+            "extra": "mean: 948.9314919497936 nsec\nrounds: 32011"
+          },
+          {
+            "name": "semver/test_semver_benchmark.py::TestPropertyAccess::test_packaging",
+            "value": 131911.01089709572,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000134798049165591",
+            "extra": "mean: 7.5808682929441265 usec\nrounds: 31350"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestSmall::test_zerodep",
+            "value": 4126.371320835997,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005775423003512119",
+            "extra": "mean: 242.34367734927974 usec\nrounds: 1872"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestSmall::test_readability_lxml",
+            "value": 1929.2024689019727,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000023200864317271954",
+            "extra": "mean: 518.3489115941062 usec\nrounds: 690"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestSmall::test_mozilla_js",
+            "value": 70.05513494807083,
+            "unit": "iter/sec",
+            "range": "stddev: 0.003912455048267717",
+            "extra": "mean: 14.27447111109359 msec\nrounds: 9"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestMedium::test_zerodep",
+            "value": 442.43598664694156,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00011041621508411817",
+            "extra": "mean: 2.2602139748591195 msec\nrounds: 358"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestMedium::test_readability_lxml",
+            "value": 343.6018397287249,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007815375920143015",
+            "extra": "mean: 2.910345301962016 msec\nrounds: 255"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestMedium::test_mozilla_js",
+            "value": 43.24294171135671,
+            "unit": "iter/sec",
+            "range": "stddev: 0.005220032924225034",
+            "extra": "mean: 23.125161250012145 msec\nrounds: 24"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestLarge::test_zerodep",
+            "value": 37.821072778455836,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0011982432553198199",
+            "extra": "mean: 26.440286500007318 msec\nrounds: 38"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestLarge::test_readability_lxml",
+            "value": 41.28457207479954,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001099814476698417",
+            "extra": "mean: 24.2221234166651 msec\nrounds: 36"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestLarge::test_mozilla_js",
+            "value": 1.6636445498686032,
+            "unit": "iter/sec",
+            "range": "stddev: 0.03960562424297333",
+            "extra": "mean: 601.0899383999913 msec\nrounds: 5"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestIsProbablyReadable::test_zerodep",
+            "value": 812.704456671379,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00015729203663328948",
+            "extra": "mean: 1.2304595991705687 msec\nrounds: 721"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestSyntheticSmall::test_zerodep",
+            "value": 2900.1092172665108,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003408861169929679",
+            "extra": "mean: 344.8146001006634 usec\nrounds: 2028"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestSyntheticSmall::test_readability_lxml",
+            "value": 1724.7743044202791,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000027175291684035337",
+            "extra": "mean: 579.7860029785833 usec\nrounds: 1007"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestSyntheticSmall::test_mozilla_js",
+            "value": 88.19367777672765,
+            "unit": "iter/sec",
+            "range": "stddev: 0.03281908566172904",
+            "extra": "mean: 11.338681243474323 msec\nrounds: 115"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestSyntheticMedium::test_zerodep",
+            "value": 1156.665279061841,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001021619154416968",
+            "extra": "mean: 864.5543512908847 usec\nrounds: 891"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestSyntheticMedium::test_readability_lxml",
+            "value": 477.35208392401927,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00016679662762352052",
+            "extra": "mean: 2.094889775654926 msec\nrounds: 419"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestSyntheticMedium::test_mozilla_js",
+            "value": 87.01645707130513,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0015111672294760485",
+            "extra": "mean: 11.492079011910997 msec\nrounds: 84"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestSyntheticLarge::test_zerodep",
+            "value": 230.26200203986807,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005312999824273206",
+            "extra": "mean: 4.342878942861175 msec\nrounds: 210"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestSyntheticLarge::test_readability_lxml",
+            "value": 85.19796004210974,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0006698199713130696",
+            "extra": "mean: 11.737370231702055 msec\nrounds: 82"
+          },
+          {
+            "name": "readability/test_readability_benchmark.py::TestSyntheticLarge::test_mozilla_js",
+            "value": 25.216573371409723,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0023880640097144524",
+            "extra": "mean: 39.65645868180445 msec\nrounds: 22"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestPerfTiny::test_zerodep",
+            "value": 59988.99002299323,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003834773354590745",
+            "extra": "mean: 16.669725554917814 usec\nrounds: 12436"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestPerfTiny::test_allof_merge_js",
+            "value": 7018.934296741198,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007418345314685706",
+            "extra": "mean: 142.47177103001053 usec\nrounds: 856"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestPerfSmall::test_zerodep",
+            "value": 34610.64339872004,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003780265213771651",
+            "extra": "mean: 28.89284629817028 usec\nrounds: 11750"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestPerfSmall::test_allof_merge_js",
+            "value": 7271.162390168424,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000580743471957954",
+            "extra": "mean: 137.52959242832102 usec\nrounds: 1347"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestPerfMedium::test_zerodep",
+            "value": 12424.602125888163,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005180088646479809",
+            "extra": "mean: 80.48547469511148 usec\nrounds: 5987"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestPerfMedium::test_allof_merge_js",
+            "value": 3369.618131402387,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009574356232559178",
+            "extra": "mean: 296.7695332241741 usec\nrounds: 617"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestPerfLarge::test_zerodep",
+            "value": 4184.524959288908,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000017015367638348403",
+            "extra": "mean: 238.97575226076174 usec\nrounds: 2765"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestPerfLarge::test_allof_merge_js",
+            "value": 1407.1959796997025,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001904437943643326",
+            "extra": "mean: 710.6330706071241 usec\nrounds: 609"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestPerfXlarge::test_zerodep",
+            "value": 687.8065661916968,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00010974663179576049",
+            "extra": "mean: 1.4538971407860806 msec\nrounds: 483"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestPerfXlarge::test_allof_merge_js",
+            "value": 368.1082059374283,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003058949420128089",
+            "extra": "mean: 2.716592523259266 msec\nrounds: 258"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestBenchValidateMedium::test_ours",
+            "value": 43118.66074315879,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002231301071513009",
+            "extra": "mean: 23.19181493035263 usec\nrounds: 12190"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestBenchValidateMedium::test_jsonschema_ref",
+            "value": 329.57498148139604,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006695244793765667",
+            "extra": "mean: 3.034210896425244 msec\nrounds: 280"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestBenchValidateLarge::test_ours",
+            "value": 14088.236827804167,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006094428746115723",
+            "extra": "mean: 70.98120312872841 usec\nrounds: 6902"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestBenchValidateLarge::test_jsonschema_ref",
+            "value": 111.76802086952898,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004194472397845222",
+            "extra": "mean: 8.947103046293872 msec\nrounds: 108"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestBenchResolveOnceVsEveryTime::test_resolve_every_time",
+            "value": 1911.1168721982478,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001982702554643323",
+            "extra": "mean: 523.2542365919032 usec\nrounds: 1585"
+          },
+          {
+            "name": "jsonschema/test_jsonschema_benchmark.py::TestBenchResolveOnceVsEveryTime::test_resolve_once",
+            "value": 6633.197350636348,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000072329010672823",
+            "extra": "mean: 150.75685934537532 usec\nrounds: 5773"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestDecodeSmallRGBA::test_zerodep",
+            "value": 812.92809485164,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000026487515017950577",
+            "extra": "mean: 1.2301210972201677 msec\nrounds: 720"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestDecodeSmallRGBA::test_pillow",
+            "value": 22361.736166050472,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000040957254223129115",
+            "extra": "mean: 44.719246867700605 usec\nrounds: 3751"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestDecodeMediumRGBA::test_zerodep",
+            "value": 43.09708018114543,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002720836826328916",
+            "extra": "mean: 23.203428069762612 msec\nrounds: 43"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestDecodeMediumRGBA::test_pillow",
+            "value": 642.7620802572661,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000024081067723514814",
+            "extra": "mean: 1.5557856175954703 msec\nrounds: 591"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestDecodeLargeRGBA::test_zerodep",
+            "value": 2.3106992017225947,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0022107028370548076",
+            "extra": "mean: 432.7694401999679 msec\nrounds: 5"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestDecodeLargeRGBA::test_pillow",
+            "value": 35.77088562591363,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00014772551542126489",
+            "extra": "mean: 27.955695882339757 msec\nrounds: 34"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestDecodeMediumRGB::test_zerodep",
+            "value": 50.280561044800805,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0008215031839065979",
+            "extra": "mean: 19.888401784319463 msec\nrounds: 51"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestDecodeMediumRGB::test_pillow",
+            "value": 793.4814146634419,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000023334791959891574",
+            "extra": "mean: 1.26026896348184 msec\nrounds: 712"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestDecodeMediumGray::test_zerodep",
+            "value": 204.7824041339028,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008164420211564172",
+            "extra": "mean: 4.883232054186265 msec\nrounds: 203"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestDecodeMediumGray::test_pillow",
+            "value": 3122.1059444968873,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000009579884703508658",
+            "extra": "mean: 320.2966259881822 usec\nrounds: 2155"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestEncodeSmallRGBA::test_zerodep",
+            "value": 91.69692653496693,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00013910876600513038",
+            "extra": "mean: 10.905490923064562 msec\nrounds: 91"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestEncodeSmallRGBA::test_pillow",
+            "value": 1885.7738418210718,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000014977295974705408",
+            "extra": "mean: 530.2862823859676 usec\nrounds: 1374"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestEncodeMediumRGBA::test_zerodep",
+            "value": 5.029242829998964,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00444231471500852",
+            "extra": "mean: 198.83708816665072 msec\nrounds: 6"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestEncodeMediumRGBA::test_pillow",
+            "value": 88.56625757873897,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002869003918824121",
+            "extra": "mean: 11.290981772724896 msec\nrounds: 88"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestEncodeLargeRGBA::test_zerodep",
+            "value": 0.3099966129745277,
+            "unit": "iter/sec",
+            "range": "stddev: 0.004676880216325093",
+            "extra": "mean: 3.2258416967999892 sec\nrounds: 5"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestEncodeLargeRGBA::test_pillow",
+            "value": 5.411872051320025,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004867334507496775",
+            "extra": "mean: 184.778943499983 msec\nrounds: 6"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestDecodeBmpMediumRGB::test_zerodep",
+            "value": 1992.051113957782,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000014223921710343881",
+            "extra": "mean: 501.9951511250194 usec\nrounds: 1866"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestDecodeBmpMediumRGB::test_pillow",
+            "value": 12901.410736861484,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004787112499282904",
+            "extra": "mean: 77.51090329546932 usec\nrounds: 4705"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestEncodeBmpMediumRGB::test_zerodep",
+            "value": 2131.0600714314814,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001667608452187734",
+            "extra": "mean: 469.2500288498565 usec\nrounds: 1837"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestEncodeBmpMediumRGB::test_pillow",
+            "value": 14710.353376945543,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000009273695705310686",
+            "extra": "mean: 67.97933226860658 usec\nrounds: 4072"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestMatrixRoundTrip::test_zerodep_encode",
+            "value": 13.993966739140946,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004320232199994245",
+            "extra": "mean: 71.45936664284136 msec\nrounds: 14"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestMatrixRoundTrip::test_zerodep_decode",
+            "value": 70.32876290491767,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00019457260184582137",
+            "extra": "mean: 14.218933459016894 msec\nrounds: 61"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestMatrixRoundTrip::test_pillow_encode",
+            "value": 382.25066614706253,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003732641615832094",
+            "extra": "mean: 2.616084387974021 msec\nrounds: 366"
+          },
+          {
+            "name": "png/test_png_benchmark.py::TestMatrixRoundTrip::test_pillow_decode",
+            "value": 3856.3226548228968,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000951447505037967",
+            "extra": "mean: 259.3144011820052 usec\nrounds: 2196"
+          },
+          {
+            "name": "llmstxt/test_llmstxt_benchmark.py::TestParseSmall::test_zerodep",
+            "value": 103359.42089754905,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000015995422188238257",
+            "extra": "mean: 9.674976807302457 usec\nrounds: 18411"
+          },
+          {
+            "name": "llmstxt/test_llmstxt_benchmark.py::TestParseMedium::test_zerodep",
+            "value": 24368.978210645517,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004581357525243528",
+            "extra": "mean: 41.03577882322341 usec\nrounds: 14459"
+          },
+          {
+            "name": "llmstxt/test_llmstxt_benchmark.py::TestParseLarge::test_zerodep",
+            "value": 1019.156587376582,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000026035036766408447",
+            "extra": "mean: 981.2034896169458 usec\nrounds: 674"
+          },
+          {
+            "name": "llmstxt/test_llmstxt_benchmark.py::TestCandidateUrls::test_zerodep",
+            "value": 94123.47016039987,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000014486448878668445",
+            "extra": "mean: 10.624342667093094 usec\nrounds: 15607"
+          },
+          {
+            "name": "useragent/test_useragent_benchmark.py::TestGenerateDefault::test_zerodep",
+            "value": 223222.04703790866,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000016655051297952986",
+            "extra": "mean: 4.4798442325465055 usec\nrounds: 22142"
+          },
+          {
+            "name": "useragent/test_useragent_benchmark.py::TestGenerateDefault::test_ua_generator",
+            "value": 98576.39156772611,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000022010490700588473",
+            "extra": "mean: 10.144416772579449 usec\nrounds: 11066"
+          },
+          {
+            "name": "useragent/test_useragent_benchmark.py::TestGenerateChromeDesktop::test_zerodep",
+            "value": 248739.19620989176,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006052361337996279",
+            "extra": "mean: 4.020275112395947 usec\nrounds: 54316"
+          },
+          {
+            "name": "useragent/test_useragent_benchmark.py::TestGenerateChromeDesktop::test_ua_generator",
+            "value": 105692.18689509381,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001409648068885992",
+            "extra": "mean: 9.461437305602951 usec\nrounds: 20281"
+          },
+          {
+            "name": "useragent/test_useragent_benchmark.py::TestGenerateEdgeMobile::test_zerodep",
+            "value": 234171.00667045815,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000611299559925764",
+            "extra": "mean: 4.270383486915911 usec\nrounds: 51475"
+          },
+          {
+            "name": "useragent/test_useragent_benchmark.py::TestGenerateEdgeMobile::test_ua_generator",
+            "value": 91074.664375973,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000021020136498476397",
+            "extra": "mean: 10.980002032967318 usec\nrounds: 21638"
+          },
+          {
+            "name": "useragent/test_useragent_benchmark.py::TestHeadersGet::test_zerodep",
+            "value": 160112.85726476685,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006784622549070439",
+            "extra": "mean: 6.245594620464323 usec\nrounds: 27885"
+          },
+          {
+            "name": "useragent/test_useragent_benchmark.py::TestHeadersGet::test_ua_generator",
+            "value": 82019.78298423385,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001951815969522058",
+            "extra": "mean: 12.192180515671733 usec\nrounds: 12143"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestGetJSON::test_zerodep",
+            "value": 3796.770147722608,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003235843559492782",
+            "extra": "mean: 263.3817589931862 usec\nrounds: 834"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestGetJSON::test_flask",
+            "value": 1499.7847081418186,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00021200944048166528",
+            "extra": "mean: 666.7623656724473 usec\nrounds: 536"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestGetJSON::test_microdot",
+            "value": 1756.3418635713638,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001415913612380653",
+            "extra": "mean: 569.3652361998533 usec\nrounds: 1105"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestGetJSON::test_bottle",
+            "value": 2273.2453893901784,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000035456609658228334",
+            "extra": "mean: 439.89971547605796 usec\nrounds: 840"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestPostJSON::test_zerodep",
+            "value": 2663.3426130369826,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008181314023904731",
+            "extra": "mean: 375.46802844854807 usec\nrounds: 1371"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestPostJSON::test_flask",
+            "value": 1299.0487055946508,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006585478981334339",
+            "extra": "mean: 769.7940775378714 usec\nrounds: 748"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestPostJSON::test_microdot",
+            "value": 1543.007706518269,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001514278241360047",
+            "extra": "mean: 648.0849031249866 usec\nrounds: 960"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestPostJSON::test_bottle",
+            "value": 1840.2501177710508,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007803336437865379",
+            "extra": "mean: 543.4043939696745 usec\nrounds: 1094"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestGetText::test_zerodep",
+            "value": 3527.7968977563596,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005586237289264729",
+            "extra": "mean: 283.4630306058688 usec\nrounds: 1699"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestGetText::test_flask",
+            "value": 1448.3818428563786,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00010736207318404057",
+            "extra": "mean: 690.4256670519169 usec\nrounds: 865"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestGetText::test_microdot",
+            "value": 1746.3741350715666,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00014105518597856258",
+            "extra": "mean: 572.6149854819167 usec\nrounds: 1171"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestGetText::test_bottle",
+            "value": 2252.2418962066786,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007914643227100338",
+            "extra": "mean: 444.0020415587875 usec\nrounds: 1179"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestSyncVsAsyncHandler::test_async_handler",
+            "value": 2992.2098044431896,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006532884319144357",
+            "extra": "mean: 334.20116414132485 usec\nrounds: 1584"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestSyncVsAsyncHandler::test_sync_handler",
+            "value": 2154.56541341888,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006833144934899877",
+            "extra": "mean: 464.13072157006025 usec\nrounds: 765"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestConcurrentGet::test_zerodep",
+            "value": 158.73914744609525,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0027191057972397494",
+            "extra": "mean: 6.2996432580663875 msec\nrounds: 124"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestConcurrentGet::test_flask",
+            "value": 112.93331747579569,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0008570977253329592",
+            "extra": "mean: 8.854782825398926 msec\nrounds: 126"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestConcurrentGet::test_microdot",
+            "value": 142.61529211862938,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001479714729894377",
+            "extra": "mean: 7.011870782890421 msec\nrounds: 152"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestConcurrentGet::test_bottle",
+            "value": 0.9765087813364232,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0008514150857219078",
+            "extra": "mean: 1.0240563312000404 sec\nrounds: 5"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestConcurrentPost::test_zerodep",
+            "value": 148.93592600281818,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0023556643926239845",
+            "extra": "mean: 6.714296723686923 msec\nrounds: 152"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestConcurrentPost::test_flask",
+            "value": 115.21829430353708,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0009631661697045168",
+            "extra": "mean: 8.67917726125634 msec\nrounds: 111"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestConcurrentPost::test_microdot",
+            "value": 138.96182454647283,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0012105650736548422",
+            "extra": "mean: 7.196221000002567 msec\nrounds: 149"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestConcurrentPost::test_bottle",
+            "value": 0.9765895643105419,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0008614410516184258",
+            "extra": "mean: 1.0239716217999786 sec\nrounds: 5"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestLargePayload::test_zerodep",
+            "value": 1531.63115828047,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00010955695056061409",
+            "extra": "mean: 652.898705144311 usec\nrounds: 719"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestLargePayload::test_flask",
+            "value": 868.7363539256609,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00012646666638769998",
+            "extra": "mean: 1.1510972177936178 msec\nrounds: 652"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestLargePayload::test_microdot",
+            "value": 1046.2858524928688,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00014702350213838069",
+            "extra": "mean: 955.7617525052177 usec\nrounds: 699"
+          },
+          {
+            "name": "httpserver/test_httpserver_benchmark.py::TestLargePayload::test_bottle",
+            "value": 1153.9273328192276,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001194610950896892",
+            "extra": "mean: 866.6056965275633 usec\nrounds: 893"
+          },
+          {
+            "name": "websocket/test_websocket_benchmark.py::TestJsonRpcRoundtrip::test_zerodep",
+            "value": 15297.570812052547,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000008209726599264048",
+            "extra": "mean: 65.36985592589163 usec\nrounds: 6809"
+          },
+          {
+            "name": "websocket/test_websocket_benchmark.py::TestJsonRpcRoundtrip::test_websockets",
+            "value": 9700.006513011793,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000016914358919238356",
+            "extra": "mean: 103.09271428411712 usec\nrounds: 4445"
+          },
+          {
+            "name": "websocket/test_websocket_benchmark.py::TestLargePayload::test_zerodep",
+            "value": 205.79641588506058,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006719994000109087",
+            "extra": "mean: 4.8591711167531235 msec\nrounds: 197"
+          },
+          {
+            "name": "websocket/test_websocket_benchmark.py::TestLargePayload::test_websockets",
+            "value": 395.1393689912553,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00012824450320693965",
+            "extra": "mean: 2.5307526368554045 msec\nrounds: 369"
+          },
+          {
+            "name": "websocket/test_websocket_benchmark.py::TestBurstMessages::test_zerodep",
+            "value": 259.80126577565636,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0006526885298622533",
+            "extra": "mean: 3.849095950377394 msec\nrounds: 262"
+          },
+          {
+            "name": "websocket/test_websocket_benchmark.py::TestBurstMessages::test_websockets",
+            "value": 156.2514758231384,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0015225246946725176",
+            "extra": "mean: 6.399939550855209 msec\nrounds: 118"
+          },
+          {
+            "name": "websocket/test_websocket_benchmark.py::TestConnectionSetup::test_zerodep",
+            "value": 2965.769742190802,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005792743172067334",
+            "extra": "mean: 337.1805928741131 usec\nrounds: 1319"
+          },
+          {
+            "name": "websocket/test_websocket_benchmark.py::TestConnectionSetup::test_websockets",
+            "value": 791.8131582944219,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005668927741584435",
+            "extra": "mean: 1.262924200646041 msec\nrounds: 618"
+          },
+          {
+            "name": "websocket/test_websocket_benchmark.py::TestConcurrentMessages::test_zerodep",
+            "value": 69.98312510702513,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0008877705274956265",
+            "extra": "mean: 14.289158971833581 msec\nrounds: 71"
+          },
+          {
+            "name": "websocket/test_websocket_benchmark.py::TestConcurrentMessages::test_websockets",
+            "value": 51.21032248438823,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0014640121119230186",
+            "extra": "mean: 19.527313078429763 msec\nrounds: 51"
+          },
+          {
+            "name": "cdp/test_cdp_benchmark.py::TestFullRenderPipeline::test_get_rendered_text",
+            "value": 1325.5553337766748,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00011894767039015018",
+            "extra": "mean: 754.4007967972739 usec\nrounds: 999"
+          },
+          {
+            "name": "cdp/test_cdp_benchmark.py::TestFullRenderPipeline::test_get_rendered_text_fresh_client",
+            "value": 882.4758521872162,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00018282301149344363",
+            "extra": "mean: 1.1331754829568426 msec\nrounds: 528"
+          },
+          {
+            "name": "cdp/test_cdp_benchmark.py::TestRenderHtml::test_get_rendered_html",
+            "value": 1253.0202462526868,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00013697789543179597",
+            "extra": "mean: 798.0717015472214 usec\nrounds: 1357"
+          },
+          {
+            "name": "cdp/test_cdp_benchmark.py::TestMultiTarget::test_multi_target_pipeline",
+            "value": 250.631757026935,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0006093003714490665",
+            "extra": "mean: 3.989917366666873 msec\nrounds: 240"
+          },
+          {
+            "name": "cdp/test_cdp_benchmark.py::TestJsEvalThroughput::test_evaluate_burst",
+            "value": 971.1278950923579,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00013284031668968254",
+            "extra": "mean: 1.0297304866367742 msec\nrounds: 898"
+          },
+          {
+            "name": "cdp/test_cdp_benchmark.py::TestCommandThroughput::test_send_command_burst",
+            "value": 248.81591539135334,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0007296630744228227",
+            "extra": "mean: 4.019035512367194 msec\nrounds: 283"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestParseSmall::test_zerodep",
+            "value": 58034.195151099964,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000023354154043261688",
+            "extra": "mean: 17.231220272743737 usec\nrounds: 3877"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestParseSmall::test_python_multipart",
+            "value": 35306.83447494399,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000031767384536597265",
+            "extra": "mean: 28.32312822350767 usec\nrounds: 5428"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestParseMedium::test_zerodep",
+            "value": 21886.70300388163,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000438751325140002",
+            "extra": "mean: 45.68984190184556 usec\nrounds: 9298"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestParseMedium::test_python_multipart",
+            "value": 15729.603426788968,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004629011106164338",
+            "extra": "mean: 63.57439363645416 usec\nrounds: 7888"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestParseLarge::test_zerodep",
+            "value": 3048.5976073014476,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000011040074805971048",
+            "extra": "mean: 328.0196761963539 usec\nrounds: 2134"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestParseLarge::test_python_multipart",
+            "value": 3975.951367744947,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000008818642177775037",
+            "extra": "mean: 251.51213068462985 usec\nrounds: 3145"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestEncodeSmall::test_zerodep",
+            "value": 357236.81049192505,
+            "unit": "iter/sec",
+            "range": "stddev: 5.958668301909961e-7",
+            "extra": "mean: 2.799263599467737 usec\nrounds: 46510"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestEncodeMedium::test_zerodep",
+            "value": 158389.71129476823,
+            "unit": "iter/sec",
+            "range": "stddev: 9.073754209516129e-7",
+            "extra": "mean: 6.313541402566032 usec\nrounds: 32172"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestEncodeLarge::test_zerodep",
+            "value": 27004.926913743682,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007214926779320751",
+            "extra": "mean: 37.03027981501655 usec\nrounds: 2373"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestRoundTrip::test_small",
+            "value": 50109.40145147628,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000026926238819503214",
+            "extra": "mean: 19.956334959785053 usec\nrounds: 13109"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestRoundTrip::test_medium",
+            "value": 18104.43223278013,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004584577592985641",
+            "extra": "mean: 55.23509310550963 usec\nrounds: 8818"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestFixtureParseFormWithFile::test_zerodep",
+            "value": 22118.098150960417,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003880594476382976",
+            "extra": "mean: 45.2118438563208 usec\nrounds: 11451"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestFixtureParseFormWithFile::test_python_multipart",
+            "value": 15864.890316132016,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004301202267733039",
+            "extra": "mean: 63.03226685299944 usec\nrounds: 8233"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestFixtureParseMixedCharsets::test_zerodep",
+            "value": 31787.931568955202,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000029468704161677417",
+            "extra": "mean: 31.458479701039188 usec\nrounds: 11774"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestFixtureParseMixedCharsets::test_python_multipart",
+            "value": 20811.372539938613,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003904128094532831",
+            "extra": "mean: 48.050651060179895 usec\nrounds: 9334"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestFixtureParseLargeBinary::test_zerodep",
+            "value": 17062.879155272465,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004286185222370508",
+            "extra": "mean: 58.60675627483407 usec\nrounds: 7172"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestFixtureParseLargeBinary::test_python_multipart",
+            "value": 13701.014226213392,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000514018358423695",
+            "extra": "mean: 72.98729739925058 usec\nrounds: 7458"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_zerodep[100B]",
+            "value": 107577.0550673429,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001493615855414191",
+            "extra": "mean: 9.29566253114108 usec\nrounds: 19907"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_zerodep[500B]",
+            "value": 106892.62007702606,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000013485390991697578",
+            "extra": "mean: 9.355182792595102 usec\nrounds: 31429"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_zerodep[1KB]",
+            "value": 59203.78015330213,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000024300536937776053",
+            "extra": "mean: 16.890813346894447 usec\nrounds: 18896"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_zerodep[5KB]",
+            "value": 24707.147581946338,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003614061452195919",
+            "extra": "mean: 40.47411772983078 usec\nrounds: 12019"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_zerodep[10KB]",
+            "value": 24086.720247076795,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003839581479777497",
+            "extra": "mean: 41.51665273404592 usec\nrounds: 10096"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_zerodep[50KB]",
+            "value": 10154.019518881563,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005609685268593479",
+            "extra": "mean: 98.48316700007163 usec\nrounds: 5988"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_zerodep[100KB]",
+            "value": 7656.480186956334,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007173926745695552",
+            "extra": "mean: 130.60831812816693 usec\nrounds: 4998"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_zerodep[500KB]",
+            "value": 2207.227296311844,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003789481106624983",
+            "extra": "mean: 453.0571009478477 usec\nrounds: 317"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_python_multipart[100B]",
+            "value": 50352.078679349994,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000025501497378268183",
+            "extra": "mean: 19.86015326930509 usec\nrounds: 13597"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_python_multipart[500B]",
+            "value": 45846.51189345056,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000049995989297075285",
+            "extra": "mean: 21.811910191205968 usec\nrounds: 17348"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_python_multipart[1KB]",
+            "value": 29601.605133547357,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000031048294582614183",
+            "extra": "mean: 33.781951873505164 usec\nrounds: 13527"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_python_multipart[5KB]",
+            "value": 15605.017801975497,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007120634029178058",
+            "extra": "mean: 64.08195188815525 usec\nrounds: 9665"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_python_multipart[10KB]",
+            "value": 15661.08083245217,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000473073953807153",
+            "extra": "mean: 63.85255339004739 usec\nrounds: 9955"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_python_multipart[50KB]",
+            "value": 8224.840356790468,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000009663164899625439",
+            "extra": "mean: 121.58290697695976 usec\nrounds: 5203"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_python_multipart[100KB]",
+            "value": 7123.637954600131,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000659872622029038",
+            "extra": "mean: 140.3777123954263 usec\nrounds: 4687"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_parse_python_multipart[500KB]",
+            "value": 2672.818860969029,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010082300678011881",
+            "extra": "mean: 374.1368390514315 usec\nrounds: 1603"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_encode_zerodep[100B]",
+            "value": 485349.6520104377,
+            "unit": "iter/sec",
+            "range": "stddev: 5.377124078327817e-7",
+            "extra": "mean: 2.0603702832746533 usec\nrounds: 82210"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_encode_zerodep[500B]",
+            "value": 457728.9666282269,
+            "unit": "iter/sec",
+            "range": "stddev: 5.503587377914926e-7",
+            "extra": "mean: 2.1846989657794853 usec\nrounds: 99404"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_encode_zerodep[1KB]",
+            "value": 330631.6845878614,
+            "unit": "iter/sec",
+            "range": "stddev: 6.98007833302288e-7",
+            "extra": "mean: 3.024513519466589 usec\nrounds: 85136"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_encode_zerodep[5KB]",
+            "value": 204768.37902981788,
+            "unit": "iter/sec",
+            "range": "stddev: 7.754489809512157e-7",
+            "extra": "mean: 4.883566519098061 usec\nrounds: 54037"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_encode_zerodep[10KB]",
+            "value": 194709.95917828818,
+            "unit": "iter/sec",
+            "range": "stddev: 9.128759366815429e-7",
+            "extra": "mean: 5.1358441253862095 usec\nrounds: 41758"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_encode_zerodep[50KB]",
+            "value": 97073.50650362708,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000016441652474294625",
+            "extra": "mean: 10.301471905340472 usec\nrounds: 14024"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_encode_zerodep[100KB]",
+            "value": 77702.03572302537,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000017020565567137508",
+            "extra": "mean: 12.869675687321418 usec\nrounds: 9534"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_encode_zerodep[500KB]",
+            "value": 14666.69217914068,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003947848482557059",
+            "extra": "mean: 68.18169958064736 usec\nrounds: 2147"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[100B]",
+            "value": 90214.1210197016,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000015551840862447409",
+            "extra": "mean: 11.084739159422867 usec\nrounds: 16512"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[500B]",
+            "value": 85636.65584403837,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001585298680567845",
+            "extra": "mean: 11.677242532931247 usec\nrounds: 22599"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[1KB]",
+            "value": 50021.32550378634,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000028860950628017276",
+            "extra": "mean: 19.991473435151285 usec\nrounds: 17749"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[5KB]",
+            "value": 21211.37380587012,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004199995649228913",
+            "extra": "mean: 47.144518273646945 usec\nrounds: 8592"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[10KB]",
+            "value": 20794.932004805785,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000040870847448181855",
+            "extra": "mean: 48.0886400479163 usec\nrounds: 10957"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[50KB]",
+            "value": 8775.14585765913,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006181149909260621",
+            "extra": "mean: 113.95821975166133 usec\nrounds: 5802"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[100KB]",
+            "value": 6830.340898961035,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006829760807449365",
+            "extra": "mean: 146.40557693864304 usec\nrounds: 4952"
+          },
+          {
+            "name": "multipart/test_multipart_benchmark.py::TestScaleCurve::test_roundtrip_zerodep[500KB]",
+            "value": 1982.567085528318,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003638637675450081",
+            "extra": "mean: 504.3965509664043 usec\nrounds: 1138"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestPutObjectSmall::test_zerodep",
+            "value": 458.12906502783267,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00014248858763412536",
+            "extra": "mean: 2.1827910000411066 msec\nrounds: 5"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestPutObjectSmall::test_boto3",
+            "value": 343.58751047000504,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009203784647218857",
+            "extra": "mean: 2.910466677418123 msec\nrounds: 155"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestPutObjectSmall::test_minio",
+            "value": 512.129830261627,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008200316380209502",
+            "extra": "mean: 1.9526298624103564 msec\nrounds: 407"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestPutObjectMedium::test_zerodep",
+            "value": 348.0400156225953,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009609478870764916",
+            "extra": "mean: 2.8732328327567123 msec\nrounds: 287"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestPutObjectMedium::test_boto3",
+            "value": 255.3487101673392,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005597463625134833",
+            "extra": "mean: 3.9162132416673026 msec\nrounds: 240"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestPutObjectMedium::test_minio",
+            "value": 355.68257423405356,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00022852537914480584",
+            "extra": "mean: 2.8114956212107245 msec\nrounds: 330"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestPutObjectLarge::test_zerodep",
+            "value": 95.75272691221343,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00017461086920082117",
+            "extra": "mean: 10.443566802194624 msec\nrounds: 91"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestPutObjectLarge::test_boto3",
+            "value": 86.5561689034413,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00021123793278736557",
+            "extra": "mean: 11.553191559524326 msec\nrounds: 84"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestPutObjectLarge::test_minio",
+            "value": 97.47414151712033,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00021202693968833404",
+            "extra": "mean: 10.259131134018352 msec\nrounds: 97"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestGetObjectSmall::test_zerodep",
+            "value": 732.9861853970059,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007820107146310512",
+            "extra": "mean: 1.3642821923831645 msec\nrounds: 473"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestGetObjectSmall::test_boto3",
+            "value": 470.8780431734451,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009454683414626203",
+            "extra": "mean: 2.12369214172863 msec\nrounds: 254"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestGetObjectSmall::test_minio",
+            "value": 791.2690481005772,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009469360806030812",
+            "extra": "mean: 1.2637926409487097 msec\nrounds: 674"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestGetObjectMedium::test_zerodep",
+            "value": 682.3695804463295,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00018340159350271347",
+            "extra": "mean: 1.4654815054122319 msec\nrounds: 554"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestGetObjectMedium::test_boto3",
+            "value": 436.9704999660661,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000911213155168601",
+            "extra": "mean: 2.2884840053908837 msec\nrounds: 371"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestGetObjectMedium::test_minio",
+            "value": 705.5271684082572,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001335523034871793",
+            "extra": "mean: 1.417379861155601 msec\nrounds: 605"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestGetObjectLarge::test_zerodep",
+            "value": 425.9859375170573,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003383763486144734",
+            "extra": "mean: 2.3474953324250474 msec\nrounds: 367"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestGetObjectLarge::test_boto3",
+            "value": 326.63643785395817,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00020277701253094873",
+            "extra": "mean: 3.06150779309903 msec\nrounds: 290"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestGetObjectLarge::test_minio",
+            "value": 459.901550869571,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007958416939477033",
+            "extra": "mean: 2.174378403615347 msec\nrounds: 166"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestBucketExists::test_zerodep",
+            "value": 959.736668498556,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006035319503015086",
+            "extra": "mean: 1.041952478031743 msec\nrounds: 751"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestBucketExists::test_boto3",
+            "value": 637.7329557928692,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008069474967602981",
+            "extra": "mean: 1.5680544511875476 msec\nrounds: 379"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestBucketExists::test_minio",
+            "value": 1047.8215179645333,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00015554337527111012",
+            "extra": "mean: 954.361007915327 usec\nrounds: 884"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestMakeBucket::test_zerodep",
+            "value": 430.0132651277445,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00017068920975061132",
+            "extra": "mean: 2.3255096553891863 msec\nrounds: 325"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestMakeBucket::test_boto3",
+            "value": 324.35834086222894,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00011562930726436804",
+            "extra": "mean: 3.0830099739126164 msec\nrounds: 230"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestMakeBucket::test_minio",
+            "value": 456.09639696231994,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002749731498882794",
+            "extra": "mean: 2.1925189645438357 msec\nrounds: 423"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestStatObject::test_zerodep",
+            "value": 940.5739386013132,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005638315521475931",
+            "extra": "mean: 1.063180637863576 msec\nrounds: 787"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestStatObject::test_boto3",
+            "value": 548.9564295708388,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008202308536016616",
+            "extra": "mean: 1.8216381959161612 msec\nrounds: 245"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestStatObject::test_minio",
+            "value": 929.2834905510023,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007444750366493315",
+            "extra": "mean: 1.0760978863479729 msec\nrounds: 44"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestListObjectsSmall::test_zerodep",
+            "value": 624.236241069551,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00016341977002067015",
+            "extra": "mean: 1.601957615095568 msec\nrounds: 530"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestListObjectsSmall::test_boto3",
+            "value": 334.9802757320325,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00023276317511721804",
+            "extra": "mean: 2.9852503936678056 msec\nrounds: 221"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestListObjectsSmall::test_minio",
+            "value": 474.60918169392613,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007881558719541281",
+            "extra": "mean: 2.106996742943116 msec\nrounds: 319"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestListObjectsMedium::test_zerodep",
+            "value": 322.6464358467372,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00022811829029500296",
+            "extra": "mean: 3.099367880434352 msec\nrounds: 276"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestListObjectsMedium::test_boto3",
+            "value": 103.21764802218783,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003200781254885878",
+            "extra": "mean: 9.68826570999795 msec\nrounds: 100"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestListObjectsMedium::test_minio",
+            "value": 141.945477007681,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005665089861369034",
+            "extra": "mean: 7.044958536761883 msec\nrounds: 136"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestListObjectsLarge::test_zerodep",
+            "value": 62.29860530460853,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0010104143124739352",
+            "extra": "mean: 16.051723712120168 msec\nrounds: 66"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestListObjectsLarge::test_boto3",
+            "value": 8.788504232582023,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0010424460093136905",
+            "extra": "mean: 113.78500522223727 msec\nrounds: 9"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestListObjectsLarge::test_minio",
+            "value": 12.206255659452944,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001728141797294001",
+            "extra": "mean: 81.92520523077572 msec\nrounds: 13"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestCopyObject::test_zerodep",
+            "value": 344.0246866149059,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00011043988306759347",
+            "extra": "mean: 2.9067681445761457 msec\nrounds: 249"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestCopyObject::test_boto3",
+            "value": 275.14803015235884,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001355407903987825",
+            "extra": "mean: 3.634407265958858 msec\nrounds: 188"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestCopyObject::test_minio",
+            "value": 256.1866373221964,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00013450874524357256",
+            "extra": "mean: 3.9034042151946324 msec\nrounds: 237"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestRemoveObject::test_zerodep",
+            "value": 342.63577617104556,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00026827877926777346",
+            "extra": "mean: 2.918551037416463 msec\nrounds: 294"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestRemoveObject::test_boto3",
+            "value": 220.52123323856702,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00011164163515632967",
+            "extra": "mean: 4.534710718392217 msec\nrounds: 174"
+          },
+          {
+            "name": "s3/test_s3_benchmark.py::TestRemoveObject::test_minio",
+            "value": 334.64887536729435,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00017660337332229466",
+            "extra": "mean: 2.988206665575818 msec\nrounds: 305"
+          },
+          {
+            "name": "ratelimit/test_ratelimit_benchmark.py::TestZerodepBenchmarks::test_token_bucket_acquire",
+            "value": 1054628.7204932834,
+            "unit": "iter/sec",
+            "range": "stddev: 4.3252597320225005e-7",
+            "extra": "mean: 948.2009929828843 nsec\nrounds: 70102"
+          },
+          {
+            "name": "ratelimit/test_ratelimit_benchmark.py::TestZerodepBenchmarks::test_fixed_window_acquire",
+            "value": 1062933.4103589384,
+            "unit": "iter/sec",
+            "range": "stddev: 3.8310502220617517e-7",
+            "extra": "mean: 940.7927065368219 nsec\nrounds: 106588"
+          },
+          {
+            "name": "ratelimit/test_ratelimit_benchmark.py::TestZerodepBenchmarks::test_sliding_window_acquire",
+            "value": 772369.3176283266,
+            "unit": "iter/sec",
+            "range": "stddev: 3.4808212794135405e-7",
+            "extra": "mean: 1.2947174067849392 usec\nrounds: 60872"
+          },
+          {
+            "name": "ratelimit/test_ratelimit_benchmark.py::TestZerodepBenchmarks::test_gcra_acquire",
+            "value": 1021555.0122011662,
+            "unit": "iter/sec",
+            "range": "stddev: 3.539388069203831e-7",
+            "extra": "mean: 978.8998028067806 nsec\nrounds: 97248"
+          },
+          {
+            "name": "ratelimit/test_ratelimit_benchmark.py::TestZerodepBenchmarks::test_token_bucket_peek",
+            "value": 862042.6405620057,
+            "unit": "iter/sec",
+            "range": "stddev: 5.087535295295081e-7",
+            "extra": "mean: 1.1600354239415043 usec\nrounds: 55782"
+          },
+          {
+            "name": "ratelimit/test_ratelimit_benchmark.py::TestZerodepBenchmarks::test_fixed_window_peek",
+            "value": 1027185.0779848504,
+            "unit": "iter/sec",
+            "range": "stddev: 3.4260881713490394e-7",
+            "extra": "mean: 973.534391642271 nsec\nrounds: 111583"
+          },
+          {
+            "name": "ratelimit/test_ratelimit_benchmark.py::TestZerodepBenchmarks::test_composite_two_buckets_acquire",
+            "value": 160434.38184866638,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000011253875990556571",
+            "extra": "mean: 6.2330779006165535 usec\nrounds: 32079"
+          },
+          {
+            "name": "ratelimit/test_ratelimit_benchmark.py::TestZerodepBenchmarks::test_composite_mixed_acquire",
+            "value": 164839.05370126685,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000013043592097355707",
+            "extra": "mean: 6.066523542486914 usec\nrounds: 45853"
+          },
+          {
+            "name": "ratelimit/test_ratelimit_benchmark.py::TestLimitsBenchmarks::test_fixed_window_hit",
+            "value": 327295.15283885953,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000034281720404214093",
+            "extra": "mean: 3.0553461954028385 usec\nrounds: 23221"
+          },
+          {
+            "name": "ratelimit/test_ratelimit_benchmark.py::TestLimitsBenchmarks::test_moving_window_hit",
+            "value": 294848.3205223486,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003699983746355004",
+            "extra": "mean: 3.391574346526431 usec\nrounds: 33485"
+          },
+          {
+            "name": "ratelimit/test_ratelimit_benchmark.py::TestLimitsBenchmarks::test_sliding_window_hit",
+            "value": 217050.67985510227,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003063700975439744",
+            "extra": "mean: 4.607218925402932 usec\nrounds: 24031"
+          },
+          {
+            "name": "ratelimit/test_ratelimit_benchmark.py::TestLimitsBenchmarks::test_fixed_window_test",
+            "value": 589964.4575701063,
+            "unit": "iter/sec",
+            "range": "stddev: 6.448411562725209e-7",
+            "extra": "mean: 1.6950173644675344 usec\nrounds: 73368"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestProfilerOverhead::test_zerodep",
+            "value": 4884.630082912635,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000009533629910866828",
+            "extra": "mean: 204.72379341440617 usec\nrounds: 2672"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestProfilerOverhead::test_raw_cprofile",
+            "value": 5372.057789128579,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000070023565047250855",
+            "extra": "mean: 186.14840704500565 usec\nrounds: 4287"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestProfilerOverhead::test_pyinstrument",
+            "value": 3517.1585246981626,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001499274994811856",
+            "extra": "mean: 284.3204231420927 usec\nrounds: 1737"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestOutputGeneration::test_zerodep_text",
+            "value": 40530.941782894246,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002811641602813367",
+            "extra": "mean: 24.67250836056422 usec\nrounds: 9210"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestOutputGeneration::test_zerodep_html",
+            "value": 46281.05553503753,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000017823593681595546",
+            "extra": "mean: 21.607113071199084 usec\nrounds: 11002"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestOutputGeneration::test_pyinstrument_text",
+            "value": 171713.16085704084,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000013786810025196574",
+            "extra": "mean: 5.823665437226133 usec\nrounds: 12473"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestOutputGeneration::test_pyinstrument_html",
+            "value": 11282.47885433845,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000009034925507371542",
+            "extra": "mean: 88.63300458262948 usec\nrounds: 3056"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestTracingProfilerOverhead::test_zerodep_tracing",
+            "value": 5275.73902283377,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000008734483401237675",
+            "extra": "mean: 189.54690436201062 usec\nrounds: 3346"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestTracingProfilerOverhead::test_yappi",
+            "value": 4345.269184671806,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000012010001053884712",
+            "extra": "mean: 230.13533972246393 usec\nrounds: 3026"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestTracingOutputGeneration::test_zerodep_tracing_text",
+            "value": 109888.75545836362,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000011212763501618367",
+            "extra": "mean: 9.10011216187534 usec\nrounds: 17662"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestTracingOutputGeneration::test_zerodep_tracing_html_table",
+            "value": 82068.8738360319,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000017704324461147609",
+            "extra": "mean: 12.184887561609933 usec\nrounds: 19006"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestTracingOutputGeneration::test_zerodep_tracing_html_flamegraph",
+            "value": 75219.97433905558,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000020600331703954566",
+            "extra": "mean: 13.294341147904138 usec\nrounds: 11901"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestMultiThreadOverhead::test_zerodep_tracing_multithread",
+            "value": 1091.2760409511054,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003297493701194609",
+            "extra": "mean: 916.3584303825148 usec\nrounds: 158"
+          },
+          {
+            "name": "profiler/test_profiler_benchmark.py::TestMultiThreadOverhead::test_yappi_multithread",
+            "value": 1098.8228143114213,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00004218299913915855",
+            "extra": "mean: 910.0648320872837 usec\nrounds: 804"
+          },
+          {
+            "name": "semantic_search/test_semantic_search_benchmark.py::TestFlatSearchPerformance::test_our_flat",
+            "value": 493.4536257174423,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000048622460842296835",
+            "extra": "mean: 2.026532885529171 msec\nrounds: 463"
+          },
+          {
+            "name": "semantic_search/test_semantic_search_benchmark.py::TestFlatSearchPerformance::test_faiss_flat",
+            "value": 135920.26293603014,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000016433909926514945",
+            "extra": "mean: 7.35725474921015 usec\nrounds: 17319"
+          },
+          {
+            "name": "semantic_search/test_semantic_search_benchmark.py::TestIVFSearchPerformance::test_our_ivf",
+            "value": 249.05324181643724,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006940155034767198",
+            "extra": "mean: 4.015205715479272 msec\nrounds: 239"
+          },
+          {
+            "name": "semantic_search/test_semantic_search_benchmark.py::TestBuildPerformance::test_ivf_build_500",
+            "value": 3.5023648902869136,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001329922266277164",
+            "extra": "mean: 285.5213638000123 msec\nrounds: 5"
+          },
+          {
+            "name": "semantic_search/test_semantic_search_benchmark.py::TestHNSWSearchPerformance::test_our_ivf",
+            "value": 248.99849797141607,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008207216886875338",
+            "extra": "mean: 4.016088483050993 msec\nrounds: 236"
+          },
+          {
+            "name": "semantic_search/test_semantic_search_benchmark.py::TestHNSWSearchPerformance::test_hnswlib_hnsw",
+            "value": 50393.456336415074,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000018649879973552237",
+            "extra": "mean: 19.843846259010913 usec\nrounds: 13861"
+          },
+          {
+            "name": "semantic_search/test_semantic_search_benchmark.py::TestHNSWBuildPerformance::test_our_ivf_build",
+            "value": 0.10579157984267112,
+            "unit": "iter/sec",
+            "range": "stddev: 0.022830996142306315",
+            "extra": "mean: 9.452548127999966 sec\nrounds: 5"
+          },
+          {
+            "name": "semantic_search/test_semantic_search_benchmark.py::TestHNSWBuildPerformance::test_hnswlib_build",
+            "value": 12.751295256217022,
+            "unit": "iter/sec",
+            "range": "stddev: 0.003210054035255255",
+            "extra": "mean: 78.42340561539739 msec\nrounds: 13"
+          },
+          {
+            "name": "ptyx/test_ptyx_benchmark.py::TestSpawnTeardown::test_ptyx",
+            "value": 90.90880062074325,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00033340564324924163",
+            "extra": "mean: 11.000035125002228 msec\nrounds: 80"
+          },
+          {
+            "name": "ptyx/test_ptyx_benchmark.py::TestSpawnTeardown::test_ptyprocess",
+            "value": 5.551021512025333,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0009080125523593926",
+            "extra": "mean: 180.14702299994192 msec\nrounds: 6"
+          },
+          {
+            "name": "ptyx/test_ptyx_benchmark.py::TestEchoRoundTrip::test_ptyx",
+            "value": 90.54385283617114,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003861819822717017",
+            "extra": "mean: 11.04437207691379 msec\nrounds: 78"
+          },
+          {
+            "name": "ptyx/test_ptyx_benchmark.py::TestEchoRoundTrip::test_ptyprocess",
+            "value": 5.58380258586746,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0008244513705351059",
+            "extra": "mean: 179.08942599994285 msec\nrounds: 6"
+          },
+          {
+            "name": "ptyx/test_ptyx_benchmark.py::TestBulkOutput::test_ptyx",
+            "value": 86.2251217803881,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003410340708836962",
+            "extra": "mean: 11.597548131586981 msec\nrounds: 76"
+          },
+          {
+            "name": "ptyx/test_ptyx_benchmark.py::TestBulkOutput::test_ptyprocess",
+            "value": 5.571149693603437,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005792543534570699",
+            "extra": "mean: 179.49616416664563 msec\nrounds: 6"
+          },
+          {
+            "name": "jwt/test_jwt_benchmark.py::TestRsaVerify::test_pyjwt",
+            "value": 24891.401054875947,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005593611657831528",
+            "extra": "mean: 40.17451640409414 usec\nrounds: 2438"
+          },
+          {
+            "name": "jwt/test_jwt_benchmark.py::TestRsaVerify::test_zerodep",
+            "value": 15016.913321653159,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000049741648184407365",
+            "extra": "mean: 66.59158101139745 usec\nrounds: 1580"
+          },
+          {
+            "name": "jwt/test_jwt_benchmark.py::TestRsaPssVerify::test_pyjwt",
+            "value": 21798.756314563536,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006091313895800701",
+            "extra": "mean: 45.8741767452077 usec\nrounds: 4696"
+          },
+          {
+            "name": "jwt/test_jwt_benchmark.py::TestRsaPssVerify::test_zerodep",
+            "value": 11229.888661637866,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006303577548721993",
+            "extra": "mean: 89.04807786884605 usec\nrounds: 3403"
+          },
+          {
+            "name": "jwt/test_jwt_benchmark.py::TestEcdsaVerify::test_pyjwt",
+            "value": 10115.010571301844,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006169592687198179",
+            "extra": "mean: 98.86297131880266 usec\nrounds: 3208"
+          },
+          {
+            "name": "jwt/test_jwt_benchmark.py::TestEcdsaVerify::test_zerodep",
+            "value": 7841.066110097851,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000015278078857468124",
+            "extra": "mean: 127.53367794108813 usec\nrounds: 2602"
+          },
+          {
+            "name": "jwt/test_jwt_benchmark.py::TestHmacVerify::test_pyjwt",
+            "value": 64038.22095450867,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002855384829166472",
+            "extra": "mean: 15.615674281619688 usec\nrounds: 8099"
+          },
+          {
+            "name": "jwt/test_jwt_benchmark.py::TestHmacVerify::test_zerodep",
+            "value": 49544.876741530155,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000947166557148711",
+            "extra": "mean: 20.18372162306273 usec\nrounds: 1850"
+          },
+          {
+            "name": "jwt/test_jwt_benchmark.py::TestHmacSign::test_pyjwt",
+            "value": 89054.00175615847,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000016974807304558217",
+            "extra": "mean: 11.229141647537984 usec\nrounds: 10625"
+          },
+          {
+            "name": "jwt/test_jwt_benchmark.py::TestHmacSign::test_zerodep",
+            "value": 78351.58092976308,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000017310504407558048",
+            "extra": "mean: 12.762984334629223 usec\nrounds: 15576"
           }
         ]
       }

@@ -165,6 +165,12 @@ print(text)
 
 ---
 
+### `safe_load(stream)`、`safe_load_all(stream)`、`safe_dump(...)`、`safe_dump_all(...)`
+
+与 PyYAML 同名的函数，当 `import yaml` 解析到本模块时，按 PyYAML 写的代码仍能运行。`safe_load` 与 `safe_load_all` 接受 `str`、UTF-8 `bytes`（开头的 BOM 会被丢弃，不会探测 UTF-16）或文件对象。`safe_dump` 与 `safe_dump_all` 就是 `dump` 与 `dump_all`。
+
+它们不是 PyYAML 的替代品。anchor、alias、tag 与 merge key 会原样作为文本返回，多文档流只返回第一个文档，格式错误的输入（未闭合的括号或引号、缩进错位、tab）会解析成部分结果而不是抛出异常。
+
 ### `class YAMLError(Exception)`
 
 YAML 解析失败时抛出。包含发生错误的行号信息。

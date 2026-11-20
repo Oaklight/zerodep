@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+## [2026.11.20] - 2026-11-20
+
+### 新功能
+
+- **yaml**：新增 PyYAML 的同名函数 `safe_load`、`safe_load_all`、`safe_dump`、`safe_dump_all`（并加入 `__all__`），当 `import yaml` 解析到本模块时（例如平铺的 `yaml.py` 旁边有像 `sse`、`acp` 那样把自身目录放进 `sys.path` 的模块），按 PyYAML 写的代码仍能运行。`safe_load` 与 `safe_load_all` 接受 `str`、UTF-8 `bytes`（开头的 BOM 会被丢弃，不会探测 UTF-16）或文件对象；`safe_dump` 与 `safe_dump_all` 就是现有的 `dump` 与 `dump_all`。这不是 PyYAML 的替代品：anchor、alias、tag 与 merge key 会原样作为文本返回，多文档流只返回第一个文档，格式错误的输入（未闭合的括号或引号、缩进错位、tab）会解析成部分结果而不是抛出异常，PyYAML 则会抛出。`yaml` 升至 0.4.0。([#323](https://github.com/Oaklight/zerodep/pull/323))
+
 ### 问题修复
 
 - **ptyx**：当子进程的输出快于消费方时，ConPTY 读取线程不再丢失数据。此前分块从事件循环里用 `put_nowait` 送入 32 槽的有界队列，队列满时会在回调中抛出 `QueueFull`，该分块被丢弃；现在读取线程通过 `run_coroutine_threadsafe` 阻塞在 `put` 上，并在 0.5 秒的等待中复用同一个 future，因此超时不会把同一分块重复入队，关闭时仍能停止等待。子进程仍在运行时 `PeekNamedPipe`/`ReadFile` 失败会被记录并唤醒阻塞的 `read()`，由它抛出新增的 `PtyReadError`（已加入 `__all__`），而不是像子进程退出那样返回 `b""`；子进程退出后或清理阶段的失败仍属正常流结束，退出前的零字节读取会重试而不是结束流。POSIX 终端查询应答现在只对 `CSI 6n`（光标位置）回复 `ESC[1;1R`：DA1/DA2（`CSI c`、`CSI > c`）此前会收到固定的 `ESC[?62;c`，等于声明伪终端并不具备的能力；跨两次读取拆分的查询仍然只回复一次。`ptyx` 升到 0.2.0。([#311](https://github.com/Oaklight/zerodep/issues/311))

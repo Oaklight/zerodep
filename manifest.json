@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-11-11T12:01:44.418300+00:00",
+  "generated": "2026-11-20T05:03:24.352841+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -193,7 +193,7 @@
       "deps": [],
       "tier": "subsystem",
       "category": "network",
-      "last_updated": "2026-11-11T05:03:37-06:00",
+      "last_updated": "2026-11-11T06:04:21-06:00",
       "content_hash": "410166bee26d34f4d875e115fc3a567c74d8bef7405107479a15185582346d8d"
     },
     "httpserver": {
@@ -681,12 +681,12 @@
         "yaml/yaml.py"
       ],
       "primary_file": "yaml/yaml.py",
-      "version": "0.3.1",
+      "version": "0.4.0",
       "deps": [],
       "tier": "subsystem",
       "category": "serialization",
-      "last_updated": "2026-04-27T23:17:36+08:00",
-      "content_hash": "5fd31be65d0c15cc82ef518e7b6e9cb553f8a7722a70c1ae6f9cda0999c92344"
+      "last_updated": "2026-11-19T21:55:24-06:00",
+      "content_hash": "0b5ac3e3980f027dbf90f8516a4c465f5b49d9250a0164f4b0696b586d9e7b78"
     }
   }
 }

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2026.11.20] - 2026-11-20
+
+### Features
+
+- **yaml**: the PyYAML names `safe_load`, `safe_load_all`, `safe_dump` and `safe_dump_all` are added (and to `__all__`), so code written against PyYAML keeps working when this module is the one `import yaml` resolves to — for example a flat `yaml.py` next to modules that put their own directory on `sys.path`, as `sse` and `acp` do. `safe_load` and `safe_load_all` accept a `str`, UTF-8 `bytes` (a leading BOM is dropped; UTF-16 is not sniffed) or a file-like object; `safe_dump` and `safe_dump_all` are the existing `dump` and `dump_all`. This is not a PyYAML replacement: anchors, aliases, tags and merge keys come back as literal text, a multi-document stream yields its first document, and malformed input (an unclosed bracket or quote, a misindented key, a tab) parses to a partial value instead of raising, where PyYAML raises. `yaml` goes to 0.4.0. ([#323](https://github.com/Oaklight/zerodep/pull/323))
+
 ### Bug Fixes
 
 - **ptyx**: the ConPTY reader no longer loses output when the child outruns the consumer. Chunks were fed to the bounded 32-slot queue with `put_nowait` from the event loop, so a full queue raised `QueueFull` inside the callback and that chunk was dropped; the reader now blocks on `put` through `run_coroutine_threadsafe`, reusing one future across its 0.5 s waits so a timeout cannot enqueue the same chunk twice and shutdown still stops it. A `PeekNamedPipe`/`ReadFile` failure while the child is still running is recorded and wakes the blocked `read()`, which raises the new `PtyReadError` (added to `__all__`) instead of returning `b""` as if the child had exited; a failure after the child exits or during teardown is still the normal end of stream, and a zero-byte read before exit is retried rather than ending the stream. POSIX terminal-query answering now replies only to `CSI 6n` (cursor position) with `ESC[1;1R`: DA1/DA2 (`CSI c`, `CSI > c`) previously received a fixed `ESC[?62;c`, which claims capabilities the pseudo-terminal does not have, and a query split across two reads is still answered once. `ptyx` goes to 0.2.0. ([#311](https://github.com/Oaklight/zerodep/issues/311))

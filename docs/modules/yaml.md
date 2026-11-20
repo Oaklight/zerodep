@@ -165,6 +165,12 @@ print(text)
 
 ---
 
+### `safe_load(stream)`, `safe_load_all(stream)`, `safe_dump(...)`, `safe_dump_all(...)`
+
+PyYAML-compatible names, so code written against PyYAML keeps working when this module is what `import yaml` resolves to. `safe_load` and `safe_load_all` accept a `str`, UTF-8 `bytes` (a leading BOM is dropped; UTF-16 is not sniffed) or a file-like object. `safe_dump` and `safe_dump_all` are `dump` and `dump_all`.
+
+They are not a PyYAML replacement. Anchors, aliases, tags and merge keys come back as literal text, a multi-document stream yields its first document, and malformed input (an unclosed bracket or quote, a misindented key, a tab) parses to a partial value instead of raising.
+
 ### `class YAMLError(Exception)`
 
 Raised when YAML parsing fails. Includes the line number where the error occurred.

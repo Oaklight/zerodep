@@ -125,16 +125,16 @@ td { white-space: nowrap; }
 <h1>tabulate</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: d2294c4 | Commit: d2294c49 | 2026-11-11T08:40:17.360445+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-11-11T08:40:17.360445+00:00"></span></p>
+<p class="meta">Version: 9f872e8 | Commit: 9f872e8d | 2026-11-20T05:39:47.552934+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-11-20T05:39:47.552934+00:00"></span></p>
 <h2>tabulate</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Large Table</td><td>zerodep</td><td>reference</td><td>6.32 ms</td><td>29.03 ms</td><td>158.2</td><td>34.5</td><td title="CV=6.8% | rounds=145">6.17 ms</td><td title="CV=6.8% | rounds=145">10.80 ms</td><td title="CV=6.8% | rounds=145">428.1 µs</td><td title="CV=6.8% | rounds=145">6.45 ms</td><td title="CV=2.2% | rounds=35">28.34 ms</td><td title="CV=2.2% | rounds=35">31.44 ms</td><td title="CV=2.2% | rounds=35">652.4 µs</td><td title="CV=2.2% | rounds=35">31.30 ms</td><td class="ratio-cell faster">4.6x faster</td></tr>
-<tr><td>Medium Table</td><td>zerodep</td><td>reference</td><td>412.7 µs</td><td>1.88 ms</td><td>2.4K</td><td>532.0</td><td title="CV=11.1% | rounds=1951">390.3 µs</td><td title="CV=11.1% | rounds=1951">835.7 µs</td><td title="CV=11.1% | rounds=1951">45.7 µs</td><td title="CV=11.1% | rounds=1951">435.4 µs</td><td title="CV=7.0% | rounds=506">1.83 ms</td><td title="CV=7.0% | rounds=506">3.28 ms</td><td title="CV=7.0% | rounds=506">132.0 µs</td><td title="CV=7.0% | rounds=506">1.94 ms</td><td class="ratio-cell faster">4.6x faster</td></tr>
-<tr><td>Small Table</td><td>zerodep</td><td>reference</td><td>54.1 µs</td><td>179.0 µs</td><td>18.5K</td><td>5.6K</td><td title="CV=9.3% | rounds=6037">50.8 µs</td><td title="CV=9.3% | rounds=6037">111.3 µs</td><td title="CV=9.3% | rounds=6037">5.0 µs</td><td title="CV=9.3% | rounds=6037">65.1 µs</td><td title="CV=8.4% | rounds=1382">167.6 µs</td><td title="CV=8.4% | rounds=1382">317.3 µs</td><td title="CV=8.4% | rounds=1382">15.1 µs</td><td title="CV=8.4% | rounds=1382">206.4 µs</td><td class="ratio-cell faster">3.3x faster</td></tr>
+<tr><td>Large Table</td><td>zerodep</td><td>reference</td><td>4.76 ms</td><td>22.31 ms</td><td>209.9</td><td>44.8</td><td title="CV=4.2% | rounds=195">4.66 ms</td><td title="CV=4.2% | rounds=195">7.41 ms</td><td title="CV=4.2% | rounds=195">202.0 µs</td><td title="CV=4.2% | rounds=195">4.89 ms</td><td title="CV=0.7% | rounds=44">22.09 ms</td><td title="CV=0.7% | rounds=44">22.93 ms</td><td title="CV=0.7% | rounds=44">159.1 µs</td><td title="CV=0.7% | rounds=44">22.57 ms</td><td class="ratio-cell faster">4.7x faster</td></tr>
+<tr><td>Medium Table</td><td>zerodep</td><td>reference</td><td>317.0 µs</td><td>1.46 ms</td><td>3.2K</td><td>686.0</td><td title="CV=3.5% | rounds=2405">307.5 µs</td><td title="CV=3.5% | rounds=2405">575.6 µs</td><td title="CV=3.5% | rounds=2405">11.0 µs</td><td title="CV=3.5% | rounds=2405">329.8 µs</td><td title="CV=2.3% | rounds=604">1.43 ms</td><td title="CV=2.3% | rounds=604">1.93 ms</td><td title="CV=2.3% | rounds=604">33.1 µs</td><td title="CV=2.3% | rounds=604">1.51 ms</td><td class="ratio-cell faster">4.6x faster</td></tr>
+<tr><td>Small Table</td><td>zerodep</td><td>reference</td><td>42.3 µs</td><td>141.0 µs</td><td>23.6K</td><td>7.1K</td><td title="CV=10.8% | rounds=7346">39.1 µs</td><td title="CV=10.8% | rounds=7346">134.6 µs</td><td title="CV=10.8% | rounds=7346">4.6 µs</td><td title="CV=10.8% | rounds=7346">50.2 µs</td><td title="CV=4.3% | rounds=1421">135.4 µs</td><td title="CV=4.3% | rounds=1421">209.8 µs</td><td title="CV=4.3% | rounds=1421">6.1 µs</td><td title="CV=4.3% | rounds=1421">151.7 µs</td><td class="ratio-cell faster">3.3x faster</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -206,13 +206,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [158.1998637813814, 2423.111197921232, 18471.899125486627],
+        data: [209.92743299554598, 3154.1971852857264, 23632.23805803776],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "reference" + ' (ops/s)',
-        data: [34.45194727687146, 531.9963372409023, 5585.92289230162],
+        data: [44.8180537159578, 686.0402424507473, 7090.0252639571745],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

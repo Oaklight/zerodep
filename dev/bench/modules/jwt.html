@@ -125,18 +125,18 @@ td { white-space: nowrap; }
 <h1>jwt</h1>
 <button class="theme-toggle" id="theme-toggle">☾ Dark</button>
 </div>
-<p class="meta">Version: d2294c4 | Commit: d2294c49 | 2026-11-11T08:40:17.360445+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-11-11T08:40:17.360445+00:00"></span></p>
+<p class="meta">Version: 9f872e8 | Commit: 9f872e8d | 2026-11-20T05:39:47.552934+00:00 <span class="time-ago" id="time-ago" data-timestamp="2026-11-20T05:39:47.552934+00:00"></span></p>
 <h2>jwt</h2>
 <div class="table-wrap"><table>
 <thead><tr><th rowspan="2">Operation</th><th rowspan="2">zerodep</th><th rowspan="2">Reference</th><th rowspan="2">zd mean</th><th rowspan="2">Ref mean</th><th rowspan="2">zd ops/s</th><th rowspan="2">Ref ops/s</th><th colspan="4" style="text-align:center">zerodep tail latency</th><th colspan="4" style="text-align:center">Ref tail latency</th><th rowspan="2">Ratio</th></tr>
 <tr><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th><th>Min</th><th>Max</th><th>StdDev</th><th>P95</th></tr>
 </thead>
 <tbody>
-<tr><td>Ecdsa Verify</td><td>zerodep</td><td>pyjwt</td><td>156.9 µs</td><td>115.5 µs</td><td>6.4K</td><td>8.7K</td><td title="CV=7.0% | rounds=2675">149.4 µs</td><td title="CV=7.0% | rounds=2675">320.6 µs</td><td title="CV=7.0% | rounds=2675">11.0 µs</td><td title="CV=7.0% | rounds=2675">175.4 µs</td><td title="CV=8.1% | rounds=3608">109.6 µs</td><td title="CV=8.1% | rounds=3608">257.4 µs</td><td title="CV=8.1% | rounds=3608">9.3 µs</td><td title="CV=8.1% | rounds=3608">133.6 µs</td><td class="ratio-cell slower">1.4x slower</td></tr>
-<tr><td>Hmac Sign</td><td>zerodep</td><td>pyjwt</td><td>17.1 µs</td><td>14.6 µs</td><td>58.4K</td><td>68.7K</td><td title="CV=14.6% | rounds=18155">16.2 µs</td><td title="CV=14.6% | rounds=18155">63.5 µs</td><td title="CV=14.6% | rounds=18155">2.5 µs</td><td title="CV=14.6% | rounds=18155">17.7 µs</td><td title="CV=16.4% | rounds=12174">13.8 µs</td><td title="CV=16.4% | rounds=12174">106.9 µs</td><td title="CV=16.4% | rounds=12174">2.4 µs</td><td title="CV=16.4% | rounds=12174">15.1 µs</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Hmac Verify</td><td>zerodep</td><td>pyjwt</td><td>28.3 µs</td><td>22.7 µs</td><td>35.3K</td><td>44.1K</td><td title="CV=13.0% | rounds=1017">26.1 µs</td><td title="CV=13.0% | rounds=1017">61.9 µs</td><td title="CV=13.0% | rounds=1017">3.7 µs</td><td title="CV=13.0% | rounds=1017">32.9 µs</td><td title="CV=15.4% | rounds=8920">20.8 µs</td><td title="CV=15.4% | rounds=8920">71.1 µs</td><td title="CV=15.4% | rounds=8920">3.5 µs</td><td title="CV=15.4% | rounds=8920">26.0 µs</td><td class="ratio-cell slower">1.2x slower</td></tr>
-<tr><td>Rsa Pss Verify</td><td>zerodep</td><td>pyjwt</td><td>114.8 µs</td><td>65.3 µs</td><td>8.7K</td><td>15.3K</td><td title="CV=10.8% | rounds=4307">106.5 µs</td><td title="CV=10.8% | rounds=4307">221.4 µs</td><td title="CV=10.8% | rounds=4307">12.4 µs</td><td title="CV=10.8% | rounds=4307">135.1 µs</td><td title="CV=10.8% | rounds=6017">60.8 µs</td><td title="CV=10.8% | rounds=6017">186.5 µs</td><td title="CV=10.8% | rounds=6017">7.1 µs</td><td title="CV=10.8% | rounds=6017">84.7 µs</td><td class="ratio-cell slower">1.8x slower</td></tr>
-<tr><td>Rsa Verify</td><td>zerodep</td><td>pyjwt</td><td>88.3 µs</td><td>56.2 µs</td><td>11.3K</td><td>17.8K</td><td title="CV=8.8% | rounds=1442">82.8 µs</td><td title="CV=8.8% | rounds=1442">161.8 µs</td><td title="CV=8.8% | rounds=1442">7.8 µs</td><td title="CV=8.8% | rounds=1442">107.3 µs</td><td title="CV=11.5% | rounds=2160">51.8 µs</td><td title="CV=11.5% | rounds=2160">106.1 µs</td><td title="CV=11.5% | rounds=2160">6.5 µs</td><td title="CV=11.5% | rounds=2160">74.8 µs</td><td class="ratio-cell slower">1.6x slower</td></tr>
+<tr><td>Ecdsa Verify</td><td>zerodep</td><td>pyjwt</td><td>127.5 µs</td><td>98.9 µs</td><td>7.8K</td><td>10.1K</td><td title="CV=12.0% | rounds=2602">116.4 µs</td><td title="CV=12.0% | rounds=2602">563.8 µs</td><td title="CV=12.0% | rounds=2602">15.3 µs</td><td title="CV=12.0% | rounds=2602">153.2 µs</td><td title="CV=6.2% | rounds=3208">92.8 µs</td><td title="CV=6.2% | rounds=3208">149.9 µs</td><td title="CV=6.2% | rounds=3208">6.2 µs</td><td title="CV=6.2% | rounds=3208">110.4 µs</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Hmac Sign</td><td>zerodep</td><td>pyjwt</td><td>12.8 µs</td><td>11.2 µs</td><td>78.4K</td><td>89.1K</td><td title="CV=13.6% | rounds=15576">11.8 µs</td><td title="CV=13.6% | rounds=15576">70.7 µs</td><td title="CV=13.6% | rounds=15576">1.7 µs</td><td title="CV=13.6% | rounds=15576">13.3 µs</td><td title="CV=15.1% | rounds=10625">10.4 µs</td><td title="CV=15.1% | rounds=10625">100.7 µs</td><td title="CV=15.1% | rounds=10625">1.7 µs</td><td title="CV=15.1% | rounds=10625">11.7 µs</td><td class="ratio-cell slower">1.1x slower</td></tr>
+<tr><td>Hmac Verify</td><td>zerodep</td><td>pyjwt</td><td>20.2 µs</td><td>15.6 µs</td><td>49.5K</td><td>64.0K</td><td title="CV=46.9% | rounds=1850">18.0 µs</td><td title="CV=46.9% | rounds=1850">383.2 µs</td><td title="CV=46.9% | rounds=1850">9.5 µs</td><td title="CV=46.9% | rounds=1850">22.7 µs</td><td title="CV=18.3% | rounds=8099">14.3 µs</td><td title="CV=18.3% | rounds=8099">130.3 µs</td><td title="CV=18.3% | rounds=8099">2.9 µs</td><td title="CV=18.3% | rounds=8099">16.8 µs</td><td class="ratio-cell slower">1.3x slower</td></tr>
+<tr><td>Rsa Pss Verify</td><td>zerodep</td><td>pyjwt</td><td>89.0 µs</td><td>45.9 µs</td><td>11.2K</td><td>21.8K</td><td title="CV=7.1% | rounds=3403">82.5 µs</td><td title="CV=7.1% | rounds=3403">154.6 µs</td><td title="CV=7.1% | rounds=3403">6.3 µs</td><td title="CV=7.1% | rounds=3403">100.8 µs</td><td title="CV=13.3% | rounds=4696">41.3 µs</td><td title="CV=13.3% | rounds=4696">83.7 µs</td><td title="CV=13.3% | rounds=4696">6.1 µs</td><td title="CV=13.3% | rounds=4696">59.3 µs</td><td class="ratio-cell slower">1.9x slower</td></tr>
+<tr><td>Rsa Verify</td><td>zerodep</td><td>pyjwt</td><td>66.6 µs</td><td>40.2 µs</td><td>15.0K</td><td>24.9K</td><td title="CV=7.5% | rounds=1580">60.8 µs</td><td title="CV=7.5% | rounds=1580">112.0 µs</td><td title="CV=7.5% | rounds=1580">5.0 µs</td><td title="CV=7.5% | rounds=1580">76.8 µs</td><td title="CV=13.9% | rounds=2438">37.2 µs</td><td title="CV=13.9% | rounds=2438">147.2 µs</td><td title="CV=13.9% | rounds=2438">5.6 µs</td><td title="CV=13.9% | rounds=2438">49.9 µs</td><td class="ratio-cell slower">1.7x slower</td></tr>
 </tbody></table></div>
 <div class="chart-container"><canvas id="chart_0"></canvas></div>
 
@@ -208,13 +208,13 @@ new Chart(document.getElementById('chart_0'), {
     datasets: [
       {
         label: 'zerodep (ops/s)',
-        data: [6371.515064189169, 58409.87729558602, 35318.50782839178, 8713.598434105406, 11325.623641953718],
+        data: [7841.066110097851, 78351.58092976308, 49544.876741530155, 11229.888661637866, 15016.913321653159],
         backgroundColor: 'rgba(111, 66, 193, 0.8)',
         borderRadius: 4,
       },
       {
         label: "pyjwt" + ' (ops/s)',
-        data: [8658.50675842727, 68688.95860159681, 44098.9861277494, 15317.572819634406, 17797.998940970585],
+        data: [10115.010571301844, 89054.00175615847, 64038.22095450867, 21798.756314563536, 24891.401054875947],
         backgroundColor: 'rgba(13, 110, 253, 0.6)',
         borderRadius: 4,
       }

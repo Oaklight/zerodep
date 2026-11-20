@@ -41,7 +41,11 @@ finally:
         sys.modules["yaml"] = _cached_yaml
 
 sys.path.insert(0, _this_dir)
-from yaml import dump, load, load_all
+from yaml import (
+    dump,
+    load,
+    load_all,
+)
 
 # ── Helpers ──
 

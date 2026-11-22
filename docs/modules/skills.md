@@ -108,6 +108,10 @@ registry.discover(
 # Recursive discovery for nested layouts (category/skill/)
 registry.discover("~/.agents/skills", recursive=True)
 
+# A single skill directory or SKILL.md file also works
+registry.discover("/opt/skills/pdf-processing")
+registry.discover("/opt/skills/pdf-processing/SKILL.md")
+
 # Override: project skills take precedence over user skills
 registry.discover("~/.agents/skills")           # user-level
 registry.discover(".agents/skills", override=True)  # project overrides
@@ -116,6 +120,8 @@ print(f"Found {len(registry)} skills")
 for skill in registry:
     print(f"  - {skill.name}: {skill.description}")
 ```
+
+Immediate child directories are scanned in sorted order, so discovery is deterministic. When the module is vendored inside a package, the `frontmatter` and `sparse_search` siblings are imported through that package first, which avoids resolving an unrelated top-level module that happens to share the name.
 
 ### Pre-Filter Skills (Save Tokens)
 

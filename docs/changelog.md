@@ -8,7 +8,7 @@
 
 ### 新功能
 
-- **skills**：`SkillRegistry.discover()` 除“子目录是技能目录的根目录”外，现在也接受单个技能目录或 `SKILL.md` 文件，因此已经拿到单个技能时不需要再扫描其父目录。直接子目录会排序，发现顺序因此确定。模块被 vendored 到包内时，`frontmatter` 与 `sparse_search` 会优先通过该包导入，再回退到平铺布局，避免同名但无关的顶层模块抢先解析。`frontmatter` 使用相同的包内相对 yaml 导入，并在调用前断言惰性处理器已加载。`skills` 升至 0.5.0，`frontmatter` 升至 0.3.1。（[#324](https://github.com/Oaklight/zerodep/pull/324)）
+- **skills**：`SkillRegistry.discover()` 除“子目录是技能目录的根目录”外，现在也接受单个技能目录或 `SKILL.md` 文件，因此已经拿到单个技能时不需要再扫描其父目录。直接子目录会排序，发现顺序因此确定。模块被 vendored 到包内时，`frontmatter` 与 `sparse_search` 会优先通过该包导入，再回退到平铺布局，避免同名但无关的顶层模块抢先解析。`frontmatter` 使用相同的包内相对 yaml 导入，并在调用前断言惰性处理器已加载。自身带有 `SKILL.md` 的集合根目录现在会返回其技能子目录，而不是把它们隐藏；包内相对导入也不再回退到无关的顶层模块。`skills` 升至 0.5.1，`frontmatter` 升至 0.3.1。（[#324](https://github.com/Oaklight/zerodep/pull/324)）
 
 ## [2026.11.20] - 2026-11-20
 

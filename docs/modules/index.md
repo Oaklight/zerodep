@@ -24,7 +24,7 @@ title: 模块概览
 | [diff](diff.md) | 0.3.1 | 2026-04-15 |
 | [dotenv](dotenv.md) | 0.3.1 | 2026-04-27 |
 | [filelock](filelock.md) | 0.3.0 | 2026-04-27 |
-| [frontmatter](frontmatter.md) | 0.3.0 | 2026-04-27 |
+| [frontmatter](frontmatter.md) | 0.3.1 | 2026-11-22 |
 | [httpclient](httpclient.md) | 0.7.4 | 2026-11-11 |
 | [httpserver](httpserver.md) | 0.8.0 | 2026-11-11 |
 | [jsonrpc](jsonrpc.md) | 0.4.0 | 2026-10-24 |
@@ -49,7 +49,7 @@ title: 模块概览
 | [scheduler](scheduler.md) | 0.3.1 | 2026-04-15 |
 | [semantic_search](semantic_search.md) | 0.2.0 | 2026-10-24 |
 | [semver](semver.md) | 0.4.1 | 2026-04-27 |
-| [skills](skills.md) | 0.4.3 | 2026-08-25 |
+| [skills](skills.md) | 0.5.1 | 2026-11-22 |
 | [soup](soup.md) | 0.9.0 | 2026-10-13 |
 | [sparse_search](sparse_search.md) | 0.4.0 | 2026-04-27 |
 | [sse](sse.md) | 0.4.1 | 2026-10-23 |

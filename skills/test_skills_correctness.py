@@ -1,7 +1,11 @@
 """Correctness tests: zerodep skills."""
 
+import importlib
 import os
+import shutil
 import sys
+import uuid
+from pathlib import Path
 
 import pytest
 
@@ -421,11 +425,67 @@ class TestSkillRegistry:
         registry = SkillRegistry()
         assert registry.discover(other) == []
 
+    def test_collection_root_with_own_skill_md_keeps_children(self, tmp_path):
+        root = tmp_path / "collection"
+        for name in ("alpha", "beta"):
+            d = root / name
+            d.mkdir(parents=True)
+            (d / "SKILL.md").write_text(
+                SIMPLE_SKILL_MD.replace("pdf-processing", name), encoding="utf-8"
+            )
+        (root / "SKILL.md").write_text(
+            SIMPLE_SKILL_MD.replace("pdf-processing", "collection"),
+            encoding="utf-8",
+        )
+
+        registry = SkillRegistry()
+        found = registry.discover(root)
+        assert [s.name for s in found] == ["alpha", "beta"]
+
     def test_repr(self):
         registry = SkillRegistry()
         registry.register(loads(SIMPLE_SKILL_MD))
         r = repr(registry)
         assert "pdf-processing" in r
+
+
+def test_package_relative_siblings_win_over_top_level_modules(tmp_path, monkeypatch):
+    package = f"pkg_{uuid.uuid4().hex}"
+    vendor = tmp_path / package / "_vendor"
+    vendor.mkdir(parents=True)
+    (tmp_path / package / "__init__.py").write_text("", encoding="utf-8")
+    (vendor / "__init__.py").write_text("", encoding="utf-8")
+
+    base = Path(__file__).resolve().parent
+    for source in (
+        base / "skills.py",
+        base.parent / "frontmatter" / "frontmatter.py",
+        base.parent / "sparse_search" / "sparse_search.py",
+        base.parent / "yaml" / "yaml.py",
+    ):
+        shutil.copyfile(source, vendor / source.name)
+
+    (tmp_path / "frontmatter.py").write_text(
+        "def load(*args, **kwargs):\n"
+        "    raise AssertionError('decoy frontmatter used')\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "sparse_search.py").write_text(
+        "raise AssertionError('decoy sparse_search used')\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.syspath_prepend(str(tmp_path))
+    try:
+        module = importlib.import_module(f"{package}._vendor.skills")
+        load, _loads, _dumps, _document = module._load_frontmatter()
+        assert load.__module__ == f"{package}._vendor.frontmatter"
+        assert module._HAS_SEARCH is True
+        assert module._SparseIndex.__module__ == f"{package}._vendor.sparse_search"
+    finally:
+        for name in list(sys.modules):
+            if name == package or name.startswith(f"{package}."):
+                sys.modules.pop(name, None)
 
 
 # ---------------------------------------------------------------------------

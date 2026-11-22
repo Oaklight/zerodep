@@ -108,6 +108,10 @@ registry.discover(
 # 递归发现嵌套布局（category/skill/）
 registry.discover("~/.agents/skills", recursive=True)
 
+# 单个技能目录或 SKILL.md 文件同样可用
+registry.discover("/opt/skills/pdf-processing")
+registry.discover("/opt/skills/pdf-processing/SKILL.md")
+
 # 覆盖机制：项目级技能优先于用户级技能
 registry.discover("~/.agents/skills")           # 用户级
 registry.discover(".agents/skills", override=True)  # 项目级覆盖
@@ -116,6 +120,8 @@ print(f"发现 {len(registry)} 个技能")
 for skill in registry:
     print(f"  - {skill.name}: {skill.description}")
 ```
+
+直接子目录按排序后的顺序扫描，因此发现结果是确定的。当模块被 vendored 到某个包内时，`frontmatter` 与 `sparse_search` 兄弟模块会优先通过该包导入，避免解析到同名但无关的顶层模块。
 
 ### 预筛选技能（节省 Token）
 

@@ -442,6 +442,44 @@ class TestSkillRegistry:
         found = registry.discover(root)
         assert [s.name for s in found] == ["alpha", "beta"]
 
+    def test_collection_root_with_own_skill_md_keeps_children_recursive(self, tmp_path):
+        root = tmp_path / "collection"
+        for name in ("alpha", "beta"):
+            d = root / "nested" / name
+            d.mkdir(parents=True)
+            (d / "SKILL.md").write_text(
+                SIMPLE_SKILL_MD.replace("pdf-processing", name), encoding="utf-8"
+            )
+        (root / "SKILL.md").write_text(
+            SIMPLE_SKILL_MD.replace("pdf-processing", "collection"),
+            encoding="utf-8",
+        )
+
+        registry = SkillRegistry()
+        found = registry.discover(root, recursive=True)
+        assert [s.name for s in found] == ["alpha", "beta"]
+
+    def test_recursive_discovery_is_sorted(self, tmp_path):
+        for name in ("zebra", "mango", "alpha"):
+            d = tmp_path / name
+            d.mkdir()
+            (d / "SKILL.md").write_text(
+                SIMPLE_SKILL_MD.replace("pdf-processing", name), encoding="utf-8"
+            )
+
+        found = SkillRegistry().discover(tmp_path, recursive=True)
+        assert [s.name for s in found] == ["alpha", "mango", "zebra"]
+
+    def test_discover_direct_skill_md_nonstandard_case(self, tmp_path):
+        d = tmp_path / "pdf-processing"
+        d.mkdir()
+        skill_md = d / "SKILL.MD"
+        skill_md.write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+
+        registry = SkillRegistry()
+        found = registry.discover(skill_md)
+        assert [s.name for s in found] == ["pdf-processing"]
+
     def test_repr(self):
         registry = SkillRegistry()
         registry.register(loads(SIMPLE_SKILL_MD))
@@ -449,7 +487,10 @@ class TestSkillRegistry:
         assert "pdf-processing" in r
 
 
-def test_package_relative_siblings_win_over_top_level_modules(tmp_path, monkeypatch):
+def _build_vendored_package(
+    tmp_path, modules=("skills", "frontmatter", "sparse_search", "yaml")
+):
+    """Create a package with vendored zerodep modules and return its name."""
     package = f"pkg_{uuid.uuid4().hex}"
     vendor = tmp_path / package / "_vendor"
     vendor.mkdir(parents=True)
@@ -457,13 +498,25 @@ def test_package_relative_siblings_win_over_top_level_modules(tmp_path, monkeypa
     (vendor / "__init__.py").write_text("", encoding="utf-8")
 
     base = Path(__file__).resolve().parent
-    for source in (
-        base / "skills.py",
-        base.parent / "frontmatter" / "frontmatter.py",
-        base.parent / "sparse_search" / "sparse_search.py",
-        base.parent / "yaml" / "yaml.py",
-    ):
-        shutil.copyfile(source, vendor / source.name)
+    sources = {
+        "skills": base / "skills.py",
+        "frontmatter": base.parent / "frontmatter" / "frontmatter.py",
+        "sparse_search": base.parent / "sparse_search" / "sparse_search.py",
+        "yaml": base.parent / "yaml" / "yaml.py",
+    }
+    for name in modules:
+        shutil.copyfile(sources[name], vendor / sources[name].name)
+    return package
+
+
+def _drop_package_modules(package):
+    for name in list(sys.modules):
+        if name == package or name.startswith(f"{package}."):
+            sys.modules.pop(name, None)
+
+
+def test_package_relative_siblings_win_over_top_level_modules(tmp_path, monkeypatch):
+    package = _build_vendored_package(tmp_path)
 
     (tmp_path / "frontmatter.py").write_text(
         "def load(*args, **kwargs):\n"
@@ -483,9 +536,43 @@ def test_package_relative_siblings_win_over_top_level_modules(tmp_path, monkeypa
         assert module._HAS_SEARCH is True
         assert module._SparseIndex.__module__ == f"{package}._vendor.sparse_search"
     finally:
-        for name in list(sys.modules):
-            if name == package or name.startswith(f"{package}."):
-                sys.modules.pop(name, None)
+        _drop_package_modules(package)
+
+
+def test_package_without_frontmatter_sibling_fails_loudly(tmp_path, monkeypatch):
+    package = _build_vendored_package(
+        tmp_path, modules=("skills", "sparse_search", "yaml")
+    )
+    (tmp_path / "frontmatter.py").write_text(
+        "class Document:  # decoy\n    pass\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.syspath_prepend(str(tmp_path))
+    try:
+        module = importlib.import_module(f"{package}._vendor.skills")
+        with pytest.raises(ImportError, match="sibling frontmatter"):
+            module._load_frontmatter()
+    finally:
+        _drop_package_modules(package)
+
+
+def test_package_with_broken_frontmatter_sibling_surfaces_error(tmp_path, monkeypatch):
+    package = _build_vendored_package(
+        tmp_path, modules=("skills", "sparse_search", "yaml")
+    )
+    vendor = tmp_path / package / "_vendor"
+    (vendor / "frontmatter.py").write_text(
+        "raise ImportError('broken vendored frontmatter')\n", encoding="utf-8"
+    )
+
+    monkeypatch.syspath_prepend(str(tmp_path))
+    try:
+        module = importlib.import_module(f"{package}._vendor.skills")
+        with pytest.raises(ImportError, match="broken vendored frontmatter"):
+            module._load_frontmatter()
+    finally:
+        _drop_package_modules(package)
 
 
 # ---------------------------------------------------------------------------

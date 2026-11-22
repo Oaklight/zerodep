@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.5.0"
+# version = "0.5.1"
 # deps = ["frontmatter", "sparse_search"]
 # tier = "medium"
 # category = "protocol"
@@ -113,11 +113,16 @@ def _import_package_sibling(name: str):
     if not __package__:
         return None
     import importlib
+    import importlib.util
 
+    qualified = f"{__package__}.{name}"
     try:
-        return importlib.import_module(f"{__package__}.{name}")
-    except ImportError:
+        spec = importlib.util.find_spec(qualified)
+    except (ImportError, AttributeError, ValueError):
         return None
+    if spec is None:
+        return None
+    return importlib.import_module(qualified)
 
 
 def _load_frontmatter():
@@ -744,6 +749,11 @@ class SkillRegistry:
         * a directory whose immediate children (or full tree when
           *recursive* is true) are skill directories.
 
+        A directory that contains skill children is treated as a collection,
+        even when it also has its own ``SKILL.md``.  The children win so a
+        repository root that grows a top-level ``SKILL.md`` does not hide the
+        skills below it.
+
         Discovered skills are automatically registered.  Paths are scanned
         in the order given, so passing a lower-precedence root first and
         *override=True* lets later roots replace earlier skills with the same
@@ -772,17 +782,20 @@ class SkillRegistry:
                 if resolved.name.lower() != "skill.md":
                     continue
                 candidates: Iterable[Path] = (resolved.parent,)
-            elif _find_skill_md_quiet(resolved) is not None:
-                candidates = (resolved,)
             else:
                 try:
-                    candidates = (
-                        _walk_skill_dirs(resolved)
-                        if recursive
-                        else _iter_child_dirs(resolved)
-                    )
+                    if recursive:
+                        candidates = list(_walk_skill_dirs(resolved))
+                    else:
+                        candidates = [
+                            child
+                            for child in _iter_child_dirs(resolved)
+                            if _find_skill_md_quiet(child) is not None
+                        ]
                 except OSError:
                     continue
+                if not candidates and _find_skill_md_quiet(resolved) is not None:
+                    candidates = [resolved]
             for child in candidates:
                 try:
                     _find_skill_md(child)

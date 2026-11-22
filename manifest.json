@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-11-22T17:19:34.444279+00:00",
+  "generated": "2026-11-22T17:29:33.930306+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -180,7 +180,7 @@
       ],
       "tier": "medium",
       "category": "serialization",
-      "last_updated": "2026-04-27T23:17:36+08:00",
+      "last_updated": "2026-11-22T11:08:10-06:00",
       "content_hash": "d3a003b6572f2719b650d430de98e1052b2696bb68e24a02144bac3d602d300f"
     },
     "httpclient": {
@@ -505,15 +505,15 @@
         "skills/skills.py"
       ],
       "primary_file": "skills/skills.py",
-      "version": "0.5.0",
+      "version": "0.5.1",
       "deps": [
         "frontmatter",
         "sparse_search"
       ],
       "tier": "medium",
       "category": "protocol",
-      "last_updated": "2026-08-25T10:33:53-05:00",
-      "content_hash": "07ffdd6d27ff643bba7fe7045833c08a5e858cedc150c38613d95f097a7ca274"
+      "last_updated": "2026-11-22T11:08:10-06:00",
+      "content_hash": "7343e0b3538932583eff96d59fe8c8fd91d1c37820e946d73015acd41b59b85d"
     },
     "soup": {
       "description": "HTML parser with BeautifulSoup-like API — zero-dep, stdlib only, Python 3.10+",

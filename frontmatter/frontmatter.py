@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.3.0"
+# version = "0.3.1"
 # deps = ["yaml"]
 # tier = "medium"
 # category = "serialization"
@@ -74,16 +74,34 @@ __all__ = [
 
 # ── Sibling yaml import (guarded) ──
 
-try:
-    _yaml_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "yaml")
-    if _yaml_dir not in sys.path:
-        sys.path.insert(0, _yaml_dir)
-    from yaml import dump as _yaml_dump
-    from yaml import load as _yaml_load
+_yaml_dump = None
+_yaml_load = None
+_HAS_YAML = False
 
-    _HAS_YAML = True
-except ImportError:
-    _HAS_YAML = False
+if __package__:
+    try:
+        import importlib
+
+        _yaml = importlib.import_module(f"{__package__}.yaml")
+        _yaml_dump = _yaml.dump
+        _yaml_load = _yaml.load
+        _HAS_YAML = True
+    except ImportError:
+        pass
+
+if not _HAS_YAML:
+    try:
+        _yaml_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "yaml"
+        )
+        if _yaml_dir not in sys.path:
+            sys.path.insert(0, _yaml_dir)
+        from yaml import dump as _yaml_dump
+        from yaml import load as _yaml_load
+
+        _HAS_YAML = True
+    except ImportError:
+        pass
 
 # ── Optional TOML support (Python 3.11+ stdlib) ──
 
@@ -178,6 +196,7 @@ def _parse_yaml(raw: str) -> dict[str, Any]:
             "Place yaml.py in a sibling directory or on sys.path.",
             handler="yaml",
         )
+    assert _yaml_load is not None
     result = _yaml_load(raw)
     if not isinstance(result, dict):
         raise FrontmatterError(
@@ -195,6 +214,7 @@ def _dump_yaml(data: dict[str, Any], **kwargs: Any) -> str:
             handler="yaml",
         )
     sort_keys = kwargs.pop("sort_keys", False)
+    assert _yaml_dump is not None
     result = _yaml_dump(data, sort_keys=sort_keys, **kwargs)
     assert isinstance(result, str)
     return result

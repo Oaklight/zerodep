@@ -395,6 +395,32 @@ class TestSkillRegistry:
         found = registry.discover("/nonexistent/path")
         assert found == []
 
+    def test_discover_direct_skill_directory(self, tmp_path):
+        d = tmp_path / "pdf-processing"
+        d.mkdir()
+        (d / "SKILL.md").write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+
+        registry = SkillRegistry()
+        found = registry.discover(d)
+        assert [s.name for s in found] == ["pdf-processing"]
+
+    def test_discover_direct_skill_md_file(self, tmp_path):
+        d = tmp_path / "pdf-processing"
+        d.mkdir()
+        skill_md = d / "SKILL.md"
+        skill_md.write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+
+        registry = SkillRegistry()
+        found = registry.discover(skill_md)
+        assert [s.name for s in found] == ["pdf-processing"]
+
+    def test_discover_ignores_other_files(self, tmp_path):
+        other = tmp_path / "notes.md"
+        other.write_text(SIMPLE_SKILL_MD, encoding="utf-8")
+
+        registry = SkillRegistry()
+        assert registry.discover(other) == []
+
     def test_repr(self):
         registry = SkillRegistry()
         registry.register(loads(SIMPLE_SKILL_MD))

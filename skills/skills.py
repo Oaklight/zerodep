@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.3"
+# version = "0.5.0"
 # deps = ["frontmatter", "sparse_search"]
 # tier = "medium"
 # category = "protocol"
@@ -94,8 +94,44 @@ def _ensure_sibling_path(name: str) -> str:
     return base
 
 
+def _import_package_sibling(name: str):
+    """Import a sibling module when this file is part of a package.
+
+    Vendored installs place every zerodep module in one package directory
+    (for example ``toolregistry._vendor``).  Importing through ``importlib``
+    keeps the lookup package-relative without a relative-import statement, so
+    the same source also type-checks in the flat zerodep checkout where
+    ``skills.py`` has no package.
+
+    Args:
+        name: Sibling module name, without the package prefix.
+
+    Returns:
+        The imported module, or ``None`` when this file is not inside a
+        package or the sibling is unavailable.
+    """
+    if not __package__:
+        return None
+    import importlib
+
+    try:
+        return importlib.import_module(f"{__package__}.{name}")
+    except ImportError:
+        return None
+
+
 def _load_frontmatter():
-    """Load sibling ``frontmatter`` helpers on demand."""
+    """Load sibling ``frontmatter`` helpers on demand.
+
+    When this module is vendored into a package, the package-relative import
+    finds the sibling module without touching ``sys.path``.  A flat install
+    keeps the sibling path fallback so ``zerodep add skills`` continues to
+    work.
+    """
+    sibling = _import_package_sibling("frontmatter")
+    if sibling is not None:
+        return sibling.load, sibling.loads, sibling.dumps, sibling.Document
+
     _ensure_sibling_path("frontmatter")
     sys.modules.pop("frontmatter", None)
     try:
@@ -115,10 +151,15 @@ def _load_frontmatter():
 _HAS_SEARCH = False
 
 try:
-    _ensure_sibling_path("sparse_search")
-    sys.modules.pop("sparse_search", None)
-    from sparse_search import Result as _SearchResult  # noqa: F401
-    from sparse_search import SparseIndex as _SparseIndex
+    _search = _import_package_sibling("sparse_search")
+    if _search is not None:
+        _SearchResult = _search.Result  # noqa: F841
+        _SparseIndex = _search.SparseIndex
+    else:
+        _ensure_sibling_path("sparse_search")
+        sys.modules.pop("sparse_search", None)
+        from sparse_search import Result as _SearchResult  # noqa: F401
+        from sparse_search import SparseIndex as _SparseIndex
 
     _HAS_SEARCH = True
 except ImportError:
@@ -696,11 +737,20 @@ class SkillRegistry:
     ) -> builtins.list[Skill]:
         """Scan directories for skills and register them.
 
-        Each path is scanned for subdirectories containing a ``SKILL.md``
-        file.  Discovered skills are automatically registered.
+        Each path may be:
+
+        * a skill directory containing ``SKILL.md``,
+        * a ``SKILL.md`` file, or
+        * a directory whose immediate children (or full tree when
+          *recursive* is true) are skill directories.
+
+        Discovered skills are automatically registered.  Paths are scanned
+        in the order given, so passing a lower-precedence root first and
+        *override=True* lets later roots replace earlier skills with the same
+        name.
 
         Args:
-            *paths: Directories to scan.
+            *paths: Paths to scan.
             recursive: If ``True``, walk the full directory tree instead
                 of scanning only immediate children.  Useful for
                 hierarchical skill layouts like
@@ -716,19 +766,31 @@ class SkillRegistry:
         found: builtins.list[Skill] = []
         for p in paths:
             resolved = Path(p).expanduser().resolve()
-            if not resolved.is_dir():
+            if not resolved.exists():
                 continue
-            candidates = (
-                _walk_skill_dirs(resolved) if recursive else _iter_child_dirs(resolved)
-            )
+            if resolved.is_file():
+                if resolved.name.lower() != "skill.md":
+                    continue
+                candidates: Iterable[Path] = (resolved.parent,)
+            elif _find_skill_md_quiet(resolved) is not None:
+                candidates = (resolved,)
+            else:
+                try:
+                    candidates = (
+                        _walk_skill_dirs(resolved)
+                        if recursive
+                        else _iter_child_dirs(resolved)
+                    )
+                except OSError:
+                    continue
             for child in candidates:
                 try:
                     _find_skill_md(child)
-                except ParseError:
+                except (ParseError, OSError):
                     continue
                 try:
                     skill = Skill.load(child)
-                except (ParseError, ValidationError):
+                except (ParseError, ValidationError, OSError):
                     continue
                 if skill.name in self._skills and not override:
                     continue
@@ -1062,6 +1124,7 @@ def _iter_child_dirs(root: Path) -> Iterator[Path]:
 def _walk_skill_dirs(root: Path) -> Iterator[Path]:
     """Walk the directory tree yielding dirs that contain a SKILL.md."""
     for dirpath, dirnames, filenames in os.walk(root):
+        dirnames.sort()
         p = Path(dirpath)
         if p == root:
             continue

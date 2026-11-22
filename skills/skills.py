@@ -137,6 +137,12 @@ def _load_frontmatter():
     if sibling is not None:
         return sibling.load, sibling.loads, sibling.dumps, sibling.Document
 
+    if __package__:
+        raise ImportError(
+            "Skills module requires the sibling frontmatter module. "
+            f"Copy frontmatter/frontmatter.py next to skills.py in {__package__!r}."
+        )
+
     _ensure_sibling_path("frontmatter")
     sys.modules.pop("frontmatter", None)
     try:
@@ -155,20 +161,21 @@ def _load_frontmatter():
 
 _HAS_SEARCH = False
 
-try:
-    _search = _import_package_sibling("sparse_search")
-    if _search is not None:
-        _SearchResult = _search.Result  # noqa: F841
-        _SparseIndex = _search.SparseIndex
-    else:
+_search = _import_package_sibling("sparse_search")
+if _search is not None:
+    _SearchResult = _search.Result  # noqa: F841
+    _SparseIndex = _search.SparseIndex
+    _HAS_SEARCH = True
+elif not __package__:
+    try:
         _ensure_sibling_path("sparse_search")
         sys.modules.pop("sparse_search", None)
         from sparse_search import Result as _SearchResult  # noqa: F401
         from sparse_search import SparseIndex as _SparseIndex
 
-    _HAS_SEARCH = True
-except ImportError:
-    pass
+        _HAS_SEARCH = True
+    except ImportError:
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -1152,6 +1159,10 @@ def _walk_skill_dirs(root: Path) -> Iterator[Path]:
 def _find_skill_md(path: Path) -> Path:
     """Find ``SKILL.md`` in a directory.
 
+    The two canonical spellings are tried first.  A case-insensitive fallback
+    handles filesystems that preserve a non-standard spelling such as
+    ``SKILL.MD``.
+
     Args:
         path: Directory to search.
 
@@ -1161,10 +1172,9 @@ def _find_skill_md(path: Path) -> Path:
     Raises:
         ParseError: If no ``SKILL.md`` is found.
     """
-    for name in _SKILL_MD_NAMES:
-        candidate = path / name
-        if candidate.is_file():
-            return candidate
+    found = _find_skill_md_quiet(path)
+    if found is not None:
+        return found
     raise ParseError(f"SKILL.md not found in {path}")
 
 
@@ -1174,6 +1184,13 @@ def _find_skill_md_quiet(path: Path) -> Path | None:
         candidate = path / name
         if candidate.is_file():
             return candidate
+    try:
+        entries = sorted(path.iterdir())
+    except OSError:
+        return None
+    for entry in entries:
+        if entry.name.lower() == "skill.md" and entry.is_file():
+            return entry
     return None
 
 

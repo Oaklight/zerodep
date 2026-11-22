@@ -79,17 +79,19 @@ _yaml_load = None
 _HAS_YAML = False
 
 if __package__:
-    try:
-        import importlib
+    import importlib
 
+    try:
         _yaml = importlib.import_module(f"{__package__}.yaml")
+    except ModuleNotFoundError as exc:
+        if exc.name != f"{__package__}.yaml":
+            raise
+    else:
         _yaml_dump = _yaml.dump
         _yaml_load = _yaml.load
         _HAS_YAML = True
-    except ImportError:
-        pass
 
-if not _HAS_YAML:
+if not _HAS_YAML and not __package__:
     try:
         _yaml_dir = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "..", "yaml"

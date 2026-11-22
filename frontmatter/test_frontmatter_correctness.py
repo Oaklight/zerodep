@@ -336,3 +336,66 @@ class TestEdgeCases:
         doc = loads(text)
         assert doc.metadata["title"] == "Test"
         assert "---" in doc.content
+
+
+# ── Package-relative sibling lookup ──
+
+
+def _build_frontmatter_package(tmp_path, *, with_yaml: bool):
+    """Copy frontmatter into a throwaway package and return its name."""
+    import shutil
+    import uuid
+    from pathlib import Path
+
+    package = f"fm_{uuid.uuid4().hex}"
+    vendor = tmp_path / package / "_vendor"
+    vendor.mkdir(parents=True)
+    (tmp_path / package / "__init__.py").write_text("", encoding="utf-8")
+    (vendor / "__init__.py").write_text("", encoding="utf-8")
+    source = Path(__file__).resolve().parent / "frontmatter.py"
+    shutil.copyfile(source, vendor / "frontmatter.py")
+    if with_yaml:
+        yaml_source = Path(__file__).resolve().parent.parent / "yaml" / "yaml.py"
+        shutil.copyfile(yaml_source, vendor / "yaml.py")
+    return package
+
+
+def _drop_package(package):
+    for name in list(sys.modules):
+        if name == package or name.startswith(f"{package}."):
+            sys.modules.pop(name, None)
+
+
+def test_package_mode_without_yaml_sibling_does_not_use_top_level_yaml(
+    tmp_path, monkeypatch
+):
+    package = _build_frontmatter_package(tmp_path, with_yaml=False)
+    (tmp_path / "yaml.py").write_text(
+        "raise AssertionError('top-level yaml used')\n", encoding="utf-8"
+    )
+
+    monkeypatch.syspath_prepend(str(tmp_path))
+    try:
+        import importlib
+
+        module = importlib.import_module(f"{package}._vendor.frontmatter")
+        assert module._HAS_YAML is False
+    finally:
+        _drop_package(package)
+
+
+def test_package_mode_broken_yaml_sibling_surfaces_error(tmp_path, monkeypatch):
+    package = _build_frontmatter_package(tmp_path, with_yaml=False)
+    vendor = tmp_path / package / "_vendor"
+    (vendor / "yaml.py").write_text(
+        "raise ImportError('broken vendored yaml')\n", encoding="utf-8"
+    )
+
+    monkeypatch.syspath_prepend(str(tmp_path))
+    try:
+        import importlib
+
+        with pytest.raises(ImportError, match="broken vendored yaml"):
+            importlib.import_module(f"{package}._vendor.frontmatter")
+    finally:
+        _drop_package(package)

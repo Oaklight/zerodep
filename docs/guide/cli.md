@@ -149,7 +149,7 @@ zerodep update --all --diff
 # CI gate: exit 1 if anything needs attention
 zerodep update --all --check
 
-# Overwrite locally modified or unverified modules
+# Overwrite local edits or accept a downgrade to the resolved upstream
 zerodep update sse --force
 
 # Update without recording the result in the lock
@@ -163,6 +163,7 @@ zerodep update --all --dry-run
 |-------|---------|----------------------------|
 | `up-to-date` | installed content matches the lock and upstream | nothing to do |
 | `outdated` | upstream changed, local file untouched | overwritten |
+| `newer-than-upstream` | installed version is newer than the resolved upstream | **skipped**, exit 1 |
 | `locally-modified` | local bytes differ from the lock | **skipped**, exit 1 |
 | `conflict` | upstream changed *and* the file was edited | **skipped**, exit 1 |
 | `missing` | a recorded file was deleted | reinstalled |
@@ -172,6 +173,15 @@ zerodep update --all --dry-run
 Skipped modules make the command exit 1, so a CI job cannot mistake a refused
 update for a successful one. `--diff` is read-only and still prints the diff
 for skipped modules, so `--force` is a decision you can inspect first.
+
+`newer-than-upstream` usually means the files were vendored from a commit
+after the latest release. `status` and `update` print the installed version,
+the upstream version, and the resolved ref for each such module, so the
+discrepancy is visible even when other modules are updated. Run
+`zerodep --ref <commit> update --all` to keep that source, or add `--force`
+to accept the older release. A content hash difference is still reported as
+`outdated` when the version strings match; `status` names the matching version
+and warns that the content differs.
 
 #### Migrating a lock-less install
 

@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **skills**: `SkillRegistry.discover()` now accepts a skill directory or a `SKILL.md` file in addition to a root whose children are skill directories, so a caller that already has one skill does not need to scan its parent. Immediate child directories are sorted, making discovery order deterministic. When the module is vendored inside a package, `frontmatter` and `sparse_search` are imported through that package before the flat-layout fallback, which prevents an unrelated top-level module with the same name from winning. `frontmatter` uses the same package-relative yaml import and asserts the lazy handlers are loaded. A collection root that has its own `SKILL.md` now yields its skill children instead of hiding them, and package-relative imports no longer fall back to unrelated top-level modules. `skills` goes to 0.5.1 and `frontmatter` to 0.3.1. ([#324](https://github.com/Oaklight/zerodep/pull/324))
 
+### Bug Fixes
+
+- **cli**: `status` and `update` now report `newer-than-upstream` when the installed module version is greater than the resolved upstream version. Any upstream content difference used to be `outdated`, so `update --all` replaced a module vendored from a post-release commit with the older latest release. The new state is skipped without `--force`, which remains the explicit downgrade path, and `status`/`update` print the installed version, upstream version, and resolved ref so the discrepancy is visible even when other modules are updated. Content hashes are still compared independently of version strings, so a same-version content change remains `outdated` and `status` explains that the version matches while the content differs.
+
 ## [2026.11.20] - 2026-11-20
 
 ### Features

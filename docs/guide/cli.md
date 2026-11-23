@@ -158,6 +158,7 @@ zerodep update --all --dry-run
 | `up-to-date` | 安装内容与锁文件和上游都一致 | 无需处理 |
 | `outdated` | 上游有变更，本地文件未被修改 | 覆盖更新 |
 | `newer-than-upstream` | 已安装版本比解析到的上游版本更新 | **跳过**，退出 1 |
+| `version-uncomparable` | 本地或上游版本无法解析 | **跳过**，退出 1 |
 | `locally-modified` | 本地内容与锁文件记录不同 | **跳过**，退出 1 |
 | `conflict` | 上游有变更，且本地文件被修改 | **跳过**，退出 1 |
 | `missing` | 锁文件记录的文件被删除 | 重新安装 |
@@ -167,6 +168,8 @@ zerodep update --all --dry-run
 只要有模块被跳过，命令就以 1 退出，CI 不会把"拒绝更新"误判为成功。`--diff` 只读，并且仍会为被跳过的模块输出 diff，因此执行 `--force` 前可以先看清楚地改了什么。
 
 `newer-than-upstream` 通常表示文件来自最新 release 之后的某个提交。`status` 与 `update` 会为每个此类模块打印已安装版本、上游版本和解析到的 ref，因此即使同时更新了其他模块，这个差异也不会被遗漏。运行 `zerodep --ref <commit> update --all` 可继续使用该来源；加 `--force` 才会接受较旧的 release。即使版本号相同，内容哈希不同仍会报告为 `outdated`；`status` 会指出版本号相同但内容不同。
+
+`version-uncomparable` 表示版本字符串不是合法的 SemVer（例如格式错误或自定义值）。CLI 无法判断哪一侧更新，因此不加 `--force` 时不会替换本地文件。
 
 #### 迁移没有锁文件的旧安装
 
@@ -237,8 +240,9 @@ yaml    0.3.1      0.3.1       up-to-date
 - **up-to-date** — 内容与上游一致（元数据可能不同）
 - **unverified** — 没有锁文件记录且内容与上游不同；可能只是旧版本，也可能被修改过，或两者兼有
 - **outdated** / **locally-modified** / **conflict** / **missing** / **upstream-removed** — 含义见 `update` 一节
+- **newer-than-upstream** / **version-uncomparable** — 仅作提示，不计入需要更新的模块数
 
-`--json` 输出机器可读结果，`--exit-code` 在任何模块非最新时以 1 退出。只检查目标目录中存在的文件。
+`--json` 输出机器可读结果，`--exit-code` 在存在需要更新的模块时以 1 退出；`newer-than-upstream` 与 `version-uncomparable` 只作提示，不会使其失败，因为替换它们需要 `--force`。只检查目标目录中存在的文件。
 
 ### `zerodep version-check`
 

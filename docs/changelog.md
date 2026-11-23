@@ -12,7 +12,7 @@
 
 ### 问题修复
 
-- **cli**：`status` 与 `update` 现在会在已安装模块的版本高于解析到的上游版本时报告 `newer-than-upstream`。此前只要上游内容不同就一律标为 `outdated`，导致 `update --all` 会把从 release 之后的提交 vendored 进来的模块替换成较旧的 release。新状态在不加 `--force` 时会跳过，`--force` 仍是显式的降级路径；`status`/`update` 会打印已安装版本、上游版本和解析到的 ref，因此即使同时更新了其他模块，这个差异也不会被遗漏。内容哈希仍会独立于版本号比较，所以版本号相同但内容变化时仍会报告为 `outdated`，`status` 会说明版本号相同而内容不同。
+- **cli**：`status` 与 `update` 现在会在已安装模块的版本高于解析到的上游版本时报告 `newer-than-upstream`。此前只要上游内容不同就一律标为 `outdated`，导致 `update --all` 会把从 release 之后的提交 vendored 进来的模块替换成较旧的 release。新状态在不加 `--force` 时会跳过，`--force` 仍是显式的降级路径；`status`/`update` 会打印已安装版本、上游版本和解析到的 ref，因此即使同时更新了其他模块，这个差异也不会被遗漏。内容哈希仍会独立于版本号比较，所以版本号相同但内容变化时仍会报告为 `outdated`，`status` 会说明版本号相同而内容不同。无法解析的版本会报告为 `version-uncomparable`，并用同样方式跳过，而不是悄悄关闭降级保护。锁文件记录的文件被删除时，即使锁版本更新，现在也会报告为 `missing` 并重新安装。`outdated --exit-code` 把这两个受保护状态视为提示，只因 `update` 会处理的状态而失败。
 
 ## [2026.11.20] - 2026-11-20
 

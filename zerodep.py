@@ -300,24 +300,57 @@ def _parse_semver(version: str) -> tuple[int, ...]:
     return tuple(int(x) for x in version.split("."))
 
 
-def _is_newer_version(installed: object, latest: object) -> bool:
-    """Return whether the installed version is newer than the upstream one.
+_VersionKey = tuple[tuple[int, ...], int, tuple[tuple[int, int, str], ...]]
 
-    Unknown or non-numeric versions are not comparable, so they never count
-    as newer.  That keeps legacy lock entries on the existing update path.
+
+def _parse_version(value: object) -> _VersionKey | None:
+    """Parse a version into a SemVer-compatible sort key.
+
+    Accepts an optional ``v`` prefix, prerelease identifiers, and build
+    metadata.  The core must be dotted integers; anything else returns None.
     """
+    text = str(value).strip()
+    if text[:1] in {"v", "V"}:
+        text = text[1:]
+    text = text.split("+", 1)[0]
+    core, separator, prerelease = text.partition("-")
     try:
-        return _parse_semver(str(installed)) > _parse_semver(str(latest))
+        core_key = tuple(int(part) for part in core.split("."))
     except (TypeError, ValueError):
-        return False
+        return None
+    if not core_key:
+        return None
+    if not separator:
+        return (core_key, 1, ())
+    identifiers: list[tuple[int, int, str]] = []
+    for part in prerelease.split("."):
+        if part.isdigit():
+            identifiers.append((0, int(part), ""))
+        else:
+            identifiers.append((1, 0, part))
+    return (core_key, 0, tuple(identifiers))
+
+
+def _compare_versions(installed: object, latest: object) -> int | None:
+    """Compare two versions, or return None when either cannot be parsed."""
+    left = _parse_version(installed)
+    right = _parse_version(latest)
+    if left is None or right is None:
+        return None
+    return (left > right) - (left < right)
+
+
+def _is_newer_version(installed: object, latest: object) -> bool:
+    """Return whether the installed version is newer than the upstream one."""
+    return _compare_versions(installed, latest) == 1
 
 
 def _is_same_version(left: object, right: object) -> bool:
     """Return whether two versions are equal after SemVer normalization."""
-    try:
-        return _parse_semver(str(left)) == _parse_semver(str(right))
-    except (TypeError, ValueError):
+    comparison = _compare_versions(left, right)
+    if comparison is None:
         return str(left) == str(right)
+    return comparison == 0
 
 
 def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
@@ -812,6 +845,7 @@ STATE_MISSING = "missing"
 STATE_REMOVED = "upstream-removed"
 STATE_UNVERIFIED = "unverified"
 STATE_NEWER = "newer-than-upstream"
+STATE_VERSION_UNKNOWN = "version-uncomparable"
 
 
 def _sha256_text(text: str) -> str:
@@ -940,15 +974,17 @@ def _tracked_state_rows(tracked: dict, manifest: dict, target: Path) -> list[dic
                 modified = True
         latest_hash = latest.get("content_hash")
         upstream = bool(latest_hash) and latest_hash != entry.get("upstream_hash")
-        newer = _is_newer_version(entry.get("version"), latest.get("version"))
+        comparison = _compare_versions(entry.get("version"), latest.get("version"))
         if name not in modules:
             state = STATE_REMOVED
         elif upstream and modified:
             state = STATE_CONFLICT
-        elif upstream and newer:
-            state = STATE_NEWER
         elif missing:
             state = STATE_MISSING
+        elif upstream and comparison == 1:
+            state = STATE_NEWER
+        elif upstream and comparison is None:
+            state = STATE_VERSION_UNKNOWN
         elif upstream:
             state = STATE_OUTDATED
         elif modified:
@@ -1610,6 +1646,7 @@ def _select_update_candidates(
             STATE_CONFLICT,
             STATE_UNVERIFIED,
             STATE_NEWER,
+            STATE_VERSION_UNKNOWN,
         ) and (not args.force):
             skipped.append(name)
             continue
@@ -1657,6 +1694,8 @@ def cmd_update(args: argparse.Namespace) -> None:
             hint = "run again with --force to adopt the upstream content"
         elif state == STATE_NEWER:
             hint = "use --force to downgrade to the upstream version"
+        elif state == STATE_VERSION_UNKNOWN:
+            hint = "cannot compare the versions; use --force to replace the local file"
         else:
             hint = "use --force to overwrite"
         _warn(
@@ -1807,6 +1846,13 @@ def cmd_status(args: argparse.Namespace) -> None:
                 f"{row['name']}: local {row['installed_version'] or '—'} is newer "
                 f"than upstream {row['latest_version'] or '—'} at {args.ref}; "
                 "update will not downgrade without --force"
+            )
+        elif row["state"] == STATE_VERSION_UNKNOWN:
+            _warn(
+                f"{row['name']}: cannot compare local "
+                f"{row['installed_version'] or '—'} with upstream "
+                f"{row['latest_version'] or '—'} at {args.ref}; update will not "
+                "replace the local file without --force"
             )
         elif row["state"] == STATE_OUTDATED and _is_same_version(
             row["installed_version"], row["latest_version"]
@@ -2358,7 +2404,8 @@ def cmd_outdated(args: argparse.Namespace) -> None:
             _ok(f"No zerodep modules found in {scan_dir}.")
         return
 
-    has_outdated = any(r[3] != "up-to-date" for r in rows)
+    informational = {STATE_NEWER, STATE_VERSION_UNKNOWN}
+    has_outdated = any(r[3] != "up-to-date" and r[3] not in informational for r in rows)
 
     if args.json_output:
         modules = [
@@ -2370,7 +2417,9 @@ def cmd_outdated(args: argparse.Namespace) -> None:
             }
             for r in rows
         ]
-        outdated_count = sum(1 for r in rows if r[3] != "up-to-date")
+        outdated_count = sum(
+            1 for r in rows if r[3] != "up-to-date" and r[3] not in informational
+        )
         print(json.dumps({"modules": modules, "outdated_count": outdated_count}))
     else:
         headers = ("Module", "Local Ver", "Latest Ver", "Status")
@@ -2388,6 +2437,18 @@ def cmd_outdated(args: argparse.Namespace) -> None:
                     f"'{row[0]}' has been renamed to '{new_name}'. "
                     f"Run `zerodep add {new_name}` and remove the old file."
                 )
+
+    for name, local, latest, status in rows:
+        if status == STATE_NEWER:
+            _warn(
+                f"{name}: local {local} is newer than upstream {latest} at "
+                f"{args.ref}; not an update"
+            )
+        elif status == STATE_VERSION_UNKNOWN:
+            _warn(
+                f"{name}: cannot compare local {local} with upstream {latest} "
+                f"at {args.ref}; not updating"
+            )
 
     if args.exit_code and has_outdated:
         sys.exit(1)

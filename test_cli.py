@@ -588,6 +588,13 @@ def test_update_does_not_downgrade_newer_install(tmp_path: Path):
     assert row["state"] == "newer-than-upstream"
     assert f"local 99.0.0 is newer than upstream {latest} at master" in r.stderr
 
+    r = run_cli("outdated", "--json", "--exit-code", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    data = json.loads(r.stdout)
+    assert data["outdated_count"] == 0
+    assert data["modules"][0]["status"] == "newer-than-upstream"
+    assert f"local 99.0.0 is newer than upstream {latest} at master" in r.stderr
+
     r = run_cli("update", "--all", "-d", str(vendor))
     assert r.returncode == 1
     assert "skipped (newer-than-upstream)" in r.stderr
@@ -635,6 +642,56 @@ def test_same_version_hash_diff_is_still_outdated(tmp_path: Path):
         f"version {version} matches upstream at master, but content differs; updating"
         in r.stderr
     )
+    assert _status_rows(vendor)["yaml"]["state"] == "up-to-date"
+
+
+def test_missing_newer_lock_is_reinstalled(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    lock = _read_lock(vendor)
+    lock["modules"]["yaml"]["version"] = "99.0.0"
+    lock["modules"]["yaml"]["upstream_hash"] = "0" * 64
+    _write_lock(vendor, lock)
+    (vendor / "yaml.py").unlink()
+
+    assert _status_rows(vendor)["yaml"]["state"] == "missing"
+
+    r = run_cli("update", "--all", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert (vendor / "yaml.py").exists()
+    assert _status_rows(vendor)["yaml"]["state"] == "up-to-date"
+
+
+def test_version_ordering_handles_semver_forms():
+    zerodep = _import_cli()
+    assert zerodep._is_newer_version("v0.3.1", "0.3.0")
+    assert zerodep._is_newer_version("0.3.1-rc1", "0.3.0")
+    assert not zerodep._is_newer_version("0.3.0", "0.3.1-rc1")
+    assert zerodep._is_newer_version("1.0.0", "1.0.0-rc1")
+    assert not zerodep._is_newer_version("1.0.0+meta", "1.0.0")
+
+
+def test_unparseable_version_is_not_auto_replaced(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    lock = _read_lock(vendor)
+    lock["modules"]["yaml"]["version"] = "not-a-version"
+    lock["modules"]["yaml"]["upstream_hash"] = "0" * 64
+    _write_lock(vendor, lock)
+    before = (vendor / "yaml.py").read_text(encoding="utf-8")
+
+    r = run_cli("status", "--json", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert json.loads(r.stdout)["modules"][0]["state"] == "version-uncomparable"
+    assert "cannot compare local not-a-version" in r.stderr
+
+    r = run_cli("update", "--all", "-d", str(vendor))
+    assert r.returncode == 1
+    assert "skipped (version-uncomparable)" in r.stderr
+    assert (vendor / "yaml.py").read_text(encoding="utf-8") == before
+
+    r = run_cli("update", "--all", "--force", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
     assert _status_rows(vendor)["yaml"]["state"] == "up-to-date"
 
 

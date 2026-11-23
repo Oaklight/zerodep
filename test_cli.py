@@ -586,19 +586,19 @@ def test_update_does_not_downgrade_newer_install(tmp_path: Path):
     assert row["installed_version"] == "99.0.0"
     assert row["latest_version"] == latest
     assert row["state"] == "newer-than-upstream"
-    assert f"local 99.0.0 is newer than upstream {latest} at master" in r.stderr
+    assert f"locked 99.0.0 is newer than upstream {latest} at master" in r.stderr
 
     r = run_cli("outdated", "--json", "--exit-code", "-d", str(vendor))
     assert r.returncode == 0, r.stderr
     data = json.loads(r.stdout)
     assert data["outdated_count"] == 0
     assert data["modules"][0]["status"] == "newer-than-upstream"
-    assert f"local 99.0.0 is newer than upstream {latest} at master" in r.stderr
+    assert f"locked 99.0.0 is newer than upstream {latest} at master" in r.stderr
 
     r = run_cli("update", "--all", "-d", str(vendor))
     assert r.returncode == 1
     assert "skipped (newer-than-upstream)" in r.stderr
-    assert f"local 99.0.0 vs upstream {latest} at master" in r.stderr
+    assert f"locked 99.0.0 vs upstream {latest} at master" in r.stderr
     assert "downgrade" in r.stderr
     assert (vendor / "yaml.py").read_text(encoding="utf-8") == before
 
@@ -669,6 +669,16 @@ def test_version_ordering_handles_semver_forms():
     assert not zerodep._is_newer_version("0.3.0", "0.3.1-rc1")
     assert zerodep._is_newer_version("1.0.0", "1.0.0-rc1")
     assert not zerodep._is_newer_version("1.0.0+meta", "1.0.0")
+    assert zerodep._is_newer_version("0.10.0", "0.9.0")
+    assert not zerodep._is_newer_version("0.9.0", "0.10.0")
+
+
+def test_same_version_normalizes_padding_and_absence():
+    zerodep = _import_cli()
+    assert zerodep._is_same_version("1.0.0", "1.0")
+    assert zerodep._is_same_version("v1.2.3+build", "1.2.3")
+    assert not zerodep._is_same_version(None, None)
+    assert not zerodep._is_same_version("", "")
 
 
 def test_unparseable_version_is_not_auto_replaced(tmp_path: Path):
@@ -683,7 +693,7 @@ def test_unparseable_version_is_not_auto_replaced(tmp_path: Path):
     r = run_cli("status", "--json", "-d", str(vendor))
     assert r.returncode == 0, r.stderr
     assert json.loads(r.stdout)["modules"][0]["state"] == "version-uncomparable"
-    assert "cannot compare local not-a-version" in r.stderr
+    assert "cannot compare locked not-a-version" in r.stderr
 
     r = run_cli("update", "--all", "-d", str(vendor))
     assert r.returncode == 1

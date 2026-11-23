@@ -320,6 +320,8 @@ def _parse_version(value: object) -> _VersionKey | None:
         return None
     if not core_key:
         return None
+    if len(core_key) < 3:
+        core_key = core_key + (0,) * (3 - len(core_key))
     if not separator:
         return (core_key, 1, ())
     identifiers: list[tuple[int, int, str]] = []
@@ -348,9 +350,11 @@ def _is_newer_version(installed: object, latest: object) -> bool:
 def _is_same_version(left: object, right: object) -> bool:
     """Return whether two versions are equal after SemVer normalization."""
     comparison = _compare_versions(left, right)
-    if comparison is None:
-        return str(left) == str(right)
-    return comparison == 0
+    if comparison is not None:
+        return comparison == 0
+    left_text = "" if left is None else str(left)
+    right_text = "" if right is None else str(right)
+    return bool(left_text) and left_text == right_text
 
 
 def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
@@ -1699,7 +1703,7 @@ def cmd_update(args: argparse.Namespace) -> None:
         else:
             hint = "use --force to overwrite"
         _warn(
-            f"{name}: skipped ({state}); local "
+            f"{name}: skipped ({state}); locked "
             f"{row['installed_version'] or '—'} vs upstream "
             f"{row['latest_version'] or '—'} at {args.ref}; {hint}"
         )
@@ -1843,13 +1847,13 @@ def cmd_status(args: argparse.Namespace) -> None:
     for row in rows:
         if row["state"] == STATE_NEWER:
             _warn(
-                f"{row['name']}: local {row['installed_version'] or '—'} is newer "
+                f"{row['name']}: locked {row['installed_version'] or '—'} is newer "
                 f"than upstream {row['latest_version'] or '—'} at {args.ref}; "
                 "update will not downgrade without --force"
             )
         elif row["state"] == STATE_VERSION_UNKNOWN:
             _warn(
-                f"{row['name']}: cannot compare local "
+                f"{row['name']}: cannot compare locked "
                 f"{row['installed_version'] or '—'} with upstream "
                 f"{row['latest_version'] or '—'} at {args.ref}; update will not "
                 "replace the local file without --force"
@@ -2441,12 +2445,12 @@ def cmd_outdated(args: argparse.Namespace) -> None:
     for name, local, latest, status in rows:
         if status == STATE_NEWER:
             _warn(
-                f"{name}: local {local} is newer than upstream {latest} at "
+                f"{name}: locked {local} is newer than upstream {latest} at "
                 f"{args.ref}; not an update"
             )
         elif status == STATE_VERSION_UNKNOWN:
             _warn(
-                f"{name}: cannot compare local {local} with upstream {latest} "
+                f"{name}: cannot compare locked {local} with upstream {latest} "
                 f"at {args.ref}; not updating"
             )
 

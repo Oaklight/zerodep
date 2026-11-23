@@ -164,6 +164,7 @@ zerodep update --all --dry-run
 | `up-to-date` | installed content matches the lock and upstream | nothing to do |
 | `outdated` | upstream changed, local file untouched | overwritten |
 | `newer-than-upstream` | installed version is newer than the resolved upstream | **skipped**, exit 1 |
+| `version-uncomparable` | the local or upstream version cannot be parsed | **skipped**, exit 1 |
 | `locally-modified` | local bytes differ from the lock | **skipped**, exit 1 |
 | `conflict` | upstream changed *and* the file was edited | **skipped**, exit 1 |
 | `missing` | a recorded file was deleted | reinstalled |
@@ -182,6 +183,10 @@ discrepancy is visible even when other modules are updated. Run
 to accept the older release. A content hash difference is still reported as
 `outdated` when the version strings match; `status` names the matching version
 and warns that the content differs.
+
+`version-uncomparable` means a version string is not valid SemVer (for example
+a malformed or custom value). The CLI cannot tell which side is newer, so it
+refuses to replace the file without `--force`.
 
 #### Migrating a lock-less install
 
@@ -268,9 +273,13 @@ yaml    0.3.1      0.3.1       up-to-date
   may be old, edited, or both
 - **outdated** / **locally-modified** / **conflict** / **missing** /
   **upstream-removed** — as documented under `update`
+- **newer-than-upstream** / **version-uncomparable** — informational; the
+  command does not count them as updates
 
 Use `--json` for machine-readable output and `--exit-code` to fail when any
-module is not up to date. Only files in the target directory are considered.
+module is not up to date. `newer-than-upstream` and `version-uncomparable` do
+not fail it, because replacing them needs `--force`. Only files in the target
+directory are considered.
 
 ### `zerodep version-check`
 

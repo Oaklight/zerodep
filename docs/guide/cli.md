@@ -143,7 +143,7 @@ zerodep update --all --diff
 # CI 门禁：有需要处理的模块时退出 1
 zerodep update --all --check
 
-# 覆盖本地修改或未验证的模块
+# 覆盖本地修改，或接受降级到当前解析到的上游版本
 zerodep update sse --force
 
 # 不把结果写入锁文件
@@ -157,6 +157,7 @@ zerodep update --all --dry-run
 |------|------|-----------------------------------|
 | `up-to-date` | 安装内容与锁文件和上游都一致 | 无需处理 |
 | `outdated` | 上游有变更，本地文件未被修改 | 覆盖更新 |
+| `newer-than-upstream` | 已安装版本比解析到的上游版本更新 | **跳过**，退出 1 |
 | `locally-modified` | 本地内容与锁文件记录不同 | **跳过**，退出 1 |
 | `conflict` | 上游有变更，且本地文件被修改 | **跳过**，退出 1 |
 | `missing` | 锁文件记录的文件被删除 | 重新安装 |
@@ -164,6 +165,8 @@ zerodep update --all --dry-run
 | `upstream-removed` | 该模块已不再发布 | **跳过**，给出警告 |
 
 只要有模块被跳过，命令就以 1 退出，CI 不会把"拒绝更新"误判为成功。`--diff` 只读，并且仍会为被跳过的模块输出 diff，因此执行 `--force` 前可以先看清楚地改了什么。
+
+`newer-than-upstream` 通常表示文件来自最新 release 之后的某个提交。`status` 与 `update` 会为每个此类模块打印已安装版本、上游版本和解析到的 ref，因此即使同时更新了其他模块，这个差异也不会被遗漏。运行 `zerodep --ref <commit> update --all` 可继续使用该来源；加 `--force` 才会接受较旧的 release。即使版本号相同，内容哈希不同仍会报告为 `outdated`；`status` 会指出版本号相同但内容不同。
 
 #### 迁移没有锁文件的旧安装
 

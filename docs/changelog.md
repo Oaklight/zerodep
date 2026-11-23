@@ -10,6 +10,10 @@
 
 - **skills**：`SkillRegistry.discover()` 除“子目录是技能目录的根目录”外，现在也接受单个技能目录或 `SKILL.md` 文件，因此已经拿到单个技能时不需要再扫描其父目录。直接子目录会排序，发现顺序因此确定。模块被 vendored 到包内时，`frontmatter` 与 `sparse_search` 会优先通过该包导入，再回退到平铺布局，避免同名但无关的顶层模块抢先解析。`frontmatter` 使用相同的包内相对 yaml 导入，并在调用前断言惰性处理器已加载。自身带有 `SKILL.md` 的集合根目录现在会返回其技能子目录，而不是把它们隐藏；包内相对导入也不再回退到无关的顶层模块。`skills` 升至 0.5.1，`frontmatter` 升至 0.3.1。（[#324](https://github.com/Oaklight/zerodep/pull/324)）
 
+### 问题修复
+
+- **cli**：`status` 与 `update` 现在会在已安装模块的版本高于解析到的上游版本时报告 `newer-than-upstream`。此前只要上游内容不同就一律标为 `outdated`，导致 `update --all` 会把从 release 之后的提交 vendored 进来的模块替换成较旧的 release。新状态在不加 `--force` 时会跳过，`--force` 仍是显式的降级路径；`status`/`update` 会打印已安装版本、上游版本和解析到的 ref，因此即使同时更新了其他模块，这个差异也不会被遗漏。内容哈希仍会独立于版本号比较，所以版本号相同但内容变化时仍会报告为 `outdated`，`status` 会说明版本号相同而内容不同。
+
 ## [2026.11.20] - 2026-11-20
 
 ### 新功能

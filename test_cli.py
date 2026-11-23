@@ -671,6 +671,8 @@ def test_version_ordering_handles_semver_forms():
     assert not zerodep._is_newer_version("1.0.0+meta", "1.0.0")
     assert zerodep._is_newer_version("0.10.0", "0.9.0")
     assert not zerodep._is_newer_version("0.9.0", "0.10.0")
+    assert zerodep._is_newer_version("0.3.1-rc.10", "0.3.1-rc.2")
+    assert not zerodep._is_newer_version("0.3.1-rc.2", "0.3.1-rc.10")
 
 
 def test_same_version_normalizes_padding_and_absence():

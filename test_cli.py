@@ -570,6 +570,83 @@ def test_update_force_overwrites_local_edit(tmp_path: Path):
     assert json.loads(r.stdout)["modules"][0]["state"] == "up-to-date"
 
 
+def test_update_does_not_downgrade_newer_install(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    lock = _read_lock(vendor)
+    latest = lock["modules"]["yaml"]["version"]
+    lock["modules"]["yaml"]["version"] = "99.0.0"
+    lock["modules"]["yaml"]["upstream_hash"] = "0" * 64
+    _write_lock(vendor, lock)
+    before = (vendor / "yaml.py").read_text(encoding="utf-8")
+
+    r = run_cli("status", "--json", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    row = json.loads(r.stdout)["modules"][0]
+    assert row["installed_version"] == "99.0.0"
+    assert row["latest_version"] == latest
+    assert row["state"] == "newer-than-upstream"
+    assert f"local 99.0.0 is newer than upstream {latest} at master" in r.stderr
+
+    r = run_cli("update", "--all", "-d", str(vendor))
+    assert r.returncode == 1
+    assert "skipped (newer-than-upstream)" in r.stderr
+    assert f"local 99.0.0 vs upstream {latest} at master" in r.stderr
+    assert "downgrade" in r.stderr
+    assert (vendor / "yaml.py").read_text(encoding="utf-8") == before
+
+    r = run_cli("update", "--all", "--force", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert _read_lock(vendor)["modules"]["yaml"]["version"] == latest
+    assert _status_rows(vendor)["yaml"]["state"] == "up-to-date"
+
+
+def test_newer_version_with_identical_content_stays_up_to_date(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    lock = _read_lock(vendor)
+    lock["modules"]["yaml"]["version"] = "99.0.0"
+    _write_lock(vendor, lock)
+
+    assert _status_rows(vendor)["yaml"]["state"] == "up-to-date"
+
+
+def test_same_version_hash_diff_is_still_outdated(tmp_path: Path):
+    vendor = tmp_path / "_vendor"
+    _install(vendor, "yaml")
+    lock = _read_lock(vendor)
+    version = lock["modules"]["yaml"]["version"]
+    lock["modules"]["yaml"]["upstream_hash"] = "0" * 64
+    _write_lock(vendor, lock)
+
+    r = run_cli("status", "--json", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    row = json.loads(r.stdout)["modules"][0]
+    assert row["installed_version"] == version
+    assert row["latest_version"] == version
+    assert row["state"] == "outdated"
+    assert (
+        f"version {version} matches upstream at master, but content differs" in r.stderr
+    )
+
+    r = run_cli("update", "--all", "-d", str(vendor))
+    assert r.returncode == 0, r.stderr
+    assert (
+        f"version {version} matches upstream at master, but content differs; updating"
+        in r.stderr
+    )
+    assert _status_rows(vendor)["yaml"]["state"] == "up-to-date"
+
+
+def test_is_newer_version_ignores_unparseable_versions():
+    zerodep = _import_cli()
+    assert zerodep._is_newer_version("0.3.1", "0.3.0")
+    assert not zerodep._is_newer_version("0.3.0", "0.3.1")
+    assert not zerodep._is_newer_version("0.3.0", "0.3.0")
+    assert not zerodep._is_newer_version("?", "0.3.1")
+    assert not zerodep._is_newer_version(None, "0.3.1")
+
+
 def test_update_diff_writes_nothing(tmp_path: Path):
     vendor = tmp_path / "_vendor"
     vendor.mkdir()

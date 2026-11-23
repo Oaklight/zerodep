@@ -300,6 +300,26 @@ def _parse_semver(version: str) -> tuple[int, ...]:
     return tuple(int(x) for x in version.split("."))
 
 
+def _is_newer_version(installed: object, latest: object) -> bool:
+    """Return whether the installed version is newer than the upstream one.
+
+    Unknown or non-numeric versions are not comparable, so they never count
+    as newer.  That keeps legacy lock entries on the existing update path.
+    """
+    try:
+        return _parse_semver(str(installed)) > _parse_semver(str(latest))
+    except (TypeError, ValueError):
+        return False
+
+
+def _is_same_version(left: object, right: object) -> bool:
+    """Return whether two versions are equal after SemVer normalization."""
+    try:
+        return _parse_semver(str(left)) == _parse_semver(str(right))
+    except (TypeError, ValueError):
+        return str(left) == str(right)
+
+
 def _find_changed_modules(repo_root: Path, modules: dict) -> dict[str, str]:
     """Detect which modules have been modified since their declared version tag.
 
@@ -791,6 +811,7 @@ STATE_CONFLICT = "conflict"
 STATE_MISSING = "missing"
 STATE_REMOVED = "upstream-removed"
 STATE_UNVERIFIED = "unverified"
+STATE_NEWER = "newer-than-upstream"
 
 
 def _sha256_text(text: str) -> str:
@@ -919,12 +940,15 @@ def _tracked_state_rows(tracked: dict, manifest: dict, target: Path) -> list[dic
                 modified = True
         latest_hash = latest.get("content_hash")
         upstream = bool(latest_hash) and latest_hash != entry.get("upstream_hash")
+        newer = _is_newer_version(entry.get("version"), latest.get("version"))
         if name not in modules:
             state = STATE_REMOVED
-        elif missing:
-            state = STATE_MISSING
         elif upstream and modified:
             state = STATE_CONFLICT
+        elif upstream and newer:
+            state = STATE_NEWER
+        elif missing:
+            state = STATE_MISSING
         elif upstream:
             state = STATE_OUTDATED
         elif modified:
@@ -1581,9 +1605,12 @@ def _select_update_candidates(
             rows[name] = row
         if row["state"] == STATE_UP_TO_DATE:
             continue
-        if row["state"] in (STATE_MODIFIED, STATE_CONFLICT, STATE_UNVERIFIED) and (
-            not args.force
-        ):
+        if row["state"] in (
+            STATE_MODIFIED,
+            STATE_CONFLICT,
+            STATE_UNVERIFIED,
+            STATE_NEWER,
+        ) and (not args.force):
             skipped.append(name)
             continue
         candidates.append(name)
@@ -1624,13 +1651,29 @@ def cmd_update(args: argparse.Namespace) -> None:
 
     candidates, skipped, removed = _select_update_candidates(args, rows, lock, manifest)
     for name in skipped:
-        state = rows[name]["state"]
-        hint = (
-            "run again with --force to adopt the upstream content"
-            if state == STATE_UNVERIFIED
-            else "use --force to overwrite"
+        row = rows[name]
+        state = row["state"]
+        if state == STATE_UNVERIFIED:
+            hint = "run again with --force to adopt the upstream content"
+        elif state == STATE_NEWER:
+            hint = "use --force to downgrade to the upstream version"
+        else:
+            hint = "use --force to overwrite"
+        _warn(
+            f"{name}: skipped ({state}); local "
+            f"{row['installed_version'] or '—'} vs upstream "
+            f"{row['latest_version'] or '—'} at {args.ref}; {hint}"
         )
-        _warn(f"{name}: skipped ({state}); {hint}")
+
+    for name in candidates:
+        row = rows[name]
+        if row["state"] == STATE_OUTDATED and _is_same_version(
+            row["installed_version"], row["latest_version"]
+        ):
+            _warn(
+                f"{name}: version {row['latest_version'] or '—'} matches upstream "
+                f"at {args.ref}, but content differs; updating"
+            )
 
     # Diffs are read-only, so preview everything that differs, including the
     # modules an update would currently refuse to touch.
@@ -1756,6 +1799,22 @@ def cmd_status(args: argparse.Namespace) -> None:
             _warn(
                 "no zerodep.lock.json; states are inferred from file content "
                 "(run 'zerodep add <module>' to record a baseline)"
+            )
+
+    for row in rows:
+        if row["state"] == STATE_NEWER:
+            _warn(
+                f"{row['name']}: local {row['installed_version'] or '—'} is newer "
+                f"than upstream {row['latest_version'] or '—'} at {args.ref}; "
+                "update will not downgrade without --force"
+            )
+        elif row["state"] == STATE_OUTDATED and _is_same_version(
+            row["installed_version"], row["latest_version"]
+        ):
+            _warn(
+                f"{row['name']}: version {row['latest_version'] or '—'} matches "
+                f"upstream at {args.ref}, but content differs; update will "
+                "replace the local file"
             )
 
     if args.exit_code and any(
@@ -3602,7 +3661,7 @@ def main(argv: list[str] | None = None) -> None:
         "-f",
         "--force",
         action="store_true",
-        help="also overwrite locally modified files",
+        help="also overwrite local edits or downgrade a newer install",
     )
     p_update.add_argument(
         "--diff",

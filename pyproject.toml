@@ -185,7 +185,7 @@ bench-profiler = [
     "yappi>=1.6.0",
 ]
 bench-jwt = [
-    "PyJWT[crypto]==2.10.1",
+    "PyJWT[crypto]==2.15.0",
 ]
 bench-ptyx = [
     # The POSIX comparison; the benchmark job runs on ubuntu-latest.

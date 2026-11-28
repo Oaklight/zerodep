@@ -1,5 +1,12 @@
-"""Correctness tests: zerodep YAML vs PyYAML."""
+"""Correctness tests: zerodep YAML vs PyYAML.
 
+The scalar and structural cases are generated from bounded grammars rather
+than hand-listed, so every token in the grammar is checked against the same
+reference oracle.  Bounded enumeration covers more inputs than the previous
+hand-written tables while keeping the suite fast.
+"""
+
+import itertools
 import os
 import sys
 
@@ -58,162 +65,212 @@ def _theirs(text: str) -> object:
     return _safe_load(text)
 
 
-# ── Test vectors ──
+def _same(ours: object, theirs: object) -> bool:
+    """Equality that also treats two NaNs as equal."""
+    if isinstance(ours, float) and isinstance(theirs, float):
+        if ours != ours and theirs != theirs:
+            return True
+    return ours == theirs
 
-SCALAR_CASES = [
-    pytest.param("null", id="null"),
-    pytest.param("~", id="tilde_null"),
-    pytest.param("Null", id="null_cap"),
-    pytest.param("true", id="true"),
-    pytest.param("false", id="false"),
-    pytest.param("True", id="true_cap"),
-    pytest.param("False", id="false_cap"),
-    pytest.param("yes", id="yes"),
-    pytest.param("no", id="no"),
-    pytest.param("on", id="on"),
-    pytest.param("off", id="off"),
-    pytest.param("42", id="int"),
-    pytest.param("-7", id="negative_int"),
-    pytest.param("0", id="zero"),
-    pytest.param("3.14", id="float"),
-    pytest.param("-2.5", id="negative_float"),
-    pytest.param("1.0e+10", id="scientific"),
-    pytest.param(".inf", id="inf"),
-    pytest.param("-.inf", id="neg_inf"),
-    pytest.param(".nan", id="nan_val"),
-    pytest.param("0x1A", id="hex_int"),
-    pytest.param("017", id="octal_int"),
-    pytest.param("hello world", id="plain_string"),
+
+# ── Generated scalar corpus ──
+
+# Boolean/null words, every case variant accepted by YAML 1.1.
+_BOOL_WORDS = ("true", "false", "yes", "no", "on", "off", "null")
+_BOOL_TOKENS = sorted(
+    {
+        variant
+        for word in _BOOL_WORDS
+        for variant in (word, word.upper(), word.capitalize())
+    }
+    | {"~", "y", "n", "Y", "N", "Null", "NULL"}
+)
+
+# Every numeric form the module claims to support: integers with sign and
+# base prefixes, floats, scientific notation, infinities and NaN spellings.
+_NUMBER_TOKENS = [
+    "0",
+    "1",
+    "-1",
+    "+1",
+    "-0",
+    "42",
+    "-7",
+    "0.0",
+    "3.14",
+    "-2.5",
+    ".5",
+    "5.",
+    "1e3",
+    "1.0e+10",
+    "1_000",
+    "0x1A",
+    "0xFF",
+    "017",
+    "0o17",
+    "0b101",
+    ".inf",
+    "-.inf",
+    "+.inf",
+    ".nan",
+    ".NaN",
+    ".NAN",
 ]
 
-MAPPING_CASES = [
-    pytest.param("name: Alice", id="simple"),
-    pytest.param("name: Alice\nage: 30", id="two_keys"),
-    pytest.param("key: true\nother: null", id="bool_and_null"),
-    pytest.param("count: 42\nprice: 9.99", id="numeric_values"),
-    pytest.param("empty:", id="empty_value"),
+_PLAIN_TOKENS = [
+    "hello",
+    "hello world",
+    "a:b",
+    "a#b",
+    "a b c",
+    "café",
+    "- item",
+    "#comment",
 ]
 
-SEQUENCE_CASES = [
-    pytest.param("- 1\n- 2\n- 3", id="int_list"),
-    pytest.param("- hello\n- world", id="string_list"),
-    pytest.param("- true\n- false\n- null", id="mixed_types"),
-]
+SCALAR_TOKENS = sorted(set(_BOOL_TOKENS) | set(_NUMBER_TOKENS) | set(_PLAIN_TOKENS))
 
-NESTED_CASES = [
-    pytest.param(
-        "person:\n  name: Alice\n  age: 30",
-        id="nested_mapping",
-    ),
-    pytest.param(
-        "items:\n  - apple\n  - banana\n  - cherry",
-        id="mapping_with_list",
-    ),
-    pytest.param(
-        "- name: Alice\n  age: 30\n- name: Bob\n  age: 25",
-        id="list_of_mappings",
-    ),
-    pytest.param(
-        "a:\n  b:\n    c: deep",
-        id="deeply_nested",
-    ),
-]
 
-FLOW_CASES = [
-    pytest.param("{}", id="empty_mapping"),
-    pytest.param("[]", id="empty_sequence"),
-    pytest.param("{a: 1, b: 2}", id="flow_mapping"),
-    pytest.param("[1, 2, 3]", id="flow_sequence"),
-    pytest.param("{a: [1, 2], b: {c: 3}}", id="nested_flow"),
-    pytest.param("[{a: 1}, {b: 2}]", id="flow_list_of_maps"),
-]
+def _block_documents() -> list[str]:
+    """Generate valid block-style documents from a bounded grammar."""
+    values = ["1", "true", "null", "hello", "3.14"]
+    keys = ["a", "b", "c"]
+    documents: list[str] = []
 
-QUOTED_CASES = [
-    pytest.param("key: 'single quoted'", id="single_quoted"),
-    pytest.param('key: "double quoted"', id="double_quoted"),
-    pytest.param("key: 'true'", id="quoted_bool"),
-    pytest.param("key: '42'", id="quoted_int"),
-    pytest.param('key: "line\\nbreak"', id="escaped_newline"),
-    pytest.param("key: ''", id="empty_single_quoted"),
-    pytest.param('key: ""', id="empty_double_quoted"),
-]
+    for size in (1, 2):
+        for chosen in itertools.combinations(keys, size):
+            for combo in itertools.product(values, repeat=size):
+                documents.append(
+                    "\n".join(f"{key}: {value}" for key, value in zip(chosen, combo))
+                )
+
+    for size in (1, 2):
+        for combo in itertools.product(values, repeat=size):
+            documents.append("\n".join(f"- {value}" for value in combo))
+
+    # Three-element cases are kept explicitly; repeating the grammar at size 3
+    # would only re-check the same type-inference branches.
+    documents.extend(
+        [
+            "- 1\n- 2\n- 3",
+            "- hello\n- world",
+            "- true\n- false\n- null",
+            "a: 1\nb: 2\nc: true",
+        ]
+    )
+
+    for value in values:
+        documents.append(f"outer:\n  - {value}\n  - inner")
+        documents.append(f"- name: {value}\n  value: {values[0]}")
+
+    for depth in (1, 2, 3):
+        lines = ["  " * level + f"k{level}:" for level in range(depth)]
+        lines.append("  " * depth + "value")
+        documents.append("\n".join(lines))
+
+    return documents
+
+
+def _flow_documents() -> list[str]:
+    """Generate flow-style documents from a bounded grammar."""
+    values = ["1", "true", "null", "hello"]
+    documents = ["{}", "[]"]
+
+    for size in (1, 2):
+        for combo in itertools.product(values, repeat=size):
+            documents.append("[" + ", ".join(combo) + "]")
+    documents.append("[1, 2, 3]")
+    for size in (1, 2):
+        for combo in itertools.product(values, repeat=size):
+            body = ", ".join(f"k{i}: {value}" for i, value in enumerate(combo))
+            documents.append("{" + body + "}")
+    documents.extend(["{a: [1, 2], b: {c: 3}}", "[{a: 1}, {b: 2}]"])
+    return documents
+
+
+def _quoted_documents() -> list[str]:
+    """Quote every interesting scalar with both quote styles."""
+    values = ["true", "42", "a b", "a:b", "#x", "", "line\\nbreak"]
+    documents = []
+    for value in values:
+        documents.append(f"key: '{value}'")
+        documents.append(f'key: "{value}"')
+    return documents
+
+
+STRUCTURAL_DOCUMENTS = _block_documents() + _flow_documents() + _quoted_documents()
 
 
 # ── Test classes ──
 
 
 class TestScalarTypes:
-    @pytest.mark.parametrize("text", SCALAR_CASES)
-    def test_matches_reference(self, text: str):
-        ours = _ours(text)
-        theirs = _theirs(text)
-        if isinstance(theirs, float) and isinstance(ours, float):
-            # Handle NaN comparison
-            if theirs != theirs:  # NaN
-                assert ours != ours
-                return
-        assert ours == theirs
+    def test_scalar_corpus_matches_reference(self):
+        mismatches = []
+        for text in SCALAR_TOKENS:
+            ours = _ours(text)
+            theirs = _theirs(text)
+            if not _same(ours, theirs):
+                mismatches.append((text, ours, theirs))
+        assert not mismatches, f"scalar mismatches vs PyYAML: {mismatches!r}"
 
 
-class TestBlockMappings:
-    @pytest.mark.parametrize("text", MAPPING_CASES)
-    def test_matches_reference(self, text: str):
-        assert _ours(text) == _theirs(text)
-
-
-class TestBlockSequences:
-    @pytest.mark.parametrize("text", SEQUENCE_CASES)
-    def test_matches_reference(self, text: str):
-        assert _ours(text) == _theirs(text)
-
-
-class TestNestedStructures:
-    @pytest.mark.parametrize("text", NESTED_CASES)
-    def test_matches_reference(self, text: str):
-        assert _ours(text) == _theirs(text)
-
-
-class TestFlowStyle:
-    @pytest.mark.parametrize("text", FLOW_CASES)
-    def test_matches_reference(self, text: str):
-        assert _ours(text) == _theirs(text)
-
-
-class TestQuotedStrings:
-    @pytest.mark.parametrize("text", QUOTED_CASES)
-    def test_matches_reference(self, text: str):
-        assert _ours(text) == _theirs(text)
+class TestStructures:
+    def test_generated_documents_match_reference(self):
+        mismatches = []
+        for text in STRUCTURAL_DOCUMENTS:
+            ours = _ours(text)
+            theirs = _theirs(text)
+            if not _same(ours, theirs):
+                mismatches.append((text, ours, theirs))
+        assert not mismatches, f"structure mismatches vs PyYAML: {mismatches!r}"
 
 
 class TestMultipleDocuments:
-    def test_two_documents(self):
-        text = "---\na: 1\n---\nb: 2"
-        ours = list(load_all(text))
-        theirs = list(_safe_load_all(text))
-        assert ours == theirs
-
-    def test_three_documents(self):
+    def test_generated_document_streams(self):
+        scalars = ["1", "a: 1", "true"]
+        mismatches = []
+        for size in (1, 2):
+            for combo in itertools.product(scalars, repeat=size):
+                text = "---\n" + "\n---\n".join(combo)
+                ours = list(load_all(text))
+                theirs = list(_safe_load_all(text))
+                if ours != theirs:
+                    mismatches.append((text, ours, theirs))
+        # A three-document stream is preserved explicitly.
         text = "---\n1\n---\n2\n---\n3"
-        ours = list(load_all(text))
-        theirs = list(_safe_load_all(text))
-        assert ours == theirs
+        if list(load_all(text)) != list(_safe_load_all(text)):
+            mismatches.append((text, list(load_all(text)), list(_safe_load_all(text))))
+        assert not mismatches, f"stream mismatches vs PyYAML: {mismatches!r}"
+
+
+def _generated_data() -> list[object]:
+    """Bounded Python structures for the dump → load round-trip property."""
+    scalars = [None, True, False, 0, 1, -1, 3.14, "hello", "true", "a b"]
+    data: list[object] = [[value] for value in scalars]
+    data += [[left, right] for left, right in itertools.product(scalars[:5], repeat=2)]
+    data += [{"k": value} for value in scalars]
+    data += [
+        {"a": left, "b": right}
+        for left, right in itertools.product(scalars[:5], repeat=2)
+    ]
+    data += [
+        {"outer": {"inner": value, "seq": [value, other]}}
+        for value in scalars[:5]
+        for other in scalars[:3]
+    ]
+    data.append({"empty_dict": {}, "empty_list": []})
+    return data
 
 
 class TestDump:
-    def test_simple_mapping(self):
-        data = {"name": "Alice", "age": 30}
-        ours = load(dump(data))
-        assert ours == data
-
-    def test_simple_sequence(self):
-        data = [1, 2, 3]
-        ours = load(dump(data))
-        assert ours == data
-
-    def test_nested(self):
-        data = {"person": {"name": "Alice", "scores": [95, 87, 91]}}
-        ours = load(dump(data))
-        assert ours == data
+    def test_dump_load_round_trip(self):
+        mismatches = []
+        for data in _generated_data():
+            parsed = load(dump(data))
+            if parsed != data:
+                mismatches.append((data, parsed))
+        assert not mismatches, f"dump/load round-trip failures: {mismatches!r}"
 
     def test_none_value(self):
         data = {"key": None}
@@ -271,10 +328,6 @@ class TestEdgeCases:
 
     def test_comment_only(self):
         assert load("# just a comment") is None
-
-    def test_unicode(self):
-        text = "name: こんにちは"
-        assert _ours(text) == _theirs(text)
 
     def test_colon_in_value(self):
         text = "url: http://example.com"

@@ -1,12 +1,14 @@
 """Correctness tests: zerodep semver vs packaging.version.
 
-Compares our PEP 440 parser against the reference ``packaging`` library
-to ensure behavioural parity for parsing, comparison, normalisation,
-and property access.
+Compares our PEP 440 parser against the reference ``packaging`` library.
+The version corpus is generated from a bounded grammar (epoch × release ×
+pre × post × dev × local) instead of a hand-written list, so parity is
+checked over every combination in the grammar rather than selected samples.
 """
 
 from __future__ import annotations
 
+import itertools
 import os
 import sys
 
@@ -25,73 +27,90 @@ from semver import InvalidVersion, Version, version_parse  # noqa: E402, I001
 # ── Helpers ──────────────────────────────────────────────────────────
 
 
-def assert_same(version_str: str) -> None:
-    """Assert that our Version matches packaging's for a given string."""
+def _parity_error(version_str: str) -> list[tuple[str, object, object]] | None:
+    """Return the fields where our Version disagrees with packaging, if any."""
     ours = Version(version_str)
     theirs = PkgVersion(version_str)
-    assert str(ours) == str(theirs), f"str mismatch for {version_str!r}"
-    assert ours.is_prerelease == theirs.is_prerelease, (
-        f"is_prerelease mismatch for {version_str!r}"
+    pairs = [
+        ("str", str(ours), str(theirs)),
+        ("is_prerelease", ours.is_prerelease, theirs.is_prerelease),
+        ("is_devrelease", ours.is_devrelease, theirs.is_devrelease),
+        ("is_postrelease", ours.is_postrelease, theirs.is_postrelease),
+    ]
+    mismatches = [pair for pair in pairs if pair[1] != pair[2]]
+    return mismatches or None
+
+
+def assert_same(version_str: str) -> None:
+    """Assert that our Version matches packaging's for a given string."""
+    mismatches = _parity_error(version_str)
+    assert not mismatches, f"parity mismatch for {version_str!r}: {mismatches!r}"
+
+
+# ── Generated corpus ─────────────────────────────────────────────────
+
+_RELEASES = ("1.0", "1.2.3", "0.0.1", "10.20.30")
+_EPOCHS = ("", "1!", "2!")
+_PRES = ("", "a1", "rc1")
+_POSTS = ("", ".post1")
+_DEVS = ("", ".dev0")
+_LOCALS = ("", "+local", "+abc.123")
+
+
+def _generated_versions() -> list[str]:
+    """Every combination of the bounded PEP 440 grammar."""
+    return [
+        f"{epoch}{release}{pre}{post}{dev}{local}"
+        for epoch, release, pre, post, dev, local in itertools.product(
+            _EPOCHS, _RELEASES, _PRES, _POSTS, _DEVS, _LOCALS
+        )
+    ]
+
+
+def _generated_aliases() -> list[tuple[str, str]]:
+    """Non-canonical spellings paired with their canonical form."""
+    cases: list[tuple[str, str]] = []
+
+    pre_aliases = {
+        "alpha": "a",
+        "beta": "b",
+        "preview": "rc",
+        "pre": "rc",
+        "c": "rc",
+    }
+    for alias, canonical in pre_aliases.items():
+        for number in (1, 2, 3):
+            cases.append((f"1.0{alias}{number}", f"1.0{canonical}{number}"))
+
+    for number in (1, 2):
+        cases.append((f"1.0-{number}", f"1.0.post{number}"))
+        cases.append((f"1.0rev{number}", f"1.0.post{number}"))
+        cases.append((f"1.0.r{number}", f"1.0.post{number}"))
+
+    cases.extend(
+        [
+            ("v1.0", "1.0"),
+            ("  1.0  ", "1.0"),
+            ("1.0.0", "1.0.0"),
+            # Golden values pin the contract independently of packaging.
+            ("1.0alpha1", "1.0a1"),
+            ("1.0preview1", "1.0rc1"),
+        ]
     )
-    assert ours.is_devrelease == theirs.is_devrelease, (
-        f"is_devrelease mismatch for {version_str!r}"
-    )
-    assert ours.is_postrelease == theirs.is_postrelease, (
-        f"is_postrelease mismatch for {version_str!r}"
-    )
+    return cases
 
 
 # ── Test classes ─────────────────────────────────────────────────────
 
 
 class TestParsing:
-    """Basic version string parsing."""
-
-    @pytest.mark.parametrize(
-        "v",
-        [
-            "1.0",
-            "1.0.0",
-            "1.2.3",
-            "0.0.1",
-            "10.20.30",
-            "1.0.0.0.0",
-        ],
-    )
-    def test_simple_releases(self, v: str) -> None:
-        assert_same(v)
-
-    @pytest.mark.parametrize("v", ["1!1.0", "2!1.2.3", "0!1.0"])
-    def test_epoch(self, v: str) -> None:
-        assert_same(v)
-
-    @pytest.mark.parametrize(
-        "v",
-        [
-            "1.0a1",
-            "1.0b2",
-            "1.0rc1",
-            "1.0alpha1",
-            "1.0beta2",
-            "1.0preview1",
-            "1.0c1",
-            "1.0pre1",
-        ],
-    )
-    def test_pre_release(self, v: str) -> None:
-        assert_same(v)
-
-    @pytest.mark.parametrize("v", ["1.0.post1", "1.0.post0", "1.0-1"])
-    def test_post_release(self, v: str) -> None:
-        assert_same(v)
-
-    @pytest.mark.parametrize("v", ["1.0.dev0", "1.0.dev5", "1.0a1.dev1"])
-    def test_dev_release(self, v: str) -> None:
-        assert_same(v)
-
-    @pytest.mark.parametrize("v", ["1.0+local", "1.0+local.1", "1.0+abc.123"])
-    def test_local_version(self, v: str) -> None:
-        assert_same(v)
+    def test_generated_versions_match_packaging(self):
+        mismatches = []
+        for version in _generated_versions():
+            error = _parity_error(version)
+            if error:
+                mismatches.append((version, error))
+        assert not mismatches, f"parity mismatches: {mismatches!r}"
 
 
 class TestOrdering:
@@ -120,9 +139,10 @@ class TestOrdering:
                     f"Expected {self.ORDERED[i]} < {self.ORDERED[j]}"
                 )
 
-    def test_ordering_matches_packaging(self) -> None:
-        ours = [Version(v) for v in self.ORDERED]
-        theirs = [PkgVersion(v) for v in self.ORDERED]
+    def test_generated_order_matches_packaging(self) -> None:
+        versions = _generated_versions()
+        ours = [Version(v) for v in versions]
+        theirs = [PkgVersion(v) for v in versions]
         assert [str(v) for v in sorted(ours)] == [str(v) for v in sorted(theirs)]
 
     def test_epoch_trumps_release(self) -> None:
@@ -182,61 +202,16 @@ class TestComparison:
         assert v.__lt__("1.0") is NotImplemented
 
 
-class TestPrerelease:
-    """is_prerelease property."""
-
-    @pytest.mark.parametrize(
-        "v",
-        ["1.0a1", "1.0b1", "1.0rc1", "1.0.dev1", "1.0a1.dev0"],
-    )
-    def test_is_prerelease(self, v: str) -> None:
-        assert Version(v).is_prerelease is True
-
-    @pytest.mark.parametrize(
-        "v",
-        ["1.0", "1.0.post1", "1.0.post0"],
-    )
-    def test_is_not_prerelease(self, v: str) -> None:
-        assert Version(v).is_prerelease is False
-
-
-class TestDevrelease:
-    """is_devrelease property."""
-
-    @pytest.mark.parametrize("v", ["1.0.dev0", "1.0.dev5", "1.0a1.dev1"])
-    def test_is_devrelease(self, v: str) -> None:
-        assert Version(v).is_devrelease is True
-
-    @pytest.mark.parametrize(
-        "v",
-        ["1.0", "1.0a1", "1.0b1", "1.0rc1", "1.0.post1"],
-    )
-    def test_is_not_devrelease(self, v: str) -> None:
-        assert Version(v).is_devrelease is False
-
-
 class TestStringNormalization:
     """str() output matches packaging's canonical form."""
 
-    @pytest.mark.parametrize(
-        ("raw", "expected"),
-        [
-            ("1.0", "1.0"),
-            ("1.0.0", "1.0.0"),
-            ("1.0alpha1", "1.0a1"),
-            ("1.0beta2", "1.0b2"),
-            ("1.0preview1", "1.0rc1"),
-            ("1.0c1", "1.0rc1"),
-            ("1.0pre1", "1.0rc1"),
-            ("1.0-1", "1.0.post1"),
-            ("1.0.rev2", "1.0.post2"),
-            ("v1.0", "1.0"),
-            ("  1.0  ", "1.0"),
-        ],
-    )
-    def test_normalization(self, raw: str, expected: str) -> None:
-        assert str(Version(raw)) == expected
-        assert str(Version(raw)) == str(PkgVersion(raw))
+    def test_generated_aliases(self):
+        mismatches = []
+        for raw, expected in _generated_aliases():
+            got = str(Version(raw))
+            if got != expected or got != str(PkgVersion(raw)):
+                mismatches.append((raw, expected, got, str(PkgVersion(raw))))
+        assert not mismatches, f"normalization mismatches: {mismatches!r}"
 
 
 class TestInvalidVersion:

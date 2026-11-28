@@ -7,6 +7,11 @@ on:
         description: "Release version (leave empty for auto CalVer YYYY.M.D)"
         required: false
         default: ""
+  schedule:
+    # Every day at 09:17 UTC (~03:17 US Central in winter). The run exits
+    # early when no commit landed since the last release tag, so a quiet day
+    # never cuts an empty release.
+    - cron: "17 9 * * *"
 
 permissions:
   contents: read
@@ -29,6 +34,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       republish: ${{ steps.version.outputs.republish }}
+      skip: ${{ steps.version.outputs.skip }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,12 +53,24 @@ jobs:
             VER="$(date +%Y.%-m.%-d)"
           fi
           REPUBLISH=false
+          SKIP=false
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # A scheduled run releases only what landed since the last tag;
+            # without this a quiet day would cut an empty version.
+            LAST_TAG=$(git describe --tags --abbrev=0)
+            if [ "$(git rev-list --count "${LAST_TAG}..HEAD")" -eq 0 ]; then
+              echo "No commits since ${LAST_TAG}; skipping the scheduled release"
+              SKIP=true
+            fi
+          fi
           if git tag -l "v${VER}" | grep -q .; then
             if [ -n "${{ github.event.inputs.version }}" ]; then
               # An explicit version whose tag exists means "re-run the
               # publish for this release", not "cut a new one".
               REPUBLISH=true
               echo "Tag v${VER} already exists; publishing it to PyPI only"
+            elif [ "$SKIP" = "true" ]; then
+              echo "Tag v${VER} already exists; the scheduled run has nothing to do"
             else
               echo "::error::Tag v${VER} already exists (pass an explicit version to re-publish)"
               exit 1
@@ -60,10 +78,11 @@ jobs:
           fi
           echo "version=${VER}" >> "$GITHUB_OUTPUT"
           echo "republish=${REPUBLISH}" >> "$GITHUB_OUTPUT"
-          echo "Release version: ${VER} (republish=${REPUBLISH})"
+          echo "skip=${SKIP}" >> "$GITHUB_OUTPUT"
+          echo "Release version: ${VER} (republish=${REPUBLISH}, skip=${SKIP})"
 
       - name: Release checks
-        if: steps.version.outputs.republish != 'true'
+        if: steps.version.outputs.republish != 'true' && steps.version.outputs.skip != 'true'
         run: |
           # Same code path maintainers run locally; a failing check here
           # means the tree is not taggable (unbumped module, stale manifest,
@@ -71,14 +90,14 @@ jobs:
           python -m zerodep release-check --version "${{ steps.version.outputs.version }}"
 
       - name: Bump project version
-        if: steps.version.outputs.republish != 'true'
+        if: steps.version.outputs.republish != 'true' && steps.version.outputs.skip != 'true'
         run: |
           VER="${{ steps.version.outputs.version }}"
           sed -i "s/^version = .*/version = \"${VER}\"/" pyproject.toml
           sed -i "s/^__version__ = .*/__version__ = \"${VER}\"/" zerodep.py
 
       - name: Commit and tag
-        if: steps.version.outputs.republish != 'true'
+        if: steps.version.outputs.republish != 'true' && steps.version.outputs.skip != 'true'
         run: |
           VER="${{ steps.version.outputs.version }}"
           git config user.name "github-actions[bot]"
@@ -93,7 +112,7 @@ jobs:
           git push origin master --tags
 
       - name: Create GitHub Release
-        if: steps.version.outputs.republish != 'true'
+        if: steps.version.outputs.republish != 'true' && steps.version.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -104,7 +123,7 @@ jobs:
 
   benchmark:
     needs: release
-    if: needs.release.outputs.republish != 'true'
+    if: needs.release.outputs.republish != 'true' && needs.release.outputs.skip != 'true'
     permissions:
       actions: write
     runs-on: ubuntu-latest
@@ -123,6 +142,7 @@ jobs:
 
   pypi:
     needs: release
+    if: needs.release.outputs.skip != 'true'
     permissions:
       contents: read
       id-token: write

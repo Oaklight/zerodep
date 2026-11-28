@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- **sse** (v0.4.2): a `retry:` field is now accepted only when its value is ASCII digits, as WHATWG requires. `str.isdigit()` also accepts superscripts and other scripts' digits; a superscript such as `retry: ²` made `int()` raise `ValueError` out of the parser, and Arabic-Indic or fullwidth digits were silently accepted. Both are now ignored like any other invalid retry value.
+
 ### Features
 
 - **jsonx** (v2.1.0): `repair()` recovers a value from JSON damaged in transit — truncation at any point, missing commas or colons, stray or missing brackets, spliced tokens — and returns a report of what it fixed. It parses straight into Python objects in one pass, with strings and numbers going through the same C helpers the stdlib decoder uses, so a damaged 200 KB body costs about 6 ms and a clean document still costs the same as `json.loads`. The new `loads(..., repair=True)` falls back to it instead of raising; custom decoders and hooks are rejected in that mode because repaired values bypass them. Bytes that were replaced inside a string cannot be detected, so the result is best-effort, never a validation path. The test suite adds a bounded exhaustive check over short inputs, an agreement property against `json.loads` on generated documents, an every-truncation-point check on a sample document, splice fuzzing and two sanitized bodies taken from real `body_parse` error dumps.

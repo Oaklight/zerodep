@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "0.4.1"
+# version = "0.4.2"
 # deps = ["httpclient"]
 # tier = "subsystem"
 # category = "network"
@@ -329,7 +329,9 @@ class _SSEParser:
             if "\0" not in value:
                 self._last_id = value
         elif field == "retry":
-            if value.isdigit() and value:
+            # WHATWG: only ASCII digits count. str.isdigit() also accepts
+            # superscripts, which int() rejects, and other scripts' digits.
+            if value.isascii() and value.isdigit():
                 self._retry = int(value)
 
         return None

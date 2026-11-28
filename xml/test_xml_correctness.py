@@ -1,5 +1,6 @@
 """Correctness tests: zerodep XML vs xmltodict."""
 
+import itertools
 import os
 import sys
 
@@ -71,94 +72,66 @@ def _theirs(xml_str: str, **kwargs) -> dict | None:
     return _ref_parse(xml_str, **kwargs)
 
 
-# ── Test vectors ──
+# ── Generated corpus ──
 
-BASIC_CASES = [
-    pytest.param("<root/>", id="empty_root"),
-    pytest.param("<root></root>", id="empty_root_explicit"),
-    pytest.param("<root>hello</root>", id="text_only"),
-    pytest.param("<root><a>1</a></root>", id="single_child"),
-    pytest.param("<root><a>1</a><b>2</b></root>", id="two_children"),
-    pytest.param("<root><a>1</a><b>2</b><c>3</c></root>", id="three_children"),
-]
+_CHILDREN = [(name, text) for name in ("a", "b") for text in ("1", "hello", "")]
+_ATTRS = [("id", "1"), ("class", "main")]
 
-ATTRIBUTE_CASES = [
-    pytest.param('<item id="1">hello</item>', id="one_attr"),
-    pytest.param('<item id="1" type="test">hello</item>', id="two_attrs"),
-    pytest.param('<item id="1"/>', id="attr_empty"),
-    pytest.param('<item id="1" class="main">text</item>', id="attr_with_text"),
-]
 
-LIST_CASES = [
-    pytest.param(
-        "<root><item>a</item><item>b</item></root>",
-        id="two_same_siblings",
-    ),
-    pytest.param(
-        "<root><item>a</item><item>b</item><item>c</item></root>",
-        id="three_same_siblings",
-    ),
-    pytest.param(
-        "<root><x>1</x><y>2</y><x>3</x></root>",
-        id="interleaved_siblings",
-    ),
-]
+def _generated_xml_documents() -> list[str]:
+    """Bounded tree grammar: children, repeated names, attrs, nesting, text."""
+    documents = ["<root/>"]
 
-NESTED_CASES = [
-    pytest.param("<root><a><b>deep</b></a></root>", id="two_levels"),
-    pytest.param(
-        "<root><a><b><c>very deep</c></b></a></root>",
-        id="three_levels",
-    ),
-    pytest.param(
-        "<root><person><name>Alice</name><age>30</age></person></root>",
-        id="nested_mapping",
-    ),
-]
+    for size in (1, 2, 3):
+        for combo in itertools.product(_CHILDREN, repeat=size):
+            body = "".join(f"<{name}>{text}</{name}>" for name, text in combo)
+            documents.append(f"<root>{body}</root>")
 
-WHITESPACE_CASES = [
-    pytest.param(
-        "<root>\n  <a>1</a>\n  <b>2</b>\n</root>",
-        id="indented",
-    ),
-    pytest.param(
-        "<root>  hello  </root>",
-        id="padded_text",
-    ),
-]
+    for size in (1, 2):
+        for combo in itertools.combinations(_ATTRS, size):
+            attr = " ".join(f'{key}="{value}"' for key, value in combo)
+            documents.append(f"<item {attr}>hello</item>")
+            documents.append(f"<item {attr}/>")
 
-CDATA_CASES = [
-    pytest.param(
-        "<root><![CDATA[hello <world>]]></root>",
-        id="cdata_section",
-    ),
-    pytest.param(
-        "<root>prefix<![CDATA[ cdata ]]>suffix</root>",
-        id="mixed_cdata",
-    ),
-]
+    for depth in (1, 2, 3):
+        opening = "".join(f"<n{level}>" for level in range(depth))
+        closing = "".join(f"</n{level}>" for level in reversed(range(depth)))
+        documents.append(f"<root>{opening}deep{closing}</root>")
 
-ENTITY_CASES = [
-    pytest.param("<root>&amp;</root>", id="amp_entity"),
-    pytest.param("<root>&lt;tag&gt;</root>", id="lt_gt_entities"),
-    pytest.param("<root>&quot;quoted&quot;</root>", id="quot_entity"),
-]
+    documents.extend(
+        [
+            "<root></root>",
+            "<root>hello</root>",
+            "<root>\n  <a>1</a>\n  <b>2</b>\n</root>",
+            "<root>  hello  </root>",
+            "<root><![CDATA[hello <world>]]></root>",
+            "<root>prefix<![CDATA[ cdata ]]>suffix</root>",
+            "<root>&amp;</root>",
+            "<root>&lt;tag&gt;</root>",
+            "<root>&quot;quoted&quot;</root>",
+        ]
+    )
+    return documents
+
+
+GENERATED_XML = _generated_xml_documents()
 
 
 # ── Test classes ──
 
 
-class TestParseBasic:
-    @pytest.mark.parametrize("xml_str", BASIC_CASES)
-    def test_matches_reference(self, xml_str: str):
-        assert _ours(xml_str) == _theirs(xml_str)
+class TestGeneratedParse:
+    def test_parse_matches_reference(self):
+        mismatches = []
+        for xml_str in GENERATED_XML:
+            ours = _ours(xml_str)
+            theirs = _theirs(xml_str)
+            if ours != theirs:
+                mismatches.append((xml_str, ours, theirs))
+        assert not mismatches, f"{len(mismatches)} parse mismatches: {mismatches!r}"
 
 
 class TestParseAttributes:
-    @pytest.mark.parametrize("xml_str", ATTRIBUTE_CASES)
-    def test_matches_reference(self, xml_str: str):
-        assert _ours(xml_str) == _theirs(xml_str)
-
     def test_no_attribs(self):
         xml_str = '<item id="1">hello</item>'
         ours = _ours(xml_str, xml_attribs=False)
@@ -173,10 +146,6 @@ class TestParseAttributes:
 
 
 class TestParseLists:
-    @pytest.mark.parametrize("xml_str", LIST_CASES)
-    def test_matches_reference(self, xml_str: str):
-        assert _ours(xml_str) == _theirs(xml_str)
-
     def test_force_list_tuple(self):
         xml_str = "<root><item>only one</item></root>"
         ours = _ours(xml_str, force_list=("item",))
@@ -190,34 +159,12 @@ class TestParseLists:
         assert ours == theirs
 
 
-class TestParseNested:
-    @pytest.mark.parametrize("xml_str", NESTED_CASES)
-    def test_matches_reference(self, xml_str: str):
-        assert _ours(xml_str) == _theirs(xml_str)
-
-
 class TestParseWhitespace:
-    @pytest.mark.parametrize("xml_str", WHITESPACE_CASES)
-    def test_matches_reference(self, xml_str: str):
-        assert _ours(xml_str) == _theirs(xml_str)
-
     def test_strip_false(self):
         xml_str = "<root>  hello  </root>"
         ours = _ours(xml_str, strip_whitespace=False)
         theirs = _theirs(xml_str, strip_whitespace=False)
         assert ours == theirs
-
-
-class TestParseCdata:
-    @pytest.mark.parametrize("xml_str", CDATA_CASES)
-    def test_matches_reference(self, xml_str: str):
-        assert _ours(xml_str) == _theirs(xml_str)
-
-
-class TestParseEntities:
-    @pytest.mark.parametrize("xml_str", ENTITY_CASES)
-    def test_matches_reference(self, xml_str: str):
-        assert _ours(xml_str) == _theirs(xml_str)
 
 
 class TestParseForceCdata:
@@ -399,36 +346,45 @@ class TestUnparsePreprocessor:
         assert "skip" not in parsed.get("root", {})
 
 
-class TestRoundTrip:
-    """Test that parse(unparse(d)) == d for various structures."""
-
-    ROUND_TRIP_CASES = [
-        pytest.param({"root": "hello"}, id="simple_text"),
-        pytest.param({"root": {"a": "1", "b": "2"}}, id="two_children"),
-        pytest.param({"root": {"a": {"b": "deep"}}}, id="nested"),
-        pytest.param({"root": {"item": ["a", "b", "c"]}}, id="list"),
-        pytest.param(
-            {"root": {"@id": "1", "#text": "hello"}},
-            id="attrs_and_text",
-        ),
-        pytest.param(
-            {
-                "root": {
-                    "person": [
-                        {"name": "Alice", "age": "30"},
-                        {"name": "Bob", "age": "25"},
-                    ]
-                }
-            },
-            id="list_of_dicts",
-        ),
+def _generated_round_trip_data() -> list[dict]:
+    """Bounded dict grammar for parse(unparse(d)) == d."""
+    texts = ["hello", "1"]
+    data: list[dict] = [{"root": text} for text in texts]
+    data += [{"root": {name: text}} for name in ("a", "b") for text in texts]
+    data += [
+        {"root": {"item": [left, right]}}
+        for left, right in itertools.product(texts, repeat=2)
     ]
+    data += [
+        {"item": {"@id": ident, "#text": text}}
+        for ident in ("1", "2")
+        for text in texts
+    ]
+    data += [
+        {"root": {"a": {"b": "deep"}}},
+        {
+            "root": {
+                "person": [
+                    {"name": "Alice", "age": "30"},
+                    {"name": "Bob", "age": "25"},
+                ]
+            }
+        },
+    ]
+    return data
 
-    @pytest.mark.parametrize("data", ROUND_TRIP_CASES)
-    def test_round_trip(self, data: dict):
-        xml_str = unparse(data, full_document=False)
-        result = parse(xml_str)
-        assert result == data
+
+class TestRoundTrip:
+    """Test that parse(unparse(d)) == d for generated structures."""
+
+    def test_round_trip(self):
+        mismatches = []
+        for data in _generated_round_trip_data():
+            xml_str = unparse(data, full_document=False)
+            result = parse(xml_str)
+            if result != data:
+                mismatches.append((data, xml_str, result))
+        assert not mismatches, f"{len(mismatches)} round-trip failures: {mismatches!r}"
 
 
 class TestUnparseList:

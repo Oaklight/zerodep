@@ -1,5 +1,6 @@
 """Correctness tests: zerodep validate module."""
 
+import copy
 import dataclasses
 import os
 import sys
@@ -113,59 +114,59 @@ class PointWithDefault:
 # ── Simple Types ──
 
 
+_SIMPLE_VALUES = [
+    ("str", "hello"),
+    ("empty_str", ""),
+    ("int", 42),
+    ("zero", 0),
+    ("negative", -1),
+    ("float", 3.14),
+    ("integral_float", 42.0),
+    ("bool_true", True),
+    ("bool_false", False),
+    ("bytes", b"data"),
+    ("none", None),
+    ("list", [1, 2]),
+    ("dict", {"a": 1}),
+]
+
+# Each predicate is the independent model of which values the type accepts.
+# ``bool`` is deliberately not an ``int`` here, matching strict validation.
+_SIMPLE_TYPES = [
+    ("str", str, lambda value: type(value) is str),
+    ("int", int, lambda value: type(value) is int),
+    ("float", float, lambda value: type(value) in (int, float)),
+    ("bool", bool, lambda value: type(value) is bool),
+    ("bytes", bytes, lambda value: type(value) is bytes),
+    ("none", None, lambda value: value is None),
+    ("list", list, lambda value: type(value) is list),
+    ("dict", dict, lambda value: type(value) is dict),
+    ("any", Any, lambda value: True),
+]
+
+
 class TestSimpleTypes:
-    def test_str_valid(self):
-        assert validate("hello", str) == "hello"
-
-    def test_str_invalid(self):
-        with pytest.raises(ValidationError) as exc_info:
-            validate(123, str)
-        assert len(exc_info.value.errors) == 1
-        assert exc_info.value.errors[0].expected == "str"
-
-    def test_int_valid(self):
-        assert validate(42, int) == 42
-
-    def test_int_invalid(self):
-        with pytest.raises(ValidationError):
-            validate("not_int", int)
-
-    def test_float_valid(self):
-        assert validate(3.14, float) == 3.14
-
-    def test_float_accepts_int(self):
-        assert validate(42, float) == 42
-
-    def test_bool_valid(self):
-        assert validate(True, bool) is True
-        assert validate(False, bool) is False
-
-    def test_bool_rejects_int(self):
-        with pytest.raises(ValidationError):
-            validate(1, bool)
-
-    def test_int_rejects_bool(self):
-        with pytest.raises(ValidationError):
-            validate(True, int)
-
-    def test_float_rejects_bool(self):
-        with pytest.raises(ValidationError):
-            validate(True, float)
-
-    def test_bytes_valid(self):
-        assert validate(b"data", bytes) == b"data"
-
-    def test_none_valid(self):
-        assert validate(None, None) is None
-
-    def test_none_invalid(self):
-        with pytest.raises(ValidationError):
-            validate(42, None)
-
-    def test_any_accepts_anything(self):
-        assert validate("anything", Any) == "anything"
-        assert validate(None, Any) is None
-        assert validate([1, 2], Any) == [1, 2]
+    def test_type_acceptance_matrix(self):
+        """Exhaustive values × types matrix against an independent model."""
+        failures = []
+        for value_name, value in _SIMPLE_VALUES:
+            for type_name, tp, accepts in _SIMPLE_TYPES:
+                expected = accepts(value)
+                try:
+                    result = validate(value, tp)
+                except ValidationError as exc:
+                    if expected:
+                        failures.append((value_name, type_name, "rejected"))
+                    elif len(exc.errors) != 1:
+                        failures.append(
+                            (value_name, type_name, "error count", len(exc.errors))
+                        )
+                    continue
+                if not expected:
+                    failures.append((value_name, type_name, "accepted", result))
+                elif result is not value:
+                    failures.append((value_name, type_name, "not identity", result))
+        assert not failures, f"type matrix failures: {failures!r}"
 
 
 # ── Container Types ──
@@ -391,49 +392,63 @@ class TestDataclass:
 # ── Annotated Constraints ──
 
 
+_INT_CONSTRAINTS = [
+    (Gt(0), lambda value: value > 0),
+    (Ge(0), lambda value: value >= 0),
+    (Lt(10), lambda value: value < 10),
+    (Le(10), lambda value: value <= 10),
+]
+
+_LENGTH_CONSTRAINTS = [
+    (MinLen(2), lambda value: len(value) >= 2),
+    (MaxLen(5), lambda value: len(value) <= 5),
+]
+
+
+def _accepts(value: Any, tp: Any) -> bool:
+    try:
+        validate(value, tp)
+    except ValidationError:
+        return False
+    return True
+
+
 class TestConstraints:
-    def test_gt(self):
-        validate({"name": "a", "price": 1.0, "quantity": 0}, ConstrainedItem)
-        with pytest.raises(ValidationError):
-            validate({"name": "a", "price": 0.0, "quantity": 0}, ConstrainedItem)
-        with pytest.raises(ValidationError):
-            validate({"name": "a", "price": -1.0, "quantity": 0}, ConstrainedItem)
+    def test_integer_constraint_boundaries(self):
+        failures = []
+        for constraint, accepts in _INT_CONSTRAINTS:
+            tp = Annotated[int, constraint]
+            for value in range(-5, 16):
+                if _accepts(value, tp) != accepts(value):
+                    failures.append((str(constraint), value))
+        assert not failures, f"integer constraint failures: {failures!r}"
 
-    def test_ge_le(self):
-        validate({"name": "a", "price": 1.0, "quantity": 0}, ConstrainedItem)
-        validate({"name": "a", "price": 1.0, "quantity": 1000}, ConstrainedItem)
-        with pytest.raises(ValidationError):
-            validate({"name": "a", "price": 1.0, "quantity": -1}, ConstrainedItem)
-        with pytest.raises(ValidationError):
-            validate({"name": "a", "price": 1.0, "quantity": 1001}, ConstrainedItem)
-
-    def test_lt(self):
-        c = Lt(10)
-        assert c.check(9)
-        assert not c.check(10)
-
-    def test_minlen_maxlen(self):
-        validate({"name": "a", "price": 1.0, "quantity": 0}, ConstrainedItem)
-        with pytest.raises(ValidationError):
-            validate({"name": "", "price": 1.0, "quantity": 0}, ConstrainedItem)
-        with pytest.raises(ValidationError):
-            validate({"name": "x" * 101, "price": 1.0, "quantity": 0}, ConstrainedItem)
-
-    def test_maxlen_on_list(self):
-        validate({"name": "a", "tags": ["t1", "t2"]}, TaggedItem)
-        with pytest.raises(ValidationError):
-            validate({"name": "a", "tags": ["t"] * 6}, TaggedItem)
+    def test_length_constraint_boundaries(self):
+        failures = []
+        for constraint, accepts in _LENGTH_CONSTRAINTS:
+            for length in range(0, 8):
+                cases = [
+                    ("x" * length, Annotated[str, constraint]),
+                    ([0] * length, Annotated[list[int], constraint]),
+                ]
+                for value, tp in cases:
+                    if _accepts(value, tp) != accepts(value):
+                        failures.append((str(constraint), value))
+        assert not failures, f"length constraint failures: {failures!r}"
 
     def test_match(self):
         validate({"email": "test@example.com"}, PatternField)
         with pytest.raises(ValidationError):
             validate({"email": "not-an-email"}, PatternField)
 
-    def test_predicate(self):
+    def test_predicate_matrix(self):
         EvenInt = Annotated[int, Predicate(lambda x: x % 2 == 0, "must be even")]
-        validate(4, EvenInt)
-        with pytest.raises(ValidationError, match="even"):
-            validate(3, EvenInt)
+        failures = [
+            value
+            for value in range(-6, 11)
+            if _accepts(value, EvenInt) != (value % 2 == 0)
+        ]
+        assert not failures, f"predicate failures: {failures!r}"
 
     def test_multiple_constraints(self):
         BoundedStr = Annotated[str, MinLen(2), MaxLen(5)]
@@ -704,101 +719,112 @@ class TestLiteral:
 # ── Coercion ──
 
 
+_COERCE_STRUCT = create_struct(
+    "CoerceStruct",
+    {"name": (str, ...), "age": (int, ...), "score": (float, ...)},
+)
+_COERCE_FLAT = create_struct("CoerceFlat", {"name": (str, ...), "age": (int, ...)})
+_COERCE_INNER = create_struct("CoerceInner", {"value": (int, ...)})
+_COERCE_OUTER = create_struct(
+    "CoerceOuter", {"name": (str, ...), "inner": (_COERCE_INNER, ...)}
+)
+
+_SCALAR_COERCIONS = [
+    ("42", int, 42),
+    ("-7", int, -7),
+    ("3.14", float, 3.14),
+    (42, float, 42.0),
+]
+
+# (raw, type, expected, predicate every coerced leaf must satisfy)
+_CONTAINER_COERCIONS = [
+    (["1", "2", "3"], list[int], [1, 2, 3], lambda value: type(value) is int),
+    (("1", "2", "3"), tuple[int, ...], (1, 2, 3), lambda value: type(value) is int),
+    (
+        ("1", "3.14"),
+        tuple[int, float],
+        (1, 3.14),
+        lambda value: type(value) is int or type(value) is float,
+    ),
+    (
+        {"a": "1", "b": "2"},
+        dict[str, int],
+        {"a": 1, "b": 2},
+        lambda value: type(value) is int,
+    ),
+    (
+        {"1": "a", "2": "b"},
+        dict[int, str],
+        {1: "a", 2: "b"},
+        lambda value: type(value) is str,
+    ),
+]
+
+_INVALID_COERCIONS = [("not_a_number", int), ("not_a_float", float)]
+
+_NO_COERCE_CASES = [("42", int), (["1"], list[int]), ({"a": "1"}, dict[str, int])]
+
+_MUTATION_CASES = [
+    (["1", "2"], list[int]),
+    ({"a": "1"}, dict[str, int]),
+    ({"name": "Alice", "age": "25"}, _COERCE_FLAT),
+]
+
+
 class TestCoercion:
-    def test_str_to_int(self):
-        assert validate("42", int, coerce=True) == 42
+    def test_scalar_coercions(self):
+        failures = []
+        for raw, tp, expected in _SCALAR_COERCIONS:
+            result = validate(raw, tp, coerce=True)
+            if result != expected:
+                failures.append((raw, tp, expected, result))
+        assert not failures, f"scalar coercion failures: {failures!r}"
 
-    def test_str_to_float(self):
-        assert validate("3.14", float, coerce=True) == 3.14
+    def test_container_coercions(self):
+        failures = []
+        for raw, tp, expected, leaf_ok in _CONTAINER_COERCIONS:
+            result = validate(raw, tp, coerce=True)
+            leaves = result.values() if isinstance(result, dict) else result
+            if result != expected or not all(leaf_ok(value) for value in leaves):
+                failures.append((raw, tp, expected, result))
+        assert not failures, f"container coercion failures: {failures!r}"
 
-    def test_int_to_float(self):
-        assert validate(42, float, coerce=True) == 42.0
-
-    def test_list_to_tuple(self):
+        # A list is accepted where a tuple is expected; either shape is valid.
         result = validate([1, 2], tuple[int, ...], coerce=True)
-        assert isinstance(result, (tuple, list))
+        assert tuple(result) == (1, 2)
+
+    def test_struct_coercions(self):
+        """Coerced values propagate into flat and nested struct fields."""
+        result = validate(
+            {"name": "Alice", "age": "25", "score": "3.14"},
+            _COERCE_STRUCT,
+            coerce=True,
+        )
+        assert result == {"name": "Alice", "age": 25, "score": 3.14}
+        assert type(result["age"]) is int
+        assert type(result["score"]) is float
+
+        nested = validate(
+            {"name": "Bob", "inner": {"value": "42"}}, _COERCE_OUTER, coerce=True
+        )
+        assert nested == {"name": "Bob", "inner": {"value": 42}}
+        assert type(nested["inner"]["value"]) is int
+
+    def test_invalid_coercions(self):
+        for raw, tp in _INVALID_COERCIONS:
+            with pytest.raises(ValidationError):
+                validate(raw, tp, coerce=True)
 
     def test_no_coerce_by_default(self):
-        with pytest.raises(ValidationError):
-            validate("42", int)
+        for raw, tp in _NO_COERCE_CASES:
+            with pytest.raises(ValidationError):
+                validate(raw, tp)
 
-    def test_invalid_coerce(self):
-        with pytest.raises(ValidationError):
-            validate("not_a_number", int, coerce=True)
-
-    def test_struct_field_coercion(self):
-        """Coerced values should propagate back into struct fields."""
-        T = create_struct(
-            "T", {"name": (str, ...), "age": (int, ...), "score": (float, ...)}
-        )
-        result = validate(
-            {"name": "Alice", "age": "25", "score": "3.14"}, T, coerce=True
-        )
-        assert result["age"] == 25
-        assert isinstance(result["age"], int)
-        assert result["score"] == 3.14
-        assert isinstance(result["score"], float)
-
-    def test_nested_struct_field_coercion(self):
-        """Coerced values should propagate in nested structs."""
-        Inner = create_struct("Inner", {"value": (int, ...)})
-        Outer = create_struct("Outer", {"name": (str, ...), "inner": (Inner, ...)})
-        result = validate({"name": "Bob", "inner": {"value": "42"}}, Outer, coerce=True)
-        assert result["inner"]["value"] == 42
-        assert isinstance(result["inner"]["value"], int)
-
-    def test_list_coercion(self):
-        """Coerced values should propagate in list items."""
-        result = validate(["1", "2", "3"], list[int], coerce=True)
-        assert result == [1, 2, 3]
-        assert all(isinstance(v, int) for v in result)
-
-    def test_list_no_input_mutation(self):
-        """Validating a list should not mutate the original."""
-        data = ["1", "2"]
-        result = validate(data, list[int], coerce=True)
-        assert result == [1, 2]
-        assert data == ["1", "2"]
-
-    def test_dict_value_coercion(self):
-        """Coerced values should propagate in dict values."""
-        result = validate({"a": "1", "b": "2"}, dict[str, int], coerce=True)
-        assert result == {"a": 1, "b": 2}
-        assert all(isinstance(v, int) for v in result.values())
-
-    def test_dict_key_coercion(self):
-        """Coerced keys should propagate in dict keys."""
-        result = validate({"1": "a", "2": "b"}, dict[int, str], coerce=True)
-        assert result == {1: "a", 2: "b"}
-        assert all(isinstance(k, int) for k in result.keys())
-
-    def test_dict_no_input_mutation(self):
-        """Validating a dict should not mutate the original."""
-        data = {"a": "1"}
-        result = validate(data, dict[str, int], coerce=True)
-        assert result == {"a": 1}
-        assert data == {"a": "1"}
-
-    def test_tuple_coercion_variadic(self):
-        """Coerced values should propagate in tuple[X, ...] items."""
-        result = validate(("1", "2", "3"), tuple[int, ...], coerce=True)
-        assert result == (1, 2, 3)
-        assert all(isinstance(v, int) for v in result)
-
-    def test_tuple_coercion_fixed(self):
-        """Coerced values should propagate in tuple[X, Y] items."""
-        result = validate(("1", "3.14"), tuple[int, float], coerce=True)
-        assert result == (1, 3.14)
-        assert isinstance(result[0], int)
-        assert isinstance(result[1], float)
-
-    def test_struct_no_input_mutation(self):
-        """Validating a struct should not mutate the original dict."""
-        T = create_struct("T", {"name": (str, ...), "age": (int, ...)})
-        data = {"name": "Alice", "age": "25"}
-        result = validate(data, T, coerce=True)
-        assert result["age"] == 25
-        assert data["age"] == "25"
+    def test_input_not_mutated(self):
+        for raw, tp in _MUTATION_CASES:
+            snapshot = copy.deepcopy(raw)
+            validate(raw, tp, coerce=True)
+            assert raw == snapshot
 
 
 # ── Error Collection ──

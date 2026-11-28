@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import json
 import os
 import sys
@@ -69,27 +70,52 @@ def tmp_config(tmp_path):
 # ── Bool coercion ───────────────────────────────────────────────────────────
 
 
-class TestCastBool:
-    @pytest.mark.parametrize(
-        "val", ["1", "true", "True", "TRUE", "yes", "on", "t", "y"]
-    )
-    def test_truthy(self, val):
-        assert _cast_bool(val) is True
+_TRUE_WORDS = ("1", "true", "yes", "on", "t", "y")
+_FALSE_WORDS = ("0", "false", "no", "off", "f", "n", "")
+_INVALID_WORDS = ("maybe", "2", "-1", "truth", "yes please")
 
-    @pytest.mark.parametrize(
-        "val",
-        ["0", "false", "False", "FALSE", "no", "off", "f", "n", ""],
-    )
-    def test_falsy(self, val):
-        assert _cast_bool(val) is False
+
+def _case_variants(word: str) -> set[str]:
+    """Every upper/lower combination of *word*."""
+    return {
+        "".join(parts)
+        for parts in itertools.product(*((char.lower(), char.upper()) for char in word))
+    }
+
+
+def _bool_corpus(words: tuple[str, ...]) -> list[str]:
+    """Case variants plus surrounding whitespace for every accepted word."""
+    variants = {variant for word in words for variant in _case_variants(word)}
+    variants |= {f" {word} " for word in words}
+    variants |= {f"\t{word}\n" for word in words}
+    return sorted(variants)
+
+
+class TestCastBool:
+    def test_truthy(self):
+        mismatches = [
+            token
+            for token in _bool_corpus(_TRUE_WORDS)
+            if _cast_bool(token) is not True
+        ]
+        assert not mismatches, f"expected True for: {mismatches!r}"
+
+    def test_falsy(self):
+        mismatches = [
+            token
+            for token in _bool_corpus(_FALSE_WORDS)
+            if _cast_bool(token) is not False
+        ]
+        assert not mismatches, f"expected False for: {mismatches!r}"
 
     def test_bool_passthrough(self):
         assert _cast_bool(True) is True
         assert _cast_bool(False) is False
 
     def test_invalid(self):
-        with pytest.raises(ValueError, match="Cannot convert"):
-            _cast_bool("maybe")
+        for token in _INVALID_WORDS:
+            with pytest.raises(ValueError, match="Cannot convert"):
+                _cast_bool(token)
 
 
 # ── List coercion ───────────────────────────────────────────────────────────

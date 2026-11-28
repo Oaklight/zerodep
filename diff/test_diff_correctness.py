@@ -1,5 +1,6 @@
 """Correctness tests: zerodep diff vs unidiff."""
 
+import itertools
 import os
 import sys
 
@@ -68,21 +69,54 @@ LONG_B_LINES[50] = "CHANGED50\n"
 LONG_B_LINES[90] = "CHANGED90\n"
 LONG_B = "".join(LONG_B_LINES)
 
-ROUND_TRIP_CASES = [
-    pytest.param(SIMPLE_A, SIMPLE_B, id="simple"),
-    pytest.param(MULTI_LINE_A, MULTI_LINE_B, id="multi_line"),
-    pytest.param(LONG_A, LONG_B, id="long_multi_hunk"),
-    pytest.param("", "new content\n", id="empty_to_content"),
-    pytest.param("old content\n", "", id="content_to_empty"),
-    pytest.param("same\n", "same\n", id="identical"),
-    pytest.param("no newline", "also no newline", id="no_trailing_newline"),
-    pytest.param("hello\nworld", "hello\nworld\n", id="add_trailing_newline"),
-    pytest.param("hello\nworld\n", "hello\nworld", id="remove_trailing_newline"),
-    pytest.param("一\n二\n三\n", "一\n贰\n三\n", id="unicode_cjk"),
-    pytest.param("a\nb\n", "a\nx\ny\nb\n", id="insert_multiple"),
-    pytest.param("a\nx\ny\nb\n", "a\nb\n", id="delete_multiple"),
-    pytest.param("a\n", "b\n", id="single_line_change"),
-]
+
+def _small_texts() -> list[str]:
+    """All texts of up to two lines over a three-symbol alphabet."""
+    alphabet = ["a\n", "b\n", "c\n"]
+    texts = [""]
+    for size in (1, 2):
+        texts.extend(
+            "".join(combo) for combo in itertools.product(alphabet, repeat=size)
+        )
+    return texts
+
+
+SMALL_TEXTS = _small_texts()
+GENERATED_PAIRS = list(itertools.product(SMALL_TEXTS, repeat=2))
+
+
+# ── Exhaustive round-trip ────────────────────────────────────────────
+
+
+class TestRoundTrip:
+    """make_diff → parse_patch → apply_patch and reverse, for every pair."""
+
+    def test_generated_pairs(self):
+        failures = []
+        for a, b in GENERATED_PAIRS:
+            diff_text = make_diff(a, b)
+            if a == b:
+                if diff_text != "":
+                    failures.append((a, b, "expected empty diff", diff_text))
+                continue
+            patch = parse_patch(diff_text)
+            applied = apply_patch(a, patch)
+            reversed_applied = apply_patch(b, reverse_patch(patch))
+            if applied != b or reversed_applied != a:
+                failures.append((a, b, applied, reversed_applied))
+        assert not failures, f"round-trip failures: {failures!r}"
+
+    def test_generated_structure_matches_unidiff(self):
+        failures = []
+        for a, b in GENERATED_PAIRS:
+            diff_text = make_diff(a, b)
+            if not diff_text:
+                continue
+            try:
+                _compare_structure(parse_patch(diff_text), unidiff.PatchSet(diff_text))
+            except AssertionError as exc:
+                failures.append((a, b, str(exc)))
+        assert not failures, f"structure mismatches: {failures!r}"
 
 
 # ── TestMakeDiff ─────────────────────────────────────────────────────
@@ -123,14 +157,6 @@ class TestMakeDiff:
 
 
 class TestParsePatch:
-    @pytest.mark.parametrize("a,b", ROUND_TRIP_CASES)
-    def test_parseable(self, a, b):
-        d = make_diff(a, b)
-        if d == "":
-            return
-        patch = parse_patch(d)
-        assert len(patch.files) >= 1
-
     def test_structure_matches_unidiff(self):
         d = make_diff(LONG_A, LONG_B, context=3)
         ours = parse_patch(d)
@@ -177,10 +203,6 @@ class TestParsePatch:
 
 
 class TestApplyPatch:
-    @pytest.mark.parametrize("a,b", ROUND_TRIP_CASES)
-    def test_round_trip(self, a, b):
-        _assert_round_trip(a, b)
-
     def test_apply_patched_file(self):
         """Can pass a PatchedFile directly."""
         d = make_diff(SIMPLE_A, SIMPLE_B)
@@ -212,10 +234,6 @@ class TestApplyPatch:
 
 
 class TestReversePatch:
-    @pytest.mark.parametrize("a,b", ROUND_TRIP_CASES)
-    def test_reverse_round_trip(self, a, b):
-        _assert_round_trip(a, b)
-
     def test_metadata_swap(self):
         d = make_diff(SIMPLE_A, SIMPLE_B, filename_a="old.py", filename_b="new.py")
         p = parse_patch(d)

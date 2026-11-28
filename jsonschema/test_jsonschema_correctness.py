@@ -1,6 +1,7 @@
 """Correctness tests for zerodep jsonschema module."""
 
 import copy
+import itertools
 import os
 import re
 import sys
@@ -1476,213 +1477,231 @@ class TestPropertyNameCollisions:
 # ---------------------------------------------------------------------------
 
 
+_TYPE_VALUES = [
+    ("str", "hello"),
+    ("empty_str", ""),
+    ("int", 42),
+    ("zero", 0),
+    ("negative", -1),
+    ("float", 3.14),
+    ("integral_float", 42.0),
+    ("true", True),
+    ("false", False),
+    ("none", None),
+    ("list", [1, 2]),
+    ("object", {"a": 1}),
+]
+
+# (name, schema type value, independent acceptance model)
+_TYPE_SCHEMAS = [
+    ("string", "string", lambda value: type(value) is str),
+    ("integer", "integer", lambda value: type(value) is int),
+    ("number", "number", lambda value: type(value) is int or type(value) is float),
+    ("boolean", "boolean", lambda value: type(value) is bool),
+    ("null", "null", lambda value: value is None),
+    ("array", "array", lambda value: type(value) is list),
+    ("object", "object", lambda value: type(value) is dict),
+    (
+        "string|null",
+        ["string", "null"],
+        lambda value: type(value) is str or value is None,
+    ),
+    (
+        "string|integer",
+        ["string", "integer"],
+        lambda value: type(value) is str or type(value) is int,
+    ),
+]
+
+
 class TestSchemaValidateType:
-    """Type keyword validation."""
+    """Type keyword validation over an exhaustive values × types matrix."""
 
-    def test_string_valid(self):
-        assert iter_errors("hello", {"type": "string"}) == []
+    def test_type_acceptance_matrix(self):
+        failures = []
+        for schema_name, type_val, accepts in _TYPE_SCHEMAS:
+            schema = {"type": type_val}
+            for value_name, value in _TYPE_VALUES:
+                errors = iter_errors(value, schema)
+                if accepts(value):
+                    if errors:
+                        failures.append((schema_name, value_name, "rejected"))
+                elif len(errors) != 1 or errors[0].validator != "type":
+                    failures.append((schema_name, value_name, "bad rejection", errors))
+        assert not failures, f"type matrix failures: {failures!r}"
 
-    def test_string_invalid(self):
-        errs = iter_errors(42, {"type": "string"})
-        assert len(errs) == 1
-        assert errs[0].validator == "type"
+    def test_empty_schema_accepts_everything(self):
+        failures = [
+            value_name
+            for value_name, value in _TYPE_VALUES
+            if iter_errors(value, {}) != []
+        ]
+        assert not failures, f"empty schema rejected: {failures!r}"
 
-    def test_integer_valid(self):
-        assert iter_errors(42, {"type": "integer"}) == []
 
-    def test_integer_invalid(self):
-        errs = iter_errors(3.14, {"type": "integer"})
-        assert len(errs) == 1
+_ENUM_VALUES = [
+    ("int", 1),
+    ("bool", True),
+    ("zero", 0),
+    ("false", False),
+    ("numeric_str", "1"),
+    ("str", "a"),
+    ("none", None),
+    ("list", [1]),
+    ("object", {"a": 1}),
+    ("float", 1.0),
+]
 
-    def test_integer_rejects_bool(self):
-        errs = iter_errors(True, {"type": "integer"})
-        assert len(errs) == 1
+_ENUM_SCHEMAS = [
+    ("ints", [1, 2, 3]),
+    ("bools", [True, False]),
+    ("mixed", [1, "one", True]),
+    ("with_null", ["a", "b", None]),
+    ("float", [1.0]),
+]
 
-    def test_number_valid(self):
-        assert iter_errors(3.14, {"type": "number"}) == []
+_CONST_SCHEMAS = [42, None, True, "x", 1.0]
 
-    def test_number_accepts_int(self):
-        assert iter_errors(42, {"type": "number"}) == []
 
-    def test_number_rejects_bool(self):
-        errs = iter_errors(False, {"type": "number"})
-        assert len(errs) == 1
-
-    def test_boolean_valid(self):
-        assert iter_errors(True, {"type": "boolean"}) == []
-
-    def test_boolean_invalid(self):
-        errs = iter_errors(1, {"type": "boolean"})
-        assert len(errs) == 1
-
-    def test_null_valid(self):
-        assert iter_errors(None, {"type": "null"}) == []
-
-    def test_null_invalid(self):
-        errs = iter_errors("", {"type": "null"})
-        assert len(errs) == 1
-
-    def test_array_valid(self):
-        assert iter_errors([1, 2], {"type": "array"}) == []
-
-    def test_array_invalid(self):
-        errs = iter_errors("not array", {"type": "array"})
-        assert len(errs) == 1
-
-    def test_object_valid(self):
-        assert iter_errors({"a": 1}, {"type": "object"}) == []
-
-    def test_object_invalid(self):
-        errs = iter_errors([1, 2], {"type": "object"})
-        assert len(errs) == 1
-
-    def test_type_array_accepts_any_listed(self):
-        schema = {"type": ["string", "integer"]}
-        assert iter_errors("hello", schema) == []
-        assert iter_errors(42, schema) == []
-
-    def test_type_array_rejects_unlisted(self):
-        schema = {"type": ["string", "integer"]}
-        errs = iter_errors(3.14, schema)
-        assert len(errs) == 1
-
-    def test_nullable_type_array(self):
-        schema = {"type": ["string", "null"]}
-        assert iter_errors(None, schema) == []
-        assert iter_errors("hello", schema) == []
-        errs = iter_errors(42, schema)
-        assert len(errs) == 1
-
-    def test_empty_schema_accepts_anything(self):
-        assert iter_errors("anything", {}) == []
-        assert iter_errors(42, {}) == []
-        assert iter_errors(None, {}) == []
-        assert iter_errors({"nested": [1, 2]}, {}) == []
+def _type_aware_equal(value: object, candidate: object) -> bool:
+    """JSON Schema equality as implemented: same Python type, then ``==``."""
+    return type(value) is type(candidate) and value == candidate
 
 
 class TestSchemaValidateEnum:
-    """Enum keyword validation."""
+    """Enum keyword validation over the type-aware equality matrix."""
 
-    def test_enum_valid(self):
-        assert iter_errors("red", {"enum": ["red", "green", "blue"]}) == []
-
-    def test_enum_invalid(self):
-        errs = iter_errors("yellow", {"enum": ["red", "green", "blue"]})
-        assert len(errs) == 1
-        assert errs[0].validator == "enum"
-
-    def test_enum_with_null(self):
-        schema = {"enum": ["a", "b", None]}
-        assert iter_errors(None, schema) == []
-        assert iter_errors("a", schema) == []
-
-    def test_enum_with_types(self):
-        schema = {"enum": [1, "one", True]}
-        assert iter_errors(1, schema) == []
-        assert iter_errors("one", schema) == []
-        assert iter_errors(True, schema) == []
+    def test_enum_acceptance_matrix(self):
+        failures = []
+        for schema_name, allowed in _ENUM_SCHEMAS:
+            schema = {"enum": allowed}
+            for value_name, value in _ENUM_VALUES:
+                errors = iter_errors(value, schema)
+                expected = any(_type_aware_equal(value, item) for item in allowed)
+                if expected and errors:
+                    failures.append((schema_name, value_name, "rejected"))
+                elif not expected and (
+                    len(errors) != 1 or errors[0].validator != "enum"
+                ):
+                    failures.append((schema_name, value_name, "bad rejection", errors))
+        assert not failures, f"enum matrix failures: {failures!r}"
 
 
 class TestSchemaValidateConst:
-    """Const keyword validation."""
+    """Const keyword validation over the type-aware equality matrix."""
 
-    def test_const_valid(self):
-        assert iter_errors(42, {"const": 42}) == []
+    def test_const_acceptance_matrix(self):
+        failures = []
+        for const in _CONST_SCHEMAS:
+            schema = {"const": const}
+            for value_name, value in _ENUM_VALUES:
+                errors = iter_errors(value, schema)
+                expected = _type_aware_equal(value, const)
+                if expected and errors:
+                    failures.append((const, value_name, "rejected"))
+                elif not expected and (
+                    len(errors) != 1 or errors[0].validator != "const"
+                ):
+                    failures.append((const, value_name, "bad rejection", errors))
+        assert not failures, f"const matrix failures: {failures!r}"
 
-    def test_const_invalid(self):
-        errs = iter_errors(43, {"const": 42})
-        assert len(errs) == 1
-        assert errs[0].validator == "const"
 
-    def test_const_null(self):
-        assert iter_errors(None, {"const": None}) == []
-        errs = iter_errors("", {"const": None})
-        assert len(errs) == 1
+_STRING_VALUES = ["", *("x" * length for length in range(1, 8)), "abc", "ABC", "abc123"]
+
+# (name, schema, allowed validators, independent acceptance model)
+_STRING_SCHEMAS = [
+    ("minLength", {"minLength": 3}, "minLength", lambda value: len(value) >= 3),
+    ("maxLength", {"maxLength": 5}, "maxLength", lambda value: len(value) <= 5),
+    (
+        "bounded",
+        {"minLength": 2, "maxLength": 5},
+        {"minLength", "maxLength"},
+        lambda value: 2 <= len(value) <= 5,
+    ),
+    (
+        "pattern",
+        {"pattern": "^[a-z]+$"},
+        "pattern",
+        lambda value: re.search("^[a-z]+$", value) is not None,
+    ),
+]
 
 
 class TestSchemaValidateString:
-    """String constraint keywords."""
+    """String constraint keywords over length and pattern boundaries."""
 
-    def test_minlength_valid(self):
-        assert iter_errors("abc", {"type": "string", "minLength": 2}) == []
-
-    def test_minlength_invalid(self):
-        errs = iter_errors("a", {"type": "string", "minLength": 2})
-        assert len(errs) == 1
-        assert errs[0].validator == "minLength"
-
-    def test_maxlength_valid(self):
-        assert iter_errors("ab", {"type": "string", "maxLength": 5}) == []
-
-    def test_maxlength_invalid(self):
-        errs = iter_errors("toolong", {"type": "string", "maxLength": 3})
-        assert len(errs) == 1
-        assert errs[0].validator == "maxLength"
-
-    def test_pattern_valid(self):
-        assert (
-            iter_errors("abc123", {"type": "string", "pattern": "^[a-z]+\\d+$"}) == []
-        )
-
-    def test_pattern_invalid(self):
-        errs = iter_errors("ABC", {"type": "string", "pattern": "^[a-z]+$"})
-        assert len(errs) == 1
-        assert errs[0].validator == "pattern"
+    def test_string_constraint_matrix(self):
+        failures = []
+        for schema_name, schema, allowed, accepts in _STRING_SCHEMAS:
+            allowed_set = {allowed} if isinstance(allowed, str) else set(allowed)
+            for value in _STRING_VALUES:
+                errors = iter_errors(value, schema)
+                if accepts(value):
+                    if errors:
+                        failures.append((schema_name, value, "rejected"))
+                else:
+                    got = {error.validator for error in errors}
+                    if not got or not got <= allowed_set:
+                        failures.append((schema_name, value, "bad rejection", got))
+        assert not failures, f"string matrix failures: {failures!r}"
 
     def test_string_constraints_skip_non_string(self):
-        assert iter_errors(42, {"minLength": 1, "maxLength": 10, "pattern": ".*"}) == []
+        schema = {"minLength": 1, "maxLength": 10, "pattern": ".*"}
+        for value in (42, None, [], {}, True):
+            assert iter_errors(value, schema) == []
+
+
+_NUMBER_VALUES = [*range(-2, 13), 0.5, 2.5, 7.5, 3.14, 10.0, -0.5]
+
+_NUMBER_SCHEMAS = [
+    ("minimum", {"minimum": 0}, "minimum", lambda value: value >= 0),
+    ("maximum", {"maximum": 10}, "maximum", lambda value: value <= 10),
+    (
+        "exclusiveMinimum",
+        {"exclusiveMinimum": 5},
+        "exclusiveMinimum",
+        lambda value: value > 5,
+    ),
+    (
+        "exclusiveMaximum",
+        {"exclusiveMaximum": 5},
+        "exclusiveMaximum",
+        lambda value: value < 5,
+    ),
+    (
+        "multipleOf-int",
+        {"multipleOf": 3},
+        "multipleOf",
+        lambda value: value % 3 == 0,
+    ),
+    (
+        "multipleOf-float",
+        {"multipleOf": 0.25},
+        "multipleOf",
+        lambda value: abs(value / 0.25 - round(value / 0.25)) < 1e-9,
+    ),
+]
 
 
 class TestSchemaValidateNumber:
-    """Numeric constraint keywords."""
+    """Numeric constraint keywords over boundary values."""
 
-    def test_minimum_valid(self):
-        assert iter_errors(10, {"type": "number", "minimum": 5}) == []
-
-    def test_minimum_invalid(self):
-        errs = iter_errors(3, {"type": "number", "minimum": 5})
-        assert len(errs) == 1
-        assert errs[0].validator == "minimum"
-
-    def test_maximum_valid(self):
-        assert iter_errors(5, {"type": "number", "maximum": 10}) == []
-
-    def test_maximum_invalid(self):
-        errs = iter_errors(15, {"type": "number", "maximum": 10})
-        assert len(errs) == 1
-        assert errs[0].validator == "maximum"
-
-    def test_exclusive_minimum_valid(self):
-        assert iter_errors(6, {"type": "integer", "exclusiveMinimum": 5}) == []
-
-    def test_exclusive_minimum_invalid(self):
-        errs = iter_errors(5, {"type": "integer", "exclusiveMinimum": 5})
-        assert len(errs) == 1
-        assert errs[0].validator == "exclusiveMinimum"
-
-    def test_exclusive_maximum_valid(self):
-        assert iter_errors(4, {"type": "integer", "exclusiveMaximum": 5}) == []
-
-    def test_exclusive_maximum_invalid(self):
-        errs = iter_errors(5, {"type": "integer", "exclusiveMaximum": 5})
-        assert len(errs) == 1
-        assert errs[0].validator == "exclusiveMaximum"
-
-    def test_multiple_of_valid(self):
-        assert iter_errors(10, {"type": "integer", "multipleOf": 5}) == []
-
-    def test_multiple_of_invalid(self):
-        errs = iter_errors(7, {"type": "integer", "multipleOf": 3})
-        assert len(errs) == 1
-        assert errs[0].validator == "multipleOf"
-
-    def test_multiple_of_float(self):
-        assert iter_errors(0.5, {"type": "number", "multipleOf": 0.25}) == []
-        errs = iter_errors(0.3, {"type": "number", "multipleOf": 0.25})
-        assert len(errs) == 1
+    def test_number_constraint_matrix(self):
+        failures = []
+        for schema_name, schema, validator, accepts in _NUMBER_SCHEMAS:
+            for value in _NUMBER_VALUES:
+                errors = iter_errors(value, schema)
+                if accepts(value):
+                    if errors:
+                        failures.append((schema_name, value, "rejected"))
+                elif len(errors) != 1 or errors[0].validator != validator:
+                    failures.append((schema_name, value, "bad rejection", errors))
+        assert not failures, f"number matrix failures: {failures!r}"
 
     def test_number_constraints_skip_non_number(self):
-        assert iter_errors("hello", {"minimum": 0, "maximum": 100}) == []
+        schema = {"minimum": 0, "maximum": 100}
+        for value in ("hello", None, True, [], {}):
+            assert iter_errors(value, schema) == []
 
 
 class TestSchemaValidateObject:
@@ -1773,78 +1792,81 @@ class TestSchemaValidateObject:
         assert errs_max[0].validator == "maxProperties"
 
 
+_ARRAY_ITEMS = [1, 2, "x", True, None]
+_ARRAY_VALUES = [
+    list(combo)
+    for size in (0, 1, 2, 3)
+    for combo in itertools.product(_ARRAY_ITEMS, repeat=size)
+]
+
+
+def _prefix_items_accept(value: list) -> bool:
+    if len(value) > 2:
+        return False
+    if value and type(value[0]) is not str:
+        return False
+    if len(value) > 1 and type(value[1]) is not int:
+        return False
+    return True
+
+
+# (name, schema, allowed validators, independent acceptance model)
+_ARRAY_SCHEMAS = [
+    ("minItems", {"minItems": 2}, {"minItems"}, lambda value: len(value) >= 2),
+    ("maxItems", {"maxItems": 2}, {"maxItems"}, lambda value: len(value) <= 2),
+    (
+        "uniqueItems",
+        {"uniqueItems": True},
+        {"uniqueItems"},
+        lambda value: len({(type(item), item) for item in value}) == len(value),
+    ),
+    (
+        "items",
+        {"items": {"type": "integer"}},
+        {"type"},
+        lambda value: all(type(item) is int for item in value),
+    ),
+    (
+        "prefixItems+itemsFalse",
+        {
+            "prefixItems": [{"type": "string"}, {"type": "integer"}],
+            "items": False,
+        },
+        {"type", "items"},
+        _prefix_items_accept,
+    ),
+    (
+        "contains",
+        {"contains": {"type": "integer"}},
+        {"contains"},
+        lambda value: any(type(item) is int for item in value),
+    ),
+]
+
+
 class TestSchemaValidateArray:
-    """Array keyword validation."""
+    """Array keyword validation over bounded array shapes."""
 
-    def test_items_valid(self):
-        schema = {"type": "array", "items": {"type": "integer"}}
-        assert iter_errors([1, 2, 3], schema) == []
-
-    def test_items_invalid_child(self):
-        schema = {"type": "array", "items": {"type": "integer"}}
-        errs = iter_errors([1, "two", 3], schema)
-        assert len(errs) == 1
-        assert errs[0].path == "[1]"
-
-    def test_min_items(self):
-        schema = {"type": "array", "minItems": 2}
-        assert iter_errors([1, 2], schema) == []
-        errs = iter_errors([1], schema)
-        assert len(errs) == 1
-        assert errs[0].validator == "minItems"
-
-    def test_max_items(self):
-        schema = {"type": "array", "maxItems": 2}
-        assert iter_errors([1, 2], schema) == []
-        errs = iter_errors([1, 2, 3], schema)
-        assert len(errs) == 1
-        assert errs[0].validator == "maxItems"
-
-    def test_unique_items_valid(self):
-        schema = {"type": "array", "uniqueItems": True}
-        assert iter_errors([1, 2, 3], schema) == []
-
-    def test_unique_items_invalid(self):
-        schema = {"type": "array", "uniqueItems": True}
-        errs = iter_errors([1, 2, 2, 3], schema)
-        assert len(errs) == 1
-        assert errs[0].validator == "uniqueItems"
+    def test_array_constraint_matrix(self):
+        failures = []
+        for schema_name, schema, allowed, accepts in _ARRAY_SCHEMAS:
+            for value in _ARRAY_VALUES:
+                errors = iter_errors(value, schema)
+                if accepts(value):
+                    if errors:
+                        failures.append((schema_name, value, "rejected"))
+                else:
+                    got = {error.validator for error in errors}
+                    if not got or not got <= allowed:
+                        failures.append((schema_name, value, "bad rejection", got))
+        assert not failures, f"array matrix failures: {failures!r}"
 
     def test_unique_items_unhashable(self):
-        schema = {"type": "array", "uniqueItems": True}
+        schema = {"uniqueItems": True}
         assert iter_errors([{"a": 1}, {"b": 2}], schema) == []
         errs = iter_errors([{"a": 1}, {"a": 1}], schema)
         assert len(errs) == 1
-
-    def test_prefix_items(self):
-        schema = {
-            "type": "array",
-            "prefixItems": [
-                {"type": "string"},
-                {"type": "integer"},
-            ],
-        }
-        assert iter_errors(["hello", 42], schema) == []
-        errs = iter_errors([42, "hello"], schema)
-        assert len(errs) == 2  # both wrong type
-
-    def test_prefix_items_with_items_false(self):
-        schema = {
-            "type": "array",
-            "prefixItems": [{"type": "string"}],
-            "items": False,
-        }
-        assert iter_errors(["hello"], schema) == []
-        errs = iter_errors(["hello", "extra"], schema)
-        assert len(errs) == 1
-        assert errs[0].validator == "items"
-
-    def test_contains(self):
-        schema = {"type": "array", "contains": {"type": "integer"}}
-        assert iter_errors(["a", 1, "b"], schema) == []
-        errs = iter_errors(["a", "b", "c"], schema)
-        assert len(errs) == 1
-        assert errs[0].validator == "contains"
+        assert errs[0].validator == "uniqueItems"
 
 
 class TestSchemaValidateComposition:
@@ -2185,32 +2207,30 @@ class TestSchemaValidateEdgeCases:
 class TestSchemaValidateTypeAwareEquality:
     """Type-aware equality for enum, const, and uniqueItems."""
 
-    def test_enum_bool_not_equal_to_int(self):
-        errs = iter_errors(True, {"enum": [1, 2, 3]})
-        assert len(errs) == 1
+    @staticmethod
+    def _validators(value, schema) -> list[str]:
+        return [error.validator for error in iter_errors(value, schema)]
 
-    def test_enum_int_not_equal_to_bool(self):
-        errs = iter_errors(1, {"enum": [True, False]})
-        assert len(errs) == 1
+    def test_bool_and_int_are_distinct_everywhere(self):
+        failures = []
+        for boolean, integer in ((True, 1), (False, 0)):
+            cases = [
+                ({"enum": [integer]}, boolean, "enum"),
+                ({"enum": [boolean]}, integer, "enum"),
+                ({"const": boolean}, integer, "const"),
+                ({"const": integer}, boolean, "const"),
+            ]
+            for schema, value, validator in cases:
+                if self._validators(value, schema) != [validator]:
+                    failures.append((schema, value, "not rejected"))
+            if self._validators([boolean, integer], {"uniqueItems": True}) != []:
+                failures.append(([boolean, integer], "uniqueItems", "rejected"))
+        assert not failures, f"type-aware equality failures: {failures!r}"
 
-    def test_enum_bool_matches_bool(self):
+    def test_bool_matches_bool(self):
         assert iter_errors(True, {"enum": [True, False]}) == []
-
-    def test_const_bool_not_equal_to_int(self):
-        errs = iter_errors(1, {"const": True})
-        assert len(errs) == 1
-
-    def test_const_int_not_equal_to_bool(self):
-        errs = iter_errors(True, {"const": 1})
-        assert len(errs) == 1
-
-    def test_const_bool_matches_bool(self):
         assert iter_errors(True, {"const": True}) == []
-
-    def test_unique_items_bool_vs_int(self):
-        schema = {"type": "array", "uniqueItems": True}
-        # Top-level bool vs int: distinct via (type, value) tuple
-        assert iter_errors([True, 1], schema) == []
+        assert self._validators([True, True], {"uniqueItems": True}) == ["uniqueItems"]
 
 
 class TestSchemaValidateBooleanSubSchemas:
@@ -2296,6 +2316,78 @@ class TestSchemaValidateResolved:
         assert errs[0].validator == "minimum"
 
 
+_REFERENCE_SCHEMAS = [
+    {},
+    {"type": "string"},
+    {"type": "integer"},
+    {"type": "number"},
+    {"type": "boolean"},
+    {"type": "null"},
+    {"type": "array"},
+    {"type": "object"},
+    {"type": ["string", "null"]},
+    {"type": ["string", "integer"]},
+    {"enum": ["red", "green"]},
+    {"const": "red"},
+    {"type": "string", "minLength": 2},
+    {"type": "string", "maxLength": 3},
+    {"type": "string", "minLength": 2, "maxLength": 5},
+    {"type": "string", "pattern": "^[a-z]+$"},
+    {"type": "number", "minimum": 0},
+    {"type": "number", "maximum": 10},
+    {"type": "number", "exclusiveMinimum": 0},
+    {"type": "number", "exclusiveMaximum": 10},
+    {"type": "array", "items": {"type": "integer"}},
+    {"type": "array", "minItems": 2},
+    {"type": "array", "maxItems": 2},
+    {"type": "array", "uniqueItems": True},
+    {
+        "type": "object",
+        "properties": {"a": {"type": "integer"}},
+        "required": ["a"],
+    },
+    {
+        "type": "object",
+        "properties": {"a": {"type": "integer"}},
+        "additionalProperties": False,
+    },
+    {"type": "object", "minProperties": 1},
+    {"type": "object", "maxProperties": 1},
+    {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+    {"oneOf": [{"type": "string"}, {"type": "integer"}]},
+    {"allOf": [{"type": "object"}, {"required": ["a"]}]},
+    {"not": {"type": "string"}},
+    {
+        "if": {"type": "object", "properties": {"kind": {"const": "n"}}},
+        "then": {"type": "object", "properties": {"v": {"type": "number"}}},
+    },
+]
+
+_REFERENCE_INSTANCES = [
+    "hello",
+    "red",
+    "",
+    "ABC",
+    0,
+    1,
+    -1,
+    3.14,
+    True,
+    False,
+    None,
+    [1, 2],
+    [1, "x"],
+    [],
+    ["a", "a"],
+    [True, 1],
+    {"a": 1},
+    {"a": "x"},
+    {},
+    {"kind": "n", "v": 1},
+    {"kind": "t", "v": "s"},
+]
+
+
 class TestSchemaValidateVsReference:
     """Compare our validation against the jsonschema PyPI package."""
 
@@ -2314,10 +2406,9 @@ class TestSchemaValidateVsReference:
         try:
             import jsonschema as ref
 
-            if not hasattr(ref, "validate"):
+            if not hasattr(ref, "Draft202012Validator"):
                 raise ImportError("Not the real jsonschema")
-            self.ref_validate = ref.validate
-            self.ref_ValidationError = ref.ValidationError
+            self.ref_validator_cls = ref.Draft202012Validator
         except ImportError:
             pytest.skip("jsonschema PyPI not installed")
         finally:
@@ -2331,11 +2422,7 @@ class TestSchemaValidateVsReference:
     def _both_agree(self, instance, schema):
         """Assert both implementations agree on validity."""
         ours = iter_errors(instance, schema)
-        try:
-            self.ref_validate(instance, schema)
-            ref_valid = True
-        except self.ref_ValidationError:
-            ref_valid = False
+        ref_valid = self.ref_validator_cls(schema).is_valid(instance)
 
         our_valid = len(ours) == 0
         ours_s = "valid" if our_valid else "invalid"
@@ -2344,91 +2431,24 @@ class TestSchemaValidateVsReference:
             f"Disagreement on {instance!r}: ours={ours_s}, ref={ref_s}"
         )
 
-    def test_type_string(self):
-        self._both_agree("hello", {"type": "string"})
-        self._both_agree(42, {"type": "string"})
-
-    def test_type_integer(self):
-        self._both_agree(42, {"type": "integer"})
-        self._both_agree(3.14, {"type": "integer"})
-        self._both_agree(True, {"type": "integer"})
-
-    def test_type_number(self):
-        self._both_agree(3.14, {"type": "number"})
-        self._both_agree(42, {"type": "number"})
-        self._both_agree(True, {"type": "number"})
-
-    def test_required(self):
-        schema = {"type": "object", "required": ["a"]}
-        self._both_agree({"a": 1}, schema)
-        self._both_agree({}, schema)
-
-    def test_enum(self):
-        schema = {"enum": [1, 2, 3]}
-        self._both_agree(1, schema)
-        self._both_agree(4, schema)
-
-    def test_minimum_maximum(self):
-        schema = {"type": "integer", "minimum": 0, "maximum": 10}
-        self._both_agree(5, schema)
-        self._both_agree(-1, schema)
-        self._both_agree(11, schema)
-
-    def test_string_constraints(self):
-        schema = {"type": "string", "minLength": 2, "maxLength": 5}
-        self._both_agree("abc", schema)
-        self._both_agree("a", schema)
-        self._both_agree("toolong", schema)
-
-    def test_additional_properties_false(self):
-        schema = {
-            "type": "object",
-            "properties": {"a": {}},
-            "additionalProperties": False,
-        }
-        self._both_agree({"a": 1}, schema)
-        self._both_agree({"a": 1, "b": 2}, schema)
-
-    def test_anyof(self):
-        schema = {"anyOf": [{"type": "string"}, {"type": "integer"}]}
-        self._both_agree("hello", schema)
-        self._both_agree(42, schema)
-        self._both_agree(3.14, schema)
-
-    def test_nested_object(self):
-        schema = {
-            "type": "object",
-            "properties": {
-                "user": {
-                    "type": "object",
-                    "properties": {"name": {"type": "string"}},
-                    "required": ["name"],
-                }
-            },
-        }
-        self._both_agree({"user": {"name": "Alice"}}, schema)
-        self._both_agree({"user": {}}, schema)
-
-    def test_array_items(self):
-        schema = {"type": "array", "items": {"type": "integer"}, "minItems": 1}
-        self._both_agree([1, 2, 3], schema)
-        self._both_agree([], schema)
-        self._both_agree([1, "two"], schema)
-
-    def test_oneof(self):
-        schema = {"oneOf": [{"type": "string"}, {"type": "integer"}]}
-        self._both_agree("hello", schema)
-        self._both_agree(3.14, schema)
-
-    def test_not(self):
-        schema = {"not": {"type": "string"}}
-        self._both_agree(42, schema)
-        self._both_agree("hello", schema)
-
-    def test_pattern(self):
-        schema = {"type": "string", "pattern": "^[a-z]+$"}
-        self._both_agree("abc", schema)
-        self._both_agree("ABC", schema)
+    def test_generated_schema_instance_matrix(self):
+        """Every schema × instance pair agrees with the reference validator."""
+        failures = []
+        for schema in _REFERENCE_SCHEMAS:
+            validator = self.ref_validator_cls(schema)
+            for instance in _REFERENCE_INSTANCES:
+                ours = iter_errors(instance, schema)
+                ref_valid = validator.is_valid(instance)
+                if (not ours) != ref_valid:
+                    failures.append(
+                        (
+                            schema,
+                            instance,
+                            [error.validator for error in ours],
+                            ref_valid,
+                        )
+                    )
+        assert not failures, f"{len(failures)} reference disagreements: {failures!r}"
 
     def test_openapi_style_schema(self):
         schema = {

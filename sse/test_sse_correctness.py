@@ -90,7 +90,8 @@ class _ModelSSEParser:
             if "\0" not in value:
                 self._last_id = value
         elif field == "retry":
-            if value.isdigit():
+            # WHATWG: only ASCII digits count.
+            if value.isascii() and value.isdigit():
                 self._retry = int(value)
         return None
 
@@ -251,6 +252,8 @@ _PARSER_LINES = [
     "id: bad" + chr(0) + "id",
     "retry: 5000",
     "retry: abc",
+    "retry: \u00b2",
+    "retry: \u0661\u0662\u0663",
     "retry:",
     "foo: bar",
     ": comment",
@@ -280,6 +283,22 @@ class TestSSEParser:
         p.feed_line("retry: 5000")
         p.feed_line("data: x")
         p.feed_line("")
+        assert p.retry_interval == 5000
+
+    def test_non_ascii_retry_digits_are_ignored(self):
+        """Superscripts and other scripts' digits are not WHATWG retry values.
+
+        str.isdigit() accepts both; int() rejects a superscript, so the old
+        check could raise out of the parser instead of ignoring the line.
+        """
+        for value in ("\u00b2", "\u0661\u0662\u0663", "\uff11\uff12\uff13"):
+            p = _SSEParser()
+            p.feed_line(f"retry: {value}")
+            p.feed_line("data: x")
+            p.feed_line("")
+            assert p.retry_interval is None, value
+        p = _SSEParser()
+        p.feed_line("retry: 5000")
         assert p.retry_interval == 5000
 
     def test_parser_init_with_restored_state(self):

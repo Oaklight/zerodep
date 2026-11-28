@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Infrastructure
+
+- **ci**: the Release workflow also runs on a daily schedule (09:17 UTC, ~03:17 US Central in winter). A scheduled run releases only what landed since the last tag: with no new commits it exits before the release checks, and a tag that already exists for the day ends the run instead of failing. Manual dispatch keeps its behavior, including the explicit re-publish path.
+
 ## [2026.11.28] - 2026-11-28
 
 ### Features

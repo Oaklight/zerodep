@@ -448,48 +448,64 @@ class TestEncoding:
 # ── Round-trip ──
 
 
+_GENERATED_FORMS = [
+    ({"a": "1"}, None),
+    ({"a": "", "b": "hello world"}, None),
+    ({"msg": "こんにちは 🎉"}, None),
+    ({"name": "Alice", "age": "30", "city": "NYC"}, None),
+    (None, {"f": ("empty.bin", b"")}),
+    (None, {"f": ("abc.bin", b"abc", "application/octet-stream")}),
+    (None, {"f": ("bytes.bin", bytes(range(64)), "image/png")}),
+    (
+        {"user": "bob", "action": "upload"},
+        {"doc": ("report.pdf", b"PDF content", "application/pdf")},
+    ),
+    (
+        {"k1": "v1", "k2": "v2"},
+        {
+            "one": ("one.txt", b"one", "text/plain"),
+            "two": ("two.txt", b"two", "text/plain"),
+        },
+    ),
+    ({"unicode": "Ñoño"}, None),
+]
+
+
+def _expected_parts(fields, files) -> list[tuple[str, bytes, str | None, str | None]]:
+    """(name, data, filename, content_type) for each part, in encoder order."""
+    expected: list[tuple[str, bytes, str | None, str | None]] = []
+    for name, value in (fields or {}).items():
+        data = value.encode() if isinstance(value, str) else value
+        expected.append((name, data, None, None))
+    for name, spec in (files or {}).items():
+        filename, data = spec[0], spec[1]
+        content_type = spec[2] if len(spec) > 2 else "application/octet-stream"
+        expected.append((name, data, filename, content_type))
+    return expected
+
+
 class TestRoundTrip:
-    def test_text_fields_roundtrip(self):
-        fields = {"name": "Alice", "age": "30", "city": "NYC"}
-        body, ct = encode_multipart(fields=fields)
-        parts = parse_multipart(body, ct)
-        result = {p.name: p.text for p in parts}
-        assert result == fields
-
-    def test_file_upload_roundtrip(self):
-        data = os.urandom(1024)
-        body, ct = encode_multipart(files={"f": ("photo.jpg", data, "image/jpeg")})
-        parts = parse_multipart(body, ct)
-        assert parts[0].filename == "photo.jpg"
-        assert parts[0].data == data
-        assert parts[0].content_type == "image/jpeg"
-
-    def test_mixed_roundtrip(self):
-        fields = {"user": "bob", "action": "upload"}
-        file_data = b"PDF content here"
-        body, ct = encode_multipart(
-            fields=fields,
-            files={"doc": ("report.pdf", file_data, "application/pdf")},
-        )
-        parts = parse_multipart(body, ct)
-        text_parts = {p.name: p.text for p in parts if not p.is_file}
-        file_parts = [p for p in parts if p.is_file]
-        assert text_parts == fields
-        assert len(file_parts) == 1
-        assert file_parts[0].data == file_data
-
-    def test_binary_content_roundtrip(self):
-        data = bytes(range(256)) * 10
-        body, ct = encode_multipart(files={"bin": ("all.bin", data)})
-        parts = parse_multipart(body, ct)
-        assert parts[0].data == data
-
-    def test_unicode_roundtrip(self):
-        fields = {"msg": "こんにちは世界 🎉", "name": "Ñoño"}
-        body, ct = encode_multipart(fields=fields)
-        parts = parse_multipart(body, ct)
-        result = {p.name: p.text for p in parts}
-        assert result == fields
+    def test_generated_forms(self):
+        failures = []
+        for fields, files in _GENERATED_FORMS:
+            body, content_type = encode_multipart(
+                fields=fields, files=files, boundary="testboundary"
+            )
+            parts = parse_multipart(body, content_type)
+            expected = _expected_parts(fields, files)
+            if len(parts) != len(expected):
+                failures.append((fields, files, "part count", parts))
+                continue
+            for part, (name, data, filename, part_type) in zip(parts, expected):
+                if (
+                    part.name != name
+                    or part.data != data
+                    or part.filename != filename
+                    or part.is_file is not (filename is not None)
+                    or (part_type is not None and part.content_type != part_type)
+                ):
+                    failures.append((fields, files, (name, data, filename), part))
+        assert not failures, f"round-trip failures: {failures!r}"
 
 
 # ── Reference comparison vs python-multipart ──
@@ -535,50 +551,18 @@ class TestVsReference:
         parser.finalize()
         return results
 
-    def test_text_fields_match_reference(self):
-        body, ct = _build_body(fields={"name": "Alice", "age": "30"})
-        boundary = extract_boundary(ct)
-
-        ours = parse_multipart(body, ct)
-        theirs = self._parse_with_reference(body, boundary)
-
-        assert len(ours) == len(theirs)
-        for our_part, ref_part in zip(ours, theirs):
-            assert our_part.data == bytes(ref_part["data"])
-
-    def test_file_upload_match_reference(self):
-        data = os.urandom(512)
-        body, ct = _build_body(
-            files={"doc": ("test.bin", data, "application/octet-stream")}
-        )
-        boundary = extract_boundary(ct)
-
-        ours = parse_multipart(body, ct)
-        theirs = self._parse_with_reference(body, boundary)
-
-        assert len(ours) == len(theirs)
-        assert ours[0].data == bytes(theirs[0]["data"])
-
-    def test_mixed_match_reference(self):
-        body, ct = _build_body(
-            fields={"user": "bob"},
-            files={"avatar": ("pic.png", b"\x89PNG\r\n", "image/png")},
-        )
-        boundary = extract_boundary(ct)
-
-        ours = parse_multipart(body, ct)
-        theirs = self._parse_with_reference(body, boundary)
-
-        assert len(ours) == len(theirs)
-        for our_part, ref_part in zip(ours, theirs):
-            assert our_part.data == bytes(ref_part["data"])
-
-    def test_binary_data_match_reference(self):
-        data = bytes(range(256))
-        body, ct = _build_body(files={"bin": ("all.bin", data)})
-        boundary = extract_boundary(ct)
-
-        ours = parse_multipart(body, ct)
-        theirs = self._parse_with_reference(body, boundary)
-
-        assert ours[0].data == bytes(theirs[0]["data"])
+    def test_generated_forms_match_reference_bytes(self):
+        failures = []
+        for fields, files in _GENERATED_FORMS:
+            body, content_type = encode_multipart(
+                fields=fields, files=files, boundary="testboundary"
+            )
+            boundary = extract_boundary(content_type)
+            ours = [part.data for part in parse_multipart(body, content_type)]
+            theirs = [
+                bytes(part["data"])
+                for part in self._parse_with_reference(body, boundary)
+            ]
+            if ours != theirs:
+                failures.append((fields, files, ours, theirs))
+        assert not failures, f"reference byte mismatches: {failures!r}"

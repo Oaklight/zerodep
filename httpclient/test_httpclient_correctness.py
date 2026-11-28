@@ -2,6 +2,7 @@
 
 import asyncio
 import io
+import itertools
 import json
 import os
 import sys
@@ -1158,6 +1159,31 @@ class TestCaseInsensitiveDict:
         item_keys = [k for k, _ in d.items()]
         assert "User-Agent" in item_keys  # setdefault preserves casing
 
+    def test_insertion_order_permutations(self):
+        """Every insertion order obeys last-write-wins per case-insensitive key."""
+        pairs = [
+            ("Content-Type", "first"),
+            ("content-type", "second"),
+            ("HOST", "example.com"),
+            ("X-Foo", "x"),
+        ]
+        failures = []
+        for order in itertools.permutations(pairs):
+            mapping = CaseInsensitiveDict()
+            model = {}
+            for key, value in order:
+                mapping[key] = value
+                model[key.lower()] = value
+            observed = {key.lower(): mapping[key] for key in mapping}
+            lower_keys = [key.lower() for key in mapping]
+            if (
+                observed != model
+                or len(mapping) != len(model)
+                or len(lower_keys) != len(set(lower_keys))
+            ):
+                failures.append((order, observed, model, list(mapping)))
+        assert not failures, f"permutation failures: {failures!r}"
+
 
 class TestPrepareRequestHeaderDedup:
     """_prepare_request: case-insensitive merge, user headers always win."""
@@ -1239,6 +1265,26 @@ class TestPrepareRequestHeaderDedup:
         assert host_values == ["mybucket.s3.amazonaws.com"], f"got: {h}"
         # SigV4 headers must survive intact
         assert "x-amz-date" in h or "X-Amz-Date" in h
+
+    def test_user_header_permutations_win_without_duplicates(self):
+        """Every user-header order overrides defaults and keeps one key each."""
+        pairs = [
+            ("user-agent", "custom/1.0"),
+            ("accept-encoding", "identity"),
+            ("content-type", "text/plain"),
+        ]
+        failures = []
+        for order in itertools.permutations(pairs):
+            headers = self._prepare(dict(order), data=b"body")
+            lower_keys = [key.lower() for key in headers]
+            observed = {key.lower(): value for key, value in headers.items()}
+            if len(lower_keys) != len(set(lower_keys)):
+                failures.append((order, "duplicate keys", headers))
+                continue
+            for key, value in order:
+                if observed.get(key) != value:
+                    failures.append((order, key, observed.get(key), value))
+        assert not failures, f"user header permutation failures: {failures!r}"
 
 
 class TestAuthority:
@@ -1407,6 +1453,30 @@ class TestMergeHeadersCaseInsensitive:
 
     def test_both_none(self):
         assert _merge_headers(None, None) == {}
+
+    def test_insertion_order_permutations(self):
+        """Every base/extra order yields extra-wins over the union, no duplicates."""
+        base_pairs = [
+            ("User-Agent", "base/1"),
+            ("Accept", "*/*"),
+            ("X-Base", "1"),
+        ]
+        extra_pairs = [("user-agent", "extra/2"), ("X-Extra", "2")]
+        failures = []
+        for base_order in itertools.permutations(base_pairs):
+            for extra_order in itertools.permutations(extra_pairs):
+                merged = _merge_headers(dict(base_order), dict(extra_order))
+                lower_keys = [key.lower() for key in merged]
+                observed = {key.lower(): value for key, value in merged.items()}
+                expected = {key.lower(): value for key, value in base_order}
+                expected.update({key.lower(): value for key, value in extra_order})
+                if (
+                    len(lower_keys) != len(set(lower_keys))
+                    or observed != expected
+                    or len(merged) != len(expected)
+                ):
+                    failures.append((base_order, extra_order, observed, expected))
+        assert not failures, f"merge permutation failures: {failures!r}"
 
 
 class TestClientInterfaceParity:

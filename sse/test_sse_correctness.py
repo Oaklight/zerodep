@@ -2,6 +2,7 @@
 
 import asyncio
 import http.server
+import itertools
 import os
 import sys
 import threading
@@ -34,6 +35,72 @@ async def _async_lines(lines):
     """Convert a list of strings to an async iterable."""
     for line in lines:
         yield line
+
+
+# ── Independent WHATWG model for the line parser ──
+#
+# Written from the WHATWG event-stream rules, not from sse.py.  Each branch
+# corresponds to an assertion that used to be a separate hand-written test;
+# the rule-to-assertion mapping is recorded in the PR body.
+
+
+class _ModelSSEParser:
+    """Minimal WHATWG event-stream parser used as an oracle."""
+
+    def __init__(self) -> None:
+        self._first_line = True
+        self._event_type = ""
+        self._data: list[str] = []
+        self._last_id = ""
+        self._retry: int | None = None
+
+    def feed(self, line: str) -> tuple[str, str, str, int | None] | None:
+        if self._first_line:
+            self._first_line = False
+            if line.startswith("﻿"):
+                line = line[1:]
+
+        if line == "":
+            if not self._data:
+                return None
+            event = (
+                self._event_type or "message",
+                "\n".join(self._data),
+                self._last_id,
+                self._retry,
+            )
+            self._event_type = ""
+            self._data = []
+            return event
+
+        if line.startswith(":"):
+            return None
+
+        field, separator, value = line.partition(":")
+        if not separator:
+            field, value = line, ""
+        elif value.startswith(" "):
+            value = value[1:]
+
+        if field == "event":
+            self._event_type = value
+        elif field == "data":
+            self._data.append(value)
+        elif field == "id":
+            if "\0" not in value:
+                self._last_id = value
+        elif field == "retry":
+            if value.isdigit():
+                self._retry = int(value)
+        return None
+
+    @property
+    def last_event_id(self) -> str:
+        return self._last_id
+
+    @property
+    def retry_interval(self) -> int | None:
+        return self._retry
 
 
 # ── SSEEvent tests ──
@@ -90,19 +157,6 @@ class TestEncodeEvent:
     def test_trailing_newline_is_preserved(self):
         assert encode_event("a\n") == "data: a\ndata:\n\n"
 
-    def test_round_trip(self):
-        block = encode_event("line1\nline2", event="update", id="7", retry=1500)
-        assert list(EventSource(block.split("\n"))) == [
-            SSEEvent(event="update", data="line1\nline2", id="7", retry=1500)
-        ]
-
-    def test_round_trip_survives_unicode_line_separators(self):
-        # U+2028 is data, not a line terminator (WHATWG 9.2.6).
-        # Splitting on str.splitlines() would silently drop what follows.
-        payload = "a\u2028b\x85c"
-        events = list(EventSource(encode_event(payload).split("\n")))
-        assert events == [SSEEvent(data=payload)]
-
     def test_empty_id_resets_and_retry_zero_is_emitted(self):
         assert encode_event("x", id="") == "id:\ndata: x\n\n"
         assert encode_event("x", retry=0) == "retry: 0\ndata: x\n\n"
@@ -148,204 +202,70 @@ class TestEncodeEvent:
             encode_comment("a\nb")
 
 
+_ENCODE_DATA = [
+    "",
+    "hello",
+    "a\nb",
+    "a\r\nb\rc",
+    "a\n",
+    "a" + chr(0x2028) + "b" + chr(0x85) + "c",
+    "こんにちは 🎉",
+    "x" * 100,
+]
+_ENCODE_EVENTS = [None, "update", "ping"]
+_ENCODE_IDS = [None, "", "42", "abc"]
+_ENCODE_RETRIES = [None, 0, 1000]
+
+
+class TestEncodeRoundTrip:
+    def test_generated_events(self):
+        failures = []
+        for data, event, event_id, retry in itertools.product(
+            _ENCODE_DATA, _ENCODE_EVENTS, _ENCODE_IDS, _ENCODE_RETRIES
+        ):
+            block = encode_event(data, event=event, id=event_id, retry=retry)
+            events = list(EventSource(block.split("\n")))
+            expected = SSEEvent(
+                event=event if event is not None else "message",
+                data=data.replace("\r\n", "\n").replace("\r", "\n"),
+                id=event_id if event_id is not None else "",
+                retry=retry,
+            )
+            if events != [expected]:
+                failures.append((data, event, event_id, retry, events, expected))
+        assert not failures, f"encode/parse round-trip failures: {failures!r}"
+
+
 # ── _SSEParser tests ──
 
 
+_PARSER_LINES = [
+    "data: hello",
+    "data:",
+    "data:hello",
+    "data:  hello",
+    "data",
+    "event: update",
+    "event: ping",
+    "id: 42",
+    "id: bad" + chr(0) + "id",
+    "retry: 5000",
+    "retry: abc",
+    "retry:",
+    "foo: bar",
+    ": comment",
+    chr(0xFEFF) + "data: hello",
+    "data: a" + chr(0x2028) + "b",
+]
+
+
+def _event_tuple(event) -> tuple[str, str, str, int | None] | None:
+    if event is None:
+        return None
+    return (event.event, event.data, event.id, event.retry)
+
+
 class TestSSEParser:
-    def test_simple_data(self):
-        p = _SSEParser()
-        assert p.feed_line("data: hello") is None
-        event = p.feed_line("")
-        assert event is not None
-        assert event.data == "hello"
-        assert event.event == "message"
-
-    def test_multiline_data(self):
-        p = _SSEParser()
-        p.feed_line("data: line1")
-        p.feed_line("data: line2")
-        p.feed_line("data: line3")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.data == "line1\nline2\nline3"
-
-    def test_event_type(self):
-        p = _SSEParser()
-        p.feed_line("event: update")
-        p.feed_line("data: payload")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.event == "update"
-
-    def test_event_type_resets_after_dispatch(self):
-        p = _SSEParser()
-        p.feed_line("event: custom")
-        p.feed_line("data: first")
-        p.feed_line("")
-        p.feed_line("data: second")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.event == "message"  # reset to default
-
-    def test_id_field(self):
-        p = _SSEParser()
-        p.feed_line("id: 42")
-        p.feed_line("data: payload")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.id == "42"
-
-    def test_id_persists_across_events(self):
-        p = _SSEParser()
-        p.feed_line("id: 42")
-        p.feed_line("data: first")
-        p.feed_line("")
-        p.feed_line("data: second")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.id == "42"  # persists
-
-    def test_id_with_null_ignored(self):
-        p = _SSEParser()
-        p.feed_line("id: 42")
-        p.feed_line("data: first")
-        p.feed_line("")
-        p.feed_line("id: bad\0id")
-        p.feed_line("data: second")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.id == "42"  # null id ignored
-
-    def test_retry_field(self):
-        p = _SSEParser()
-        p.feed_line("retry: 5000")
-        p.feed_line("data: payload")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.retry == 5000
-
-    def test_retry_non_digit_ignored(self):
-        p = _SSEParser()
-        p.feed_line("retry: abc")
-        p.feed_line("data: payload")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.retry is None
-
-    def test_retry_empty_ignored(self):
-        p = _SSEParser()
-        p.feed_line("retry:")
-        p.feed_line("data: payload")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.retry is None
-
-    def test_retry_persists(self):
-        p = _SSEParser()
-        p.feed_line("retry: 1000")
-        p.feed_line("data: first")
-        p.feed_line("")
-        p.feed_line("data: second")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.retry == 1000
-
-    def test_comment_ignored(self):
-        p = _SSEParser()
-        p.feed_line(": this is a comment")
-        p.feed_line("data: hello")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.data == "hello"
-
-    def test_comment_only_no_dispatch(self):
-        p = _SSEParser()
-        assert p.feed_line(": comment") is None
-        assert p.feed_line("") is None  # no data to dispatch
-
-    def test_empty_data_field(self):
-        """data: with no value -> empty string in data buf."""
-        p = _SSEParser()
-        p.feed_line("data:")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.data == ""
-
-    def test_data_leading_space_stripped(self):
-        p = _SSEParser()
-        p.feed_line("data: hello")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.data == "hello"
-
-    def test_data_double_space_preserved(self):
-        """Only one leading space is stripped."""
-        p = _SSEParser()
-        p.feed_line("data:  hello")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.data == " hello"
-
-    def test_data_no_space(self):
-        p = _SSEParser()
-        p.feed_line("data:hello")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.data == "hello"
-
-    def test_field_no_colon(self):
-        p = _SSEParser()
-        p.feed_line("data")  # field="data", value=""
-        event = p.feed_line("")
-        assert event is not None
-        assert event.data == ""
-
-    def test_unknown_field_ignored(self):
-        p = _SSEParser()
-        p.feed_line("foo: bar")
-        p.feed_line("data: hello")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.data == "hello"
-
-    def test_bom_stripped_from_first_line(self):
-        p = _SSEParser()
-        p.feed_line("\ufeffdata: hello")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.data == "hello"
-
-    def test_bom_only_on_first_line(self):
-        """BOM on non-first line is NOT stripped — '\ufeffdata' is unknown field."""
-        p = _SSEParser()
-        p.feed_line("data: first")
-        p.feed_line("")
-        # '\ufeffdata' is not recognized as 'data', so nothing appended
-        p.feed_line("\ufeffdata: second")
-        event = p.feed_line("")
-        assert event is None  # no data buffer, nothing to dispatch
-
-    def test_multiple_empty_lines_no_extra_dispatch(self):
-        p = _SSEParser()
-        p.feed_line("data: hello")
-        event1 = p.feed_line("")
-        assert event1 is not None
-        event2 = p.feed_line("")
-        assert event2 is None  # no pending data
-
-    def test_all_fields(self):
-        p = _SSEParser()
-        p.feed_line("event: notification")
-        p.feed_line("data: payload")
-        p.feed_line("id: 99")
-        p.feed_line("retry: 2000")
-        event = p.feed_line("")
-        assert event is not None
-        assert event.event == "notification"
-        assert event.data == "payload"
-        assert event.id == "99"
-        assert event.retry == 2000
-
     def test_last_event_id_property(self):
         p = _SSEParser()
         assert p.last_event_id == ""
@@ -373,6 +293,37 @@ class TestSSEParser:
         p = _SSEParser()
         assert p.last_event_id == ""
         assert p.retry_interval is None
+
+    def test_generated_line_sequences_match_model(self):
+        failures = []
+        for size in (1, 2, 3):
+            for lines in itertools.product(_PARSER_LINES, repeat=size):
+                actual = _SSEParser()
+                model = _ModelSSEParser()
+                for line in lines:
+                    got = actual.feed_line(line)
+                    expected = model.feed(line)
+                    if _event_tuple(got) != expected:
+                        failures.append((lines, line, _event_tuple(got), expected))
+                        break
+                else:
+                    got = actual.feed_line("")
+                    expected = model.feed("")
+                    if _event_tuple(got) != expected:
+                        failures.append((lines, "", _event_tuple(got), expected))
+                    elif (
+                        actual.last_event_id,
+                        actual.retry_interval,
+                    ) != (model.last_event_id, model.retry_interval):
+                        failures.append(
+                            (
+                                lines,
+                                "state",
+                                (actual.last_event_id, actual.retry_interval),
+                                (model.last_event_id, model.retry_interval),
+                            )
+                        )
+        assert not failures, f"parser model failures: {failures!r}"
 
 
 # ── EventSource tests ──

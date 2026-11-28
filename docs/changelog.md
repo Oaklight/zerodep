@@ -6,9 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Bug Fixes
-
-- **sse** (v0.4.2): a `retry:` field is now accepted only when its value is ASCII digits, as WHATWG requires. `str.isdigit()` also accepts superscripts and other scripts' digits; a superscript such as `retry: ²` made `int()` raise `ValueError` out of the parser, and Arabic-Indic or fullwidth digits were silently accepted. Both are now ignored like any other invalid retry value.
+## [2026.11.28] - 2026-11-28
 
 ### Features
 
@@ -17,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Bug Fixes
 
+- **sse** (v0.4.2): a `retry:` field is now accepted only when its value is ASCII digits, as WHATWG requires. `str.isdigit()` also accepts superscripts and other scripts' digits; a superscript such as `retry: ²` made `int()` raise `ValueError` out of the parser, and Arabic-Indic or fullwidth digits were silently accepted. Both are now ignored like any other invalid retry value.
 - **cli**: `status` and `update` now report `newer-than-upstream` when the installed module version is greater than the resolved upstream version. Any upstream content difference used to be `outdated`, so `update --all` replaced a module vendored from a post-release commit with the older latest release. The new state is skipped without `--force`, which remains the explicit downgrade path, and `status`/`update` print the installed version, upstream version, and resolved ref so the discrepancy is visible even when other modules are updated. Content hashes are still compared independently of version strings, so a same-version content change remains `outdated` and `status` explains that the version matches while the content differs. A version that cannot be parsed is reported as `version-uncomparable` and skipped the same way, instead of silently disabling the downgrade guard. A recorded file that is missing is now reported as `missing` and reinstalled even when its lock version is newer. `outdated --exit-code` treats both protected states as informational and fails only for states that `update` would act on.
 
 ## [2026.11.20] - 2026-11-20

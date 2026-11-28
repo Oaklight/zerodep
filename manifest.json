@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generated": "2026-11-22T17:32:32.291567+00:00",
+  "generated": "2026-11-28T12:34:49.143309+00:00",
   "modules": {
     "a2a": {
       "description": "A2A (Agent-to-Agent Protocol) - Zero-dependency Python implementation",
@@ -180,7 +180,7 @@
       ],
       "tier": "medium",
       "category": "serialization",
-      "last_updated": "2026-11-22T11:08:10-06:00",
+      "last_updated": "2026-11-22T11:32:40-06:00",
       "content_hash": "9e7b261e344ab14a4561fb16a047bf63e215256e2cc817df8fa2cdced6ff3a4c"
     },
     "httpclient": {
@@ -241,12 +241,12 @@
         "jsonx/jsonx.py"
       ],
       "primary_file": "jsonx/jsonx.py",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "deps": [],
       "tier": "simple",
       "category": "serialization",
       "last_updated": "2026-10-24T11:32:21-05:00",
-      "content_hash": "b9ac4f5cbb2fbccac06eef1f2bfa35e98553df649c9a5735f00c317eae919625"
+      "content_hash": "d737348891661db0d2b06208fa3bc6f07406bcd9bb0fddcc05be13b38f24bd4a"
     },
     "jwt": {
       "description": "JWS (JWT) token verification and HMAC signing — stdlib only",
@@ -512,7 +512,7 @@
       ],
       "tier": "medium",
       "category": "protocol",
-      "last_updated": "2026-11-22T11:29:47-06:00",
+      "last_updated": "2026-11-22T11:32:40-06:00",
       "content_hash": "7b9387235f4225695c19f1924576e16cd2cd3b87a0fcea76a7b2279aa90e38bc"
     },
     "soup": {

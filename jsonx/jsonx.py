@@ -1,5 +1,5 @@
 # /// zerodep
-# version = "2.0.0"
+# version = "2.1.0"
 # deps = []
 # tier = "simple"
 # category = "serialization"
@@ -20,6 +20,7 @@ Supports:
     - Trailing commas in objects and arrays
     - All standard JSON types
     - JSONL (one JSON value per line, with optional comments)
+    - Best-effort repair of damaged JSON (``repair``, ``loads(repair=True)``)
 
 Example::
 
@@ -36,15 +37,19 @@ Example::
 from __future__ import annotations
 
 import json
+import json.scanner
 import re
 from typing import IO, Any
 
 __all__ = [
     "JSONCDecodeError",
+    "JSONRepairError",
+    "RepairReport",
     "loads",
     "load",
     "dumps",
     "dump",
+    "repair",
     "loads_lines",
     "load_lines",
     "dumps_lines",
@@ -163,6 +168,362 @@ def _remap_error_position(
     return line, col
 
 
+# ── Repair ───────────────────────────────────────────────────────────────────
+#
+# The repair path parses the damaged text directly into Python objects, in one
+# pass, without building a repaired copy of the document: a 660 KB body costs
+# one scan and the result. Strings and numbers use the stdlib C helpers the
+# stdlib decoder itself uses (``scanstring``, ``NUMBER_RE``), so the Python
+# loop only walks the structure.
+#
+# It never silently invents bytes: where a value is missing (a key with no
+# value, an element lost to a splice) the value is dropped and the report says
+# so. Everything that parsed before the damage is kept.
+
+_MISSING = object()
+_WS = " \t\r\n"
+_NUMBER_RE = json.scanner.NUMBER_RE
+_scanstring: Any = getattr(
+    json.decoder, "scanstring", getattr(json.decoder, "py_scanstring", None)
+)
+if _scanstring is None:  # pragma: no cover - stdlib always ships one
+    raise ImportError("json.decoder has no string scanner")
+_MAX_DEPTH = 512
+_UNICODE_ESCAPE = set("0123456789abcdefABCDEF")
+_UNESCAPE = {
+    '"': '"',
+    "\\": "\\",
+    "/": "/",
+    "b": "\b",
+    "f": "\f",
+    "n": "\n",
+    "r": "\r",
+    "t": "\t",
+}
+
+
+class JSONRepairError(ValueError):
+    """Raised when no JSON value can be recovered from the text.
+
+    Attributes:
+        report: What the failed attempt had repaired so far.
+    """
+
+    def __init__(self, message: str, report: RepairReport) -> None:
+        super().__init__(message)
+        self.report = report
+
+
+class RepairReport:
+    """What :func:`repair` had to fix.
+
+    Attributes:
+        counts: Repair kind to number of times it was applied. The kinds are
+            ``missing_comma``, ``missing_colon``, ``missing_value``,
+            ``unclosed``, ``unterminated_string``, ``stray_closer``,
+            ``skipped_token``, ``unquoted_key``, ``bad_number``,
+            ``empty_entry`` and ``trailing_garbage``.
+        replaced_characters: Undecodable bytes (``U+FFFD``) in byte input.
+    """
+
+    __slots__ = ("counts", "replaced_characters")
+
+    def __init__(
+        self, counts: dict[str, int] | None = None, replaced_characters: int = 0
+    ) -> None:
+        self.counts = counts or {}
+        self.replaced_characters = replaced_characters
+
+    @property
+    def total(self) -> int:
+        """Number of repairs, byte replacements included."""
+        return sum(self.counts.values()) + self.replaced_characters
+
+    def __bool__(self) -> bool:
+        return self.total > 0
+
+    def __repr__(self) -> str:
+        head = ", ".join(f"{k}={v}" for k, v in sorted(self.counts.items()))
+        if self.replaced_characters:
+            head += f", replaced_characters={self.replaced_characters}"
+        return f"RepairReport({head or 'clean'})"
+
+
+class _Repairer:
+    __slots__ = ("text", "n", "counts")
+
+    def __init__(self, text: str) -> None:
+        self.text = text
+        self.n = len(text)
+        self.counts: dict[str, int] = {}
+
+    def note(self, kind: str) -> None:
+        counts = self.counts
+        counts[kind] = counts.get(kind, 0) + 1
+
+    def skip(self, i: int) -> int:
+        """Skip whitespace and comments."""
+        text, n = self.text, self.n
+        while i < n:
+            c = text[i]
+            if c in _WS:
+                i += 1
+            elif c == "/" and i + 1 < n and text[i + 1] == "/":
+                j = text.find("\n", i + 2)
+                i = n if j < 0 else j + 1
+            elif c == "/" and i + 1 < n and text[i + 1] == "*":
+                j = text.find("*/", i + 2)
+                i = n if j < 0 else j + 2
+            elif c == "#":
+                j = text.find("\n", i + 1)
+                i = n if j < 0 else j + 1
+            else:
+                break
+        return i
+
+    def string(self, i: int) -> tuple[str, int]:
+        """Read a string. *i* points at the opening quote."""
+        try:
+            return _scanstring(self.text, i + 1, False)
+        except ValueError:
+            self.note("unterminated_string")
+            return self._lenient_string(i + 1)
+
+    def _lenient_string(self, i: int) -> tuple[str, int]:
+        text, n = self.text, self.n
+        buf: list[str] = []
+        while i < n:
+            c = text[i]
+            if c == "\\":
+                if i + 1 >= n:
+                    return "".join(buf), n
+                e = text[i + 1]
+                if e == "u":
+                    hex4 = text[i + 2 : i + 6]
+                    if len(hex4) == 4 and set(hex4) <= _UNICODE_ESCAPE:
+                        buf.append(chr(int(hex4, 16)))
+                        i += 6
+                    else:
+                        i += 2
+                    continue
+                buf.append(_UNESCAPE.get(e, e))
+                i += 2
+                continue
+            if c == '"':
+                return "".join(buf), i + 1
+            buf.append(c)
+            i += 1
+        return "".join(buf), n
+
+    def number(self, i: int) -> tuple[Any, int]:
+        m = _NUMBER_RE.match(self.text, i)
+        if m:
+            literal = m.group()
+            return (
+                float(literal) if any(ch in literal for ch in ".eE") else int(literal)
+            ), m.end()
+        text, n = self.text, self.n
+        j = i + 1
+        while j < n and (text[j].isdigit() or text[j] in ".eE+-"):
+            j += 1
+        self.note("bad_number")
+        literal = text[i:j]
+        try:
+            return int(literal), j
+        except ValueError:
+            try:
+                return float(literal), j
+            except ValueError:
+                return None, j
+
+    def value(self, i: int, depth: int) -> tuple[Any, int]:
+        text, n = self.text, self.n
+        i = self.skip(i)
+        if i >= n:
+            self.note("missing_value")
+            return _MISSING, i
+        c = text[i]
+        if c in "}]" or c == ",":
+            self.note("missing_value")
+            return _MISSING, i
+        if c == "{":
+            if depth >= _MAX_DEPTH:
+                raise JSONRepairError("nesting too deep", RepairReport(self.counts))
+            return self.object(i, depth + 1)
+        if c == "[":
+            if depth >= _MAX_DEPTH:
+                raise JSONRepairError("nesting too deep", RepairReport(self.counts))
+            return self.array(i, depth + 1)
+        if c == '"':
+            return self.string(i)
+        if text.startswith("true", i):
+            return True, i + 4
+        if text.startswith("false", i):
+            return False, i + 5
+        if text.startswith("null", i):
+            return None, i + 4
+        if text.startswith("NaN", i):
+            return float("nan"), i + 3
+        if text.startswith("Infinity", i):
+            return float("inf"), i + 8
+        if text.startswith("-Infinity", i):
+            return float("-inf"), i + 9
+        if c == "-" or c.isdigit():
+            return self.number(i)
+        # A spliced token: skip to the next structural character.
+        self.note("skipped_token")
+        j = i + 1
+        while j < n and text[j] not in ",}]":
+            j += 1
+        return _MISSING, j
+
+    def object(self, i: int, depth: int) -> tuple[dict[str, Any], int]:
+        text, n = self.text, self.n
+        i += 1
+        obj: dict[str, Any] = {}
+        while True:
+            i = self.skip(i)
+            if i >= n:
+                self.note("unclosed")
+                return obj, n
+            c = text[i]
+            if c == "}":
+                return obj, i + 1
+            if c == "]":
+                self.note("stray_closer")
+                i += 1
+                continue
+            if c == ",":
+                self.note("empty_entry")
+                i += 1
+                continue
+            if c == '"':
+                key, i = self.string(i)
+            else:
+                j = i
+                while j < n and text[j] not in ":,} \t\r\n":
+                    j += 1
+                key, i = text[i:j], j
+                self.note("unquoted_key")
+            i = self.skip(i)
+            if i < n and text[i] == ":":
+                i += 1
+            else:
+                self.note("missing_colon")
+            value, i = self.value(i, depth)
+            if value is not _MISSING:
+                obj[key] = value
+            i = self.skip(i)
+            if i < n and text[i] == ",":
+                i += 1
+            elif i < n and text[i] != "}":
+                self.note("missing_comma")
+
+    def array(self, i: int, depth: int) -> tuple[list[Any], int]:
+        text, n = self.text, self.n
+        i += 1
+        arr: list[Any] = []
+        while True:
+            i = self.skip(i)
+            if i >= n:
+                self.note("unclosed")
+                return arr, n
+            c = text[i]
+            if c == "]":
+                return arr, i + 1
+            if c == "}":
+                self.note("stray_closer")
+                i += 1
+                continue
+            if c == ",":
+                self.note("empty_entry")
+                i += 1
+                continue
+            value, i = self.value(i, depth)
+            if value is not _MISSING:
+                arr.append(value)
+            i = self.skip(i)
+            if i < n and text[i] == ",":
+                i += 1
+            elif i < n and text[i] != "]":
+                self.note("missing_comma")
+
+
+def _repair_document(
+    text: str, replaced_characters: int = 0
+) -> tuple[Any, RepairReport]:
+    if text.startswith("\ufeff"):
+        text = text[1:]
+    try:
+        value, report = _repair_once(text, 0)
+        if value is _MISSING:
+            # A splice can put junk in front of the document; the container
+            # that follows it is still the document.
+            starts = [p for p in (text.find("{"), text.find("[")) if p > 0]
+            if starts:
+                value, report = _repair_once(text, min(starts))
+                if value is not _MISSING:
+                    report.counts["discarded_prefix"] = 1
+        if not isinstance(value, (dict, list)) and value is not _MISSING:
+            # Damage that removes the opening brace leaves a bare string (or
+            # number) in front of the rest of the document. When a container
+            # covers more of the text, that container is the document.
+            starts = [p for p in (text.find("{"), text.find("[")) if p > 0]
+            if starts:
+                other, other_report = _repair_once(text, min(starts))
+                if isinstance(other, (dict, list)):
+                    other_report.counts["discarded_prefix"] = 1
+                    value, report = other, other_report
+    except RecursionError:
+        raise JSONRepairError(
+            "nesting too deep", RepairReport({}, replaced_characters)
+        ) from None
+    if value is _MISSING:
+        raise JSONRepairError("no JSON value found", report)
+    return value, RepairReport(report.counts, replaced_characters)
+
+
+def _repair_once(text: str, start: int) -> tuple[Any, RepairReport]:
+    fixer = _Repairer(text)
+    value, i = fixer.value(start, 0)
+    i = fixer.skip(i)
+    if i < fixer.n:
+        fixer.note("trailing_garbage")
+    return value, RepairReport(fixer.counts)
+
+
+def repair(text: str | bytes | bytearray) -> tuple[Any, RepairReport]:
+    """Recover a value from JSON that is damaged but still readable.
+
+    Accepts truncation, missing commas or colons, stray brackets, spliced
+    tokens, comments and trailing commas. Byte input is decoded with
+    ``errors="replace"``, which is how a body damaged in transit usually
+    arrives; each replaced byte is counted.
+
+    Repair keeps every value that parsed before the damage and drops the ones
+    the damage made unreadable. It cannot detect bytes replaced inside a
+    string: such values come back wrong without an error. Use it on data that
+    is better recovered approximately than lost, and never as the default
+    parser for input you validate.
+
+    Args:
+        text: Damaged JSON text, or bytes to decode first.
+
+    Returns:
+        ``(value, report)`` where ``report`` counts what was repaired.
+
+    Raises:
+        JSONRepairError: If no JSON value can be recovered at all.
+    """
+    if isinstance(text, (bytes, bytearray)):
+        decoded = bytes(text).decode("utf-8", "replace")
+        replaced = decoded.count("�")
+        return _repair_document(decoded, replaced)
+    if not isinstance(text, str):
+        raise TypeError(f"repair() requires str or bytes, not {type(text).__name__}")
+    return _repair_document(text)
+
+
 class JSONCDecodeError(json.JSONDecodeError):
     """Error raised when JSONC parsing fails.
 
@@ -183,6 +544,7 @@ def loads(
     parse_int: Any = None,
     parse_constant: Any = None,
     object_pairs_hook: Any = None,
+    repair: bool = False,
     **kwargs: Any,
 ) -> Any:
     """Deserialize a JSONC string to a Python object.
@@ -206,13 +568,21 @@ def loads(
         parse_int: Called with every JSON int string decoded.
         parse_constant: Called with ``-Infinity``, ``Infinity``, ``NaN``.
         object_pairs_hook: Called with an ordered list of pairs.
+        repair: Recover a damaged document with :func:`repair` instead of
+            raising. The returned value may be missing whatever the damage
+            made unreadable. Cannot be combined with a custom decoder or
+            hook, because repaired values bypass them.
         **kwargs: Additional keyword arguments passed to :func:`json.loads`.
 
     Returns:
         Deserialized Python object.
 
     Raises:
-        JSONCDecodeError: If the text is not valid JSONC.
+        JSONCDecodeError: If the text is not valid JSONC and ``repair`` is
+            False.
+        JSONRepairError: If ``repair`` is True and no value can be recovered.
+        ValueError: If ``repair`` is True and a custom decoder or hook is
+            given.
     """
 
     if not isinstance(text, str):
@@ -249,6 +619,11 @@ def loads(
         or parse_int is not None
         or parse_constant is not None
     )
+    if repair and custom_parse:
+        raise ValueError(
+            "repair=True cannot be combined with a custom decoder or hook: "
+            "repaired values bypass them"
+        )
     if not custom_parse:
         try:
             return _decode(text)
@@ -258,6 +633,8 @@ def loads(
                 # Nothing JSONC to strip, so a retry would parse the same
                 # document for the same result.  Report the failure exactly
                 # as the pre-fast-path code did.
+                if repair:
+                    return _repair_document(text)[0]
                 raise JSONCDecodeError(exc.msg, text, exc.pos) from None
     else:
         cleaned = _preprocess(text)
@@ -265,7 +642,8 @@ def loads(
     try:
         return _decode(cleaned)
     except json.JSONDecodeError as exc:
-        line, col = _remap_error_position(text, cleaned, exc.pos)
+        if repair:
+            return _repair_document(text)[0]
         raise JSONCDecodeError(exc.msg, text, exc.pos) from None
 
 

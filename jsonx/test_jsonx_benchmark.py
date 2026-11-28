@@ -29,6 +29,7 @@ except ImportError:
 sys.path.insert(0, os.path.dirname(__file__))
 from jsonx import loads as zd_loads  # noqa: E402
 from jsonx import loads_lines as zd_loads_lines  # noqa: E402
+from jsonx import repair as zd_repair  # noqa: E402
 
 _skip_commentjson = pytest.mark.skipif(_cj is None, reason="commentjson not installed")
 _skip_jsonlines = pytest.mark.skipif(_jl is None, reason="jsonlines not installed")
@@ -269,3 +270,35 @@ class TestJsonlLarge:
     @_skip_ndjson
     def test_ndjson(self, benchmark):
         benchmark(_ndjson_loads, _JSONL_LARGE)
+
+
+# ── Repair benchmarks ──
+
+# A 200 KB body spliced the way a damaged request arrives: every ~2000th
+# character of a valid document is dropped. Deterministic, so runs compare.
+_REPAIR_DOC = json.dumps(
+    {
+        "model": "example",
+        "messages": [
+            {
+                "role": "user" if i % 2 else "assistant",
+                "content": f"item {i} " + "y" * 150,
+            }
+            for i in range(1000)
+        ],
+    },
+    separators=(",", ":"),
+)
+_DAMAGED = "".join(
+    c for i, c in enumerate(_REPAIR_DOC) if i % 2000 != 0 and i % 2000 != 1
+)
+
+
+class TestRepair:
+    """Repair cost on a damaged body, next to the stdlib failure path."""
+
+    def test_fast_path(self, benchmark):
+        benchmark(zd_loads, _REPAIR_DOC)
+
+    def test_repair_damaged(self, benchmark):
+        benchmark(zd_repair, _DAMAGED)
